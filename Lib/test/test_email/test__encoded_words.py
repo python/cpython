@@ -5,15 +5,19 @@ from test.test_email import TestEmailBase
 from test.test_email.params import C, params, Params
 
 
-class TestDecodeQ(TestEmailBase):
+class TestDecoders(TestEmailBase):
+
+    def _test(self, function, source, result, defects=[]):
+        actual_result, actual_defects = function(source)
+        self.assertEqual(actual_result, result)
+        self.assertDefectsEqual(actual_defects, defects)
+
 
     @params
-    def test(self, source, ex_result, ex_defects=[]):
-        result, defects = _ew.decode_q(source)
-        self.assertEqual(result, ex_result)
-        self.assertDefectsEqual(defects, ex_defects)
+    def test_decode_q(self, *args, **kw):
+        return self._test(_ew.decode_q, *args, **kw)
 
-    params_test = Params(
+    params_test_decode_q = Params(
         no_encoded = C(b'foobar', b'foobar'),
         encoded_spaces = C(b'foo=20bar=20', b'foo bar '),
         underline_space = C(b'foo_bar_', b'foo bar '),
@@ -21,15 +25,11 @@ class TestDecodeQ(TestEmailBase):
         )
 
 
-class TestDecodeB(TestEmailBase):
-
     @params
-    def test(self, source, ex_result, ex_defects=[]):
-        result, defects = _ew.decode_b(source)
-        self.assertEqual(result, ex_result)
-        self.assertDefectsEqual(defects, ex_defects)
+    def test_decode_b(self, *args, **kw):
+        return self._test(_ew.decode_b, *args, **kw)
 
-    params_test = Params(
+    params_test_decode_b = Params(
 
         simple = C(
             b'Zm9v',
@@ -39,25 +39,25 @@ class TestDecodeB(TestEmailBase):
         missing_1_padding_char = C(
             b'dmk',
             b'vi',
-            [errors.InvalidBase64PaddingDefect],
+            defects=[errors.InvalidBase64PaddingDefect],
             ),
 
         missing_2_padding_char = C(
             b'dg',
             b'v',
-            [errors.InvalidBase64PaddingDefect],
+            defects=[errors.InvalidBase64PaddingDefect],
             ),
 
         invalid_character = C(
             b'dm\x01k===',
             b'vi',
-            [errors.InvalidBase64CharactersDefect],
+            defects=[errors.InvalidBase64CharactersDefect],
             ),
 
         invalid_character_and_bad_padding = C(
             b'dm\x01k',
             b'vi',
-            [
+            defects=[
                 errors.InvalidBase64CharactersDefect,
                 errors.InvalidBase64PaddingDefect,
                 ],
@@ -66,50 +66,41 @@ class TestDecodeB(TestEmailBase):
         invalid_length = C(
             b'abcde',
             b'abcde',
-            [errors.InvalidBase64LengthDefect],
+            defects=[errors.InvalidBase64LengthDefect],
             ),
 
         )
 
 
-class TestDecode(TestEmailBase):
-
     @params
-    def test_raises_if(self, value, exception=ValueError):
+    def test_decode_raises_if_value(self, value, exception=ValueError):
         with self.assertRaises(exception):
             _ew.decode(value)
 
-    params_test_raises_if = Params(
-
-        missing_middle = C(
-           '=?badone?=',
-           ),
-
-        beginning_only = C(
-           '=?',
-           ),
-
-        empty_string = C(
-           '',
-           ),
-
-        invalid_encoding = C(
-           '=?utf-8?X?somevalue?=',
-           exception=KeyError,
-           ),
-
+    params_test_decode_raises_if_value = Params(
+        missing_middle = C('=?badone?='),
+        beginning_only = C('=?'),
+        empty_string = C(''),
+        invalid_encoding = C('=?utf-8?X?somevalue?=', exception=KeyError),
         )
 
 
     @params
-    def test(self, source, result, charset='us-ascii', lang='', defects=[]):
-        res, char, l, d = _ew.decode(source)
-        self.assertEqual(res, result)
-        self.assertEqual(char, charset)
-        self.assertEqual(l, lang)
-        self.assertDefectsEqual(d, defects)
+    def test_decode(
+            self,
+            source,
+            result,
+            charset='us-ascii',
+            lang='',
+            defects=[],
+        ):
+        actual, actual_charset, actual_lang, actual_defects = _ew.decode(source)
+        self.assertEqual(actual, result)
+        self.assertEqual(actual_charset, charset)
+        self.assertEqual(actual_lang, lang)
+        self.assertDefectsEqual(actual_defects, defects)
 
-    params_test = Params(
+    params_test_decode = Params(
 
         simple_q = C(
             '=?us-ascii?q?foo?=',
@@ -134,7 +125,7 @@ class TestDecode(TestEmailBase):
         non_trivial_q = C(
             '=?latin-1?q?=20F=fcr=20Elise=20?=',
             ' Für Elise ',
-            'latin-1',
+            charset='latin-1',
             ),
 
         q_escaped_bytes_preserved = C(
@@ -211,38 +202,33 @@ class TestDecode(TestEmailBase):
         )
 
 
-class TestEncodeQ(TestEmailBase):
+class TestEncoders(TestEmailBase):
 
-    @params
-    def test(self, src, expected):
-        self.assertEqual(_ew.encode_q(src), expected)
+    def _test(self, function, source, expected):
+        self.assertEqual(function(source), expected)
 
-    params_test = Params(
+    @params(
         all_safe = C(b'foobar', 'foobar'),
         spaces = C(b'foo bar ', 'foo_bar_'),
         run_of_encodables = C(b'foo  ,,bar', 'foo__=2C=2Cbar'),
         )
+    def test_encode_q(self, *args, **kw):
+        return self._test(_ew.encode_q, *args, **kw)
 
 
-class TestEncodeB(TestEmailBase):
-
-    @params
-    def test(self, src, expected):
-        self.assertEqual(_ew.encode_b(src), expected)
-
-    params_test = Params(
+    @params(
         simple = C(b'foo',  'Zm9v'),
         padding = C(b'vi',  'dmk='),
         )
+    def test_encode_b(self, *args, **kw):
+        return self._test(_ew.encode_b, *args, **kw)
 
-
-class TestEncode(TestEmailBase):
 
     @params
-    def test(self, callspec, expected):
+    def test_encode(self, callspec, expected):
         self.assertEqual(callspec(_ew.encode), expected)
 
-    params_test = Params(
+    params_test_encode = Params(
 
         q = C(
             C('foo', 'utf-8', 'q'),
