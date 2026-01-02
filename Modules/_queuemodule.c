@@ -248,19 +248,12 @@ Returns size in memory, in bytes.
 
 static Py_ssize_t
 _queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
-{
-    Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
-    PyObject **items = self->buf.items;
-    Py_ssize_t items_cap = self->buf.items_cap;
-
-    if (items != NULL) {
-        size += items_cap * (Py_ssize_t)sizeof(void *);
-    }
-
-    return size;
-}
 /*[clinic end generated code: output=58ce4e3bbc078fd4 input=a3a7f05c9616598f]*/
-
+{
+    Py_ssize_t res = sizeof(simplequeueobject);
+    res += self->buf.items_cap * sizeof(PyObject *);
+    return res;
+}
 /*[clinic input]
 @classmethod
 _queue.SimpleQueue.__new__ as simplequeue_new
