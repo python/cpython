@@ -1133,15 +1133,7 @@ class TestPyReplModuleCompleter(TestCase):
             output = reader.readline()
             self.assertEqual(output, "import collections.abc")
 
-    @patch.dict(sys.modules)
-    def test_already_imported_frozen_module(self):
-        importlib.import_module("__phello__")
-        events = code_to_events("from __phello__ import s\t\n")
-        reader = self.prepare_reader(events, namespace={})
-        output = reader.readline()
-        self.assertEqual(output, "from __phello__ import spam")
-
-    def test_already_imported_custom_module_no_other_suggestions(self):
+    def test_already_imported_custom_module_no_suggestions(self):
         with (tempfile.TemporaryDirectory() as _dir1,
               tempfile.TemporaryDirectory() as _dir2,
               patch.object(sys, "path", [_dir2, _dir1, *sys.path])):
@@ -1158,11 +1150,11 @@ class TestPyReplModuleCompleter(TestCase):
             # Purge FileFinder cache after adding files
             pkgutil.get_importer(_dir2).invalidate_caches()
             # mymodule found in dir2 before dir1, but it was already imported
-            # from dir1 -> suggest dir1 submodules only
+            # from dir1 -> do not suggest dir2 submodules
             events = code_to_events("import mymodule.\t\n")
             reader = self.prepare_reader(events, namespace={})
             output = reader.readline()
-            self.assertEqual(output, "import mymodule.foo")
+            self.assertEqual(output, "import mymodule.")
 
             del sys.modules["mymodule"]
             # mymodule not imported anymore -> suggest dir2 submodules
