@@ -18,6 +18,7 @@ from typing import Dict, List, Tuple
 from ._css_utils import get_combined_css
 from ._format_utils import fmt
 from .collector import normalize_location, extract_lineno
+from .opcode_utils import get_opcode_info, format_opcode
 from .stack_collector import StackTraceCollector
 
 
@@ -642,8 +643,6 @@ class HeatmapCollector(StackTraceCollector):
         Returns:
             List of dicts with instruction info, sorted by samples descending
         """
-        from .opcode_utils import get_opcode_info, format_opcode
-
         key = (filename, lineno)
         opcode_data = self.line_opcodes.get(key, {})
 
@@ -1046,8 +1045,6 @@ class HeatmapCollector(StackTraceCollector):
         Simple: collect ranges with sample counts, assign each byte position to
         smallest covering range, then emit spans for contiguous runs with sample data.
         """
-        import html as html_module
-
         content = line_content.rstrip('\n')
         if not content:
             return ''
@@ -1070,7 +1067,7 @@ class HeatmapCollector(StackTraceCollector):
                             range_data[key]['opcodes'].append(opname)
 
         if not range_data:
-            return html_module.escape(content)
+            return html.escape(content)
 
         # For each byte position, find the smallest covering range
         byte_to_range = {}
@@ -1098,7 +1095,7 @@ class HeatmapCollector(StackTraceCollector):
         def flush_span():
             nonlocal span_chars, current_range
             if span_chars:
-                text = html_module.escape(''.join(span_chars))
+                text = html.escape(''.join(span_chars))
                 if current_range:
                     data = range_data.get(current_range, {'samples': 0, 'opcodes': []})
                     samples = data['samples']
@@ -1112,7 +1109,7 @@ class HeatmapCollector(StackTraceCollector):
                                   f'data-samples="{samples}" '
                                   f'data-max-samples="{max_range_samples}" '
                                   f'data-pct="{pct}" '
-                                  f'data-opcodes="{html_module.escape(opcodes)}">{text}</span>')
+                                  f'data-opcodes="{html.escape(opcodes)}">{text}</span>')
                 else:
                     result.append(text)
                 span_chars = []

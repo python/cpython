@@ -31,6 +31,7 @@ from ..constants import (
     PROFILING_MODE_GIL,
     PROFILING_MODE_WALL,
 )
+from ..opcode_utils import get_opcode_info, format_opcode
 
 
 class Widget(ABC):
@@ -1013,8 +1014,6 @@ class OpcodePanel(Widget):
         Returns:
             Next available line number
         """
-        from ..opcode_utils import get_opcode_info, format_opcode
-
         stats_list = kwargs.get("stats_list", [])
         height = kwargs.get("height", 24)
         selected_row = self.collector.selected_row
