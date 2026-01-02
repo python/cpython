@@ -433,7 +433,7 @@ base64 & binascii
 
 * CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
   faster thanks to simple CPU pipelining optimizations.
-  (Contributed by Gregory P. Smith in :gh:`143262`.)
+  (Contributed by Gregory P. Smith & Serhiy Storchaka in :gh:`143262`.)
 
 calendar
 --------

@@ -81,7 +81,7 @@ static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
-    52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1, 0,-1,-1, /* Note PAD->0 */
+    52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1,64,-1,-1, /* PAD->64 detected by fast path */
     -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
     15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
     -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
@@ -177,19 +177,7 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
     Py_ssize_t i;
 
     for (i = 0; i < n_quads; i++) {
-        const unsigned char *inp = in + i * 4;
-
-        /* Check for padding - exit fast path to handle it properly.
-         * Four independent comparisons lets the compiler choose the optimal
-         * approach; on modern pipelined CPUs this is faster than bitmask tricks
-         * like XOR+SUB+AND for zero-detection which have data dependencies.
-         */
-        if (inp[0] == BASE64_PAD || inp[1] == BASE64_PAD ||
-            inp[2] == BASE64_PAD || inp[3] == BASE64_PAD) {
-            break;
-        }
-
-        if (!base64_decode_quad(inp, out + i * 3, table)) {
+        if (!base64_decode_quad(in + i * 4, out + i * 3, table)) {
             break;
         }
     }
