@@ -134,10 +134,12 @@ base64_encode_fast(const unsigned char *in, Py_ssize_t in_len,
                    unsigned char *out, const unsigned char *table)
 {
     Py_ssize_t n_trios = in_len / 3;
-    Py_ssize_t i;
+    const unsigned char *in_end = in + n_trios * 3;
 
-    for (i = 0; i < n_trios; i++) {
-        base64_encode_trio(in + i * 3, out + i * 4, table);
+    while (in < in_end) {
+        base64_encode_trio(in, out, table);
+        in += 3;
+        out += 4;
     }
 
     return n_trios * 3;
