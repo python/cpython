@@ -1292,24 +1292,124 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
 
 // Fstring stuff
 
+static int
+unicodewriter_write_line(Parser *p, PyUnicodeWriter *w, const char *line_start, const char *line_end,
+                         int is_raw, Token* token)
+{
+    if (is_raw || memchr(line_start, '\\', line_end - line_start) == NULL) {
+        return PyUnicodeWriter_WriteUTF8(w, line_start, line_end - line_start);
+    }
+    else {
+        PyObject *line = _PyPegen_decode_string(p, 1, line_start, line_end - line_start, token);
+        if (line == NULL || PyUnicodeWriter_WriteStr(w, line) < 0) {
+            Py_XDECREF(line);
+            return -1;
+        }
+        Py_DECREF(line);
+    }
+    return 0;
+}
+
+static PyObject*
+_PyPegen_dedent_string_part(Parser *p, const char *s, size_t len, int indent_char, Py_ssize_t dedent_count,
+                            int is_raw, int is_first, expr_ty constant, Token* token)
+{
+    Py_ssize_t lineno = constant->lineno;
+    const char *line_start = s;
+    const char *s_end = s + len;
+
+    PyUnicodeWriter *w = PyUnicodeWriter_Create(len);
+    if (w == NULL) {
+        return NULL;
+    }
+    if (is_first) {
+        assert (line_start[0] == '\n');
+        line_start++;  // skip the first newline
+    }
+    else {
+        // Example: df"""
+        //      first part {param} second part
+        //      next line
+        //    """"
+        // We don't need to dedent the first line in the non-first parts.
+        const char *line_end = memchr(line_start, '\n', s_end - line_start);
+        if (line_end) {
+            line_end++; // include the newline
+        }
+        else {
+            line_end = s_end;
+        }
+        if (unicodewriter_write_line(p, w, line_start, line_end, is_raw, token) < 0) {
+            PyUnicodeWriter_Discard(w);
+            return NULL;
+        }
+        line_start = line_end;
+    }
+
+    while (line_start < s + len) {
+        lineno++;
+
+        Py_ssize_t i = 0;
+        while (line_start + i < s_end && i < dedent_count && line_start[i] == indent_char) {
+            i++;
+        }
+
+        if (line_start[i] == '\0') {  // found an empty line without newline.
+            break;
+        }
+        if (line_start[i] == '\n') {  // found an empty line with newline.
+            if (PyUnicodeWriter_WriteChar(w, '\n') < 0) {
+                PyUnicodeWriter_Discard(w);
+                return NULL;
+            }
+            line_start += i+1;
+            continue;
+        }
+        if (i < dedent_count) {  // found an invalid indent.
+            assert(line_start[i] != indent_char);
+            PyUnicodeWriter_Discard(w);
+            RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, lineno, i, lineno, i+1,
+                "d-string line missing valid indentation");
+            return NULL;
+        }
+
+        // found a indented line. let's dedent it.
+        line_start += i;
+        const char *line_end = memchr(line_start, '\n', s_end - line_start);
+        if (line_end) {
+            line_end++; // include the newline
+        }
+        else {
+            line_end = s_end;
+        }
+        if (unicodewriter_write_line(p, w, line_start, line_end, is_raw, token) < 0) {
+            PyUnicodeWriter_Discard(w);
+            return NULL;
+        }
+        line_start = line_end;
+    }
+    return  PyUnicodeWriter_Finish(w);
+}
+
 static expr_ty
-_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* token) {
+_PyPegen_decode_fstring_part(Parser* p, int is_first, int is_raw, int indent_char, Py_ssize_t dedent_count, expr_ty constant, Token* token) {
     assert(PyUnicode_CheckExact(constant->v.Constant.value));
 
     const char* bstr = PyUnicode_AsUTF8(constant->v.Constant.value);
     if (bstr == NULL) {
         return NULL;
     }
+    is_raw = is_raw || strchr(bstr, '\\') == NULL;
 
-    size_t len;
-    if (strcmp(bstr, "{{") == 0 || strcmp(bstr, "}}") == 0) {
-        len = 1;
-    } else {
-        len = strlen(bstr);
+    PyObject *str = NULL;
+    if (dedent_count > 0) {
+        str = _PyPegen_dedent_string_part(p, bstr, strlen(bstr), indent_char, dedent_count,
+                                        is_raw, is_first, constant, token);
+    }
+    else {
+        str = _PyPegen_decode_string(p, is_raw, bstr, strlen(bstr), token);
     }
 
-    is_raw = is_raw || strchr(bstr, '\\') == NULL;
-    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, token);
     if (str == NULL) {
         _Pypegen_raise_decode_error(p);
         return NULL;
@@ -1340,10 +1440,72 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
         return NULL;
     }
     int is_raw = strpbrk(quote_str, "rR") != NULL;
+    int is_dedent = strpbrk(quote_str, "dD") != NULL;
+    int indent_char = 0;
+    Py_ssize_t indent_count = 0;
 
     asdl_expr_seq *seq = _Py_asdl_expr_seq_new(total_items, p->arena);
     if (seq == NULL) {
         return NULL;
+    }
+
+    if (is_dedent) {
+        expr_ty first_item = asdl_seq_GET(raw_expressions, 0);
+        if (first_item->kind != Constant_kind
+                || PyUnicode_ReadChar(first_item->v.Constant.value, 0) != '\n') {
+            RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+                first_item,
+                "d-string must start with a newline"
+            );
+            return NULL;
+        }
+
+        expr_ty last_item = asdl_seq_GET(raw_expressions, n_items - 1);
+        if (last_item->kind != Constant_kind) {
+            RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+                last_item,
+                "d-string must end with an indent line"
+            );
+            return NULL;
+        }
+
+        Py_ssize_t blen;
+        const char *bstr = PyUnicode_AsUTF8AndSize(last_item->v.Constant.value, &blen);
+        if (bstr == NULL) {
+            return NULL;
+        }
+
+        // memrchr is GNU extension; use manual loop for portability.
+        const char *lastline = bstr + blen;
+        while (bstr < lastline) {
+            if (lastline[-1] == '\n') {
+                break;
+            }
+            lastline--;
+            if (*lastline != ' ' && *lastline != '\t') {
+                RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+                    last_item,
+                    "d-string must end with an indent line"
+                );
+                return NULL;
+            }
+        }
+
+        // checks indent of the last line.
+        indent_count = bstr + blen - lastline;
+        if (indent_count > 0) {
+            indent_char = lastline[0];
+
+            for (Py_ssize_t i = 1; i < indent_count; i++) {
+                if (lastline[i] != indent_char) {
+                    RAISE_ERROR_KNOWN_LOCATION(
+                        p, PyExc_TabError, last_item->end_lineno, i, last_item->end_lineno, i+1,
+                        "inconsistent use of tabs and spaces in indentation"
+                    );
+                    return NULL;
+                }
+            }
+        }
     }
 
     Py_ssize_t index = 0;
@@ -1377,7 +1539,7 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
         }
 
         if (item->kind == Constant_kind) {
-            item = _PyPegen_decode_fstring_part(p, is_raw, item, b);
+            item = _PyPegen_decode_fstring_part(p, i == 0, is_raw, indent_char, indent_count, item, b);
             if (item == NULL) {
                 return NULL;
             }

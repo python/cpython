@@ -86,7 +86,8 @@ def _all_string_prefixes():
     # The valid string prefixes. Only contain the lower case versions,
     #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
-    _valid_string_prefixes = ['b', 'r', 'u', 'f', 't', 'br', 'fr', 'tr']
+    _valid_string_prefixes = ['b', 'r', 'u', 'f', 't', 'd', 'br', 'fr', 'tr',
+                              'df', 'dt', 'dr', 'dfr', 'dtr']
     # if we add binary f-strings, add: ['fb', 'fbr']
     result = {''}
     for prefix in _valid_string_prefixes:

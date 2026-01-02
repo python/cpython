@@ -455,7 +455,7 @@ tok_continuation_line(struct tok_state *tok) {
 static int
 maybe_raise_syntax_error_for_string_prefixes(struct tok_state *tok,
                                              int saw_b, int saw_r, int saw_u,
-                                             int saw_f, int saw_t) {
+                                             int saw_f, int saw_t, int saw_d) {
     // Supported: rb, rf, rt (in any order)
     // Unsupported: ub, ur, uf, ut, bf, bt, ft (in any order)
 
@@ -480,12 +480,18 @@ maybe_raise_syntax_error_for_string_prefixes(struct tok_state *tok,
     if (saw_u && saw_t) {
         RETURN_SYNTAX_ERROR("u", "t");
     }
+    if (saw_u && saw_d) {
+        RETURN_SYNTAX_ERROR("u", "d");
+    }
 
     if (saw_b && saw_f) {
         RETURN_SYNTAX_ERROR("b", "f");
     }
     if (saw_b && saw_t) {
         RETURN_SYNTAX_ERROR("b", "t");
+    }
+    if (saw_b && saw_d) {
+        RETURN_SYNTAX_ERROR("b", "d");
     }
 
     if (saw_f && saw_t) {
@@ -741,8 +747,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Identifier (most frequent token!) */
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
-        /* Process the various legal combinations of b"", r"", u"", and f"". */
-        int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0, saw_t = 0;
+        /* Process the various legal combinations of b"", r"", u"", f"", and d"". */
+        int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0, saw_t = 0, saw_d = 0;
         while (1) {
             if (!saw_b && (c == 'b' || c == 'B')) {
                 saw_b = 1;
@@ -762,6 +768,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else if (!saw_t && (c == 't' || c == 'T')) {
                 saw_t = 1;
             }
+            else if (!saw_d && (c == 'd' || c == 'D')) {
+                saw_d = 1;
+            }
             else {
                 break;
             }
@@ -769,7 +778,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (c == '"' || c == '\'') {
                 // Raise error on incompatible string prefixes:
                 int status = maybe_raise_syntax_error_for_string_prefixes(
-                    tok, saw_b, saw_r, saw_u, saw_f, saw_t);
+                    tok, saw_b, saw_r, saw_u, saw_f, saw_t, saw_d);
                 if (status < 0) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
@@ -1049,7 +1058,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
   f_string_quote:
-    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r' || Py_TOLOWER(*tok->start) == 't')
+    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r' || Py_TOLOWER(*tok->start) == 't' || Py_TOLOWER(*tok->start) == 'd')
         && (c == '\'' || c == '"'))) {
 
         int quote = c;
@@ -1089,6 +1098,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->kind = TOK_FSTRING_MODE;
         the_current_tok->quote = quote;
         the_current_tok->quote_size = quote_size;
+        the_current_tok->raw = 0;
         the_current_tok->start = tok->start;
         the_current_tok->multi_line_start = tok->line_start;
         the_current_tok->first_line = tok->lineno;
@@ -1101,25 +1111,28 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->in_debug = 0;
 
         enum string_kind_t string_kind = FSTRING;
-        switch (*tok->start) {
-            case 'T':
-            case 't':
-                the_current_tok->raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
-                string_kind = TSTRING;
-                break;
-            case 'F':
-            case 'f':
-                the_current_tok->raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
-                break;
-            case 'R':
-            case 'r':
-                the_current_tok->raw = 1;
-                if (Py_TOLOWER(*(tok->start + 1)) == 't') {
+        for (const char *p = tok->start; *p != c; p++) {
+            switch (*p) {
+                case 'f':
+                case 'F':
+                    break;
+                case 't':
+                case 'T':
                     string_kind = TSTRING;
-                }
-                break;
-            default:
-                Py_UNREACHABLE();
+                    break;
+                case 'r':
+                case 'R':
+                    the_current_tok->raw = 1;
+                    break;
+                case 'd':
+                case 'D':
+                    if (quote_size != 3) {
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "d-string must be a multiline string"));
+                    }
+                    break;
+                default:
+                    Py_UNREACHABLE();
+            }
         }
 
         the_current_tok->string_kind = string_kind;
