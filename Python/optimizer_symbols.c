@@ -846,8 +846,12 @@ _Py_uop_frame_new(
         frame->locals[i] = args[i];
     }
 
+    // If the args are known, then it's safe to just initialize
+    // every other non-set local to null symbol.
+    bool default_null = args != NULL;
+
     for (int i = arg_len; i < co->co_nlocalsplus; i++) {
-        JitOptRef local = _Py_uop_sym_new_unknown(ctx);
+        JitOptRef local = default_null ? _Py_uop_sym_new_null(ctx) : _Py_uop_sym_new_unknown(ctx);
         frame->locals[i] = local;
     }
 

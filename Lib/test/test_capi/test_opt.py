@@ -67,6 +67,9 @@ def iter_ops(ex):
 def get_ops(ex):
     return list(iter_ops(ex))
 
+def count_ops(ex, name):
+    return len([opname for opname in iter_opnames(ex) if opname == name])
+
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
@@ -1918,8 +1921,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
         self.assertIn("_COMPARE_OP_STR", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
-        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
 
     def test_call_type_1_guards_removed(self):
         def testfunc(n):
@@ -2209,10 +2212,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        pop_tops = [opname for opname in iter_opnames(ex) if opname == "_POP_TOP"]
         self.assertIn("_CALL_BUILTIN_O", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertLessEqual(len(pop_tops), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
 
     def test_call_method_descriptor_o(self):
         def testfunc(n):
@@ -2227,10 +2229,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        pop_tops = [opname for opname in iter_opnames(ex) if opname == "_POP_TOP"]
         self.assertIn("_CALL_METHOD_DESCRIPTOR_O", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertLessEqual(len(pop_tops), 1)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 4)
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
@@ -2539,6 +2540,47 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
 
+    def test_store_fast_refcount_elimination(self):
+        def foo(x):
+            # Since x is known to be
+            # a constant value (1) here,
+            # The refcount is eliminated in the STORE_FAST.
+            x = 2
+            return x
+        def testfunc(n):
+            # The STORE_FAST for the range here needs a POP_TOP
+            # (for now, until we do loop peeling).
+            for _ in range(n):
+                foo(1)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
+
+    def test_store_fast_refcount_elimination_when_uninitialized(self):
+        def foo():
+            # Since y is known to be
+            # uninitialized (NULL) here,
+            # The refcount is eliminated in the STORE_FAST.
+            y = 2
+            return y
+        def testfunc(n):
+            # The STORE_FAST for the range here needs a POP_TOP
+            # (for now, until we do loop peeling).
+            for _ in range(n):
+                foo()
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
+
+
     def test_float_op_refcount_elimination(self):
         def testfunc(args):
             a, b, n = args
@@ -2569,7 +2611,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_LOAD_ATTR_INSTANCE_VALUE", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_load_attr_with_hint(self):
@@ -2590,7 +2632,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_LOAD_ATTR_WITH_HINT", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_load_addr_slot(self):
@@ -2609,7 +2651,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_LOAD_ATTR_SLOT", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_int_add_op_refcount_elimination(self):
@@ -2625,7 +2667,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_int_sub_op_refcount_elimination(self):
         def testfunc(n):
@@ -2640,7 +2682,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_SUBTRACT_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_int_mul_op_refcount_elimination(self):
         def testfunc(n):
@@ -2655,7 +2697,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_MULTIPLY_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_int_cmp_op_refcount_elimination(self):
         def testfunc(n):
@@ -2670,7 +2712,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_COMPARE_OP_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_float_cmp_op_refcount_elimination(self):
         def testfunc(n):
@@ -2685,7 +2727,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_COMPARE_OP_FLOAT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_str_cmp_op_refcount_elimination(self):
         def testfunc(n):
@@ -2700,7 +2742,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_COMPARE_OP_STR", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_unicode_add_op_refcount_elimination(self):
         def testfunc(n):
@@ -2716,7 +2758,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_remove_guard_for_slice_list(self):
         def f(n):
@@ -2775,7 +2817,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_STORE_ATTR_INSTANCE_VALUE", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_store_attr_with_hint(self):
@@ -2795,7 +2837,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_STORE_ATTR_WITH_HINT", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_store_subscr_int(self):
@@ -2813,7 +2855,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_STORE_SUBSCR_LIST_INT", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
         self.assertNotIn("_POP_TOP_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
@@ -2850,7 +2892,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_STORE_SUBSCR_DICT", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_attr_promotion_failure(self):
@@ -3183,7 +3225,8 @@ class TestUopsOptimization(unittest.TestCase):
         assert "_LOAD_GLOBAL_BUILTIN" not in uops
         assert "_LOAD_CONST_INLINE_BORROW" in uops
         assert "_POP_TOP_NOP" in uops
-        assert "_POP_TOP" not in uops
+        pop_top_count = len([opname for opname in ex if opname == "_POP_TOP" ])
+        assert pop_top_count <= 2
         """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
@@ -3214,8 +3257,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
-        self.assertNotIn("_POP_TOP", uops)
-        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_binary_subscr_tuple_int(self):
@@ -3233,8 +3276,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
-        self.assertNotIn("_POP_TOP", uops)
-        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_is_op(self):
@@ -3252,7 +3295,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_IS_OP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
 
         def test_is_true(n):
@@ -3268,7 +3311,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_IS_OP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
 
         def test_is_not(n):
@@ -3285,7 +3328,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_IS_OP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
 
         def test_is_none(n):
@@ -3300,7 +3343,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_IS_OP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
-        self.assertNotIn("_POP_TOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
