@@ -567,7 +567,7 @@ class WindowsConsole(Console):
                 e.data += ch
         return e
 
-    def wait(self, timeout: float | None) -> bool:
+    def wait_for_event(self, timeout: float | None) -> bool:
         """Wait for an event."""
         if timeout is None:
             timeout = INFINITE
@@ -579,6 +579,15 @@ class WindowsConsole(Console):
         elif ret == WAIT_TIMEOUT:
             return False
         return True
+
+    def wait(self, timeout: float | None) -> bool:
+        """
+        Wait for events on the console.
+        """
+        return (
+            not self.event_queue.empty()
+            or self.wait_for_event(timeout)
+        )
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
