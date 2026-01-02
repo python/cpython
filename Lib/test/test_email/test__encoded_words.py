@@ -86,57 +86,81 @@ class TestDecoders(TestEmailBase):
 
 
     @params
-    def test_decode(
+    def test__decode(
             self,
-            source,
-            result,
+            cte_encoded,
+            *,
+            cte,
             charset='us-ascii',
-            lang='',
+            result,
             defects=[],
         ):
-        actual, actual_charset, actual_lang, actual_defects = _ew.decode(source)
+        actual, actual_defects = _ew._decode(charset, cte, cte_encoded)
+        self.assertEqual(actual, result)
+        self.assertDefectsEqual(actual_defects, defects)
+
+    @params
+    def test_decode(
+            self,
+            cte_encoded,
+            *,
+            cte,
+            charset='us-ascii',
+            lang='',
+            result,
+            defects=[],
+        ):
+        ew = f'=?{charset}{lang and '*'}{lang}?{cte}?{cte_encoded}?='
+        actual, actual_charset, actual_lang, actual_defects = _ew.decode(ew)
         self.assertEqual(actual, result)
         self.assertEqual(actual_charset, charset)
         self.assertEqual(actual_lang, lang)
         self.assertDefectsEqual(actual_defects, defects)
 
-    params_test_decode = Params(
+    params_test__decode = params_test_decode = Params(
 
         simple_q = C(
-            '=?us-ascii?q?foo?=',
             'foo',
+            cte='q',
+            result='foo',
             ),
 
         simple_b = C(
-            '=?us-ascii?b?dmk=?=',
-            'vi',
+            'dmk=',
+            cte='b',
+            result='vi',
             ),
 
         q_case_ignored = C(
-            '=?us-ascii?Q?foo?=',
             'foo',
+            cte='Q',
+            result='foo',
             ),
 
         b_case_ignored = C(
-            '=?us-ascii?B?dmk=?=',
-            'vi',
+            'dmk=',
+            cte='B',
+            result='vi',
             ),
 
         non_trivial_q = C(
-            '=?latin-1?q?=20F=fcr=20Elise=20?=',
-            ' Für Elise ',
+            '=20F=fcr=20Elise=20',
+            cte='q',
+            result=' Für Elise ',
             charset='latin-1',
             ),
 
         q_escaped_bytes_preserved = C(
-            b'=?us-ascii?q?=20\xACfoo?='.decode('us-ascii', 'surrogateescape'),
-            ' \uDCACfoo',
+            b'=20\xACfoo'.decode('us-ascii', 'surrogateescape'),
+            cte='q',
+            result=' \uDCACfoo',
             defects=[errors.UndecodableBytesDefect],
             ),
 
         b_undecodable_bytes_ignored_with_defect = C(
-            b'=?us-ascii?b?dm\xACk?='.decode('us-ascii', 'surrogateescape'),
-            'vi',
+            b'dm\xACk'.decode('us-ascii', 'surrogateescape'),
+            cte='b',
+            result='vi',
             defects=[
                 errors.InvalidBase64CharactersDefect,
                 errors.InvalidBase64PaddingDefect,
@@ -144,14 +168,16 @@ class TestDecoders(TestEmailBase):
             ),
 
         b_invalid_bytes_ignored_with_defect = C(
-            '=?us-ascii?b?dm\x01k===?=',
-            'vi',
+            'dm\x01k===',
+            cte='b',
+            result='vi',
             defects=[errors.InvalidBase64CharactersDefect],
             ),
 
         b_invalid_bytes_incorrect_padding = C(
-            '=?us-ascii?b?dm\x01k?=',
-            'vi',
+            'dm\x01k',
+            cte='b',
+            result='vi',
             defects=[
                 errors.InvalidBase64CharactersDefect,
                 errors.InvalidBase64PaddingDefect,
@@ -159,44 +185,54 @@ class TestDecoders(TestEmailBase):
             ),
 
         b_padding_defect = C(
-            '=?us-ascii?b?dmk?=',
-            'vi',
+            'dmk',
+            cte='b',
+            result='vi',
             defects=[errors.InvalidBase64PaddingDefect],
             ),
 
-        nonnull_lang = C(
-            '=?us-ascii*jive?q?test?=',
-            'test',
-            lang='jive',
-            ),
-
         unknown_8bit_charset = C(
-            '=?unknown-8bit?q?foo=ACbar?=',
-            b'foo\xacbar'.decode('ascii', 'surrogateescape'),
+            'foo=ACbar',
+            cte='q',
+            result=b'foo\xacbar'.decode('ascii', 'surrogateescape'),
             charset='unknown-8bit',
             defects=[],
             ),
 
         unknown_charset = C(
-            '=?foobar?q?foo=ACbar?=',
-            b'foo\xacbar'.decode('ascii', 'surrogateescape'),
+            'foo=ACbar',
+            cte='q',
+            result=b'foo\xacbar'.decode('ascii', 'surrogateescape'),
             charset='foobar',
             # XXX Should this be a new Defect instead?
             defects=[errors.CharsetError],
             ),
 
         invalid_character_in_charset = C(
-            '=?utf-8\udce2\udc80\udc9d?q?foo=ACbar?=',
-            b'foo\xacbar'.decode('ascii', 'surrogateescape'),
+            'foo=ACbar',
+            cte='q',
+            result=b'foo\xacbar'.decode('ascii', 'surrogateescape'),
             charset='utf-8\udce2\udc80\udc9d',
             # XXX Should this be a new Defect instead?
             defects=[errors.CharsetError],
             ),
 
         q_nonascii = C(
-            '=?utf-8?q?=C3=89ric?=',
-            'Éric',
+            '=C3=89ric',
+            cte='q',
+            result='Éric',
             charset='utf-8',
+            ),
+
+        )
+
+    params_test_decode__lang = Params(
+
+        nonnull_lang = C(
+            'test',
+            cte='q',
+            result='test',
+            lang='jive',
             ),
 
         )
