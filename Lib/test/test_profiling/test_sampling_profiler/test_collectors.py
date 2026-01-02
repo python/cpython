@@ -2,6 +2,7 @@
 
 import json
 import marshal
+import opcode
 import os
 import tempfile
 import unittest
@@ -1437,7 +1438,6 @@ class TestOpcodeFormatting(unittest.TestCase):
 
     def test_get_opcode_info_standard_opcode(self):
         """Test get_opcode_info for a standard opcode."""
-        import opcode
         # LOAD_CONST is a standard opcode
         load_const = opcode.opmap.get('LOAD_CONST')
         if load_const is not None:
@@ -1455,7 +1455,6 @@ class TestOpcodeFormatting(unittest.TestCase):
 
     def test_format_opcode_standard(self):
         """Test format_opcode for a standard opcode."""
-        import opcode
         load_const = opcode.opmap.get('LOAD_CONST')
         if load_const is not None:
             formatted = format_opcode(load_const)
@@ -1463,7 +1462,6 @@ class TestOpcodeFormatting(unittest.TestCase):
 
     def test_format_opcode_specialized(self):
         """Test format_opcode for a specialized opcode shows base in parens."""
-        import opcode
         if not hasattr(opcode, '_specialized_opmap'):
             self.skipTest("No specialized opcodes in this Python version")
         if not hasattr(opcode, '_specializations'):
