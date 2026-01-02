@@ -1656,7 +1656,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Subcommands
+Sub-commands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1674,50 +1674,46 @@ Subcommands
    called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~_SubParsersAction.add_parser`:
 
-   .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
 
-      Creates and returns a new :class:`!ArgumentParser` object for the
-      subcommand *name*.
+   Creates and returns a new :class:`!ArgumentParser` object for the
+   subcommand *name*.
 
-      The *name* argument is the name of the subcommand.
-      The *help* argument provides a short description for this subcommand. If provided, it will be listed next to the command in the main parser's help message (e.g., ``PROG --help``).
+   The *name* argument is the name of the sub-command.
 
-      The *aliases* argument allows to provide a sequence of strings that can be used as alternative names for this subcommand (e.g., ``aliases=['r']`` for a ``'run'`` command).
+   The *help* argument provides a short description for this sub-command.
+   If provided, it will be listed next to the command in the main parser’s
+   help message (e.g., ``PROG --help``).
 
-      The *deprecated* argument, if :const:`True`, marks the subcommand as deprecated, which typically issues a warning when used.
+   The *aliases* argument allows providing alternative names for this
+   sub-command.
 
-      All other keyword arguments are passed directly to the
-      :class:`!ArgumentParser` constructor.
+   The *deprecated* argument, if ``True``, marks the sub-command as
+   deprecated and will issue a warning when used.
 
-   Description of parameters:
+   All other keyword arguments are passed directly to the
+   :class:`!ArgumentParser` constructor.
 
-   * *title* - title for the subparser group in help output; by default
-     "subcommands" if description is provided, otherwise uses title for
-     positional arguments
+   Examples
+   ~~~~~~~~
 
-   * *description* - description for the subparser group in help output, by
-     default ``None``
+   Using aliases::
 
-   * *prog* - usage information that will be displayed with subcommand help,
-     by default the name of the program and any positional arguments before the
-     subparser argument
+      >>> parser = argparse.ArgumentParser()
+      >>> subparsers = parser.add_subparsers()
+      >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
+      >>> checkout.add_argument('foo')
+      >>> parser.parse_args(['co', 'bar'])
+      Namespace(foo='bar')
 
-   * *parser_class* - class which will be used to create subparser instances, by
-     default the class of the current parser (e.g. :class:`ArgumentParser`)
+   Using deprecated::
 
-   * action_ - the basic type of action to be taken when this argument is
-     encountered at the command line
-
-   * dest_ - name of the attribute under which subcommand name will be
-     stored; by default ``None`` and no value is stored
-
-   * required_ - Whether or not a subcommand must be provided, by default
-     ``False`` (added in 3.7)
-
-   * help_ - help for subparser group in help output, by default ``None``
-
-   * metavar_ - string presenting available subcommands in help; by default it
-     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+      >>> parser = argparse.ArgumentParser(prog='chicken.py')
+      >>> subparsers = parser.add_subparsers()
+      >>> fly = subparsers.add_parser('fly', deprecated=True)
+      >>> parser.parse_args(['fly'])  # doctest: +SKIP
+      chicken.py: warning: command 'fly' is deprecated
+      Namespace()
 
    Some example usage::
 
@@ -1803,48 +1799,6 @@ Subcommands
        valid subcommands
 
        {foo,bar}   additional help
-
-   .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
-
-      Creates and returns a new :class:`!ArgumentParser` object for the
-      subcommand name.
-
-      The name argument is the name of the subcommand.
-
-      The help argument provides a short description for this subcommand.
-      If provided, it will be listed next to the command in the main
-      parser’s help message (e.g., ``PROG --help``).
-
-      The aliases argument allows you to provide a sequence of strings
-      that can be used as alternative names for this subcommand
-      (e.g., ``aliases=['co']`` for a ``'checkout'`` command).
-
-      The deprecated argument allows you to mark the subcommand as
-      deprecated. When a deprecated subcommand is used, :mod:`argparse`
-      will emit a warning.
-
-      This returned :class:`!ArgumentParser`
-      object can be modified as usual.
-
-      *Examples*
-
-      Using aliases::
-
-         >>> parser = argparse.ArgumentParser()
-         >>> subparsers = parser.add_subparsers()
-         >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
-         >>> checkout.add_argument('foo')
-         >>> parser.parse_args(['co', 'bar'])
-         Namespace(foo='bar')
-
-      Using deprecated::
-
-         >>> parser = argparse.ArgumentParser(prog='chicken.py')
-         >>> subparsers = parser.add_subparsers()
-         >>> fly = subparsers.add_parser('fly', deprecated=True)
-         >>> parser.parse_args(['fly'])  # doctest: +SKIP
-         chicken.py: warning: command 'fly' is deprecated
-         Namespace()
 
    One particularly effective way of handling subcommands is to combine the use
    of the :meth:`~ArgumentParser.add_subparsers` method with calls to :meth:`~ArgumentParser.set_defaults` so
@@ -2270,7 +2224,7 @@ Registering custom types or actions
 
    Sometimes it's desirable to use a custom string in error messages to provide
    more user-friendly output. In these cases, :meth:`!register` can be used to
-   register custom actions or types with a parser anto reference the
+   register custom actions or types with a parser allows you to reference the
    type by their registered name instead of their callable name.
 
    The :meth:`!register` method accepts three arguments - a *registry_name*,
