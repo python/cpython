@@ -36,3 +36,18 @@ Each package definition is contained in a subdirectory, but they share the build
 - Support for Windows
 - Using a single `pixi.toml` and `recipe.yaml` for all package variants is blocked on https://github.com/prefix-dev/pixi/issues/4599
 - A workaround can be removed from the build script once https://github.com/prefix-dev/rattler-build/issues/2012 is resolved
+
+## Troubleshooting
+
+TSan builds may crash on Linux with
+```
+FATAL: ThreadSanitizer: unexpected memory mapping 0x7977bd072000-0x7977bd500000
+```
+To fix it, try reducing `mmap_rnd_bits`:
+
+```bash
+$ sudo sysctl vm.mmap_rnd_bits
+vm.mmap_rnd_bits = 32  # too high for TSan
+$ sudo sysctl vm.mmap_rnd_bits=28  # reduce it
+vm.mmap_rnd_bits = 28
+```
