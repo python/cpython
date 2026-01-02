@@ -163,8 +163,8 @@ def decode(ew):
     the encoded_string decoded first from its Content Transfer Encoding and
     then from the resulting bytes into unicode using the specified charset.  If
     the cte-decoded string does not successfully decode using the specified
-    character set, a defect is added to the defects list and the unknown octets
-    are replaced by the unicode 'unknown' character \\uFDFF.
+    character set, a defect is added to the defects list.  If the charset
+    is invalid or not found, a defect is added to the defects list.
 
     The specified charset and language are returned.  The default for language,
     which is rarely if ever encountered, is the empty string.
@@ -172,6 +172,20 @@ def decode(ew):
     """
     _, charset, cte, cte_string, _ = ew.split('?')
     charset, _, lang = charset.partition('*')
+    string, defects = _decode(charset, cte, cte_string)
+    return string, charset, lang, defects
+
+
+def _decode(charset, cte, cte_string):
+    """Return cte_string decoded using cte and charset and a list of defects.
+
+    Use cte to turn cte_string into bytes, then decode those bytes using
+    charset and the surrogateescape error handler.  Return a possibly empty
+    list of defects: return a CharsetError if the charset name is invalid or
+    unknown, and an UndecodableBytesDefect if there are any bytes the charset
+    cannot decode.
+
+    """
     cte = cte.lower()
     # Recover the original bytes and do CTE decoding.
     bstring = cte_string.encode('ascii', 'surrogateescape')
@@ -184,11 +198,13 @@ def decode(ew):
             f"contains bytes not decodable using {charset!r} charset"))
         string = bstring.decode(charset, 'surrogateescape')
     except (LookupError, UnicodeEncodeError):
+        # In this context a UnicodeEncodeError results when the charset name is
+        # not a valid ASCII string.
         string = bstring.decode('ascii', 'surrogateescape')
         if charset.lower() != 'unknown-8bit':
             defects.append(errors.CharsetError(f"Unknown charset {charset!r} "
                 f"in encoded word; decoded as unknown bytes"))
-    return string, charset, lang, defects
+    return string, defects
 
 
 _cte_encoders = {
