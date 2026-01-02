@@ -1846,6 +1846,44 @@ class TestMain(ReplTestCase):
                 )
                 self.assertIn(hint, output)
 
+    @force_not_colorized
+    def test_no_newline(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        env["PYTHON_BASIC_REPL"] = "1"
+
+        commands = "print('Something pretty long', end='')\nexit()\n"
+        expected_output_sequence = "Something pretty long>>> exit()"
+
+        basic_output, basic_exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(basic_exit_code, 0)
+        self.assertIn(expected_output_sequence, basic_output)
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+
+        # Define escape sequences that don't affect cursor position or visual output
+        bracketed_paste_mode = r'\x1b\[\?2004[hl]'     # Enable/disable bracketed paste
+        application_cursor_keys = r'\x1b\[\?1[hl]'     # Enable/disable application cursor keys
+        application_keypad_mode = r'\x1b[=>]'          # Enable/disable application keypad
+        insert_character = r'\x1b\[(?:1)?@(?=[ -~])'   # Insert exactly 1 char (safe form)
+        cursor_visibility = r'\x1b\[\?25[hl]'          # Show/hide cursor
+        cursor_blinking = r'\x1b\[\?12[hl]'            # Start/stop cursor blinking
+        device_attributes = r'\x1b\[\?[01]c'           # Device Attributes (DA) queries/responses
+
+        safe_escapes = re.compile(
+            f'{bracketed_paste_mode}|'
+            f'{application_cursor_keys}|'
+            f'{application_keypad_mode}|'
+            f'{insert_character}|'
+            f'{cursor_visibility}|'
+            f'{cursor_blinking}|'
+            f'{device_attributes}'
+        )
+        cleaned_output = safe_escapes.sub('', output)
+        self.assertIn(expected_output_sequence, cleaned_output)
+
+
 class TestPyReplCtrlD(TestCase):
     """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
 
