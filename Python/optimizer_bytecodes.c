@@ -131,7 +131,7 @@ dummy_func(void) {
     }
 
     op(_PUSH_NULL, (-- res)) {
-        res = sym_new_null(ctx);
+        res = PyJitRef_Borrow(sym_new_null(ctx));
     }
 
     op(_GUARD_TOS_INT, (value -- value)) {
@@ -665,9 +665,10 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
+    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
         attr = sym_new_not_null(ctx);
         (void)index;
+        o = owner;
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
@@ -1066,6 +1067,35 @@ dummy_func(void) {
         c = callable;
         s = self;
         none = sym_new_const(ctx, Py_None);
+    }
+
+    op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
+        res = sym_new_not_null(ctx);
+        c = callable;
+        if (sym_is_not_null(self_or_null)) {
+            args--;
+            s = args[0];
+        }
+        else if (sym_is_null(self_or_null)) {
+            s = args[0];
+        }
+        else {
+            s = sym_new_unknown(ctx);
+        }
+    }
+
+    op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
+        res = sym_new_not_null(ctx);
+        c = callable;
+        if (sym_is_not_null(self_or_null)) {
+            args--;
+            s = args[0];
+            a = args[1];
+        }
+        else {
+            s = sym_new_unknown(ctx);
+            a = sym_new_unknown(ctx);
+        }
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {

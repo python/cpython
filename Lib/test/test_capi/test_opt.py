@@ -2209,8 +2209,28 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        pop_tops = [opname for opname in iter_opnames(ex) if opname == "_POP_TOP"]
         self.assertIn("_CALL_BUILTIN_O", uops)
-        self.assertIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(len(pop_tops), 1)
+
+    def test_call_method_descriptor_o(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = (1, 2, 3)
+                z = y.count(2)
+                x += z
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        pop_tops = [opname for opname in iter_opnames(ex) if opname == "_POP_TOP"]
+        self.assertIn("_CALL_METHOD_DESCRIPTOR_O", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(len(pop_tops), 1)
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
@@ -2570,6 +2590,25 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_LOAD_ATTR_WITH_HINT", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_load_addr_slot(self):
+        def testfunc(n):
+            class C:
+                __slots__ = ('x',)
+            c = C()
+            c.x = 42
+            x = 0
+            for _ in range(n):
+                x += c.x
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_ATTR_SLOT", uops)
         self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 

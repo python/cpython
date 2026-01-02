@@ -11,6 +11,8 @@ try:
     import _remote_debugging  # noqa: F401
     import profiling.sampling
     import profiling.sampling.sample
+    from profiling.sampling.pstats_collector import PstatsCollector
+    from profiling.sampling.stack_collector import CollapsedStackCollector
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -61,7 +63,6 @@ while True:
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            from profiling.sampling.pstats_collector import PstatsCollector
             collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
             profiling.sampling.sample.sample(
                 subproc.process.pid,
@@ -88,7 +89,6 @@ while True:
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            from profiling.sampling.pstats_collector import PstatsCollector
             collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
             profiling.sampling.sample.sample(
                 subproc.process.pid,
@@ -140,7 +140,6 @@ while True:
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                from profiling.sampling.stack_collector import CollapsedStackCollector
                 collector = CollapsedStackCollector(1000, skip_idle=False)
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
@@ -176,7 +175,6 @@ while True:
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            from profiling.sampling.pstats_collector import PstatsCollector
             collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
             profiling.sampling.sample.sample(
                 subproc.process.pid,
