@@ -2647,7 +2647,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
-            // _DO_CALL_FUNCTION_EX_PY
+            // _PY_FRAME_EX
             {
                 kwargs_st = stack_pointer[-1];
                 callargs_st = callargs;

@@ -3060,7 +3060,7 @@
 
         /* _DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
-        case _DO_CALL_FUNCTION_EX_PY: {
+        case _PY_FRAME_EX: {
             JitOptRef ex_frame;
             ex_frame = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-3);

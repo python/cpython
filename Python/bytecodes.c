@@ -4883,7 +4883,7 @@ dummy_func(
             _DO_CALL_FUNCTION_EX +
             _CHECK_PERIODIC_AT_END;
 
-        op(_DO_CALL_FUNCTION_EX_PY, (func_st, null, callargs_st, kwargs_st -- ex_frame)) {
+        op(_PY_FRAME_EX, (func_st, null, callargs_st, kwargs_st -- ex_frame)) {
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             DEOPT_IF(Py_TYPE(func) != &PyFunction_Type);
             DEOPT_IF(((PyFunctionObject *)func)->vectorcall != _PyFunction_Vectorcall);
@@ -4910,7 +4910,7 @@ dummy_func(
             unused/1 +
             _CHECK_PEP_523 +
             _MAKE_CALLARGS_A_TUPLE +
-            _DO_CALL_FUNCTION_EX_PY +
+            _PY_FRAME_EX +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 

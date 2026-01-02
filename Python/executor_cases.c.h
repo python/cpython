@@ -15615,7 +15615,7 @@
 
         /* _DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        case _DO_CALL_FUNCTION_EX_PY_r31: {
+        case _PY_FRAME_EX_r31: {
             CHECK_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef kwargs_st;
