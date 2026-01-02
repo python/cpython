@@ -49,6 +49,9 @@ FINISHED_BANNER_EXTRA_LINES = 3  # Blank line + banner + blank line
 OPCODE_PANEL_HEIGHT = 12  # Height reserved for opcode statistics panel
 
 # Color pair IDs
+COLOR_PAIR_SAMPLES = 1
+COLOR_PAIR_FILE = 2
+COLOR_PAIR_FUNC = 3
 COLOR_PAIR_HEADER_BG = 4
 COLOR_PAIR_CYAN = 5
 COLOR_PAIR_YELLOW = 6
