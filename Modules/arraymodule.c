@@ -1591,6 +1591,9 @@ array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f)
     /* XXX Make the block size settable */
     Py_ssize_t BLOCKSIZE = 64*1024;
     Py_ssize_t max_items = PY_SSIZE_T_MAX / self->ob_descr->itemsize;
+    Py_ssize_t total_size = Py_SIZE(self);
+    Py_ssize_t current_nbytes = total_size * self->ob_descr->itemsize;
+    Py_ssize_t offset = 0;
 
     if (Py_SIZE(self) == 0)
         goto done;
@@ -1598,25 +1601,18 @@ array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f)
     array_state *state = get_array_state_by_class(cls);
     assert(state != NULL);
 
-    Py_ssize_t offset = 0;
-    while (1) {
-        Py_ssize_t total_size = Py_SIZE(self);
-        if (self->ob_item == NULL || total_size == 0) {
-            break;
-        }
+    if (total_size == 0) {
+        goto done;
+    }
 
-        if (total_size > max_items) {
-            return PyErr_NoMemory();
-        }
+    if (total_size > max_items) {
+        return PyErr_NoMemory();
+    }
 
-        Py_ssize_t current_nbytes = total_size * self->ob_descr->itemsize;
-        if (offset >= current_nbytes) {
-            break;
-        }
-
-        Py_ssize_t size = current_nbytes - offset;
-        if (size > BLOCKSIZE) {
-            size = BLOCKSIZE;
+    while (self->ob_item != NULL && offset < current_nbytes) {
+        Py_ssize_t size = BLOCKSIZE;
+        if (offset + size > current_nbytes) {
+            size = current_nbytes - offset;
         }
 
         char* ptr = self->ob_item + offset;
