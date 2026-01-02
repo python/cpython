@@ -526,7 +526,7 @@ class WindowsConsole(Console):
         processed."""
         return Event("key", "", b"")
 
-    def wait(self, timeout: float | None) -> bool:
+    def wait_for_event(self, timeout: float | None) -> bool:
         """Wait for an event."""
         # Poor man's Windows select loop
         start_time = time.time()
@@ -536,6 +536,15 @@ class WindowsConsole(Console):
             if timeout and time.time() - start_time > timeout / 1000:
                 return False
             time.sleep(0.01)
+
+    def wait(self, timeout: float | None) -> bool:
+        """
+        Wait for events on the console.
+        """
+        return (
+            not self.event_queue.empty()
+            or self.wait_for_event(timeout)
+        )
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
