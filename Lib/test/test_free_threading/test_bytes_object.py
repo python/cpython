@@ -7,7 +7,7 @@ threading_helper.requires_working_threading(module=True)
 
 class BytesThreading(unittest.TestCase):
     @threading_helper.reap_threads
-    def test_conversion_from_list(self):
+    def test_conversion_from_mutating_list(self):
         number_of_threads = 10
         number_of_iterations = 10
         barrier = Barrier(number_of_threads)
