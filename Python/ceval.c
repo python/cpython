@@ -1273,7 +1273,7 @@ _Py_CallBuiltinClass_StackRefSteal(
         goto cleanup;
     }
     PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(callable);
-    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
+    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
 cleanup:
