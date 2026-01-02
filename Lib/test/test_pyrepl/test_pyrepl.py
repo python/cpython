@@ -1428,14 +1428,17 @@ class TestMain(ReplTestCase):
         # Build patterns for escape sequences that don't affect cursor position
         # or visual output. Use terminfo to get platform-specific sequences,
         # falling back to hard-coded patterns for capabilities not in terminfo.
-        from _pyrepl.terminfo import TermInfo
-        ti = TermInfo(os.environ.get("TERM", ""))
+        try:
+            from _pyrepl import curses
+        except ImportError:
+            self.skipTest("curses required for capability discovery")
 
+        curses.setupterm(os.environ.get("TERM", ""), 1)
         safe_patterns = []
 
         # smkx/rmkx - application cursor keys and keypad mode
-        smkx = ti.get("smkx")
-        rmkx = ti.get("rmkx")
+        smkx = curses.tigetstr("smkx")
+        rmkx = curses.tigetstr("rmkx")
         if smkx:
             safe_patterns.append(re.escape(smkx.decode("ascii")))
         if rmkx:
@@ -1445,15 +1448,15 @@ class TestMain(ReplTestCase):
             safe_patterns.append(r'\x1b[=>]')  # application keypad mode
 
         # ich1 - insert character (only safe form that inserts exactly 1 char)
-        ich1 = ti.get("ich1")
+        ich1 = curses.tigetstr("ich1")
         if ich1:
             safe_patterns.append(re.escape(ich1.decode("ascii")) + r'(?=[ -~])')
         else:
             safe_patterns.append(r'\x1b\[(?:1)?@(?=[ -~])')
 
         # civis/cnorm - cursor visibility (may include cursor blinking control)
-        civis = ti.get("civis")
-        cnorm = ti.get("cnorm")
+        civis = curses.tigetstr("civis")
+        cnorm = curses.tigetstr("cnorm")
         if civis:
             safe_patterns.append(re.escape(civis.decode("ascii")))
         if cnorm:
