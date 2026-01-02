@@ -631,7 +631,7 @@ toolong:;
     if (state == NULL) {
         return NULL;
     }
-    PyErr_SetString(state->Error, "Too much data for base64 line");
+    PyErr_SetString(state->Error, "Too much data for base64");
     return NULL;
 }
 
