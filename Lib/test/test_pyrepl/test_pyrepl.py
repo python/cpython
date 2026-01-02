@@ -1425,24 +1425,49 @@ class TestMain(ReplTestCase):
         output, exit_code = self.run_repl(commands)
         self.assertEqual(exit_code, 0)
 
-        # Define escape sequences that don't affect cursor position or visual output
-        bracketed_paste_mode = r'\x1b\[\?2004[hl]'     # Enable/disable bracketed paste
-        application_cursor_keys = r'\x1b\[\?1[hl]'     # Enable/disable application cursor keys
-        application_keypad_mode = r'\x1b[=>]'          # Enable/disable application keypad
-        insert_character = r'\x1b\[(?:1)?@(?=[ -~])'   # Insert exactly 1 char (safe form)
-        cursor_visibility = r'\x1b\[\?25[hl]'          # Show/hide cursor
-        cursor_blinking = r'\x1b\[\?12[hl]'            # Start/stop cursor blinking
-        device_attributes = r'\x1b\[\?[01]c'           # Device Attributes (DA) queries/responses
+        # Build patterns for escape sequences that don't affect cursor position
+        # or visual output. Use terminfo to get platform-specific sequences,
+        # falling back to hard-coded patterns for capabilities not in terminfo.
+        from _pyrepl.terminfo import TermInfo
+        ti = TermInfo(os.environ.get("TERM", ""))
 
-        safe_escapes = re.compile(
-            f'{bracketed_paste_mode}|'
-            f'{application_cursor_keys}|'
-            f'{application_keypad_mode}|'
-            f'{insert_character}|'
-            f'{cursor_visibility}|'
-            f'{cursor_blinking}|'
-            f'{device_attributes}'
-        )
+        safe_patterns = []
+
+        # smkx/rmkx - application cursor keys and keypad mode
+        smkx = ti.get("smkx")
+        rmkx = ti.get("rmkx")
+        if smkx:
+            safe_patterns.append(re.escape(smkx.decode("ascii")))
+        if rmkx:
+            safe_patterns.append(re.escape(rmkx.decode("ascii")))
+        if not smkx and not rmkx:
+            safe_patterns.append(r'\x1b\[\?1[hl]')  # application cursor keys
+            safe_patterns.append(r'\x1b[=>]')  # application keypad mode
+
+        # ich1 - insert character (only safe form that inserts exactly 1 char)
+        ich1 = ti.get("ich1")
+        if ich1:
+            safe_patterns.append(re.escape(ich1.decode("ascii")) + r'(?=[ -~])')
+        else:
+            safe_patterns.append(r'\x1b\[(?:1)?@(?=[ -~])')
+
+        # civis/cnorm - cursor visibility (may include cursor blinking control)
+        civis = ti.get("civis")
+        cnorm = ti.get("cnorm")
+        if civis:
+            safe_patterns.append(re.escape(civis.decode("ascii")))
+        if cnorm:
+            safe_patterns.append(re.escape(cnorm.decode("ascii")))
+        if not civis and not cnorm:
+            safe_patterns.append(r'\x1b\[\?25[hl]')  # cursor visibility
+            safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
+
+        # Modern extensions not in standard terminfo - always use patterns
+        safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
+        safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
+        safe_patterns.append(r'\x1b\[\?[01]c')  # device attributes
+
+        safe_escapes = re.compile('|'.join(safe_patterns))
         cleaned_output = safe_escapes.sub('', output)
         self.assertIn(expected_output_sequence, cleaned_output)
 
