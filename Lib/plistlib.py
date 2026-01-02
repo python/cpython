@@ -376,12 +376,10 @@ class _PlistWriter(_DumbXMLWriter):
     def write_bytes(self, data):
         self.begin_element("data")
         self._indent_level -= 1
-        maxlinelength = max(
-            16,
-            76 - len(self.indent.replace(b"\t", b" " * 8) * self._indent_level))
-        maxlinelength = maxlinelength // 4 * 4
-
-        for line in _encode_base64(data, maxlinelength).split(b"\n"):
+        wrapcol = 76 - len(self.indent.expandtabs()) * self._indent_level
+        wrapcol = max(16, wrapcol)
+        encoded = binascii.b2a_base64(data, wrapcol=wrapcol, newline=False)
+        for line in encoded.split(b"\n"):
             if line:
                 self.writeln(line)
         self._indent_level += 1
