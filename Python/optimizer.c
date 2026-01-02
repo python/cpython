@@ -827,7 +827,10 @@ _PyJit_translate_single_bytecode_to_trace(
                 // We don't want to continue tracing as we might get stuck in the
                 // inner loop. Instead, end the trace where the executor of the
                 // inner loop might start and let the traces rejoin.
-                if (_tstate->jit_tracer_state.prev_state.jump_backward_seen >= 1) {
+                if (_tstate->jit_tracer_state.prev_state.jump_backward_seen >= 1 ||
+                    // Also end the trace early if we probably have no more space left, as it's better
+                    // to link to another backwards jump trace.
+                    trace_length >= (_tstate->jit_tracer_state.prev_state.code_max_size / 2)) {
                     OPT_STAT_INC(inner_loop);
                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
                     trace[trace_length-1].operand1 = true; // is_control_flow
