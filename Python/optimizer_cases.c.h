@@ -379,6 +379,13 @@
             break;
         }
 
+        case _GUARD_NOS_COMPACT_ASCII: {
+            JitOptRef nos;
+            nos = stack_pointer[-2];
+            sym_set_type(nos, &PyUnicode_Type);
+            break;
+        }
+
         case _GUARD_NOS_UNICODE: {
             JitOptRef nos;
             nos = stack_pointer[-2];
