@@ -117,7 +117,7 @@ class ModuleCompleter:
             if spec:
                 modules = [mod for mod in modules
                            if mod.name == spec.name
-                           and mod.module_finder.find_spec(mod.name) == spec]
+                           and mod.module_finder.find_spec(mod.name, None) == spec]
             else:
                 modules = []
 
