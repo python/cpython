@@ -2650,7 +2650,7 @@ class ExecTests(unittest.TestCase):
 
         args = [sys.executable, '-c', "print({message!r})"]
         os.execve(args[0], args, MyEnv())
-        """.format(message="hello from execve")
+        """.format(message=message)
 
         # Use '__cleanenv' to signal to assert_python_ok() not
         # to do a copy of os.environ on its own.
