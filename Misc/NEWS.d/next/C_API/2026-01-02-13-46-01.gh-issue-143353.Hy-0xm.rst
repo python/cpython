@@ -1,0 +1,1 @@
+Add macros for annotating functions with constexpr, consteval, and constinit
