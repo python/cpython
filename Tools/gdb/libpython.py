@@ -1045,31 +1045,14 @@ class PyFrameObjectPtr(PyObjectPtr):
             return
         return self._frame.print_traceback()
 
-def current_line(filename, lineno):
-    if lineno is None:
-        return '(failed to get frame line number)'
-
-    try:
-        with open(os.fsencode(filename), 'r', encoding="utf-8") as fp:
-            lines = fp.readlines()
-    except IOError:
-        return None
-
-    try:
-        # Convert from 1-based current_line_num to 0-based list offset
-        return lines[lineno - 1]
-    except IndexError:
-        return None
-
-
 class PyFramePtr:
 
     def __init__(self, gdbval):
         self._gdbval = gdbval
 
         if not self.is_optimized_out():
-            try:
-                self.co = self._f_code()
+            self.co = self._f_code()
+            if not self.is_shim():
                 self.co_name = self.co.pyop_field('co_name')
                 self.co_filename = self.co.pyop_field('co_filename')
 
@@ -1077,9 +1060,6 @@ class PyFramePtr:
                 self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
                 pnames = self.co.field('co_localsplusnames')
                 self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
-                self._is_code = True
-            except:
-                self._is_code = False
 
     def is_optimized_out(self):
         return self._gdbval.is_optimized_out
@@ -1137,6 +1117,8 @@ class PyFramePtr:
         return self._f_special("owner", int) == FRAME_OWNED_BY_INTERPRETER
 
     def previous(self):
+        if int(self._gdbval['previous']) == 0:
+            return None
         return self._f_special("previous", PyFramePtr)
 
     def iter_globals(self):
@@ -1210,9 +1192,22 @@ class PyFramePtr:
         if self.is_optimized_out():
             return FRAME_INFO_OPTIMIZED_OUT
 
-        filename = self.filename()
         lineno = self.current_line_num()
-        return current_line(filename, lineno)
+        if lineno is None:
+            return '(failed to get frame line number)'
+
+        filename = self.filename()
+        try:
+            with open(os.fsencode(filename), 'r', encoding="utf-8") as fp:
+                lines = fp.readlines()
+        except IOError:
+            return None
+
+        try:
+            # Convert from 1-based current_line_num to 0-based list offset
+            return lines[lineno - 1]
+        except IndexError:
+            return None
 
     def write_repr(self, out, visited):
         if self.is_optimized_out():
@@ -2081,59 +2076,36 @@ class PyBacktrace(gdb.Command):
                               gdb.COMMAND_STACK,
                               gdb.COMPLETE_NONE)
 
-    def invoke(self, args, from_tty):
-        frame = Frame.get_selected_python_frame()
-        if not frame:
-            print('Unable to locate python frame')
-            return
+    @staticmethod
+    def get_interp_frame():
+        try:
+            return PyFramePtr(gdb.parse_and_eval('_Py_tss_gilstate->current_frame'))
+        except gdb.error:
+            pass
+        try:
+            return PyFramePtr(gdb.parse_and_eval('_Py_tss_tstate->current_frame'))
+        except gdb.error:
+            return None
 
-        sys.stdout.write('Traceback (most recent call first):\n')
-        while frame:
-            if frame.is_python_frame():
-                frame.print_traceback()
-            frame = frame.older()
+    def invoke(self, args, from_tty):
+        if iframe := PyBacktrace.get_interp_frame():
+            # Use the _PyInterpreterFrame in thread local state
+            print('Traceback (most recent call first):')
+            while iframe:
+                if not iframe.is_shim():
+                    iframe.print_traceback()
+                iframe = iframe.previous()
+        elif frame := Frame.get_selected_python_frame():
+            # Try the selected frame route
+            sys.stdout.write('Traceback (most recent call first):\n')
+            while frame:
+                if frame.is_python_frame():
+                    frame.print_traceback()
+                frame = frame.older()
+        else:
+            print('Unable to locate python frame')
 
 PyBacktrace()
-
-class PyBacktraceTSS(gdb.Command):
-    'Similar to py-bt but read _Py_tss_gilstate or _Py_tss_tstate'
-    def __init__(self):
-        gdb.Command.__init__ (self,
-                              "py-bt-tss",
-                              gdb.COMMAND_STACK,
-                              gdb.COMPLETE_NONE)
-
-    def invoke(self, args, from_tty):
-        try:
-            iframe = gdb.parse_and_eval('_Py_tss_gilstate->current_frame')
-        except gdb.error:
-            iframe = gdb.parse_and_eval('_Py_tss_tstate->current_frame')
-        visited = set()
-
-        print('Traceback (most recent call first):')
-        while True:
-            is_complete = not _PyFrame_IsIncomplete(iframe)
-            if is_complete:
-                code = _PyFrame_GetCode(iframe)
-                code = PyCodeObjectPtr.from_pyobject_ptr(code)
-
-                filename = code.pyop_field('co_filename')
-                filename = filename.proxyval(visited)
-                lasti = iframe['instr_ptr'] - _PyFrame_GetBytecode(iframe)
-                lineno = code.addr2line(lasti)
-                name = code.pyop_field('co_name')
-                name = name.proxyval(visited)
-                print('  File "%s", line %s, in %s'
-                      % (filename, lineno, name))
-                line = current_line(filename, lineno)
-                if line is not None:
-                    sys.stdout.write('    %s\n' % line.strip())
-
-            iframe = iframe['previous']
-            if not iframe:
-                break
-
-PyBacktraceTSS()
 
 class PyPrint(gdb.Command):
     'Look up the given python variable name, and print it'
@@ -2203,39 +2175,5 @@ class PyLocals(gdb.Command):
 
 
             pyop_frame = pyop_frame.previous()
-
-
-def _PyCode_CODE(code):
-    cast_to = gdb.lookup_type('PyCodeObject').pointer()
-    code = code.cast(cast_to)
-    cast_to = gdb.lookup_type('_Py_CODEUNIT').pointer()
-    return code['co_code_adaptive'].cast(cast_to)
-
-def _PyFrame_GetCode(iframe):
-    executable = iframe['f_executable']
-    try:
-        # Python 3.14 and newer: f_executable is a _PyStackRef
-        return _PyStackRef_AsPyObjectBorrow(executable)
-    except gdb.error:
-        # Python 3.13: f_executable is a PyCodeObject*
-        return executable
-
-def _PyFrame_GetBytecode(iframe):
-    # FIXME: #ifdef Py_GIL_DISABLED
-    #     PyCodeObject *co = _PyFrame_GetCode(f);
-    #     _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
-    #     assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
-    #     return (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
-    return _PyCode_CODE(_PyFrame_GetCode(iframe))
-
-def _PyFrame_IsIncomplete(iframe):
-    if iframe['owner'] >= FRAME_OWNED_BY_INTERPRETER:
-        return True
-    # FIXME:
-    # return frame->owner != FRAME_OWNED_BY_GENERATOR &&
-    #        frame->instr_ptr < _PyFrame_GetBytecode(frame) +
-    #                               _PyFrame_GetCode(frame)->_co_firsttraceable;
-    return False
-
 
 PyLocals()
