@@ -282,6 +282,8 @@ extern "C" {
 #elif defined(_MSC_VER)
 #define Py_DEPRECATED(VERSION) __declspec(deprecated( \
                                           "deprecated in " #VERSION))
+#elif __STDC_VERSION__ >= 202311L || __cplusplus >= 201402L
+#define Py_DEPRECATED(VERSION) [[deprecated("Deprecated in "#VERSION)]]
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
