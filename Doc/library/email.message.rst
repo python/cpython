@@ -752,6 +752,6 @@ message objects.
 
 .. [2] The :class:`EmailMessage` class requires a policy that provides a
        ``content_manager`` attribute for content management methods like
-       :meth:`set_content` and :meth:`get_content` to work. The legacy
+       ``set_content()`` and ``get_content()`` to work. The legacy
        :const:`~email.policy.compat32` policy does not support these methods
        and should not be used with :class:`EmailMessage`.
