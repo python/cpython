@@ -642,6 +642,30 @@ extern "C" {
 #  endif
 #endif
 
+#ifndef PY_CXX_CONSTEXPR
+#  if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+#    define PY_CXX_CONSTEXPR constexpr
+#  else
+#    define PY_CXX_CONSTEXPR
+#  endif
+#endif
+
+#ifndef PY_CXX_CONSTEVAL
+#  ifdef __cpp_consteval
+#    define PY_CXX_CONSTEVAL consteval
+#  else
+#    define PY_CXX_CONSTEVAL
+#  endif
+#endif
+
+#ifndef PY_CXX_CONSTINIT
+#  ifdef __cpp_constinit
+#    define PY_CXX_CONSTINIT constinit
+#  else
+#    define PY_CXX_CONSTINIT
+#  endif
+#endif
+
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #  define _SGI_MP_SOURCE
 #endif
