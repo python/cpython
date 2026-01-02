@@ -99,13 +99,14 @@
             break;
         }
 
-        case _STORE_FAST: {
+        case _SWAP_FAST: {
             JitOptRef value;
+            JitOptRef trash;
             value = stack_pointer[-1];
+            JitOptRef tmp = GETLOCAL(oparg);
             GETLOCAL(oparg) = value;
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            trash = tmp;
+            stack_pointer[-1] = trash;
             break;
         }
 

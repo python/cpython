@@ -65,15 +65,15 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_SMALL_INT_2] = 0,
     [_LOAD_SMALL_INT_3] = 0,
     [_LOAD_SMALL_INT] = HAS_ARG_FLAG,
-    [_STORE_FAST_0] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST_1] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST_2] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST_3] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST_4] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST_5] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST_6] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST_7] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
+    [_SWAP_FAST_0] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST_1] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST_2] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST_3] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST_4] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST_5] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST_6] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST_7] = HAS_LOCAL_FLAG,
+    [_SWAP_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_POP_TOP] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_POP_TOP_NOP] = 0,
     [_POP_TOP_INT] = 0,
@@ -362,7 +362,7 @@ const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
     [_LOAD_FAST] = { 0, 8 },
     [_LOAD_FAST_BORROW] = { 0, 8 },
     [_LOAD_SMALL_INT] = { 0, 4 },
-    [_STORE_FAST] = { 0, 8 },
+    [_SWAP_FAST] = { 0, 8 },
     [_INIT_CALL_PY_EXACT_ARGS] = { 0, 5 },
     [_COPY] = { 1, 4 },
     [_SWAP] = { 2, 4 },
@@ -639,85 +639,85 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_STORE_FAST_0] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_0] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_0_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_0_r01 },
+            { 1, 1, _SWAP_FAST_0_r11 },
+            { 2, 2, _SWAP_FAST_0_r22 },
+            { 3, 3, _SWAP_FAST_0_r33 },
         },
     },
-    [_STORE_FAST_1] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_1] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_1_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_1_r01 },
+            { 1, 1, _SWAP_FAST_1_r11 },
+            { 2, 2, _SWAP_FAST_1_r22 },
+            { 3, 3, _SWAP_FAST_1_r33 },
         },
     },
-    [_STORE_FAST_2] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_2] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_2_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_2_r01 },
+            { 1, 1, _SWAP_FAST_2_r11 },
+            { 2, 2, _SWAP_FAST_2_r22 },
+            { 3, 3, _SWAP_FAST_2_r33 },
         },
     },
-    [_STORE_FAST_3] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_3] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_3_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_3_r01 },
+            { 1, 1, _SWAP_FAST_3_r11 },
+            { 2, 2, _SWAP_FAST_3_r22 },
+            { 3, 3, _SWAP_FAST_3_r33 },
         },
     },
-    [_STORE_FAST_4] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_4] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_4_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_4_r01 },
+            { 1, 1, _SWAP_FAST_4_r11 },
+            { 2, 2, _SWAP_FAST_4_r22 },
+            { 3, 3, _SWAP_FAST_4_r33 },
         },
     },
-    [_STORE_FAST_5] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_5] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_5_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_5_r01 },
+            { 1, 1, _SWAP_FAST_5_r11 },
+            { 2, 2, _SWAP_FAST_5_r22 },
+            { 3, 3, _SWAP_FAST_5_r33 },
         },
     },
-    [_STORE_FAST_6] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_6] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_6_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_6_r01 },
+            { 1, 1, _SWAP_FAST_6_r11 },
+            { 2, 2, _SWAP_FAST_6_r22 },
+            { 3, 3, _SWAP_FAST_6_r33 },
         },
     },
-    [_STORE_FAST_7] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST_7] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_7_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_7_r01 },
+            { 1, 1, _SWAP_FAST_7_r11 },
+            { 2, 2, _SWAP_FAST_7_r22 },
+            { 3, 3, _SWAP_FAST_7_r33 },
         },
     },
-    [_STORE_FAST] = {
-        .best = { 1, 1, 1, 1 },
+    [_SWAP_FAST] = {
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _STORE_FAST_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 1, 0, _SWAP_FAST_r01 },
+            { 1, 1, _SWAP_FAST_r11 },
+            { 2, 2, _SWAP_FAST_r22 },
+            { 3, 3, _SWAP_FAST_r33 },
         },
     },
     [_POP_TOP] = {
@@ -3340,15 +3340,42 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_SMALL_INT_r01] = _LOAD_SMALL_INT,
     [_LOAD_SMALL_INT_r12] = _LOAD_SMALL_INT,
     [_LOAD_SMALL_INT_r23] = _LOAD_SMALL_INT,
-    [_STORE_FAST_0_r10] = _STORE_FAST_0,
-    [_STORE_FAST_1_r10] = _STORE_FAST_1,
-    [_STORE_FAST_2_r10] = _STORE_FAST_2,
-    [_STORE_FAST_3_r10] = _STORE_FAST_3,
-    [_STORE_FAST_4_r10] = _STORE_FAST_4,
-    [_STORE_FAST_5_r10] = _STORE_FAST_5,
-    [_STORE_FAST_6_r10] = _STORE_FAST_6,
-    [_STORE_FAST_7_r10] = _STORE_FAST_7,
-    [_STORE_FAST_r10] = _STORE_FAST,
+    [_SWAP_FAST_0_r01] = _SWAP_FAST_0,
+    [_SWAP_FAST_0_r11] = _SWAP_FAST_0,
+    [_SWAP_FAST_0_r22] = _SWAP_FAST_0,
+    [_SWAP_FAST_0_r33] = _SWAP_FAST_0,
+    [_SWAP_FAST_1_r01] = _SWAP_FAST_1,
+    [_SWAP_FAST_1_r11] = _SWAP_FAST_1,
+    [_SWAP_FAST_1_r22] = _SWAP_FAST_1,
+    [_SWAP_FAST_1_r33] = _SWAP_FAST_1,
+    [_SWAP_FAST_2_r01] = _SWAP_FAST_2,
+    [_SWAP_FAST_2_r11] = _SWAP_FAST_2,
+    [_SWAP_FAST_2_r22] = _SWAP_FAST_2,
+    [_SWAP_FAST_2_r33] = _SWAP_FAST_2,
+    [_SWAP_FAST_3_r01] = _SWAP_FAST_3,
+    [_SWAP_FAST_3_r11] = _SWAP_FAST_3,
+    [_SWAP_FAST_3_r22] = _SWAP_FAST_3,
+    [_SWAP_FAST_3_r33] = _SWAP_FAST_3,
+    [_SWAP_FAST_4_r01] = _SWAP_FAST_4,
+    [_SWAP_FAST_4_r11] = _SWAP_FAST_4,
+    [_SWAP_FAST_4_r22] = _SWAP_FAST_4,
+    [_SWAP_FAST_4_r33] = _SWAP_FAST_4,
+    [_SWAP_FAST_5_r01] = _SWAP_FAST_5,
+    [_SWAP_FAST_5_r11] = _SWAP_FAST_5,
+    [_SWAP_FAST_5_r22] = _SWAP_FAST_5,
+    [_SWAP_FAST_5_r33] = _SWAP_FAST_5,
+    [_SWAP_FAST_6_r01] = _SWAP_FAST_6,
+    [_SWAP_FAST_6_r11] = _SWAP_FAST_6,
+    [_SWAP_FAST_6_r22] = _SWAP_FAST_6,
+    [_SWAP_FAST_6_r33] = _SWAP_FAST_6,
+    [_SWAP_FAST_7_r01] = _SWAP_FAST_7,
+    [_SWAP_FAST_7_r11] = _SWAP_FAST_7,
+    [_SWAP_FAST_7_r22] = _SWAP_FAST_7,
+    [_SWAP_FAST_7_r33] = _SWAP_FAST_7,
+    [_SWAP_FAST_r01] = _SWAP_FAST,
+    [_SWAP_FAST_r11] = _SWAP_FAST,
+    [_SWAP_FAST_r22] = _SWAP_FAST,
+    [_SWAP_FAST_r33] = _SWAP_FAST,
     [_POP_TOP_r10] = _POP_TOP,
     [_POP_TOP_NOP_r00] = _POP_TOP_NOP,
     [_POP_TOP_NOP_r10] = _POP_TOP_NOP,
@@ -4883,24 +4910,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_STORE_ATTR_WITH_HINT_r21] = "_STORE_ATTR_WITH_HINT_r21",
     [_STORE_DEREF] = "_STORE_DEREF",
     [_STORE_DEREF_r10] = "_STORE_DEREF_r10",
-    [_STORE_FAST] = "_STORE_FAST",
-    [_STORE_FAST_r10] = "_STORE_FAST_r10",
-    [_STORE_FAST_0] = "_STORE_FAST_0",
-    [_STORE_FAST_0_r10] = "_STORE_FAST_0_r10",
-    [_STORE_FAST_1] = "_STORE_FAST_1",
-    [_STORE_FAST_1_r10] = "_STORE_FAST_1_r10",
-    [_STORE_FAST_2] = "_STORE_FAST_2",
-    [_STORE_FAST_2_r10] = "_STORE_FAST_2_r10",
-    [_STORE_FAST_3] = "_STORE_FAST_3",
-    [_STORE_FAST_3_r10] = "_STORE_FAST_3_r10",
-    [_STORE_FAST_4] = "_STORE_FAST_4",
-    [_STORE_FAST_4_r10] = "_STORE_FAST_4_r10",
-    [_STORE_FAST_5] = "_STORE_FAST_5",
-    [_STORE_FAST_5_r10] = "_STORE_FAST_5_r10",
-    [_STORE_FAST_6] = "_STORE_FAST_6",
-    [_STORE_FAST_6_r10] = "_STORE_FAST_6_r10",
-    [_STORE_FAST_7] = "_STORE_FAST_7",
-    [_STORE_FAST_7_r10] = "_STORE_FAST_7_r10",
     [_STORE_GLOBAL] = "_STORE_GLOBAL",
     [_STORE_GLOBAL_r10] = "_STORE_GLOBAL_r10",
     [_STORE_NAME] = "_STORE_NAME",
@@ -4925,6 +4934,51 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_SWAP_3_r13] = "_SWAP_3_r13",
     [_SWAP_3_r23] = "_SWAP_3_r23",
     [_SWAP_3_r33] = "_SWAP_3_r33",
+    [_SWAP_FAST] = "_SWAP_FAST",
+    [_SWAP_FAST_r01] = "_SWAP_FAST_r01",
+    [_SWAP_FAST_r11] = "_SWAP_FAST_r11",
+    [_SWAP_FAST_r22] = "_SWAP_FAST_r22",
+    [_SWAP_FAST_r33] = "_SWAP_FAST_r33",
+    [_SWAP_FAST_0] = "_SWAP_FAST_0",
+    [_SWAP_FAST_0_r01] = "_SWAP_FAST_0_r01",
+    [_SWAP_FAST_0_r11] = "_SWAP_FAST_0_r11",
+    [_SWAP_FAST_0_r22] = "_SWAP_FAST_0_r22",
+    [_SWAP_FAST_0_r33] = "_SWAP_FAST_0_r33",
+    [_SWAP_FAST_1] = "_SWAP_FAST_1",
+    [_SWAP_FAST_1_r01] = "_SWAP_FAST_1_r01",
+    [_SWAP_FAST_1_r11] = "_SWAP_FAST_1_r11",
+    [_SWAP_FAST_1_r22] = "_SWAP_FAST_1_r22",
+    [_SWAP_FAST_1_r33] = "_SWAP_FAST_1_r33",
+    [_SWAP_FAST_2] = "_SWAP_FAST_2",
+    [_SWAP_FAST_2_r01] = "_SWAP_FAST_2_r01",
+    [_SWAP_FAST_2_r11] = "_SWAP_FAST_2_r11",
+    [_SWAP_FAST_2_r22] = "_SWAP_FAST_2_r22",
+    [_SWAP_FAST_2_r33] = "_SWAP_FAST_2_r33",
+    [_SWAP_FAST_3] = "_SWAP_FAST_3",
+    [_SWAP_FAST_3_r01] = "_SWAP_FAST_3_r01",
+    [_SWAP_FAST_3_r11] = "_SWAP_FAST_3_r11",
+    [_SWAP_FAST_3_r22] = "_SWAP_FAST_3_r22",
+    [_SWAP_FAST_3_r33] = "_SWAP_FAST_3_r33",
+    [_SWAP_FAST_4] = "_SWAP_FAST_4",
+    [_SWAP_FAST_4_r01] = "_SWAP_FAST_4_r01",
+    [_SWAP_FAST_4_r11] = "_SWAP_FAST_4_r11",
+    [_SWAP_FAST_4_r22] = "_SWAP_FAST_4_r22",
+    [_SWAP_FAST_4_r33] = "_SWAP_FAST_4_r33",
+    [_SWAP_FAST_5] = "_SWAP_FAST_5",
+    [_SWAP_FAST_5_r01] = "_SWAP_FAST_5_r01",
+    [_SWAP_FAST_5_r11] = "_SWAP_FAST_5_r11",
+    [_SWAP_FAST_5_r22] = "_SWAP_FAST_5_r22",
+    [_SWAP_FAST_5_r33] = "_SWAP_FAST_5_r33",
+    [_SWAP_FAST_6] = "_SWAP_FAST_6",
+    [_SWAP_FAST_6_r01] = "_SWAP_FAST_6_r01",
+    [_SWAP_FAST_6_r11] = "_SWAP_FAST_6_r11",
+    [_SWAP_FAST_6_r22] = "_SWAP_FAST_6_r22",
+    [_SWAP_FAST_6_r33] = "_SWAP_FAST_6_r33",
+    [_SWAP_FAST_7] = "_SWAP_FAST_7",
+    [_SWAP_FAST_7_r01] = "_SWAP_FAST_7_r01",
+    [_SWAP_FAST_7_r11] = "_SWAP_FAST_7_r11",
+    [_SWAP_FAST_7_r22] = "_SWAP_FAST_7_r22",
+    [_SWAP_FAST_7_r33] = "_SWAP_FAST_7_r33",
     [_TIER2_RESUME_CHECK] = "_TIER2_RESUME_CHECK",
     [_TIER2_RESUME_CHECK_r00] = "_TIER2_RESUME_CHECK_r00",
     [_TIER2_RESUME_CHECK_r11] = "_TIER2_RESUME_CHECK_r11",
@@ -5035,23 +5089,23 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_SMALL_INT:
             return 0;
-        case _STORE_FAST_0:
+        case _SWAP_FAST_0:
             return 1;
-        case _STORE_FAST_1:
+        case _SWAP_FAST_1:
             return 1;
-        case _STORE_FAST_2:
+        case _SWAP_FAST_2:
             return 1;
-        case _STORE_FAST_3:
+        case _SWAP_FAST_3:
             return 1;
-        case _STORE_FAST_4:
+        case _SWAP_FAST_4:
             return 1;
-        case _STORE_FAST_5:
+        case _SWAP_FAST_5:
             return 1;
-        case _STORE_FAST_6:
+        case _SWAP_FAST_6:
             return 1;
-        case _STORE_FAST_7:
+        case _SWAP_FAST_7:
             return 1;
-        case _STORE_FAST:
+        case _SWAP_FAST:
             return 1;
         case _POP_TOP:
             return 1;
