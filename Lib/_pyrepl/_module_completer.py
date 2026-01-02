@@ -16,6 +16,7 @@ from tokenize import TokenInfo
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
+    from types import ModuleType
     from typing import Any, Iterable, Iterator, Mapping
     from .types import CompletionAction
 
@@ -26,6 +27,14 @@ HARDCODED_SUBMODULES = {
     "collections": ["abc"],
     "os": ["path"],
     "xml.parsers.expat": ["errors", "model"],
+}
+
+AUTO_IMPORT_BLACKLIST = {
+    # Standard library modules/submodules that have import side effects
+    # and must not be automatically imported to complete attributes
+    "antigravity",
+    "this",
+    "idlelib.idle",
 }
 
 
@@ -157,15 +166,7 @@ class ModuleCompleter:
         if not imported_module:
             if path in self._failed_imports:  # Do not propose to import again
                 return [], None
-            root = path.split(".")[0]
-            mod_info = next((m for m in self.global_cache if m.name == root),
-                             None)
-            if mod_info and self._is_stdlib_module(mod_info):
-                # Stdlib module: auto-import (no risk of dangerous side-effect)
-                try:
-                    imported_module = importlib.import_module(path)
-                except Exception:
-                    sys.modules.pop(path, None)  # Clean half-imported module
+            imported_module = self._maybe_import_module(path)
         if not imported_module:
             return [], self._get_import_completion_action(path)
         try:
@@ -245,6 +246,21 @@ class ModuleCompleter:
             # print('getting packages')
             self._global_cache = list(pkgutil.iter_modules())
         return self._global_cache
+
+    def _maybe_import_module(self, fqname: str) -> ModuleType | None:
+        if fqname in AUTO_IMPORT_BLACKLIST or fqname.endswith(".__main__"):
+            # Special-cased modules with known import side-effects
+            return None
+        root = fqname.split(".")[0]
+        mod_info = next((m for m in self.global_cache if m.name == root), None)
+        if not mod_info or not self._is_stdlib_module(mod_info):
+            # Only import stdlib modules (no risk of import side-effects)
+            return None
+        try:
+            return importlib.import_module(fqname)
+        except Exception:
+            sys.modules.pop(fqname, None)  # Clean half-imported module
+            return None
 
     def _get_import_completion_action(self, path: str) -> CompletionAction:
         prompt = ("[ module not imported, press again to import it "

@@ -1163,6 +1163,9 @@ class TestPyReplModuleCompleter(TestCase):
                     ("from pack import b\t\t\t\n", "from pack import ba", {"pack"}),
                     # stdlib modules are automatically imported
                     ("from graphlib import T\t\n", "from graphlib import TopologicalSorter", {"graphlib"}),
+                    # except those with known side-effects
+                    ("from antigravity import g\t\n", "from antigravity import g", set()),
+                    ("from unittest.__main__ import \t\n", "from unittest.__main__ import ", set()),
                 )
                 for code, expected, expected_imports in cases:
                     with self.subTest(code=code), patch.dict(sys.modules):
