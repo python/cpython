@@ -59,6 +59,20 @@ class WindowsConsoleTests(TestCase):
     def handle_events_height_3(self, events):
         return self.handle_events(events, height=3)
 
+    def test_no_newline(self):
+        code = "1"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        self.assertNotIn(call(b'\n'), con.out.write.mock_calls)
+        con.restore()
+
+    def test_newline(self):
+        code = "\n"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        con.out.write.assert_any_call(b"\n")
+        con.restore()
+
     def test_simple_addition(self):
         code = "12+34"
         events = code_to_events(code)
