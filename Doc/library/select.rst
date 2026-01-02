@@ -383,7 +383,7 @@ Edge and Level Trigger Polling (epoll) Objects
    (may be non-integer) which the system will wait for events before returning.
 
    *maxevents* specifies the maximum number of events to return. It must be
-   greater than 0, or ``-1`` to use the default (``FD_SETSIZE-1``).
+   greater than 0, or ``-1`` to use the default (``FD_SETSIZE - 1``).
 
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by
