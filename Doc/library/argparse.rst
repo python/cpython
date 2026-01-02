@@ -1688,8 +1688,6 @@ Sub-commands
    The *aliases* argument allows providing alternative names for this
    sub-command.
 
-   .. versionadded:: 3.14
-
    For example::
 
       >>> parser = argparse.ArgumentParser()
@@ -1702,7 +1700,7 @@ Sub-commands
    The *deprecated* argument, if ``True``, marks the sub-command as
    deprecated and will issue a warning when used.
 
-   .. versionadded:: 3.14
+   .. versionadded:: 3.13
 
    For example::
 
