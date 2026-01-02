@@ -575,6 +575,21 @@ class TestCallCache(TestBase):
         for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             f()
 
+    @requires_jit_disabled
+    @requires_specialization_ft
+    def test_specialize_call_function_ex_py(self):
+        def ex_py(*args, **kwargs):
+            return 1
+
+        def instantiate():
+            args = (1, 2, 3)
+            kwargs = {}
+            return ex_py(*args, **kwargs)
+
+        # Trigger specialization
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            instantiate()
+        self.assert_specialized(instantiate, "CALL_FUNCTION_EX_PY")
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.

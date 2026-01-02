@@ -301,6 +301,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_IS_NOT_PY_CALLABLE_KW] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_KW_NON_PY] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_CALLARGS_A_TUPLE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_DO_CALL_FUNCTION_EX_PY] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG,
     [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
@@ -2763,6 +2764,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 3, 3, _MAKE_CALLARGS_A_TUPLE_r33 },
         },
     },
+    [_DO_CALL_FUNCTION_EX_PY] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 3, _DO_CALL_FUNCTION_EX_PY_r31 },
+        },
+    },
     [_MAKE_FUNCTION] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -3819,6 +3829,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_CHECK_IS_NOT_PY_CALLABLE_KW_r11] = _CHECK_IS_NOT_PY_CALLABLE_KW,
     [_CALL_KW_NON_PY_r11] = _CALL_KW_NON_PY,
     [_MAKE_CALLARGS_A_TUPLE_r33] = _MAKE_CALLARGS_A_TUPLE,
+    [_DO_CALL_FUNCTION_EX_PY_r31] = _DO_CALL_FUNCTION_EX_PY,
     [_MAKE_FUNCTION_r11] = _MAKE_FUNCTION,
     [_SET_FUNCTION_ATTRIBUTE_r01] = _SET_FUNCTION_ATTRIBUTE,
     [_SET_FUNCTION_ATTRIBUTE_r11] = _SET_FUNCTION_ATTRIBUTE,
@@ -4233,6 +4244,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_DICT_MERGE_r10] = "_DICT_MERGE_r10",
     [_DICT_UPDATE] = "_DICT_UPDATE",
     [_DICT_UPDATE_r10] = "_DICT_UPDATE_r10",
+    [_DO_CALL_FUNCTION_EX_PY] = "_DO_CALL_FUNCTION_EX_PY",
+    [_DO_CALL_FUNCTION_EX_PY_r31] = "_DO_CALL_FUNCTION_EX_PY_r31",
     [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_DYNAMIC_EXIT_r00] = "_DYNAMIC_EXIT_r00",
     [_DYNAMIC_EXIT_r10] = "_DYNAMIC_EXIT_r10",
@@ -5561,6 +5574,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 3 + oparg;
         case _MAKE_CALLARGS_A_TUPLE:
             return 0;
+        case _DO_CALL_FUNCTION_EX_PY:
+            return 4;
         case _MAKE_FUNCTION:
             return 1;
         case _SET_FUNCTION_ATTRIBUTE:

@@ -90,6 +90,9 @@ _cache_format = {
         "counter": 1,
         "func_version": 2,
     },
+    "CALL_FUNCTION_EX": {
+        "counter": 1,
+    },
     "STORE_SUBSCR": {
         "counter": 1,
     },

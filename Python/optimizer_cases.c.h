@@ -3060,6 +3060,16 @@
 
         /* _DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
+        case _DO_CALL_FUNCTION_EX_PY: {
+            JitOptRef ex_frame;
+            ex_frame = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer[-4] = ex_frame;
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _MAKE_FUNCTION: {
             JitOptRef func;
             func = sym_new_not_null(ctx);

@@ -287,6 +287,7 @@ Known values:
     Python 3.15a1 3654 (Fix missing exception handlers in logical expression)
     Python 3.15a1 3655 (Fix miscompilation of some module-level annotations)
     Python 3.15a1 3656 (Add TRACE_RECORD instruction, for platforms with switch based interpreter)
+    Python 3.15a1 3657 (Add CALL_FUNCTION_EX specialization)
 
 
     Python 3.16 will start with 3700
@@ -300,7 +301,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3656
+#define PYC_MAGIC_NUMBER 3657
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
