@@ -1588,18 +1588,14 @@ dummy_func(
             (void)counter;
         }
 
-        op(_UNPACK_SEQUENCE, (seq -- unused[oparg], top[0], s)) {
-            PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
+        op(_UNPACK_SEQUENCE, (seq -- unused[oparg], top[0])) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq_o, oparg, -1, top);
-            if (res == 0) {
-                PyStackRef_CLOSE(seq);
-                ERROR_IF(1);
-            }
-            s = seq;
-            INPUTS_DEAD();
+            Py_DECREF(seq_o);
+            ERROR_IF(res == 0);
         }
 
-        macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE + POP_TOP;
+        macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE;
 
         macro(UNPACK_SEQUENCE_TWO_TUPLE) =
             _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TWO_TUPLE + POP_TOP;
@@ -1616,10 +1612,10 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(UNPACK_SEQUENCE_TUPLE) =
-            _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE + POP_TOP;
+         macro(UNPACK_SEQUENCE_TUPLE) =
+            _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE;
 
-        op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg], s)) {
+        op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             assert(PyTuple_CheckExact(seq_o));
             DEOPT_IF(PyTuple_GET_SIZE(seq_o) != oparg);
@@ -1628,14 +1624,13 @@ dummy_func(
             for (int i = oparg; --i >= 0; ) {
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
-            s = seq;
-            INPUTS_DEAD();
+            DECREF_INPUTS();
         }
 
         macro(UNPACK_SEQUENCE_LIST) =
-            _GUARD_TOS_LIST + unused/1 + _UNPACK_SEQUENCE_LIST + POP_TOP;
+            _GUARD_TOS_LIST + unused/1 + _UNPACK_SEQUENCE_LIST;
 
-        op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg], s)) {
+        op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             assert(PyList_CheckExact(seq_o));
             DEOPT_IF(!LOCK_OBJECT(seq_o));
@@ -1649,8 +1644,7 @@ dummy_func(
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
             UNLOCK_OBJECT(seq_o);
-            s = seq;
-            INPUTS_DEAD();
+            DECREF_INPUTS();
         }
 
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8], top[0])) {

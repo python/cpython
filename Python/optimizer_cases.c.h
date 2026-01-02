@@ -1119,21 +1119,16 @@
         }
 
         case _UNPACK_SEQUENCE: {
-            JitOptRef seq;
             JitOptRef *values;
             JitOptRef *top;
-            JitOptRef s;
-            seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             top = &stack_pointer[-1 + oparg];
             (void)top;
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
-            s = seq;
-            CHECK_STACK_BOUNDS(oparg);
-            stack_pointer[-1 + oparg] = s;
-            stack_pointer += oparg;
+            CHECK_STACK_BOUNDS(-1 + oparg);
+            stack_pointer += -1 + oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -1159,33 +1154,25 @@
         case _UNPACK_SEQUENCE_TUPLE: {
             JitOptRef seq;
             JitOptRef *values;
-            JitOptRef s;
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
             }
-            s = seq;
-            CHECK_STACK_BOUNDS(oparg);
-            stack_pointer[-1 + oparg] = s;
-            stack_pointer += oparg;
+            CHECK_STACK_BOUNDS(-1 + oparg);
+            stack_pointer += -1 + oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
         case _UNPACK_SEQUENCE_LIST: {
-            JitOptRef seq;
             JitOptRef *values;
-            JitOptRef s;
-            seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_new_not_null(ctx);
             }
-            s = seq;
-            CHECK_STACK_BOUNDS(oparg);
-            stack_pointer[-1 + oparg] = s;
-            stack_pointer += oparg;
+            CHECK_STACK_BOUNDS(-1 + oparg);
+            stack_pointer += -1 + oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

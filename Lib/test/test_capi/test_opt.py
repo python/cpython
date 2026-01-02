@@ -440,23 +440,6 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
-    def test_unpack_sequence_generic(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-                # Use an iterator to force generic UNPACK_SEQUENCE
-                a, b = iter((1, 2))
-            return a, b
-
-        res = testfunc(TIER2_THRESHOLD)
-        self.assertEqual(res, (1, 2))
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_UNPACK_SEQUENCE", uops)
-
     def test_unpack_sequence_two_tuple(self):
         def testfunc(x):
             i = 0
@@ -474,40 +457,6 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_POP_TOP", uops)
-
-    def test_unpack_sequence_tuple(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-                t = (i, i, i)
-                a, b, c = t
-            return a, b, c
-
-        res = testfunc(TIER2_THRESHOLD)
-        self.assertEqual(res, (TIER2_THRESHOLD, TIER2_THRESHOLD, TIER2_THRESHOLD))
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
-        self.assertNotIn("_POP_TOP", uops)
-
-    def test_unpack_sequence_list(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-                a, b = [1, 2]
-            return a, b
-
-        res = testfunc(TIER2_THRESHOLD)
-        self.assertEqual(res, (1, 2))
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_UNPACK_SEQUENCE_LIST", uops)
 
 
 @requires_specialization

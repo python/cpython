@@ -975,13 +975,12 @@ dummy_func(void) {
         }
     }
 
-    op(_UNPACK_SEQUENCE, (seq -- values[oparg], top[0], s)) {
+    op(_UNPACK_SEQUENCE, (seq -- values[oparg], top[0])) {
         (void)top;
         /* This has to be done manually */
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_new_unknown(ctx);
         }
-        s = seq;
     }
 
     op(_UNPACK_EX, (seq -- values[oparg & 0xFF], unused, unused[oparg >> 8], top[0])) {
@@ -1195,18 +1194,16 @@ dummy_func(void) {
         s = seq;
     }
 
-    op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg], s)) {
+    op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
         }
-        s = seq;
     }
 
-    op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg], s)) {
+    op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg])) {
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_new_not_null(ctx);
         }
-        s = seq;
     }
 
     op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
