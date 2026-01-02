@@ -83,9 +83,6 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: pwsh
         run: |
-          choco install visualstudio2026buildtools --no-progress -y --force --params "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64  --locale en-US --passive"
-          $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\bin;$env:PATH"
-          $env:PlatformToolset = "v145"
           ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -94,21 +91,13 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         shell: pwsh
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          $env:PlatformToolset = "clangcl"
-          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
-          $env:LLVMInstallDir = "C:\Program Files\LLVM"
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
       - name: Native macOS (release)
         if: runner.os == 'macOS'
         run: |
-          brew update
-          brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
-          export PATH="/opt/homebrew/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
-          CC=clang-20 ./configure --with-tail-call-interp
+          ./configure --with-tail-call-interp
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
