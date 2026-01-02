@@ -57,15 +57,7 @@ message objects.
    :class:`~email.policy.default` policy, which follows the rules of the email
    RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
    the Python standard ``\n`` line endings).  For more information see the
-   :mod:`~email.policy` documentation.
-
-   .. note::
-
-      The :class:`EmailMessage` class requires a policy that provides a
-      ``content_manager`` attribute for content management methods like
-      :meth:`set_content` and :meth:`get_content` to work.
-      The legacy :class:`~email.policy.Compat32` policy does not support
-      these methods and should not be used with :class:`EmailMessage`.
+   :mod:`~email.policy` documentation. [2]_
 
    .. method:: as_string(unixfrom=False, maxheaderlen=None, policy=None)
 
@@ -757,3 +749,9 @@ message objects.
 .. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`.  Docs for legacy message class moved to
        :ref:`compat32_message`.
+
+.. [2] The :class:`EmailMessage` class requires a policy that provides a
+       ``content_manager`` attribute for content management methods like
+       :meth:`set_content` and :meth:`get_content` to work. The legacy
+       :const:`~email.policy.compat32` policy does not support these methods
+       and should not be used with :class:`EmailMessage`.
