@@ -76,7 +76,7 @@ get_binascii_state(PyObject *module)
 }
 
 
-/* Align to 64 bytes to ensure table fits in a single L1 cache line */
+/* Align to 64 bytes for L1 cache line friendliness */
 static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
@@ -108,7 +108,7 @@ static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
  * Process complete groups without loop-carried dependencies.
  */
 
-/* Align to 64 bytes to ensure table fits in a single L1 cache line */
+/* Align to 64 bytes for L1 cache line friendliness */
 static const unsigned char table_b2a_base64[] Py_ALIGNED(64) =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
