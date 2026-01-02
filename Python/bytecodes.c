@@ -4899,6 +4899,7 @@ dummy_func(
                 tstate, func_st, locals,
                 nargs, callargs, kwargs, frame);
             INPUTS_DEAD();
+            SYNC_SP();
             if (new_frame == NULL) {
                 ERROR_NO_POP();
             }

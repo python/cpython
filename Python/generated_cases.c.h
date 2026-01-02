@@ -2677,6 +2677,8 @@
                     tstate, func_st, locals,
                     nargs, callargs, kwargs, frame);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 if (new_frame == NULL) {
                     JUMP_TO_LABEL(error);
                 }
@@ -2696,8 +2698,6 @@
                 new_frame = ex_frame;
                 assert(tstate->interp->eval_frame == NULL);
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(temp->previous == frame || temp->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);

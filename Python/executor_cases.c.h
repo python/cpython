@@ -15631,18 +15631,22 @@
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             if (Py_TYPE(func) != &PyFunction_Type) {
                 UOP_STAT_INC(uopcode, miss);
-                _tos_cache2 = kwargs_st;
-                _tos_cache1 = callargs_st;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(3);
+                _tos_cache0 = kwargs_st;
+                SET_CURRENT_CACHED_VALUES(1);
+                stack_pointer[0] = _stack_item_0;
+                stack_pointer[1] = callargs_st;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 JUMP_TO_JUMP_TARGET();
             }
             if (((PyFunctionObject *)func)->vectorcall != _PyFunction_Vectorcall) {
                 UOP_STAT_INC(uopcode, miss);
-                _tos_cache2 = kwargs_st;
-                _tos_cache1 = callargs_st;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(3);
+                _tos_cache0 = kwargs_st;
+                SET_CURRENT_CACHED_VALUES(1);
+                stack_pointer[0] = _stack_item_0;
+                stack_pointer[1] = callargs_st;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 JUMP_TO_JUMP_TARGET();
             }
             PyObject *callargs = PyStackRef_AsPyObjectSteal(callargs_st);
@@ -15660,6 +15664,8 @@
                 tstate, func_st, locals,
                 nargs, callargs, kwargs, frame);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             if (new_frame == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
@@ -15669,8 +15675,6 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
