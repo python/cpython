@@ -424,7 +424,7 @@ def generate_abstract_interpreter(
     for abstract_uop_name in abstract.uops:
         if abstract_uop_name not in base_uop_names:
             raise ValueError(f"All abstract uops should override base uops, "
-                                 "but {abstract_uop_name} is not.")
+                                 f"but {abstract_uop_name} is not.")
 
     for uop in base.uops.values():
         override: Uop | None = None
