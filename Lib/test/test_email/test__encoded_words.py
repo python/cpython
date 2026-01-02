@@ -2,40 +2,51 @@ import unittest
 from email import _encoded_words as _ew
 from email import errors
 from test.test_email import TestEmailBase
+from test.test_email.params import params, Params
 
 
 class TestDecodeQ(TestEmailBase):
 
+    #@params
     def _test(self, source, ex_result, ex_defects=[]):
         result, defects = _ew.decode_q(source)
         self.assertEqual(result, ex_result)
         self.assertDefectsEqual(defects, ex_defects)
 
+    #params_test = dict(
+
     def test_no_encoded(self):
         self._test(b'foobar', b'foobar')
 
-    def test_spaces(self):
+    def test_encoded_spaces(self):
         self._test(b'foo=20bar=20', b'foo bar ')
+
+    def test_underline_spaces(self):
         self._test(b'foo_bar_', b'foo bar ')
 
     def test_run_of_encoded(self):
         self._test(b'foo=20=20=21=2Cbar', b'foo  !,bar')
 
+    #   )
+
 
 class TestDecodeB(TestEmailBase):
 
+    #@params
     def _test(self, source, ex_result, ex_defects=[]):
         result, defects = _ew.decode_b(source)
         self.assertEqual(result, ex_result)
         self.assertDefectsEqual(defects, ex_defects)
 
+    #params_test = dict(
+
     def test_simple(self):
         self._test(b'Zm9v', b'foo')
 
-    def test_missing_padding(self):
-        # 1 missing padding character
+    def test_missing_1_padding_char(self):
         self._test(b'dmk', b'vi', [errors.InvalidBase64PaddingDefect])
-        # 2 missing padding characters
+
+    def test_missing_2_padding_chars(self):
         self._test(b'dg', b'v', [errors.InvalidBase64PaddingDefect])
 
     def test_invalid_character(self):
@@ -48,25 +59,46 @@ class TestDecodeB(TestEmailBase):
     def test_invalid_length(self):
         self._test(b'abcde', b'abcde', [errors.InvalidBase64LengthDefect])
 
+    #   )
+
 
 class TestDecode(TestEmailBase):
 
-    def test_wrong_format_input_raises(self):
+    #@params
+    #def test_raises_if(self, value, exception=ValueError):
+    #    with self.assertRaises(exception):
+    #        _ew.decode(value)
+
+    #params_test_raises_if = dict(
+
+    def test_raises_if_missing_middle(self):
         with self.assertRaises(ValueError):
             _ew.decode('=?badone?=')
+
+    def test_raises_if_beginning_only(self):
         with self.assertRaises(ValueError):
             _ew.decode('=?')
+
+    def test_raises_if_empty_string(self):
         with self.assertRaises(ValueError):
             _ew.decode('')
+
+    def test_raises_if_invalid_encoding(self):
         with self.assertRaises(KeyError):
             _ew.decode('=?utf-8?X?somevalue?=')
 
+        #)
+
+
+    #@params
     def _test(self, source, result, charset='us-ascii', lang='', defects=[]):
         res, char, l, d = _ew.decode(source)
         self.assertEqual(res, result)
         self.assertEqual(char, charset)
         self.assertEqual(l, lang)
         self.assertDefectsEqual(d, defects)
+
+    #params_test = dict(
 
     def test_simple_q(self):
         self._test('=?us-ascii?q?foo?=', 'foo')
@@ -142,11 +174,16 @@ class TestDecode(TestEmailBase):
                    'Éric',
                    charset='utf-8')
 
+    #   )
+
 
 class TestEncodeQ(TestEmailBase):
 
+    #@params
     def _test(self, src, expected):
         self.assertEqual(_ew.encode_q(src), expected)
+
+    #params_test = dict(
 
     def test_all_safe(self):
         self._test(b'foobar', 'foobar')
@@ -157,8 +194,17 @@ class TestEncodeQ(TestEmailBase):
     def test_run_of_encodables(self):
         self._test(b'foo  ,,bar', 'foo__=2C=2Cbar')
 
+    #   )
+
 
 class TestEncodeB(TestEmailBase):
+
+    @params
+    def test(self, src, expected):
+        self.assertEqual(_ew.encode_b(src), expected)
+
+    params_test = Params(
+        )
 
     def test_simple(self):
         self.assertEqual(_ew.encode_b(b'foo'), 'Zm9v')
@@ -168,6 +214,13 @@ class TestEncodeB(TestEmailBase):
 
 
 class TestEncode(TestEmailBase):
+
+    @params
+    def test(self, callspec, expected):
+        self.assertEqual(callspec(_ew.encode), expected)
+
+    params_test = Params(
+        )
 
     def test_q(self):
         self.assertEqual(_ew.encode('foo', 'utf-8', 'q'), '=?utf-8?q?foo?=')
