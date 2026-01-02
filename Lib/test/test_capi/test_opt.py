@@ -3225,8 +3225,8 @@ class TestUopsOptimization(unittest.TestCase):
         assert "_LOAD_GLOBAL_BUILTIN" not in uops
         assert "_LOAD_CONST_INLINE_BORROW" in uops
         assert "_POP_TOP_NOP" in uops
-        pop_top_count = [opname for opname in ex if opname == "_POP_TOP" ]
-        assert len(pop_top_count) <= 2
+        pop_top_count = len([opname for opname in ex if opname == "_POP_TOP" ])
+        assert pop_top_count <= 2
         """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
