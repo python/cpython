@@ -1688,16 +1688,9 @@ Sub-commands
    The *aliases* argument allows providing alternative names for this
    sub-command.
 
-   The *deprecated* argument, if ``True``, marks the sub-command as
-   deprecated and will issue a warning when used.
+   .. versionadded:: 3.14
 
-   All other keyword arguments are passed directly to the
-   :class:`!ArgumentParser` constructor.
-
-   Examples
-   ~~~~~~~~
-
-   Using aliases::
+   For example::
 
       >>> parser = argparse.ArgumentParser()
       >>> subparsers = parser.add_subparsers()
@@ -1706,7 +1699,12 @@ Sub-commands
       >>> parser.parse_args(['co', 'bar'])
       Namespace(foo='bar')
 
-   Using deprecated::
+   The *deprecated* argument, if ``True``, marks the sub-command as
+   deprecated and will issue a warning when used.
+
+   .. versionadded:: 3.14
+
+   For example::
 
       >>> parser = argparse.ArgumentParser(prog='chicken.py')
       >>> subparsers = parser.add_subparsers()
@@ -1714,6 +1712,10 @@ Sub-commands
       >>> parser.parse_args(['fly'])  # doctest: +SKIP
       chicken.py: warning: command 'fly' is deprecated
       Namespace()
+
+
+   All other keyword arguments are passed directly to the
+   :class:`!ArgumentParser` constructor.
 
    Some example usage::
 
@@ -2224,7 +2226,7 @@ Registering custom types or actions
 
    Sometimes it's desirable to use a custom string in error messages to provide
    more user-friendly output. In these cases, :meth:`!register` can be used to
-   register custom actions or types with a parser allows you to reference the
+   register custom actions or types with a parser and allow you to reference the
    type by their registered name instead of their callable name.
 
    The :meth:`!register` method accepts three arguments - a *registry_name*,
