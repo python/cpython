@@ -83,6 +83,9 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: pwsh
         run: |
+          choco install visualstudio2026buildtools --no-progress -y --force --params "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64  --locale en-US --passive"
+          $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\bin;$env:PATH"
+          $env:PlatformToolset = "v145"
           ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -91,6 +94,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         shell: pwsh
         run: |
+          $env:PlatformToolset = "clangcl"
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
       - name: Native macOS (release)
