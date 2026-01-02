@@ -4766,7 +4766,8 @@ dummy_func(
             _CHECK_PERIODIC_AT_END;
 
         family(CALL_FUNCTION_EX, INLINE_CACHE_ENTRIES_CALL_FUNCTION_EX) = {
-            CALL_FUNCTION_EX_PY,
+            CALL_EX_PY,
+            CALL_EX_NON_PY_GENERAL,
         };
 
         op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs -- func, unused, callargs, kwargs)) {
@@ -4906,13 +4907,35 @@ dummy_func(
             ex_frame = PyStackRef_Wrap(new_frame);
         }
 
-        macro(CALL_FUNCTION_EX_PY) =
+        macro(CALL_EX_PY) =
             unused/1 +
             _CHECK_PEP_523 +
             _MAKE_CALLARGS_A_TUPLE +
             _PY_FRAME_EX +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
+
+        op(_CALL_FUNCTION_EX_NON_PY_GENERAL, (func_st, null, callargs_st, kwargs_st -- result)) {
+            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+            PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+            (void)null;
+            assert(PyTuple_CheckExact(callargs));
+            PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+            assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+            PyObject *result_o = PyObject_Call(func, callargs, kwargs);
+            PyStackRef_XCLOSE(kwargs_st);
+            PyStackRef_CLOSE(callargs_st);
+            DEAD(null);
+            PyStackRef_CLOSE(func_st);
+            ERROR_IF(result_o == NULL);
+            result = PyStackRef_FromPyObjectSteal(result_o);
+        }
+
+        macro(CALL_EX_NON_PY_GENERAL) =
+            unused/1 +
+            _MAKE_CALLARGS_A_TUPLE +
+            _CALL_FUNCTION_EX_NON_PY_GENERAL +
+            _CHECK_PERIODIC_AT_END;
 
         macro(INSTRUMENTED_CALL_FUNCTION_EX) =
             unused/1 +

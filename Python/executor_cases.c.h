@@ -15679,6 +15679,63 @@
             break;
         }
 
+        case _CALL_FUNCTION_EX_NON_PY_GENERAL_r31: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef kwargs_st;
+            _PyStackRef callargs_st;
+            _PyStackRef null;
+            _PyStackRef func_st;
+            _PyStackRef result;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            kwargs_st = _stack_item_2;
+            callargs_st = _stack_item_1;
+            null = _stack_item_0;
+            func_st = stack_pointer[-1];
+            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+            PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+            (void)null;
+            assert(PyTuple_CheckExact(callargs));
+            PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+            assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+            stack_pointer[0] = null;
+            stack_pointer[1] = callargs_st;
+            stack_pointer[2] = kwargs_st;
+            stack_pointer += 3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *result_o = PyObject_Call(func, callargs, kwargs);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(kwargs_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(callargs_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(func_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (result_o == NULL) {
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            result = PyStackRef_FromPyObjectSteal(result_o);
+            _tos_cache0 = result;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _MAKE_FUNCTION_r11: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());

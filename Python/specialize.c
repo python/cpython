@@ -2590,9 +2590,11 @@ _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr)
         if (_PyInterpreterState_GET()->eval_frame) {
             goto failure;
         }
-        specialize(instr, CALL_FUNCTION_EX_PY);
+        specialize(instr, CALL_EX_PY);
         return;
     }
+    specialize(instr, CALL_EX_NON_PY_GENERAL);
+    return;
 failure:
     unspecialize(instr);
 }

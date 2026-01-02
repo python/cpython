@@ -302,6 +302,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_KW_NON_PY] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_CALLARGS_A_TUPLE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_PY_FRAME_EX] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG,
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG,
     [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
@@ -2773,6 +2774,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _PY_FRAME_EX_r31 },
         },
     },
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 3, _CALL_FUNCTION_EX_NON_PY_GENERAL_r31 },
+        },
+    },
     [_MAKE_FUNCTION] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -3830,6 +3840,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_CALL_KW_NON_PY_r11] = _CALL_KW_NON_PY,
     [_MAKE_CALLARGS_A_TUPLE_r33] = _MAKE_CALLARGS_A_TUPLE,
     [_PY_FRAME_EX_r31] = _PY_FRAME_EX,
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL_r31] = _CALL_FUNCTION_EX_NON_PY_GENERAL,
     [_MAKE_FUNCTION_r11] = _MAKE_FUNCTION,
     [_SET_FUNCTION_ATTRIBUTE_r01] = _SET_FUNCTION_ATTRIBUTE,
     [_SET_FUNCTION_ATTRIBUTE_r11] = _SET_FUNCTION_ATTRIBUTE,
@@ -4077,6 +4088,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01",
     [_CALL_BUILTIN_O] = "_CALL_BUILTIN_O",
     [_CALL_BUILTIN_O_r03] = "_CALL_BUILTIN_O_r03",
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL] = "_CALL_FUNCTION_EX_NON_PY_GENERAL",
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL_r31] = "_CALL_FUNCTION_EX_NON_PY_GENERAL_r31",
     [_CALL_INTRINSIC_1] = "_CALL_INTRINSIC_1",
     [_CALL_INTRINSIC_1_r11] = "_CALL_INTRINSIC_1_r11",
     [_CALL_INTRINSIC_2] = "_CALL_INTRINSIC_2",
@@ -5575,6 +5588,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _MAKE_CALLARGS_A_TUPLE:
             return 0;
         case _PY_FRAME_EX:
+            return 4;
+        case _CALL_FUNCTION_EX_NON_PY_GENERAL:
             return 4;
         case _MAKE_FUNCTION:
             return 1;

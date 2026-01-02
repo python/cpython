@@ -3075,6 +3075,16 @@
             break;
         }
 
+        case _CALL_FUNCTION_EX_NON_PY_GENERAL: {
+            JitOptRef result;
+            result = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer[-4] = result;
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _MAKE_FUNCTION: {
             JitOptRef func;
             func = sym_new_not_null(ctx);
