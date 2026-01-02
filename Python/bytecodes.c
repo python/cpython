@@ -1612,7 +1612,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-         macro(UNPACK_SEQUENCE_TUPLE) =
+        macro(UNPACK_SEQUENCE_TUPLE) =
             _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE;
 
         op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
