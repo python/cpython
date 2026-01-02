@@ -2,6 +2,10 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
@@ -371,29 +375,63 @@ mmap_mmap_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(mmap_mmap_flush__doc__,
-"flush($self, offset=0, size=-1, /)\n"
+"flush($self, offset=0, size=-1, /, *, flags=0)\n"
 "--\n"
 "\n");
 
 #define MMAP_MMAP_FLUSH_METHODDEF    \
-    {"flush", _PyCFunction_CAST(mmap_mmap_flush), METH_FASTCALL, mmap_mmap_flush__doc__},
+    {"flush", _PyCFunction_CAST(mmap_mmap_flush), METH_FASTCALL|METH_KEYWORDS, mmap_mmap_flush__doc__},
 
 static PyObject *
-mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size);
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size,
+                     int flags);
 
 static PyObject *
-mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(flags), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "flags", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "flush",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     Py_ssize_t offset = 0;
     Py_ssize_t size = -1;
+    int flags = 0;
 
-    if (!_PyArg_CheckPositional("flush", nargs, 0, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = _PyNumber_Index(args[0]);
@@ -407,8 +445,9 @@ mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         offset = ival;
     }
     if (nargs < 2) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = _PyNumber_Index(args[1]);
@@ -421,9 +460,17 @@ mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         }
         size = ival;
     }
-skip_optional:
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    flags = PyLong_AsInt(args[2]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = mmap_mmap_flush_impl((mmap_object *)self, offset, size);
+    return_value = mmap_mmap_flush_impl((mmap_object *)self, offset, size, flags);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -832,4 +879,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=fd9ca0ef425af934 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8389e3c8e3db3a78 input=a9049054013a1b77]*/
