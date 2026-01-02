@@ -1200,12 +1200,6 @@ dummy_func(void) {
         }
     }
 
-    op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg])) {
-        for (int i = 0; i < oparg; i++) {
-            values[i] = sym_new_not_null(ctx);
-        }
-    }
-
     op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
         if (sym_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple

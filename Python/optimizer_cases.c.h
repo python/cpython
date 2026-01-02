@@ -1168,8 +1168,8 @@
         case _UNPACK_SEQUENCE_LIST: {
             JitOptRef *values;
             values = &stack_pointer[-1];
-            for (int i = 0; i < oparg; i++) {
-                values[i] = sym_new_not_null(ctx);
+            for (int _i = oparg; --_i >= 0;) {
+                values[_i] = sym_new_not_null(ctx);
             }
             CHECK_STACK_BOUNDS(-1 + oparg);
             stack_pointer += -1 + oparg;
