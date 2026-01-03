@@ -142,7 +142,6 @@ initial_jump_backoff_counter(_PyPolicy *policy)
 #define SIDE_EXIT_INITIAL_VALUE 4000
 #define SIDE_EXIT_INITIAL_BACKOFF 6
 
-#ifdef _TIER2
 static inline _Py_BackoffCounter
 initial_temperature_backoff_counter(_PyPolicy *policy)
 {
@@ -150,7 +149,6 @@ initial_temperature_backoff_counter(_PyPolicy *policy)
         policy->jit.side_exit_initial_value,
         policy->jit.side_exit_initial_backoff);
 }
-#endif
 
 /* Unreachable backoff counter. */
 static inline _Py_BackoffCounter
