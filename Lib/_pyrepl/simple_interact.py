@@ -31,7 +31,6 @@ import os
 import sys
 import code
 import warnings
-import errno
 
 from .readline import _get_reader, multiline_input, append_history_file
 

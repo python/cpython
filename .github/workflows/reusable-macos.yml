@@ -3,9 +3,6 @@ name: Reusable macOS
 on:
   workflow_call:
     inputs:
-      config_hash:
-        required: true
-        type: string
       free-threading:
         required: false
         type: boolean
@@ -36,16 +33,11 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
       run: |
-        brew install pkg-config openssl@3.0 xz gdbm tcl-tk@8 make
+        brew install pkg-config openssl@3.0 xz gdbm tcl-tk@9 make
         # Because alternate versions are not symlinked into place by default:
-        brew link --overwrite tcl-tk@8
+        brew link --overwrite tcl-tk@9
     - name: Configure CPython
       run: |
         MACOSX_DEPLOYMENT_TARGET=10.15 \

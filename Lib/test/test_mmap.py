@@ -6,6 +6,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
+import errno
 import unittest
 import os
 import re
@@ -871,6 +872,10 @@ class MmapTests(unittest.TestCase):
         size = 2 * PAGESIZE
         m = mmap.mmap(-1, size)
 
+        class Number:
+            def __index__(self):
+                return 2
+
         with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
             m.madvise(mmap.MADV_NORMAL, size)
         with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
@@ -879,10 +884,14 @@ class MmapTests(unittest.TestCase):
             m.madvise(mmap.MADV_NORMAL, 0, -1)
         with self.assertRaisesRegex(OverflowError, "madvise length too large"):
             m.madvise(mmap.MADV_NORMAL, PAGESIZE, sys.maxsize)
+        with self.assertRaisesRegex(
+                TypeError, "'str' object cannot be interpreted as an integer"):
+            m.madvise(mmap.MADV_NORMAL, PAGESIZE, "Not a Number")
         self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE, size), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, Number()), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
     @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
@@ -1156,6 +1165,61 @@ class MmapTests(unittest.TestCase):
             m.flush()
             m.flush(PAGESIZE)
             m.flush(PAGESIZE, PAGESIZE)
+
+            if hasattr(mmap, 'MS_SYNC'):
+                m.flush(0, PAGESIZE, flags=mmap.MS_SYNC)
+            if hasattr(mmap, 'MS_ASYNC'):
+                m.flush(flags=mmap.MS_ASYNC)
+            if hasattr(mmap, 'MS_INVALIDATE'):
+                m.flush(PAGESIZE * 2, flags=mmap.MS_INVALIDATE)
+            if hasattr(mmap, 'MS_ASYNC') and hasattr(mmap, 'MS_INVALIDATE'):
+                if sys.platform == 'freebsd':
+                    # FreeBSD doesn't support this combination
+                    with self.assertRaises(OSError) as cm:
+                        m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
+                    self.assertEqual(cm.exception.errno, errno.EINVAL)
+                else:
+                    m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux only')
+    @support.requires_linux_version(5, 17, 0)
+    def test_set_name(self):
+        # Test setting name on anonymous mmap
+        m = mmap.mmap(-1, PAGESIZE)
+        self.addCleanup(m.close)
+        try:
+            result = m.set_name('test_mapping')
+        except OSError as exc:
+            if exc.errno == errno.EINVAL:
+                # gh-142419: On Fedora, prctl(PR_SET_VMA_ANON_NAME) fails with
+                # EINVAL because the kernel option CONFIG_ANON_VMA_NAME is
+                # disabled.
+                # See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746
+                self.skipTest("prctl() failed with EINVAL")
+            else:
+                raise
+        self.assertIsNone(result)
+
+        # Test name length limit (80 chars including prefix "cpython:mmap:" and '\0')
+        # Prefix is 13 chars, so max name is 66 chars
+        long_name = 'x' * 66
+        result = m.set_name(long_name)
+        self.assertIsNone(result)
+
+        # Test name too long
+        too_long_name = 'x' * 67
+        with self.assertRaises(ValueError):
+            m.set_name(too_long_name)
+
+        # Test that file-backed mmap raises error
+        with open(TESTFN, 'wb+') as f:
+            f.write(b'x' * PAGESIZE)
+            f.flush()
+            m2 = mmap.mmap(f.fileno(), PAGESIZE)
+            self.addCleanup(m2.close)
+
+            with self.assertRaises(ValueError):
+                m2.set_name('should_fail')
 
 
 class LargeMmapTests(unittest.TestCase):

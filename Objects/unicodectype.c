@@ -9,6 +9,7 @@
 */
 
 #include "Python.h"
+#include "pycore_unicodectype.h"   // export _PyUnicode_IsXidStart(), _PyUnicode_IsXidContinue()
 
 #define ALPHA_MASK 0x01
 #define DECIMAL_MASK 0x02

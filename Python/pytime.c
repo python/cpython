@@ -2,7 +2,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "pycore_runtime.h"       // _PyRuntime
-#include "pycore_time.h"          // PyTime_t
+#include "pycore_time.h"          // export _PyLong_FromTime_t()
 
 #include <time.h>                 // gmtime_r()
 #ifdef HAVE_SYS_TIME_H
@@ -472,31 +472,6 @@ _PyTime_FromMicrosecondsClamp(PyTime_t us)
 }
 
 
-int
-_PyTime_FromLong(PyTime_t *tp, PyObject *obj)
-{
-    if (!PyLong_Check(obj)) {
-        PyErr_Format(PyExc_TypeError, "expect int, got %s",
-                     Py_TYPE(obj)->tp_name);
-        return -1;
-    }
-
-    static_assert(sizeof(long long) == sizeof(PyTime_t),
-                  "PyTime_t is not long long");
-    long long nsec = PyLong_AsLongLong(obj);
-    if (nsec == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            pytime_overflow();
-        }
-        return -1;
-    }
-
-    PyTime_t t = (PyTime_t)nsec;
-    *tp = t;
-    return 0;
-}
-
-
 #ifdef HAVE_CLOCK_GETTIME
 static int
 pytime_fromtimespec(PyTime_t *tp, const struct timespec *ts, int raise_exc)
@@ -657,14 +632,6 @@ PyTime_AsSecondsDouble(PyTime_t ns)
     return d;
 }
 
-
-PyObject *
-_PyTime_AsLong(PyTime_t ns)
-{
-    static_assert(sizeof(long long) >= sizeof(PyTime_t),
-                  "PyTime_t is larger than long long");
-    return PyLong_FromLongLong((long long)ns);
-}
 
 int
 _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round, PyTime_t *result)

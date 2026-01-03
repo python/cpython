@@ -1140,7 +1140,7 @@ concurrent.futures
 .. _whatsnew314-concurrent-futures-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>` for
   :class:`~concurrent.futures.ProcessPoolExecutor`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
@@ -1591,7 +1591,7 @@ multiprocessing
 .. _whatsnew314-multiprocessing-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
   This change does not affect Windows or macOS, where :ref:`'spawn'
@@ -2263,6 +2263,15 @@ pdb
   Explicitly instantiating :class:`pdb.Pdb` and its derived classes
   will use the :func:`sys.settrace` backend by default, which is configurable.
   (Contributed by Tian Gao in :gh:`124533`.)
+
+
+textwrap
+--------
+
+* Optimize the :func:`~textwrap.dedent` function, improving performance by
+  an average of 2.4x, with larger improvements for bigger inputs,
+  and fix a bug with incomplete normalization of blank lines with whitespace
+  characters other than space and tab.
 
 
 uuid
@@ -3045,7 +3054,7 @@ Deprecated C APIs
 -----------------
 
 * The :c:macro:`!Py_HUGE_VAL` macro is now :term:`soft deprecated`.
-  Use :c:macro:`!Py_INFINITY` instead.
+  Use :c:macro:`!INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * The :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`,

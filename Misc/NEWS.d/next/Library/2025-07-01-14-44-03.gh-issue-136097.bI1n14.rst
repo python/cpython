@@ -1,2 +1,0 @@
-Fix potential infinite recursion and KeyError in ``sysconfig
---generate-posix-vars``.

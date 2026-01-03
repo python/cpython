@@ -473,6 +473,32 @@ class PydocDocTest(unittest.TestCase):
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
+    def test_online_docs_link(self):
+        import encodings.idna
+        import importlib._bootstrap
+
+        module_docs = {
+            'encodings': 'codecs#module-encodings',
+            'encodings.idna': 'codecs#module-encodings.idna',
+        }
+
+        with unittest.mock.patch('pydoc_data.module_docs.module_docs', module_docs):
+            doc = pydoc.TextDoc()
+
+            basedir = os.path.dirname(encodings.__file__)
+            doc_link = doc.getdocloc(encodings, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings', doc_link)
+            self.assertNotIn('encodings.html', doc_link)
+
+            doc_link = doc.getdocloc(encodings.idna, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings.idna', doc_link)
+            self.assertNotIn('encodings.idna.html', doc_link)
+
+            doc_link = doc.getdocloc(importlib._bootstrap, basedir=basedir)
+            self.assertIsNone(doc_link)
+
     def test_getpager_with_stdin_none(self):
         previous_stdin = sys.stdin
         try:
@@ -1413,7 +1439,7 @@ class TestDescriptions(unittest.TestCase):
             self.assertIn('NoReturn = typing.NoReturn', doc)
             self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
+            self.assertIn('NoReturn = class _SpecialForm(_Final, _NotIterable)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
@@ -2304,6 +2330,32 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(leading_argv0dir))
                 trailing_argv0dir = trailing_curdir + [self.argv0dir]
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
+
+    def test__get_version(self):
+        import json
+        import warnings
+
+        class MyModule:
+            __name__ = 'my_module'
+
+            @property
+            def __version__(self):
+                warnings._deprecated("__version__", remove=(3, 20))
+                return "1.2.3"
+
+        module = MyModule()
+        doc = pydoc.Doc()
+        with warnings.catch_warnings(record=True) as w: # TODO: remove in 3.20
+            warnings.simplefilter("always")
+            version = doc._get_version(json)
+            self.assertEqual(version, "2.0.9")
+            self.assertEqual(len(w), 0)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            version = doc._get_version(module)
+            self.assertEqual(version, "1.2.3")
+            self.assertEqual(len(w), 1)
 
 
 def setUpModule():
