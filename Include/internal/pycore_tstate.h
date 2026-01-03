@@ -53,24 +53,21 @@ typedef struct _PyJitTracerState {
     _PyJitTracerPreviousState prev_state;
 } _PyJitTracerState;
 
+#endif
+
 typedef struct _PyJitPolicy {
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
 } _PyJitPolicy;
-
-#endif
 
 typedef struct _PyInterpreterPolicy {
     uint16_t jump_backward_initial_value;
     uint16_t jump_backward_initial_backoff;
 } _PyInterpreterPolicy;
 
-
 typedef struct _PyPolicy {
 
-#ifdef _Py_TIER2
     _PyJitPolicy jit;
-#endif
     _PyInterpreterPolicy interp;
 } _PyPolicy;
 
