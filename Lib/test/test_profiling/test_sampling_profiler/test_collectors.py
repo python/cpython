@@ -1823,3 +1823,131 @@ class TestCollectorFrameFormat(unittest.TestCase):
         thread = profile["threads"][0]
         # Should have recorded 3 functions
         self.assertEqual(thread["funcTable"]["length"], 3)
+
+
+class TestInternalFrameFiltering(unittest.TestCase):
+    """Tests for filtering internal profiler frames from output."""
+
+    def test_filter_internal_frames(self):
+        """Test that _sync_coordinator frames are filtered from anywhere in stack."""
+        from profiling.sampling.collector import filter_internal_frames
+
+        # Stack with _sync_coordinator in the middle (realistic scenario)
+        frames = [
+            MockFrameInfo("user_script.py", 10, "user_func"),
+            MockFrameInfo("/path/to/_sync_coordinator.py", 100, "main"),
+            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+        ]
+
+        filtered = filter_internal_frames(frames)
+        self.assertEqual(len(filtered), 2)
+        self.assertEqual(filtered[0].filename, "user_script.py")
+        self.assertEqual(filtered[1].filename, "<frozen runpy>")
+
+    def test_pstats_collector_filters_internal_frames(self):
+        """Test that PstatsCollector filters out internal frames."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("user_script.py", 10, "user_func"),
+                            MockFrameInfo("/path/to/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        self.assertEqual(len(collector.result), 2)
+        self.assertIn(("user_script.py", 10, "user_func"), collector.result)
+        self.assertIn(("<frozen runpy>", 87, "_run_code"), collector.result)
+
+    def test_gecko_collector_filters_internal_frames(self):
+        """Test that GeckoCollector filters out internal frames."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        profile = collector._build_profile()
+        string_array = profile["shared"]["stringArray"]
+
+        # Should not contain _sync_coordinator functions
+        for s in string_array:
+            self.assertNotIn("_sync_coordinator", s)
+
+    def test_flamegraph_collector_filters_internal_frames(self):
+        """Test that FlamegraphCollector filters out internal frames."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        data = collector._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        for s in strings:
+            self.assertNotIn("_sync_coordinator", s)
+
+    def test_collapsed_stack_collector_filters_internal_frames(self):
+        """Test that CollapsedStackCollector filters out internal frames."""
+        collector = CollapsedStackCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # Check that no stack contains _sync_coordinator
+        for (call_tree, _), _ in collector.stack_counter.items():
+            for filename, _, _ in call_tree:
+                self.assertNotIn("_sync_coordinator", filename)

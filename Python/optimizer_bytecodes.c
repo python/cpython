@@ -109,8 +109,10 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_STORE_FAST, (value --)) {
+    op(_SWAP_FAST, (value -- trash)) {
+        JitOptRef tmp = GETLOCAL(oparg);
         GETLOCAL(oparg) = value;
+        trash = tmp;
     }
 
     op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
@@ -409,6 +411,10 @@ dummy_func(void) {
         if (sym_matches_type(nos, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyUnicode_Type);
+    }
+
+    op(_GUARD_NOS_COMPACT_ASCII, (nos, unused -- nos, unused)) {
         sym_set_type(nos, &PyUnicode_Type);
     }
 
