@@ -3219,11 +3219,14 @@ class AbstractPickleTests:
                     self.assertIs(self.loads(s), t)
 
     def test_builtin_exceptions(self):
-        new_names = {'EncodingWarning': (3, 10),
-                     'BaseExceptionGroup': (3, 11),
-                     'ExceptionGroup': (3, 11),
-                     '_IncompleteInputError': (3, 13),
-                     'PythonFinalizationError': (3, 13)}
+        new_names = {
+            'ModuleNotFoundError': (3, 6),
+            'EncodingWarning': (3, 10),
+            'BaseExceptionGroup': (3, 11),
+            'ExceptionGroup': (3, 11),
+            '_IncompleteInputError': (3, 13),
+            'PythonFinalizationError': (3, 13),
+        }
         for t in builtins.__dict__.values():
             if isinstance(t, type) and issubclass(t, BaseException):
                 if t.__name__ in new_names and self.py_version < new_names[t.__name__]:

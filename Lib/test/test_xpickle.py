@@ -1,6 +1,6 @@
 # This test covers backwards compatibility with
-# previous version of Python by bouncing pickled objects through Python 3.6
-# and Python 3.9 by running xpickle_worker.py.
+# previous version of Python by bouncing pickled objects through Python 3.5
+# and the current version by running xpickle_worker.py.
 import io
 import os
 import pickle
@@ -68,7 +68,7 @@ def have_python_version(py_version):
     if py_version not in py_executable_map:
         for target in targets[0 if is_windows else 1:]:
             try:
-                worker = subprocess.Popen([*target, '-c','import test.support'],
+                worker = subprocess.Popen([*target, '-c', 'pass'],
                                           stdout=subprocess.DEVNULL,
                                           stderr=subprocess.DEVNULL,
                                           shell=is_windows)
@@ -246,7 +246,7 @@ def make_test(py_version, base):
 def load_tests(loader, tests, pattern):
     major = sys.version_info.major
     assert major == 3
-    for minor in range(sys.version_info.minor):
+    for minor in range(5, sys.version_info.minor):
         test_class = make_test((major, minor), PyPicklePythonCompat)
         tests.addTest(loader.loadTestsFromTestCase(test_class))
         if has_c_implementation:
