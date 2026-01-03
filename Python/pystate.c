@@ -1439,6 +1439,22 @@ decref_threadstate(_PyThreadStateImpl *tstate)
     }
 }
 
+#ifdef _Py_TIER2
+static inline void
+init_jit_metric(uint16_t *target, const char *env_name, uint16_t default_value,
+                long min_value, long max_value)
+{
+    *target = default_value;
+    char *env = Py_GETENV(env_name);
+    if (env && *env != '\0') {
+        long value = atol(env);
+        if (value >= min_value && value <= max_value) {
+            *target = (uint16_t)value;
+        }
+    }
+}
+#endif
+
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -1526,42 +1542,18 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->asyncio_running_task = NULL;
 #ifdef _Py_TIER2
     // Initialize JIT metrics from environment variables
-    _tstate->jit_metrics.jump_backward_initial_value = JUMP_BACKWARD_INITIAL_VALUE;
-    _tstate->jit_metrics.jump_backward_initial_backoff = JUMP_BACKWARD_INITIAL_BACKOFF;
-    _tstate->jit_metrics.side_exit_initial_value = SIDE_EXIT_INITIAL_VALUE;
-    _tstate->jit_metrics.side_exit_initial_backoff = SIDE_EXIT_INITIAL_BACKOFF;
-
-    char *env = Py_GETENV("PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE");
-    if (env && *env != '\0') {
-        long value = atol(env);
-        if (value > 0 && value <= MAX_VALUE) {
-            _tstate->jit_metrics.jump_backward_initial_value = (uint16_t)value;
-        }
-    }
-
-    env = Py_GETENV("PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF");
-    if (env && *env != '\0') {
-        long value = atol(env);
-        if (value >= 0 && value <= MAX_BACKOFF) {
-            _tstate->jit_metrics.jump_backward_initial_backoff = (uint16_t)value;
-        }
-    }
-
-    env = Py_GETENV("PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE");
-    if (env && *env != '\0') {
-        long value = atol(env);
-        if (value > 0 && value <= MAX_VALUE) {
-            _tstate->jit_metrics.side_exit_initial_value = (uint16_t)value;
-        }
-    }
-
-    env = Py_GETENV("PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF");
-    if (env && *env != '\0') {
-        long value = atol(env);
-        if (value >= 0 && value <= MAX_BACKOFF) {
-            _tstate->jit_metrics.side_exit_initial_backoff = (uint16_t)value;
-        }
-    }
+    init_jit_metric(&_tstate->jit_metrics.jump_backward_initial_value,
+                    "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
+                    JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
+    init_jit_metric(&_tstate->jit_metrics.jump_backward_initial_backoff,
+                    "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
+                    JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+    init_jit_metric(&_tstate->jit_metrics.side_exit_initial_value,
+                    "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
+                    SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
+    init_jit_metric(&_tstate->jit_metrics.side_exit_initial_backoff,
+                    "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
+                    SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     _tstate->jit_tracer_state.code_buffer = NULL;
 #endif
     tstate->delete_later = NULL;
