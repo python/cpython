@@ -2664,11 +2664,11 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
         /* Write data in-band */
         if (view.readonly) {
             rc = _save_bytes_data(st, self, obj, (const char *)view.buf,
-                                    view.len);
+                                  view.len);
         }
         else {
             rc = _save_bytearray_data(st, self, obj, (const char *)view.buf,
-                                        view.len);
+                                      view.len);
         }
     }
     else {
