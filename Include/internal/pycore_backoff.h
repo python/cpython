@@ -12,7 +12,7 @@ extern "C" {
 #include <assert.h>
 #include <stdbool.h>
 #include "pycore_structs.h"       // _Py_BackoffCounter
-#include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_tstate.h"        // _PyPolicy
 
 /* 16-bit countdown counters using exponential backoff.
 
