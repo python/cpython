@@ -1439,7 +1439,6 @@ decref_threadstate(_PyThreadStateImpl *tstate)
     }
 }
 
-#ifdef _Py_TIER2
 static inline void
 init_jit_metric(uint16_t *target, const char *env_name, uint16_t default_value,
                 long min_value, long max_value)
@@ -1453,7 +1452,6 @@ init_jit_metric(uint16_t *target, const char *env_name, uint16_t default_value,
         }
     }
 }
-#endif
 
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
@@ -1540,14 +1538,15 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
-#ifdef _Py_TIER2
-    // Initialize JIT policy from environment variables
-    init_jit_metric(&_tstate->policy.jit.jump_backward_initial_value,
+    // Initialize interpreter policy from environment variables
+    init_jit_metric(&_tstate->policy.interp.jump_backward_initial_value,
                     "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
                     JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
-    init_jit_metric(&_tstate->policy.jit.jump_backward_initial_backoff,
+    init_jit_metric(&_tstate->policy.interp.jump_backward_initial_backoff,
                     "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
                     JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+#ifdef _Py_TIER2
+    // Initialize JIT policy from environment variables
     init_jit_metric(&_tstate->policy.jit.side_exit_initial_value,
                     "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
                     SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
