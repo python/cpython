@@ -135,9 +135,13 @@ EXACT_TOKEN_TYPES = {
 }
 
 def ISTERMINAL(x: int) -> bool:
+    if not isinstance(x,int):
+        raise TypeError(f"expected integer, got {type(x).__name__}")
     return x < NT_OFFSET
 
 def ISNONTERMINAL(x: int) -> bool:
+    if not isinstance(x,int):
+        raise TypeError(f"expected integer, got {type(x).__name__}")
     return x >= NT_OFFSET
 
 def ISEOF(x: int) -> bool:
