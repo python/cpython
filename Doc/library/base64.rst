@@ -1,5 +1,5 @@
-:mod:`base64` --- Base16, Base32, Base64, Base85 Data Encodings
-===============================================================
+:mod:`!base64` --- Base16, Base32, Base64, Base85 Data Encodings
+================================================================
 
 .. module:: base64
    :synopsis: RFC 4648: Base16, Base32, Base64 Data Encodings;
@@ -15,14 +15,9 @@
 
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
-It provides encoding and decoding functions for the encodings specified in
-:rfc:`4648`, which defines the Base16, Base32, and Base64 algorithms,
-and for the de-facto standard Ascii85 and Base85 encodings.
-
-The :rfc:`4648` encodings are suitable for encoding binary data so that it can be
-safely sent by email, used as parts of URLs, or included as part of an HTTP
-POST request.  The encoding algorithm is not the same as the
-:program:`uuencode` program.
+This includes the :ref:`encodings specified in <base64-rfc-4648>`
+:rfc:`4648` (Base64, Base32 and Base16)
+and the non-standard :ref:`Base85 encodings <base64-base-85>`.
 
 There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
@@ -30,7 +25,7 @@ supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
 strings containing ASCII to :class:`bytes`.  Both base-64 alphabets
 defined in :rfc:`4648` (normal, and URL- and filesystem-safe) are supported.
 
-The legacy interface does not support decoding from strings, but it does
+The :ref:`legacy interface <base64-legacy>` does not support decoding from strings, but it does
 provide functions for encoding and decoding to and from :term:`file objects
 <file object>`.  It only supports the Base64 standard alphabet, and it adds
 newlines every 76 characters as per :rfc:`2045`.  Note that if you are looking
@@ -46,7 +41,15 @@ package instead.
    Any :term:`bytes-like objects <bytes-like object>` are now accepted by all
    encoding and decoding functions in this module.  Ascii85/Base85 support added.
 
-The modern interface provides:
+
+.. _base64-rfc-4648:
+
+RFC 4648 Encodings
+------------------
+
+The :rfc:`4648` encodings are suitable for encoding binary data so that it can be
+safely sent by email, used as parts of URLs, or included as part of an HTTP
+POST request.
 
 .. function:: b64encode(s, altchars=None)
 
@@ -58,7 +61,7 @@ The modern interface provides:
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
-   May assert or raise a a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
+   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
 
@@ -181,6 +184,26 @@ The modern interface provides:
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
+.. _base64-base-85:
+
+Base85 Encodings
+-----------------
+
+Base85 encoding is not formally specified but rather a de facto standard,
+thus different systems perform the encoding differently.
+
+The :func:`a85encode` and :func:`b85encode` functions in this module are two implementations of
+the de facto standard. You should call the function with the Base85
+implementation used by the software you intend to work with.
+
+The two functions present in this module differ in how they handle the following:
+
+* Whether to include enclosing ``<~`` and ``~>`` markers
+* Whether to include newline characters
+* The set of ASCII characters used for encoding
+* Handling of null bytes
+
+Refer to the documentation of the individual functions for more information.
 
 .. function:: a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
 
@@ -193,7 +216,7 @@ The modern interface provides:
 
    *wrapcol* controls whether the output should have newline (``b'\n'``)
    characters added to it. If this is non-zero, each output line will be
-   at most this many characters long.
+   at most this many characters long, excluding the trailing newline.
 
    *pad* controls whether the input is padded to a multiple of 4
    before encoding. Note that the ``btoa`` implementation always pads.
@@ -244,7 +267,34 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-The legacy interface:
+.. function:: z85encode(s, pad=False)
+
+   Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
+   and return the encoded :class:`bytes`.  See `Z85  specification
+   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+
+   .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      The *pad* parameter was added.
+
+
+.. function:: z85decode(s)
+
+   Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
+   return the decoded :class:`bytes`.  See `Z85  specification
+   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: 3.13
+
+
+.. _base64-legacy:
+
+Legacy Interface
+----------------
 
 .. function:: decode(input, output)
 

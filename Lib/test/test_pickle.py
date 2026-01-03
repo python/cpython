@@ -1,21 +1,26 @@
 from _compat_pickle import (IMPORT_MAPPING, REVERSE_IMPORT_MAPPING,
                             NAME_MAPPING, REVERSE_NAME_MAPPING)
 import builtins
-import pickle
-import io
 import collections
+import contextlib
+import io
+import pickle
 import struct
 import sys
+import tempfile
 import warnings
 import weakref
+from textwrap import dedent
 
 import doctest
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import cpython_only, import_helper, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
+from test.pickletester import AbstractPicklingErrorTests
 from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
 from test.pickletester import AbstractPersistentPicklerTests
@@ -30,6 +35,12 @@ try:
     has_c_implementation = True
 except ImportError:
     has_c_implementation = False
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("pickle", {"re"})
 
 
 class PyPickleTests(AbstractPickleModuleTests, unittest.TestCase):
@@ -48,11 +59,25 @@ class PyUnpicklerTests(AbstractUnpickleTests, unittest.TestCase):
     truncated_errors = (pickle.UnpicklingError, EOFError,
                         AttributeError, ValueError,
                         struct.error, IndexError, ImportError)
+    truncated_data_error = (EOFError, '')
+    size_overflow_error = (pickle.UnpicklingError, 'exceeds')
 
     def loads(self, buf, **kwds):
         f = io.BytesIO(buf)
         u = self.unpickler(f, **kwds)
         return u.load()
+
+
+class PyPicklingErrorTests(AbstractPicklingErrorTests, unittest.TestCase):
+
+    pickler = pickle._Pickler
+
+    def dumps(self, arg, proto=None, **kwargs):
+        f = io.BytesIO()
+        p = self.pickler(f, proto, **kwargs)
+        p.dump(arg)
+        f.seek(0)
+        return bytes(f.read())
 
 
 class PyPicklerTests(AbstractPickleTests, unittest.TestCase):
@@ -80,6 +105,8 @@ class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
     truncated_errors = (pickle.UnpicklingError, EOFError,
                         AttributeError, ValueError,
                         struct.error, IndexError, ImportError)
+    truncated_data_error = ((pickle.UnpicklingError, EOFError), '')
+    size_overflow_error = ((OverflowError, pickle.UnpicklingError), 'exceeds')
 
     def dumps(self, arg, protocol=None, **kwargs):
         return pickle.dumps(arg, protocol, **kwargs)
@@ -88,6 +115,8 @@ class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
         return pickle.loads(buf, **kwds)
 
     test_framed_write_sizes_with_delayed_writer = None
+    test_find_class = None
+    test_custom_find_class = None
 
 
 class PersistentPicklerUnpicklerMixin(object):
@@ -122,6 +151,7 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
+    persistent_load_error = pickle.UnpicklingError
 
     @support.cpython_only
     def test_pickler_reference_cycle(self):
@@ -176,7 +206,6 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
         support.gc_collect()
         self.assertIsNone(table_ref())
 
-
     @support.cpython_only
     def test_unpickler_reference_cycle(self):
         def check(Unpickler):
@@ -205,6 +234,112 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
             def persistent_load(pid):
                 return pid
         check(PersUnpickler)
+
+    def test_pickler_super(self):
+        class PersPickler(self.pickler):
+            def persistent_id(subself, obj):
+                called.append(obj)
+                self.assertIsNone(super().persistent_id(obj))
+                return obj
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f = io.BytesIO()
+            pickler = PersPickler(f, proto)
+            called = []
+            pickler.dump('abc')
+            self.assertEqual(called, ['abc'])
+            self.assertEqual(self.loads(f.getvalue()), 'abc')
+
+    def test_unpickler_super(self):
+        class PersUnpickler(self.unpickler):
+            def persistent_load(subself, pid):
+                called.append(pid)
+                with self.assertRaises(self.persistent_load_error):
+                    super().persistent_load(pid)
+                return pid
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            unpickler = PersUnpickler(io.BytesIO(self.dumps('abc', proto)))
+            called = []
+            self.assertEqual(unpickler.load(), 'abc')
+            self.assertEqual(called, ['abc'])
+
+    def test_pickler_instance_attribute(self):
+        def persistent_id(obj):
+            called.append(obj)
+            return obj
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f = io.BytesIO()
+            pickler = self.pickler(f, proto)
+            called = []
+            old_persistent_id = pickler.persistent_id
+            pickler.persistent_id = persistent_id
+            self.assertEqual(pickler.persistent_id, persistent_id)
+            pickler.dump('abc')
+            self.assertEqual(called, ['abc'])
+            self.assertEqual(self.loads(f.getvalue()), 'abc')
+            del pickler.persistent_id
+            self.assertEqual(pickler.persistent_id, old_persistent_id)
+
+    def test_unpickler_instance_attribute(self):
+        def persistent_load(pid):
+            called.append(pid)
+            return pid
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            unpickler = self.unpickler(io.BytesIO(self.dumps('abc', proto)))
+            called = []
+            old_persistent_load = unpickler.persistent_load
+            unpickler.persistent_load = persistent_load
+            self.assertEqual(unpickler.persistent_load, persistent_load)
+            self.assertEqual(unpickler.load(), 'abc')
+            self.assertEqual(called, ['abc'])
+            del unpickler.persistent_load
+            self.assertEqual(unpickler.persistent_load, old_persistent_load)
+
+    def test_pickler_super_instance_attribute(self):
+        class PersPickler(self.pickler):
+            def persistent_id(subself, obj):
+                raise AssertionError('should never be called')
+            def _persistent_id(subself, obj):
+                called.append(obj)
+                self.assertIsNone(super().persistent_id(obj))
+                return obj
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f = io.BytesIO()
+            pickler = PersPickler(f, proto)
+            called = []
+            old_persistent_id = pickler.persistent_id
+            pickler.persistent_id = pickler._persistent_id
+            self.assertEqual(pickler.persistent_id, pickler._persistent_id)
+            pickler.dump('abc')
+            self.assertEqual(called, ['abc'])
+            self.assertEqual(self.loads(f.getvalue()), 'abc')
+            del pickler.persistent_id
+            self.assertEqual(pickler.persistent_id, old_persistent_id)
+
+    def test_unpickler_super_instance_attribute(self):
+        class PersUnpickler(self.unpickler):
+            def persistent_load(subself, pid):
+                raise AssertionError('should never be called')
+            def _persistent_load(subself, pid):
+                called.append(pid)
+                with self.assertRaises(self.persistent_load_error):
+                    super().persistent_load(pid)
+                return pid
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            unpickler = PersUnpickler(io.BytesIO(self.dumps('abc', proto)))
+            called = []
+            old_persistent_load = unpickler.persistent_load
+            unpickler.persistent_load = unpickler._persistent_load
+            self.assertEqual(unpickler.persistent_load, unpickler._persistent_load)
+            self.assertEqual(unpickler.load(), 'abc')
+            self.assertEqual(called, ['abc'])
+            del unpickler.persistent_load
+            self.assertEqual(unpickler.persistent_load, old_persistent_load)
 
 
 class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests, unittest.TestCase):
@@ -244,6 +379,11 @@ if has_c_implementation:
         unpickler = _pickle.Unpickler
         bad_stack_errors = (pickle.UnpicklingError,)
         truncated_errors = (pickle.UnpicklingError,)
+        truncated_data_error = (pickle.UnpicklingError, 'truncated')
+        size_overflow_error = (OverflowError, 'exceeds')
+
+    class CPicklingErrorTests(PyPicklingErrorTests):
+        pickler = _pickle.Pickler
 
     class CPicklerTests(PyPicklerTests):
         pickler = _pickle.Pickler
@@ -256,6 +396,7 @@ if has_c_implementation:
     class CIdPersPicklerTests(PyIdPersPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
+        persistent_load_error = _pickle.UnpicklingError
 
     class CDumpPickle_LoadPickle(PyPicklerTests):
         pickler = _pickle.Pickler
@@ -294,6 +435,34 @@ if has_c_implementation:
         pickler_class = CustomCPicklerClass
 
     @support.cpython_only
+    class HeapTypesTests(unittest.TestCase):
+        def setUp(self):
+            pickler = _pickle.Pickler(io.BytesIO())
+            unpickler = _pickle.Unpickler(io.BytesIO())
+
+            self._types = (
+                _pickle.Pickler,
+                _pickle.Unpickler,
+                type(pickler.memo),
+                type(unpickler.memo),
+
+                # We cannot test the _pickle.Pdata;
+                # there's no way to get to it.
+            )
+
+        def test_have_gc(self):
+            import gc
+            for tp in self._types:
+                with self.subTest(tp=tp):
+                    self.assertTrue(gc.is_tracked(tp))
+
+        def test_immutable(self):
+            for tp in self._types:
+                with self.subTest(tp=tp):
+                    with self.assertRaisesRegex(TypeError, "immutable"):
+                        tp.foo = "bar"
+
+    @support.cpython_only
     class SizeofTests(unittest.TestCase):
         check_sizeof = support.check_sizeof
 
@@ -315,7 +484,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n2i')
+            basesize = support.calcobjsize('2P2n3P 2P2n2i5P 2P3n8P2n2i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.
@@ -351,7 +520,9 @@ if has_c_implementation:
             check_unpickler(recurse(1), 32, 20)
             check_unpickler(recurse(20), 32, 20)
             check_unpickler(recurse(50), 64, 60)
-            check_unpickler(recurse(100), 128, 140)
+            if not (support.is_wasi and support.Py_DEBUG):
+                # stack depth too shallow in pydebug WASI.
+                check_unpickler(recurse(100), 128, 140)
 
             u = unpickler(io.BytesIO(pickle.dumps('a', 0)),
                           encoding='ASCII', errors='strict')
@@ -446,10 +617,10 @@ class CompatPickleTests(unittest.TestCase):
             with self.subTest(((module3, name3), (module2, name2))):
                 if (module2, name2) == ('exceptions', 'OSError'):
                     attr = getattribute(module3, name3)
-                    self.assertTrue(issubclass(attr, OSError))
+                    self.assertIsSubclass(attr, OSError)
                 elif (module2, name2) == ('exceptions', 'ImportError'):
                     attr = getattribute(module3, name3)
-                    self.assertTrue(issubclass(attr, ImportError))
+                    self.assertIsSubclass(attr, ImportError)
                 else:
                     module, name = mapping(module2, name2)
                     if module3[:1] != '_':
@@ -511,10 +682,12 @@ class CompatPickleTests(unittest.TestCase):
                 if exc in (BlockingIOError,
                            ResourceWarning,
                            StopAsyncIteration,
+                           PythonFinalizationError,
                            RecursionError,
                            EncodingWarning,
                            BaseExceptionGroup,
-                           ExceptionGroup):
+                           ExceptionGroup,
+                           _IncompleteInputError):
                     continue
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),
@@ -533,6 +706,8 @@ class CompatPickleTests(unittest.TestCase):
     def test_multiprocessing_exceptions(self):
         module = import_helper.import_module('multiprocessing.context')
         for name, exc in get_exceptions(module):
+            if issubclass(exc, Warning):
+                continue
             with self.subTest(name):
                 self.assertEqual(reverse_mapping('multiprocessing.context', name),
                                  ('multiprocessing', name))
@@ -540,8 +715,61 @@ class CompatPickleTests(unittest.TestCase):
                                  ('multiprocessing.context', name))
 
 
+class CommandLineTest(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    @staticmethod
+    def text_normalize(string):
+        """Dedent *string* and strip it from its surrounding whitespaces.
+
+        This method is used by the other utility functions so that any
+        string to write or to match against can be freely indented.
+        """
+        return dedent(string).strip()
+
+    def set_pickle_data(self, data):
+        with open(self.filename, 'wb') as f:
+            pickle.dump(data, f)
+
+    def invoke_pickle(self, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            pickle._main(args=[*flags, self.filename])
+        return self.text_normalize(output.getvalue())
+
+    def test_invocation(self):
+        # test 'python -m pickle pickle_file'
+        data = {
+            'a': [1, 2.0, 3+4j],
+            'b': ('character string', b'byte string'),
+            'c': 'string'
+        }
+        expect = '''
+            {'a': [1, 2.0, (3+4j)],
+             'b': ('character string', b'byte string'),
+             'c': 'string'}
+        '''
+        self.set_pickle_data(data)
+
+        with self.subTest(data=data):
+            res = self.invoke_pickle()
+            expect = self.text_normalize(expect)
+            self.assertListEqual(res.splitlines(), expect.splitlines())
+
+    @support.force_not_colorized
+    def test_unknown_flag(self):
+        stderr = io.StringIO()
+        with self.assertRaises(SystemExit):
+            # check that the parser help is shown
+            with contextlib.redirect_stderr(stderr):
+                _ = self.invoke_pickle('--unknown')
+        self.assertStartsWith(stderr.getvalue(), 'usage: ')
+
+
 def load_tests(loader, tests, pattern):
-    tests.addTest(doctest.DocTestSuite())
+    tests.addTest(doctest.DocTestSuite(pickle))
     return tests
 
 

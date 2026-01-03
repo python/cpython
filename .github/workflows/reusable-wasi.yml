@@ -1,0 +1,61 @@
+name: Reusable WASI
+
+on:
+  workflow_call:
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-wasi-reusable:
+    name: 'build and test'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    env:
+      WASMTIME_VERSION: 38.0.3
+      WASI_SDK_VERSION: 29
+      WASI_SDK_PATH: /opt/wasi-sdk
+      CROSS_BUILD_PYTHON: cross-build/build
+      CROSS_BUILD_WASI: cross-build/wasm32-wasip1
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    # No problem resolver registered as one doesn't currently exist for Clang.
+    - name: "Install wasmtime"
+      uses: bytecodealliance/actions/wasmtime/setup@v1
+      with:
+        version: ${{ env.WASMTIME_VERSION }}
+    - name: "Restore WASI SDK"
+      id: cache-wasi-sdk
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.WASI_SDK_PATH }}
+        key: ${{ runner.os }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}
+    - name: "Install WASI SDK"  # Hard-coded to x64.
+      if: steps.cache-wasi-sdk.outputs.cache-hit != 'true'
+      run: |
+        mkdir "${WASI_SDK_PATH}" && \
+        curl -s -S --location "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/wasi-sdk-${WASI_SDK_VERSION}.0-arm64-linux.tar.gz" | \
+        tar --strip-components 1 --directory "${WASI_SDK_PATH}" --extract --gunzip
+    - name: "Add ccache to PATH"
+      run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: "Install Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - name: "Runner image version"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: "Configure build Python"
+      run: python3 Tools/wasm/wasi configure-build-python -- --config-cache --with-pydebug
+    - name: "Make build Python"
+      run: python3 Tools/wasm/wasi make-build-python
+    - name: "Configure host"
+      # `--with-pydebug` inferred from configure-build-python
+      run: python3 Tools/wasm/wasi configure-host -- --config-cache
+    - name: "Make host"
+      run: python3 Tools/wasm/wasi make-host
+    - name: "Display build info"
+      run: make --directory "${CROSS_BUILD_WASI}" pythoninfo
+    - name: "Test"
+      run: make --directory "${CROSS_BUILD_WASI}" test

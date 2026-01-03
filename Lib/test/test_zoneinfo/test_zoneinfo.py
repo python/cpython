@@ -17,16 +17,19 @@ import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
+from test.support import MISSING_C_DOCSTRINGS
+from test.support.os_helper import EnvironmentVarGuard, FakePath
 from test.test_zoneinfo import _support as test_support
-from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
-from test.support.import_helper import import_module
+from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
+from test.support.import_helper import import_module, CleanImport
+from test.support.script_helper import assert_python_ok
 
 lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()
 
 try:
     importlib.metadata.metadata("tzdata")
-    HAS_TZDATA_PKG = True
+    HAS_TZDATA_PKG = (importlib.metadata.version("tzdata") == "2025.3")
 except importlib.metadata.PackageNotFoundError:
     HAS_TZDATA_PKG = False
 
@@ -35,6 +38,7 @@ ZONEINFO_DATA_V1 = None
 TEMP_DIR = None
 DATA_DIR = pathlib.Path(__file__).parent / "data"
 ZONEINFO_JSON = DATA_DIR / "zoneinfo_data.json"
+DRIVE = os.path.splitdrive('x:')[0]
 
 # Useful constants
 ZERO = timedelta(0)
@@ -53,6 +57,10 @@ def setUpModule():
 
 def tearDownModule():
     shutil.rmtree(TEMP_DIR)
+
+
+class CustomError(Exception):
+    pass
 
 
 class TzPathUserMixin:
@@ -220,6 +228,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "America.Los_Angeles",
             "🇨🇦",  # Non-ascii
             "America/New\ud800York",  # Contains surrogate character
+            "Europe",  # Is a directory, see issue gh-85702
         ]
 
         for bad_key in bad_keys:
@@ -243,6 +252,8 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
         bad_zones = [
             b"",  # Empty file
             b"AAAA3" + b" " * 15,  # Bad magic
+            # Truncated V2 file (should not loop indefinitely)
+            b"TZif2" + (b"\x00" * 39) + b"TZif2" + (b"\x00" * 39) + b"\n" + b"Part",
         ]
 
         for bad_zone in bad_zones:
@@ -400,10 +411,31 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(t.utcoffset(), offset.utcoffset)
                 self.assertEqual(t.dst(), offset.dst)
 
+    def test_cache_exception(self):
+        class Incomparable(str):
+            eq_called = False
+            def __eq__(self, other):
+                self.eq_called = True
+                raise CustomError
+            __hash__ = str.__hash__
+
+        key = "America/Los_Angeles"
+        tz1 = self.klass(key)
+        key = Incomparable(key)
+        try:
+            tz2 = self.klass(key)
+        except CustomError:
+            self.assertTrue(key.eq_called)
+        else:
+            self.assertFalse(key.eq_called)
+            self.assertIs(tz2, tz1)
+
 
 class CZoneInfoTest(ZoneInfoTest):
     module = c_zoneinfo
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_signatures(self):
         """Ensure that C module has valid method signatures."""
         import inspect
@@ -1001,6 +1033,80 @@ class TZStrTest(ZoneInfoTestBase):
 
                 self.assertEqual(dt_act, dt_utc)
 
+    def test_extreme_tzstr(self):
+        tzstrs = [
+            # Extreme offset hour
+            "AAA24",
+            "AAA+24",
+            "AAA-24",
+            "AAA24BBB,J60/2,J300/2",
+            "AAA+24BBB,J60/2,J300/2",
+            "AAA-24BBB,J60/2,J300/2",
+            "AAA4BBB24,J60/2,J300/2",
+            "AAA4BBB+24,J60/2,J300/2",
+            "AAA4BBB-24,J60/2,J300/2",
+            # Extreme offset minutes
+            "AAA4:00BBB,J60/2,J300/2",
+            "AAA4:59BBB,J60/2,J300/2",
+            "AAA4BBB5:00,J60/2,J300/2",
+            "AAA4BBB5:59,J60/2,J300/2",
+            # Extreme offset seconds
+            "AAA4:00:00BBB,J60/2,J300/2",
+            "AAA4:00:59BBB,J60/2,J300/2",
+            "AAA4BBB5:00:00,J60/2,J300/2",
+            "AAA4BBB5:00:59,J60/2,J300/2",
+            # Extreme total offset
+            "AAA24:59:59BBB5,J60/2,J300/2",
+            "AAA-24:59:59BBB5,J60/2,J300/2",
+            "AAA4BBB24:59:59,J60/2,J300/2",
+            "AAA4BBB-24:59:59,J60/2,J300/2",
+            # Extreme months
+            "AAA4BBB,M12.1.1/2,M1.1.1/2",
+            "AAA4BBB,M1.1.1/2,M12.1.1/2",
+            # Extreme weeks
+            "AAA4BBB,M1.5.1/2,M1.1.1/2",
+            "AAA4BBB,M1.1.1/2,M1.5.1/2",
+            # Extreme weekday
+            "AAA4BBB,M1.1.6/2,M2.1.1/2",
+            "AAA4BBB,M1.1.1/2,M2.1.6/2",
+            # Extreme numeric offset
+            "AAA4BBB,0/2,20/2",
+            "AAA4BBB,0/2,0/14",
+            "AAA4BBB,20/2,365/2",
+            "AAA4BBB,365/2,365/14",
+            # Extreme julian offset
+            "AAA4BBB,J1/2,J20/2",
+            "AAA4BBB,J1/2,J1/14",
+            "AAA4BBB,J20/2,J365/2",
+            "AAA4BBB,J365/2,J365/14",
+            # Extreme transition hour
+            "AAA4BBB,J60/167,J300/2",
+            "AAA4BBB,J60/+167,J300/2",
+            "AAA4BBB,J60/-167,J300/2",
+            "AAA4BBB,J60/2,J300/167",
+            "AAA4BBB,J60/2,J300/+167",
+            "AAA4BBB,J60/2,J300/-167",
+            # Extreme transition minutes
+            "AAA4BBB,J60/2:00,J300/2",
+            "AAA4BBB,J60/2:59,J300/2",
+            "AAA4BBB,J60/2,J300/2:00",
+            "AAA4BBB,J60/2,J300/2:59",
+            # Extreme transition seconds
+            "AAA4BBB,J60/2:00:00,J300/2",
+            "AAA4BBB,J60/2:00:59,J300/2",
+            "AAA4BBB,J60/2,J300/2:00:00",
+            "AAA4BBB,J60/2,J300/2:00:59",
+            # Extreme total transition time
+            "AAA4BBB,J60/167:59:59,J300/2",
+            "AAA4BBB,J60/-167:59:59,J300/2",
+            "AAA4BBB,J60/2,J300/167:59:59",
+            "AAA4BBB,J60/2,J300/-167:59:59",
+        ]
+
+        for tzstr in tzstrs:
+            with self.subTest(tzstr=tzstr):
+                self.zone_from_tzstr(tzstr)
+
     def test_invalid_tzstr(self):
         invalid_tzstrs = [
             "PST8PDT",  # DST but no transition specified
@@ -1008,16 +1114,33 @@ class TZStrTest(ZoneInfoTestBase):
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
             "PST8PDT,M3.2.0/2",  # Only one transition rule
-            # Invalid offsets
-            "STD+25",
-            "STD-25",
-            "STD+374",
-            "STD+374DST,M3.2.0/2,M11.1.0/3",
-            "STD+23DST+25,M3.2.0/2,M11.1.0/3",
-            "STD-23DST-25,M3.2.0/2,M11.1.0/3",
+            # Invalid offset hours
+            "AAA168",
+            "AAA+168",
+            "AAA-168",
+            "AAA168BBB,J60/2,J300/2",
+            "AAA+168BBB,J60/2,J300/2",
+            "AAA-168BBB,J60/2,J300/2",
+            "AAA4BBB168,J60/2,J300/2",
+            "AAA4BBB+168,J60/2,J300/2",
+            "AAA4BBB-168,J60/2,J300/2",
+            # Invalid offset minutes
+            "AAA4:0BBB,J60/2,J300/2",
+            "AAA4:100BBB,J60/2,J300/2",
+            "AAA4BBB5:0,J60/2,J300/2",
+            "AAA4BBB5:100,J60/2,J300/2",
+            # Invalid offset seconds
+            "AAA4:00:0BBB,J60/2,J300/2",
+            "AAA4:00:100BBB,J60/2,J300/2",
+            "AAA4BBB5:00:0,J60/2,J300/2",
+            "AAA4BBB5:00:100,J60/2,J300/2",
             # Completely invalid dates
             "AAA4BBB,M1443339,M11.1.0/3",
             "AAA4BBB,M3.2.0/2,0349309483959c",
+            "AAA4BBB,,J300/2",
+            "AAA4BBB,z,J300/2",
+            "AAA4BBB,J60/2,",
+            "AAA4BBB,J60/2,z",
             # Invalid months
             "AAA4BBB,M13.1.1/2,M1.1.1/2",
             "AAA4BBB,M1.1.1/2,M13.1.1/2",
@@ -1037,6 +1160,26 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid julian offset
             "AAA4BBB,J0/2,J20/2",
             "AAA4BBB,J20/2,J366/2",
+            # Invalid transition time
+            "AAA4BBB,J60/2/3,J300/2",
+            "AAA4BBB,J60/2,J300/2/3",
+            # Invalid transition hour
+            "AAA4BBB,J60/168,J300/2",
+            "AAA4BBB,J60/+168,J300/2",
+            "AAA4BBB,J60/-168,J300/2",
+            "AAA4BBB,J60/2,J300/168",
+            "AAA4BBB,J60/2,J300/+168",
+            "AAA4BBB,J60/2,J300/-168",
+            # Invalid transition minutes
+            "AAA4BBB,J60/2:0,J300/2",
+            "AAA4BBB,J60/2:100,J300/2",
+            "AAA4BBB,J60/2,J300/2:0",
+            "AAA4BBB,J60/2,J300/2:100",
+            # Invalid transition seconds
+            "AAA4BBB,J60/2:00:0,J300/2",
+            "AAA4BBB,J60/2:00:100,J300/2",
+            "AAA4BBB,J60/2,J300/2:00:0",
+            "AAA4BBB,J60/2,J300/2:00:100",
         ]
 
         for invalid_tzstr in invalid_tzstrs:
@@ -1390,6 +1533,46 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         self.assertIsNot(dub0, dub1)
         self.assertIs(tok0, tok1)
 
+    def test_clear_cache_refleak(self):
+        class Stringy(str):
+            allow_comparisons = True
+            def __eq__(self, other):
+                if not self.allow_comparisons:
+                    raise CustomError
+                return super().__eq__(other)
+            __hash__ = str.__hash__
+
+        key = Stringy("America/Los_Angeles")
+        self.klass(key)
+        key.allow_comparisons = False
+        try:
+            # Note: This is try/except rather than assertRaises because
+            # there is no guarantee that the key is even still in the cache,
+            # or that the key for the cache is the original `key` object.
+            self.klass.clear_cache(only_keys="America/Los_Angeles")
+        except CustomError:
+            pass
+
+    def test_weak_cache_descriptor_use_after_free(self):
+        class BombDescriptor:
+            def __get__(self, obj, owner):
+                return {}
+
+        class EvilZoneInfo(self.klass):
+            pass
+
+        # Must be set after the class creation.
+        EvilZoneInfo._weak_cache = BombDescriptor()
+
+        key = "America/Los_Angeles"
+        zone1 = EvilZoneInfo(key)
+        self.assertEqual(str(zone1), key)
+
+        EvilZoneInfo.clear_cache()
+        zone2 = EvilZoneInfo(key)
+        self.assertEqual(str(zone2), key)
+        self.assertIsNot(zone2, zone1)
+
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
@@ -1542,24 +1725,16 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
     @staticmethod
     @contextlib.contextmanager
     def python_tzpath_context(value):
-        path_var = "PYTHONTZPATH"
-        try:
-            with OS_ENV_LOCK:
-                old_env = os.environ.get(path_var, None)
-                os.environ[path_var] = value
-                yield
-        finally:
-            if old_env is None:
-                del os.environ[path_var]
-            else:
-                os.environ[path_var] = old_env  # pragma: nocover
+        with EnvironmentVarGuard() as env:
+            env["PYTHONTZPATH"] = value
+            yield
 
     def test_env_variable(self):
         """Tests that the environment variable works with reset_tzpath."""
         new_paths = [
             ("", []),
-            ("/etc/zoneinfo", ["/etc/zoneinfo"]),
-            (f"/a/b/c{os.pathsep}/d/e/f", ["/a/b/c", "/d/e/f"]),
+            (f"{DRIVE}/etc/zoneinfo", [f"{DRIVE}/etc/zoneinfo"]),
+            (f"{DRIVE}/a/b/c{os.pathsep}{DRIVE}/d/e/f", [f"{DRIVE}/a/b/c", f"{DRIVE}/d/e/f"]),
         ]
 
         for new_path_var, expected_result in new_paths:
@@ -1573,22 +1748,22 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         test_cases = [
             [("path/to/somewhere",), ()],
             [
-                ("/usr/share/zoneinfo", "path/to/somewhere",),
-                ("/usr/share/zoneinfo",),
+                (f"{DRIVE}/usr/share/zoneinfo", "path/to/somewhere",),
+                (f"{DRIVE}/usr/share/zoneinfo",),
             ],
             [("../relative/path",), ()],
             [
-                ("/usr/share/zoneinfo", "../relative/path",),
-                ("/usr/share/zoneinfo",),
+                (f"{DRIVE}/usr/share/zoneinfo", "../relative/path",),
+                (f"{DRIVE}/usr/share/zoneinfo",),
             ],
             [("path/to/somewhere", "../relative/path",), ()],
             [
                 (
-                    "/usr/share/zoneinfo",
+                    f"{DRIVE}/usr/share/zoneinfo",
                     "path/to/somewhere",
                     "../relative/path",
                 ),
-                ("/usr/share/zoneinfo",),
+                (f"{DRIVE}/usr/share/zoneinfo",),
             ],
         ]
 
@@ -1598,17 +1773,30 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                 with self.subTest("warning", path_var=path_var):
                     # Note: Per PEP 615 the warning is implementation-defined
                     # behavior, other implementations need not warn.
-                    with self.assertWarns(self.module.InvalidTZPathWarning):
+                    with self.assertWarns(self.module.InvalidTZPathWarning) as w:
                         self.module.reset_tzpath()
+                    self.assertEqual(w.warnings[0].filename, __file__)
 
                 tzpath = self.module.TZPATH
                 with self.subTest("filtered", path_var=path_var):
                     self.assertSequenceEqual(tzpath, expected_paths)
 
-    def test_reset_tzpath_kwarg(self):
-        self.module.reset_tzpath(to=["/a/b/c"])
+    def test_env_variable_relative_paths_warning_location(self):
+        path_var = "path/to/somewhere"
 
-        self.assertSequenceEqual(self.module.TZPATH, ("/a/b/c",))
+        with self.python_tzpath_context(path_var):
+            with CleanImport("zoneinfo", "zoneinfo._tzpath"):
+                with self.assertWarns(RuntimeWarning) as w:
+                    import zoneinfo
+                InvalidTZPathWarning = zoneinfo.InvalidTZPathWarning
+            self.assertIsInstance(w.warnings[0].message, InvalidTZPathWarning)
+            # It should represent the current file:
+            self.assertEqual(w.warnings[0].filename, __file__)
+
+    def test_reset_tzpath_kwarg(self):
+        self.module.reset_tzpath(to=[f"{DRIVE}/a/b/c"])
+
+        self.assertSequenceEqual(self.module.TZPATH, (f"{DRIVE}/a/b/c",))
 
     def test_reset_tzpath_relative_paths(self):
         bad_values = [
@@ -1618,6 +1806,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             ("/usr/share/zoneinfo", "../relative/path",),
             ("path/to/somewhere", "../relative/path",),
             ("/usr/share/zoneinfo", "path/to/somewhere", "../relative/path",),
+            (FakePath("path/to/somewhere"),)
         ]
         for input_paths in bad_values:
             with self.subTest(input_paths=input_paths):
@@ -1629,6 +1818,9 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             "/etc/zoneinfo:/usr/share/zoneinfo",
             b"/etc/zoneinfo:/usr/share/zoneinfo",
             0,
+            (b"/bytes/path", "/valid/path"),
+            (FakePath(b"/bytes/path"),),
+            (0,),
         ]
 
         for bad_value in bad_values:
@@ -1637,8 +1829,9 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                     self.module.reset_tzpath(bad_value)
 
     def test_tzpath_attribute(self):
-        tzpath_0 = ["/one", "/two"]
-        tzpath_1 = ["/three"]
+        tzpath_0 = [f"{DRIVE}/one", f"{DRIVE}/two"]
+        tzpath_1 = [f"{DRIVE}/three"]
+        tzpath_pathlike = (FakePath(f"{DRIVE}/usr/share/zoneinfo"),)
 
         with self.tzpath_context(tzpath_0):
             query_0 = self.module.TZPATH
@@ -1646,8 +1839,12 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         with self.tzpath_context(tzpath_1):
             query_1 = self.module.TZPATH
 
+        with self.tzpath_context(tzpath_pathlike):
+            query_pathlike = self.module.TZPATH
+
         self.assertSequenceEqual(tzpath_0, query_0)
         self.assertSequenceEqual(tzpath_1, query_1)
+        self.assertSequenceEqual(tuple([os.fspath(p) for p in tzpath_pathlike]), query_pathlike)
 
 
 class CTzPathTest(TzPathTest):
@@ -1776,9 +1973,44 @@ class TestModule(ZoneInfoTestBase):
                 actual = self.module.available_timezones()
                 self.assertEqual(actual, expected)
 
+    def test_exclude_localtime(self):
+        expected = {
+            "America/New_York",
+            "Europe/London",
+        }
+
+        tree = list(expected) + ["localtime"]
+
+        with tempfile.TemporaryDirectory() as td:
+            for key in tree:
+                self.touch_zone(key, td)
+
+            with self.tzpath_context([td]):
+                actual = self.module.available_timezones()
+                self.assertEqual(actual, expected)
 
 class CTestModule(TestModule):
     module = c_zoneinfo
+
+
+class MiscTests(unittest.TestCase):
+    def test_pydatetime(self):
+        # Test that zoneinfo works if the C implementation of datetime
+        # is not available and the Python implementation of datetime is used.
+        # The Python implementation of zoneinfo should be used in thet case.
+        #
+        # Run the test in a subprocess, as importing _zoneinfo with
+        # _datettime disabled causes crash in the previously imported
+        # _zoneinfo.
+        assert_python_ok('-c', '''if 1:
+            import sys
+            sys.modules['_datetime'] = None
+            import datetime
+            import zoneinfo
+            tzinfo = zoneinfo.ZoneInfo('Europe/London')
+            datetime.datetime(2025, 10, 26, 2, 0, tzinfo=tzinfo)
+            ''',
+            PYTHONTZPATH=str(ZONEINFO_DATA.tzpath))
 
 
 class ExtensionBuiltTest(unittest.TestCase):
@@ -1793,16 +2025,14 @@ class ExtensionBuiltTest(unittest.TestCase):
     def test_cache_location(self):
         # The pure Python version stores caches on attributes, but the C
         # extension stores them in C globals (at least for now)
-        self.assertFalse(hasattr(c_zoneinfo.ZoneInfo, "_weak_cache"))
-        self.assertTrue(hasattr(py_zoneinfo.ZoneInfo, "_weak_cache"))
+        self.assertNotHasAttr(c_zoneinfo.ZoneInfo, "_weak_cache")
+        self.assertHasAttr(py_zoneinfo.ZoneInfo, "_weak_cache")
 
     def test_gc_tracked(self):
-        # The pure Python version is tracked by the GC but (for now) the C
-        # version is not.
         import gc
 
         self.assertTrue(gc.is_tracked(py_zoneinfo.ZoneInfo))
-        self.assertFalse(gc.is_tracked(c_zoneinfo.ZoneInfo))
+        self.assertTrue(gc.is_tracked(c_zoneinfo.ZoneInfo))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1999,8 +2229,8 @@ class ZoneDumpData:
             ]
 
         def _America_Santiago():
-            LMT = ZoneOffset("LMT", timedelta(seconds=-16966), ZERO)
-            SMT = ZoneOffset("SMT", timedelta(seconds=-16966), ZERO)
+            LMT = ZoneOffset("LMT", timedelta(seconds=-16965), ZERO)
+            SMT = ZoneOffset("SMT", timedelta(seconds=-16965), ZERO)
             N05 = ZoneOffset("-05", timedelta(seconds=-18000), ZERO)
             N04 = ZoneOffset("-04", timedelta(seconds=-14400), ZERO)
             N03 = ZoneOffset("-03", timedelta(seconds=-10800), ONE_H)
@@ -2035,8 +2265,8 @@ class ZoneDumpData:
 
             return [
                 ZoneTransition(datetime(1895, 2, 1), LMT, AEST),
-                ZoneTransition(datetime(1917, 1, 1, 0, 1), AEST, AEDT),
-                ZoneTransition(datetime(1917, 3, 25, 2), AEDT, AEST),
+                ZoneTransition(datetime(1917, 1, 1, 2), AEST, AEDT),
+                ZoneTransition(datetime(1917, 3, 25, 3), AEDT, AEST),
                 ZoneTransition(datetime(2012, 4, 1, 3), AEDT, AEST),
                 ZoneTransition(datetime(2012, 10, 7, 2), AEST, AEDT),
                 ZoneTransition(datetime(2040, 4, 1, 3), AEDT, AEST),
@@ -2044,7 +2274,7 @@ class ZoneDumpData:
             ]
 
         def _Europe_Dublin():
-            LMT = ZoneOffset("LMT", timedelta(seconds=-1500), ZERO)
+            LMT = ZoneOffset("LMT", timedelta(seconds=-1521), ZERO)
             DMT = ZoneOffset("DMT", timedelta(seconds=-1521), ZERO)
             IST_0 = ZoneOffset("IST", timedelta(seconds=2079), ONE_H)
             GMT_0 = ZoneOffset("GMT", ZERO, ZERO)

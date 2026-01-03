@@ -11,7 +11,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 # Test that asyncio.iscoroutine() uses collections.abc.Coroutine
@@ -77,7 +77,7 @@ class LockTests(BaseTest):
             self.assertFalse(lock.locked())
             with self.assertRaisesRegex(
                 TypeError,
-                "can't be used in 'await' expression"
+                "can't be awaited"
             ):
                 with await lock:
                     pass
@@ -119,9 +119,15 @@ class CoroutineTests(BaseTest):
 
         self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
+    def test_iscoroutine_generator(self):
+        def foo(): yield
+
+        self.assertFalse(asyncio.iscoroutine(foo()))
+
     def test_iscoroutinefunction(self):
         async def foo(): pass
-        self.assertTrue(asyncio.iscoroutinefunction(foo))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(asyncio.iscoroutinefunction(foo))
 
     def test_async_def_coroutines(self):
         async def bar():

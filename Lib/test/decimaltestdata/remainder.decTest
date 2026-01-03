@@ -435,7 +435,7 @@ remx757 remainder  1    sNaN   ->  NaN  Invalid_operation
 remx758 remainder  1000 sNaN   ->  NaN  Invalid_operation
 remx759 remainder  Inf -sNaN   -> -NaN  Invalid_operation
 
--- propaging NaNs
+-- propagating NaNs
 remx760 remainder  NaN1   NaN7   ->  NaN1
 remx761 remainder sNaN2   NaN8   ->  NaN2 Invalid_operation
 remx762 remainder  NaN3  sNaN9   ->  NaN9 Invalid_operation

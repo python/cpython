@@ -273,9 +273,9 @@ class TestLongMessage(unittest.TestCase):
 
     def testAssertMultiLineEqual(self):
         self.assertMessages('assertMultiLineEqual', ("", "foo"),
-                            [r"\+ foo$", "^oops$",
-                             r"\+ foo$",
-                             r"\+ foo : oops$"])
+                            [r"\+ foo\n$", "^oops$",
+                             r"\+ foo\n$",
+                             r"\+ foo\n : oops$"])
 
     def testAssertLess(self):
         self.assertMessages('assertLess', (2, 1),
@@ -385,6 +385,16 @@ class TestLongMessage(unittest.TestCase):
                               ['^UserWarning not triggered$', '^oops$',
                                '^UserWarning not triggered$',
                                '^UserWarning not triggered : oops$'])
+
+    def test_assertNotWarns(self):
+        def warn_future():
+            warnings.warn('xyz', FutureWarning, stacklevel=2)
+        self.assertMessagesCM('_assertNotWarns', (FutureWarning,),
+                              warn_future,
+                              ['^FutureWarning triggered$',
+                               '^oops$',
+                               '^FutureWarning triggered$',
+                               '^FutureWarning triggered : oops$'])
 
     def testAssertWarnsRegex(self):
         # test error not raised

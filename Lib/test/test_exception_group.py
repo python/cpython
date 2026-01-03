@@ -1,13 +1,13 @@
-import collections.abc
+import collections
 import types
 import unittest
-
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, exceeds_recursion_limit
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
-        self.assertTrue(issubclass(ExceptionGroup, Exception))
-        self.assertTrue(issubclass(ExceptionGroup, BaseExceptionGroup))
-        self.assertTrue(issubclass(BaseExceptionGroup, BaseException))
+        self.assertIsSubclass(ExceptionGroup, Exception)
+        self.assertIsSubclass(ExceptionGroup, BaseExceptionGroup)
+        self.assertIsSubclass(BaseExceptionGroup, BaseException)
 
     def test_exception_is_not_generic_type(self):
         with self.assertRaisesRegex(TypeError, 'Exception'):
@@ -102,6 +102,20 @@ class InstanceCreation(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             MyEG("eg", [ValueError(12), KeyboardInterrupt(42)])
 
+    def test_EG_and_specific_subclass_can_wrap_any_nonbase_exception(self):
+        class MyEG(ExceptionGroup, ValueError):
+            pass
+
+        # The restriction is specific to Exception, not "the other base class"
+        MyEG("eg", [ValueError(12), Exception()])
+
+    def test_BEG_and_specific_subclass_can_wrap_any_nonbase_exception(self):
+        class MyEG(BaseExceptionGroup, ValueError):
+            pass
+
+        # The restriction is specific to Exception, not "the other base class"
+        MyEG("eg", [ValueError(12), Exception()])
+
 
     def test_BEG_subclass_wraps_anything(self):
         class MyBEG(BaseExceptionGroup):
@@ -178,6 +192,77 @@ class StrAndReprTests(unittest.TestCase):
                       "ValueError(1), "
                       "MyEG('flat', [ValueError(1), TypeError(2)]), "
                       "TypeError(2)])"))
+
+    def test_exceptions_mutation(self):
+        class MyEG(ExceptionGroup):
+            pass
+
+        excs = [ValueError(1), TypeError(2)]
+        eg = MyEG('test', excs)
+
+        self.assertEqual(repr(eg), "MyEG('test', [ValueError(1), TypeError(2)])")
+        excs.clear()
+
+        # Ensure that clearing the exceptions sequence doesn't change the repr.
+        self.assertEqual(repr(eg), "MyEG('test', [ValueError(1), TypeError(2)])")
+
+        # Ensure that the args are still as passed.
+        self.assertEqual(eg.args, ('test', []))
+
+        excs = (ValueError(1), KeyboardInterrupt(2))
+        eg = BaseExceptionGroup('test', excs)
+
+        # Ensure that immutable sequences still work fine.
+        self.assertEqual(
+            repr(eg),
+            "BaseExceptionGroup('test', (ValueError(1), KeyboardInterrupt(2)))"
+        )
+
+        # Test non-standard custom sequences.
+        excs = collections.deque([ValueError(1), TypeError(2)])
+        eg = ExceptionGroup('test', excs)
+
+        self.assertEqual(
+            repr(eg),
+            "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
+        )
+        excs.clear()
+
+        # Ensure that clearing the exceptions sequence doesn't change the repr.
+        self.assertEqual(
+            repr(eg),
+            "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
+        )
+
+    def test_repr_raises(self):
+        class MySeq(collections.abc.Sequence):
+            def __init__(self, raises):
+                self.raises = raises
+
+            def __len__(self):
+                return 1
+
+            def __getitem__(self, index):
+                if index == 0:
+                    return ValueError(1)
+                raise IndexError
+
+            def __repr__(self):
+                if self.raises:
+                    raise self.raises
+                return None
+
+        seq = MySeq(None)
+        with self.assertRaisesRegex(
+            TypeError,
+            r".*MySeq\.__repr__\(\) must return a str, not NoneType"
+        ):
+            ExceptionGroup("test", seq)
+
+        seq = MySeq(ValueError)
+        with self.assertRaises(ValueError):
+            BaseExceptionGroup("test", seq)
+
 
 
 def create_simple_eg():
@@ -280,6 +365,15 @@ class ExceptionGroupTestBase(unittest.TestCase):
             self.assertEqual(type(exc), type(template))
             self.assertEqual(exc.args, template.args)
 
+class Predicate:
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, e):
+        return self.func(e)
+
+    def method(self, e):
+        return self.func(e)
 
 class ExceptionGroupSubgroupTests(ExceptionGroupTestBase):
     def setUp(self):
@@ -287,10 +381,15 @@ class ExceptionGroupSubgroupTests(ExceptionGroupTestBase):
         self.eg_template = [ValueError(1), TypeError(int), ValueError(2)]
 
     def test_basics_subgroup_split__bad_arg_type(self):
+        class C:
+            pass
+
         bad_args = ["bad arg",
+                    C,
                     OSError('instance not type'),
                     [OSError, TypeError],
-                    (OSError, 42)]
+                    (OSError, 42),
+                   ]
         for arg in bad_args:
             with self.assertRaises(TypeError):
                 self.eg.subgroup(arg)
@@ -322,10 +421,14 @@ class ExceptionGroupSubgroupTests(ExceptionGroupTestBase):
                 self.assertMatchesTemplate(subeg, ExceptionGroup, template)
 
     def test_basics_subgroup_by_predicate__passthrough(self):
-        self.assertIs(self.eg, self.eg.subgroup(lambda e: True))
+        f = lambda e: True
+        for callable in [f, Predicate(f), Predicate(f).method]:
+            self.assertIs(self.eg, self.eg.subgroup(callable))
 
     def test_basics_subgroup_by_predicate__no_match(self):
-        self.assertIsNone(self.eg.subgroup(lambda e: False))
+        f = lambda e: False
+        for callable in [f, Predicate(f), Predicate(f).method]:
+            self.assertIsNone(self.eg.subgroup(callable))
 
     def test_basics_subgroup_by_predicate__match(self):
         eg = self.eg
@@ -336,9 +439,12 @@ class ExceptionGroupSubgroupTests(ExceptionGroupTestBase):
             ((ValueError, TypeError), self.eg_template)]
 
         for match_type, template in testcases:
-            subeg = eg.subgroup(lambda e: isinstance(e, match_type))
-            self.assertEqual(subeg.message, eg.message)
-            self.assertMatchesTemplate(subeg, ExceptionGroup, template)
+            f = lambda e: isinstance(e, match_type)
+            for callable in [f, Predicate(f), Predicate(f).method]:
+                with self.subTest(callable=callable):
+                    subeg = eg.subgroup(f)
+                    self.assertEqual(subeg.message, eg.message)
+                    self.assertMatchesTemplate(subeg, ExceptionGroup, template)
 
 
 class ExceptionGroupSplitTests(ExceptionGroupTestBase):
@@ -385,14 +491,18 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
                 self.assertIsNone(rest)
 
     def test_basics_split_by_predicate__passthrough(self):
-        match, rest = self.eg.split(lambda e: True)
-        self.assertMatchesTemplate(match, ExceptionGroup, self.eg_template)
-        self.assertIsNone(rest)
+        f = lambda e: True
+        for callable in [f, Predicate(f), Predicate(f).method]:
+            match, rest = self.eg.split(callable)
+            self.assertMatchesTemplate(match, ExceptionGroup, self.eg_template)
+            self.assertIsNone(rest)
 
     def test_basics_split_by_predicate__no_match(self):
-        match, rest = self.eg.split(lambda e: False)
-        self.assertIsNone(match)
-        self.assertMatchesTemplate(rest, ExceptionGroup, self.eg_template)
+        f = lambda e: False
+        for callable in [f, Predicate(f), Predicate(f).method]:
+            match, rest = self.eg.split(callable)
+            self.assertIsNone(match)
+            self.assertMatchesTemplate(rest, ExceptionGroup, self.eg_template)
 
     def test_basics_split_by_predicate__match(self):
         eg = self.eg
@@ -406,28 +516,34 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
         ]
 
         for match_type, match_template, rest_template in testcases:
-            match, rest = eg.split(lambda e: isinstance(e, match_type))
-            self.assertEqual(match.message, eg.message)
-            self.assertMatchesTemplate(
-                match, ExceptionGroup, match_template)
-            if rest_template is not None:
-                self.assertEqual(rest.message, eg.message)
+            f = lambda e: isinstance(e, match_type)
+            for callable in [f, Predicate(f), Predicate(f).method]:
+                match, rest = eg.split(callable)
+                self.assertEqual(match.message, eg.message)
                 self.assertMatchesTemplate(
-                    rest, ExceptionGroup, rest_template)
+                    match, ExceptionGroup, match_template)
+                if rest_template is not None:
+                    self.assertEqual(rest.message, eg.message)
+                    self.assertMatchesTemplate(
+                        rest, ExceptionGroup, rest_template)
 
 
 class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
     def make_deep_eg(self):
         e = TypeError(1)
-        for i in range(2000):
+        for i in range(exceeds_recursion_limit()):
             e = ExceptionGroup('eg', [e])
         return e
 
+    @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
     def test_deep_split(self):
         e = self.make_deep_eg()
         with self.assertRaises(RecursionError):
             e.split(TypeError)
 
+    @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
     def test_deep_subgroup(self):
         e = self.make_deep_eg()
         with self.assertRaises(RecursionError):
@@ -769,8 +885,8 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         eg = ExceptionGroup("eg", [ValueError(1), TypeError(2)])
         eg.__notes__ = 123
         match, rest = eg.split(TypeError)
-        self.assertFalse(hasattr(match, '__notes__'))
-        self.assertFalse(hasattr(rest, '__notes__'))
+        self.assertNotHasAttr(match, '__notes__')
+        self.assertNotHasAttr(rest, '__notes__')
 
     def test_drive_invalid_return_value(self):
         class MyEg(ExceptionGroup):

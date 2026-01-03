@@ -1,3 +1,8 @@
+# When adding new tokens, remember to update the PEG generator in
+# Tools/peg_generator/pegen/parser_generator.py
+# This will ensure that older versions of Python can generate a Python parser
+# using "python -m pegen python <GRAMMAR FILE>".
+
 ENDMARKER
 NAME
 NUMBER
@@ -53,16 +58,21 @@ ATEQUAL                 '@='
 RARROW                  '->'
 ELLIPSIS                '...'
 COLONEQUAL              ':='
+EXCLAMATION             '!'
 
 OP
-AWAIT
-ASYNC
 TYPE_IGNORE
 TYPE_COMMENT
 SOFT_KEYWORD
+FSTRING_START
+FSTRING_MIDDLE
+FSTRING_END
+TSTRING_START
+TSTRING_MIDDLE
+TSTRING_END
+COMMENT
+NL
 ERRORTOKEN
 
 # These aren't used by the C tokenizer but are needed for tokenize.py
-COMMENT
-NL
 ENCODING

@@ -10,6 +10,10 @@
     <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(MSBuildThisFileDirectory)obj\</Py_IntDir>
     <IntDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
+    <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen\</GeneratedFrozenModulesDir>
+    <GeneratedZlibNgDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\zlib-ng\</GeneratedZlibNgDir>
+    <GeneratedJitStencilsDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_$(Configuration)</GeneratedJitStencilsDir>
+    <GeneratedJitStencilsDir Condition="$(Configuration) == 'PGUpdate'">$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_PGInstrument</GeneratedJitStencilsDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
@@ -21,17 +25,37 @@
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$(TargetExt) != ''">
+    <TargetNameExt>$(TargetName)$(TargetExt)</TargetNameExt>
+    <_TargetNameSep>$(TargetNameExt.LastIndexOf(`.`))</_TargetNameSep>
+    <TargetName>$(TargetNameExt.Substring(0, $(_TargetNameSep)))</TargetName>
+    <TargetExt>$(TargetNameExt.Substring($(_TargetNameSep)))</TargetExt>
+  </PropertyGroup>
+
+  <PropertyGroup Label="MSVC Bug Workarounds" Condition="$(VCToolsVersion) != ''">
+    <_VCToolsVersion>$([System.Version]::Parse(`$(VCToolsVersion)`).Major).$([System.Version]::Parse(`$(VCToolsVersion)`).Minor)</_VCToolsVersion>
+
+    <!-- See https://developercommunity.visualstudio.com/t/Regression-in-MSVC-1433-1434-ARM64-co/10224361 -->
+    <MSVCHasBrokenARM64Clamping Condition="$(_VCToolsVersion) == '14.34' or $(_VCToolsVersion) == '14.35'">true</MSVCHasBrokenARM64Clamping>
+    <MSVCHasBrokenARM64SignExtension Condition="$(_VCToolsVersion) == '14.37'">true</MSVCHasBrokenARM64SignExtension>
+  </PropertyGroup>
+
   <PropertyGroup>
     <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
     <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
+    <_PyStatsPreprocessorDefinition>PyStats;</_PyStatsPreprocessorDefinition>
+    <_PyStatsPreprocessorDefinition Condition="$(PySTATS) != ''">Py_STATS;</_PyStatsPreprocessorDefinition>
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
-    <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;_M_X64;</_PlatformPreprocessorDefinition>
-    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)";</_Py3NamePreprocessorDefinition>
+    <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
+    <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
+    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)$(PyDebugExt)";</_Py3NamePreprocessorDefinition>
+    <_FreeThreadedPreprocessorDefinition Condition="$(DisableGil) == 'true'">Py_GIL_DISABLED=1;</_FreeThreadedPreprocessorDefinition>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition);$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)Include\internal\mimalloc;$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition)$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PyStatsPreprocessorDefinition)$(_PydPreprocessorDefinition)$(_FreeThreadedPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(SupportPGO)' and ($(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate')">_Py_USING_PGO=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -45,8 +69,11 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(MSVCHasBrokenARM64SignExtension) == 'true' and $(Platform) == 'ARM64'">-d2ssa-patterns-all- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(GenerateSourceDependencies) == 'true'">/sourceDependencies "$(IntDir.Trim(`\`))" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -70,17 +97,16 @@
       <TargetMachine Condition="'$(Platform)' == 'x64'">MachineX64</TargetMachine>
       <TargetMachine Condition="'$(Platform)'=='ARM'">MachineARM</TargetMachine>
       <TargetMachine Condition="'$(Platform)'=='ARM64'">MachineARM64</TargetMachine>
-      <ProfileGuidedDatabase Condition="$(SupportPGO)">$(OutDir)$(TargetName).pgd</ProfileGuidedDatabase>
-      <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">PGInstrument</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(Configuration) != 'Debug'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition="$(Configuration) != 'Debug'">/OPT:REF,NOICF %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2:-pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument' and $(PlatformToolset) != 'ClangCL'">/GENPROFILE %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate' and $(PlatformToolset) != 'ClangCL'">/USEPROFILE %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
-      <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">true</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">true</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(Configuration) != 'Debug'">true</LinkTimeCodeGeneration>
     </Lib>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)PC;$(PySourcePath)Include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -98,6 +124,13 @@
       <ProxyFileName>$(MSBuildProjectName)_p.c</ProxyFileName>
     </Midl>
   </ItemDefinitionGroup>
+
+  <!--
+  We need the overridden OutDir (PropertyGroup Label="Globals"),
+  and want to be able to override some ClCompile parameters,
+  so this must not be included erlier.
+  -->
+  <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
 
   <UsingTask TaskName="KillPython" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
@@ -139,8 +172,8 @@ public override bool Execute() {
   </UsingTask>
 
   <Target Name="KillPython" BeforeTargets="PrepareForBuild" Condition="'$(KillPython)' == 'true'">
-    <Message Text="Killing any running python$(PyDebugExt)$(PyTestExt).exe instances..." Importance="high" />
-    <KillPython FileName="$(OutDir)python$(PyDebugExt)$(PyTestExt).exe" />
+    <Message Text="Killing any running $(PyExeName)$(PyDebugExt)$(PyTestExt).exe instances..." Importance="high" />
+    <KillPython FileName="$(OutDir)$(PyExeName)$(PyDebugExt)$(PyTestExt).exe" />
   </Target>
 
   <!--
@@ -158,7 +191,7 @@ public override bool Execute() {
              Targets="CleanAll" />
   </Target>
 
-  <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate'">
+  <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate' and $(PlatformToolset) != 'ClangCL'">
     <ItemGroup>
       <_PGCFiles Include="$(OutDir)instrumented\$(TargetName)!*.pgc" />
       <_PGDFile Include="$(OutDir)instrumented\$(TargetName).pgd" />
@@ -166,7 +199,7 @@ public override bool Execute() {
     </ItemGroup>
     <Delete Files="@(_CopyFiles->'$(OutDir)%(Filename)%(Extension)')" />
     <Error Text="PGO run did not succeed (no $(TargetName)!*.pgc files) and there is no data to merge"
-           Condition="$(RequirePGCFiles) == 'true' and @(_PGCFiles) == ''" />
+           Condition="$(RequireProfileData) == 'true' and @(_PGCFiles) == ''" />
     <Copy SourceFiles="@(_CopyFiles)"
           DestinationFolder="$(OutDir)"
           UseHardLinksIfPossible="true"
@@ -191,11 +224,6 @@ public override bool Execute() {
 
 
   <Target Name="FindVCRedistDir">
-    <!-- Hard coded path for VS 2015 -->
-    <PropertyGroup Condition="$(PlatformToolset) == 'v140'">
-      <VCRedistDir>$(VCInstallDir)\redist\</VCRedistDir>
-    </PropertyGroup>
-
     <!-- Search for version number in some broken Build Tools installs -->
     <ItemGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
       <_RedistFiles Include="$(VCInstallDir)\Redist\MSVC\*\*.*" />
@@ -220,8 +248,11 @@ public override bool Execute() {
   </Target>
 
   <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
-    <ItemGroup Condition="$(VCInstallDir) != ''">
-      <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
+    <ItemGroup Condition="$(VCRuntimeDLL) != ''">
+      <VCRuntimeDLL Include="$(VCRuntimeDLL)" />
+    </ItemGroup>
+    <ItemGroup Condition="$(VCInstallDir) != '' and $(VCRuntimeDLL) == ''">
+      <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" Exclude="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*_threads.dll" />
     </ItemGroup>
 
     <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />

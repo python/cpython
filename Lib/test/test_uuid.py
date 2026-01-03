@@ -1,6 +1,3 @@
-import unittest
-from test import support
-from test.support import import_helper
 import builtins
 import contextlib
 import copy
@@ -8,9 +5,16 @@ import enum
 import io
 import os
 import pickle
+import random
 import sys
+import unittest
 import weakref
+from itertools import product
 from unittest import mock
+
+from test import support
+from test.support import force_not_colorized_test_class, import_helper, warnings_helper
+from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
@@ -19,7 +23,7 @@ def importable(name):
     try:
         __import__(name)
         return True
-    except:
+    except ModuleNotFoundError:
         return False
 
 
@@ -31,6 +35,47 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_nil_uuid(self):
+        nil_uuid = self.uuid.NIL
+
+        s = '00000000-0000-0000-0000-000000000000'
+        i = 0
+        self.assertEqual(nil_uuid, self.uuid.UUID(s))
+        self.assertEqual(nil_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(nil_uuid.int, i)
+        self.assertEqual(str(nil_uuid), s)
+        # The Nil UUID falls within the range of the Apollo NCS variant as per
+        # RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.9-4
+        self.assertEqual(nil_uuid.variant, self.uuid.RESERVED_NCS)
+        # A version field of all zeros is "Unused" in RFC 9562, but the version
+        # field also only applies to the 10xx variant, i.e. the variant
+        # specified in RFC 9562. As such, because the Nil UUID falls under a
+        # different variant, its version is considered undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(nil_uuid.version)
+
+    def test_max_uuid(self):
+        max_uuid = self.uuid.MAX
+
+        s = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+        i = (1 << 128) - 1
+        self.assertEqual(max_uuid, self.uuid.UUID(s))
+        self.assertEqual(max_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(max_uuid.int, i)
+        self.assertEqual(str(max_uuid), s)
+        # The Max UUID falls within the range of the "yet-to-be defined" future
+        # UUID variant as per RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.10-4
+        self.assertEqual(max_uuid.variant, self.uuid.RESERVED_FUTURE)
+        # A version field of all ones is "Reserved for future definition" in
+        # RFC 9562, but the version field also only applies to the 10xx
+        # variant, i.e. the variant specified in RFC 9562. As such, because the
+        # Max UUID falls under a different variant, its version is considered
+        # undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(max_uuid.version)
 
     def test_safe_uuid_enum(self):
         class CheckedSafeUUID(enum.Enum):
@@ -267,7 +312,7 @@ class BaseTestUUID:
 
         # Version number out of range.
         badvalue(lambda: self.uuid.UUID('00'*16, version=0))
-        badvalue(lambda: self.uuid.UUID('00'*16, version=6))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=42))
 
         # Integer value out of range.
         badvalue(lambda: self.uuid.UUID(int=-1))
@@ -530,7 +575,14 @@ class BaseTestUUID:
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_safe(self):
-        if not self.uuid._has_uuid_generate_time_safe:
+        try:
+            import _uuid
+        except ImportError:
+            has_uuid_generate_time_safe = False
+        else:
+            has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+
+        if not has_uuid_generate_time_safe or not self.uuid._generate_time_safe:
             self.skipTest('requires uuid_generate_time_safe(3)')
 
         u = self.uuid.uuid1()
@@ -538,6 +590,7 @@ class BaseTestUUID:
         # dependent on the underlying platform support.  At least it cannot be
         # unknown (unless I suppose the platform is buggy).
         self.assertNotEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+        self.assertEqual(u.version, 1)
 
     @contextlib.contextmanager
     def mock_generate_time_safe(self, safe_value):
@@ -546,7 +599,6 @@ class BaseTestUUID:
         """
         if os.name != 'posix':
             self.skipTest('POSIX-only test')
-        self.uuid._load_system_functions()
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
@@ -561,28 +613,31 @@ class BaseTestUUID:
         with self.mock_generate_time_safe(None):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_safe(self):
         with self.mock_generate_time_safe(0):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_unsafe(self):
         with self.mock_generate_time_safe(-1):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unsafe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_bogus_return_value(self):
         with self.mock_generate_time_safe(3):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     def test_uuid1_time(self):
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
              mock.patch('time.time_ns', return_value=1545052026752910643), \
@@ -590,8 +645,7 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch('time.time_ns', return_value=1545052026752910643):
             u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)
@@ -600,7 +654,22 @@ class BaseTestUUID:
     def test_uuid3(self):
         equal = self.assertEqual
 
-        # Test some known version-3 UUIDs.
+        # Test some known version-3 UUIDs with name passed as a byte object
+        for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, b'python.org'),
+                      '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_URL, b'http://python.org/'),
+                      '9fe8e8c4-aaa8-32a9-a55c-4535a88b748d'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_OID, b'1.3.6.1'),
+                      'dd1a1cef-13d5-368a-ad82-eca71acd4cd1'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_X500, b'c=ca'),
+                      '658d3002-db6b-3040-a1d1-8ddd7d189a4d'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 3)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-3 UUIDs with name passed as a string
         for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
                      (self.uuid.uuid3(self.uuid.NAMESPACE_URL, 'http://python.org/'),
@@ -632,7 +701,22 @@ class BaseTestUUID:
     def test_uuid5(self):
         equal = self.assertEqual
 
-        # Test some known version-5 UUIDs.
+        # Test some known version-5 UUIDs with names given as byte objects
+        for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, b'python.org'),
+                      '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_URL, b'http://python.org/'),
+                      '4c565f0d-3f5a-5890-b41b-20cf47701c5e'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_OID, b'1.3.6.1'),
+                      '1447fa61-5277-5fef-a9b3-fbc6e44f4af3'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_X500, b'c=ca'),
+                      'cc957dd1-a972-5349-98cd-874190002798'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 5)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-5 UUIDs with names given as strings
         for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
                      (self.uuid.uuid5(self.uuid.NAMESPACE_URL, 'http://python.org/'),
@@ -647,6 +731,393 @@ class BaseTestUUID:
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
+    def test_uuid6(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid6()
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 6)
+
+        fake_nanoseconds = 0x1571_20a1_de1a_c533
+        fake_node_value = 0x54e1_acf6_da7f
+        fake_clock_seq = 0x14c5
+        with (
+            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
+            mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value),
+            mock.patch('time.time_ns', return_value=fake_nanoseconds),
+            mock.patch('random.getrandbits', return_value=fake_clock_seq)
+        ):
+            u = self.uuid.uuid6()
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 6)
+
+            # 32 (top) | 16 (mid) | 12 (low) == 60 (timestamp)
+            equal(u.time, 0x1e901fca_7a55_b92)
+            equal(u.fields[0], 0x1e901fca)  # 32 top bits of time
+            equal(u.fields[1], 0x7a55)  # 16 mid bits of time
+            # 4 bits of version + 12 low bits of time
+            equal((u.fields[2] >> 12) & 0xf, 6)
+            equal((u.fields[2] & 0xfff), 0xb92)
+            # 2 bits of variant + 6 high bits of clock_seq
+            equal((u.fields[3] >> 6) & 0xf, 2)
+            equal(u.fields[3] & 0x3f, fake_clock_seq >> 8)
+            # 8 low bits of clock_seq
+            equal(u.fields[4], fake_clock_seq & 0xff)
+            equal(u.fields[5], fake_node_value)
+
+    def test_uuid6_uniqueness(self):
+        # Test that UUIDv6-generated values are unique.
+
+        # Unlike UUIDv8, only 62 bits can be randomized for UUIDv6.
+        # In practice, however, it remains unlikely to generate two
+        # identical UUIDs for the same 60-bit timestamp if neither
+        # the node ID nor the clock sequence is specified.
+        uuids = {self.uuid.uuid6() for _ in range(1000)}
+        self.assertEqual(len(uuids), 1000)
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {6})
+
+        timestamp = 0x1ec9414c_232a_b00
+        fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
+
+        with mock.patch('time.time_ns', return_value=fake_nanoseconds):
+            def gen():
+                with mock.patch.object(self.uuid, '_last_timestamp_v6', None):
+                    return self.uuid.uuid6(node=0, clock_seq=None)
+
+            # By the birthday paradox, sampling N = 1024 UUIDs with identical
+            # node IDs and timestamps results in duplicates with probability
+            # close to 1 (not having a duplicate happens with probability of
+            # order 1E-15) since only the 14-bit clock sequence is randomized.
+            N = 1024
+            uuids = {gen() for _ in range(N)}
+            self.assertSetEqual({u.node for u in uuids}, {0})
+            self.assertSetEqual({u.time for u in uuids}, {timestamp})
+            self.assertLess(len(uuids), N, 'collision property does not hold')
+
+    def test_uuid6_node(self):
+        # Make sure the given node ID appears in the UUID.
+        #
+        # Note: when no node ID is specified, the same logic as for UUIDv1
+        # is applied to UUIDv6. In particular, there is no need to test that
+        # getnode() correctly returns positive integers of exactly 48 bits
+        # since this is done in test_uuid1_eui64().
+        self.assertLessEqual(self.uuid.uuid6().node.bit_length(), 48)
+
+        self.assertEqual(self.uuid.uuid6(0).node, 0)
+
+        # tests with explicit values
+        max_node = 0xffff_ffff_ffff
+        self.assertEqual(self.uuid.uuid6(max_node).node, max_node)
+        big_node = 0xE_1234_5678_ABCD  # 52-bit node
+        res_node = 0x0_1234_5678_ABCD  # truncated to 48 bits
+        self.assertEqual(self.uuid.uuid6(big_node).node, res_node)
+
+        # randomized tests
+        for _ in range(10):
+            # node with > 48 bits is truncated
+            for b in [24, 48, 72]:
+                node = (1 << (b - 1)) | random.getrandbits(b)
+                with self.subTest(node=node, bitlen=b):
+                    self.assertEqual(node.bit_length(), b)
+                    u = self.uuid.uuid6(node=node)
+                    self.assertEqual(u.node, node & 0xffff_ffff_ffff)
+
+    def test_uuid6_clock_seq(self):
+        # Make sure the supplied clock sequence appears in the UUID.
+        #
+        # For UUIDv6, clock sequence bits are stored from bit 48 to bit 62,
+        # with the convention that the least significant bit is bit 0 and
+        # the most significant bit is bit 127.
+        get_clock_seq = lambda u: (u.int >> 48) & 0x3fff
+
+        u = self.uuid.uuid6()
+        self.assertLessEqual(get_clock_seq(u).bit_length(), 14)
+
+        # tests with explicit values
+        big_clock_seq = 0xffff  # 16-bit clock sequence
+        res_clock_seq = 0x3fff  # truncated to 14 bits
+        u = self.uuid.uuid6(clock_seq=big_clock_seq)
+        self.assertEqual(get_clock_seq(u), res_clock_seq)
+
+        # some randomized tests
+        for _ in range(10):
+            # clock_seq with > 14 bits is truncated
+            for b in [7, 14, 28]:
+                node = random.getrandbits(48)
+                clock_seq = (1 << (b - 1)) | random.getrandbits(b)
+                with self.subTest(node=node, clock_seq=clock_seq, bitlen=b):
+                    self.assertEqual(clock_seq.bit_length(), b)
+                    u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
+                    self.assertEqual(get_clock_seq(u), clock_seq & 0x3fff)
+
+    def test_uuid6_test_vectors(self):
+        equal = self.assertEqual
+        # https://www.rfc-editor.org/rfc/rfc9562#name-test-vectors
+        # (separators are put at the 12th and 28th bits)
+        timestamp = 0x1ec9414c_232a_b00
+        fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
+        # https://www.rfc-editor.org/rfc/rfc9562#name-example-of-a-uuidv6-value
+        node = 0x9f6bdeced846
+        clock_seq = (3 << 12) | 0x3c8
+
+        with (
+            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
+            mock.patch('time.time_ns', return_value=fake_nanoseconds)
+        ):
+            u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
+            equal(str(u).upper(), '1EC9414C-232A-6B00-B3C8-9F6BDECED846')
+            #   32          16      4      12       2      14         48
+            # time_hi | time_mid | ver | time_lo | var | clock_seq | node
+            equal(u.time, timestamp)
+            equal(u.int & 0xffff_ffff_ffff, node)
+            equal((u.int >> 48) & 0x3fff, clock_seq)
+            equal((u.int >> 62) & 0x3, 0b10)
+            equal((u.int >> 64) & 0xfff, 0xb00)
+            equal((u.int >> 76) & 0xf, 0x6)
+            equal((u.int >> 80) & 0xffff, 0x232a)
+            equal((u.int >> 96) & 0xffff_ffff, 0x1ec9_414c)
+
+    def test_uuid7(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid7()
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 7)
+
+        # 1 Jan 2023 12:34:56.123_456_789
+        timestamp_ns = 1672533296_123_456_789  # ns precision
+        timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+
+        for _ in range(100):
+            counter_hi = random.getrandbits(11)
+            counter_lo = random.getrandbits(30)
+            counter = (counter_hi << 30) | counter_lo
+
+            tail = random.getrandbits(32)
+            # effective number of bits is 32 + 30 + 11 = 73
+            random_bits = counter << 32 | tail
+
+            # set all remaining MSB of fake random bits to 1 to ensure that
+            # the implementation correctly removes them
+            random_bits = (((1 << 7) - 1) << 73) | random_bits
+            random_data = random_bits.to_bytes(10)
+
+            with (
+                mock.patch.multiple(
+                    self.uuid,
+                    _last_timestamp_v7=None,
+                    _last_counter_v7=0,
+                ),
+                mock.patch('time.time_ns', return_value=timestamp_ns),
+                mock.patch('os.urandom', return_value=random_data) as urand
+            ):
+                u = self.uuid.uuid7()
+                urand.assert_called_once_with(10)
+                equal(u.variant, self.uuid.RFC_4122)
+                equal(u.version, 7)
+
+                equal(self.uuid._last_timestamp_v7, timestamp_ms)
+                equal(self.uuid._last_counter_v7, counter)
+
+                unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
+                equal(u.time, unix_ts_ms)
+                equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+
+                equal((u.int >> 75) & 1, 0)  # check that the MSB is 0
+                equal((u.int >> 64) & 0xfff, counter_hi)
+                equal((u.int >> 32) & 0x3fff_ffff, counter_lo)
+                equal(u.int & 0xffff_ffff, tail)
+
+    def test_uuid7_uniqueness(self):
+        # Test that UUIDv7-generated values are unique.
+        #
+        # While UUIDv8 has an entropy of 122 bits, those 122 bits may not
+        # necessarily be sampled from a PRNG. On the other hand, UUIDv7
+        # uses os.urandom() as a PRNG which features better randomness.
+        N = 1000
+        uuids = {self.uuid.uuid7() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {7})
+
+    def test_uuid7_monotonicity(self):
+        equal = self.assertEqual
+
+        us = [self.uuid.uuid7() for _ in range(10_000)]
+        equal(us, sorted(us))
+
+        with mock.patch.multiple(
+            self.uuid,
+            _last_timestamp_v7=0,
+            _last_counter_v7=0,
+        ):
+            # 1 Jan 2023 12:34:56.123_456_789
+            timestamp_ns = 1672533296_123_456_789  # ns precision
+            timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+
+            # counter_{hi,lo} are chosen so that "counter + 1" does not overflow
+            counter_hi = random.getrandbits(11)
+            counter_lo = random.getrandbits(29)
+            counter = (counter_hi << 30) | counter_lo
+            self.assertLess(counter + 1, 0x3ff_ffff_ffff)
+
+            tail = random.getrandbits(32)
+            random_bits = counter << 32 | tail
+            random_data = random_bits.to_bytes(10)
+
+            with (
+                mock.patch('time.time_ns', return_value=timestamp_ns),
+                mock.patch('os.urandom', return_value=random_data) as urand
+            ):
+                u1 = self.uuid.uuid7()
+                urand.assert_called_once_with(10)
+                equal(self.uuid._last_timestamp_v7, timestamp_ms)
+                equal(self.uuid._last_counter_v7, counter)
+                equal(u1.time, timestamp_ms)
+                equal((u1.int >> 64) & 0xfff, counter_hi)
+                equal((u1.int >> 32) & 0x3fff_ffff, counter_lo)
+                equal(u1.int & 0xffff_ffff, tail)
+
+            # 1 Jan 2023 12:34:56.123_457_032 (same millisecond but not same ns)
+            next_timestamp_ns = 1672533296_123_457_032
+            next_timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+            equal(timestamp_ms, next_timestamp_ms)
+
+            next_tail_bytes = os.urandom(4)
+            next_fail = int.from_bytes(next_tail_bytes)
+
+            with (
+                mock.patch('time.time_ns', return_value=next_timestamp_ns),
+                mock.patch('os.urandom', return_value=next_tail_bytes) as urand
+            ):
+                u2 = self.uuid.uuid7()
+                urand.assert_called_once_with(4)
+                # same milli-second
+                equal(self.uuid._last_timestamp_v7, timestamp_ms)
+                # 42-bit counter advanced by 1
+                equal(self.uuid._last_counter_v7, counter + 1)
+                equal(u2.time, timestamp_ms)
+                equal((u2.int >> 64) & 0xfff, counter_hi)
+                equal((u2.int >> 32) & 0x3fff_ffff, counter_lo + 1)
+                equal(u2.int & 0xffff_ffff, next_fail)
+
+            self.assertLess(u1, u2)
+
+    def test_uuid7_timestamp_backwards(self):
+        equal = self.assertEqual
+        # 1 Jan 2023 12:34:56.123_456_789
+        timestamp_ns = 1672533296_123_456_789  # ns precision
+        timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+        fake_last_timestamp_v7 = timestamp_ms + 1
+
+        # counter_{hi,lo} are chosen so that "counter + 1" does not overflow
+        counter_hi = random.getrandbits(11)
+        counter_lo = random.getrandbits(29)
+        counter = (counter_hi << 30) | counter_lo
+        self.assertLess(counter + 1, 0x3ff_ffff_ffff)
+
+        tail_bytes = os.urandom(4)
+        tail = int.from_bytes(tail_bytes)
+
+        with (
+            mock.patch.multiple(
+                self.uuid,
+                _last_timestamp_v7=fake_last_timestamp_v7,
+                _last_counter_v7=counter,
+            ),
+            mock.patch('time.time_ns', return_value=timestamp_ns),
+            mock.patch('os.urandom', return_value=tail_bytes) as urand
+        ):
+            u = self.uuid.uuid7()
+            urand.assert_called_once_with(4)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 7)
+            equal(self.uuid._last_timestamp_v7, fake_last_timestamp_v7 + 1)
+            unix_ts_ms = (fake_last_timestamp_v7 + 1) & 0xffff_ffff_ffff
+            equal(u.time, unix_ts_ms)
+            equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+            # 42-bit counter advanced by 1
+            equal(self.uuid._last_counter_v7, counter + 1)
+            equal((u.int >> 64) & 0xfff, counter_hi)
+            # 42-bit counter advanced by 1 (counter_hi is untouched)
+            equal((u.int >> 32) & 0x3fff_ffff, counter_lo + 1)
+            equal(u.int & 0xffff_ffff, tail)
+
+    def test_uuid7_overflow_counter(self):
+        equal = self.assertEqual
+        # 1 Jan 2023 12:34:56.123_456_789
+        timestamp_ns = 1672533296_123_456_789  # ns precision
+        timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+
+        new_counter_hi = random.getrandbits(11)
+        new_counter_lo = random.getrandbits(30)
+        new_counter = (new_counter_hi << 30) | new_counter_lo
+
+        tail = random.getrandbits(32)
+        random_bits = (new_counter << 32) | tail
+        random_data = random_bits.to_bytes(10)
+
+        with (
+            mock.patch.multiple(
+                self.uuid,
+                _last_timestamp_v7=timestamp_ms,
+                # same timestamp, but force an overflow on the counter
+                _last_counter_v7=0x3ff_ffff_ffff,
+            ),
+            mock.patch('time.time_ns', return_value=timestamp_ns),
+            mock.patch('os.urandom', return_value=random_data) as urand
+        ):
+            u = self.uuid.uuid7()
+            urand.assert_called_with(10)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 7)
+            # timestamp advanced due to overflow
+            equal(self.uuid._last_timestamp_v7, timestamp_ms + 1)
+            unix_ts_ms = (timestamp_ms + 1) & 0xffff_ffff_ffff
+            equal(u.time, unix_ts_ms)
+            equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+            # counter overflowed, so we picked a new one
+            equal(self.uuid._last_counter_v7, new_counter)
+            equal((u.int >> 64) & 0xfff, new_counter_hi)
+            equal((u.int >> 32) & 0x3fff_ffff, new_counter_lo)
+            equal(u.int & 0xffff_ffff, tail)
+
+    def test_uuid8(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid8()
+
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 8)
+
+        for (_, hi, mid, lo) in product(
+            range(10),  # repeat 10 times
+            [None, 0, random.getrandbits(48)],
+            [None, 0, random.getrandbits(12)],
+            [None, 0, random.getrandbits(62)],
+        ):
+            u = self.uuid.uuid8(hi, mid, lo)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 8)
+            if hi is not None:
+                equal((u.int >> 80) & 0xffffffffffff, hi)
+            if mid is not None:
+                equal((u.int >> 64) & 0xfff, mid)
+            if lo is not None:
+                equal(u.int & 0x3fffffffffffffff, lo)
+
+    def test_uuid8_uniqueness(self):
+        # Test that UUIDv8-generated values are unique (up to a negligible
+        # probability of failure). There are 122 bits of entropy and assuming
+        # that the underlying mt-19937-based random generator is sufficiently
+        # good, it is unlikely to have a collision of two UUIDs.
+        N = 1000
+        uuids = {self.uuid.uuid8() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {8})
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
@@ -675,12 +1146,145 @@ class BaseTestUUID:
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
 
-class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
+
+class CommandLineTestCases:
+    uuid = None  # to be defined in subclasses
+
+    def do_test_standalone_uuid(self, version):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+        output = stdout.getvalue().strip()
+        u = self.uuid.UUID(output)
+        self.assertEqual(output, str(u))
+        self.assertEqual(u.version, version)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid1"])
+    def test_cli_uuid1(self):
+        self.do_test_standalone_uuid(1)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_namespace_required_for_uuid3(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-N", "python.org"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_name_required_for_uuid3(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
+
+    @mock.patch.object(sys, "argv", [""])
+    def test_cli_uuid4_outputted_with_no_args(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output uuid should be in the format of uuid4
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 4)
+
+    @mock.patch.object(sys, "argv", ["", "-C", "3"])
+    def test_cli_uuid4_outputted_with_count(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip().splitlines()
+
+        # Check that 3 UUIDs in the format of uuid4 have been generated
+        self.assertEqual(len(output), 3)
+        for o in output:
+            uuid_output = self.uuid.UUID(o)
+            self.assertEqual(uuid_output.version, 4)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 5)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
+    def test_cli_uuid6(self):
+        self.do_test_standalone_uuid(6)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid7"])
+    def test_cli_uuid7(self):
+        self.do_test_standalone_uuid(7)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid8"])
+    def test_cli_uuid8(self):
+        self.do_test_standalone_uuid(8)
+
+
+@force_not_colorized_test_class
+class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
+
+@force_not_colorized_test_class
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
+class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
+
+    def check_has_stable_libuuid_extractable_node(self):
+        if not self.uuid._has_stable_extractable_node:
+            self.skipTest("libuuid cannot deduce MAC address")
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX only')
+    def test_unix_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._unix_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows only')
+    def test_windows_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._windll_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
 
 
 class BaseTestInternals:

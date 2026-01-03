@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"
@@ -12,17 +13,20 @@ module _symtable
 _symtable.symtable
 
     source:    object
-    filename:  object(converter='PyUnicode_FSDecoder')
+    filename:  unicode_fs_decoded
     startstr:  str
     /
+    *
+    module as modname: object = None
 
 Return symbol and scope dictionaries used internally by compiler.
 [clinic start generated code]*/
 
 static PyObject *
 _symtable_symtable_impl(PyObject *module, PyObject *source,
-                        PyObject *filename, const char *startstr)
-/*[clinic end generated code: output=59eb0d5fc7285ac4 input=9dd8a50c0c36a4d7]*/
+                        PyObject *filename, const char *startstr,
+                        PyObject *modname)
+/*[clinic end generated code: output=235ec5a87a9ce178 input=fbf9adaa33c7070d]*/
 {
     struct symtable *st;
     PyObject *t;
@@ -46,12 +50,20 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     else {
         PyErr_SetString(PyExc_ValueError,
            "symtable() arg 3 must be 'exec' or 'eval' or 'single'");
-        Py_DECREF(filename);
         Py_XDECREF(source_copy);
         return NULL;
     }
-    st = _Py_SymtableStringObjectFlags(str, filename, start, &cf);
-    Py_DECREF(filename);
+    if (modname == Py_None) {
+        modname = NULL;
+    }
+    else if (!PyUnicode_Check(modname)) {
+        PyErr_Format(PyExc_TypeError,
+                     "symtable() argument 'module' must be str or None, not %T",
+                     modname);
+        Py_XDECREF(source_copy);
+        return NULL;
+    }
+    st = _Py_SymtableStringObjectFlags(str, filename, start, &cf, modname);
     Py_XDECREF(source_copy);
     if (st == NULL) {
         return NULL;
@@ -67,12 +79,6 @@ static PyMethodDef symtable_methods[] = {
 };
 
 static int
-symtable_init_stentry_type(PyObject *m)
-{
-    return PyType_Ready(&PySTEntry_Type);
-}
-
-static int
 symtable_init_constants(PyObject *m)
 {
     if (PyModule_AddIntMacro(m, USE) < 0) return -1;
@@ -80,16 +86,27 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntMacro(m, DEF_NONLOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_LOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_PARAM) < 0) return -1;
-    if (PyModule_AddIntMacro(m, DEF_FREE) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_TYPE_PARAM) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_FREE_CLASS) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_IMPORT) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_BOUND) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_ANNOT) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_COMP_ITER) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_COMP_CELL) < 0) return -1;
 
     if (PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock) < 0)
         return -1;
-    if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0) return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0)
+        return -1;
     if (PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_ANNOTATION", AnnotationBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_ALIAS", TypeAliasBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_PARAMETERS", TypeParametersBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_VARIABLE", TypeVariableBlock) < 0)
         return -1;
 
     if (PyModule_AddIntMacro(m, LOCAL) < 0) return -1;
@@ -105,8 +122,9 @@ symtable_init_constants(PyObject *m)
 }
 
 static PyModuleDef_Slot symtable_slots[] = {
-    {Py_mod_exec, symtable_init_stentry_type},
     {Py_mod_exec, symtable_init_constants},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

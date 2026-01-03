@@ -13,6 +13,80 @@ the module initialisation function.  The macro puts a pointer to a C structure
 into a static variable, :c:data:`PyDateTimeAPI`, that is used by the following
 macros.
 
+.. c:macro:: PyDateTime_IMPORT()
+
+   Import the datetime C API.
+
+   On success, populate the :c:var:`PyDateTimeAPI` pointer.
+   On failure, set :c:var:`PyDateTimeAPI` to ``NULL`` and set an exception.
+   The caller must check if an error occurred via :c:func:`PyErr_Occurred`:
+
+   .. code-block::
+
+      PyDateTime_IMPORT;
+      if (PyErr_Occurred()) { /* cleanup */ }
+
+   .. warning::
+
+      This is not compatible with subinterpreters.
+
+.. c:type:: PyDateTime_CAPI
+
+   Structure containing the fields for the datetime C API.
+
+   The fields of this structure are private and subject to change.
+
+   Do not use this directly; prefer ``PyDateTime_*`` APIs instead.
+
+.. c:var:: PyDateTime_CAPI *PyDateTimeAPI
+
+   Dynamically allocated object containing the datetime C API.
+
+   This variable is only available once :c:macro:`PyDateTime_IMPORT` succeeds.
+
+.. c:type:: PyDateTime_Date
+
+   This subtype of :c:type:`PyObject` represents a Python date object.
+
+.. c:type:: PyDateTime_DateTime
+
+   This subtype of :c:type:`PyObject` represents a Python datetime object.
+
+.. c:type:: PyDateTime_Time
+
+   This subtype of :c:type:`PyObject` represents a Python time object.
+
+.. c:type:: PyDateTime_Delta
+
+   This subtype of :c:type:`PyObject` represents the difference between two datetime values.
+
+.. c:var:: PyTypeObject PyDateTime_DateType
+
+   This instance of :c:type:`PyTypeObject` represents the Python date type;
+   it is the same object as :class:`datetime.date` in the Python layer.
+
+.. c:var:: PyTypeObject PyDateTime_DateTimeType
+
+   This instance of :c:type:`PyTypeObject` represents the Python datetime type;
+   it is the same object as :class:`datetime.datetime` in the Python layer.
+
+.. c:var:: PyTypeObject PyDateTime_TimeType
+
+   This instance of :c:type:`PyTypeObject` represents the Python time type;
+   it is the same object as :class:`datetime.time` in the Python layer.
+
+.. c:var:: PyTypeObject PyDateTime_DeltaType
+
+   This instance of :c:type:`PyTypeObject` represents the Python type for
+   the difference between two datetime values;
+   it is the same object as :class:`datetime.timedelta` in the Python layer.
+
+.. c:var:: PyTypeObject PyDateTime_TZInfoType
+
+   This instance of :c:type:`PyTypeObject` represents the Python time zone info type;
+   it is the same object as :class:`datetime.tzinfo` in the Python layer.
+
+
 Macro for access to the UTC singleton:
 
 .. c:var:: PyObject* PyDateTime_TimeZone_UTC
@@ -28,7 +102,7 @@ Type-check macros:
 .. c:function:: int PyDate_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateType` or a subtype of
-   :c:data:`PyDateTime_DateType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_DateType`.  *ob* must not be ``NULL``.  This function always
    succeeds.
 
 
@@ -41,7 +115,7 @@ Type-check macros:
 .. c:function:: int PyDateTime_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateTimeType` or a subtype of
-   :c:data:`PyDateTime_DateTimeType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_DateTimeType`.  *ob* must not be ``NULL``.  This function always
    succeeds.
 
 
@@ -54,7 +128,7 @@ Type-check macros:
 .. c:function:: int PyTime_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_TimeType` or a subtype of
-   :c:data:`PyDateTime_TimeType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_TimeType`.  *ob* must not be ``NULL``.  This function always
    succeeds.
 
 
@@ -67,7 +141,7 @@ Type-check macros:
 .. c:function:: int PyDelta_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DeltaType` or a subtype of
-   :c:data:`PyDateTime_DeltaType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_DeltaType`.  *ob* must not be ``NULL``.  This function always
    succeeds.
 
 
@@ -80,7 +154,7 @@ Type-check macros:
 .. c:function:: int PyTZInfo_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_TZInfoType` or a subtype of
-   :c:data:`PyDateTime_TZInfoType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_TZInfoType`.  *ob* must not be ``NULL``.  This function always
    succeeds.
 
 
@@ -133,7 +207,7 @@ Macros to create objects:
    :class:`datetime.timedelta` objects.
 
 
-.. c:function:: PyObject* PyTimeZone_FromOffset(PyDateTime_DeltaType* offset)
+.. c:function:: PyObject* PyTimeZone_FromOffset(PyObject *offset)
 
    Return a :class:`datetime.timezone` object with an unnamed fixed offset
    represented by the *offset* argument.
@@ -141,7 +215,7 @@ Macros to create objects:
    .. versionadded:: 3.7
 
 
-.. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyDateTime_DeltaType* offset, PyUnicode* name)
+.. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyObject *offset, PyObject *name)
 
    Return a :class:`datetime.timezone` object with a fixed offset represented
    by the *offset* argument and with tzname *name*.
@@ -150,8 +224,8 @@ Macros to create objects:
 
 
 Macros to extract fields from date objects.  The argument must be an instance of
-:c:data:`PyDateTime_Date`, including subclasses (such as
-:c:data:`PyDateTime_DateTime`).  The argument must not be ``NULL``, and the type is
+:c:type:`PyDateTime_Date`, including subclasses (such as
+:c:type:`PyDateTime_DateTime`).  The argument must not be ``NULL``, and the type is
 not checked:
 
 .. c:function:: int PyDateTime_GET_YEAR(PyDateTime_Date *o)
@@ -170,7 +244,7 @@ not checked:
 
 
 Macros to extract fields from datetime objects.  The argument must be an
-instance of :c:data:`PyDateTime_DateTime`, including subclasses. The argument
+instance of :c:type:`PyDateTime_DateTime`, including subclasses. The argument
 must not be ``NULL``, and the type is not checked:
 
 .. c:function:: int PyDateTime_DATE_GET_HOUR(PyDateTime_DateTime *o)
@@ -208,7 +282,7 @@ must not be ``NULL``, and the type is not checked:
 
 
 Macros to extract fields from time objects.  The argument must be an instance of
-:c:data:`PyDateTime_Time`, including subclasses. The argument must not be ``NULL``,
+:c:type:`PyDateTime_Time`, including subclasses. The argument must not be ``NULL``,
 and the type is not checked:
 
 .. c:function:: int PyDateTime_TIME_GET_HOUR(PyDateTime_Time *o)
@@ -246,7 +320,7 @@ and the type is not checked:
 
 
 Macros to extract fields from time delta objects.  The argument must be an
-instance of :c:data:`PyDateTime_Delta`, including subclasses. The argument must
+instance of :c:type:`PyDateTime_Delta`, including subclasses. The argument must
 not be ``NULL``, and the type is not checked:
 
 .. c:function:: int PyDateTime_DELTA_GET_DAYS(PyDateTime_Delta *o)
@@ -275,10 +349,23 @@ Macros for the convenience of modules implementing the DB API:
 .. c:function:: PyObject* PyDateTime_FromTimestamp(PyObject *args)
 
    Create and return a new :class:`datetime.datetime` object given an argument
-   tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp()`.
+   tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp`.
 
 
 .. c:function:: PyObject* PyDate_FromTimestamp(PyObject *args)
 
    Create and return a new :class:`datetime.date` object given an argument
-   tuple suitable for passing to :meth:`datetime.date.fromtimestamp()`.
+   tuple suitable for passing to :meth:`datetime.date.fromtimestamp`.
+
+
+Internal data
+-------------
+
+The following symbols are exposed by the C API but should be considered
+internal-only.
+
+.. c:macro:: PyDateTime_CAPSULE_NAME
+
+   Name of the datetime capsule to pass to :c:func:`PyCapsule_Import`.
+
+   Internal usage only. Use :c:macro:`PyDateTime_IMPORT` instead.

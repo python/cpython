@@ -80,7 +80,6 @@ def _run_code(code, run_globals, init_globals=None,
             pkg_name = mod_spec.parent
     run_globals.update(__name__ = mod_name,
                        __file__ = fname,
-                       __cached__ = cached,
                        __doc__ = None,
                        __loader__ = loader,
                        __package__ = pkg_name,
@@ -180,7 +179,6 @@ def _run_module_as_main(mod_name, alter_argv=True):
        At the very least, these variables in __main__ will be overwritten:
            __name__
            __file__
-           __cached__
            __loader__
            __package__
     """
@@ -247,17 +245,17 @@ def _get_main_module_details(error=ImportError):
         sys.modules[main_name] = saved_main
 
 
-def _get_code_from_file(run_name, fname):
+def _get_code_from_file(fname, module):
     # Check for a compiled file first
     from pkgutil import read_code
-    decoded_path = os.path.abspath(os.fsdecode(fname))
-    with io.open_code(decoded_path) as f:
+    code_path = os.path.abspath(fname)
+    with io.open_code(code_path) as f:
         code = read_code(f)
     if code is None:
         # That didn't work, so try it as normal source code
-        with io.open_code(decoded_path) as f:
-            code = compile(f.read(), fname, 'exec')
-    return code, fname
+        with io.open_code(code_path) as f:
+            code = compile(f.read(), fname, 'exec', module=module)
+    return code
 
 def run_path(path_name, init_globals=None, run_name=None):
     """Execute code located at the specified filesystem location.
@@ -279,17 +277,13 @@ def run_path(path_name, init_globals=None, run_name=None):
     pkg_name = run_name.rpartition(".")[0]
     from pkgutil import get_importer
     importer = get_importer(path_name)
-    # Trying to avoid importing imp so as to not consume the deprecation warning.
-    is_NullImporter = False
-    if type(importer).__module__ == 'imp':
-        if type(importer).__name__ == 'NullImporter':
-            is_NullImporter = True
-    if isinstance(importer, type(None)) or is_NullImporter:
+    path_name = os.fsdecode(path_name)
+    if isinstance(importer, type(None)):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
-        code, fname = _get_code_from_file(run_name, path_name)
+        code = _get_code_from_file(path_name, run_name)
         return _run_module_code(code, init_globals, run_name,
-                                pkg_name=pkg_name, script_name=fname)
+                                pkg_name=pkg_name, script_name=path_name)
     else:
         # Finder is defined for path, so add it to
         # the start of sys.path

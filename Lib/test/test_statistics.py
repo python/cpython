@@ -1,4 +1,4 @@
-"""Test suite for statistics module, including helper NumericTestCase and
+x = """Test suite for statistics module, including helper NumericTestCase and
 approx_equal function.
 
 """
@@ -27,6 +27,12 @@ import statistics
 
 
 # === Helper functions and class ===
+
+# Test copied from Lib/test/test_math.py
+# detect evidence of double-rounding: fsum is not always correctly
+# rounded on machines that suffer from double rounding.
+x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 def sign(x):
     """Return -1.0 for negatives, including -0.0, otherwise +1.0."""
@@ -639,7 +645,7 @@ class TestNumericTestCase(unittest.TestCase):
 
     def test_numerictestcase_is_testcase(self):
         # Ensure that NumericTestCase actually is a TestCase.
-        self.assertTrue(issubclass(NumericTestCase, unittest.TestCase))
+        self.assertIsSubclass(NumericTestCase, unittest.TestCase)
 
     def test_error_msg_numeric(self):
         # Test the error message generated for numeric comparisons.
@@ -677,40 +683,23 @@ class GlobalsTest(unittest.TestCase):
     def test_meta(self):
         # Test for the existence of metadata.
         for meta in self.expected_metadata:
-            self.assertTrue(hasattr(self.module, meta),
-                            "%s not present" % meta)
+            self.assertHasAttr(self.module, meta)
 
     def test_check_all(self):
         # Check everything in __all__ exists and is public.
         module = self.module
         for name in module.__all__:
             # No private names in __all__:
-            self.assertFalse(name.startswith("_"),
+            self.assertNotStartsWith(name, "_",
                              'private name "%s" in __all__' % name)
             # And anything in __all__ must exist:
-            self.assertTrue(hasattr(module, name),
-                            'missing name "%s" in __all__' % name)
+            self.assertHasAttr(module, name)
 
-
-class DocTests(unittest.TestCase):
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -OO and above")
-    def test_doc_tests(self):
-        failed, tried = doctest.testmod(statistics, optionflags=doctest.ELLIPSIS)
-        self.assertGreater(tried, 0)
-        self.assertEqual(failed, 0)
 
 class StatisticsErrorTest(unittest.TestCase):
     def test_has_exception(self):
-        errmsg = (
-                "Expected StatisticsError to be a ValueError, but got a"
-                " subclass of %r instead."
-                )
-        self.assertTrue(hasattr(statistics, 'StatisticsError'))
-        self.assertTrue(
-                issubclass(statistics.StatisticsError, ValueError),
-                errmsg % statistics.StatisticsError.__base__
-                )
+        self.assertHasAttr(statistics, 'StatisticsError')
+        self.assertIsSubclass(statistics.StatisticsError, ValueError)
 
 
 # === Tests for private utility functions ===
@@ -1074,7 +1063,7 @@ class UnivariateCommonMixin:
     def test_order_doesnt_matter(self):
         # Test that the order of data points doesn't change the result.
 
-        # CAUTION: due to floating point rounding errors, the result actually
+        # CAUTION: due to floating-point rounding errors, the result actually
         # may depend on the order. Consider this test representing an ideal.
         # To avoid this test failing, only test with exact values such as ints
         # or Fractions.
@@ -2016,7 +2005,6 @@ class VarianceStdevMixin(UnivariateCommonMixin):
         expected = self.func(data)
         self.assertEqual(self.func(iter(data)), expected)
 
-
 class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for population variance.
     def setUp(self):
@@ -2124,6 +2112,14 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
 
+    def test_gh_140938(self):
+        # Inputs with inf/nan should raise a ValueError
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
+
+
 class TestSqrtHelpers(unittest.TestCase):
 
     def test_integer_sqrt_of_frac_rto(self):
@@ -2139,6 +2135,7 @@ class TestSqrtHelpers(unittest.TestCase):
             self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
 
     @requires_IEEE_754
+    @support.requires_resource('cpu')
     def test_float_sqrt_of_frac(self):
 
         def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
@@ -2304,9 +2301,11 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(StatisticsError):
             geometric_mean([])                      # empty input
         with self.assertRaises(StatisticsError):
-            geometric_mean([3.5, 0.0, 5.25])        # zero input
-        with self.assertRaises(StatisticsError):
             geometric_mean([3.5, -4.0, 5.25])       # negative input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([0.0, -4.0, 5.25])       # negative input with zero
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, -math.inf, 5.25])  # negative infinity
         with self.assertRaises(StatisticsError):
             geometric_mean(iter([]))                # empty iterator
         with self.assertRaises(TypeError):
@@ -2329,6 +2328,12 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(ValueError):
             geometric_mean([Inf, -Inf])
 
+        # Cases with zero
+        self.assertEqual(geometric_mean([3, 0.0, 5]), 0.0)         # Any zero gives a zero
+        self.assertEqual(geometric_mean([3, -0.0, 5]), 0.0)        # Negative zero allowed
+        self.assertTrue(math.isnan(geometric_mean([0, NaN])))      # NaN beats zero
+        self.assertTrue(math.isnan(geometric_mean([0, Inf])))      # Because 0.0 * Inf -> NaN
+
     def test_mixed_int_and_float(self):
         # Regression test for b.p.o. issue #28327
         geometric_mean = statistics.geometric_mean
@@ -2344,6 +2349,184 @@ class TestGeometricMean(unittest.TestCase):
             with self.subTest(v=v):
                 actual_mean = geometric_mean(v)
                 self.assertAlmostEqual(actual_mean, expected_mean, places=5)
+
+
+class TestKDE(unittest.TestCase):
+
+    @support.requires_resource('cpu')
+    def test_kde(self):
+        kde = statistics.kde
+        StatisticsError = statistics.StatisticsError
+
+        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
+                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
+                   'quartic', 'biweight', 'triweight', 'cosine']
+
+        sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+
+        # The approximate integral of a PDF should be close to 1.0
+
+        def integrate(func, low, high, steps=10_000):
+            "Numeric approximation of a definite function integral."
+            dx = (high - low) / steps
+            midpoints = (low + (i + 1/2) * dx for i in range(steps))
+            return sum(map(func, midpoints)) * dx
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                f_hat = kde(sample, h=1.5, kernel=kernel)
+                area = integrate(f_hat, -20, 20)
+                self.assertAlmostEqual(area, 1.0, places=4)
+
+        # Check CDF against an integral of the PDF
+
+        data = [3, 5, 10, 12]
+        h = 2.3
+        x = 10.5
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                cdf = kde(data, h, kernel, cumulative=True)
+                f_hat = kde(data, h, kernel)
+                area = integrate(f_hat, -20, x, 100_000)
+                self.assertAlmostEqual(cdf(x), area, places=4)
+
+        # Check error cases
+
+        with self.assertRaises(StatisticsError):
+            kde([], h=1.0)                              # Empty dataset
+        with self.assertRaises(TypeError):
+            kde(['abc', 'def'], 1.5)                    # Non-numeric data
+        with self.assertRaises(TypeError):
+            kde(iter(sample), 1.5)                      # Data is not a sequence
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=0.0)                          # Zero bandwidth
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=-1.0)                         # Negative bandwidth
+        with self.assertRaises(TypeError):
+            kde(sample, h='str')                        # Wrong bandwidth type
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=1.0, kernel='bogus')          # Invalid kernel
+        with self.assertRaises(TypeError):
+            kde(sample, 1.0, 'gauss', True)             # Positional cumulative argument
+
+        # Test name and docstring of the generated function
+
+        h = 1.5
+        kernel = 'cosine'
+        f_hat = kde(sample, h, kernel)
+        self.assertEqual(f_hat.__name__, 'pdf')
+        self.assertIn(kernel, f_hat.__doc__)
+        self.assertIn(repr(h), f_hat.__doc__)
+
+        # Test closed interval for the support boundaries.
+        # In particular, 'uniform' should non-zero at the boundaries.
+
+        f_hat = kde([0], 1.0, 'uniform')
+        self.assertEqual(f_hat(-1.0), 1/2)
+        self.assertEqual(f_hat(1.0), 1/2)
+
+        # Test online updates to data
+
+        data = [1, 2]
+        f_hat = kde(data, 5.0, 'triangular')
+        self.assertEqual(f_hat(100), 0.0)
+        data.append(100)
+        self.assertGreater(f_hat(100), 0.0)
+
+    def test_kde_kernel_specs(self):
+        # White-box test for the kernel formulas in isolation from
+        # their downstream use in kde() and kde_random()
+        kernel_specs = statistics._kernel_specs
+
+        # Verify that cdf / invcdf will round trip
+        xarr = [i/100 for i in range(-100, 101)]
+        parr = [i/1000 + 5/10000 for i in range(1000)]
+        for kernel, spec in kernel_specs.items():
+            cdf = spec['cdf']
+            invcdf = spec['invcdf']
+            with self.subTest(kernel=kernel):
+                for x in xarr:
+                    self.assertAlmostEqual(invcdf(cdf(x)), x, places=6)
+                for p in parr:
+                    self.assertAlmostEqual(cdf(invcdf(p)), p, places=11)
+
+    @support.requires_resource('cpu')
+    def test_kde_random(self):
+        kde_random = statistics.kde_random
+        StatisticsError = statistics.StatisticsError
+        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
+                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
+                   'quartic', 'biweight', 'triweight', 'cosine']
+        sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+
+        # Smoke test
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                rand = kde_random(sample, h=1.5, kernel=kernel)
+                selections = [rand() for i in range(10)]
+
+        # Check error cases
+
+        with self.assertRaises(StatisticsError):
+            kde_random([], h=1.0)                       # Empty dataset
+        with self.assertRaises(TypeError):
+            kde_random(['abc', 'def'], 1.5)             # Non-numeric data
+        with self.assertRaises(TypeError):
+            kde_random(iter(sample), 1.5)               # Data is not a sequence
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=-1.0)                  # Zero bandwidth
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=0.0)                   # Negative bandwidth
+        with self.assertRaises(TypeError):
+            kde_random(sample, h='str')                 # Wrong bandwidth type
+        with self.assertRaises(StatisticsError):
+            kde_random(sample, h=1.0, kernel='bogus')   # Invalid kernel
+
+        # Test name and docstring of the generated function
+
+        h = 1.5
+        kernel = 'cosine'
+        rand = kde_random(sample, h, kernel)
+        self.assertEqual(rand.__name__, 'rand')
+        self.assertIn(kernel, rand.__doc__)
+        self.assertIn(repr(h), rand.__doc__)
+
+        # Approximate distribution test: Compare a random sample to the expected distribution
+
+        data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2, 7.8, 14.3, 15.1, 15.3, 15.8, 17.0]
+        xarr = [x / 10 for x in range(-100, 250)]
+        n = 1_000_000
+        h = 1.75
+        dx = 0.1
+
+        def p_observed(x):
+            # P(x <= X < x+dx)
+            i = bisect.bisect_left(big_sample, x)
+            j = bisect.bisect_left(big_sample, x + dx)
+            return (j - i) / len(big_sample)
+
+        def p_expected(x):
+            # P(x <= X < x+dx)
+            return F_hat(x + dx) - F_hat(x)
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+
+                rand = kde_random(data, h, kernel, seed=8675309**2)
+                big_sample = sorted([rand() for i in range(n)])
+                F_hat = statistics.kde(data, h, kernel, cumulative=True)
+
+                for x in xarr:
+                    self.assertTrue(math.isclose(p_observed(x), p_expected(x), abs_tol=0.0005))
+
+        # Test online updates to data
+
+        data = [1, 2]
+        rand = kde_random(data, 5, 'triangular')
+        self.assertLess(max([rand() for i in range(5000)]), 10)
+        data.append(100)
+        self.assertGreater(max(rand() for i in range(5000)), 10)
 
 
 class TestQuantiles(unittest.TestCase):
@@ -2455,6 +2638,11 @@ class TestQuantiles(unittest.TestCase):
             data = random.choices(range(100), k=k)
             q1, q2, q3 = quantiles(data, method='inclusive')
             self.assertEqual(q2, statistics.median(data))
+        # Base case with a single data point:  When estimating quantiles from
+        # a sample, we want to be able to add one sample point at a time,
+        # getting increasingly better estimates.
+        self.assertEqual(quantiles([10], n=4), [10.0, 10.0, 10.0])
+        self.assertEqual(quantiles([10], n=4, method='exclusive'), [10.0, 10.0, 10.0])
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles
@@ -2505,7 +2693,7 @@ class TestQuantiles(unittest.TestCase):
         with self.assertRaises(ValueError):
             quantiles([10, 20, 30], method='X') # method is unknown
         with self.assertRaises(StatisticsError):
-            quantiles([10], n=4)                # not enough data points
+            quantiles([], n=4)                  # not enough data points
         with self.assertRaises(TypeError):
             quantiles([10, None, 30], n=4)      # data is non-numeric
 
@@ -2564,6 +2752,79 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         self.assertAlmostEqual(statistics.correlation(x, y), 1)
         self.assertAlmostEqual(statistics.covariance(x, y), 0.1)
 
+    def test_sqrtprod_helper_function_fundamentals(self):
+        # Verify that results are close to sqrt(x * y)
+        for i in range(100):
+            x = random.expovariate()
+            y = random.expovariate()
+            expected = math.sqrt(x * y)
+            actual = statistics._sqrtprod(x, y)
+            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+                self.assertAlmostEqual(expected, actual)
+
+        x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661
+        self.assertEqual(statistics._sqrtprod(x, y), target)
+        self.assertNotEqual(math.sqrt(x * y), target)
+
+        # Test that range extremes avoid underflow and overflow
+        smallest = sys.float_info.min * sys.float_info.epsilon
+        self.assertEqual(statistics._sqrtprod(smallest, smallest), smallest)
+        biggest = sys.float_info.max
+        self.assertEqual(statistics._sqrtprod(biggest, biggest), biggest)
+
+        # Check special values and the sign of the result
+        special_values = [0.0, -0.0, 1.0, -1.0, 4.0, -4.0,
+                          math.nan, -math.nan, math.inf, -math.inf]
+        for x, y in itertools.product(special_values, repeat=2):
+            try:
+                expected = math.sqrt(x * y)
+            except ValueError:
+                expected = 'ValueError'
+            try:
+                actual = statistics._sqrtprod(x, y)
+            except ValueError:
+                actual = 'ValueError'
+            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+                if isinstance(expected, str) and expected == 'ValueError':
+                    self.assertEqual(actual, 'ValueError')
+                    continue
+                self.assertIsInstance(actual, float)
+                if math.isnan(expected):
+                    self.assertTrue(math.isnan(actual))
+                    continue
+                self.assertEqual(actual, expected)
+                self.assertEqual(sign(actual), sign(expected))
+
+    @requires_IEEE_754
+    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                     "accuracy not guaranteed on machines with double rounding")
+    @support.cpython_only    # Allow for a weaker sumprod() implementation
+    def test_sqrtprod_helper_function_improved_accuracy(self):
+        # Test a known example where accuracy is improved
+        x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661
+        self.assertEqual(statistics._sqrtprod(x, y), target)
+        self.assertNotEqual(math.sqrt(x * y), target)
+
+        def reference_value(x: float, y: float) -> float:
+            x = decimal.Decimal(x)
+            y = decimal.Decimal(y)
+            with decimal.localcontext() as ctx:
+                ctx.prec = 200
+                return float((x * y).sqrt())
+
+        # Verify that the new function with improved accuracy
+        # agrees with a reference value more often than old version.
+        new_agreements = 0
+        old_agreements = 0
+        for i in range(10_000):
+            x = random.expovariate()
+            y = random.expovariate()
+            new = statistics._sqrtprod(x, y)
+            old = math.sqrt(x * y)
+            ref = reference_value(x, y)
+            new_agreements += (new == ref)
+            old_agreements += (old == ref)
+        self.assertGreater(new_agreements, old_agreements)
 
     def test_correlation_spearman(self):
         # https://statistics.laerd.com/statistical-guides/spearmans-rank-order-correlation-statistical-guide-2.php
@@ -2609,6 +2870,16 @@ class TestLinearRegression(unittest.TestCase):
         slope, intercept = statistics.linear_regression(x, y, proportional=True)
         self.assertAlmostEqual(slope, 20 + 1/150)
         self.assertEqual(intercept, 0.0)
+
+    def test_float_output(self):
+        x = [Fraction(2, 3), Fraction(3, 4)]
+        y = [Fraction(4, 5), Fraction(5, 6)]
+        slope, intercept = statistics.linear_regression(x, y)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
+        slope, intercept = statistics.linear_regression(x, y, proportional=True)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
 
 class TestNormalDist:
 
@@ -2760,6 +3031,7 @@ class TestNormalDist:
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_inv_cdf(self):
         NormalDist = self.module.NormalDist
 
@@ -3054,6 +3326,8 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
+    if sys.float_repr_style == 'short':
+        tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

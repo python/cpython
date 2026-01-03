@@ -255,8 +255,8 @@ struct pool_header {
     union { pymem_block *_padding;
             uint count; } ref;          /* number of allocated blocks    */
     pymem_block *freeblock;             /* pool's free list head         */
-    struct pool_header *nextpool;       /* next pool of this size class  */
-    struct pool_header *prevpool;       /* previous pool       ""        */
+    struct pool_header *nextpool;       /* see "Pool table" for meaning  */
+    struct pool_header *prevpool;       /* "                             */
     uint arenaindex;                    /* index into arenas of base adr */
     uint szidx;                         /* block size class index        */
     uint nextoffset;                    /* bytes to virgin block         */
@@ -657,11 +657,17 @@ struct _obmalloc_usage {
 #endif /* WITH_PYMALLOC_RADIX_TREE */
 
 
-struct _obmalloc_state {
+struct _obmalloc_global_state {
     int dump_debug_stats;
+    Py_ssize_t interpreter_leaks;
+};
+
+struct _obmalloc_state {
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
+#if WITH_PYMALLOC_RADIX_TREE
     struct _obmalloc_usage usage;
+#endif
 };
 
 
@@ -675,11 +681,17 @@ void _PyObject_VirtualFree(void *, size_t size);
 
 
 /* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
+extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
+#define _Py_GetAllocatedBlocks() \
+    _Py_GetGlobalAllocatedBlocks()
+extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
+extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
+extern int _PyMem_init_obmalloc(PyInterpreterState *interp);
+extern bool _PyMem_obmalloc_state_on_heap(PyInterpreterState *interp);
 
 
 #ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
+// Export the symbol for the 3rd party 'guppy3' project
 PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif
 

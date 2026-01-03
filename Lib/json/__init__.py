@@ -86,18 +86,17 @@ Specializing JSON object encoding::
     '[2.0, 1.0]'
 
 
-Using json.tool from the shell to validate and pretty-print::
+Using json from the shell to validate and pretty-print::
 
-    $ echo '{"json":"obj"}' | python -m json.tool
+    $ echo '{"json":"obj"}' | python -m json
     {
         "json": "obj"
     }
-    $ echo '{ 1.2:3.4}' | python -m json.tool
+    $ echo '{ 1.2:3.4}' | python -m json
     Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
 """
-__version__ = '2.0.9'
 __all__ = [
-    'dump', 'dumps', 'load', 'loads', 'AttrDict',
+    'dump', 'dumps', 'load', 'loads',
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
 ]
 
@@ -128,8 +127,9 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     instead of raising a ``TypeError``.
 
     If ``ensure_ascii`` is false, then the strings written to ``fp`` can
-    contain non-ASCII characters if they appear in strings contained in
-    ``obj``. Otherwise, all such characters are escaped in JSON strings.
+    contain non-ASCII and non-printable characters if they appear in strings
+    contained in ``obj``. Otherwise, all such characters are escaped in JSON
+    strings.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
@@ -145,10 +145,11 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     level of 0 will only insert newlines. ``None`` is the most compact
     representation.
 
-    If specified, ``separators`` should be an ``(item_separator, key_separator)``
-    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
-    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-    you should specify ``(',', ':')`` to eliminate whitespace.
+    If specified, ``separators`` should be an ``(item_separator,
+    key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
+    ``None`` and ``(',', ': ')`` otherwise.  To get the most compact JSON
+    representation, you should specify ``(',', ':')`` to eliminate
+    whitespace.
 
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
@@ -189,9 +190,10 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
     instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the return value can contain non-ASCII
-    characters if they appear in strings contained in ``obj``. Otherwise, all
-    such characters are escaped in JSON strings.
+    If ``ensure_ascii`` is false, then the return value can contain
+    non-ASCII and non-printable characters if they appear in strings
+    contained in ``obj``.  Otherwise, all such characters are escaped in
+    JSON strings.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
@@ -207,10 +209,11 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     level of 0 will only insert newlines. ``None`` is the most compact
     representation.
 
-    If specified, ``separators`` should be an ``(item_separator, key_separator)``
-    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
-    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-    you should specify ``(',', ':')`` to eliminate whitespace.
+    If specified, ``separators`` should be an ``(item_separator,
+    key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
+    ``None`` and ``(',', ': ')`` otherwise.  To get the most compact JSON
+    representation, you should specify ``(',', ':')`` to eliminate
+    whitespace.
 
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
@@ -281,11 +284,12 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` will be used instead of the ``dict``. This feature
     can be used to implement custom decoders (e.g. JSON-RPC class hinting).
 
-    ``object_pairs_hook`` is an optional function that will be called with the
-    result of any object literal decoded with an ordered list of pairs.  The
-    return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders.  If ``object_hook``
-    is also defined, the ``object_pairs_hook`` takes priority.
+    ``object_pairs_hook`` is an optional function that will be called with
+    the result of any object literal decoded with an ordered list of pairs.
+    The return value of ``object_pairs_hook`` will be used instead of the
+    ``dict``.  This feature can be used to implement custom decoders.  If
+    ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+    priority.
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
@@ -306,11 +310,12 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` will be used instead of the ``dict``. This feature
     can be used to implement custom decoders (e.g. JSON-RPC class hinting).
 
-    ``object_pairs_hook`` is an optional function that will be called with the
-    result of any object literal decoded with an ordered list of pairs.  The
-    return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders.  If ``object_hook``
-    is also defined, the ``object_pairs_hook`` takes priority.
+    ``object_pairs_hook`` is an optional function that will be called with
+    the result of any object literal decoded with an ordered list of pairs.
+    The return value of ``object_pairs_hook`` will be used instead of the
+    ``dict``.  This feature can be used to implement custom decoders.  If
+    ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+    priority.
 
     ``parse_float``, if specified, will be called with the string
     of every JSON float to be decoded. By default this is equivalent to
@@ -358,52 +363,11 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
         kw['parse_constant'] = parse_constant
     return cls(**kw).decode(s)
 
-class AttrDict(dict):
-    """Dict like object that supports attribute style dotted access.
 
-    This class is intended for use with the *object_hook* in json.loads():
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
 
-        >>> from json import loads, AttrDict
-        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
-        >>> orbital_period = loads(json_string, object_hook=AttrDict)
-        >>> orbital_period['earth']     # Dict style lookup
-        365
-        >>> orbital_period.earth        # Attribute style lookup
-        365
-        >>> orbital_period.keys()       # All dict methods are present
-        dict_keys(['mercury', 'venus', 'earth', 'mars'])
-
-    Attribute style access only works for keys that are valid attribute names.
-    In contrast, dictionary style access works for all keys.
-    For example, ``d.two words`` contains a space and is not syntactically
-    valid Python, so ``d["two words"]`` should be used instead.
-
-    If a key has the same name as dictionary method, then a dictionary
-    lookup finds the key and an attribute lookup finds the method:
-
-        >>> d = AttrDict(items=50)
-        >>> d['items']                  # Lookup the key
-        50
-        >>> d.items()                   # Call the method
-        dict_items([('items', 50)])
-
-    """
-    __slots__ = ()
-
-    def __getattr__(self, attr):
-        try:
-            return self[attr]
-        except KeyError:
-            raise AttributeError(attr) from None
-
-    def __setattr__(self, attr, value):
-        self[attr] = value
-
-    def __delattr__(self, attr):
-        try:
-            del self[attr]
-        except KeyError:
-            raise AttributeError(attr) from None
-
-    def __dir__(self):
-        return list(self) + dir(type(self))
+        _deprecated("__version__", remove=(3, 20))
+        return "2.0.9"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

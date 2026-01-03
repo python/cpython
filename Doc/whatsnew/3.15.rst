@@ -1,0 +1,1429 @@
+
+****************************
+  What's new in Python 3.15
+****************************
+
+:Editor: Hugo van Kemenade
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the issue number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :gh:`12345`.)
+
+   This saves the maintainer the effort of going through the VCS log
+   when researching a change.
+
+This article explains the new features in Python 3.15, compared to 3.14.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.15 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- Release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.15.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+* :pep:`799`: :ref:`A dedicated profiling package for organizing Python
+  profiling tools <whatsnew315-profiling-package>`
+* :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
+  profiling tools <whatsnew315-sampling-profiler>`
+* :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
+  <whatsnew315-utf8-default>`
+* :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
+  <whatsnew315-pep782>`
+* :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
+* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
+
+
+New features
+============
+
+.. _whatsnew315-profiling-package:
+
+:pep:`799`: A dedicated profiling package
+-----------------------------------------
+
+A new :mod:`profiling` module has been added to organize Python's built-in
+profiling tools under a single, coherent namespace. This module contains:
+
+* :mod:`profiling.tracing`: deterministic function-call tracing (relocated from
+  ``cProfile``).
+* :mod:`profiling.sampling`: a new statistical sampling profiler (named Tachyon).
+
+The ``cProfile`` module remains as an alias for backwards compatibility.
+The :mod:`profile` module is deprecated and will be removed in Python 3.17.
+
+.. seealso:: :pep:`799` for further details.
+
+(Contributed by Pablo Galindo and László Kiss Kollár in :gh:`138122`.)
+
+
+.. _whatsnew315-sampling-profiler:
+
+Tachyon: High frequency statistical sampling profiler
+-----------------------------------------------------
+
+.. image:: ../library/tachyon-logo.png
+   :alt: Tachyon profiler logo
+   :align: center
+   :width: 200px
+
+A new statistical sampling profiler (Tachyon) has been added as
+:mod:`profiling.sampling`. This profiler enables low-overhead performance analysis of
+running Python processes without requiring code modification or process restart.
+
+Unlike deterministic profilers (such as :mod:`profiling.tracing`) that instrument
+every function call, the sampling profiler periodically captures stack traces from
+running processes.  This approach provides virtually zero overhead while achieving
+sampling rates of **up to 1,000,000 Hz**, making it the fastest sampling profiler
+available for Python (at the time of its contribution) and ideal for debugging
+performance issues in production environments. This capability is particularly
+valuable for debugging performance issues in production systems where traditional
+profiling approaches would be too intrusive.
+
+Key features include:
+
+* **Zero-overhead profiling**: Attach to any running Python process without
+  affecting its performance. Ideal for production debugging where you can't afford
+  to restart or slow down your application.
+
+* **No code modification required**: Profile existing applications without restart.
+  Simply point the profiler at a running process by PID and start collecting data.
+
+* **Flexible target modes**:
+
+  * Profile running processes by PID (``attach``) - attach to already-running applications
+  * Run and profile scripts directly (``run``) - profile from the very start of execution
+  * Execute and profile modules (``run -m``) - profile packages run as ``python -m module``
+
+* **Multiple profiling modes**: Choose what to measure based on your performance investigation:
+
+  * **Wall-clock time** (``--mode wall``, default): Measures real elapsed time including I/O,
+    network waits, and blocking operations. Use this to understand where your program spends
+    calendar time, including when waiting for external resources.
+  * **CPU time** (``--mode cpu``): Measures only active CPU execution time, excluding I/O waits
+    and blocking. Use this to identify CPU-bound bottlenecks and optimize computational work.
+  * **GIL-holding time** (``--mode gil``): Measures time spent holding Python's Global Interpreter
+    Lock. Use this to identify which threads dominate GIL usage in multi-threaded applications.
+  * **Exception handling time** (``--mode exception``): Captures samples only from threads with
+    an active exception. Use this to analyze exception handling overhead.
+
+* **Thread-aware profiling**: Option to profile all threads (``-a``) or just the main thread,
+  essential for understanding multi-threaded application behavior.
+
+* **Multiple output formats**: Choose the visualization that best fits your workflow:
+
+  * ``--pstats``: Detailed tabular statistics compatible with :mod:`pstats`. Shows function-level
+    timing with direct and cumulative samples. Best for detailed analysis and integration with
+    existing Python profiling tools.
+  * ``--collapsed``: Generates collapsed stack traces (one line per stack). This format is
+    specifically designed for creating flamegraphs with external tools like Brendan Gregg's
+    FlameGraph scripts or speedscope.
+  * ``--flamegraph``: Generates a self-contained interactive HTML flamegraph using D3.js.
+    Opens directly in your browser for immediate visual analysis. Flamegraphs show the call
+    hierarchy where width represents time spent, making it easy to spot bottlenecks at a glance.
+  * ``--gecko``: Generates Gecko Profiler format compatible with Firefox Profiler
+    (https://profiler.firefox.com). Upload the output to Firefox Profiler for advanced
+    timeline-based analysis with features like stack charts, markers, and network activity.
+  * ``--heatmap``: Generates an interactive HTML heatmap visualization with line-level sample
+    counts. Creates a directory with per-file heatmaps showing exactly where time is spent
+    at the source code level.
+
+* **Live interactive mode**: Real-time TUI profiler with a top-like interface (``--live``).
+  Monitor performance as your application runs with interactive sorting and filtering.
+
+* **Async-aware profiling**: Profile async/await code with task-based stack reconstruction
+  (``--async-aware``). See which coroutines are consuming time, with options to show only
+  running tasks or all tasks including those waiting.
+
+* **Opcode-level profiling**: Gather bytecode opcode information for instruction-level
+  profiling (``--opcodes``). Shows which bytecode instructions are executing, including
+  specializations from the adaptive interpreter.
+
+See :mod:`profiling.sampling` for the complete documentation, including all
+available output formats, profiling modes, and configuration options.
+
+(Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
+
+
+.. _whatsnew315-improved-error-messages:
+
+Improved error messages
+-----------------------
+
+* The interpreter now provides more helpful suggestions in :exc:`AttributeError`
+  exceptions when accessing an attribute on an object that does not exist, but
+  a similar attribute is available through one of its members.
+
+  For example, if the object has an attribute that itself exposes the requested
+  name, the error message will suggest accessing it via that inner attribute:
+
+  .. code-block:: python
+
+     @dataclass
+     class Circle:
+        radius: float
+
+        @property
+        def area(self) -> float:
+           return pi * self.radius**2
+
+     class Container:
+        def __init__(self, inner: Circle) -> None:
+           self.inner = inner
+
+     circle = Circle(radius=4.0)
+     container = Container(circle)
+     print(container.area)
+
+  Running this code now produces a clearer suggestion:
+
+  .. code-block:: pycon
+
+     Traceback (most recent call last):
+     File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
+        print(container.area)
+              ^^^^^^^^^^^^^^
+     AttributeError: 'Container' object has no attribute 'area'. Did you mean: 'inner.area'?
+
+
+Other language changes
+======================
+
+.. _whatsnew315-utf8-default:
+
+* Python now uses UTF-8_ as the default encoding, independent of the system's
+  environment. This means that I/O operations without an explicit encoding,
+  for example, ``open('flying-circus.txt')``, will use UTF-8.
+  UTF-8 is a widely-supported Unicode_ character encoding that has become a
+  *de facto* standard for representing text, including nearly every webpage
+  on the internet, many common file formats, programming languages, and more.
+
+  This only applies when no ``encoding`` argument is given. For best
+  compatibility between versions of Python, ensure that an explicit ``encoding``
+  argument is always provided. The :ref:`opt-in encoding warning <io-encoding-warning>`
+  can be used to identify code that may be affected by this change.
+  The special ``encoding='locale'`` argument uses the current locale
+  encoding, and has been supported since Python 3.10.
+
+  To retain the previous behaviour, Python's UTF-8 mode may be disabled with
+  the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable or the
+  :option:`-X utf8=0 <-X>` command-line option.
+
+  .. seealso:: :pep:`686` for further details.
+
+  .. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
+  .. _Unicode: https://home.unicode.org/
+
+  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
+
+* Several error messages incorrectly using the term "argument" have been corrected.
+  (Contributed by Stan Ulbrych in :gh:`133382`.)
+
+* The interpreter now tries to provide a suggestion when
+  :func:`delattr` fails due to a missing attribute.
+  When an attribute name that closely resembles an existing attribute is used,
+  the interpreter will suggest the correct attribute name in the error message.
+  For example:
+
+  .. doctest::
+
+     >>> class A:
+     ...     pass
+     >>> a = A()
+     >>> a.abcde = 1
+     >>> del a.abcdf  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'A' object has no attribute 'abcdf'. Did you mean: 'abcde'?
+
+  (Contributed by Nikita Sobolev and Pranjal Prajapati in :gh:`136588`.)
+
+* Unraisable exceptions are now highlighted with color by default. This can be
+  controlled by :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Peter Bierma in :gh:`134170`.)
+
+* The :meth:`~object.__repr__` of :class:`ImportError` and :class:`ModuleNotFoundError`
+  now shows "name" and "path" as ``name=<name>`` and ``path=<path>`` if they were given
+  as keyword arguments at construction time.
+  (Contributed by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir in :gh:`74185`.)
+
+* The :attr:`~object.__dict__` and :attr:`!__weakref__` descriptors now use a
+  single descriptor instance per interpreter, shared across all types that
+  need them.
+  This speeds up class creation, and helps avoid reference cycles.
+  (Contributed by Petr Viktorin in :gh:`135228`.)
+
+* The :option:`-W` option and the :envvar:`PYTHONWARNINGS` environment variable
+  can now specify regular expressions instead of literal strings to match
+  the warning message and the module name, if the corresponding field starts
+  and ends with a forward slash (``/``).
+  (Contributed by Serhiy Storchaka in :gh:`134716`.)
+
+* Functions that take timestamp or timeout arguments now accept any real
+  numbers (such as :class:`~decimal.Decimal` and :class:`~fractions.Fraction`),
+  not only integers or floats, although this does not improve precision.
+  (Contributed by Serhiy Storchaka in :gh:`67795`.)
+
+.. _whatsnew315-bytearray-take-bytes:
+
+* Added :meth:`bytearray.take_bytes(n=None, /) <bytearray.take_bytes>` to take
+  bytes out of a :class:`bytearray` without copying. This enables optimizing code
+  which must return :class:`bytes` after working with a mutable buffer of bytes
+  such as data buffering, network protocol parsing, encoding, decoding,
+  and compression. Common code patterns which can be optimized with
+  :func:`~bytearray.take_bytes` are listed below.
+
+  .. list-table:: Suggested optimizing refactors
+      :header-rows: 1
+
+      * - Description
+        - Old
+        - New
+
+      * - Return :class:`bytes` after working with :class:`bytearray`
+        - .. code:: python
+
+              def read() -> bytes:
+                  buffer = bytearray(1024)
+                  ...
+                  return bytes(buffer)
+
+        - .. code:: python
+
+              def read() -> bytes:
+                  buffer = bytearray(1024)
+                  ...
+                  return buffer.take_bytes()
+
+      * - Empty a buffer getting the bytes
+        - .. code:: python
+
+              buffer = bytearray(1024)
+              ...
+              data = bytes(buffer)
+              buffer.clear()
+
+        - .. code:: python
+
+              buffer = bytearray(1024)
+              ...
+              data = buffer.take_bytes()
+
+      * - Split a buffer at a specific separator
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = bytes(buffer[:n + 1])
+              del buffer[:n + 1]
+              assert data == b'abc'
+              assert buffer == bytearray(b'def')
+
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = buffer.take_bytes(n + 1)
+
+      * - Split a buffer at a specific separator; discard after the separator
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = bytes(buffer[:n])
+              buffer.clear()
+              assert data == b'abc'
+              assert len(buffer) == 0
+
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              buffer.resize(n)
+              data = buffer.take_bytes()
+
+  (Contributed by Cody Maloney in :gh:`139871`.)
+
+* Many functions related to compiling or parsing Python code, such as
+  :func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`,
+  and :func:`importlib.abc.InspectLoader.source_to_code`, now allow the module
+  name to be passed. It is needed to unambiguously :ref:`filter <warning-filter>`
+  syntax warnings by module name.
+  (Contributed by Serhiy Storchaka in :gh:`135801`.)
+
+* Allowed defining the *__dict__* and *__weakref__* :ref:`__slots__ <slots>`
+  for any class.
+  (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
+
+New modules
+===========
+
+math.integer
+------------
+
+This module provides access to the mathematical functions for integer
+arguments (:pep:`791`).
+(Contributed by Serhiy Storchaka in :gh:`81313`.)
+
+
+Improved modules
+================
+
+argparse
+--------
+
+* The :class:`~argparse.BooleanOptionalAction` action supports now single-dash
+  long options and alternate prefix characters.
+  (Contributed by Serhiy Storchaka in :gh:`138525`.)
+
+* Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
+  default to ``True``. This enables suggestions for mistyped arguments by default.
+  (Contributed by Jakob Schluse in :gh:`140450`.)
+
+* Added backtick markup support in description and epilog text to highlight
+  inline code when color output is enabled.
+  (Contributed by Savannah Ostrowski in :gh:`142390`.)
+
+base64 & binascii
+-----------------
+
+* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
+  faster thanks to simple CPU pipelining optimizations.
+  (Contributed by Gregory P. Smith & Serhiy Storchaka in :gh:`143262`.)
+
+calendar
+--------
+
+* Calendar pages generated by the :class:`calendar.HTMLCalendar` class now support
+  dark mode and have been migrated to the HTML5 standard for improved accessibility.
+  (Contributed by Jiahao Li and Hugo van Kemenade in :gh:`137634`.)
+
+* The :mod:`calendar`'s :ref:`command-line <calendar-cli>` HTML output now
+  accepts the year-month option: ``python -m calendar -t html 2009 06``.
+  (Contributed by Pål Grønås Drange in :gh:`140212`.)
+
+
+collections
+-----------
+
+* Added :meth:`!collections.Counter.__xor__` and
+  :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
+  between :class:`~collections.Counter` objects.
+  (Contributed by Raymond Hettinger in :gh:`138682`.)
+
+collections.abc
+---------------
+
+* :class:`collections.abc.ByteString` has been removed from
+  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
+  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
+
+* The following statements now cause ``DeprecationWarning``\ s to be emitted at
+  runtime:
+
+  * ``from collections.abc import ByteString``
+  * ``import collections.abc; collections.abc.ByteString``.
+
+  ``DeprecationWarning``\ s were already emitted if
+  :class:`collections.abc.ByteString` was subclassed or used as the second
+  argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
+  previously emitted if it was merely imported or accessed from the
+  :mod:`!collections.abc` module.
+
+
+concurrent.futures
+------------------
+
+* Improved error reporting when a child process in a
+  :class:`concurrent.futures.ProcessPoolExecutor` terminates abruptly.
+  The resulting traceback will now tell you the PID and exit code of the
+  terminated process.
+  (Contributed by Jonathan Berg in :gh:`139486`.)
+
+
+dataclasses
+-----------
+
+* Annotations for generated ``__init__`` methods no longer include internal
+  type names.
+
+
+dbm
+---
+
+* Added new :meth:`!reorganize` methods to :mod:`dbm.dumb` and :mod:`dbm.sqlite3`
+  which allow to recover unused free space previously occupied by deleted entries.
+  (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+
+
+difflib
+-------
+
+  .. _whatsnew315-color-difflib:
+
+* Introduced the optional *color* parameter to :func:`difflib.unified_diff`,
+  enabling color output similar to :program:`git diff`.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
+  (Contributed by Douglas Thor in :gh:`133725`.)
+
+* Improved the styling of HTML diff pages generated by the :class:`difflib.HtmlDiff`
+  class, and migrated the output to the HTML5 standard.
+  (Contributed by Jiahao Li in :gh:`134580`.)
+
+
+functools
+---------
+
+* :func:`~functools.singledispatchmethod` now supports non-:term:`descriptor`
+  callables.
+  (Contributed by Serhiy Storchaka in :gh:`140873`.)
+
+
+hashlib
+-------
+
+* Ensure that hash functions guaranteed to be always *available* exist as
+  attributes of :mod:`hashlib` even if they will not work at runtime due to
+  missing backend implementations. For instance, ``hashlib.md5`` will no
+  longer raise :exc:`AttributeError` if OpenSSL is not available and Python
+  has been built without MD5 support.
+  (Contributed by Bénédikt Tran in :gh:`136929`.)
+
+
+http.client
+-----------
+
+* A new *max_response_headers* keyword-only parameter has been added to
+  :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection`
+  constructors. This parameter overrides the default maximum number of allowed
+  response headers.
+  (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
+
+
+http.cookies
+------------
+
+* Allow '``"``' double quotes in cookie values.
+  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
+
+
+inspect
+-------
+
+* Add parameters *inherit_class_doc* and *fallback_to_class_doc*
+  for :func:`~inspect.getdoc`.
+  (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
+
+locale
+------
+
+* :func:`~locale.setlocale` now supports language codes with ``@``-modifiers.
+  ``@``-modifiers are no longer silently removed in :func:`~locale.getlocale`,
+  but included in the language code.
+  (Contributed by Serhiy Storchaka in :gh:`137729`.)
+
+* Undeprecate the :func:`locale.getdefaultlocale` function.
+  (Contributed by Victor Stinner in :gh:`130796`.)
+
+
+math
+----
+
+* Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
+  (Contributed by Sergey B Kirpichev in :gh:`132908`.)
+
+* Add :func:`math.fmax`, :func:`math.fmin` and :func:`math.signbit` functions.
+  (Contributed by Bénédikt Tran in :gh:`135853`.)
+
+
+mimetypes
+---------
+
+* Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
+* Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Rename ``application/x-texinfo`` to ``application/texinfo``.
+  (Contributed by Charlie Lin in :gh:`140165`.)
+* Changed the MIME type for ``.ai`` files to ``application/pdf``.
+  (Contributed by Stan Ulbrych in :gh:`141239`.)
+
+
+mmap
+----
+
+* :class:`mmap.mmap` now has a *trackfd* parameter on Windows;
+  if it is ``False``, the file handle corresponding to *fileno* will
+  not be duplicated.
+  (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+* Added the :meth:`mmap.mmap.set_name` method
+  to annotate an anonymous memory mapping
+  if Linux kernel supports :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  (Contributed by Donghee Na in :gh:`142419`.)
+
+
+os
+--
+
+* Add :func:`os.statx` on Linux kernel versions 4.11 and later with
+  glibc versions 2.28 and later.
+  (Contributed by Jeffrey Bosboom and Victor Stinner in :gh:`83714`.)
+
+
+os.path
+-------
+
+* Add support of the all-but-last mode in :func:`~os.path.realpath`.
+  (Contributed by Serhiy Storchaka in :gh:`71189`.)
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+
+resource
+--------
+
+* Add new constants: :data:`~resource.RLIMIT_NTHR`,
+  :data:`~resource.RLIMIT_UMTXP`, :data:`~resource.RLIMIT_THREADS`,
+  :data:`~resource.RLIM_SAVED_CUR`, and :data:`~resource.RLIM_SAVED_MAX`.
+  (Contributed by Serhiy Storchaka in :gh:`137512`.)
+
+
+shelve
+------
+
+* Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
+  space previously occupied by deleted entries.
+  (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+
+socket
+------
+
+* Add constants for the ISO-TP CAN protocol.
+  (Contributed by Patrick Menschel and Stefan Tatschner in :gh:`86819`.)
+
+
+sqlite3
+-------
+
+* The :ref:`command-line interface <sqlite3-cli>` has several new features:
+
+   * SQL keyword completion on <tab>.
+     (Contributed by Long Tan in :gh:`133393`.)
+
+   * Prompts, error messages, and help text are now colored.
+     This is enabled by default, see :ref:`using-on-controlling-color` for
+     details.
+     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
+
+   * Table, index, trigger, view, column, function, and schema completion on <tab>.
+     (Contributed by Long Tan in :gh:`136101`.)
+
+
+ssl
+---
+
+* Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
+  supports "External PSKs" in TLSv1.3, as described in RFC 9258.
+  (Contributed by Will Childs-Klein in :gh:`133624`.)
+
+* Added new methods for managing groups used for SSL key agreement
+
+   * :meth:`ssl.SSLContext.set_groups` sets the groups allowed for doing
+     key agreement, extending the previous
+     :meth:`ssl.SSLContext.set_ecdh_curve` method.
+     This new API provides the ability to list multiple groups and
+     supports fixed-field and post-quantum groups in addition to ECDH
+     curves. This method can also be used to control what key shares
+     are sent in the TLS handshake.
+   * :meth:`ssl.SSLSocket.group` returns the group selected for doing key
+     agreement on the current connection after the TLS handshake completes.
+     This call requires OpenSSL 3.2 or later.
+   * :meth:`ssl.SSLContext.get_groups` returns a list of all available key
+     agreement groups compatible with the minimum and maximum TLS versions
+     currently set in the context. This call requires OpenSSL 3.5 or later.
+
+   (Contributed by Ron Frederick in :gh:`136306`.)
+
+* Added a new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
+  ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
+  continue to be used. Both calls can be made on the same context and the
+  selected cipher suite will depend on the TLS version negotiated when a
+  connection is made.
+  (Contributed by Ron Frederick in :gh:`137197`.)
+
+* Added new methods for managing signature algorithms:
+
+  * :func:`ssl.get_sigalgs` returns a list of all available TLS signature
+    algorithms. This call requires OpenSSL 3.4 or later.
+  * :meth:`ssl.SSLContext.set_client_sigalgs` sets the signature algorithms
+    allowed for certificate-based client authentication.
+  * :meth:`ssl.SSLContext.set_server_sigalgs` sets the signature algorithms
+    allowed for the server to complete the TLS handshake.
+  * :meth:`ssl.SSLSocket.client_sigalg` returns the signature algorithm
+    selected for client authentication on the current connection. This call
+    requires OpenSSL 3.5 or later.
+  * :meth:`ssl.SSLSocket.server_sigalg` returns the signature algorithm
+    selected for the server to complete the TLS handshake on the current
+    connection. This call requires OpenSSL 3.5 or later.
+
+   (Contributed by Ron Frederick in :gh:`138252`.)
+
+
+sys
+---
+
+* Add :data:`sys.abi_info` namespace to improve access to ABI information.
+  (Contributed by Klaus Zimmermann in :gh:`137476`.)
+
+
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now replace slashes by backslashes in symlink targets on Windows to prevent
+  creation of corrupted links.
+  (Contributed by Christoph Walcher in :gh:`57911`.)
+
+
+timeit
+------
+
+* The command-line interface now colorizes error tracebacks
+  by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Yi Hong in :gh:`139374`.)
+
+tkinter
+-------
+
+* The :meth:`!tkinter.Text.search` method now supports two additional
+  arguments: *nolinestop* which allows the search to
+  continue across line boundaries;
+  and *strictlimits* which restricts the search to within the specified range.
+  (Contributed by Rihaan Meher in :gh:`130848`)
+
+* A new method :meth:`!tkinter.Text.search_all` has been introduced.
+  This method allows for searching for all matches of a pattern
+  using Tcl's ``-all`` and ``-overlap`` options.
+  (Contributed by Rihaan Meher in :gh:`130848`)
+
+types
+------
+
+* Expose the write-through :func:`locals` proxy type
+  as :data:`types.FrameLocalsProxyType`.
+  This represents the type of the :attr:`frame.f_locals` attribute,
+  as described in :pep:`667`.
+
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 17.0.0.
+
+* Add :func:`unicodedata.isxidstart` and :func:`unicodedata.isxidcontinue`
+  functions to check whether a character can start or continue a
+  `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
+  (Contributed by Stan Ulbrych in :gh:`129117`.)
+
+
+unittest
+--------
+
+* :func:`unittest.TestCase.assertLogs` will now accept a formatter
+  to control how messages are formatted.
+  (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+venv
+----
+
+* On POSIX platforms, platlib directories will be created if needed when
+  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  This means purelib and platlib of virtual environments no longer share the
+  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
+  equal to ``lib``.
+  (Contributed by Rui Xi in :gh:`133951`.)
+
+
+warnings
+--------
+
+* Improve filtering by module in :func:`warnings.warn_explicit` if no *module*
+  argument is passed.
+  It now tests the module regular expression in the warnings filter not only
+  against the filename with ``.py`` stripped, but also against module names
+  constructed starting from different parent directories of the filename
+  (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw`` stripped).
+  (Contributed by Serhiy Storchaka in :gh:`135801`.)
+
+
+xml.parsers.expat
+-----------------
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+  disproportional amounts of dynamic memory usage from within an Expat parser.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+  `billion laughs`_ attacks.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
+
+  .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
+
+
+zlib
+----
+
+* Allow combining two Adler-32 checksums via :func:`~zlib.adler32_combine`.
+  (Contributed by Callum Attryde and Bénédikt Tran in :gh:`134635`.)
+
+* Allow combining two CRC-32 checksums via :func:`~zlib.crc32_combine`.
+  (Contributed by Bénédikt Tran in :gh:`134635`.)
+
+
+.. Add improved modules above alphabetically, not here at the end.
+
+Optimizations
+=============
+
+* Builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to the MSVC team including Hulon Jenkins.)
+
+csv
+---
+
+* :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
+
+
+.. _whatsnew315-jit:
+
+Upgraded JIT compiler
+=====================
+
+Results from the `pyperformance <https://github.com/python/pyperformance>`__
+benchmark suite report
+`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`__
+geometric mean performance improvement for the JIT over the standard CPython
+interpreter built with all optimizations enabled. The speedups for JIT
+builds versus no JIT builds range from roughly 20% slowdown to over
+100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
+x86-64 Linux and AArch64 macOS systems.
+
+.. attention::
+    These results are not yet final.
+
+The major upgrades to the JIT are:
+
+* LLVM 21 build-time dependency
+* New tracing frontend
+* Basic register allocation in the JIT
+* More JIT optimizations
+* Better machine code generation
+
+.. rubric:: LLVM 21 build-time dependency
+
+The JIT compiler now uses LLVM 21 for build-time stencil generation. As
+always, LLVM is only needed when building CPython with the JIT enabled;
+end users running Python do not need LLVM installed. Instructions for
+installing LLVM can be found in the `JIT compiler documentation
+<https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
+for all supported platforms.
+
+(Contributed by Savannah Ostrowski in :gh:`140973`.)
+
+.. rubric:: A new tracing frontend
+
+The JIT compiler now supports significantly more bytecode operations and
+control flow than in Python 3.14, enabling speedups on a wider variety of
+code. For example, simple Python object creation is now understood by the
+3.15 JIT compiler. Overloaded operations and generators are also partially
+supported. This was made possible by an overhauled JIT tracing frontend
+that records actual execution paths through code, rather than estimating
+them as the previous implementation did.
+
+(Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
+Mark Shannon in :gh:`141703`.)
+
+.. rubric:: Basic register allocation in the JIT
+
+A basic form of register allocation has been added to the JIT compiler's
+optimizer. This allows the JIT compiler to avoid certain stack operations
+altogether and instead operate on registers. This allows the JIT to produce
+more efficient traces by avoiding reads and writes to memory.
+
+(Contributed by Mark Shannon in :gh:`135379`.)
+
+.. rubric:: More JIT optimizations
+
+More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
+is now performed. This means when the JIT compiler detects that certain user
+code results in constants, the code can be simplified by the JIT.
+
+(Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
+
+The JIT avoids :term:`reference count`\ s where possible. This generally
+reduces the cost of most operations in Python.
+
+(Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
+Noam Cohen, Tomas Roun, and PuQing in :gh:`134584`.)
+
+.. rubric:: Better machine code generation
+
+The JIT compiler's machine code generator now produces better machine code
+for x86-64 and AArch64 macOS and Linux targets. In general, users should
+experience lower memory usage for generated machine code and more efficient
+machine code versus the old JIT.
+
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
+Additional optimizations for AArch64 contributed by Mark Shannon and
+Diego Russo in :gh:`140683` and :gh:`142305`.)
+
+
+Removed
+=======
+
+ctypes
+------
+
+* Removed the undocumented function :func:`!ctypes.SetPointerType`,
+  which has been deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133866`.)
+
+
+glob
+----
+
+* Removed the undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
+  functions, which have been deprecated since Python 3.13. Use
+  :func:`glob.glob` and pass a directory to its *root_dir* argument instead.
+  (Contributed by Barney Gale in :gh:`137466`.)
+
+
+http.server
+-----------
+
+* Removed the :class:`!CGIHTTPRequestHandler` class
+  and the ``--cgi`` flag from the :program:`python -m http.server`
+  command-line interface. They were deprecated in Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133810`.)
+
+
+importlib.resources
+-------------------
+
+* Removed deprecated ``package`` parameter
+  from :func:`importlib.resources.files` function.
+  (Contributed by Semyon Moroz in :gh:`138044`)
+
+
+pathlib
+-------
+
+* Removed deprecated :meth:`!pathlib.PurePath.is_reserved`.
+  Use :func:`os.path.isreserved` to detect reserved paths on Windows.
+  (Contributed by Nikita Sobolev in :gh:`133875`.)
+
+
+platform
+--------
+
+* Removed the :func:`!platform.java_ver` function,
+  which was deprecated since Python 3.13.
+  (Contributed by Alexey Makridenko in :gh:`133604`.)
+
+
+sre_*
+-----
+
+* Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+  (Contributed by Stan Ulbrych in :gh:`135994`.)
+
+
+sysconfig
+---------
+
+* Removed the *check_home* parameter of :func:`sysconfig.is_python_build`.
+  (Contributed by Filipe Laíns in :gh:`92897`.)
+
+
+threading
+---------
+
+* Remove support for arbitrary positional or keyword arguments in the C
+  implementation of :class:`~threading.RLock` objects. This was deprecated
+  in Python 3.14.
+  (Contributed by Bénédikt Tran in :gh:`134087`.)
+
+
+typing
+------
+
+* The undocumented keyword argument syntax for creating
+  :class:`~typing.NamedTuple` classes (for example,
+  ``Point = NamedTuple("Point", x=int, y=int)``) is no longer supported.
+  Use the class-based syntax or the functional syntax instead.
+  (Contributed by Bénédikt Tran in :gh:`133817`.)
+
+* Using ``TD = TypedDict("TD")`` or ``TD = TypedDict("TD", None)`` to
+  construct a :class:`~typing.TypedDict` type with zero fields is no
+  longer supported. Use ``class TD(TypedDict): pass``
+  or ``TD = TypedDict("TD", {})`` instead.
+  (Contributed by Bénédikt Tran in :gh:`133823`.)
+
+* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
+  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
+  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
+  as it was incorrectly inferred in runtime before.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* :class:`typing.ByteString` has been removed from ``typing.__all__``.
+  :class:`!typing.ByteString` has been deprecated since Python 3.9, and is
+  scheduled for removal in Python 3.17.
+
+* The following statements now cause ``DeprecationWarning``\ s to be emitted at
+  runtime:
+
+  * ``from typing import ByteString``
+  * ``import typing; typing.ByteString``.
+
+  ``DeprecationWarning``\ s were already emitted if :class:`typing.ByteString`
+  was subclassed or used as the second argument to :func:`isinstance` or
+  :func:`issubclass`, but warnings were not previously emitted if it was merely
+  imported or accessed from the :mod:`!typing` module.
+
+* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+  (Contributed by Nikita Sobolev in :gh:`133601`.)
+
+
+wave
+----
+
+* Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
+  of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
+  which were deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133873`.)
+
+
+zipimport
+---------
+
+* Remove deprecated :meth:`!zipimport.zipimporter.load_module`.
+  Use :meth:`zipimport.zipimporter.exec_module` instead.
+  (Contributed by Jiahao Li in :gh:`133656`.)
+
+
+Deprecated
+==========
+
+New deprecations
+----------------
+
+* CLI:
+
+  * Deprecate :option:`-b` and :option:`!-bb` command-line options
+    and schedule them to become no-ops in Python 3.17.
+    These were primarily helpers for the Python 2 -> 3 transition.
+    Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+    for these cases; use a type checker instead.
+
+    (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+* :mod:`hashlib`:
+
+  * In hash function constructors such as :func:`~hashlib.new` or the
+    direct hash-named constructors such as :func:`~hashlib.md5` and
+    :func:`~hashlib.sha256`, the optional initial data parameter could
+    also be passed as a keyword argument named ``data=`` or ``string=`` in
+    various :mod:`hashlib` implementations.
+
+    Support for the ``string`` keyword argument name is now deprecated and
+    is slated for removal in Python 3.19. Prefer passing the initial data as
+    a positional argument for maximum backwards compatibility.
+
+    (Contributed by Bénédikt Tran in :gh:`134978`.)
+
+* ``__version__``
+
+  * The ``__version__``, ``version`` and ``VERSION`` attributes have been
+    deprecated in these standard library modules and will be removed in
+    Python 3.20. Use :py:data:`sys.version_info` instead.
+
+    - :mod:`argparse`
+    - :mod:`csv`
+    - :mod:`ctypes`
+    - :mod:`!ctypes.macholib`
+    - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+    - :mod:`http.server`
+    - :mod:`imaplib`
+    - :mod:`ipaddress`
+    - :mod:`json`
+    - :mod:`logging` (``__date__`` also deprecated)
+    - :mod:`optparse`
+    - :mod:`pickle`
+    - :mod:`platform`
+    - :mod:`re`
+    - :mod:`socketserver`
+    - :mod:`tabnanny`
+    - :mod:`tkinter.font`
+    - :mod:`tkinter.ttk`
+    - :mod:`wsgiref.simple_server`
+    - :mod:`xml.etree.ElementTree`
+    - :mod:`!xml.sax.expatreader`
+    - :mod:`xml.sax.handler`
+    - :mod:`zlib`
+
+    (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
+
+.. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
+
+
+C API changes
+=============
+
+New features
+------------
+
+* Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
+  :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
+  functions as replacements for :c:func:`PySys_GetObject`.
+  (Contributed by Serhiy Storchaka in :gh:`108512`.)
+
+* Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
+  a string. See the documentation for caveats.
+  (Contributed by Petr Viktorin in :gh:`131510`.)
+
+* Add API for checking an extension module's ABI compatibility:
+  :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
+  and :c:data:`Py_mod_abi`.
+  (Contributed by Petr Viktorin in :gh:`137210`.)
+
+.. _whatsnew315-pep782:
+
+* Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
+  Add functions:
+
+  * :c:func:`PyBytesWriter_Create`
+  * :c:func:`PyBytesWriter_Discard`
+  * :c:func:`PyBytesWriter_FinishWithPointer`
+  * :c:func:`PyBytesWriter_FinishWithSize`
+  * :c:func:`PyBytesWriter_Finish`
+  * :c:func:`PyBytesWriter_Format`
+  * :c:func:`PyBytesWriter_GetData`
+  * :c:func:`PyBytesWriter_GetSize`
+  * :c:func:`PyBytesWriter_GrowAndUpdatePointer`
+  * :c:func:`PyBytesWriter_Grow`
+  * :c:func:`PyBytesWriter_Resize`
+  * :c:func:`PyBytesWriter_WriteBytes`
+
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
+* Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
+  a module from a *spec* and *initfunc*.
+  (Contributed by Itamar Oren in :gh:`116146`.)
+
+* Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
+  (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+  It should only be used for debugging.
+  (Contributed by Victor Stinner in :gh:`141070`.)
+
+* Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
+  :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
+  the stack protection base address and stack protection size of a Python
+  thread state.
+  (Contributed by Victor Stinner in :gh:`139653`.)
+
+
+Changed C APIs
+--------------
+
+* If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` or :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flag is set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
+  (Contributed by Sergey Miryanov in :gh:`134786`)
+
+
+Porting to Python 3.15
+----------------------
+
+* Private functions promoted to public C APIs:
+
+  The |pythoncapi_compat_project| can be used to get most of these new
+  functions on Python 3.14 and older.
+
+
+Removed C APIs
+--------------
+
+* Remove deprecated ``PyUnicode`` functions:
+
+  * :c:func:`!PyUnicode_AsDecodedObject`:
+    Use :c:func:`PyCodec_Decode` instead.
+  * :c:func:`!PyUnicode_AsDecodedUnicode`:
+    Use :c:func:`PyCodec_Decode` instead; Note that some codecs (for example, "base64")
+    may return a type other than :class:`str`, such as :class:`bytes`.
+  * :c:func:`!PyUnicode_AsEncodedObject`:
+    Use :c:func:`PyCodec_Encode` instead.
+  * :c:func:`!PyUnicode_AsEncodedUnicode`:
+    Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
+    may return a type other than :class:`bytes`, such as :class:`str`.
+
+  (Contributed by Stan Ulbrych in :gh:`133612`.)
+
+* :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
+  of :c:func:`PyImport_ImportModule`.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* :c:func:`!PyWeakref_GetObject` and :c:macro:`!PyWeakref_GET_OBJECT`:
+  use :c:func:`PyWeakref_GetRef` instead. The |pythoncapi_compat_project|
+  can be used to get :c:func:`!PyWeakref_GetRef` on Python 3.12 and older.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
+  Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+
+  (Contributed by Nikita Sobolev in :gh:`138886`.)
+
+The following functions are removed in favor of :c:func:`PyConfig_Get`.
+The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
+on Python 3.13 and older.
+
+* Python initialization functions:
+
+  * :c:func:`!Py_GetExecPrefix`:
+    use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
+    (:data:`sys.base_exec_prefix`) instead.
+    Use :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
+    (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetPath`:
+    use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
+    (:data:`sys.path`) instead.
+  * :c:func:`!Py_GetPrefix`:
+    use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
+    (:data:`sys.base_prefix`) instead.
+    Use :c:func:`PyConfig_Get("prefix") <PyConfig_Get>`
+    (:data:`sys.prefix`) if :ref:`virtual environments <venv-def>`
+    need to be handled.
+  * :c:func:`!Py_GetProgramFullPath`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetProgramName`:
+    use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
+  * :c:func:`!Py_GetPythonHome`:
+    use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+    :envvar:`PYTHONHOME` environment variable instead.
+
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+.. |pythoncapi_compat_project| replace:: |pythoncapi_compat_project_link|_
+.. |pythoncapi_compat_project_link| replace:: pythoncapi-compat project
+.. _pythoncapi_compat_project_link: https://github.com/python/pythoncapi-compat
+
+
+Deprecated C APIs
+-----------------
+
+* For unsigned integer formats in :c:func:`PyArg_ParseTuple`,
+  accepting Python integers with value that is larger than the maximal value
+  for the C type or less than the minimal value for the corresponding
+  signed integer type of the same size is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`132629`.)
+
+* :c:func:`PyBytes_FromStringAndSize(NULL, len) <PyBytes_FromStringAndSize>`
+  and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
+  use the :c:type:`PyBytesWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
+* :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
+  :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
+  3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
+  the module state, then call :c:func:`PyObject_CallMethod` or
+  :c:func:`PyObject_GetAttr`.
+  (Contributed by Victor Stinner in :gh:`141049`.)
+
+* Deprecate :c:member:`~PyComplexObject.cval` field of the
+  :c:type:`PyComplexObject` type.
+  Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
+  to convert a Python complex number to/from the C :c:type:`Py_complex`
+  representation.
+  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* Functions :c:func:`_Py_c_sum`, :c:func:`_Py_c_diff`, :c:func:`_Py_c_neg`,
+  :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
+  :c:func:`_Py_c_abs` are :term:`soft deprecated`.
+  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* :c:member:`~PyConfig.bytes_warning` is deprecated
+  since 3.15 and will be removed in 3.17.
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+* :c:macro:`!Py_INFINITY` macro is :term:`soft deprecated`,
+  use the C11 standard ``<math.h>`` :c:macro:`!INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`141004`.)
+
+* :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
+  since 3.15 and will be removed in 3.20.
+  (Contributed by Sergey B Kirpichev in :gh:`141004`.)
+
+
+.. Add C API deprecations above alphabetically, not here at the end.
+
+
+Build changes
+=============
+
+* Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
+  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  set to ``no`` or with :option:`!--without-system-libmpdec`.
+  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
+
+* The new configure option :option:`--with-missing-stdlib-config=FILE` allows
+  distributors to pass a `JSON <https://www.json.org/json-en.html>`_
+  configuration file containing custom error messages for :term:`standard library`
+  modules that are missing or packaged separately.
+  (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
+
+* Annotating anonymous mmap usage is now supported if Linux kernel supports
+  :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
+  and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
+  (Contributed by Donghee Na in :gh:`141770`)
+
+
+Porting to Python 3.15
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+* :class:`sqlite3.Connection` APIs have been cleaned up.
+
+  * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
+  * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
+    and :meth:`~sqlite3.Connection.create_aggregate` are now positional-only.
+  * The first parameter of methods :meth:`~sqlite3.Connection.set_authorizer`,
+    :meth:`~sqlite3.Connection.set_progress_handler` and
+    :meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.
+
+  (Contributed by Serhiy Storchaka in :gh:`133595`.)
+
+* :data:`resource.RLIM_INFINITY` is now always positive.
+  Passing a negative integer value that corresponded to its old value
+  (such as ``-1`` or ``-3``, depending on platform) to
+  :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`137044`.)
+
+* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
+  underlying syscall, instead of raising a :exc:`SystemError`.
+
+* A resource warning is now emitted for an unclosed
+  :func:`xml.etree.ElementTree.iterparse` iterator if it opened a file.
+  Use its :meth:`!close` method or the :func:`contextlib.closing` context
+  manager to close it.
+  (Contributed by Osama Abdelkader and Serhiy Storchaka in :gh:`140601`.)
+
+* If a short option and a single-dash long option are passed to
+  :meth:`argparse.ArgumentParser.add_argument`, *dest* is now inferred from
+  the single-dash long option. For example, in ``add_argument('-f', '-foo')``,
+  *dest* is now ``'foo'`` instead of ``'f'``.
+  Pass an explicit *dest* argument to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`138697`.)

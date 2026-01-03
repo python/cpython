@@ -24,22 +24,21 @@ import unittest
 import sqlite3 as sqlite
 from contextlib import contextmanager
 
-from test.support import LOOPBACK_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 
-from test.test_sqlite3.test_dbapi import memory_database
-
-
-TIMEOUT = LOOPBACK_TIMEOUT / 10
+from .util import memory_database
+from .util import MemoryDatabaseMixin
 
 
 class TransactionTests(unittest.TestCase):
     def setUp(self):
-        self.con1 = sqlite.connect(TESTFN, timeout=TIMEOUT)
+        # We can disable the busy handlers, since we control
+        # the order of SQLite C API operations.
+        self.con1 = sqlite.connect(TESTFN, timeout=0)
         self.cur1 = self.con1.cursor()
 
-        self.con2 = sqlite.connect(TESTFN, timeout=TIMEOUT)
+        self.con2 = sqlite.connect(TESTFN, timeout=0)
         self.cur2 = self.con2.cursor()
 
     def tearDown(self):
@@ -119,10 +118,8 @@ class TransactionTests(unittest.TestCase):
             self.cur2.execute("insert into test(i) values (5)")
 
     def test_locking(self):
-        """
-        This tests the improved concurrency with pysqlite 2.3.4. You needed
-        to roll back con2 before you could commit con1.
-        """
+        # This tests the improved concurrency with pysqlite 2.3.4. You needed
+        # to roll back con2 before you could commit con1.
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
         with self.assertRaises(sqlite.OperationalError):
@@ -132,14 +129,14 @@ class TransactionTests(unittest.TestCase):
 
     def test_rollback_cursor_consistency(self):
         """Check that cursors behave correctly after rollback."""
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
-        cur.execute("create table test(x)")
-        cur.execute("insert into test(x) values (5)")
-        cur.execute("select 1 union select 2 union select 3")
+        with memory_database() as con:
+            cur = con.cursor()
+            cur.execute("create table test(x)")
+            cur.execute("insert into test(x) values (5)")
+            cur.execute("select 1 union select 2 union select 3")
 
-        con.rollback()
-        self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+            con.rollback()
+            self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
 
     def test_multiple_cursors_and_iternext(self):
         # gh-94028: statements are cleared and reset in cursor iternext.
@@ -218,10 +215,7 @@ class RollbackTests(unittest.TestCase):
 
 
 
-class SpecialCommandTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
-        self.cur = self.con.cursor()
+class SpecialCommandTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_drop_table(self):
         self.cur.execute("create table test(i)")
@@ -233,14 +227,8 @@ class SpecialCommandTests(unittest.TestCase):
         self.cur.execute("insert into test(i) values (5)")
         self.cur.execute("pragma count_changes=1")
 
-    def tearDown(self):
-        self.cur.close()
-        self.con.close()
 
-
-class TransactionalDDL(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:")
+class TransactionalDDL(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_ddl_does_not_autostart_transaction(self):
         # For backwards compatibility reasons, DDL statements should not
@@ -267,9 +255,6 @@ class TransactionalDDL(unittest.TestCase):
         self.con.rollback()
         with self.assertRaises(sqlite.OperationalError):
             self.con.execute("select * from test")
-
-    def tearDown(self):
-        self.con.close()
 
 
 class IsolationLevelFromInit(unittest.TestCase):

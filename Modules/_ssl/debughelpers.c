@@ -15,7 +15,6 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
     PyGILState_STATE threadstate;
     PyObject *res = NULL;
     PySSLSocket *ssl_obj = NULL;  /* ssl._SSLSocket, borrowed ref */
-    PyObject *ssl_socket = NULL;  /* ssl.SSLSocket or ssl.SSLObject */
     int msg_type;
 
     threadstate = PyGILState_Ensure();
@@ -27,13 +26,14 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         return;
     }
 
+    PyObject *ssl_socket;  /* ssl.SSLSocket or ssl.SSLObject */
     if (ssl_obj->owner)
-        ssl_socket = PyWeakref_GetObject(ssl_obj->owner);
+        PyWeakref_GetRef(ssl_obj->owner, &ssl_socket);
     else if (ssl_obj->Socket)
-        ssl_socket = PyWeakref_GetObject(ssl_obj->Socket);
+        PyWeakref_GetRef(ssl_obj->Socket, &ssl_socket);
     else
-        ssl_socket = (PyObject *)ssl_obj;
-    Py_INCREF(ssl_socket);
+        ssl_socket = (PyObject *)Py_NewRef(ssl_obj);
+    assert(ssl_socket != NULL);  // PyWeakref_GetRef() can return NULL
 
     /* assume that OpenSSL verifies all payload and buf len is of sufficient
        length */
@@ -74,7 +74,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         buf, len
     );
     if (res == NULL) {
-        PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value, &ssl_obj->exc_tb);
+        ssl_obj->exc = PyErr_GetRaisedException();
     } else {
         Py_DECREF(res);
     }
@@ -85,7 +85,9 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
 
 
 static PyObject *
-_PySSLContext_get_msg_callback(PySSLContext *self, void *c) {
+_PySSLContext_get_msg_callback(PyObject *op, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     if (self->msg_cb != NULL) {
         return Py_NewRef(self->msg_cb);
     } else {
@@ -94,7 +96,10 @@ _PySSLContext_get_msg_callback(PySSLContext *self, void *c) {
 }
 
 static int
-_PySSLContext_set_msg_callback(PySSLContext *self, PyObject *arg, void *c) {
+_PySSLContext_set_msg_callback(PyObject *op, PyObject *arg,
+                               void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     Py_CLEAR(self->msg_cb);
     if (arg == Py_None) {
         SSL_CTX_set_msg_callback(self->ctx, NULL);
@@ -118,51 +123,47 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
     PyGILState_STATE threadstate;
     PySSLSocket *ssl_obj = NULL;  /* ssl._SSLSocket, borrowed ref */
     int res, e;
-    static PyThread_type_lock *lock = NULL;
 
     threadstate = PyGILState_Ensure();
 
     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
     assert(Py_IS_TYPE(ssl_obj, get_state_sock(ssl_obj)->PySSLSocket_Type));
+    PyThread_type_lock lock = get_state_sock(ssl_obj)->keylog_lock;
+    assert(lock != NULL);
     if (ssl_obj->ctx->keylog_bio == NULL) {
-        return;
+        goto done;
     }
-
-    /* Allocate a static lock to synchronize writes to keylog file.
+    /*
      * The lock is neither released on exit nor on fork(). The lock is
      * also shared between all SSLContexts although contexts may write to
      * their own files. IMHO that's good enough for a non-performance
      * critical debug helper.
      */
-    if (lock == NULL) {
-        lock = PyThread_allocate_lock();
-        if (lock == NULL) {
-            PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-            PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value,
-                        &ssl_obj->exc_tb);
-            return;
-        }
-    }
 
-    PySSL_BEGIN_ALLOW_THREADS
+    Py_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(lock, 1);
     res = BIO_printf(ssl_obj->ctx->keylog_bio, "%s\n", line);
     e = errno;
     (void)BIO_flush(ssl_obj->ctx->keylog_bio);
     PyThread_release_lock(lock);
-    PySSL_END_ALLOW_THREADS
+    Py_END_ALLOW_THREADS
+    _PySSL_FIX_ERRNO;
 
     if (res == -1) {
         errno = e;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError,
                                              ssl_obj->ctx->keylog_filename);
-        PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value, &ssl_obj->exc_tb);
+        ssl_obj->exc = PyErr_GetRaisedException();
     }
+
+done:
     PyGILState_Release(threadstate);
 }
 
 static PyObject *
-_PySSLContext_get_keylog_filename(PySSLContext *self, void *c) {
+_PySSLContext_get_keylog_filename(PyObject *op, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     if (self->keylog_filename != NULL) {
         return Py_NewRef(self->keylog_filename);
     } else {
@@ -171,17 +172,28 @@ _PySSLContext_get_keylog_filename(PySSLContext *self, void *c) {
 }
 
 static int
-_PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
+_PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
+                                  void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     FILE *fp;
+
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "set_keylog_filename: unavailable on Windows debug build");
+    return -1;
+#endif
+
     /* Reset variables and callback first */
     SSL_CTX_set_keylog_callback(self->ctx, NULL);
     Py_CLEAR(self->keylog_filename);
     if (self->keylog_bio != NULL) {
         BIO *bio = self->keylog_bio;
         self->keylog_bio = NULL;
-        PySSL_BEGIN_ALLOW_THREADS
+        Py_BEGIN_ALLOW_THREADS
         BIO_free_all(bio);
-        PySSL_END_ALLOW_THREADS
+        Py_END_ALLOW_THREADS
+        _PySSL_FIX_ERRNO;
     }
 
     if (arg == Py_None) {
@@ -189,8 +201,8 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
         return 0;
     }
 
-    /* _Py_fopen_obj() also checks that arg is of proper type. */
-    fp = _Py_fopen_obj(arg, "a" PY_STDIOTEXTMODE);
+    /* Py_fopen() also checks that arg is of proper type. */
+    fp = Py_fopen(arg, "a" PY_STDIOTEXTMODE);
     if (fp == NULL)
         return -1;
 
@@ -203,13 +215,13 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
     self->keylog_filename = Py_NewRef(arg);
 
     /* Write a header for seekable, empty files (this excludes pipes). */
-    PySSL_BEGIN_ALLOW_THREADS
+    PySSL_BEGIN_ALLOW_THREADS(self)
     if (BIO_tell(self->keylog_bio) == 0) {
         BIO_puts(self->keylog_bio,
                  "# TLS secrets log file, generated by OpenSSL / Python\n");
         (void)BIO_flush(self->keylog_bio);
     }
-    PySSL_END_ALLOW_THREADS
+    PySSL_END_ALLOW_THREADS(self)
     SSL_CTX_set_keylog_callback(self->ctx, _PySSL_keylog_callback);
     return 0;
 }

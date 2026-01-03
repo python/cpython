@@ -21,9 +21,9 @@ Complete Python programs
 .. index:: single: program
 
 .. index::
-   module: sys
-   module: __main__
-   module: builtins
+   pair: module; sys
+   pair: module; __main__
+   pair: module; builtins
 
 While a language specification need not prescribe how the language interpreter
 is invoked, it is useful to have a notion of a complete Python program.  A
@@ -38,7 +38,7 @@ the next section.
 
 .. index::
    single: interactive mode
-   module: __main__
+   pair: module; __main__
 
 The interpreter may also be invoked in interactive mode; in this case, it does
 not read and execute a complete program but reads and executes one statement
@@ -66,8 +66,10 @@ File input
 
 All input read from non-interactive files has the same form:
 
-.. productionlist:: python-grammar
-   file_input: (NEWLINE | `statement`)*
+.. grammar-snippet::
+   :group: python-grammar
+
+   file_input: (NEWLINE | `statement`)* ENDMARKER
 
 This syntax is used in the following situations:
 
@@ -85,8 +87,10 @@ Interactive input
 
 Input in interactive mode is parsed using the following grammar:
 
-.. productionlist:: python-grammar
-   interactive_input: [`stmt_list`] NEWLINE | `compound_stmt` NEWLINE
+.. grammar-snippet::
+   :group: python-grammar
+
+   interactive_input: [`stmt_list`] NEWLINE | `compound_stmt` NEWLINE | ENDMARKER
 
 Note that a (top-level) compound statement must be followed by a blank line in
 interactive mode; this is needed to help the parser detect the end of the input.
@@ -98,10 +102,12 @@ Expression input
 ================
 
 .. index:: single: input
-.. index:: builtin: eval
+.. index:: pair: built-in function; eval
 
 :func:`eval` is used for expression input.  It ignores leading whitespace. The
 string argument to :func:`eval` must have the following form:
 
-.. productionlist:: python-grammar
-   eval_input: `expression_list` NEWLINE*
+.. grammar-snippet::
+   :group: python-grammar
+
+   eval_input: `expression_list` NEWLINE* ENDMARKER

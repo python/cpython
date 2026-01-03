@@ -8,6 +8,8 @@ module with arguments identifying each test.
 import contextlib
 import os
 import sys
+import unittest.mock
+from test.support import swap_item
 
 
 class TestHook:
@@ -186,8 +188,8 @@ def test_monkeypatch():
     )
 
 
-def test_open():
-    # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
+def test_open(testfn):
+    # SSLContext.load_dh_params uses Py_fopen() rather than normal open()
     try:
         import ssl
 
@@ -195,20 +197,47 @@ def test_open():
     except ImportError:
         load_dh_params = None
 
+    try:
+        import readline
+    except ImportError:
+        readline = None
+
+    def rl(name):
+        if readline:
+            return getattr(readline, name, None)
+        else:
+            return None
+
     # Try a range of "open" functions.
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
         for fn, *args in [
-            (open, sys.argv[2], "r"),
+            (open, testfn, "r"),
             (open, sys.executable, "rb"),
             (open, 3, "wb"),
-            (open, sys.argv[2], "w", -1, None, None, None, False, lambda *a: 1),
-            (load_dh_params, sys.argv[2]),
+            (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
+            (load_dh_params, testfn),
+            (rl("read_history_file"), testfn),
+            (rl("read_history_file"), None),
+            (rl("write_history_file"), testfn),
+            (rl("write_history_file"), None),
+            (rl("append_history_file"), 0, testfn),
+            (rl("append_history_file"), 0, None),
+            (rl("read_init_file"), testfn),
+            (rl("read_init_file"), None),
         ]:
             if not fn:
                 continue
             with assertRaises(RuntimeError):
-                fn(*args)
+                try:
+                    fn(*args)
+                except NotImplementedError:
+                    if fn == load_dh_params:
+                        # Not callable in some builds
+                        load_dh_params = None
+                        raise RuntimeError
+                    else:
+                        raise
 
     actual_mode = [(a[0], a[1]) for e, a in hook.seen if e == "open" and a[1]]
     actual_flag = [(a[0], a[2]) for e, a in hook.seen if e == "open" and not a[1]]
@@ -216,11 +245,19 @@ def test_open():
         [
             i
             for i in [
-                (sys.argv[2], "r"),
+                (testfn, "r"),
                 (sys.executable, "r"),
                 (3, "w"),
-                (sys.argv[2], "w"),
-                (sys.argv[2], "rb") if load_dh_params else None,
+                (testfn, "w"),
+                (testfn, "rb") if load_dh_params else None,
+                (testfn, "r") if readline else None,
+                ("~/.history", "r") if readline else None,
+                (testfn, "w") if readline else None,
+                ("~/.history", "w") if readline else None,
+                (testfn, "a") if rl("append_history_file") else None,
+                ("~/.history", "a") if rl("append_history_file") else None,
+                (testfn, "r") if readline else None,
+                ("<readline_init_file>", "r") if readline else None,
             ]
             if i is not None
         ],
@@ -270,6 +307,37 @@ def test_mmap():
         assertEqual(hook.seen[0][1][:2], (-1, 8))
 
 
+def test_ctypes_call_function():
+    import ctypes
+    import _ctypes
+
+    with TestHook() as hook:
+        _ctypes.call_function(ctypes._memmove_addr, (0, 0, 0))
+        assert ("ctypes.call_function", (ctypes._memmove_addr, (0, 0, 0))) in hook.seen, f"{ctypes._memmove_addr=} {hook.seen=}"
+
+        ctypes.CFUNCTYPE(ctypes.c_voidp)(ctypes._memset_addr)(1, 0, 0)
+        assert ("ctypes.call_function", (ctypes._memset_addr, (1, 0, 0))) in hook.seen, f"{ctypes._memset_addr=} {hook.seen=}"
+
+    with TestHook() as hook:
+        ctypes.cast(ctypes.c_voidp(0), ctypes.POINTER(ctypes.c_char))
+        assert "ctypes.call_function" in hook.seen_events
+
+    with TestHook() as hook:
+        ctypes.string_at(id("ctypes.string_at") + 40)
+        assert "ctypes.call_function" in hook.seen_events
+        assert "ctypes.string_at" in hook.seen_events
+
+
+def test_posixsubprocess():
+    import multiprocessing.util
+
+    exe = b"xxx"
+    args = [b"yyy", b"zzz"]
+    with TestHook() as hook:
+        multiprocessing.util.spawnv_passfds(exe, args, ())
+        assert ("_posixsubprocess.fork_exec", ([exe], args, None)) in hook.seen
+
+
 def test_excepthook():
     def excepthook(exc_type, exc_value, exc_tb):
         if exc_type is not RuntimeError:
@@ -289,7 +357,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testcapi import write_unraisable_exc
+    from _testcapi import err_formatunraisable
 
     def unraisablehook(hookargs):
         pass
@@ -302,7 +370,8 @@ def test_unraisablehook():
 
     sys.addaudithook(hook)
     sys.unraisablehook = unraisablehook
-    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+    err_formatunraisable(RuntimeError("nonfatal-error"),
+                         "Exception ignored for audit hook test")
 
 
 def test_winreg():
@@ -398,15 +467,18 @@ def test_sqlite3():
     cx2 = sqlite3.Connection(":memory:")
 
     # Configured without --enable-loadable-sqlite-extensions
-    if hasattr(sqlite3.Connection, "enable_load_extension"):
-        cx1.enable_load_extension(False)
-        try:
-            cx1.load_extension("test")
-        except sqlite3.OperationalError:
-            pass
-        else:
-            raise RuntimeError("Expected sqlite3.load_extension to fail")
-
+    try:
+        if hasattr(sqlite3.Connection, "enable_load_extension"):
+            cx1.enable_load_extension(False)
+            try:
+                cx1.load_extension("test")
+            except sqlite3.OperationalError:
+                pass
+            else:
+                raise RuntimeError("Expected sqlite3.load_extension to fail")
+    finally:
+        cx1.close()
+        cx2.close()
 
 def test_sys_getframe():
     import sys
@@ -417,6 +489,17 @@ def test_sys_getframe():
 
     sys.addaudithook(hook)
     sys._getframe()
+
+
+def test_sys_getframemodulename():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    sys._getframemodulename()
 
 
 def test_threading():
@@ -439,6 +522,9 @@ def test_threading():
 
     i = _thread.start_new_thread(test_func(), ())
     lock.acquire()
+
+    handle = _thread.start_joinable_thread(test_func())
+    handle.join()
 
 
 def test_threading_abort():
@@ -469,7 +555,13 @@ def test_wmi_exec_query():
             print(event, args[0])
 
     sys.addaudithook(hook)
-    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    try:
+        _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    except WindowsError as e:
+        # gh-112278: WMI may be slow response when first called, but we still
+        # get the audit event, so just ignore the timeout
+        if e.winerror != 258:
+            raise
 
 def test_syslog():
     import syslog
@@ -503,10 +595,167 @@ def test_not_in_gc():
             assert hook not in o
 
 
+def test_time(mode):
+    import time
+
+    def hook(event, args):
+        if event.startswith("time."):
+            if mode == 'print':
+                print(event, *args)
+            elif mode == 'fail':
+                raise AssertionError('hook failed')
+    sys.addaudithook(hook)
+
+    time.sleep(0)
+    time.sleep(0.0625)  # 1/16, a small exact float
+    try:
+        time.sleep(-1)
+    except ValueError:
+        pass
+
+def test_sys_monitoring_register_callback():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys.monitoring"):
+            print(event, args)
+
+    sys.addaudithook(hook)
+    sys.monitoring.register_callback(1, 1, None)
+
+
+def test_winapi_createnamedpipe(pipe_name):
+    import _winapi
+
+    def hook(event, args):
+        if event == "_winapi.CreateNamedPipe":
+            print(event, args)
+
+    sys.addaudithook(hook)
+    _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
+
+
+def test_assert_unicode():
+    import sys
+    sys.addaudithook(lambda *args: None)
+    try:
+        sys.audit(9)
+    except TypeError:
+        pass
+    else:
+        raise RuntimeError("Expected sys.audit(9) to fail.")
+
+def test_sys_remote_exec():
+    import tempfile
+
+    pid = os.getpid()
+    event_pid = -1
+    event_script_path = ""
+    remote_event_script_path = ""
+    def hook(event, args):
+        if event not in ["sys.remote_exec", "cpython.remote_debugger_script"]:
+            return
+        print(event, args)
+        match event:
+            case "sys.remote_exec":
+                nonlocal event_pid, event_script_path
+                event_pid = args[0]
+                event_script_path = args[1]
+            case "cpython.remote_debugger_script":
+                nonlocal remote_event_script_path
+                remote_event_script_path = args[0]
+
+    sys.addaudithook(hook)
+    with tempfile.NamedTemporaryFile(mode='w+', delete=True) as tmp_file:
+        tmp_file.write("a = 1+1\n")
+        tmp_file.flush()
+        sys.remote_exec(pid, tmp_file.name)
+        assertEqual(event_pid, pid)
+        assertEqual(event_script_path, tmp_file.name)
+        assertEqual(remote_event_script_path, tmp_file.name)
+
+def test_import_module():
+    import importlib
+
+    with TestHook() as hook:
+        importlib.import_module("importlib")  # already imported, won't get logged
+        importlib.import_module("email") # standard library module
+        importlib.import_module("pythoninfo")  # random module
+        importlib.import_module(".audit_test_data.submodule", "test")  # relative import
+        importlib.import_module("test.audit_test_data.submodule2")  # absolute import
+        importlib.import_module("_testcapi")  # extension module
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
+
+def test_builtin__import__():
+    import importlib # noqa: F401
+
+    with TestHook() as hook:
+        __import__("importlib")
+        __import__("email")
+        __import__("pythoninfo")
+        __import__("audit_test_data.submodule", level=1, globals={"__package__": "test"})
+        __import__("test.audit_test_data.submodule2")
+        __import__("_testcapi")
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
+
+def test_import_statement():
+    import importlib # noqa: F401
+    # Set __package__ so relative imports work
+    with swap_item(globals(), "__package__", "test"):
+        with TestHook() as hook:
+            import importlib # noqa: F401
+            import email # noqa: F401
+            import pythoninfo # noqa: F401
+            from .audit_test_data import submodule # noqa: F401
+            import test.audit_test_data.submodule2 # noqa: F401
+            import _testcapi # noqa: F401
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    # Import statement ordering is different because the package is
+    # loaded first and then the submodule
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
     suppress_msvcrt_asserts()
 
     test = sys.argv[1]
-    globals()[test]()
+    globals()[test](*sys.argv[2:])

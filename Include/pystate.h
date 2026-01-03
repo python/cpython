@@ -56,7 +56,7 @@ PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 
    The caller must hold the GIL.
 
-   See also _PyThreadState_UncheckedGet() and _PyThreadState_GET(). */
+   See also PyThreadState_GetUnchecked() and _PyThreadState_GET(). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
 // Alias to PyThreadState_Get()

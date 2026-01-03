@@ -1,5 +1,5 @@
-:mod:`zipimport` --- Import modules from Zip archives
-=====================================================
+:mod:`!zipimport` --- Import modules from Zip archives
+======================================================
 
 .. module:: zipimport
    :synopsis: Support for importing Python modules from ZIP archives.
@@ -29,6 +29,12 @@ Any files may be present in the ZIP archive, but importers are only invoked for
 :file:`.py` files, Python will not attempt to modify the archive by adding the
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
+
+.. versionchanged:: 3.15
+   Zstandard (*zstd*) compressed zip file entries are supported.
+
+.. versionchanged:: 3.13
+   ZIP64 is supported
 
 .. versionchanged:: 3.8
    Previously, ZIP archives with an archive comment were not supported.
@@ -74,6 +80,11 @@ zipimporter Objects
    :exc:`ZipImportError` is raised if *archivepath* doesn't point to a valid ZIP
    archive.
 
+   .. versionchanged:: 3.12
+
+      Methods ``find_loader()`` and ``find_module()``, deprecated in 3.10 are
+      now removed.  Use :meth:`find_spec` instead.
+
    .. method:: create_module(spec)
 
       Implementation of :meth:`importlib.abc.Loader.create_module` that returns
@@ -87,28 +98,6 @@ zipimporter Objects
       Implementation of :meth:`importlib.abc.Loader.exec_module`.
 
       .. versionadded:: 3.10
-
-
-   .. method:: find_loader(fullname, path=None)
-
-      An implementation of :meth:`importlib.abc.PathEntryFinder.find_loader`.
-
-      .. deprecated:: 3.10
-
-         Use :meth:`find_spec` instead.
-
-
-   .. method:: find_module(fullname, path=None)
-
-      Search for a module specified by *fullname*. *fullname* must be the fully
-      qualified (dotted) module name. It returns the zipimporter instance itself
-      if the module was found, or :const:`None` if it wasn't. The optional
-      *path* argument is ignored---it's there for compatibility with the
-      importer protocol.
-
-      .. deprecated:: 3.10
-
-         Use :meth:`find_spec` instead.
 
 
    .. method:: find_spec(fullname, target=None)
@@ -130,7 +119,7 @@ zipimporter Objects
       file wasn't found.
 
       .. versionchanged:: 3.3
-         :exc:`IOError` used to be raised instead of :exc:`OSError`.
+         :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
 
 
    .. method:: get_filename(fullname)
@@ -154,17 +143,6 @@ zipimporter Objects
 
       Return ``True`` if the module specified by *fullname* is a package. Raise
       :exc:`ZipImportError` if the module couldn't be found.
-
-
-   .. method:: load_module(fullname)
-
-      Load the module specified by *fullname*. *fullname* must be the fully
-      qualified (dotted) module name. Returns the imported module on success,
-      raises :exc:`ZipImportError` on failure.
-
-      .. deprecated:: 3.10
-
-         Use :meth:`exec_module` instead.
 
 
    .. method:: invalidate_caches()
@@ -202,17 +180,20 @@ Here is an example that imports a module from a ZIP archive - note that the
 
 .. code-block:: shell-session
 
-   $ unzip -l example.zip
-   Archive:  example.zip
+   $ unzip -l example_archive.zip
+   Archive:  example_archive.zip
      Length     Date   Time    Name
     --------    ----   ----    ----
-        8467  11-26-02 22:30   jwzthreading.py
+        8467  01-01-00 12:30   example.py
     --------                   -------
         8467                   1 file
-   $ ./python
-   Python 2.3 (#1, Aug 1 2003, 19:54:32)
+
+.. code-block:: pycon
+
    >>> import sys
-   >>> sys.path.insert(0, 'example.zip')  # Add .zip file to front of path
-   >>> import jwzthreading
-   >>> jwzthreading.__file__
-   'example.zip/jwzthreading.py'
+   >>> # Add the archive to the front of the module search path
+   >>> sys.path.insert(0, 'example_archive.zip')
+   >>> import example
+   >>> example.__file__
+   'example_archive.zip/example.py'
+

@@ -10,20 +10,22 @@ module Python
 
     stmt = FunctionDef(identifier name, arguments args,
                        stmt* body, expr* decorator_list, expr? returns,
-                       string? type_comment)
+                       string? type_comment, type_param* type_params)
           | AsyncFunctionDef(identifier name, arguments args,
                              stmt* body, expr* decorator_list, expr? returns,
-                             string? type_comment)
+                             string? type_comment, type_param* type_params)
 
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
              stmt* body,
-             expr* decorator_list)
+             expr* decorator_list,
+             type_param* type_params)
           | Return(expr? value)
 
           | Delete(expr* targets)
           | Assign(expr* targets, expr value, string? type_comment)
+          | TypeAlias(expr name, type_param* type_params, expr value)
           | AugAssign(expr target, operator op, expr value)
           -- 'simple' indicates that we annotate simple name without parens
           | AnnAssign(expr target, expr annotation, expr? value, int simple)
@@ -61,7 +63,7 @@ module Python
          | UnaryOp(unaryop op, expr operand)
          | Lambda(arguments args, expr body)
          | IfExp(expr test, expr body, expr orelse)
-         | Dict(expr* keys, expr* values)
+         | Dict(expr?* keys, expr* values)
          | Set(expr* elts)
          | ListComp(expr elt, comprehension* generators)
          | SetComp(expr elt, comprehension* generators)
@@ -76,7 +78,9 @@ module Python
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
          | FormattedValue(expr value, int conversion, expr? format_spec)
+         | Interpolation(expr value, constant str, int conversion, expr? format_spec)
          | JoinedStr(expr* values)
+         | TemplateStr(expr* values)
          | Constant(constant value, string? kind)
 
          -- the following expression can appear in assignment context
@@ -110,7 +114,7 @@ module Python
                     attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     arguments = (arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs,
-                 expr* kw_defaults, arg? kwarg, expr* defaults)
+                 expr?* kw_defaults, arg? kwarg, expr* defaults)
 
     arg = (identifier arg, expr? annotation, string? type_comment)
            attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
@@ -142,4 +146,9 @@ module Python
              attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
 
     type_ignore = TypeIgnore(int lineno, string tag)
+
+    type_param = TypeVar(identifier name, expr? bound, expr? default_value)
+               | ParamSpec(identifier name, expr? default_value)
+               | TypeVarTuple(identifier name, expr? default_value)
+               attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
 }

@@ -40,7 +40,7 @@ This section describes Python type objects and the singleton object ``None``.
 Numeric Objects
 ===============
 
-.. index:: object: numeric
+.. index:: pair: object; numeric
 
 .. toctree::
 
@@ -55,7 +55,7 @@ Numeric Objects
 Sequence Objects
 ================
 
-.. index:: object: sequence
+.. index:: pair: object; sequence
 
 Generic operations on sequence objects were discussed in the previous chapter;
 this section deals with the specific kinds of sequence objects that are
@@ -77,7 +77,7 @@ intrinsic to the Python language.
 Container Objects
 =================
 
-.. index:: object: mapping
+.. index:: pair: object; mapping
 
 .. toctree::
 
@@ -109,11 +109,20 @@ Other Objects
    descriptor.rst
    slice.rst
    memoryview.rst
+   picklebuffer.rst
    weakref.rst
    capsule.rst
    frame.rst
    gen.rst
    coro.rst
    contextvars.rst
-   datetime.rst
    typehints.rst
+
+
+C API for extension modules
+===========================
+
+.. toctree::
+
+   curses.rst
+   datetime.rst

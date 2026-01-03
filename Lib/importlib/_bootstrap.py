@@ -51,15 +51,176 @@ def _new_module(name):
 
 # Module-level locking ########################################################
 
-# A dict mapping module names to weakrefs of _ModuleLock instances
-# Dictionary protected by the global import lock
+# For a list that can have a weakref to it.
+class _List(list):
+    __slots__ = ("__weakref__",)
+
+
+# Copied from weakref.py with some simplifications and modifications unique to
+# bootstrapping importlib. Many methods were simply deleting for simplicity, so if they
+# are needed in the future they may work if simply copied back in.
+class _WeakValueDictionary:
+
+    def __init__(self):
+        self_weakref = _weakref.ref(self)
+
+        # Inlined to avoid issues with inheriting from _weakref.ref before _weakref is
+        # set by _setup(). Since there's only one instance of this class, this is
+        # not expensive.
+        class KeyedRef(_weakref.ref):
+
+            __slots__ = "key",
+
+            def __new__(type, ob, key):
+                self = super().__new__(type, ob, type.remove)
+                self.key = key
+                return self
+
+            def __init__(self, ob, key):
+                super().__init__(ob, self.remove)
+
+            @staticmethod
+            def remove(wr):
+                nonlocal self_weakref
+
+                self = self_weakref()
+                if self is not None:
+                    if self._iterating:
+                        self._pending_removals.append(wr.key)
+                    else:
+                        _weakref._remove_dead_weakref(self.data, wr.key)
+
+        self._KeyedRef = KeyedRef
+        self.clear()
+
+    def clear(self):
+        self._pending_removals = []
+        self._iterating = set()
+        self.data = {}
+
+    def _commit_removals(self):
+        pop = self._pending_removals.pop
+        d = self.data
+        while True:
+            try:
+                key = pop()
+            except IndexError:
+                return
+            _weakref._remove_dead_weakref(d, key)
+
+    def get(self, key, default=None):
+        if self._pending_removals:
+            self._commit_removals()
+        try:
+            wr = self.data[key]
+        except KeyError:
+            return default
+        else:
+            if (o := wr()) is None:
+                return default
+            else:
+                return o
+
+    def setdefault(self, key, default=None):
+        try:
+            o = self.data[key]()
+        except KeyError:
+            o = None
+        if o is None:
+            if self._pending_removals:
+                self._commit_removals()
+            self.data[key] = self._KeyedRef(default, key)
+            return default
+        else:
+            return o
+
+
+# A dict mapping module names to weakrefs of _ModuleLock instances.
+# Dictionary protected by the global import lock.
 _module_locks = {}
-# A dict mapping thread ids to _ModuleLock instances
-_blocking_on = {}
+
+# A dict mapping thread IDs to weakref'ed lists of _ModuleLock instances.
+# This maps a thread to the module locks it is blocking on acquiring.  The
+# values are lists because a single thread could perform a re-entrant import
+# and be "in the process" of blocking on locks for more than one module.  A
+# thread can be "in the process" because a thread cannot actually block on
+# acquiring more than one lock but it can have set up bookkeeping that reflects
+# that it intends to block on acquiring more than one lock.
+#
+# The dictionary uses a WeakValueDictionary to avoid keeping unnecessary
+# lists around, regardless of GC runs. This way there's no memory leak if
+# the list is no longer needed (GH-106176).
+_blocking_on = None
+
+
+class _BlockingOnManager:
+    """A context manager responsible to updating ``_blocking_on``."""
+    def __init__(self, thread_id, lock):
+        self.thread_id = thread_id
+        self.lock = lock
+
+    def __enter__(self):
+        """Mark the running thread as waiting for self.lock. via _blocking_on."""
+        # Interactions with _blocking_on are *not* protected by the global
+        # import lock here because each thread only touches the state that it
+        # owns (state keyed on its thread id).  The global import lock is
+        # re-entrant (i.e., a single thread may take it more than once) so it
+        # wouldn't help us be correct in the face of re-entrancy either.
+
+        self.blocked_on = _blocking_on.setdefault(self.thread_id, _List())
+        self.blocked_on.append(self.lock)
+
+    def __exit__(self, *args, **kwargs):
+        """Remove self.lock from this thread's _blocking_on list."""
+        self.blocked_on.remove(self.lock)
 
 
 class _DeadlockError(RuntimeError):
     pass
+
+
+
+def _has_deadlocked(target_id, *, seen_ids, candidate_ids, blocking_on):
+    """Check if 'target_id' is holding the same lock as another thread(s).
+
+    The search within 'blocking_on' starts with the threads listed in
+    'candidate_ids'.  'seen_ids' contains any threads that are considered
+    already traversed in the search.
+
+    Keyword arguments:
+    target_id     -- The thread id to try to reach.
+    seen_ids      -- A set of threads that have already been visited.
+    candidate_ids -- The thread ids from which to begin.
+    blocking_on   -- A dict representing the thread/blocking-on graph.  This may
+                     be the same object as the global '_blocking_on' but it is
+                     a parameter to reduce the impact that global mutable
+                     state has on the result of this function.
+    """
+    if target_id in candidate_ids:
+        # If we have already reached the target_id, we're done - signal that it
+        # is reachable.
+        return True
+
+    # Otherwise, try to reach the target_id from each of the given candidate_ids.
+    for tid in candidate_ids:
+        if not (candidate_blocking_on := blocking_on.get(tid)):
+            # There are no edges out from this node, skip it.
+            continue
+        elif tid in seen_ids:
+            # bpo 38091: the chain of tid's we encounter here eventually leads
+            # to a fixed point or a cycle, but does not reach target_id.
+            # This means we would not actually deadlock.  This can happen if
+            # other threads are at the beginning of acquire() below.
+            return False
+        seen_ids.add(tid)
+
+        # Follow the edges out from this thread.
+        edges = [lock.owner for lock in candidate_blocking_on]
+        if _has_deadlocked(target_id, seen_ids=seen_ids, candidate_ids=edges,
+                blocking_on=blocking_on):
+            return True
+
+    return False
 
 
 class _ModuleLock:
@@ -69,33 +230,76 @@ class _ModuleLock:
     """
 
     def __init__(self, name):
-        self.lock = _thread.allocate_lock()
+        # Create an RLock for protecting the import process for the
+        # corresponding module.  Since it is an RLock, a single thread will be
+        # able to take it more than once.  This is necessary to support
+        # re-entrancy in the import system that arises from (at least) signal
+        # handlers and the garbage collector.  Consider the case of:
+        #
+        #  import foo
+        #  -> ...
+        #     -> importlib._bootstrap._ModuleLock.acquire
+        #        -> ...
+        #           -> <garbage collector>
+        #              -> __del__
+        #                 -> import foo
+        #                    -> ...
+        #                       -> importlib._bootstrap._ModuleLock.acquire
+        #                          -> _BlockingOnManager.__enter__
+        #
+        # If a different thread than the running one holds the lock then the
+        # thread will have to block on taking the lock, which is what we want
+        # for thread safety.
+        self.lock = _thread.RLock()
         self.wakeup = _thread.allocate_lock()
+
+        # The name of the module for which this is a lock.
         self.name = name
+
+        # Can end up being set to None if this lock is not owned by any thread
+        # or the thread identifier for the owning thread.
         self.owner = None
-        self.count = 0
-        self.waiters = 0
+
+        # Represent the number of times the owning thread has acquired this lock
+        # via a list of True.  This supports RLock-like ("re-entrant lock")
+        # behavior, necessary in case a single thread is following a circular
+        # import dependency and needs to take the lock for a single module
+        # more than once.
+        #
+        # Counts are represented as a list of True because list.append(True)
+        # and list.pop() are both atomic and thread-safe in CPython and it's hard
+        # to find another primitive with the same properties.
+        self.count = []
+
+        # This is a count of the number of threads that are blocking on
+        # self.wakeup.acquire() awaiting to get their turn holding this module
+        # lock.  When the module lock is released, if this is greater than
+        # zero, it is decremented and `self.wakeup` is released one time.  The
+        # intent is that this will let one other thread make more progress on
+        # acquiring this module lock.  This repeats until all the threads have
+        # gotten a turn.
+        #
+        # This is incremented in self.acquire() when a thread notices it is
+        # going to have to wait for another thread to finish.
+        #
+        # See the comment above count for explanation of the representation.
+        self.waiters = []
 
     def has_deadlock(self):
-        # Deadlock avoidance for concurrent circular imports.
-        me = _thread.get_ident()
-        tid = self.owner
-        seen = set()
-        while True:
-            lock = _blocking_on.get(tid)
-            if lock is None:
-                return False
-            tid = lock.owner
-            if tid == me:
-                return True
-            if tid in seen:
-                # bpo 38091: the chain of tid's we encounter here
-                # eventually leads to a fixpoint or a cycle, but
-                # does not reach 'me'.  This means we would not
-                # actually deadlock.  This can happen if other
-                # threads are at the beginning of acquire() below.
-                return False
-            seen.add(tid)
+        # To avoid deadlocks for concurrent or re-entrant circular imports,
+        # look at _blocking_on to see if any threads are blocking
+        # on getting the import lock for any module for which the import lock
+        # is held by this thread.
+        return _has_deadlocked(
+            # Try to find this thread.
+            target_id=_thread.get_ident(),
+            seen_ids=set(),
+            # Start from the thread that holds the import lock for this
+            # module.
+            candidate_ids=[self.owner],
+            # Use the global "blocking on" state.
+            blocking_on=_blocking_on,
+        )
 
     def acquire(self):
         """
@@ -104,36 +308,82 @@ class _ModuleLock:
         Otherwise, the lock is always acquired and True is returned.
         """
         tid = _thread.get_ident()
-        _blocking_on[tid] = self
-        try:
+        with _BlockingOnManager(tid, self):
             while True:
+                # Protect interaction with state on self with a per-module
+                # lock.  This makes it safe for more than one thread to try to
+                # acquire the lock for a single module at the same time.
                 with self.lock:
-                    if self.count == 0 or self.owner == tid:
+                    if self.count == [] or self.owner == tid:
+                        # If the lock for this module is unowned then we can
+                        # take the lock immediately and succeed.  If the lock
+                        # for this module is owned by the running thread then
+                        # we can also allow the acquire to succeed.  This
+                        # supports circular imports (thread T imports module A
+                        # which imports module B which imports module A).
                         self.owner = tid
-                        self.count += 1
+                        self.count.append(True)
                         return True
+
+                    # At this point we know the lock is held (because count !=
+                    # 0) by another thread (because owner != tid).  We'll have
+                    # to get in line to take the module lock.
+
+                    # But first, check to see if this thread would create a
+                    # deadlock by acquiring this module lock.  If it would
+                    # then just stop with an error.
+                    #
+                    # It's not clear who is expected to handle this error.
+                    # There is one handler in _lock_unlock_module but many
+                    # times this method is called when entering the context
+                    # manager _ModuleLockManager instead - so _DeadlockError
+                    # will just propagate up to application code.
+                    #
+                    # This seems to be more than just a hypothetical -
+                    # https://stackoverflow.com/questions/59509154
+                    # https://github.com/encode/django-rest-framework/issues/7078
                     if self.has_deadlock():
-                        raise _DeadlockError('deadlock detected by %r' % self)
+                        raise _DeadlockError(f'deadlock detected by {self!r}')
+
+                    # Check to see if we're going to be able to acquire the
+                    # lock.  If we are going to have to wait then increment
+                    # the waiters so `self.release` will know to unblock us
+                    # later on.  We do this part non-blockingly so we don't
+                    # get stuck here before we increment waiters.  We have
+                    # this extra acquire call (in addition to the one below,
+                    # outside the self.lock context manager) to make sure
+                    # self.wakeup is held when the next acquire is called (so
+                    # we block).  This is probably needlessly complex and we
+                    # should just take self.wakeup in the return codepath
+                    # above.
                     if self.wakeup.acquire(False):
-                        self.waiters += 1
-                # Wait for a release() call
+                        self.waiters.append(None)
+
+                # Now take the lock in a blocking fashion.  This won't
+                # complete until the thread holding this lock
+                # (self.owner) calls self.release.
                 self.wakeup.acquire()
+
+                # Taking the lock has served its purpose (making us wait), so we can
+                # give it up now.  We'll take it w/o blocking again on the
+                # next iteration around this 'while' loop.
                 self.wakeup.release()
-        finally:
-            del _blocking_on[tid]
 
     def release(self):
         tid = _thread.get_ident()
         with self.lock:
             if self.owner != tid:
                 raise RuntimeError('cannot release un-acquired lock')
-            assert self.count > 0
-            self.count -= 1
-            if self.count == 0:
+            assert len(self.count) > 0
+            self.count.pop()
+            if not len(self.count):
                 self.owner = None
-                if self.waiters:
-                    self.waiters -= 1
+                if len(self.waiters) > 0:
+                    self.waiters.pop()
                     self.wakeup.release()
+
+    def locked(self):
+        return bool(self.count)
 
     def __repr__(self):
         return f'_ModuleLock({self.name!r}) at {id(self)}'
@@ -271,24 +521,6 @@ def _requires_frozen(fxn):
     return _requires_frozen_wrapper
 
 
-# Typically used by loader classes as a method replacement.
-def _load_module_shim(self, fullname):
-    """Load the specified module into sys.modules and return it.
-
-    This method is deprecated.  Use loader.exec_module() instead.
-
-    """
-    msg = ("the load_module() method is deprecated and slated for removal in "
-          "Python 3.12; use exec_module() instead")
-    _warnings.warn(msg, DeprecationWarning)
-    spec = spec_from_loader(fullname, self)
-    if fullname in sys.modules:
-        module = sys.modules[fullname]
-        _exec(spec, module)
-        return sys.modules[fullname]
-    else:
-        return _load(spec)
-
 # Module specifications #######################################################
 
 def _module_repr(module):
@@ -333,8 +565,7 @@ class ModuleSpec:
     `has_location` indicates that a spec's "origin" reflects a location.
     When this is True, `__file__` attribute of the module is set.
 
-    `cached` is the location of the cached bytecode file, if any.  It
-    corresponds to the `__cached__` attribute.
+    `cached` is the location of the cached bytecode file, if any.
 
     `submodule_search_locations` is the sequence of path entries to
     search when importing submodules.  If set, is_package should be
@@ -468,17 +699,13 @@ def _spec_from_module(module, loader=None, origin=None):
         if not origin and location is not None:
             origin = location
     try:
-        cached = module.__cached__
-    except AttributeError:
-        cached = None
-    try:
         submodule_search_locations = list(module.__path__)
     except AttributeError:
         submodule_search_locations = None
 
     spec = ModuleSpec(name, loader, origin=origin)
     spec._set_fileattr = False if location is None else (origin == location)
-    spec.cached = cached
+    spec.cached = None
     spec.submodule_search_locations = submodule_search_locations
     return spec
 
@@ -513,8 +740,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 # should also be None for consistency.  While a bit of a hack,
                 # this is the best place to ensure this consistency.
                 #
-                # See # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module
-                # and bpo-32305
+                # See bpo-32305
                 module.__file__ = None
         try:
             module.__loader__ = loader
@@ -539,7 +765,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 module.__path__ = spec.submodule_search_locations
             except AttributeError:
                 pass
-    # __file__/__cached__
+    # __file__
     if spec.has_location:
         if override or getattr(module, '__file__', None) is None:
             try:
@@ -547,12 +773,6 @@ def _init_module_attrs(spec, module, *, override=False):
             except AttributeError:
                 pass
 
-        if override or getattr(module, '__cached__', None) is None:
-            if spec.cached is not None:
-                try:
-                    module.__cached__ = spec.cached
-                except AttributeError:
-                    pass
     return module
 
 
@@ -577,10 +797,16 @@ def _module_repr_from_spec(spec):
     """Return the repr to use for the module."""
     name = '?' if spec.name is None else spec.name
     if spec.origin is None:
-        if spec.loader is None:
+        loader = spec.loader
+        if loader is None:
             return f'<module {name!r}>'
+        elif (
+            _bootstrap_external is not None
+            and isinstance(loader, _bootstrap_external.NamespaceLoader)
+        ):
+            return f'<module {name!r} (namespace) from {list(loader._path)}>'
         else:
-            return f'<module {name!r} (namespace) from {list(spec.loader._path)}>'
+            return f'<module {name!r} ({loader!r})>'
     else:
         if spec.has_location:
             return f'<module {name!r} from {spec.origin!r}>'
@@ -588,7 +814,7 @@ def _module_repr_from_spec(spec):
             return f'<module {spec.name!r} ({spec.origin})>'
 
 
-# Used by importlib.reload() and _load_module_shim().
+# Used by importlib.reload().
 def _exec(spec, module):
     """Execute the spec's specified module in an existing module's namespace."""
     name = spec.name
@@ -604,13 +830,7 @@ def _exec(spec, module):
                 _init_module_attrs(spec, module, override=True)
             else:
                 _init_module_attrs(spec, module, override=True)
-                if not hasattr(spec.loader, 'exec_module'):
-                    msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
-                           "falling back to load_module()")
-                    _warnings.warn(msg, ImportWarning)
-                    spec.loader.load_module(name)
-                else:
-                    spec.loader.exec_module(module)
+                spec.loader.exec_module(module)
         finally:
             # Update the order of insertion into sys.modules for module
             # clean-up at shutdown.
@@ -618,53 +838,8 @@ def _exec(spec, module):
             sys.modules[spec.name] = module
     return module
 
-
-def _load_backward_compatible(spec):
-    # It is assumed that all callers have been warned about using load_module()
-    # appropriately before calling this function.
-    try:
-        spec.loader.load_module(spec.name)
-    except:
-        if spec.name in sys.modules:
-            module = sys.modules.pop(spec.name)
-            sys.modules[spec.name] = module
-        raise
-    # The module must be in sys.modules at this point!
-    # Move it to the end of sys.modules.
-    module = sys.modules.pop(spec.name)
-    sys.modules[spec.name] = module
-    if getattr(module, '__loader__', None) is None:
-        try:
-            module.__loader__ = spec.loader
-        except AttributeError:
-            pass
-    if getattr(module, '__package__', None) is None:
-        try:
-            # Since module.__path__ may not line up with
-            # spec.submodule_search_paths, we can't necessarily rely
-            # on spec.parent here.
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = spec.name.rpartition('.')[0]
-        except AttributeError:
-            pass
-    if getattr(module, '__spec__', None) is None:
-        try:
-            module.__spec__ = spec
-        except AttributeError:
-            pass
-    return module
-
 def _load_unlocked(spec):
     # A helper for direct use by the import system.
-    if spec.loader is not None:
-        # Not a namespace package.
-        if not hasattr(spec.loader, 'exec_module'):
-            msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
-                    "falling back to load_module()")
-            _warnings.warn(msg, ImportWarning)
-            return _load_backward_compatible(spec)
-
     module = module_from_spec(spec)
 
     # This must be done before putting the module in sys.modules
@@ -698,8 +873,7 @@ def _load_unlocked(spec):
 
     return module
 
-# A method used during testing of _load_unlocked() and by
-# _load_module_shim().
+# A method used during testing of _load_unlocked().
 def _load(spec):
     """Return a new module object, loaded by the spec's loader.
 
@@ -728,27 +902,10 @@ class BuiltinImporter:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        if path is not None:
-            return None
         if _imp.is_builtin(fullname):
             return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
         else:
             return None
-
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """Find the built-in module.
-
-        If 'path' is ever specified then the search is considered a failure.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("BuiltinImporter.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        spec = cls.find_spec(fullname, path)
-        return spec.loader if spec is not None else None
 
     @staticmethod
     def create_module(spec):
@@ -780,8 +937,6 @@ class BuiltinImporter:
     def is_package(cls, fullname):
         """Return False as built-in modules are never packages."""
         return False
-
-    load_module = classmethod(_load_module_shim)
 
 
 class FrozenImporter:
@@ -898,7 +1053,7 @@ class FrozenImporter:
         # part of the importer), instead of here (the finder part).
         # The loader is the usual place to get the data that will
         # be loaded into the module.  (For example, see _LoaderBasics
-        # in _bootstra_external.py.)  Most importantly, this importer
+        # in _bootstrap_external.py.)  Most importantly, this importer
         # is simpler if we wait to get the data.
         # However, getting as much data in the finder as possible
         # to later load the module is okay, and sometimes important.
@@ -919,18 +1074,6 @@ class FrozenImporter:
             spec.submodule_search_locations.insert(0, pkgdir)
         return spec
 
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """Find a frozen module.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("FrozenImporter.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        return cls if _imp.is_frozen(fullname) else None
-
     @staticmethod
     def create_module(spec):
         """Set __file__, if able."""
@@ -950,25 +1093,6 @@ class FrozenImporter:
         name = spec.name
         code = _call_with_frames_removed(_imp.get_frozen_object, name)
         exec(code, module.__dict__)
-
-    @classmethod
-    def load_module(cls, fullname):
-        """Load a frozen module.
-
-        This method is deprecated.  Use exec_module() instead.
-
-        """
-        # Warning about deprecation implemented in _load_module_shim().
-        module = _load_module_shim(cls, fullname)
-        info = _imp.find_frozen(fullname)
-        assert info is not None
-        _, ispkg, origname = info
-        module.__origname__ = origname
-        vars(module).pop('__file__', None)
-        if ispkg:
-            module.__path__ = []
-        cls._fix_up_module(module)
-        return module
 
     @classmethod
     @_requires_frozen
@@ -1013,24 +1137,16 @@ def _resolve_name(name, package, level):
     return f'{base}.{name}' if name else base
 
 
-def _find_spec_legacy(finder, name, path):
-    msg = (f"{_object_name(finder)}.find_spec() not found; "
-                           "falling back to find_module()")
-    _warnings.warn(msg, ImportWarning)
-    loader = finder.find_module(name, path)
-    if loader is None:
-        return None
-    return spec_from_loader(name, loader)
-
-
 def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
     if meta_path is None:
-        # PyImport_Cleanup() is running or has been called.
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
 
+    # gh-130094: Copy sys.meta_path so that we have a consistent view of the
+    # list while iterating over it.
+    meta_path = list(meta_path)
     if not meta_path:
         _warnings.warn('sys.meta_path is empty', ImportWarning)
 
@@ -1043,9 +1159,7 @@ def _find_spec(name, path, target=None):
             try:
                 find_spec = finder.find_spec
             except AttributeError:
-                spec = _find_spec_legacy(finder, name, path)
-                if spec is None:
-                    continue
+                continue
             else:
                 spec = find_spec(name, path, target)
         if spec is not None:
@@ -1087,25 +1201,39 @@ def _sanity_check(name, package, level):
 
 
 _ERR_MSG_PREFIX = 'No module named '
-_ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 
 def _find_and_load_unlocked(name, import_):
     path = None
+    sys.audit(
+        "import",
+        name,
+        path,
+        getattr(sys, "path", None),
+        getattr(sys, "meta_path", None),
+        getattr(sys, "path_hooks", None)
+    )
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
         # Crazy side-effects!
-        if name in sys.modules:
-            return sys.modules[name]
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         parent_module = sys.modules[parent]
         try:
             path = parent_module.__path__
         except AttributeError:
-            msg = f'{_ERR_MSG_PREFIX} {name!r}; {parent!r} is not a package'
+            msg = f'{_ERR_MSG_PREFIX}{name!r}; {parent!r} is not a package'
             raise ModuleNotFoundError(msg, name=name) from None
         parent_spec = parent_module.__spec__
+        if getattr(parent_spec, '_initializing', False):
+            _call_with_frames_removed(import_, parent)
+        # Crazy side-effects (again)!
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
@@ -1291,7 +1419,7 @@ def _setup(sys_module, _imp_module):
     modules, those two modules must be explicitly passed in.
 
     """
-    global _imp, sys
+    global _imp, sys, _blocking_on
     _imp = _imp_module
     sys = sys_module
 
@@ -1318,6 +1446,9 @@ def _setup(sys_module, _imp_module):
         else:
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
+
+    # Instantiation requires _weakref to have been set.
+    _blocking_on = _WeakValueDictionary()
 
 
 def _install(sys_module, _imp_module):

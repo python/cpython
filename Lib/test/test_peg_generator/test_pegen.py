@@ -42,6 +42,15 @@ class TestPegen(unittest.TestCase):
         )
         self.assertEqual(repr(rules["term"]), expected_repr)
 
+    def test_repeated_rules(self) -> None:
+        grammar_source = """
+        start: the_rule NEWLINE
+        the_rule: 'b' NEWLINE
+        the_rule: 'a' NEWLINE
+        """
+        with self.assertRaisesRegex(GrammarError, "Repeated rule 'the_rule'"):
+            parse_string(grammar_source, GrammarParser)
+
     def test_long_rule_str(self) -> None:
         grammar_source = """
         start: zero | one | one zero | one one | one zero zero | one zero one | one one zero | one one one
@@ -82,10 +91,8 @@ class TestPegen(unittest.TestCase):
         """
         rules = parse_string(grammar, GrammarParser).rules
         self.assertEqual(str(rules["start"]), "start: ','.thing+ NEWLINE")
-        self.assertTrue(
-            repr(rules["start"]).startswith(
-                "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
-            )
+        self.assertStartsWith(repr(rules["start"]),
+            "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
         )
         self.assertEqual(str(rules["thing"]), "thing: NUMBER")
         parser_class = make_parser(grammar)
@@ -475,7 +482,7 @@ class TestPegen(unittest.TestCase):
 
     def test_python_expr(self) -> None:
         grammar = """
-        start: expr NEWLINE? $ { ast.Expression(expr, lineno=1, col_offset=0) }
+        start: expr NEWLINE? $ { ast.Expression(expr) }
         expr: ( expr '+' term { ast.BinOp(expr, ast.Add(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | expr '-' term { ast.BinOp(expr, ast.Sub(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | term { term }
@@ -496,6 +503,14 @@ class TestPegen(unittest.TestCase):
         code = compile(node, "", "eval")
         val = eval(code)
         self.assertEqual(val, 3.0)
+
+    def test_f_string_in_action(self) -> None:
+        grammar = """
+        start: n=NAME NEWLINE? $ { f"name -> {n.string}" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("a", parser_class)
+        self.assertEqual(node.strip(), "name ->  a")
 
     def test_nullable(self) -> None:
         grammar_source = """
@@ -650,6 +665,7 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("foo = 12 + 12 .", parser_class)
+        self.maxDiff = None
         self.assertEqual(
             node,
             [
@@ -794,7 +810,7 @@ class TestPegen(unittest.TestCase):
         start:
             | "number" n=NUMBER { eval(n.string) }
             | "string" n=STRING { n.string }
-            | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { f"{l.string} = {n.string}"}
+            | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { l.string + " = " + n.string }
         """
         parser_class = make_parser(grammar)
         self.assertEqual(parse_string("number 1", parser_class), 1)
@@ -883,7 +899,7 @@ class TestPegen(unittest.TestCase):
 
     def test_locations_in_alt_action_and_group(self) -> None:
         grammar = """
-        start: t=term NEWLINE? $ { ast.Expression(t, LOCATIONS) }
+        start: t=term NEWLINE? $ { ast.Expression(t) }
         term:
             | l=term '*' r=factor { ast.BinOp(l, ast.Mult(), r, LOCATIONS) }
             | l=term '/' r=factor { ast.BinOp(l, ast.Div(), r, LOCATIONS) }
@@ -1090,3 +1106,53 @@ class TestGrammarVisualizer(unittest.TestCase):
         )
 
         self.assertEqual(output, expected_output)
+
+    def test_rule_flags(self) -> None:
+        """Test the new rule flags syntax that accepts arbitrary lists of flags."""
+        # Test grammar with various flag combinations
+        grammar_source = """
+        start: simple_rule
+
+        simple_rule (memo):
+            | "hello"
+
+        multi_flag_rule (memo, custom, test):
+            | "world"
+
+        single_custom_flag (custom):
+            | "test"
+
+        no_flags_rule:
+            | "plain"
+        """
+
+        grammar: Grammar = parse_string(grammar_source, GrammarParser)
+        rules = grammar.rules
+
+        # Test memo-only rule
+        simple_rule = rules['simple_rule']
+        self.assertTrue('memo' in simple_rule.flags,
+                        "simple_rule should have memo")
+        self.assertEqual(simple_rule.flags, frozenset(['memo']),
+                        f"simple_rule flags should be {'memo'}, got {simple_rule.flags}")
+
+        # Test multi-flag rule
+        multi_flag_rule = rules['multi_flag_rule']
+        self.assertTrue('memo' in simple_rule.flags,
+                        "multi_flag_rule should have memo")
+        self.assertEqual(multi_flag_rule.flags, frozenset({'memo', 'custom', 'test'}),
+                        f"multi_flag_rule flags should contain memo, custom, test, got {multi_flag_rule.flags}")
+
+        # Test single custom flag rule
+        single_custom_rule = rules['single_custom_flag']
+        self.assertFalse('memo' not in simple_rule.flags,
+                         "single_custom_flag should not have memo")
+        self.assertEqual(single_custom_rule.flags, frozenset(['custom']),
+                        f"single_custom_flag flags should be {'custom'}, got {single_custom_rule.flags}")
+
+        # Test no flags rule
+        no_flags_rule = rules['no_flags_rule']
+        self.assertFalse('memo' not in simple_rule.flags,
+                         "no_flags_rule should not have memo")
+        self.assertEqual(no_flags_rule.flags, frozenset(),
+                        f"no_flags_rule flags should be the empty set, got {no_flags_rule.flags}")

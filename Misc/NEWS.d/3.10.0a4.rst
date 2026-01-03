@@ -105,7 +105,7 @@ blocks
 .. section: Core and Builtins
 
 Make the :mod:`atexit` module state per-interpreter. It is now safe have
-more than one :mod:`atexit` module instance. Patch by Dong-hee Na and Victor
+more than one :mod:`atexit` module instance. Patch by Donghee Na and Victor
 Stinner.
 
 ..
@@ -193,7 +193,7 @@ subinterpreters. Patch by Victor Stinner.
 .. nonce: j7nl6A
 .. section: Core and Builtins
 
-Make :c:func:`_PyUnicode_FromId` function compatible with subinterpreters.
+Make :c:func:`!_PyUnicode_FromId` function compatible with subinterpreters.
 Each interpreter now has an array of identifier objects (interned strings
 decoded from UTF-8). Patch by Victor Stinner.
 
@@ -367,7 +367,7 @@ uses "options" instead.
 .. nonce: Quy3zn
 .. section: Library
 
-Port the :mod:`_thread` extension module to the multiphase initialization
+Port the :mod:`!_thread` extension module to the multiphase initialization
 API (:pep:`489`) and convert its static types to heap types.
 
 ..
@@ -412,7 +412,7 @@ be created automatically.
 
 ``logging.disable`` will now validate the types and value of its parameter.
 It also now accepts strings representing the levels (as does
-``loging.setLevel``) instead of only the numerical values.
+``logging.setLevel``) instead of only the numerical values.
 
 ..
 
@@ -516,7 +516,7 @@ Define THREAD_STACK_SIZE for VxWorks.
 .. nonce: x8TASR
 .. section: Library
 
-[Enum] `_EnumDict.update()` is now supported
+[Enum] ``_EnumDict.update()`` is now supported.
 
 ..
 
@@ -709,7 +709,7 @@ directories.
 .. nonce: ek38d_
 .. section: Library
 
-Add :func:`os.set_blocking()` support for VxWorks RTOS.
+Add :func:`os.set_blocking` support for VxWorks RTOS.
 
 ..
 
@@ -768,7 +768,7 @@ results. Patch by Ammar Askar.
 .. section: Tests
 
 Update test_nntplib to use official group name of news.aioe.org for testing.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -960,8 +960,8 @@ explicitly and so not exported.
 .. nonce: Je08Ny
 .. section: C API
 
-Remove the private :c:func:`_Py_fopen` function which is no longer needed.
-Use :c:func:`_Py_wfopen` or :c:func:`_Py_fopen_obj` instead. Patch by Victor
+Remove the private :c:func:`!_Py_fopen` function which is no longer needed.
+Use :c:func:`!_Py_wfopen` or :c:func:`!_Py_fopen_obj` instead. Patch by Victor
 Stinner.
 
 ..

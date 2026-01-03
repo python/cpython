@@ -6,9 +6,9 @@ import linecache
 import sys
 import types
 import inspect
-import importlib
 import builtins
 import unittest
+import unittest.mock
 import re
 import tempfile
 import random
@@ -18,15 +18,17 @@ import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
-from test.support.os_helper import TESTFN, unlink
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.os_helper import TESTFN, temp_dir, unlink
+from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
+from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
 import textwrap
 import traceback
 from functools import partial
 from pathlib import Path
+import _colorize
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
@@ -35,6 +37,12 @@ test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
+color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E"}
+colors = {
+    color_overrides.get(k, k[0].lower()): v
+    for k, v in _colorize.default_theme.traceback.items()
+}
+
 
 LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
@@ -42,6 +50,14 @@ LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
+    def setUp(self):
+        super().setUp()
+        self.colorize = _colorize.COLORIZE
+        _colorize.COLORIZE = False
+
+    def tearDown(self):
+        super().tearDown()
+        _colorize.COLORIZE = self.colorize
 
     def get_exception_format(self, func, exc):
         try:
@@ -72,11 +88,17 @@ class TracebackCases(unittest.TestCase):
     def tokenizer_error_with_caret_range(self):
         compile("blech  (  ", "?", "exec")
 
+    def syntax_error_with_caret_wide_char(self):
+        compile("女女女=1; 女女女/", "?", "exec")
+
+    def syntax_error_with_caret_wide_char_range(self):
+        compile("f(x, 女女女 for 女女女 in range(30), z)", "?", "exec")
+
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
         self.assertEqual(len(err), 4)
-        self.assertTrue(err[1].strip() == "return x!")
+        self.assertEqual(err[1].strip(), "return x!")
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
         self.assertEqual(err[2].count("^"), 1)
@@ -109,12 +131,27 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(err[1].find("("), err[2].find("^"))  # in the right place
         self.assertEqual(err[2].count("^"), 1)
 
+    def test_caret_wide_char(self):
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        # "女女女=1; 女女女/" has display width 17
+        self.assertEqual(err[2].find("^"), 4 + 17)
+
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char_range,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        self.assertEqual(err[2].find("^"), 4 + 5)
+        # "女女女 for 女女女 in range(30)" has display width 30
+        self.assertEqual(err[2].count("^"), 30)
+
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
         err = traceback.format_exception_only(SyntaxError, exc)
         self.assertEqual(len(err), 3)
         self.assertEqual(err[1].strip(), "bad syntax")
 
+    @force_not_colorized
     def test_no_caret_with_no_debug_ranges_flag(self):
         # Make sure that if `-X no_debug_ranges` is used, there are no carets
         # in the traceback.
@@ -139,7 +176,7 @@ class TracebackCases(unittest.TestCase):
             import traceback
             try:
                 x = 1 / 0
-            except:
+            except ZeroDivisionError:
                 traceback.print_exc()
             """)
         try:
@@ -216,7 +253,181 @@ class TracebackCases(unittest.TestCase):
             str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
+    def test_format_exception_group_without_show_group(self):
+        eg = ExceptionGroup('A', [ValueError('B')])
+        err = traceback.format_exception_only(eg)
+        self.assertEqual(err, ['ExceptionGroup: A (1 sub-exception)\n'])
+
+    def test_format_exception_group(self):
+        eg = ExceptionGroup('A', [ValueError('B')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: B\n',
+        ])
+
+    def test_format_base_exception_group(self):
+        eg = BaseExceptionGroup('A', [BaseException('B')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'BaseExceptionGroup: A (1 sub-exception)\n',
+            '   BaseException: B\n',
+        ])
+
+    def test_format_exception_group_with_note(self):
+        exc = ValueError('B')
+        exc.add_note('Note')
+        eg = ExceptionGroup('A', [exc])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: B\n',
+            '   Note\n',
+        ])
+
+    def test_format_exception_group_explicit_class(self):
+        eg = ExceptionGroup('A', [ValueError('B')])
+        err = traceback.format_exception_only(ExceptionGroup, eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: B\n',
+        ])
+
+    def test_format_exception_group_multiple_exceptions(self):
+        eg = ExceptionGroup('A', [ValueError('B'), TypeError('C')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (2 sub-exceptions)\n',
+            '   ValueError: B\n',
+            '   TypeError: C\n',
+        ])
+
+    def test_format_exception_group_multiline_messages(self):
+        eg = ExceptionGroup('A\n1', [ValueError('B\n2')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A\n1 (1 sub-exception)\n',
+            '   ValueError: B\n',
+            '   2\n',
+        ])
+
+    def test_format_exception_group_multiline2_messages(self):
+        exc = ValueError('B\n\n2\n')
+        exc.add_note('\nC\n\n3')
+        eg = ExceptionGroup('A\n\n1\n', [exc, IndexError('D')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A\n\n1\n (2 sub-exceptions)\n',
+            '   ValueError: B\n',
+            '   \n',
+            '   2\n',
+            '   \n',
+            '   \n',  # first char of `note`
+            '   C\n',
+            '   \n',
+            '   3\n', # note ends
+            '   IndexError: D\n',
+        ])
+
+    def test_format_exception_group_syntax_error(self):
+        exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
+        eg = ExceptionGroup('A\n1', [exc])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A\n1 (1 sub-exception)\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: error\n',
+        ])
+
+    def test_format_exception_group_nested_with_notes(self):
+        exc = IndexError('D')
+        exc.add_note('Note\nmultiline')
+        eg = ExceptionGroup('A', [
+            ValueError('B'),
+            ExceptionGroup('C', [exc, LookupError('E')]),
+            TypeError('F'),
+        ])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (3 sub-exceptions)\n',
+            '   ValueError: B\n',
+            '   ExceptionGroup: C (2 sub-exceptions)\n',
+            '      IndexError: D\n',
+            '      Note\n',
+            '      multiline\n',
+            '      LookupError: E\n',
+            '   TypeError: F\n',
+        ])
+
+    def test_format_exception_group_with_tracebacks(self):
+        def f():
+            try:
+                1 / 0
+            except ZeroDivisionError as e:
+                return e
+
+        def g():
+            try:
+                raise TypeError('g')
+            except TypeError as e:
+                return e
+
+        eg = ExceptionGroup('A', [
+            f(),
+            ExceptionGroup('B', [g()]),
+        ])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (2 sub-exceptions)\n',
+            '   ZeroDivisionError: division by zero\n',
+            '   ExceptionGroup: B (1 sub-exception)\n',
+            '      TypeError: g\n',
+        ])
+
+    def test_format_exception_group_with_cause(self):
+        def f():
+            try:
+                try:
+                    1 / 0
+                except ZeroDivisionError:
+                    raise ValueError(0)
+            except Exception as e:
+                return e
+
+        eg = ExceptionGroup('A', [f()])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: 0\n',
+        ])
+
+    def test_format_exception_group_syntax_error_with_custom_values(self):
+        # See https://github.com/python/cpython/issues/128894
+        for exc in [
+            SyntaxError('error', 'abcd'),
+            SyntaxError('error', [None] * 4),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 'a', 'b', 2)),
+            # with end_lineno and end_offset:
+            SyntaxError('error', 'abcdef'),
+            SyntaxError('error', [None] * 6),
+            SyntaxError('error', (1, 2, 3, 4, 5, 6)),
+            SyntaxError('error', (1, 'a', 'b', 2, 'c', 'd')),
+        ]:
+            with self.subTest(exc=exc):
+                err = traceback.format_exception_only(exc, show_group=True)
+                # Should not raise an exception:
+                if exc.lineno is not None:
+                    self.assertEqual(len(err), 2)
+                    self.assertTrue(err[0].startswith('  File'))
+                else:
+                    self.assertEqual(len(err), 1)
+                self.assertEqual(err[-1], 'SyntaxError: error\n')
+
     @requires_subprocess()
+    @force_not_colorized
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
@@ -258,16 +469,10 @@ class TracebackCases(unittest.TestCase):
             err_line = "raise RuntimeError('{0}')".format(message_ascii)
             err_msg = "RuntimeError: {0}".format(message_ascii)
 
-            self.assertIn(("line %s" % lineno), stdout[1],
-                "Invalid line number: {0!r} instead of {1}".format(
-                    stdout[1], lineno))
-            self.assertTrue(stdout[2].endswith(err_line),
-                "Invalid traceback line: {0!r} instead of {1!r}".format(
-                    stdout[2], err_line))
+            self.assertIn("line %s" % lineno, stdout[1])
+            self.assertEndsWith(stdout[2], err_line)
             actual_err_msg = stdout[3]
-            self.assertTrue(actual_err_msg == err_msg,
-                "Invalid error message: {0!r} instead of {1!r}".format(
-                    actual_err_msg, err_msg))
+            self.assertEqual(actual_err_msg, err_msg)
 
         do_test("", "foo", "ascii", 3)
         for charset in ("ascii", "iso-8859-1", "utf-8", "GBK"):
@@ -297,15 +502,15 @@ class TracebackCases(unittest.TestCase):
                 def __init__(self):
                     try:
                         x = 1 / 0
-                    except Exception:
-                        self.exc_info = sys.exc_info()
-                        # self.exc_info[1] (traceback) contains frames:
+                    except Exception as e:
+                        self.exc = e
+                        # self.exc.__traceback__ contains frames:
                         # explicitly clear the reference to self in the current
                         # frame to break a reference cycle
                         self = None
 
                 def __del__(self):
-                    traceback.print_exception(*self.exc_info)
+                    traceback.print_exception(self.exc)
 
             # Keep a reference in the module namespace to call the destructor
             # when the module is unloaded
@@ -314,7 +519,36 @@ class TracebackCases(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         expected = [b'Traceback (most recent call last):',
                     b'  File "<string>", line 8, in __init__',
+                    b'    x = 1 / 0',
+                    b'        ^^^^^',
                     b'ZeroDivisionError: division by zero']
+        self.assertEqual(stderr.splitlines(), expected)
+
+    @cpython_only
+    def test_lost_io_open(self):
+        # GH-142737: Display the traceback even if io.open is lost
+        crasher = textwrap.dedent("""\
+            import io
+            import traceback
+            # Trigger fallback mode
+            traceback._print_exception_bltin = None
+            del io.open
+            raise RuntimeError("should not crash")
+        """)
+
+        # Create a temporary script to exercise _Py_FindSourceFile
+        with temp_dir() as script_dir:
+            script = make_script(
+                script_dir=script_dir,
+                script_basename='tb_test_no_io_open',
+                source=crasher)
+            rc, stdout, stderr = assert_python_failure(script)
+
+        self.assertEqual(rc, 1)  # Make sure it's not a crash
+
+        expected = [b'Traceback (most recent call last):',
+                    f'  File "{script}", line 6, in <module>'.encode(),
+                    b'RuntimeError: should not crash']
         self.assertEqual(stderr.splitlines(), expected)
 
     def test_print_exception(self):
@@ -329,6 +563,12 @@ class TracebackCases(unittest.TestCase):
         traceback.print_exception(Exception("projector"), file=output)
         self.assertEqual(output.getvalue(), "Exception: projector\n")
 
+    def test_print_last(self):
+        with support.swap_attr(sys, 'last_exc', ValueError(42)):
+            output = StringIO()
+            traceback.print_last(file=output)
+            self.assertEqual(output.getvalue(), "ValueError: 42\n")
+
     def test_format_exception_exc(self):
         e = Exception("projector")
         output = traceback.format_exception(e)
@@ -337,7 +577,7 @@ class TracebackCases(unittest.TestCase):
             traceback.format_exception(e.__class__, e)
         with self.assertRaisesRegex(ValueError, 'Both or neither'):
             traceback.format_exception(e.__class__, tb=e.__traceback__)
-        with self.assertRaisesRegex(TypeError, 'positional-only'):
+        with self.assertRaisesRegex(TypeError, 'required positional argument'):
             traceback.format_exception(exc=e)
 
     def test_format_exception_only_exc(self):
@@ -371,30 +611,33 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.print_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, '
-             'limit=None, file=None, chain=True)'))
+             'limit=None, file=None, chain=True, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
-             'chain=True)'))
+             'chain=True, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
-            '(exc, /, value=<implicit>)')
+            '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
 
 
 class PurePythonExceptionFormattingMixin:
     def get_exception(self, callable, slice_start=0, slice_end=-1):
         try:
             callable()
-            self.fail("No exception thrown.")
-        except:
+        except BaseException:
             return traceback.format_exc().splitlines()[slice_start:slice_end]
+        else:
+            self.fail("No exception thrown.")
 
     callable_line = get_exception.__code__.co_firstlineno + 2
 
 
 class CAPIExceptionFormattingMixin:
+    LEGACY = 0
+
     def get_exception(self, callable, slice_start=0, slice_end=-1):
         from _testcapi import exception_print
         try:
@@ -402,11 +645,13 @@ class CAPIExceptionFormattingMixin:
             self.fail("No exception thrown.")
         except Exception as e:
             with captured_output("stderr") as tbstderr:
-                exception_print(e)
+                exception_print(e, self.LEGACY)
             return tbstderr.getvalue().splitlines()[slice_start:slice_end]
 
     callable_line = get_exception.__code__.co_firstlineno + 3
 
+class CAPIExceptionFormattingLegacyMixin(CAPIExceptionFormattingMixin):
+    LEGACY = 1
 
 @requires_debug_ranges()
 class TracebackErrorLocationCaretTestBase:
@@ -424,6 +669,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    if True: raise ValueError("basic caret tests")\n'
             '             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -442,6 +688,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f_with_unicode\n'
             '    if True: raise ValueError("Ĥellö Wörld")\n'
             '             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -453,13 +700,17 @@ class TracebackErrorLocationCaretTestBase:
         def f_with_type():
             def foo(a: THIS_DOES_NOT_EXIST ) -> int:
                 return 0
+            foo.__annotations__
 
         lineno_f = f_with_type.__code__.co_firstlineno
         expected_f = (
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
-            f'  File "{__file__}", line {lineno_f+1}, in f_with_type\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_type\n'
+            '    foo.__annotations__\n'
+            f'  File "{__file__}", line {lineno_f+1}, in __annotate__\n'
             '    def foo(a: THIS_DOES_NOT_EXIST ) -> int:\n'
             '               ^^^^^^^^^^^^^^^^^^^\n'
         )
@@ -479,9 +730,14 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f_with_multiline\n'
             '    if True: raise ValueError(\n'
-            '             ^^^^^^^^^^^^^^^^^'
+            '             ^^^^^^^^^^^^^^^^^\n'
+            '        "error over multiple lines"\n'
+            '        ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            '    )\n'
+            '    ^'
         )
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
@@ -510,12 +766,41 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    return compile(code, "?", "exec")\n'
-            '           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
             '  File "?", line 7\n'
             '    foo(a, z\n'
             '           ^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+        # Check custom error messages covering multiple lines
+        code = textwrap.dedent("""
+        dummy_call(
+            "dummy value"
+            foo="bar",
+        )
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '  File "?", line 3\n'
+            '    "dummy value"\n'
+            '    ^^^^^^^^^^^^^'
             )
 
         result_lines = self.get_exception(f_with_multiline)
@@ -535,9 +820,12 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    2 + 1 /\n'
-            '        ^^^'
+            '        ~~^\n'
+            '    0\n'
+            '    ~'
         )
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
@@ -552,6 +840,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
             '    return 10 + divisor / 0 + 30\n'
             '                ~~~~~~~~^~~\n'
@@ -569,6 +858,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
             '    return 10 + áóí / 0 + 30\n'
             '                ~~~~^~~\n'
@@ -586,9 +876,114 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
             '    return 10 + divisor // 0 + 30\n'
             '                ~~~~~~~~^^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_with_spaces_and_parenthesis(self):
+        def f_with_binary_operator():
+            a = 1
+            b = c = ""
+            return ( a   )   +b + c
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    return ( a   )   +b + c\n'
+            '           ~~~~~~~~~~^~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_multiline(self):
+        def f_with_binary_operator():
+            b = 1
+            c = ""
+            a = b    \
+         +\
+               c  # test
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '       a = b    \\\n'
+            '           ~~~~~~\n'
+            '    +\\\n'
+            '    ^~\n'
+            '          c  # test\n'
+            '          ~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_multiline_two_char(self):
+        def f_with_binary_operator():
+            b = 1
+            c = ""
+            a = (
+                (b  # test +
+                    )  \
+                # +
+            << (c  # test
+                \
+            )  # test
+            )
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+4}, in f_with_binary_operator\n'
+            '        (b  # test +\n'
+            '        ~~~~~~~~~~~~\n'
+            '            )  \\\n'
+            '            ~~~~\n'
+            '        # +\n'
+            '        ~~~\n'
+            '    << (c  # test\n'
+            '    ^^~~~~~~~~~~~\n'
+            '        \\\n'
+            '        ~\n'
+            '    )  # test\n'
+            '    ~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_multiline_with_unicode(self):
+        def f_with_binary_operator():
+            b = 1
+            a = ("ááá" +
+                "áá") + b
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    a = ("ááá" +\n'
+            '        ~~~~~~~~\n'
+            '        "áá") + b\n'
+            '        ~~~~~~^~~\n'
         )
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
@@ -603,6 +998,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    return some_dict['x']['y']['z']\n"
             '           ~~~~~~~~~~~~~~~~~~~^^^^^\n'
@@ -620,11 +1016,251 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    return some_dict['ó']['á']['í']['beta']\n"
             '           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^\n'
         )
         result_lines = self.get_exception(f_with_subscript)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript_with_spaces_and_parenthesis(self):
+        def f_with_binary_operator():
+            a = []
+            b = c = 1
+            return b     [    a  ] + c
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    return b     [    a  ] + c\n'
+            '           ~~~~~~^^^^^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript_multiline(self):
+        def f_with_subscript():
+            bbbbb = {}
+            ccc = 1
+            ddd = 2
+            b = bbbbb \
+                [  ccc # test
+
+                 + ddd  \
+
+                ] # test
+            return b
+
+        lineno_f = f_with_subscript.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+4}, in f_with_subscript\n'
+            '    b = bbbbb \\\n'
+            '        ~~~~~~~\n'
+            '        [  ccc # test\n'
+            '        ^^^^^^^^^^^^^\n'
+            '    \n'
+            '    \n'
+            '         + ddd  \\\n'
+            '         ^^^^^^^^\n'
+            '    \n'
+            '    \n'
+            '        ] # test\n'
+            '        ^\n'
+        )
+        result_lines = self.get_exception(f_with_subscript)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call(self):
+        def f_with_call():
+            def f1(a):
+                def f2(b):
+                    raise RuntimeError("fail")
+                return f2
+            return f1("x")("y")("z")
+
+        lineno_f = f_with_call.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+5}, in f_with_call\n'
+            '    return f1("x")("y")("z")\n'
+            '           ~~~~~~~^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f2\n'
+            '    raise RuntimeError("fail")\n'
+        )
+        result_lines = self.get_exception(f_with_call)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call_unicode(self):
+        def f_with_call():
+            def f1(a):
+                def f2(b):
+                    raise RuntimeError("fail")
+                return f2
+            return f1("ó")("á")
+
+        lineno_f = f_with_call.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+5}, in f_with_call\n'
+            '    return f1("ó")("á")\n'
+            '           ~~~~~~~^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f2\n'
+            '    raise RuntimeError("fail")\n'
+        )
+        result_lines = self.get_exception(f_with_call)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call_with_spaces_and_parenthesis(self):
+        def f_with_binary_operator():
+            def f(a):
+                raise RuntimeError("fail")
+            return f     (    "x"  ) + 2
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    return f     (    "x"  ) + 2\n'
+            '           ~~~~~~^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f\n'
+            '    raise RuntimeError("fail")\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call_multiline(self):
+        def f_with_call():
+            class C:
+                def y(self, a):
+                    def f(b):
+                        raise RuntimeError("fail")
+                    return f
+            def g(x):
+                return C()
+            a = (g(1).y)(
+                2
+            )(3)(4)
+            return a
+
+        lineno_f = f_with_call.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+8}, in f_with_call\n'
+            '    a = (g(1).y)(\n'
+            '        ~~~~~~~~~\n'
+            '        2\n'
+            '        ~\n'
+            '    )(3)(4)\n'
+            '    ~^^^\n'
+            f'  File "{__file__}", line {lineno_f+4}, in f\n'
+            '    raise RuntimeError("fail")\n'
+        )
+        result_lines = self.get_exception(f_with_call)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_many_lines(self):
+        def f():
+            x = 1
+            if True: x += (
+                "a" +
+                "a"
+            )  # test
+
+        lineno_f = f.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f\n'
+            '    if True: x += (\n'
+            '             ^^^^^^\n'
+            '    ...<2 lines>...\n'
+            '    )  # test\n'
+            '    ^\n'
+        )
+        result_lines = self.get_exception(f)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_many_lines_no_caret(self):
+        def f():
+            x = 1
+            x += (
+                "a" +
+                "a"
+            )
+
+        lineno_f = f.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f\n'
+            '    x += (\n'
+            '    ...<2 lines>...\n'
+            '    )\n'
+        )
+        result_lines = self.get_exception(f)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_many_lines_binary_op(self):
+        def f_with_binary_operator():
+            b = 1
+            c = "a"
+            a = (
+                b +
+                b
+            ) + (
+                c +
+                c +
+                c
+            )
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    a = (\n'
+            '        ~\n'
+            '        b +\n'
+            '        ~~~\n'
+            '        b\n'
+            '        ~\n'
+            '    ) + (\n'
+            '    ~~^~~\n'
+            '        c +\n'
+            '        ~~~\n'
+            '    ...<2 lines>...\n'
+            '    )\n'
+            '    ~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
     def test_traceback_specialization_with_syntax_error(self):
@@ -643,6 +1279,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             "    1 $ 0 / 1 / 2\n"
             '    ^^^^^\n'
@@ -665,6 +1302,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             f'    {source}\n'
             f'    {" "*len("if True: ") + "^"*256}\n'
@@ -682,6 +1320,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    some_dict['x']['y']['z']\n"
             '    ~~~~~~~~~~~~~~~~~~~^^^^^\n'
@@ -701,6 +1340,7 @@ class TracebackErrorLocationCaretTestBase:
              f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'  |     callable()\n'
+             f'  |     ~~~~~~~~^^\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 1}, in exc\n'
              f'  |     if True: raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
              f'  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -766,6 +1406,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_applydescs + 1}, in applydecs\n'
             '    @dec_error\n'
             '     ^^^^^^^^^\n'
@@ -784,6 +1425,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_applydescs_class + 1}, in applydecs_class\n'
             '    @dec_error\n'
             '     ^^^^^^^^^\n'
@@ -799,12 +1441,13 @@ class TracebackErrorLocationCaretTestBase:
             )()
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    .method",
-            f"     ^^^^^^",
+            "    .method",
+            "     ^^^^^^",
         ]
         self.assertEqual(actual, expected)
 
@@ -815,11 +1458,12 @@ class TracebackErrorLocationCaretTestBase:
             )()
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    method",
+            "    method",
         ]
         self.assertEqual(actual, expected)
 
@@ -830,12 +1474,13 @@ class TracebackErrorLocationCaretTestBase:
             )()
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    . method",
-            f"      ^^^^^^",
+            "    . method",
+            "      ^^^^^^",
         ]
         self.assertEqual(actual, expected)
 
@@ -845,11 +1490,12 @@ class TracebackErrorLocationCaretTestBase:
 
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
-            f"    ｗｉｄｔｈ",
+            "    ｗｉｄｔｈ",
         ]
         self.assertEqual(actual, expected)
 
@@ -861,11 +1507,12 @@ class TracebackErrorLocationCaretTestBase:
 
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    raise ValueError(ｗｉｄｔｈ)",
+            "    raise ValueError(ｗｉｄｔｈ)",
         ]
         self.assertEqual(actual, expected)
 
@@ -879,18 +1526,330 @@ class TracebackErrorLocationCaretTestBase:
 
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
+            "    ~~~~~~~~^^",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 4}, in f",
             f"    print(1, ｗｗｗ(",
-            f"             ^^^^",
+            f"             ~~~~~~^",
+            f"            ｔｈ))",
+            f"            ^^^^^",
         ]
         self.assertEqual(actual, expected)
 
+    def test_byte_offset_with_wide_characters_term_highlight(self):
+        def f():
+            说明说明 = 1
+            şçöğıĤellö = 0 # not wide but still non-ascii
+            return 说明说明 / şçöğıĤellö
 
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 3}, in f",
+            f"    return 说明说明 / şçöğıĤellö",
+            f"           ~~~~~~~~~^~~~~~~~~~~~",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_with_emojis_term_highlight(self):
+        def f():
+            return "✨🐍" + func_说明说明("📗🚛",
+                "📗🚛") + "🐍"
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            f'    return "✨🐍" + func_说明说明("📗🚛",',
+            f"                    ^^^^^^^^^^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_wide_chars_subscript(self):
+        def f():
+            my_dct = {
+                "✨🚛✨": {
+                    "说明": {
+                        "🐍🐍🐍": None
+                    }
+                }
+            }
+            return my_dct["✨🚛✨"]["说明"]["🐍"]["说明"]["🐍🐍"]
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 8}, in f",
+            f'    return my_dct["✨🚛✨"]["说明"]["🐍"]["说明"]["🐍🐍"]',
+            f"           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_memory_error(self):
+        def f():
+            raise MemoryError()
+
+        actual = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f'  File "{__file__}", line {self.callable_line}, in get_exception',
+            '    callable()',
+            '    ~~~~~~~~^^',
+            f'  File "{__file__}", line {f.__code__.co_firstlineno + 1}, in f',
+            '    raise MemoryError()']
+        self.assertEqual(actual, expected)
+
+    def test_anchors_for_simple_return_statements_are_elided(self):
+        def g():
+            1/0
+
+        def f():
+            return g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g()",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g():
+            1/0
+
+        def f():
+            return g() + 1
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g() + 1",
+            "           ~^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            return g(1,
+                     2, 4,
+                     5)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g(1,",
+            "             2, 4,",
+            "             5)",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            return g(1,
+                     2, 4,
+                     5) + 1
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g(1,",
+            "           ~^^^",
+            "             2, 4,",
+            "             ^^^^^",
+            "             5) + 1",
+            "             ^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+    def test_anchors_for_simple_assign_statements_are_elided(self):
+        def g():
+            1/0
+
+        def f():
+            x = g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = g()",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            x = g(1,
+                  2, 3,
+                  4)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = g(1,",
+            "          2, 3,",
+            "          4)",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g():
+            1/0
+
+        def f():
+            x = y = g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = y = g()",
+            "            ~^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            x = y = g(1,
+                      2, 3,
+                      4)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = y = g(1,",
+            "            ~^^^",
+            "              2, 3,",
+            "              ^^^^^",
+            "              4)",
+            "              ^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+class TestKeywordTypoSuggestions(unittest.TestCase):
+    TYPO_CASES = [
+        ("with block ad something:\n  pass", "and"),
+        ("fur a in b:\n  pass", "for"),
+        ("for a in b:\n  pass\nelso:\n  pass", "else"),
+        ("whille True:\n  pass", "while"),
+        ("iff x > 5:\n  pass", "if"),
+        ("if x:\n  pass\nelseif y:\n  pass", "elif"),
+        ("tyo:\n  pass\nexcept y:\n  pass", "try"),
+        ("classe MyClass:\n  pass", "class"),
+        ("impor math", "import"),
+        ("form x import y", "from"),
+        ("defn calculate_sum(a, b):\n  return a + b", "def"),
+        ("def foo():\n  returm result", "return"),
+        ("lamda x: x ** 2", "lambda"),
+        ("def foo():\n  yeld i", "yield"),
+        ("def foo():\n  globel counter", "global"),
+        ("frum math import sqrt", "from"),
+        ("asynch def fetch_data():\n  pass", "async"),
+        ("async def foo():\n  awaid fetch_data()", "await"),
+        ('raisee ValueError("Error")', "raise"),
+        ("[x for x\nin range(3)\nof x]", "if"),
+        ("[123 fur x\nin range(3)\nif x]", "for"),
+        ("for x im n:\n  pass", "in"),
+    ]
+
+    def test_keyword_suggestions_from_file(self):
+        with tempfile.TemporaryDirectory() as script_dir:
+            for i, (code, expected_kw) in enumerate(self.TYPO_CASES):
+                with self.subTest(typo=expected_kw):
+                    source = textwrap.dedent(code).strip()
+                    script_name = make_script(script_dir, f"script_{i}", source)
+                    rc, stdout, stderr = assert_python_failure(script_name)
+                    stderr_text = stderr.decode('utf-8')
+                    self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
+
+    def test_keyword_suggestions_from_command_string(self):
+        for code, expected_kw in self.TYPO_CASES:
+            with self.subTest(typo=expected_kw):
+                source = textwrap.dedent(code).strip()
+                rc, stdout, stderr = assert_python_failure('-c', source)
+                stderr_text = stderr.decode('utf-8')
+                self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
+
+    def test_no_keyword_suggestion_for_comma_errors(self):
+        # When the parser identifies a missing comma, don't suggest
+        # bogus keyword replacements like 'print' -> 'not'
+        code = '''\
+import sys
+print(
+    "line1"
+    "line2"
+    file=sys.stderr
+)
+'''
+        source = textwrap.dedent(code).strip()
+        rc, stdout, stderr = assert_python_failure('-c', source)
+        stderr_text = stderr.decode('utf-8')
+        self.assertIn("Perhaps you forgot a comma", stderr_text)
+        self.assertNotIn("Did you mean", stderr_text)
 
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class PurePythonTracebackErrorCaretTests(
     PurePythonExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -904,6 +1863,7 @@ class PurePythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class CPythonTracebackErrorCaretTests(
     CAPIExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -913,24 +1873,50 @@ class CPythonTracebackErrorCaretTests(
     Same set of tests as above but with Python's internal traceback printing.
     """
 
+@cpython_only
+@requires_debug_ranges()
+@force_not_colorized_test_class
+class CPythonTracebackLegacyErrorCaretTests(
+    CAPIExceptionFormattingLegacyMixin,
+    TracebackErrorLocationCaretTestBase,
+    unittest.TestCase,
+):
+    """
+    Same set of tests as above but with Python's legacy internal traceback printing.
+    """
 
-class TracebackFormatTests(unittest.TestCase):
+
+class TracebackFormatMixin:
+    DEBUG_RANGES = True
 
     def some_exception(self):
         raise KeyError('blah')
+
+    def _filter_debug_ranges(self, expected):
+        return [line for line in expected if not set(line.strip()) <= set("^~")]
+
+    def _maybe_filter_debug_ranges(self, expected):
+        if not self.DEBUG_RANGES:
+            return self._filter_debug_ranges(expected)
+        return expected
 
     @cpython_only
     def check_traceback_format(self, cleanup_func=None):
         from _testcapi import traceback_print
         try:
             self.some_exception()
-        except KeyError:
-            type_, value, tb = sys.exc_info()
+        except KeyError as e:
+            tb = e.__traceback__
             if cleanup_func is not None:
                 # Clear the inner frames, not this one
                 cleanup_func(tb.tb_next)
             traceback_fmt = 'Traceback (most recent call last):\n' + \
                             ''.join(traceback.format_tb(tb))
+            # clear caret lines from traceback_fmt since internal API does
+            # not emit them
+            traceback_fmt = "\n".join(
+                self._filter_debug_ranges(traceback_fmt.splitlines())
+            ) + "\n"
             file_ = StringIO()
             traceback_print(tb, file_)
             python_fmt  = file_.getvalue()
@@ -960,9 +1946,9 @@ class TracebackFormatTests(unittest.TestCase):
         banner = tb_lines[0]
         self.assertEqual(len(tb_lines), 5)
         location, source_line = tb_lines[-2], tb_lines[-1]
-        self.assertTrue(banner.startswith('Traceback'))
-        self.assertTrue(location.startswith('  File'))
-        self.assertTrue(source_line.startswith('    raise'))
+        self.assertStartsWith(banner, 'Traceback')
+        self.assertStartsWith(location, '  File')
+        self.assertStartsWith(source_line, '    raise')
 
     def test_traceback_format(self):
         self.check_traceback_format()
@@ -1023,12 +2009,16 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_f+5}, in _check_recursive_traceback_display\n'
             '    f()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ~^^\n'
             # XXX: The following line changes depending on whether the tests
             # are run through the interactive interpreter or with -m
             # It also varies depending on the platform (stack size)
@@ -1037,7 +2027,7 @@ class TracebackFormatTests(unittest.TestCase):
             'RecursionError: maximum recursion depth exceeded\n'
         )
 
-        expected = result_f.splitlines()
+        expected = self._maybe_filter_debug_ranges(result_f.splitlines())
         actual = stderr_f.getvalue().splitlines()
 
         # Check the output text matches expectations
@@ -1054,7 +2044,7 @@ class TracebackFormatTests(unittest.TestCase):
         # Check a known (limited) number of recursive invocations
         def g(count=10):
             if count:
-                return g(count-1)
+                return g(count-1) + 1
             raise ValueError
 
         with captured_output("stderr") as stderr_g:
@@ -1068,14 +2058,14 @@ class TracebackFormatTests(unittest.TestCase):
         lineno_g = g.__code__.co_firstlineno
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
@@ -1085,8 +2075,9 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_g+7}, in _check_recursive_traceback_display\n'
             '    g()\n'
+            '    ~^^\n'
         )
-        expected = (tb_line + result_g).splitlines()
+        expected = self._maybe_filter_debug_ranges((tb_line + result_g).splitlines())
         actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
@@ -1109,20 +2100,19 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_h+7}, in _check_recursive_traceback_display\n'
             '    h()\n'
+            '    ~^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ^^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_h+3}, in h\n'
             '    g()\n'
+            '    ~^^\n'
         )
-        expected = (result_h + result_g).splitlines()
+        expected = self._maybe_filter_debug_ranges((result_h + result_g).splitlines())
         actual = stderr_h.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
@@ -1136,14 +2126,14 @@ class TracebackFormatTests(unittest.TestCase):
                 self.fail("no error raised")
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
             'ValueError\n'
@@ -1152,8 +2142,9 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_g+77}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF)\n'
+            '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
-        expected = (tb_line + result_g).splitlines()
+        expected = self._maybe_filter_debug_ranges((tb_line + result_g).splitlines())
         actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
@@ -1167,14 +2158,14 @@ class TracebackFormatTests(unittest.TestCase):
                 self.fail("no error raised")
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
-            '           ^^^^^^^^^^\n'
+            '    return g(count-1) + 1\n'
+            '           ~^^^^^^^^^\n'
             '  [Previous line repeated 1 more time]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
@@ -1182,25 +2173,23 @@ class TracebackFormatTests(unittest.TestCase):
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+108}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+109}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
+            '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
-        expected = (tb_line + result_g).splitlines()
+        expected = self._maybe_filter_debug_ranges((tb_line + result_g).splitlines())
         actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
     @requires_debug_ranges()
-    def test_recursive_traceback_python(self):
-        self._check_recursive_traceback_display(traceback.print_exc)
-
-    @cpython_only
-    @requires_debug_ranges()
-    def test_recursive_traceback_cpython_internal(self):
-        from _testcapi import exception_print
-        def render_exc():
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            exception_print(exc_value)
-        self._check_recursive_traceback_display(render_exc)
+    def test_recursive_traceback(self):
+        if self.DEBUG_RANGES:
+            self._check_recursive_traceback_display(traceback.print_exc)
+        else:
+            from _testcapi import exception_print
+            def render_exc():
+                exception_print(sys.exception())
+            self._check_recursive_traceback_display(render_exc)
 
     def test_format_stack(self):
         def fmt():
@@ -1229,8 +2218,8 @@ class TracebackFormatTests(unittest.TestCase):
         except UnhashableException:
             try:
                 raise ex1
-            except UnhashableException:
-                exc_type, exc_val, exc_tb = sys.exc_info()
+            except UnhashableException as e:
+                exc_val = e
 
         with captured_output("stderr") as stderr_f:
             exception_print(exc_val)
@@ -1248,6 +2237,7 @@ class TracebackFormatTests(unittest.TestCase):
         return e
 
     @cpython_only
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_capi(self):
         from _testcapi import exception_print
         LIMIT = 75
@@ -1259,6 +2249,7 @@ class TracebackFormatTests(unittest.TestCase):
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_traceback(self):
         LIMIT = 75
         eg = self.deep_eg()
@@ -1273,7 +2264,8 @@ class TracebackFormatTests(unittest.TestCase):
     def test_print_exception_bad_type_capi(self):
         from _testcapi import exception_print
         with captured_output("stderr") as stderr:
-            exception_print(42)
+            with support.catch_unraisable_exception():
+                exception_print(42)
         self.assertEqual(
             stderr.getvalue(),
             ('TypeError: print_exception(): '
@@ -1297,6 +2289,26 @@ context_message = (
 boundaries = re.compile(
     '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
 
+@force_not_colorized_test_class
+class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
+    pass
+
+@cpython_only
+@force_not_colorized_test_class
+class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
+    DEBUG_RANGES = False
+    def setUp(self) -> None:
+        self.original_unraisable_hook = sys.unraisablehook
+        sys.unraisablehook = lambda *args: None
+        self.original_hook = traceback._print_exception_bltin
+        traceback._print_exception_bltin = lambda *args: 1/0
+        return super().setUp()
+
+    def tearDown(self) -> None:
+        traceback._print_exception_bltin = self.original_hook
+        sys.unraisablehook = self.original_unraisable_hook
+        return super().tearDown()
+
 class BaseExceptionReportingTests:
 
     def get_exception(self, exception_or_callable):
@@ -1315,12 +2327,12 @@ class BaseExceptionReportingTests:
     def check_zero_div(self, msg):
         lines = msg.splitlines()
         if has_no_debug_ranges():
-            self.assertTrue(lines[-3].startswith('  File'))
+            self.assertStartsWith(lines[-3], '  File')
             self.assertIn('1/0 # In zero_div', lines[-2])
         else:
-            self.assertTrue(lines[-4].startswith('  File'))
+            self.assertStartsWith(lines[-4], '  File')
             self.assertIn('1/0 # In zero_div', lines[-3])
-        self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
+        self.assertStartsWith(lines[-1], 'ZeroDivisionError')
 
     def test_simple(self):
         try:
@@ -1330,12 +2342,12 @@ class BaseExceptionReportingTests:
         lines = self.get_report(e).splitlines()
         if has_no_debug_ranges():
             self.assertEqual(len(lines), 4)
-            self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+            self.assertStartsWith(lines[3], 'ZeroDivisionError')
         else:
             self.assertEqual(len(lines), 5)
-            self.assertTrue(lines[4].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+            self.assertStartsWith(lines[4], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('1/0 # Marker', lines[2])
 
     def test_cause(self):
@@ -1370,15 +2382,15 @@ class BaseExceptionReportingTests:
         try:
             try:
                 raise Exception
-            except:
+            except Exception:
                 raise ZeroDivisionError from None
         except ZeroDivisionError as _:
             e = _
         lines = self.get_report(e).splitlines()
         self.assertEqual(len(lines), 4)
-        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+        self.assertStartsWith(lines[3], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('ZeroDivisionError from None', lines[2])
 
     def test_cause_and_context(self):
@@ -1474,19 +2486,22 @@ class BaseExceptionReportingTests:
     def test_syntax_error_various_offsets(self):
         for offset in range(-5, 10):
             for add in [0, 2]:
-                text = " "*add + "text%d" % offset
+                text = " " * add + "text%d" % offset
                 expected = ['  File "file.py", line 1']
                 if offset < 1:
                     expected.append("    %s" % text.lstrip())
                 elif offset <= 6:
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*(offset-1)))
+                    # Set the caret length to match the length of the text minus the offset.
+                    caret_length = max(1, len(text.lstrip()) - offset + 1)
+                    expected.append("    %s%s" % (" " * (offset - 1), "^" * caret_length))
                 else:
+                    caret_length = max(1, len(text.lstrip()) - 4)
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*5))
+                    expected.append("    %s%s" % (" " * 5, "^" * caret_length))
                 expected.append("SyntaxError: msg")
                 expected.append("")
-                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
+                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset + add, text)))
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
@@ -1527,11 +2542,11 @@ class BaseExceptionReportingTests:
 
         e.__notes__ = BadThing()
         notes_repr = 'bad repr'
-        self.assertEqual(self.get_report(e), vanilla + notes_repr)
+        self.assertEqual(self.get_report(e), vanilla + notes_repr + '\n')
 
         e.__notes__ = Unprintable()
         err_msg = '<__notes__ repr() failed>'
-        self.assertEqual(self.get_report(e), vanilla + err_msg)
+        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
 
         # non-string item in the __notes__ sequence
         e.__notes__  = [BadThing(), 'Final Note']
@@ -1543,27 +2558,50 @@ class BaseExceptionReportingTests:
         err_msg = '<note str() failed>'
         self.assertEqual(self.get_report(e), vanilla + err_msg + '\nFinal Note\n')
 
-    def test_exception_with_note_with_multiple_notes(self):
-        e = ValueError(42)
+        e.__notes__  = "please do not explode me"
+        err_msg = "'please do not explode me'"
+        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
+
+        e.__notes__  = b"please do not show me as numbers"
+        err_msg = "b'please do not show me as numbers'"
+        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
+
+        # an exception with a broken __getattr__ raising a non expected error
+        class BrokenException(Exception):
+            broken = False
+            def __getattr__(self, name):
+                if self.broken:
+                    raise ValueError(f'no {name}')
+
+        e = BrokenException(123)
         vanilla = self.get_report(e)
-
-        e.add_note('Note 1')
-        e.add_note('Note 2')
-        e.add_note('Note 3')
-
+        e.broken = True
         self.assertEqual(
             self.get_report(e),
-            vanilla + 'Note 1\n' + 'Note 2\n' + 'Note 3\n')
+            vanilla + "Ignored error getting __notes__: ValueError('no __notes__')\n")
 
-        del e.__notes__
-        e.add_note('Note 4')
-        del e.__notes__
-        e.add_note('Note 5')
-        e.add_note('Note 6')
+    def test_exception_with_multiple_notes(self):
+        for e in [ValueError(42), SyntaxError('bad syntax')]:
+            with self.subTest(e=e):
+                vanilla = self.get_report(e)
 
-        self.assertEqual(
-            self.get_report(e),
-            vanilla + 'Note 5\n' + 'Note 6\n')
+                e.add_note('Note 1')
+                e.add_note('Note 2')
+                e.add_note('Note 3')
+
+                self.assertEqual(
+                    self.get_report(e),
+                    vanilla + 'Note 1\n' + 'Note 2\n' + 'Note 3\n')
+
+                del e.__notes__
+                e.add_note('Note 4')
+                del e.__notes__
+                e.add_note('Note 5')
+                e.add_note('Note 6')
+
+                self.assertEqual(
+                    self.get_report(e),
+                    vanilla + 'Note 5\n' + 'Note 6\n')
 
     def test_exception_qualname(self):
         class A:
@@ -1641,6 +2679,7 @@ class BaseExceptionReportingTests:
              f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'  |     exception_or_callable()\n'
+             f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 1}, in exc\n'
              f'  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
              f'  | ExceptionGroup: eg (2 sub-exceptions)\n'
@@ -1676,6 +2715,7 @@ class BaseExceptionReportingTests:
                     f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
                     f'  |     raise EG("eg2", [ValueError(3), TypeError(4)]) from e\n'
                     f'  | ExceptionGroup: eg2 (2 sub-exceptions)\n'
@@ -1694,9 +2734,9 @@ class BaseExceptionReportingTests:
             try:
                 try:
                     raise EG("eg1", [ValueError(1), TypeError(2)])
-                except:
+                except EG:
                     raise EG("eg2", [ValueError(3), TypeError(4)])
-            except:
+            except EG:
                 raise ImportError(5)
 
         expected = (
@@ -1727,6 +2767,7 @@ class BaseExceptionReportingTests:
              f'Traceback (most recent call last):\n'
              f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'    exception_or_callable()\n'
+             f'    ~~~~~~~~~~~~~~~~~~~~~^^\n'
              f'  File "{__file__}", line {exc.__code__.co_firstlineno + 8}, in exc\n'
              f'    raise ImportError(5)\n'
              f'ImportError: 5\n')
@@ -1745,7 +2786,7 @@ class BaseExceptionReportingTests:
                 except Exception as e:
                     exc = e
                 raise EG("eg", [VE(1), exc, VE(4)])
-            except:
+            except EG:
                 raise EG("top", [VE(5)])
 
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
@@ -1773,6 +2814,7 @@ class BaseExceptionReportingTests:
                     f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 11}, in exc\n'
                     f'  |     raise EG("top", [VE(5)])\n'
                     f'  | ExceptionGroup: top (1 sub-exception)\n'
@@ -1932,6 +2974,7 @@ class BaseExceptionReportingTests:
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
                     f'  |     raise ExceptionGroup("nested", excs)\n'
                     f'  | ExceptionGroup: nested (2 sub-exceptions)\n'
@@ -1983,6 +3026,7 @@ class BaseExceptionReportingTests:
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 10}, in exc\n'
                     f'  |     raise ExceptionGroup("nested", excs)\n'
                     f'  | ExceptionGroup: nested (2 sub-exceptions)\n'
@@ -2007,6 +3051,33 @@ class BaseExceptionReportingTests:
                     f'    | ValueError: terrible value\n'
                     f'    | the terrible value\n'
                     f'    | Goodbye terrible value\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_wrapped_naked(self):
+        # See gh-128799
+
+        def exc():
+            try:
+                raise Exception(42)
+            except* Exception as e:
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
+                    f'  |     except* Exception as e:\n'
+                    f'  |         raise\n'
+                    f'  | ExceptionGroup:  (1 sub-exception)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 2}, in exc\n'
+                    f'    |     raise Exception(42)\n'
+                    f'    | Exception: 42\n'
                     f'    +------------------------------------\n')
 
         report = self.get_report(exc)
@@ -2038,6 +3109,7 @@ class BaseExceptionReportingTests:
         self.assertEqual(report, expected)
 
 
+@force_not_colorized_test_class
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks reporting through the 'traceback' module, with both
@@ -2054,6 +3126,7 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         return s
 
 
+@force_not_colorized_test_class
 class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks built-in reporting by the interpreter.
@@ -2134,8 +3207,8 @@ class LimitTests(unittest.TestCase):
     def test_extract_tb(self):
         try:
             self.last_raises5()
-        except Exception:
-            exc_type, exc_value, tb = sys.exc_info()
+        except Exception as e:
+            tb = e.__traceback__
         def extract(**kwargs):
             return traceback.extract_tb(tb, **kwargs)
 
@@ -2161,12 +3234,12 @@ class LimitTests(unittest.TestCase):
     def test_format_exception(self):
         try:
             self.last_raises5()
-        except Exception:
-            exc_type, exc_value, tb = sys.exc_info()
+        except Exception as e:
+            exc = e
         # [1:-1] to exclude "Traceback (...)" header and
         # exception type and value
         def extract(**kwargs):
-            return traceback.format_exception(exc_type, exc_value, tb, **kwargs)[1:-1]
+            return traceback.format_exception(exc, **kwargs)[1:-1]
 
         with support.swap_attr(sys, 'tracebacklimit', 1000):
             nolim = extract()
@@ -2204,8 +3277,8 @@ class MiscTracebackCases(unittest.TestCase):
 
         try:
             outer()
-        except:
-            type_, value, tb = sys.exc_info()
+        except BaseException as e:
+            tb = e.__traceback__
 
         # Initial assertion: there's one local in the inner frame.
         inner_frame = tb.tb_next.tb_next.tb_next.tb_frame
@@ -2251,7 +3324,7 @@ class TestFrame(unittest.TestCase):
     def test_lazy_lines(self):
         linecache.clearcache()
         f = traceback.FrameSummary("f", 1, "dummy", lookup_line=False)
-        self.assertEqual(None, f._line)
+        self.assertEqual(None, f._lines)
         linecache.lazycache("f", globals())
         self.assertEqual(
             '"""Test cases for traceback module"""',
@@ -2275,16 +3348,22 @@ class TestStack(unittest.TestCase):
     def test_walk_stack(self):
         def deeper():
             return list(traceback.walk_stack(None))
-        s1 = list(traceback.walk_stack(None))
-        s2 = deeper()
+        s1, s2 = list(traceback.walk_stack(None)), deeper()
         self.assertEqual(len(s2) - len(s1), 1)
         self.assertEqual(s2[1:], s1)
+
+    def test_walk_innermost_frame(self):
+        def inner():
+            return list(traceback.walk_stack(None))
+        frames = inner()
+        innermost_frame, _ = frames[0]
+        self.assertEqual(innermost_frame.f_code.co_name, "inner")
 
     def test_walk_tb(self):
         try:
             1/0
-        except Exception:
-            _, _, tb = sys.exc_info()
+        except Exception as e:
+            tb = e.__traceback__
         s = list(traceback.walk_tb(tb))
         self.assertEqual(len(s), 1)
 
@@ -2368,7 +3447,7 @@ class TestStack(unittest.TestCase):
 
     def test_custom_format_frame(self):
         class CustomStackSummary(traceback.StackSummary):
-            def format_frame_summary(self, frame_summary):
+            def format_frame_summary(self, frame_summary, colorize=False):
                 return f'{frame_summary.filename}:{frame_summary.lineno}'
 
         def some_inner():
@@ -2387,19 +3466,19 @@ class TestStack(unittest.TestCase):
         def g():
             try:
                 f()
-            except:
-                return sys.exc_info()
+            except Exception as e:
+                return e.__traceback__
 
-        exc_info = g()
+        tb = g()
 
         class Skip_G(traceback.StackSummary):
-            def format_frame_summary(self, frame_summary):
+            def format_frame_summary(self, frame_summary, colorize=False):
                 if frame_summary.name == 'g':
                     return None
                 return super().format_frame_summary(frame_summary)
 
         stack = Skip_G.extract(
-            traceback.walk_tb(exc_info[2])).format()
+            traceback.walk_tb(tb)).format()
 
         self.assertEqual(len(stack), 1)
         lno = f.__code__.co_firstlineno + 1
@@ -2408,26 +3487,90 @@ class TestStack(unittest.TestCase):
             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
         )
 
+    def test_summary_should_show_carets(self):
+        # See: https://github.com/python/cpython/issues/122353
+
+        # statement to execute and to get a ZeroDivisionError for a traceback
+        statement = "abcdef = 1 / 0 and 2.0"
+        colno = statement.index('1 / 0')
+        end_colno = colno + len('1 / 0')
+
+        # Actual line to use when rendering the traceback
+        # and whose AST will be extracted (it will be empty).
+        cached_line = '# this line will be used during rendering'
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as file:
+            file.write(cached_line)
+        linecache.updatecache(TESTFN, {})
+
+        try:
+            exec(compile(statement, TESTFN, "exec"))
+        except ZeroDivisionError as exc:
+            # This is the simplest way to create a StackSummary
+            # whose FrameSummary items have their column offsets.
+            s = traceback.TracebackException.from_exception(exc).stack
+            self.assertIsInstance(s, traceback.StackSummary)
+            with unittest.mock.patch.object(s, '_should_show_carets',
+                                            wraps=s._should_show_carets) as ff:
+                self.assertEqual(len(s), 2)
+                self.assertListEqual(
+                    s.format_frame_summary(s[1]).splitlines(),
+                    [
+                        f'  File "{TESTFN}", line 1, in <module>',
+                        f'    {cached_line}'
+                     ]
+                )
+                ff.assert_called_with(colno, end_colno, [cached_line], None)
+
 class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
 
-class TestTracebackException(unittest.TestCase):
 
-    def test_smoke(self):
+# Used in test_dont_swallow_cause_or_context_of_falsey_exception and
+# test_dont_swallow_subexceptions_of_falsey_exceptiongroup.
+class FalseyException(Exception):
+    def __bool__(self):
+        return False
+
+
+class FalseyExceptionGroup(ExceptionGroup):
+    def __bool__(self):
+        return False
+
+
+class TestTracebackException(unittest.TestCase):
+    def do_test_smoke(self, exc, expected_type_str):
         try:
-            1/0
-        except Exception:
-            exc_info = sys.exc_info()
-            exc = traceback.TracebackException(*exc_info)
+            raise exc
+        except Exception as e:
+            exc_obj = e
+            exc = traceback.TracebackException.from_exception(e)
             expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]))
+                traceback.walk_tb(e.__traceback__))
         self.assertEqual(None, exc.__cause__)
         self.assertEqual(None, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(exc_info[0], exc.exc_type)
-        self.assertEqual(str(exc_info[1]), str(exc))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(expected_type_str, exc.exc_type_str)
+        self.assertEqual(str(exc_obj), str(exc))
+
+    def test_smoke_builtin(self):
+        self.do_test_smoke(ValueError(42), 'ValueError')
+
+    def test_smoke_user_exception(self):
+        class MyException(Exception):
+            pass
+
+        if __name__ == '__main__':
+            expected = ('TestTracebackException.'
+                        'test_smoke_user_exception.<locals>.MyException')
+        else:
+            expected = ('test.test_traceback.TestTracebackException.'
+                        'test_smoke_user_exception.<locals>.MyException')
+        self.do_test_smoke(MyException('bad things happened'), expected)
 
     def test_from_exception(self):
         # Check all the parameters are accepted.
@@ -2436,9 +3579,10 @@ class TestTracebackException(unittest.TestCase):
         try:
             foo()
         except Exception as e:
-            exc_info = sys.exc_info()
+            exc_obj = e
+            tb = e.__traceback__
             self.expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]), limit=1, lookup_lines=False,
+                traceback.walk_tb(tb), limit=1, lookup_lines=False,
                 capture_locals=True)
             self.exc = traceback.TracebackException.from_exception(
                 e, limit=1, lookup_lines=False, capture_locals=True)
@@ -2448,66 +3592,72 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(None, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(exc_info[0], exc.exc_type)
-        self.assertEqual(str(exc_info[1]), str(exc))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
+        self.assertEqual(str(exc_obj), str(exc))
 
     def test_cause(self):
         try:
             try:
                 1/0
             finally:
-                exc_info_context = sys.exc_info()
-                exc_context = traceback.TracebackException(*exc_info_context)
+                exc = sys.exception()
+                exc_context = traceback.TracebackException.from_exception(exc)
                 cause = Exception("cause")
                 raise Exception("uh oh") from cause
-        except Exception:
-            exc_info = sys.exc_info()
-            exc = traceback.TracebackException(*exc_info)
+        except Exception as e:
+            exc_obj = e
+            exc = traceback.TracebackException.from_exception(e)
             expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]))
+                traceback.walk_tb(e.__traceback__))
         exc_cause = traceback.TracebackException(Exception, cause, None)
         self.assertEqual(exc_cause, exc.__cause__)
         self.assertEqual(exc_context, exc.__context__)
         self.assertEqual(True, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(exc_info[0], exc.exc_type)
-        self.assertEqual(str(exc_info[1]), str(exc))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
+        self.assertEqual(str(exc_obj), str(exc))
 
     def test_context(self):
         try:
             try:
                 1/0
             finally:
-                exc_info_context = sys.exc_info()
-                exc_context = traceback.TracebackException(*exc_info_context)
+                exc = sys.exception()
+                exc_context = traceback.TracebackException.from_exception(exc)
                 raise Exception("uh oh")
-        except Exception:
-            exc_info = sys.exc_info()
-            exc = traceback.TracebackException(*exc_info)
+        except Exception as e:
+            exc_obj = e
+            exc = traceback.TracebackException.from_exception(e)
             expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]))
+                traceback.walk_tb(e.__traceback__))
         self.assertEqual(None, exc.__cause__)
         self.assertEqual(exc_context, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(exc_info[0], exc.exc_type)
-        self.assertEqual(str(exc_info[1]), str(exc))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
+        self.assertEqual(str(exc_obj), str(exc))
 
     def test_long_context_chain(self):
         def f():
             try:
                 1/0
-            except:
+            except ZeroDivisionError:
                 f()
 
         try:
             f()
-        except RecursionError:
-            exc_info = sys.exc_info()
+        except RecursionError as e:
+            exc_obj = e
         else:
             self.fail("Exception not raised")
 
-        te = traceback.TracebackException(*exc_info)
+        te = traceback.TracebackException.from_exception(exc_obj)
         res = list(te.format())
 
         # many ZeroDiv errors followed by the RecursionError
@@ -2525,58 +3675,74 @@ class TestTracebackException(unittest.TestCase):
             finally:
                 cause = Exception("cause")
                 raise Exception("uh oh") from cause
-        except Exception:
-            exc_info = sys.exc_info()
-            exc = traceback.TracebackException(*exc_info, compact=True)
+        except Exception as e:
+            exc_obj = e
+            exc = traceback.TracebackException.from_exception(exc_obj, compact=True)
             expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]))
+                traceback.walk_tb(exc_obj.__traceback__))
         exc_cause = traceback.TracebackException(Exception, cause, None)
         self.assertEqual(exc_cause, exc.__cause__)
         self.assertEqual(None, exc.__context__)
         self.assertEqual(True, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(exc_info[0], exc.exc_type)
-        self.assertEqual(str(exc_info[1]), str(exc))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
+        self.assertEqual(str(exc_obj), str(exc))
 
     def test_compact_no_cause(self):
         try:
             try:
                 1/0
             finally:
-                exc_info_context = sys.exc_info()
-                exc_context = traceback.TracebackException(*exc_info_context)
+                exc = sys.exception()
+                exc_context = traceback.TracebackException.from_exception(exc)
                 raise Exception("uh oh")
-        except Exception:
-            exc_info = sys.exc_info()
-            exc = traceback.TracebackException(*exc_info, compact=True)
+        except Exception as e:
+            exc_obj = e
+            exc = traceback.TracebackException.from_exception(e, compact=True)
             expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]))
+                traceback.walk_tb(exc_obj.__traceback__))
         self.assertEqual(None, exc.__cause__)
         self.assertEqual(exc_context, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(exc_info[0], exc.exc_type)
-        self.assertEqual(str(exc_info[1]), str(exc))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
+        self.assertEqual(str(exc_obj), str(exc))
 
-    def test_no_refs_to_exception_and_traceback_objects(self):
+    def test_no_save_exc_type(self):
         try:
             1/0
-        except Exception:
-            exc_info = sys.exc_info()
+        except Exception as e:
+            exc = e
 
-        refcnt1 = sys.getrefcount(exc_info[1])
-        refcnt2 = sys.getrefcount(exc_info[2])
-        exc = traceback.TracebackException(*exc_info)
-        self.assertEqual(sys.getrefcount(exc_info[1]), refcnt1)
-        self.assertEqual(sys.getrefcount(exc_info[2]), refcnt2)
+        te = traceback.TracebackException.from_exception(
+                 exc, save_exc_type=False)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(te.exc_type)
+
+    def test_no_refs_to_exception_and_traceback_objects(self):
+        exc_obj = None
+        try:
+            1/0
+        except Exception as e:
+            exc_obj = e
+
+        refcnt1 = sys.getrefcount(exc_obj)
+        refcnt2 = sys.getrefcount(exc_obj.__traceback__)
+        exc = traceback.TracebackException.from_exception(exc_obj)
+        self.assertEqual(sys.getrefcount(exc_obj), refcnt1)
+        self.assertEqual(sys.getrefcount(exc_obj.__traceback__), refcnt2)
 
     def test_comparison_basic(self):
         try:
             1/0
-        except Exception:
-            exc_info = sys.exc_info()
-            exc = traceback.TracebackException(*exc_info)
-            exc2 = traceback.TracebackException(*exc_info)
+        except Exception as e:
+            exc_obj = e
+            exc = traceback.TracebackException.from_exception(exc_obj)
+            exc2 = traceback.TracebackException.from_exception(exc_obj)
         self.assertIsNot(exc, exc2)
         self.assertEqual(exc, exc2)
         self.assertNotEqual(exc, object())
@@ -2586,7 +3752,7 @@ class TestTracebackException(unittest.TestCase):
         def raise_exc():
             try:
                 raise ValueError('bad value')
-            except:
+            except ValueError:
                 raise
 
         def raise_with_locals():
@@ -2595,28 +3761,28 @@ class TestTracebackException(unittest.TestCase):
 
         try:
             raise_with_locals()
-        except Exception:
-            exc_info = sys.exc_info()
+        except Exception as e:
+            exc_obj = e
 
-        exc = traceback.TracebackException(*exc_info)
-        exc1 = traceback.TracebackException(*exc_info, limit=10)
-        exc2 = traceback.TracebackException(*exc_info, limit=2)
+        exc = traceback.TracebackException.from_exception(exc_obj)
+        exc1 = traceback.TracebackException.from_exception(exc_obj, limit=10)
+        exc2 = traceback.TracebackException.from_exception(exc_obj, limit=2)
 
         self.assertEqual(exc, exc1)      # limit=10 gets all frames
         self.assertNotEqual(exc, exc2)   # limit=2 truncates the output
 
         # locals change the output
-        exc3 = traceback.TracebackException(*exc_info, capture_locals=True)
+        exc3 = traceback.TracebackException.from_exception(exc_obj, capture_locals=True)
         self.assertNotEqual(exc, exc3)
 
         # there are no locals in the innermost frame
-        exc4 = traceback.TracebackException(*exc_info, limit=-1)
-        exc5 = traceback.TracebackException(*exc_info, limit=-1, capture_locals=True)
+        exc4 = traceback.TracebackException.from_exception(exc_obj, limit=-1)
+        exc5 = traceback.TracebackException.from_exception(exc_obj, limit=-1, capture_locals=True)
         self.assertEqual(exc4, exc5)
 
         # there are locals in the next-to-innermost frame
-        exc6 = traceback.TracebackException(*exc_info, limit=-2)
-        exc7 = traceback.TracebackException(*exc_info, limit=-2, capture_locals=True)
+        exc6 = traceback.TracebackException.from_exception(exc_obj, limit=-2)
+        exc7 = traceback.TracebackException.from_exception(exc_obj, limit=-2, capture_locals=True)
         self.assertNotEqual(exc6, exc7)
 
     def test_comparison_equivalent_exceptions_are_equal(self):
@@ -2624,8 +3790,8 @@ class TestTracebackException(unittest.TestCase):
         for _ in range(2):
             try:
                 1/0
-            except:
-                excs.append(traceback.TracebackException(*sys.exc_info()))
+            except Exception as e:
+                excs.append(traceback.TracebackException.from_exception(e))
         self.assertEqual(excs[0], excs[1])
         self.assertEqual(list(excs[0].format()), list(excs[1].format()))
 
@@ -2641,9 +3807,9 @@ class TestTracebackException(unittest.TestCase):
         except UnhashableException:
             try:
                 raise ex1
-            except UnhashableException:
-                exc_info = sys.exc_info()
-        exc = traceback.TracebackException(*exc_info)
+            except UnhashableException as e:
+                exc_obj = e
+        exc = traceback.TracebackException.from_exception(exc_obj)
         formatted = list(exc.format())
         self.assertIn('UnhashableException: ex2\n', formatted[2])
         self.assertIn('UnhashableException: ex1\n', formatted[6])
@@ -2656,11 +3822,10 @@ class TestTracebackException(unittest.TestCase):
                 1/0
         try:
             recurse(10)
-        except Exception:
-            exc_info = sys.exc_info()
-            exc = traceback.TracebackException(*exc_info, limit=5)
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e, limit=5)
             expected_stack = traceback.StackSummary.extract(
-                traceback.walk_tb(exc_info[2]), limit=5)
+                traceback.walk_tb(e.__traceback__), limit=5)
         self.assertEqual(expected_stack, exc.stack)
 
     def test_lookup_lines(self):
@@ -2707,9 +3872,9 @@ class TestTracebackException(unittest.TestCase):
             x = 12
             try:
                 x/0
-            except Exception:
-                return sys.exc_info()
-        exc = traceback.TracebackException(*f(), capture_locals=True)
+            except Exception as e:
+                return e
+        exc = traceback.TracebackException.from_exception(f(), capture_locals=True)
         output = StringIO()
         exc.print(file=output)
         self.assertEqual(
@@ -2720,11 +3885,29 @@ class TestTracebackException(unittest.TestCase):
              'ZeroDivisionError: division by zero',
              ''])
 
+    def test_dont_swallow_cause_or_context_of_falsey_exception(self):
+        # see gh-132308: Ensure that __cause__ or __context__ attributes of exceptions
+        # that evaluate as falsey are included in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+
+        try:
+            raise FalseyException from KeyError
+        except FalseyException as e:
+            self.assertIn(cause_message, traceback.format_exception(e))
+
+        try:
+            try:
+                1/0
+            except ZeroDivisionError:
+                raise FalseyException
+        except FalseyException as e:
+            self.assertIn(context_message, traceback.format_exception(e))
+
 
 class TestTracebackException_ExceptionGroups(unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.eg_info = self._get_exception_group()
+        self.eg = self._get_exception_group()
 
     def _get_exception_group(self):
         def f():
@@ -2754,26 +3937,40 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
             except Exception as e:
                 exc4 = e
             raise ExceptionGroup("eg2", [exc3, exc4])
-        except ExceptionGroup:
-            return sys.exc_info()
+        except ExceptionGroup as eg:
+            return eg
         self.fail('Exception Not Raised')
 
     def test_exception_group_construction(self):
-        eg_info = self.eg_info
-        teg1 = traceback.TracebackException(*eg_info)
-        teg2 = traceback.TracebackException.from_exception(eg_info[1])
+        eg = self.eg
+        teg1 = traceback.TracebackException(type(eg), eg, eg.__traceback__)
+        teg2 = traceback.TracebackException.from_exception(eg)
         self.assertIsNot(teg1, teg2)
         self.assertEqual(teg1, teg2)
 
     def test_exception_group_format_exception_only(self):
-        teg = traceback.TracebackException(*self.eg_info)
+        teg = traceback.TracebackException.from_exception(self.eg)
         formatted = ''.join(teg.format_exception_only()).split('\n')
         expected = "ExceptionGroup: eg2 (2 sub-exceptions)\n".split('\n')
 
         self.assertEqual(formatted, expected)
 
+    def test_exception_group_format_exception_onlyi_recursive(self):
+        teg = traceback.TracebackException.from_exception(self.eg)
+        formatted = ''.join(teg.format_exception_only(show_group=True)).split('\n')
+        expected = [
+                     'ExceptionGroup: eg2 (2 sub-exceptions)',
+                     '   ExceptionGroup: eg1 (2 sub-exceptions)',
+                     '      ZeroDivisionError: division by zero',
+                     '      ValueError: 42',
+                     '   ValueError: 24',
+                     ''
+                   ]
+
+        self.assertEqual(formatted, expected)
+
     def test_exception_group_format(self):
-        teg = traceback.TracebackException(*self.eg_info)
+        teg = traceback.TracebackException.from_exception(self.eg)
 
         formatted = ''.join(teg.format()).split('\n')
         lno_f = self.lno_f
@@ -2793,6 +3990,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'      | Traceback (most recent call last):',
                     f'      |   File "{__file__}", line {lno_g+9}, in _get_exception_group',
                     f'      |     f()',
+                    f'      |     ~^^',
                     f'      |   File "{__file__}", line {lno_f+1}, in f',
                     f'      |     1/0',
                     f'      |     ~^~',
@@ -2801,6 +3999,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'      | Traceback (most recent call last):',
                     f'      |   File "{__file__}", line {lno_g+13}, in _get_exception_group',
                     f'      |     g(42)',
+                    f'      |     ~^^^^',
                     f'      |   File "{__file__}", line {lno_g+1}, in g',
                     f'      |     raise ValueError(v)',
                     f'      | ValueError: 42',
@@ -2809,6 +4008,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'    | Traceback (most recent call last):',
                     f'    |   File "{__file__}", line {lno_g+20}, in _get_exception_group',
                     f'    |     g(24)',
+                    f'    |     ~^^^^',
                     f'    |   File "{__file__}", line {lno_g+1}, in g',
                     f'    |     raise ValueError(v)',
                     f'    | ValueError: 24',
@@ -2832,26 +4032,26 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         formatted = ''.join(teg.format()).split('\n')
 
         expected = [
-                    f'  | ExceptionGroup: eg (2 sub-exceptions)',
-                    f'  +-+---------------- 1 ----------------',
-                    f'    | ExceptionGroup: eg1 (3 sub-exceptions)',
-                    f'    +-+---------------- 1 ----------------',
-                    f'      | ValueError: 0',
-                    f'      +---------------- 2 ----------------',
-                    f'      | ValueError: 1',
-                    f'      +---------------- ... ----------------',
-                    f'      | and 1 more exception',
-                    f'      +------------------------------------',
-                    f'    +---------------- 2 ----------------',
-                    f'    | ExceptionGroup: eg2 (10 sub-exceptions)',
-                    f'    +-+---------------- 1 ----------------',
-                    f'      | TypeError: 0',
-                    f'      +---------------- 2 ----------------',
-                    f'      | TypeError: 1',
-                    f'      +---------------- ... ----------------',
-                    f'      | and 8 more exceptions',
-                    f'      +------------------------------------',
-                    f'']
+                    '  | ExceptionGroup: eg (2 sub-exceptions)',
+                    '  +-+---------------- 1 ----------------',
+                    '    | ExceptionGroup: eg1 (3 sub-exceptions)',
+                    '    +-+---------------- 1 ----------------',
+                    '      | ValueError: 0',
+                    '      +---------------- 2 ----------------',
+                    '      | ValueError: 1',
+                    '      +---------------- ... ----------------',
+                    '      | and 1 more exception',
+                    '      +------------------------------------',
+                    '    +---------------- 2 ----------------',
+                    '    | ExceptionGroup: eg2 (10 sub-exceptions)',
+                    '    +-+---------------- 1 ----------------',
+                    '      | TypeError: 0',
+                    '      +---------------- 2 ----------------',
+                    '      | TypeError: 1',
+                    '      +---------------- ... ----------------',
+                    '      | and 8 more exceptions',
+                    '      +------------------------------------',
+                    '']
 
         self.assertEqual(formatted, expected)
 
@@ -2864,39 +4064,39 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         formatted = ''.join(teg.format()).split('\n')
 
         expected = [
-                    f'  | ExceptionGroup: exc (3 sub-exceptions)',
-                    f'  +-+---------------- 1 ----------------',
-                    f'    | ValueError: -2',
-                    f'    +---------------- 2 ----------------',
-                    f'    | ExceptionGroup: exc (3 sub-exceptions)',
-                    f'    +-+---------------- 1 ----------------',
-                    f'      | ValueError: -1',
-                    f'      +---------------- 2 ----------------',
-                    f'      | ... (max_group_depth is 2)',
-                    f'      +---------------- 3 ----------------',
-                    f'      | ValueError: 1',
-                    f'      +------------------------------------',
-                    f'    +---------------- 3 ----------------',
-                    f'    | ValueError: 2',
-                    f'    +------------------------------------',
-                    f'']
+                    '  | ExceptionGroup: exc (3 sub-exceptions)',
+                    '  +-+---------------- 1 ----------------',
+                    '    | ValueError: -2',
+                    '    +---------------- 2 ----------------',
+                    '    | ExceptionGroup: exc (3 sub-exceptions)',
+                    '    +-+---------------- 1 ----------------',
+                    '      | ValueError: -1',
+                    '      +---------------- 2 ----------------',
+                    '      | ... (max_group_depth is 2)',
+                    '      +---------------- 3 ----------------',
+                    '      | ValueError: 1',
+                    '      +------------------------------------',
+                    '    +---------------- 3 ----------------',
+                    '    | ValueError: 2',
+                    '    +------------------------------------',
+                    '']
 
         self.assertEqual(formatted, expected)
 
     def test_comparison(self):
         try:
-            raise self.eg_info[1]
-        except ExceptionGroup:
-            exc_info = sys.exc_info()
+            raise self.eg
+        except ExceptionGroup as e:
+            exc = e
         for _ in range(5):
             try:
-                raise exc_info[1]
-            except:
-                exc_info = sys.exc_info()
-        exc = traceback.TracebackException(*exc_info)
-        exc2 = traceback.TracebackException(*exc_info)
-        exc3 = traceback.TracebackException(*exc_info, limit=300)
-        ne = traceback.TracebackException(*exc_info, limit=3)
+                raise exc
+            except Exception as e:
+                exc_obj = e
+        exc = traceback.TracebackException.from_exception(exc_obj)
+        exc2 = traceback.TracebackException.from_exception(exc_obj)
+        exc3 = traceback.TracebackException.from_exception(exc_obj, limit=300)
+        ne = traceback.TracebackException.from_exception(exc_obj, limit=3)
         self.assertIsNot(exc, exc2)
         self.assertEqual(exc, exc2)
         self.assertEqual(exc, exc3)
@@ -2904,15 +4104,37 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         self.assertNotEqual(exc, object())
         self.assertEqual(exc, ALWAYS_EQ)
 
+    def test_dont_swallow_subexceptions_of_falsey_exceptiongroup(self):
+        # see gh-132308: Ensure that subexceptions of exception groups
+        # that evaluate as falsey are displayed in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+
+        try:
+            raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
+        except Exception as ee:
+            str_exc = ''.join(traceback.format_exception(ee))
+            self.assertIn('+---------------- 1 ----------------', str_exc)
+            self.assertIn('+---------------- 2 ----------------', str_exc)
+
+        # Test with a falsey exception, in last position, as sub-exceptions.
+        msg = 'bool'
+        try:
+            raise FalseyExceptionGroup("Gah", (KeyError(), FalseyException(msg)))
+        except Exception as ee:
+            str_exc = traceback.format_exception(ee)
+            self.assertIn(f'{FalseyException.__name__}: {msg}', str_exc[-2])
+
 
 global_for_suggestions = None
 
 
-class SuggestionFormattingTestBase:
+class SuggestionFormattingTestMixin:
+    attr_function = getattr
+
     def get_suggestion(self, obj, attr_name=None):
         if attr_name is not None:
             def callable():
-                getattr(obj, attr_name)
+                self.attr_function(obj, attr_name)
         else:
             callable = obj
 
@@ -2921,7 +4143,9 @@ class SuggestionFormattingTestBase:
         )
         return result_lines[0]
 
-    def test_getattr_suggestions(self):
+
+class BaseSuggestionTests(SuggestionFormattingTestMixin):
+    def test_suggestions(self):
         class Substitution:
             noise = more_noise = a = bc = None
             blech = None
@@ -2964,20 +4188,43 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn(suggestion, actual)
 
-    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
+    def test_suggestions_underscored(self):
+        class A:
+            bluch = None
+
+        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
+
+        attr_function = self.attr_function
+        class B:
+            _bluch = None
+            def method(self, name):
+                attr_function(self, name)
+
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
+        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+
+
+    def test_do_not_trigger_for_long_attributes(self):
         class A:
             blech = None
 
         actual = self.get_suggestion(A(), 'somethingverywrong')
         self.assertNotIn("blech", actual)
 
-    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+    def test_do_not_trigger_for_small_names(self):
         class MyClass:
             vvv = mom = w = id = pytho = None
 
         for name in ("b", "v", "m", "py"):
             with self.subTest(name=name):
-                actual = self.get_suggestion(MyClass, name)
+                actual = self.get_suggestion(MyClass(), name)
                 self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv", actual)
                 self.assertNotIn("'mom'", actual)
@@ -2985,10 +4232,10 @@ class SuggestionFormattingTestBase:
                 self.assertNotIn("'w'", actual)
                 self.assertNotIn("'pytho'", actual)
 
-    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
+    def test_do_not_trigger_for_big_dicts(self):
         class A:
             blech = None
-        # A class with a very big __dict__ will not be consider
+        # A class with a very big __dict__ will not be considered
         # for suggestions.
         for index in range(2000):
             setattr(A, f"index_{index}", None)
@@ -2996,7 +4243,16 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(A(), 'bluch')
         self.assertNotIn("blech", actual)
 
-    def test_getattr_suggestions_no_args(self):
+    def test_suggestions_for_same_name(self):
+        class A:
+            def __dir__(self):
+                return ['blech']
+        actual = self.get_suggestion(A(), 'blech')
+        self.assertNotIn("Did you mean", actual)
+
+
+class GetattrSuggestionTests(BaseSuggestionTests):
+    def test_suggestions_no_args(self):
         class A:
             blech = None
             def __getattr__(self, attr):
@@ -3013,7 +4269,7 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(A(), 'bluch')
         self.assertIn("blech", actual)
 
-    def test_getattr_suggestions_invalid_args(self):
+    def test_suggestions_invalid_args(self):
         class NonStringifyClass:
             __str__ = None
             __repr__ = None
@@ -3037,13 +4293,12 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn("blech", actual)
 
-    def test_getattr_suggestions_for_same_name(self):
-        class A:
-            def __dir__(self):
-                return ['blech']
-        actual = self.get_suggestion(A(), 'blech')
-        self.assertNotIn("Did you mean", actual)
 
+class DelattrSuggestionTests(BaseSuggestionTests):
+    attr_function = delattr
+
+
+class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_attribute_error_with_failing_dict(self):
         class T:
             bluch = 1
@@ -3053,6 +4308,15 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(T(), 'blich')
         self.assertNotIn("blech", actual)
         self.assertNotIn("oh no!", actual)
+
+    def test_attribute_error_with_non_string_candidates(self):
+        class T:
+            bluch = 1
+
+        instance = T()
+        instance.__dict__[0] = 1
+        actual = self.get_suggestion(instance, 'blich')
+        self.assertIn("bluch", actual)
 
     def test_attribute_error_with_bad_name(self):
         def raise_attribute_error_with_bad_name():
@@ -3076,6 +4340,184 @@ class SuggestionFormattingTestBase:
         self.assertIn("Did you mean", actual)
         self.assertIn("bluch", actual)
 
+    def test_getattr_nested_attribute_suggestions(self):
+        # Test that nested attributes are suggested when no direct match
+        class Inner:
+            def __init__(self):
+                self.value = 42
+                self.data = "test"
+
+        class Outer:
+            def __init__(self):
+                self.inner = Inner()
+
+        # Should suggest 'inner.value'
+        actual = self.get_suggestion(Outer(), 'value')
+        self.assertIn("Did you mean: 'inner.value'", actual)
+
+        # Should suggest 'inner.data'
+        actual = self.get_suggestion(Outer(), 'data')
+        self.assertIn("Did you mean: 'inner.data'", actual)
+
+    def test_getattr_nested_prioritizes_direct_matches(self):
+        # Test that direct attribute matches are prioritized over nested ones
+        class Inner:
+            def __init__(self):
+                self.foo = 42
+
+        class Outer:
+            def __init__(self):
+                self.inner = Inner()
+                self.fooo = 100  # Similar to 'foo'
+
+        # Should suggest 'fooo' (direct) not 'inner.foo' (nested)
+        actual = self.get_suggestion(Outer(), 'foo')
+        self.assertIn("Did you mean: 'fooo'", actual)
+        self.assertNotIn("inner.foo", actual)
+
+    def test_getattr_nested_with_property(self):
+        # Test that descriptors (including properties) are suggested in nested attributes
+        class Inner:
+            @property
+            def computed(self):
+                return 42
+
+        class Outer:
+            def __init__(self):
+                self.inner = Inner()
+
+        actual = self.get_suggestion(Outer(), 'computed')
+        # Descriptors should not be suggested to avoid executing arbitrary code
+        self.assertIn("inner.computed", actual)
+
+    def test_getattr_nested_no_suggestion_for_deep_nesting(self):
+        # Test that deeply nested attributes (2+ levels) are not suggested
+        class Deep:
+            def __init__(self):
+                self.value = 42
+
+        class Middle:
+            def __init__(self):
+                self.deep = Deep()
+
+        class Outer:
+            def __init__(self):
+                self.middle = Middle()
+
+        # Should not suggest 'middle.deep.value' (too deep)
+        actual = self.get_suggestion(Outer(), 'value')
+        self.assertNotIn("Did you mean", actual)
+
+    def test_getattr_nested_ignores_private_attributes(self):
+        # Test that nested suggestions ignore private attributes
+        class Inner:
+            def __init__(self):
+                self.public_value = 42
+
+        class Outer:
+            def __init__(self):
+                self._private_inner = Inner()
+
+        # Should not suggest '_private_inner.public_value'
+        actual = self.get_suggestion(Outer(), 'public_value')
+        self.assertNotIn("Did you mean", actual)
+
+    def test_getattr_nested_limits_attribute_checks(self):
+        # Test that nested suggestions are limited to checking first 20 non-private attributes
+        class Inner:
+            def __init__(self):
+                self.target_value = 42
+
+        class Outer:
+            def __init__(self):
+                # Add many attributes before 'inner'
+                for i in range(25):
+                    setattr(self, f'attr_{i:02d}', i)
+                # Add the inner object after 20+ attributes
+                self.inner = Inner()
+
+        obj = Outer()
+        # Verify that 'inner' is indeed present but after position 20
+        attrs = [x for x in sorted(dir(obj)) if not x.startswith('_')]
+        inner_position = attrs.index('inner')
+        self.assertGreater(inner_position, 19, "inner should be after position 20 in sorted attributes")
+
+        # Should not suggest 'inner.target_value' because inner is beyond the first 20 attributes checked
+        actual = self.get_suggestion(obj, 'target_value')
+        self.assertNotIn("inner.target_value", actual)
+
+    def test_getattr_nested_returns_first_match_only(self):
+        # Test that only the first nested match is returned (not multiple)
+        class Inner1:
+            def __init__(self):
+                self.value = 1
+
+        class Inner2:
+            def __init__(self):
+                self.value = 2
+
+        class Inner3:
+            def __init__(self):
+                self.value = 3
+
+        class Outer:
+            def __init__(self):
+                # Multiple inner objects with same attribute
+                self.a_inner = Inner1()
+                self.b_inner = Inner2()
+                self.c_inner = Inner3()
+
+        # Should suggest only the first match (alphabetically)
+        actual = self.get_suggestion(Outer(), 'value')
+        self.assertIn("'a_inner.value'", actual)
+        # Verify it's a single suggestion, not multiple
+        self.assertEqual(actual.count("Did you mean"), 1)
+
+    def test_getattr_nested_handles_attribute_access_exceptions(self):
+        # Test that exceptions raised when accessing attributes don't crash the suggestion system
+        class ExplodingProperty:
+            @property
+            def exploding_attr(self):
+                raise RuntimeError("BOOM! This property always explodes")
+
+            def __repr__(self):
+                raise RuntimeError("repr also explodes")
+
+        class SafeInner:
+            def __init__(self):
+                self.target = 42
+
+        class Outer:
+            def __init__(self):
+                self.exploder = ExplodingProperty()  # Accessing attributes will raise
+                self.safe_inner = SafeInner()
+
+        # Should still suggest 'safe_inner.target' without crashing
+        # even though accessing exploder.target would raise an exception
+        actual = self.get_suggestion(Outer(), 'target')
+        self.assertIn("'safe_inner.target'", actual)
+
+    def test_getattr_nested_handles_hasattr_exceptions(self):
+        # Test that exceptions in hasattr don't crash the system
+        class WeirdObject:
+            def __getattr__(self, name):
+                if name == 'target':
+                    raise RuntimeError("Can't check for target attribute")
+                raise AttributeError(f"No attribute {name}")
+
+        class NormalInner:
+            def __init__(self):
+                self.target = 100
+
+        class Outer:
+            def __init__(self):
+                self.weird = WeirdObject()  # hasattr will raise for 'target'
+                self.normal = NormalInner()
+
+        # Should still find 'normal.target' even though weird.target check fails
+        actual = self.get_suggestion(Outer(), 'target')
+        self.assertIn("'normal.target'", actual)
+
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, tmpdir)
@@ -3089,8 +4531,8 @@ class SuggestionFormattingTestBase:
 
         return mod_name
 
-    def get_import_from_suggestion(self, mod_dict, name):
-        modname = self.make_module(mod_dict)
+    def get_import_from_suggestion(self, code, name):
+        modname = self.make_module(code)
 
         def callable():
             try:
@@ -3155,6 +4597,24 @@ class SuggestionFormattingTestBase:
         ]:
             actual = self.get_import_from_suggestion(code, 'bluch')
             self.assertIn(suggestion, actual)
+
+    def test_import_from_suggestions_underscored(self):
+        code = "bluch = None"
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, 'blach'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_bluch'))
+
+        code = "_bluch = None"
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_blach'))
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertNotIn("'_bluch'", self.get_import_from_suggestion(code, 'bluch'))
+
+    def test_import_from_suggestions_non_string(self):
+        modWithNonStringAttr = textwrap.dedent("""\
+            globals()[0] = 1
+            bluch = 1
+        """)
+        self.assertIn("'bluch'", self.get_import_from_suggestion(modWithNonStringAttr, 'blech'))
 
     def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
         code = "blech = None"
@@ -3251,6 +4711,15 @@ class SuggestionFormattingTestBase:
             print(eval("ZeroDivisionErrrrr", custom_globals))
         actual = self.get_suggestion(func)
         self.assertIn("'ZeroDivisionError'?", actual)
+
+    def test_name_error_suggestions_with_non_string_candidates(self):
+        def func():
+            abc = 1
+            custom_globals = globals().copy()
+            custom_globals[0] = 1
+            print(eval("abv", custom_globals, locals()))
+        actual = self.get_suggestion(func)
+        self.assertIn("abc", actual)
 
     def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def func():
@@ -3416,6 +4885,28 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(instance.foo)
         self.assertNotIn("self.blech", actual)
 
+    def test_unbound_local_error_with_side_effect(self):
+        # gh-132385
+        class A:
+            def __getattr__(self, key):
+                if key == 'foo':
+                    raise AttributeError('foo')
+                if key == 'spam':
+                    raise ValueError('spam')
+
+            def bar(self):
+                foo
+            def baz(self):
+                spam
+
+        suggestion = self.get_suggestion(A().bar)
+        self.assertNotIn('self.', suggestion)
+        self.assertIn("'foo'", suggestion)
+
+        suggestion = self.get_suggestion(A().baz)
+        self.assertNotIn('self.', suggestion)
+        self.assertIn("'spam'", suggestion)
+
     def test_unbound_local_error_does_not_match(self):
         def func():
             something = 3
@@ -3463,13 +4954,57 @@ class CPythonSuggestionFormattingTests(
     """
 
 
+class PurePythonGetattrSuggestionFormattingTests(
+    PurePythonExceptionFormattingMixin,
+    GetattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute access) as above using the pure Python
+    implementation of traceback printing in traceback.py.
+    """
+
+
+class PurePythonDelattrSuggestionFormattingTests(
+    PurePythonExceptionFormattingMixin,
+    DelattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute deletion) as above using the pure Python
+    implementation of traceback printing in traceback.py.
+    """
+
+
+@cpython_only
+class CPythonGetattrSuggestionFormattingTests(
+    CAPIExceptionFormattingMixin,
+    GetattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute access) as above but with Python's
+    internal traceback printing.
+    """
+
+
+@cpython_only
+class CPythonDelattrSuggestionFormattingTests(
+    CAPIExceptionFormattingMixin,
+    DelattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute deletion) as above but with Python's
+    internal traceback printing.
+    """
+
 class MiscTest(unittest.TestCase):
 
     def test_all(self):
         expected = set()
-        denylist = {'print_list'}
         for name in dir(traceback):
-            if name.startswith('_') or name in denylist:
+            if name.startswith('_'):
                 continue
             module_object = getattr(traceback, name)
             if getattr(module_object, '__module__', None) == 'traceback':
@@ -3505,6 +5040,7 @@ class MiscTest(unittest.TestCase):
         CHECK("AttributeError", "AttributeErrorTests", 10)
         CHECK("ABA", "AAB", 4)
 
+    @support.requires_resource('cpu')
     def test_levenshtein_distance_short_circuit(self):
         if not LEVENSHTEIN_DATA_FILE.is_file():
             self.fail(
@@ -3529,6 +5065,213 @@ class MiscTest(unittest.TestCase):
                 res3 = traceback._levenshtein_distance(a, b, threshold)
                 self.assertGreater(res3, threshold, msg=(a, b, threshold))
 
+    @cpython_only
+    def test_suggestions_extension(self):
+        # Check that the C extension is available
+        import _suggestions
+
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hello", "world"],
+                "hell"
+            ),
+            "hello"
+        )
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hovercraft"],
+                "eels"
+            ),
+            None
+        )
+
+        # gh-131936: _generate_suggestions() doesn't accept list subclasses
+        class MyList(list):
+            pass
+
+        with self.assertRaises(TypeError):
+            _suggestions._generate_suggestions(MyList(), "")
+
+    def test_no_site_package_flavour(self):
+        code = """import boo"""
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertIn(
+            (b"Site initialization is disabled, did you forget to "
+             b"add the site-packages directory to sys.path "
+             b"or to enable your virtual environment?"), stderr
+        )
+
+        code = """
+            import sys
+            sys.stdlib_module_names = sys.stdlib_module_names + ("boo",)
+            import boo
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertNotIn(
+            (b"Site initialization is disabled, did you forget to "
+             b"add the site-packages directory to sys.path "
+             b"or to enable your virtual environment?"), stderr
+        )
+
+    def test_missing_stdlib_module(self):
+        code = """
+            import sys
+            sys.stdlib_module_names |= {'spam'}
+            import spam
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertIn(b"Standard library module 'spam' was not found", stderr)
+
+        code = """
+            import sys
+            import traceback
+            traceback._MISSING_STDLIB_MODULE_MESSAGES = {'spam': "Install 'spam4life' for 'spam'"}
+            sys.stdlib_module_names |= {'spam'}
+            import spam
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertIn(b"Install 'spam4life' for 'spam'", stderr)
+
+    @unittest.skipIf(sys.platform == "win32", "Non-Windows test")
+    def test_windows_only_module_error(self):
+        try:
+            import msvcrt  # noqa: F401
+        except ModuleNotFoundError:
+            formatted = traceback.format_exc()
+            self.assertIn("Unsupported platform for Windows-only standard library module 'msvcrt'", formatted)
+        else:
+            self.fail("ModuleNotFoundError was not raised")
+
+
+class TestColorizedTraceback(unittest.TestCase):
+    maxDiff = None
+
+    def test_colorized_traceback(self):
+        def foo(*args):
+            x = {'a':{'b': None}}
+            y = x['a']['b']['c']
+
+        def baz2(*args):
+            return (lambda *args: foo(*args))(1,2,3,4)
+
+        def baz1(*args):
+            return baz2(1,2,3,4)
+
+        def bar():
+            return baz1(1,
+                    2,3
+                    ,4)
+        try:
+            bar()
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+        lines = "".join(exc.format(colorize=True))
+        red = colors["e"]
+        boldr = colors["E"]
+        reset = colors["z"]
+        self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
+        self.assertIn("return " + red + "(lambda *args: foo(*args))" + reset + boldr + "(1,2,3,4)" + reset, lines)
+        self.assertIn("return (lambda *args: " + red + "foo" + reset + boldr + "(*args)" + reset + ")(1,2,3,4)", lines)
+        self.assertIn("return baz2(1,2,3,4)", lines)
+        self.assertIn("return baz1(1,\n            2,3\n            ,4)", lines)
+        self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
+
+    def test_colorized_syntax_error(self):
+        try:
+            compile("a $ b", "<string>", "exec")
+        except SyntaxError as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+        actual = "".join(exc.format(colorize=True))
+        def expected(t, m, fn, l, f, E, e, z):
+            return "".join(
+                [
+                    f'  File {fn}"<string>"{z}, line {l}1{z}\n',
+                    f'    a {E}${z} b\n',
+                    f'      {E}^{z}\n',
+                    f'{t}SyntaxError{z}: {m}invalid syntax{z}\n'
+                ]
+            )
+        self.assertIn(expected(**colors), actual)
+
+    def test_colorized_traceback_is_the_default(self):
+        def foo():
+            1/0
+
+        from _testcapi import exception_print
+        try:
+            foo()
+            self.fail("No exception thrown.")
+        except Exception as e:
+            with captured_output("stderr") as tbstderr:
+                with unittest.mock.patch('_colorize.can_colorize', return_value=True):
+                    exception_print(e)
+            actual = tbstderr.getvalue().splitlines()
+
+        lno_foo = foo.__code__.co_firstlineno
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                'Traceback (most recent call last):',
+                f'  File {fn}"{__file__}"{z}, '
+                f'line {l}{lno_foo+5}{z}, in {f}test_colorized_traceback_is_the_default{z}',
+                f'    {e}foo{z}{E}(){z}',
+                f'    {e}~~~{z}{E}^^{z}',
+                f'  File {fn}"{__file__}"{z}, '
+                f'line {l}{lno_foo+1}{z}, in {f}foo{z}',
+                f'    {e}1{z}{E}/{z}{e}0{z}',
+                f'    {e}~{z}{E}^{z}{e}~{z}',
+                f'{t}ZeroDivisionError{z}: {m}division by zero{z}',
+            ]
+        self.assertEqual(actual, expected(**colors))
+
+    def test_colorized_traceback_from_exception_group(self):
+        def foo():
+            exceptions = []
+            try:
+                1 / 0
+            except ZeroDivisionError as inner_exc:
+                exceptions.append(inner_exc)
+            raise ExceptionGroup("test", exceptions)
+
+        try:
+            foo()
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+
+        lno_foo = foo.__code__.co_firstlineno
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                f"  + Exception Group Traceback (most recent call last):",
+                f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+9}{z}, in {f}test_colorized_traceback_from_exception_group{z}',
+                f'  |     {e}foo{z}{E}(){z}',
+                f'  |     {e}~~~{z}{E}^^{z}',
+                f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
+                f"  |     foo = {foo}",
+                f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
+                f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+6}{z}, in {f}foo{z}',
+                f'  |     raise ExceptionGroup("test", exceptions)',
+                f"  |     exceptions = [ZeroDivisionError('division by zero')]",
+                f'  | {t}ExceptionGroup{z}: {m}test (1 sub-exception){z}',
+                f'  +-+---------------- 1 ----------------',
+                f'    | Traceback (most recent call last):',
+                f'    |   File {fn}"{__file__}"{z}, line {l}{lno_foo+3}{z}, in {f}foo{z}',
+                f'    |     {e}1 {z}{E}/{z}{e} 0{z}',
+                f'    |     {e}~~{z}{E}^{z}{e}~~{z}',
+                f"    |     exceptions = [ZeroDivisionError('division by zero')]",
+                f'    | {t}ZeroDivisionError{z}: {m}division by zero{z}',
+                f'    +------------------------------------',
+        ]
+        self.assertEqual(actual, expected(**colors))
 
 if __name__ == "__main__":
     unittest.main()

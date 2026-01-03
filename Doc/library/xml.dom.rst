@@ -1,5 +1,5 @@
-:mod:`xml.dom` --- The Document Object Model API
-================================================
+:mod:`!xml.dom` --- The Document Object Model API
+=================================================
 
 .. module:: xml.dom
    :synopsis: Document Object Model API for Python.
@@ -734,7 +734,7 @@ NamedNodeMap Objects
    attribute node.  Get its value with the :attr:`value` attribute.
 
 There are also experimental methods that give this class more mapping behavior.
-You can use them or you can use the standardized :meth:`getAttribute\*` family
+You can use them or you can use the standardized :meth:`!getAttribute\*` family
 of methods on the :class:`Element` objects.
 
 

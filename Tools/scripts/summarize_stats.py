@@ -2,612 +2,1517 @@
 default stats folders.
 """
 
+from __future__ import annotations
+
+# NOTE: Bytecode introspection modules (opcode, dis, etc.) should only
+# be imported when loading a single dataset. When comparing datasets, it
+# could get it wrong, leading to subtle errors.
+
 import argparse
 import collections
-import json
-import os.path
-import opcode
+from collections.abc import KeysView
+from dataclasses import dataclass
 from datetime import date
+import enum
+import functools
 import itertools
+import json
+from operator import itemgetter
+import os
+from pathlib import Path
+import re
 import sys
+import textwrap
+from typing import Any, Callable, TextIO, TypeAlias
+
+
+RawData: TypeAlias = dict[str, Any]
+Rows: TypeAlias = list[tuple]
+Columns: TypeAlias = tuple[str, ...]
+RowCalculator: TypeAlias = Callable[["Stats"], Rows]
+
+
+# TODO: Check for parity
+
 
 if os.name == "nt":
     DEFAULT_DIR = "c:\\temp\\py_stats\\"
 else:
     DEFAULT_DIR = "/tmp/py_stats/"
 
-#Create list of all instruction names
-specialized = iter(opcode._specialized_instructions)
-opname = ["<0>"]
-for name in opcode.opname[1:]:
-    if name.startswith("<"):
-        try:
-            name = next(specialized)
-        except StopIteration:
-            pass
-    opname.append(name)
 
-# opcode_name --> opcode
-# Sort alphabetically.
-opmap = {name: i for i, name in enumerate(opname)}
-opmap = dict(sorted(opmap.items()))
+SOURCE_DIR = Path(__file__).parents[2]
+
 
 TOTAL = "specialization.hit", "specialization.miss", "execution_count"
 
-def format_ratio(num, den):
-    """
-    Format a ratio as a percentage. When the denominator is 0, returns the empty
-    string.
-    """
-    if den == 0:
-        return ""
-    else:
-        return f"{num/den:.01%}"
 
-def join_rows(a_rows, b_rows):
-    """
-    Joins two tables together, side-by-side, where the first column in each is a
-    common key.
-    """
-    if len(a_rows) == 0 and len(b_rows) == 0:
-        return []
+def pretty(name: str) -> str:
+    return name.replace("_", " ").lower()
 
-    if len(a_rows):
-        a_ncols = list(set(len(x) for x in a_rows))
-        if len(a_ncols) != 1:
-            raise ValueError("Table a is ragged")
 
-    if len(b_rows):
-        b_ncols = list(set(len(x) for x in b_rows))
-        if len(b_ncols) != 1:
-            raise ValueError("Table b is ragged")
+def _load_metadata_from_source():
+    def get_defines(filepath: Path, prefix: str = "SPEC_FAIL"):
+        with open(SOURCE_DIR / filepath) as spec_src:
+            defines = collections.defaultdict(list)
+            start = "#define " + prefix + "_"
+            for line in spec_src:
+                line = line.strip()
+                if not line.startswith(start):
+                    continue
+                line = line[len(start) :]
+                name, val = line.split()
+                defines[int(val.strip())].append(name.strip())
+        return defines
 
-    if len(a_rows) and len(b_rows) and a_ncols[0] != b_ncols[0]:
-        raise ValueError("Tables have different widths")
+    import opcode
 
-    if len(a_rows):
-        ncols = a_ncols[0]
-    else:
-        ncols = b_ncols[0]
+    return {
+        "_specialized_instructions": [
+            op for op in opcode._specialized_opmap.keys() if "__" not in op  # type: ignore
+        ],
+        "_stats_defines": get_defines(
+            Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
+        ),
+        "_defines": get_defines(Path("Python") / "specialize.c"),
+    }
 
-    default = [""] * (ncols - 1)
-    a_data = {x[0]: x[1:] for x in a_rows}
-    b_data = {x[0]: x[1:] for x in b_rows}
 
-    if len(a_data) != len(a_rows) or len(b_data) != len(b_rows):
-        raise ValueError("Duplicate keys")
-
-    # To preserve ordering, use A's keys as is and then add any in B that aren't
-    # in A
-    keys = list(a_data.keys()) + [k for k in b_data.keys() if k not in a_data]
-    return [(k, *a_data.get(k, default), *b_data.get(k, default)) for k in keys]
-
-def calculate_specialization_stats(family_stats, total):
-    rows = []
-    for key in sorted(family_stats):
-        if key.startswith("specialization.failure_kinds"):
-            continue
-        if key in ("specialization.hit", "specialization.miss"):
-            label = key[len("specialization."):]
-        elif key == "execution_count":
-            continue
-        elif key in ("specialization.success",  "specialization.failure", "specializable"):
-            continue
-        elif key.startswith("pair"):
-            continue
-        else:
-            label = key
-        rows.append((f"{label:>12}", f"{family_stats[key]:>12}", format_ratio(family_stats[key], total)))
-    return rows
-
-def calculate_specialization_success_failure(family_stats):
-    total_attempts = 0
-    for key in ("specialization.success",  "specialization.failure"):
-        total_attempts += family_stats.get(key, 0)
-    rows = []
-    if total_attempts:
-        for key in ("specialization.success",  "specialization.failure"):
-            label = key[len("specialization."):]
-            label = label[0].upper() + label[1:]
-            val = family_stats.get(key, 0)
-            rows.append((label, val, format_ratio(val, total_attempts)))
-    return rows
-
-def calculate_specialization_failure_kinds(name, family_stats, defines):
-    total_failures = family_stats.get("specialization.failure", 0)
-    failure_kinds = [ 0 ] * 40
-    for key in family_stats:
-        if not key.startswith("specialization.failure_kind"):
-            continue
-        _, index = key[:-1].split("[")
-        index = int(index)
-        failure_kinds[index] = family_stats[key]
-    failures = [(value, index) for (index, value) in enumerate(failure_kinds)]
-    failures.sort(reverse=True)
-    rows = []
-    for value, index in failures:
-        if not value:
-            continue
-        rows.append((kind_to_text(index, defines, name), value, format_ratio(value, total_failures)))
-    return rows
-
-def print_specialization_stats(name, family_stats, defines):
-    if "specializable" not in family_stats:
-        return
-    total = sum(family_stats.get(kind, 0) for kind in TOTAL)
-    if total == 0:
-        return
-    with Section(name, 3, f"specialization stats for {name} family"):
-        rows = calculate_specialization_stats(family_stats, total)
-        emit_table(("Kind", "Count", "Ratio"), rows)
-        rows = calculate_specialization_success_failure(family_stats)
-        if rows:
-            print_title("Specialization attempts", 4)
-            emit_table(("", "Count:", "Ratio:"), rows)
-            rows = calculate_specialization_failure_kinds(name, family_stats, defines)
-            emit_table(("Failure kind", "Count:", "Ratio:"), rows)
-
-def print_comparative_specialization_stats(name, base_family_stats, head_family_stats, defines):
-    if "specializable" not in base_family_stats:
-        return
-
-    base_total = sum(base_family_stats.get(kind, 0) for kind in TOTAL)
-    head_total = sum(head_family_stats.get(kind, 0) for kind in TOTAL)
-    if base_total + head_total == 0:
-        return
-    with Section(name, 3, f"specialization stats for {name} family"):
-        base_rows = calculate_specialization_stats(base_family_stats, base_total)
-        head_rows = calculate_specialization_stats(head_family_stats, head_total)
-        emit_table(
-            ("Kind", "Base Count", "Base Ratio", "Head Count", "Head Ratio"),
-            join_rows(base_rows, head_rows)
-        )
-        base_rows = calculate_specialization_success_failure(base_family_stats)
-        head_rows = calculate_specialization_success_failure(head_family_stats)
-        rows = join_rows(base_rows, head_rows)
-        if rows:
-            print_title("Specialization attempts", 4)
-            emit_table(("", "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), rows)
-            base_rows = calculate_specialization_failure_kinds(name, base_family_stats, defines)
-            head_rows = calculate_specialization_failure_kinds(name, head_family_stats, defines)
-            emit_table(
-                ("Failure kind", "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"),
-                join_rows(base_rows, head_rows)
-            )
-
-def gather_stats(input):
-    # Note the output of this function must be JSON-serializable
-
-    if os.path.isfile(input):
+def load_raw_data(input: Path) -> RawData:
+    if input.is_file():
         with open(input, "r") as fd:
-            return json.load(fd)
-    elif os.path.isdir(input):
-        stats = collections.Counter()
-        for filename in os.listdir(input):
-            with open(os.path.join(input, filename)) as fd:
+            data = json.load(fd)
+
+        data["_stats_defines"] = {int(k): v for k, v in data["_stats_defines"].items()}
+        data["_defines"] = {int(k): v for k, v in data["_defines"].items()}
+
+        return data
+
+    elif input.is_dir():
+        stats = collections.Counter[str]()
+
+        for filename in input.iterdir():
+            with open(filename) as fd:
                 for line in fd:
                     try:
                         key, value = line.split(":")
                     except ValueError:
-                        print(f"Unparsable line: '{line.strip()}' in  {filename}", file=sys.stderr)
+                        print(
+                            f"Unparsable line: '{line.strip()}' in {filename}",
+                            file=sys.stderr,
+                        )
                         continue
-                    key = key.strip()
-                    value = int(value)
-                    stats[key] += value
-            stats['__nfiles__'] += 1
-        return stats
+                    # Hack to handle older data files where some uops
+                    # are missing an underscore prefix in their name
+                    if key.startswith("uops[") and key[5:6] != "_":
+                        key = "uops[_" + key[5:]
+                    stats[key.strip()] += int(value)
+            stats["__nfiles__"] += 1
+
+        data = dict(stats)
+        data.update(_load_metadata_from_source())
+        return data
+
     else:
-        raise ValueError(f"{input:r} is not a file or directory path")
+        raise ValueError(f"{input} is not a file or directory path")
 
-def extract_opcode_stats(stats):
-    opcode_stats = [ {} for _ in range(256) ]
-    for key, value in stats.items():
-        if not key.startswith("opcode"):
-            continue
-        n, _, rest = key[7:].partition("]")
-        opcode_stats[int(n)][rest.strip(".")] = value
-    return opcode_stats
 
-def parse_kinds(spec_src, prefix="SPEC_FAIL"):
-    defines = collections.defaultdict(list)
-    start = "#define " + prefix + "_"
-    for line in spec_src:
-        line = line.strip()
-        if not line.startswith(start):
-            continue
-        line = line[len(start):]
-        name, val = line.split()
-        defines[int(val.strip())].append(name.strip())
-    return defines
+def save_raw_data(data: RawData, json_output: TextIO):
+    json.dump(data, json_output)
 
-def pretty(defname):
-    return defname.replace("_", " ").lower()
 
-def kind_to_text(kind, defines, opname):
-    if kind <= 8:
-        return pretty(defines[kind][0])
-    if opname.endswith("ATTR"):
-        opname = "ATTR"
-    if opname.endswith("SUBSCR"):
-        opname = "SUBSCR"
-    for name in defines[kind]:
-        if name.startswith(opname):
-            return pretty(name[len(opname)+1:])
-    return "kind " + str(kind)
+@dataclass(frozen=True)
+class Doc:
+    text: str
+    doc: str
 
-def categorized_counts(opcode_stats):
-    basic = 0
-    specialized = 0
-    not_specialized = 0
-    specialized_instructions = {
-        op for op in opcode._specialized_instructions
-        if "__" not in op}
-    for i, opcode_stat in enumerate(opcode_stats):
-        if "execution_count" not in opcode_stat:
-            continue
-        count = opcode_stat['execution_count']
-        name = opname[i]
-        if "specializable" in opcode_stat:
-            not_specialized += count
-        elif name in specialized_instructions:
-            miss = opcode_stat.get("specialization.miss", 0)
-            not_specialized += miss
-            specialized += count - miss
+    def markdown(self) -> str:
+        return textwrap.dedent(
+            f"""
+            {self.text}
+            <details>
+            <summary>ⓘ</summary>
+
+            {self.doc}
+            </details>
+            """
+        )
+
+
+class Count(int):
+    def markdown(self) -> str:
+        return format(self, ",d")
+
+
+@dataclass(frozen=True)
+class Ratio:
+    num: int
+    den: int | None = None
+    percentage: bool = True
+
+    def __float__(self):
+        if self.den == 0:
+            return 0.0
+        elif self.den is None:
+            return self.num
         else:
-            basic += count
-    return basic, not_specialized, specialized
+            return self.num / self.den
 
-def print_title(name, level=2):
-    print("#"*level, name)
-    print()
-
-class Section:
-
-    def __init__(self, title, level=2, summary=None):
-        self.title = title
-        self.level = level
-        if summary is None:
-            self.summary = title.lower()
+    def markdown(self) -> str:
+        if self.den is None:
+            return ""
+        elif self.den == 0:
+            if self.num != 0:
+                return f"{self.num:,} / 0 !!"
+            return ""
+        elif self.percentage:
+            return f"{self.num / self.den:,.01%}"
         else:
-            self.summary = summary
+            return f"{self.num / self.den:,.02f}"
 
-    def __enter__(self):
-        print_title(self.title, self.level)
-        print("<details>")
-        print("<summary>", self.summary, "</summary>")
-        print()
-        return self
 
-    def __exit__(*args):
-        print()
-        print("</details>")
-        print()
-
-def to_str(x):
-    if isinstance(x, int):
-        return format(x, ",d")
-    else:
-        return str(x)
-
-def emit_table(header, rows):
-    width = len(header)
-    header_line = "|"
-    under_line = "|"
-    for item in header:
-        under = "---"
-        if item.endswith(":"):
-            item = item[:-1]
-            under += ":"
-        header_line += item + " | "
-        under_line += under + "|"
-    print(header_line)
-    print(under_line)
-    for row in rows:
-        if width is not None and len(row) != width:
-            raise ValueError("Wrong number of elements in row '" + str(row) + "'")
-        print("|", " | ".join(to_str(i) for i in row), "|")
-    print()
-
-def calculate_execution_counts(opcode_stats, total):
-    counts = []
-    for i, opcode_stat in enumerate(opcode_stats):
-        if "execution_count" in opcode_stat:
-            count = opcode_stat['execution_count']
-            miss = 0
-            if "specializable" not in opcode_stat:
-                miss = opcode_stat.get("specialization.miss")
-            counts.append((count, opname[i], miss))
-    counts.sort(reverse=True)
-    cumulative = 0
-    rows = []
-    for (count, name, miss) in counts:
-        cumulative += count
-        if miss:
-            miss = format_ratio(miss, count)
+class DiffRatio(Ratio):
+    def __init__(self, base: int | str, head: int | str):
+        if isinstance(base, str) or isinstance(head, str):
+            super().__init__(0, 0)
         else:
-            miss = ""
-        rows.append((name, count, format_ratio(count, total),
-                     format_ratio(cumulative, total), miss))
-    return rows
+            super().__init__(head - base, base)
 
-def emit_execution_counts(opcode_stats, total):
-    with Section("Execution counts", summary="execution counts for all instructions"):
-        rows = calculate_execution_counts(opcode_stats, total)
-        emit_table(
-            ("Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"),
-            rows
+
+class OpcodeStats:
+    """
+    Manages the data related to specific set of opcodes, e.g. tier1 (with prefix
+    "opcode") or tier2 (with prefix "uops").
+    """
+
+    def __init__(self, data: dict[str, Any], defines, specialized_instructions):
+        self._data = data
+        self._defines = defines
+        self._specialized_instructions = specialized_instructions
+
+    def get_opcode_names(self) -> KeysView[str]:
+        return self._data.keys()
+
+    def get_pair_counts(self) -> dict[tuple[str, str], int]:
+        pair_counts = {}
+        for name_i, opcode_stat in self._data.items():
+            for key, value in opcode_stat.items():
+                if value and key.startswith("pair_count"):
+                    name_j, _, _ = key[len("pair_count") + 1 :].partition("]")
+                    pair_counts[(name_i, name_j)] = value
+        return pair_counts
+
+    def get_total_execution_count(self) -> int:
+        return sum(x.get("execution_count", 0) for x in self._data.values())
+
+    def get_execution_counts(self) -> dict[str, tuple[int, int]]:
+        counts = {}
+        for name, opcode_stat in self._data.items():
+            if "execution_count" in opcode_stat:
+                count = opcode_stat["execution_count"]
+                miss = 0
+                if "specializable" not in opcode_stat:
+                    miss = opcode_stat.get("specialization.miss", 0)
+                counts[name] = (count, miss)
+        return counts
+
+    @functools.cache
+    def _get_pred_succ(
+        self,
+    ) -> tuple[dict[str, collections.Counter], dict[str, collections.Counter]]:
+        pair_counts = self.get_pair_counts()
+
+        predecessors: dict[str, collections.Counter] = collections.defaultdict(
+            collections.Counter
         )
-
-def emit_comparative_execution_counts(
-    base_opcode_stats, base_total, head_opcode_stats, head_total
-):
-    with Section("Execution counts", summary="execution counts for all instructions"):
-        base_rows = calculate_execution_counts(base_opcode_stats, base_total)
-        head_rows = calculate_execution_counts(head_opcode_stats, head_total)
-        base_data = dict((x[0], x[1:]) for x in base_rows)
-        head_data = dict((x[0], x[1:]) for x in head_rows)
-        opcodes = set(base_data.keys()) | set(head_data.keys())
-
-        rows = []
-        default = [0, "0.0%", "0.0%", 0]
-        for opcode in opcodes:
-            base_entry = base_data.get(opcode, default)
-            head_entry = head_data.get(opcode, default)
-            if base_entry[0] == 0:
-                change = 1
-            else:
-                change = (head_entry[0] - base_entry[0]) / base_entry[0]
-            rows.append(
-                (opcode, base_entry[0], head_entry[0],
-                 f"{100*change:0.1f}%"))
-
-        rows.sort(key=lambda x: -abs(float(x[-1][:-1])))
-
-        emit_table(
-            ("Name", "Base Count:", "Head Count:", "Change:"),
-            rows
+        successors: dict[str, collections.Counter] = collections.defaultdict(
+            collections.Counter
         )
-
-def get_defines():
-    spec_path = os.path.join(os.path.dirname(__file__), "../../Python/specialize.c")
-    with open(spec_path) as spec_src:
-        defines = parse_kinds(spec_src)
-    return defines
-
-def emit_specialization_stats(opcode_stats):
-    defines = get_defines()
-    with Section("Specialization stats", summary="specialization stats by family"):
-        for i, opcode_stat in enumerate(opcode_stats):
-            name = opname[i]
-            print_specialization_stats(name, opcode_stat, defines)
-
-def emit_comparative_specialization_stats(base_opcode_stats, head_opcode_stats):
-    defines = get_defines()
-    with Section("Specialization stats", summary="specialization stats by family"):
-        for i, (base_opcode_stat, head_opcode_stat) in enumerate(zip(base_opcode_stats, head_opcode_stats)):
-            name = opname[i]
-            print_comparative_specialization_stats(name, base_opcode_stat, head_opcode_stat, defines)
-
-def calculate_specialization_effectiveness(opcode_stats, total):
-    basic, not_specialized, specialized = categorized_counts(opcode_stats)
-    return [
-        ("Basic", basic, format_ratio(basic, total)),
-        ("Not specialized", not_specialized, format_ratio(not_specialized, total)),
-        ("Specialized", specialized, format_ratio(specialized, total)),
-    ]
-
-def emit_specialization_overview(opcode_stats, total):
-    with Section("Specialization effectiveness"):
-        rows = calculate_specialization_effectiveness(opcode_stats, total)
-        emit_table(("Instructions", "Count:", "Ratio:"), rows)
-        for title, field in (("Deferred", "specialization.deferred"), ("Misses", "specialization.miss")):
-            total = 0
-            counts = []
-            for i, opcode_stat in enumerate(opcode_stats):
-                value = opcode_stat.get(field, 0)
-                counts.append((value, opname[i]))
-                total += value
-            counts.sort(reverse=True)
-            if total:
-                with Section(f"{title} by instruction", 3):
-                    rows = [ (name, count, format_ratio(count, total)) for (count, name) in counts[:10] ]
-                    emit_table(("Name", "Count:", "Ratio:"), rows)
-
-def emit_comparative_specialization_overview(base_opcode_stats, base_total, head_opcode_stats, head_total):
-    with Section("Specialization effectiveness"):
-        base_rows = calculate_specialization_effectiveness(base_opcode_stats, base_total)
-        head_rows = calculate_specialization_effectiveness(head_opcode_stats, head_total)
-        emit_table(
-            ("Instructions", "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"),
-            join_rows(base_rows, head_rows)
-        )
-
-def get_stats_defines():
-    stats_path = os.path.join(os.path.dirname(__file__), "../../Include/pystats.h")
-    with open(stats_path) as stats_src:
-        defines = parse_kinds(stats_src, prefix="EVAL_CALL")
-    return defines
-
-def calculate_call_stats(stats):
-    defines = get_stats_defines()
-    total = 0
-    for key, value in stats.items():
-        if "Calls to" in key:
-            total += value
-            rows = []
-    for key, value in stats.items():
-        if "Calls to" in key:
-            rows.append((key, value, format_ratio(value, total)))
-        elif key.startswith("Calls "):
-            name, index = key[:-1].split("[")
-            index =  int(index)
-            label = name + " (" + pretty(defines[index][0]) + ")"
-            rows.append((label, value, format_ratio(value, total)))
-    for key, value in stats.items():
-        if key.startswith("Frame"):
-            rows.append((key, value, format_ratio(value, total)))
-    return rows
-
-def emit_call_stats(stats):
-    with Section("Call stats", summary="Inlined calls and frame stats"):
-        rows = calculate_call_stats(stats)
-        emit_table(("", "Count:", "Ratio:"), rows)
-
-def emit_comparative_call_stats(base_stats, head_stats):
-    with Section("Call stats", summary="Inlined calls and frame stats"):
-        base_rows = calculate_call_stats(base_stats)
-        head_rows = calculate_call_stats(head_stats)
-        rows = join_rows(base_rows, head_rows)
-        rows.sort(key=lambda x: -float(x[-1][:-1]))
-        emit_table(
-            ("", "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"),
-            rows
-        )
-
-def calculate_object_stats(stats):
-    total_materializations = stats.get("Object new values")
-    total_allocations = stats.get("Object allocations") + stats.get("Object allocations from freelist")
-    total_increfs = stats.get("Object interpreter increfs") + stats.get("Object increfs")
-    total_decrefs = stats.get("Object interpreter decrefs") + stats.get("Object decrefs")
-    rows = []
-    for key, value in stats.items():
-        if key.startswith("Object"):
-            if "materialize" in key:
-                ratio = format_ratio(value, total_materializations)
-            elif "allocations" in key:
-                ratio = format_ratio(value, total_allocations)
-            elif "increfs"     in key:
-                ratio = format_ratio(value, total_increfs)
-            elif "decrefs"     in key:
-                ratio = format_ratio(value, total_decrefs)
-            else:
-                ratio = ""
-            label = key[6:].strip()
-            label = label[0].upper() + label[1:]
-            rows.append((label, value, ratio))
-    return rows
-
-def emit_object_stats(stats):
-    with Section("Object stats", summary="allocations, frees and dict materializatons"):
-        rows = calculate_object_stats(stats)
-        emit_table(("",  "Count:", "Ratio:"), rows)
-
-def emit_comparative_object_stats(base_stats, head_stats):
-    with Section("Object stats", summary="allocations, frees and dict materializatons"):
-        base_rows = calculate_object_stats(base_stats)
-        head_rows = calculate_object_stats(head_stats)
-        emit_table(("",  "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), join_rows(base_rows, head_rows))
-
-def get_total(opcode_stats):
-    total = 0
-    for opcode_stat in opcode_stats:
-        if "execution_count" in opcode_stat:
-            total += opcode_stat['execution_count']
-    return total
-
-def emit_pair_counts(opcode_stats, total):
-    pair_counts = []
-    for i, opcode_stat in enumerate(opcode_stats):
-        if i == 0:
-            continue
-        for key, value in opcode_stat.items():
-            if key.startswith("pair_count"):
-                x, _, _ = key[11:].partition("]")
-                if value:
-                    pair_counts.append((value, (i, int(x))))
-    with Section("Pair counts", summary="Pair counts for top 100 pairs"):
-        pair_counts.sort(reverse=True)
-        cumulative = 0
-        rows = []
-        for (count, pair) in itertools.islice(pair_counts, 100):
-            i, j = pair
-            cumulative += count
-            rows.append((opname[i] + " " + opname[j], count, format_ratio(count, total),
-                         format_ratio(cumulative, total)))
-        emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
-            rows
-        )
-    with Section("Predecessor/Successor Pairs", summary="Top 5 predecessors and successors of each opcode"):
-        predecessors = collections.defaultdict(collections.Counter)
-        successors = collections.defaultdict(collections.Counter)
-        total_predecessors = collections.Counter()
-        total_successors = collections.Counter()
-        for count, (first, second) in pair_counts:
+        for (first, second), count in pair_counts.items():
             if count:
                 predecessors[second][first] = count
                 successors[first][second] = count
-                total_predecessors[second] += count
-                total_successors[first] += count
-        for name, i in opmap.items():
-            total1 = total_predecessors[i]
-            total2 = total_successors[i]
-            if total1 == 0 and total2 == 0:
+
+        return predecessors, successors
+
+    def get_predecessors(self, opcode: str) -> collections.Counter[str]:
+        return self._get_pred_succ()[0][opcode]
+
+    def get_successors(self, opcode: str) -> collections.Counter[str]:
+        return self._get_pred_succ()[1][opcode]
+
+    def _get_stats_for_opcode(self, opcode: str) -> dict[str, int]:
+        return self._data[opcode]
+
+    def get_specialization_total(self, opcode: str) -> int:
+        family_stats = self._get_stats_for_opcode(opcode)
+        return sum(family_stats.get(kind, 0) for kind in TOTAL)
+
+    def get_specialization_counts(self, opcode: str) -> dict[str, int]:
+        family_stats = self._get_stats_for_opcode(opcode)
+
+        result = {}
+        for key, value in sorted(family_stats.items()):
+            if key.startswith("specialization."):
+                label = key[len("specialization.") :]
+                if label in ("success", "failure") or label.startswith("failure_kinds"):
+                    continue
+            elif key in (
+                "execution_count",
+                "specializable",
+            ) or key.startswith("pair"):
                 continue
-            pred_rows = succ_rows = ()
-            if total1:
-                pred_rows = [(opname[pred], count, f"{count/total1:.1%}")
-                             for (pred, count) in predecessors[i].most_common(5)]
-            if total2:
-                succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
-                             for (succ, count) in successors[i].most_common(5)]
-            with Section(name, 3, f"Successors and predecessors for {name}"):
-                emit_table(("Predecessors", "Count:", "Percentage:"),
-                    pred_rows
+            else:
+                label = key
+            result[label] = value
+
+        return result
+
+    def get_specialization_success_failure(self, opcode: str) -> dict[str, int]:
+        family_stats = self._get_stats_for_opcode(opcode)
+        result = {}
+        for key in ("specialization.success", "specialization.failure"):
+            label = key[len("specialization.") :]
+            val = family_stats.get(key, 0)
+            result[label] = val
+        return result
+
+    def get_specialization_failure_total(self, opcode: str) -> int:
+        return self._get_stats_for_opcode(opcode).get("specialization.failure", 0)
+
+    def get_specialization_failure_kinds(self, opcode: str) -> dict[str, int]:
+        def kind_to_text(kind: int, opcode: str):
+            if kind <= 8:
+                return pretty(self._defines[kind][0])
+            if opcode == "LOAD_SUPER_ATTR":
+                opcode = "SUPER"
+            elif opcode.endswith("ATTR"):
+                opcode = "ATTR"
+            elif opcode in ("FOR_ITER", "GET_ITER", "SEND"):
+                opcode = "ITER"
+            elif opcode.endswith("SUBSCR"):
+                opcode = "SUBSCR"
+            for name in self._defines[kind]:
+                if name.startswith(opcode):
+                    return pretty(name[len(opcode) + 1 :])
+            return "kind " + str(kind)
+
+        family_stats = self._get_stats_for_opcode(opcode)
+
+        def key_to_index(key):
+            return int(key[:-1].split("[")[1])
+
+        max_index = 0
+        for key in family_stats:
+            if key.startswith("specialization.failure_kind"):
+                max_index = max(max_index, key_to_index(key))
+
+        failure_kinds = [0] * (max_index + 1)
+        for key in family_stats:
+            if not key.startswith("specialization.failure_kind"):
+                continue
+            failure_kinds[key_to_index(key)] = family_stats[key]
+        return {
+            kind_to_text(index, opcode): value
+            for (index, value) in enumerate(failure_kinds)
+            if value
+        }
+
+    def is_specializable(self, opcode: str) -> bool:
+        return "specializable" in self._get_stats_for_opcode(opcode)
+
+    def get_specialized_total_counts(self) -> tuple[int, int, int]:
+        basic = 0
+        specialized_hits = 0
+        specialized_misses = 0
+        not_specialized = 0
+        for opcode, opcode_stat in self._data.items():
+            if "execution_count" not in opcode_stat:
+                continue
+            count = opcode_stat["execution_count"]
+            if "specializable" in opcode_stat:
+                not_specialized += count
+            elif opcode in self._specialized_instructions:
+                miss = opcode_stat.get("specialization.miss", 0)
+                specialized_hits += count - miss
+                specialized_misses += miss
+            else:
+                basic += count
+        return basic, specialized_hits, specialized_misses, not_specialized
+
+    def get_deferred_counts(self) -> dict[str, int]:
+        return {
+            opcode: opcode_stat.get("specialization.deferred", 0)
+            for opcode, opcode_stat in self._data.items()
+            if opcode != "RESUME"
+        }
+
+    def get_misses_counts(self) -> dict[str, int]:
+        return {
+            opcode: opcode_stat.get("specialization.miss", 0)
+            for opcode, opcode_stat in self._data.items()
+            if not self.is_specializable(opcode)
+        }
+
+    def get_opcode_counts(self) -> dict[str, int]:
+        counts = {}
+        for opcode, entry in self._data.items():
+            count = entry.get("count", 0)
+            if count:
+                counts[opcode] = count
+        return counts
+
+
+class Stats:
+    def __init__(self, data: RawData):
+        self._data = data
+
+    def get(self, key: str) -> int:
+        return self._data.get(key, 0)
+
+    @functools.cache
+    def get_opcode_stats(self, prefix: str) -> OpcodeStats:
+        opcode_stats = collections.defaultdict[str, dict](dict)
+        for key, value in self._data.items():
+            if not key.startswith(prefix):
+                continue
+            name, _, rest = key[len(prefix) + 1 :].partition("]")
+            opcode_stats[name][rest.strip(".")] = value
+        return OpcodeStats(
+            opcode_stats,
+            self._data["_defines"],
+            self._data["_specialized_instructions"],
+        )
+
+    def get_call_stats(self) -> dict[str, int]:
+        defines = self._data["_stats_defines"]
+        result = {}
+        for key, value in sorted(self._data.items()):
+            if "Calls to" in key:
+                result[key] = value
+            elif key.startswith("Calls "):
+                name, index = key[:-1].split("[")
+                label = f"{name} ({pretty(defines[int(index)][0])})"
+                result[label] = value
+
+        for key, value in sorted(self._data.items()):
+            if key.startswith("Frame"):
+                result[key] = value
+
+        return result
+
+    def get_object_stats(self) -> dict[str, tuple[int, int]]:
+        total_materializations = self._data.get("Object inline values", 0)
+        total_allocations = self._data.get("Object allocations", 0) + self._data.get(
+            "Object allocations from freelist", 0
+        )
+        total_increfs = (
+            self._data.get("Object interpreter mortal increfs", 0) +
+            self._data.get("Object mortal increfs", 0) +
+            self._data.get("Object interpreter immortal increfs", 0) +
+            self._data.get("Object immortal increfs", 0)
+        )
+        total_decrefs = (
+            self._data.get("Object interpreter mortal decrefs", 0) +
+            self._data.get("Object mortal decrefs", 0) +
+            self._data.get("Object interpreter immortal decrefs", 0) +
+            self._data.get("Object immortal decrefs", 0)
+        )
+
+        result = {}
+        for key, value in self._data.items():
+            if key.startswith("Object"):
+                if "materialize" in key:
+                    den = total_materializations
+                elif "allocations" in key:
+                    den = total_allocations
+                elif "increfs" in key:
+                    den = total_increfs
+                elif "decrefs" in key:
+                    den = total_decrefs
+                else:
+                    den = None
+                label = key[6:].strip()
+                label = label[0].upper() + label[1:]
+                result[label] = (value, den)
+        return result
+
+    def get_gc_stats(self) -> list[dict[str, int]]:
+        gc_stats: list[dict[str, int]] = []
+        for key, value in self._data.items():
+            if not key.startswith("GC"):
+                continue
+            n, _, rest = key[3:].partition("]")
+            name = rest.strip()
+            gen_n = int(n)
+            while len(gc_stats) <= gen_n:
+                gc_stats.append({})
+            gc_stats[gen_n][name] = value
+        return gc_stats
+
+    def get_optimization_stats(self) -> dict[str, tuple[int, int | None]]:
+        if "Optimization attempts" not in self._data:
+            return {}
+
+        attempts = self._data["Optimization attempts"]
+        created = self._data["Optimization traces created"]
+        executed = self._data["Optimization traces executed"]
+        uops = self._data["Optimization uops executed"]
+        trace_stack_overflow = self._data["Optimization trace stack overflow"]
+        trace_stack_underflow = self._data["Optimization trace stack underflow"]
+        trace_too_long = self._data["Optimization trace too long"]
+        trace_too_short = self._data["Optimization trace too short"]
+        inner_loop = self._data["Optimization inner loop"]
+        recursive_call = self._data["Optimization recursive call"]
+        low_confidence = self._data["Optimization low confidence"]
+        unknown_callee = self._data["Optimization unknown callee"]
+        executors_invalidated = self._data["Executors invalidated"]
+
+        return {
+            Doc(
+                "Optimization attempts",
+                "The number of times a potential trace is identified.  Specifically, this "
+                "occurs in the JUMP BACKWARD instruction when the counter reaches a "
+                "threshold.",
+            ): (attempts, None),
+            Doc(
+                "Traces created", "The number of traces that were successfully created."
+            ): (created, attempts),
+            Doc(
+                "Trace stack overflow",
+                "A trace is truncated because it would require more than 5 stack frames.",
+            ): (trace_stack_overflow, attempts),
+            Doc(
+                "Trace stack underflow",
+                "A potential trace is abandoned because it pops more frames than it pushes.",
+            ): (trace_stack_underflow, attempts),
+            Doc(
+                "Trace too long",
+                "A trace is truncated because it is longer than the instruction buffer.",
+            ): (trace_too_long, attempts),
+            Doc(
+                "Trace too short",
+                "A potential trace is abandoned because it is too short.",
+            ): (trace_too_short, attempts),
+            Doc(
+                "Inner loop found", "A trace is truncated because it has an inner loop"
+            ): (inner_loop, attempts),
+            Doc(
+                "Recursive call",
+                "A trace is truncated because it has a recursive call.",
+            ): (recursive_call, attempts),
+            Doc(
+                "Low confidence",
+                "A trace is abandoned because the likelihood of the jump to top being taken "
+                "is too low.",
+            ): (low_confidence, attempts),
+            Doc(
+                "Unknown callee",
+                "A trace is abandoned because the target of a call is unknown.",
+            ): (unknown_callee, attempts),
+            Doc(
+                "Executors invalidated",
+                "The number of executors that were invalidated due to watched "
+                "dictionary changes.",
+            ): (executors_invalidated, created),
+            Doc("Traces executed", "The number of traces that were executed"): (
+                executed,
+                None,
+            ),
+            Doc(
+                "Uops executed",
+                "The total number of uops (micro-operations) that were executed",
+            ): (
+                uops,
+                executed,
+            ),
+        }
+
+    def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
+        attempts = self._data["Optimization optimizer attempts"]
+        successes = self._data["Optimization optimizer successes"]
+        no_memory = self._data["Optimization optimizer failure no memory"]
+        builtins_changed = self._data["Optimizer remove globals builtins changed"]
+        incorrect_keys = self._data["Optimizer remove globals incorrect keys"]
+
+        return {
+            Doc(
+                "Optimizer attempts",
+                "The number of times the trace optimizer (_Py_uop_analyze_and_optimize) was run.",
+            ): (attempts, None),
+            Doc(
+                "Optimizer successes",
+                "The number of traces that were successfully optimized.",
+            ): (successes, attempts),
+            Doc(
+                "Optimizer no memory",
+                "The number of optimizations that failed due to no memory.",
+            ): (no_memory, attempts),
+            Doc(
+                "Remove globals builtins changed",
+                "The builtins changed during optimization",
+            ): (builtins_changed, attempts),
+            Doc(
+                "Remove globals incorrect keys",
+                "The keys in the globals dictionary aren't what was expected",
+            ): (incorrect_keys, attempts),
+        }
+
+    def get_jit_memory_stats(self) -> dict[Doc, tuple[int, int | None]]:
+        jit_total_memory_size = self._data["JIT total memory size"]
+        jit_code_size = self._data["JIT code size"]
+        jit_trampoline_size = self._data["JIT trampoline size"]
+        jit_data_size = self._data["JIT data size"]
+        jit_padding_size = self._data["JIT padding size"]
+        jit_freed_memory_size = self._data["JIT freed memory size"]
+
+        return {
+            Doc(
+                "Total memory size",
+                "The total size of the memory allocated for the JIT traces",
+            ): (jit_total_memory_size, None),
+            Doc(
+                "Code size",
+                "The size of the memory allocated for the code of the JIT traces",
+            ): (jit_code_size, jit_total_memory_size),
+            Doc(
+                "Trampoline size",
+                "The size of the memory allocated for the trampolines of the JIT traces",
+            ): (jit_trampoline_size, jit_total_memory_size),
+            Doc(
+                "Data size",
+                "The size of the memory allocated for the data of the JIT traces",
+            ): (jit_data_size, jit_total_memory_size),
+            Doc(
+                "Padding size",
+                "The size of the memory allocated for the padding of the JIT traces",
+            ): (jit_padding_size, jit_total_memory_size),
+            Doc(
+                "Freed memory size",
+                "The size of the memory freed from the JIT traces",
+            ): (jit_freed_memory_size, jit_total_memory_size),
+        }
+
+    def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
+        rows = []
+        for k, v in self._data.items():
+            match = re.match(f"{prefix}\\[([0-9]+)\\]", k)
+            if match is not None:
+                entry = int(match.groups()[0])
+                rows.append((entry, v))
+        rows.sort()
+        return rows
+
+    def get_rare_events(self) -> list[tuple[str, int]]:
+        prefix = "Rare event "
+        return [
+            (key[len(prefix) + 1 : -1].replace("_", " "), val)
+            for key, val in self._data.items()
+            if key.startswith(prefix)
+        ]
+
+
+class JoinMode(enum.Enum):
+    # Join using the first column as a key
+    SIMPLE = 0
+    # Join using the first column as a key, and indicate the change in the
+    # second column of each input table as a new column
+    CHANGE = 1
+    # Join using the first column as a key, indicating the change in the second
+    # column of each input table as a new column, and omit all other columns
+    CHANGE_ONE_COLUMN = 2
+    # Join using the first column as a key, and indicate the change as a new
+    # column, but don't sort by the amount of change.
+    CHANGE_NO_SORT = 3
+
+
+class Table:
+    """
+    A Table defines how to convert a set of Stats into a specific set of rows
+    displaying some aspect of the data.
+    """
+
+    def __init__(
+        self,
+        column_names: Columns,
+        calc_rows: RowCalculator,
+        join_mode: JoinMode = JoinMode.SIMPLE,
+    ):
+        self.columns = column_names
+        self.calc_rows = calc_rows
+        self.join_mode = join_mode
+
+    def join_row(self, key: str, row_a: tuple, row_b: tuple) -> tuple:
+        match self.join_mode:
+            case JoinMode.SIMPLE:
+                return (key, *row_a, *row_b)
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
+                return (key, *row_a, *row_b, DiffRatio(row_a[0], row_b[0]))
+            case JoinMode.CHANGE_ONE_COLUMN:
+                return (key, row_a[0], row_b[0], DiffRatio(row_a[0], row_b[0]))
+
+    def join_columns(self, columns: Columns) -> Columns:
+        match self.join_mode:
+            case JoinMode.SIMPLE:
+                return (
+                    columns[0],
+                    *("Base " + x for x in columns[1:]),
+                    *("Head " + x for x in columns[1:]),
                 )
-                emit_table(("Successors", "Count:", "Percentage:"),
-                    succ_rows
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
+                return (
+                    columns[0],
+                    *("Base " + x for x in columns[1:]),
+                    *("Head " + x for x in columns[1:]),
+                ) + ("Change:",)
+            case JoinMode.CHANGE_ONE_COLUMN:
+                return (
+                    columns[0],
+                    "Base " + columns[1],
+                    "Head " + columns[1],
+                    "Change:",
                 )
 
-def output_single_stats(stats):
-    opcode_stats = extract_opcode_stats(stats)
-    total = get_total(opcode_stats)
-    emit_execution_counts(opcode_stats, total)
-    emit_pair_counts(opcode_stats, total)
-    emit_specialization_stats(opcode_stats)
-    emit_specialization_overview(opcode_stats, total)
-    emit_call_stats(stats)
-    emit_object_stats(stats)
-    with Section("Meta stats", summary="Meta statistics"):
-        emit_table(("", "Count:"), [('Number of data files', stats['__nfiles__'])])
+    def join_tables(self, rows_a: Rows, rows_b: Rows) -> tuple[Columns, Rows]:
+        ncols = len(self.columns)
+
+        default = ("",) * (ncols - 1)
+        data_a = {x[0]: x[1:] for x in rows_a}
+        data_b = {x[0]: x[1:] for x in rows_b}
+
+        if len(data_a) != len(rows_a) or len(data_b) != len(rows_b):
+            raise ValueError("Duplicate keys")
+
+        # To preserve ordering, use A's keys as is and then add any in B that
+        # aren't in A
+        keys = list(data_a.keys()) + [k for k in data_b.keys() if k not in data_a]
+        rows = [
+            self.join_row(k, data_a.get(k, default), data_b.get(k, default))
+            for k in keys
+        ]
+        if self.join_mode in (JoinMode.CHANGE, JoinMode.CHANGE_ONE_COLUMN):
+            rows.sort(key=lambda row: abs(float(row[-1])), reverse=True)
+
+        columns = self.join_columns(self.columns)
+        return columns, rows
+
+    def get_table(
+        self, base_stats: Stats, head_stats: Stats | None = None
+    ) -> tuple[Columns, Rows]:
+        if head_stats is None:
+            rows = self.calc_rows(base_stats)
+            return self.columns, rows
+        else:
+            rows_a = self.calc_rows(base_stats)
+            rows_b = self.calc_rows(head_stats)
+            cols, rows = self.join_tables(rows_a, rows_b)
+            return cols, rows
 
 
-def output_comparative_stats(base_stats, head_stats):
-    base_opcode_stats = extract_opcode_stats(base_stats)
-    base_total = get_total(base_opcode_stats)
+class Section:
+    """
+    A Section defines a section of the output document.
+    """
 
-    head_opcode_stats = extract_opcode_stats(head_stats)
-    head_total = get_total(head_opcode_stats)
+    def __init__(
+        self,
+        title: str = "",
+        summary: str = "",
+        part_iter=None,
+        *,
+        comparative: bool = True,
+        doc: str = "",
+    ):
+        self.title = title
+        if not summary:
+            self.summary = title.lower()
+        else:
+            self.summary = summary
+        self.doc = textwrap.dedent(doc)
+        if part_iter is None:
+            part_iter = []
+        if isinstance(part_iter, list):
 
-    emit_comparative_execution_counts(
-        base_opcode_stats, base_total, head_opcode_stats, head_total
+            def iter_parts(base_stats: Stats, head_stats: Stats | None):
+                yield from part_iter
+
+            self.part_iter = iter_parts
+        else:
+            self.part_iter = part_iter
+        self.comparative = comparative
+
+
+def calc_execution_count_table(prefix: str) -> RowCalculator:
+    def calc(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats(prefix)
+        counts = opcode_stats.get_execution_counts()
+        total = opcode_stats.get_total_execution_count()
+        cumulative = 0
+        rows: Rows = []
+        for opcode, (count, miss) in sorted(
+            counts.items(), key=itemgetter(1), reverse=True
+        ):
+            cumulative += count
+            if miss:
+                miss_val = Ratio(miss, count)
+            else:
+                miss_val = None
+            rows.append(
+                (
+                    opcode,
+                    Count(count),
+                    Ratio(count, total),
+                    Ratio(cumulative, total),
+                    miss_val,
+                )
+            )
+        return rows
+
+    return calc
+
+
+def execution_count_section() -> Section:
+    return Section(
+        "Execution counts",
+        "Execution counts for Tier 1 instructions.",
+        [
+            Table(
+                ("Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"),
+                calc_execution_count_table("opcode"),
+                join_mode=JoinMode.CHANGE_ONE_COLUMN,
+            )
+        ],
+        doc="""
+        The "miss ratio" column shows the percentage of times the instruction
+        executed that it deoptimized. When this happens, the base unspecialized
+        instruction is not counted.
+        """,
     )
-    emit_comparative_specialization_stats(
-        base_opcode_stats, head_opcode_stats
-    )
-    emit_comparative_specialization_overview(
-        base_opcode_stats, base_total, head_opcode_stats, head_total
-    )
-    emit_comparative_call_stats(base_stats, head_stats)
-    emit_comparative_object_stats(base_stats, head_stats)
 
-def output_stats(inputs, json_output=None):
-    if len(inputs) == 1:
-        stats = gather_stats(inputs[0])
-        if json_output is not None:
-            json.dump(stats, json_output)
-        output_single_stats(stats)
-    elif len(inputs) == 2:
-        if json_output is not None:
-            raise ValueError(
-                "Can not output to JSON when there are multiple inputs"
+
+def pair_count_section(prefix: str, title=None) -> Section:
+    def calc_pair_count_table(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats(prefix)
+        pair_counts = opcode_stats.get_pair_counts()
+        total = opcode_stats.get_total_execution_count()
+
+        cumulative = 0
+        rows: Rows = []
+        for (opcode_i, opcode_j), count in itertools.islice(
+            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
+        ):
+            cumulative += count
+            rows.append(
+                (
+                    f"{opcode_i} {opcode_j}",
+                    Count(count),
+                    Ratio(count, total),
+                    Ratio(cumulative, total),
+                )
+            )
+        return rows
+
+    return Section(
+        "Pair counts",
+        f"Pair counts for top 100 {title if title else prefix} pairs",
+        [
+            Table(
+                ("Pair", "Count:", "Self:", "Cumulative:"),
+                calc_pair_count_table,
+            )
+        ],
+        comparative=False,
+        doc="""
+        Pairs of specialized operations that deoptimize and are then followed by
+        the corresponding unspecialized instruction are not counted as pairs.
+        """,
+    )
+
+
+def pre_succ_pairs_section() -> Section:
+    def iter_pre_succ_pairs_tables(base_stats: Stats, head_stats: Stats | None = None):
+        assert head_stats is None
+
+        opcode_stats = base_stats.get_opcode_stats("opcode")
+
+        for opcode in opcode_stats.get_opcode_names():
+            predecessors = opcode_stats.get_predecessors(opcode)
+            successors = opcode_stats.get_successors(opcode)
+            predecessors_total = predecessors.total()
+            successors_total = successors.total()
+            if predecessors_total == 0 and successors_total == 0:
+                continue
+            pred_rows = [
+                (pred, Count(count), Ratio(count, predecessors_total))
+                for (pred, count) in predecessors.most_common(5)
+            ]
+            succ_rows = [
+                (succ, Count(count), Ratio(count, successors_total))
+                for (succ, count) in successors.most_common(5)
+            ]
+
+            yield Section(
+                opcode,
+                f"Successors and predecessors for {opcode}",
+                [
+                    Table(
+                        ("Predecessors", "Count:", "Percentage:"),
+                        lambda *_: pred_rows,  # type: ignore
+                    ),
+                    Table(
+                        ("Successors", "Count:", "Percentage:"),
+                        lambda *_: succ_rows,  # type: ignore
+                    ),
+                ],
             )
 
-        base_stats = gather_stats(inputs[0])
-        head_stats = gather_stats(inputs[1])
-        output_comparative_stats(base_stats, head_stats)
+    return Section(
+        "Predecessor/Successor Pairs",
+        "Top 5 predecessors and successors of each Tier 1 opcode.",
+        iter_pre_succ_pairs_tables,
+        comparative=False,
+        doc="""
+        This does not include the unspecialized instructions that occur after a
+        specialized instruction deoptimizes.
+        """,
+    )
 
-    print("---")
-    print("Stats gathered on:", date.today())
+
+def specialization_section() -> Section:
+    def calc_specialization_table(opcode: str) -> RowCalculator:
+        def calc(stats: Stats) -> Rows:
+            DOCS = {
+                "deferred": 'Lists the number of "deferred" (i.e. not specialized) instructions executed.',
+                "hit": "Specialized instructions that complete.",
+                "miss": "Specialized instructions that deopt.",
+                "deopt": "Specialized instructions that deopt.",
+            }
+
+            opcode_stats = stats.get_opcode_stats("opcode")
+            total = opcode_stats.get_specialization_total(opcode)
+            specialization_counts = opcode_stats.get_specialization_counts(opcode)
+
+            return [
+                (
+                    Doc(label, DOCS[label]),
+                    Count(count),
+                    Ratio(count, total),
+                )
+                for label, count in specialization_counts.items()
+            ]
+
+        return calc
+
+    def calc_specialization_success_failure_table(name: str) -> RowCalculator:
+        def calc(stats: Stats) -> Rows:
+            values = stats.get_opcode_stats(
+                "opcode"
+            ).get_specialization_success_failure(name)
+            total = sum(values.values())
+            if total:
+                return [
+                    (label.capitalize(), Count(val), Ratio(val, total))
+                    for label, val in values.items()
+                ]
+            else:
+                return []
+
+        return calc
+
+    def calc_specialization_failure_kind_table(name: str) -> RowCalculator:
+        def calc(stats: Stats) -> Rows:
+            opcode_stats = stats.get_opcode_stats("opcode")
+            failures = opcode_stats.get_specialization_failure_kinds(name)
+            total = opcode_stats.get_specialization_failure_total(name)
+
+            return sorted(
+                [
+                    (label, Count(value), Ratio(value, total))
+                    for label, value in failures.items()
+                    if value
+                ],
+                key=itemgetter(1),
+                reverse=True,
+            )
+
+        return calc
+
+    def iter_specialization_tables(base_stats: Stats, head_stats: Stats | None = None):
+        opcode_base_stats = base_stats.get_opcode_stats("opcode")
+        names = opcode_base_stats.get_opcode_names()
+        if head_stats is not None:
+            opcode_head_stats = head_stats.get_opcode_stats("opcode")
+            names &= opcode_head_stats.get_opcode_names()  # type: ignore
+        else:
+            opcode_head_stats = None
+
+        for opcode in sorted(names):
+            if not opcode_base_stats.is_specializable(opcode):
+                continue
+            if opcode_base_stats.get_specialization_total(opcode) == 0 and (
+                opcode_head_stats is None
+                or opcode_head_stats.get_specialization_total(opcode) == 0
+            ):
+                continue
+            yield Section(
+                opcode,
+                f"specialization stats for {opcode} family",
+                [
+                    Table(
+                        ("Kind", "Count:", "Ratio:"),
+                        calc_specialization_table(opcode),
+                        JoinMode.CHANGE,
+                    ),
+                    Table(
+                        ("Success", "Count:", "Ratio:"),
+                        calc_specialization_success_failure_table(opcode),
+                        JoinMode.CHANGE,
+                    ),
+                    Table(
+                        ("Failure kind", "Count:", "Ratio:"),
+                        calc_specialization_failure_kind_table(opcode),
+                        JoinMode.CHANGE,
+                    ),
+                ],
+            )
+
+    return Section(
+        "Specialization stats",
+        "Specialization stats by family",
+        iter_specialization_tables,
+    )
+
+
+def specialization_effectiveness_section() -> Section:
+    def calc_specialization_effectiveness_table(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats("opcode")
+        total = opcode_stats.get_total_execution_count()
+
+        (
+            basic,
+            specialized_hits,
+            specialized_misses,
+            not_specialized,
+        ) = opcode_stats.get_specialized_total_counts()
+
+        return [
+            (
+                Doc(
+                    "Basic",
+                    "Instructions that are not and cannot be specialized, e.g. `LOAD_FAST`.",
+                ),
+                Count(basic),
+                Ratio(basic, total),
+            ),
+            (
+                Doc(
+                    "Not specialized",
+                    "Instructions that could be specialized but aren't, e.g. `LOAD_ATTR`, `BINARY_SLICE`.",
+                ),
+                Count(not_specialized),
+                Ratio(not_specialized, total),
+            ),
+            (
+                Doc(
+                    "Specialized hits",
+                    "Specialized instructions, e.g. `LOAD_ATTR_MODULE` that complete.",
+                ),
+                Count(specialized_hits),
+                Ratio(specialized_hits, total),
+            ),
+            (
+                Doc(
+                    "Specialized misses",
+                    "Specialized instructions, e.g. `LOAD_ATTR_MODULE` that deopt.",
+                ),
+                Count(specialized_misses),
+                Ratio(specialized_misses, total),
+            ),
+        ]
+
+    def calc_deferred_by_table(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats("opcode")
+        deferred_counts = opcode_stats.get_deferred_counts()
+        total = sum(deferred_counts.values())
+        if total == 0:
+            return []
+
+        return [
+            (name, Count(value), Ratio(value, total))
+            for name, value in sorted(
+                deferred_counts.items(), key=itemgetter(1), reverse=True
+            )[:10]
+        ]
+
+    def calc_misses_by_table(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats("opcode")
+        misses_counts = opcode_stats.get_misses_counts()
+        total = sum(misses_counts.values())
+        if total == 0:
+            return []
+
+        return [
+            (name, Count(value), Ratio(value, total))
+            for name, value in sorted(
+                misses_counts.items(), key=itemgetter(1), reverse=True
+            )[:10]
+        ]
+
+    return Section(
+        "Specialization effectiveness",
+        "",
+        [
+            Table(
+                ("Instructions", "Count:", "Ratio:"),
+                calc_specialization_effectiveness_table,
+                JoinMode.CHANGE,
+            ),
+            Section(
+                "Deferred by instruction",
+                "Breakdown of deferred (not specialized) instruction counts by family",
+                [
+                    Table(
+                        ("Name", "Count:", "Ratio:"),
+                        calc_deferred_by_table,
+                        JoinMode.CHANGE,
+                    )
+                ],
+            ),
+            Section(
+                "Misses by instruction",
+                "Breakdown of misses (specialized deopts) instruction counts by family",
+                [
+                    Table(
+                        ("Name", "Count:", "Ratio:"),
+                        calc_misses_by_table,
+                        JoinMode.CHANGE,
+                    )
+                ],
+            ),
+        ],
+        doc="""
+        All entries are execution counts. Should add up to the total number of
+        Tier 1 instructions executed.
+        """,
+    )
+
+
+def call_stats_section() -> Section:
+    def calc_call_stats_table(stats: Stats) -> Rows:
+        call_stats = stats.get_call_stats()
+        total = sum(v for k, v in call_stats.items() if "Calls to" in k)
+        return [
+            (key, Count(value), Ratio(value, total))
+            for key, value in call_stats.items()
+        ]
+
+    return Section(
+        "Call stats",
+        "Inlined calls and frame stats",
+        [
+            Table(
+                ("", "Count:", "Ratio:"),
+                calc_call_stats_table,
+                JoinMode.CHANGE,
+            )
+        ],
+        doc="""
+        This shows what fraction of calls to Python functions are inlined (i.e.
+        not having a call at the C level) and for those that are not, where the
+        call comes from.  The various categories overlap.
+
+        Also includes the count of frame objects created.
+        """,
+    )
+
+
+def object_stats_section() -> Section:
+    def calc_object_stats_table(stats: Stats) -> Rows:
+        object_stats = stats.get_object_stats()
+        return [
+            (label, Count(value), Ratio(value, den))
+            for label, (value, den) in object_stats.items()
+        ]
+
+    return Section(
+        "Object stats",
+        "Allocations, frees and dict materializatons",
+        [
+            Table(
+                ("", "Count:", "Ratio:"),
+                calc_object_stats_table,
+                JoinMode.CHANGE,
+            )
+        ],
+        doc="""
+        Below, "allocations" means "allocations that are not from a freelist".
+        Total allocations = "Allocations from freelist" + "Allocations".
+
+        "Inline values" is the number of values arrays inlined into objects.
+
+        The cache hit/miss numbers are for the MRO cache, split into dunder and
+        other names.
+        """,
+    )
+
+
+def gc_stats_section() -> Section:
+    def calc_gc_stats(stats: Stats) -> Rows:
+        gc_stats = stats.get_gc_stats()
+
+        return [
+            (
+                Count(i),
+                Count(gen["collections"]),
+                Count(gen["objects collected"]),
+                Count(gen["object visits"]),
+                Count(gen["objects reachable from roots"]),
+                Count(gen["objects not reachable from roots"]),
+            )
+            for (i, gen) in enumerate(gc_stats)
+        ]
+
+    return Section(
+        "GC stats",
+        "GC collections and effectiveness",
+        [
+            Table(
+                ("Generation:", "Collections:", "Objects collected:", "Object visits:",
+                 "Reachable from roots:", "Not reachable from roots:"),
+                calc_gc_stats,
+            )
+        ],
+        doc="""
+        Collected/visits gives some measure of efficiency.
+        """,
+    )
+
+
+def optimization_section() -> Section:
+    def calc_optimization_table(stats: Stats) -> Rows:
+        optimization_stats = stats.get_optimization_stats()
+
+        return [
+            (
+                label,
+                Count(value),
+                Ratio(value, den, percentage=label != "Uops executed"),
+            )
+            for label, (value, den) in optimization_stats.items()
+        ]
+
+    def calc_optimizer_table(stats: Stats) -> Rows:
+        optimizer_stats = stats.get_optimizer_stats()
+
+        return [
+            (label, Count(value), Ratio(value, den))
+            for label, (value, den) in optimizer_stats.items()
+        ]
+
+    def calc_jit_memory_table(stats: Stats) -> Rows:
+        jit_memory_stats = stats.get_jit_memory_stats()
+
+        return [
+            (
+                label,
+                Count(value),
+                Ratio(value, den, percentage=label != "Total memory size"),
+            )
+            for label, (value, den) in jit_memory_stats.items()
+        ]
+
+    def calc_histogram_table(key: str, den: str | None = None) -> RowCalculator:
+        def calc(stats: Stats) -> Rows:
+            histogram = stats.get_histogram(key)
+
+            if den:
+                denominator = stats.get(den)
+            else:
+                denominator = 0
+                for _, v in histogram:
+                    denominator += v
+
+            rows: Rows = []
+            for k, v in histogram:
+                rows.append(
+                    (
+                        f"<= {k:,d}",
+                        Count(v),
+                        Ratio(v, denominator),
+                    )
+                )
+            # Don't include any leading and trailing zero entries
+            start = 0
+            end = len(rows) - 1
+
+            while start <= end:
+                if rows[start][1] == 0:
+                    start += 1
+                elif rows[end][1] == 0:
+                    end -= 1
+                else:
+                    break
+
+            return rows[start:end+1]
+
+        return calc
+
+    def calc_unsupported_opcodes_table(stats: Stats) -> Rows:
+        unsupported_opcodes = stats.get_opcode_stats("unsupported_opcode")
+        return sorted(
+            [
+                (opcode, Count(count))
+                for opcode, count in unsupported_opcodes.get_opcode_counts().items()
+            ],
+            key=itemgetter(1),
+            reverse=True,
+        )
+
+    def calc_error_in_opcodes_table(stats: Stats) -> Rows:
+        error_in_opcodes = stats.get_opcode_stats("error_in_opcode")
+        return sorted(
+            [
+                (opcode, Count(count))
+                for opcode, count in error_in_opcodes.get_opcode_counts().items()
+            ],
+            key=itemgetter(1),
+            reverse=True,
+        )
+
+    def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None):
+        if not base_stats.get_optimization_stats() or (
+            head_stats is not None and not head_stats.get_optimization_stats()
+        ):
+            return
+
+        yield Table(("", "Count:", "Ratio:"), calc_optimization_table, JoinMode.CHANGE)
+        yield Table(("", "Count:", "Ratio:"), calc_optimizer_table, JoinMode.CHANGE)
+        yield Section(
+            "JIT memory stats",
+            "JIT memory stats",
+            [
+                Table(
+                    ("", "Size (bytes):", "Ratio:"),
+                    calc_jit_memory_table,
+                    JoinMode.CHANGE
+                )
+            ],
+        )
+        yield Section(
+            "JIT trace total memory histogram",
+            "JIT trace total memory histogram",
+            [
+                Table(
+                    ("Size (bytes)", "Count", "Ratio:"),
+                    calc_histogram_table("Trace total memory size"),
+                    JoinMode.CHANGE_NO_SORT,
+                )
+            ],
+        )
+        for name, den in [
+            ("Trace length", "Optimization traces created"),
+            ("Optimized trace length", "Optimization traces created"),
+            ("Trace run length", "Optimization traces executed"),
+        ]:
+            yield Section(
+                f"{name} histogram",
+                "",
+                [
+                    Table(
+                        ("Range", "Count:", "Ratio:"),
+                        calc_histogram_table(name, den),
+                        JoinMode.CHANGE_NO_SORT,
+                    )
+                ],
+            )
+        yield Section(
+            "Uop execution stats",
+            "",
+            [
+                Table(
+                    ("Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"),
+                    calc_execution_count_table("uops"),
+                    JoinMode.CHANGE_ONE_COLUMN,
+                )
+            ],
+        )
+        yield pair_count_section(prefix="uop", title="Non-JIT uop")
+        yield Section(
+            "Unsupported opcodes",
+            "",
+            [
+                Table(
+                    ("Opcode", "Count:"),
+                    calc_unsupported_opcodes_table,
+                    JoinMode.CHANGE,
+                )
+            ],
+        )
+        yield Section(
+            "Optimizer errored out with opcode",
+            "Optimization stopped after encountering this opcode",
+            [Table(("Opcode", "Count:"), calc_error_in_opcodes_table, JoinMode.CHANGE)],
+        )
+
+    return Section(
+        "Optimization (Tier 2) stats",
+        "statistics about the Tier 2 optimizer",
+        iter_optimization_tables,
+    )
+
+
+def rare_event_section() -> Section:
+    def calc_rare_event_table(stats: Stats) -> Table:
+        DOCS = {
+            "set class": "Setting an object's class, `obj.__class__ = ...`",
+            "set bases": "Setting the bases of a class, `cls.__bases__ = ...`",
+            "set eval frame func": (
+                "Setting the PEP 523 frame eval function "
+                "`_PyInterpreterState_SetFrameEvalFunc()`"
+            ),
+            "builtin dict": "Modifying the builtins, `__builtins__.__dict__[var] = ...`",
+            "func modification": "Modifying a function, e.g. `func.__defaults__ = ...`, etc.",
+            "watched dict modification": "A watched dict has been modified",
+            "watched globals modification": "A watched `globals()` dict has been modified",
+        }
+        return [(Doc(x, DOCS[x]), Count(y)) for x, y in stats.get_rare_events()]
+
+    return Section(
+        "Rare events",
+        "Counts of rare/unlikely events",
+        [Table(("Event", "Count:"), calc_rare_event_table, JoinMode.CHANGE)],
+    )
+
+
+def meta_stats_section() -> Section:
+    def calc_rows(stats: Stats) -> Rows:
+        return [("Number of data files", Count(stats.get("__nfiles__")))]
+
+    return Section(
+        "Meta stats",
+        "Meta statistics",
+        [Table(("", "Count:"), calc_rows, JoinMode.CHANGE)],
+    )
+
+
+LAYOUT = [
+    execution_count_section(),
+    pair_count_section("opcode"),
+    pre_succ_pairs_section(),
+    specialization_section(),
+    specialization_effectiveness_section(),
+    call_stats_section(),
+    object_stats_section(),
+    gc_stats_section(),
+    optimization_section(),
+    rare_event_section(),
+    meta_stats_section(),
+]
+
+
+def output_markdown(
+    out: TextIO,
+    obj: Section | Table | list,
+    base_stats: Stats,
+    head_stats: Stats | None = None,
+    level: int = 2,
+) -> None:
+    def to_markdown(x):
+        if hasattr(x, "markdown"):
+            return x.markdown()
+        elif isinstance(x, str):
+            return x
+        elif x is None:
+            return ""
+        else:
+            raise TypeError(f"Can't convert {x} to markdown")
+
+    match obj:
+        case Section():
+            if obj.title:
+                print("#" * level, obj.title, file=out)
+                print(file=out)
+                print("<details>", file=out)
+                print("<summary>", obj.summary, "</summary>", file=out)
+                print(file=out)
+            if obj.doc:
+                print(obj.doc, file=out)
+
+            if head_stats is not None and obj.comparative is False:
+                print("Not included in comparative output.\n")
+            else:
+                for part in obj.part_iter(base_stats, head_stats):
+                    output_markdown(out, part, base_stats, head_stats, level=level + 1)
+            print(file=out)
+            if obj.title:
+                print("</details>", file=out)
+                print(file=out)
+
+        case Table():
+            header, rows = obj.get_table(base_stats, head_stats)
+            if len(rows) == 0:
+                return
+
+            alignments = []
+            for item in header:
+                if item.endswith(":"):
+                    alignments.append("right")
+                else:
+                    alignments.append("left")
+
+            print("<table>", file=out)
+            print("<thead>", file=out)
+            print("<tr>", file=out)
+            for item, align in zip(header, alignments):
+                if item.endswith(":"):
+                    item = item[:-1]
+                print(f'<th align="{align}">{item}</th>', file=out)
+            print("</tr>", file=out)
+            print("</thead>", file=out)
+
+            print("<tbody>", file=out)
+            for row in rows:
+                if len(row) != len(header):
+                    raise ValueError(
+                        "Wrong number of elements in row '" + str(row) + "'"
+                    )
+                print("<tr>", file=out)
+                for col, align in zip(row, alignments):
+                    print(f'<td align="{align}">{to_markdown(col)}</td>', file=out)
+                print("</tr>", file=out)
+            print("</tbody>", file=out)
+
+            print("</table>", file=out)
+            print(file=out)
+
+        case list():
+            for part in obj:
+                output_markdown(out, part, base_stats, head_stats, level=level)
+
+            print("---", file=out)
+            print("Stats gathered on:", date.today(), file=out)
+
+
+def output_stats(inputs: list[Path], json_output=str | None):
+    match len(inputs):
+        case 1:
+            data = load_raw_data(Path(inputs[0]))
+            if json_output is not None:
+                with open(json_output, "w", encoding="utf-8") as f:
+                    save_raw_data(data, f)  # type: ignore
+            stats = Stats(data)
+            output_markdown(sys.stdout, LAYOUT, stats)
+        case 2:
+            if json_output is not None:
+                raise ValueError(
+                    "Can not output to JSON when there are multiple inputs"
+                )
+            base_data = load_raw_data(Path(inputs[0]))
+            head_data = load_raw_data(Path(inputs[1]))
+            base_stats = Stats(base_data)
+            head_stats = Stats(head_data)
+            output_markdown(sys.stdout, LAYOUT, base_stats, head_stats)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Summarize pystats results")
@@ -624,14 +1529,13 @@ def main():
         If one source is provided, its stats are printed.
         If two sources are provided, comparative stats are printed.
         Default is {DEFAULT_DIR}.
-        """
+        """,
     )
 
     parser.add_argument(
         "--json-output",
         nargs="?",
-        type=argparse.FileType("w"),
-        help="Output complete raw results to the given JSON file."
+        help="Output complete raw results to the given JSON file.",
     )
 
     args = parser.parse_args()
@@ -640,6 +1544,7 @@ def main():
         raise ValueError("0-2 arguments may be provided.")
 
     output_stats(args.inputs, json_output=args.json_output)
+
 
 if __name__ == "__main__":
     main()

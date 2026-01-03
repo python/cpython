@@ -24,25 +24,23 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
     """Primitive lock objects.
 
     A primitive lock is a synchronization primitive that is not owned
-    by a particular coroutine when locked.  A primitive lock is in one
+    by a particular task when locked.  A primitive lock is in one
     of two states, 'locked' or 'unlocked'.
 
     It is created in the unlocked state.  It has two basic methods,
     acquire() and release().  When the state is unlocked, acquire()
     changes the state to locked and returns immediately.  When the
     state is locked, acquire() blocks until a call to release() in
-    another coroutine changes it to unlocked, then the acquire() call
+    another task changes it to unlocked, then the acquire() call
     resets it to locked and returns.  The release() method should only
     be called in the locked state; it changes the state to unlocked
     and returns immediately.  If an attempt is made to release an
     unlocked lock, a RuntimeError will be raised.
 
-    When more than one coroutine is blocked in acquire() waiting for
-    the state to turn to unlocked, only one coroutine proceeds when a
-    release() call resets the state to unlocked; first coroutine which
-    is blocked in acquire() is being processed.
-
-    acquire() is a coroutine and should be called with 'await'.
+    When more than one task is blocked in acquire() waiting for
+    the state to turn to unlocked, only one task proceeds when a
+    release() call resets the state to unlocked; successive release()
+    calls will unblock tasks in FIFO order.
 
     Locks also support the asynchronous context management protocol.
     'async with lock' statement should be used.
@@ -95,6 +93,8 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
+        # Implement fair scheduling, where thread always waits
+        # its turn. Jumping the queue if all are cancelled is an optimization.
         if (not self._locked and (self._waiters is None or
                 all(w.cancelled() for w in self._waiters))):
             self._locked = True
@@ -105,19 +105,22 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         fut = self._get_loop().create_future()
         self._waiters.append(fut)
 
-        # Finally block should be called before the CancelledError
-        # handling as we don't want CancelledError to call
-        # _wake_up_first() and attempt to wake up itself.
         try:
             try:
                 await fut
             finally:
                 self._waiters.remove(fut)
         except exceptions.CancelledError:
+            # Currently the only exception designed be able to occur here.
+
+            # Ensure the lock invariant: If lock is not claimed (or about
+            # to be claimed by us) and there is a Task in waiters,
+            # ensure that the Task at the head will run.
             if not self._locked:
                 self._wake_up_first()
             raise
 
+        # assert self._locked is False
         self._locked = True
         return True
 
@@ -125,7 +128,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         """Release a lock.
 
         When the lock is locked, reset it to unlocked, and return.
-        If any other coroutines are blocked waiting for the lock to become
+        If any other tasks are blocked waiting for the lock to become
         unlocked, allow exactly one of them to proceed.
 
         When invoked on an unlocked lock, a RuntimeError is raised.
@@ -139,7 +142,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
             raise RuntimeError('Lock is not acquired.')
 
     def _wake_up_first(self):
-        """Wake up the first waiter if it isn't done."""
+        """Ensure that the first waiter will wake up."""
         if not self._waiters:
             return
         try:
@@ -147,9 +150,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         except StopIteration:
             return
 
-        # .done() necessarily means that a waiter will wake up later on and
-        # either take the lock, or, if it was cancelled and lock wasn't
-        # taken already, will hit this again and wake up a new waiter.
+        # .done() means that the waiter is already set to wake up.
         if not fut.done():
             fut.set_result(True)
 
@@ -179,8 +180,8 @@ class Event(mixins._LoopBoundMixin):
         return self._value
 
     def set(self):
-        """Set the internal flag to true. All coroutines waiting for it to
-        become true are awakened. Coroutine that call wait() once the flag is
+        """Set the internal flag to true. All tasks waiting for it to
+        become true are awakened. Tasks that call wait() once the flag is
         true will not block at all.
         """
         if not self._value:
@@ -191,7 +192,7 @@ class Event(mixins._LoopBoundMixin):
                     fut.set_result(True)
 
     def clear(self):
-        """Reset the internal flag to false. Subsequently, coroutines calling
+        """Reset the internal flag to false. Subsequently, tasks calling
         wait() will block until set() is called to set the internal flag
         to true again."""
         self._value = False
@@ -200,7 +201,7 @@ class Event(mixins._LoopBoundMixin):
         """Block until the internal flag is true.
 
         If the internal flag is true on entry, return True
-        immediately.  Otherwise, block until another coroutine calls
+        immediately.  Otherwise, block until another task calls
         set() to set the flag to true, then return True.
         """
         if self._value:
@@ -219,8 +220,8 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     """Asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
-    allows one or more coroutines to wait until they are notified by another
-    coroutine.
+    allows one or more tasks to wait until they are notified by another
+    task.
 
     A new Lock object is created and used as the underlying lock.
     """
@@ -247,45 +248,64 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     async def wait(self):
         """Wait until notified.
 
-        If the calling coroutine has not acquired the lock when this
+        If the calling task has not acquired the lock when this
         method is called, a RuntimeError is raised.
 
         This method releases the underlying lock, and then blocks
         until it is awakened by a notify() or notify_all() call for
-        the same condition variable in another coroutine.  Once
+        the same condition variable in another task.  Once
         awakened, it re-acquires the lock and returns True.
+
+        This method may return spuriously,
+        which is why the caller should always
+        re-check the state and be prepared to wait() again.
         """
         if not self.locked():
             raise RuntimeError('cannot wait on un-acquired lock')
 
+        fut = self._get_loop().create_future()
         self.release()
         try:
-            fut = self._get_loop().create_future()
-            self._waiters.append(fut)
             try:
-                await fut
-                return True
-            finally:
-                self._waiters.remove(fut)
-
-        finally:
-            # Must reacquire lock even if wait is cancelled
-            cancelled = False
-            while True:
+                self._waiters.append(fut)
                 try:
-                    await self.acquire()
-                    break
-                except exceptions.CancelledError:
-                    cancelled = True
+                    await fut
+                    return True
+                finally:
+                    self._waiters.remove(fut)
 
-            if cancelled:
-                raise exceptions.CancelledError
+            finally:
+                # Must re-acquire lock even if wait is cancelled.
+                # We only catch CancelledError here, since we don't want any
+                # other (fatal) errors with the future to cause us to spin.
+                err = None
+                while True:
+                    try:
+                        await self.acquire()
+                        break
+                    except exceptions.CancelledError as e:
+                        err = e
+
+                if err is not None:
+                    try:
+                        raise err  # Re-raise most recent exception instance.
+                    finally:
+                        err = None  # Break reference cycles.
+        except BaseException:
+            # Any error raised out of here _may_ have occurred after this Task
+            # believed to have been successfully notified.
+            # Make sure to notify another Task instead.  This may result
+            # in a "spurious wakeup", which is allowed as part of the
+            # Condition Variable protocol.
+            self._notify(1)
+            raise
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
 
-        The predicate should be a callable which result will be
-        interpreted as a boolean value.  The final predicate value is
+        The predicate should be a callable whose result will be
+        interpreted as a boolean value.  The method will repeatedly
+        wait() until it evaluates to true.  The final predicate value is
         the return value.
         """
         result = predicate()
@@ -295,20 +315,22 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         return result
 
     def notify(self, n=1):
-        """By default, wake up one coroutine waiting on this condition, if any.
-        If the calling coroutine has not acquired the lock when this method
+        """By default, wake up one task waiting on this condition, if any.
+        If the calling task has not acquired the lock when this method
         is called, a RuntimeError is raised.
 
-        This method wakes up at most n of the coroutines waiting for the
-        condition variable; it is a no-op if no coroutines are waiting.
+        This method wakes up n of the tasks waiting for the condition
+         variable; if fewer than n are waiting, they are all awoken.
 
-        Note: an awakened coroutine does not actually return from its
+        Note: an awakened task does not actually return from its
         wait() call until it can reacquire the lock. Since notify() does
         not release the lock, its caller should.
         """
         if not self.locked():
             raise RuntimeError('cannot notify on un-acquired lock')
+        self._notify(n)
 
+    def _notify(self, n):
         idx = 0
         for fut in self._waiters:
             if idx >= n:
@@ -319,9 +341,9 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
                 fut.set_result(False)
 
     def notify_all(self):
-        """Wake up all threads waiting on this condition. This method acts
-        like notify(), but wakes up all waiting threads instead of one. If the
-        calling thread has not acquired the lock when this method is called,
+        """Wake up all tasks waiting on this condition. This method acts
+        like notify(), but wakes up all waiting tasks instead of one. If the
+        calling task has not acquired the lock when this method is called,
         a RuntimeError is raised.
         """
         self.notify(len(self._waiters))
@@ -357,6 +379,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     def locked(self):
         """Returns True if semaphore cannot be acquired immediately."""
+        # Due to state, or FIFO rules (must allow others to run first).
         return self._value == 0 or (
             any(not w.cancelled() for w in (self._waiters or ())))
 
@@ -365,11 +388,12 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
 
         If the internal counter is larger than zero on entry,
         decrement it by one and return True immediately.  If it is
-        zero on entry, block, waiting until some other coroutine has
+        zero on entry, block, waiting until some other task has
         called release() to make it larger than 0, and then return
         True.
         """
         if not self.locked():
+            # Maintain FIFO, wait for others to start even if _value > 0.
             self._value -= 1
             return True
 
@@ -378,29 +402,34 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         fut = self._get_loop().create_future()
         self._waiters.append(fut)
 
-        # Finally block should be called before the CancelledError
-        # handling as we don't want CancelledError to call
-        # _wake_up_first() and attempt to wake up itself.
         try:
             try:
                 await fut
             finally:
                 self._waiters.remove(fut)
         except exceptions.CancelledError:
-            if not fut.cancelled():
+            # Currently the only exception designed be able to occur here.
+            if fut.done() and not fut.cancelled():
+                # Our Future was successfully set to True via _wake_up_next(),
+                # but we are not about to successfully acquire(). Therefore we
+                # must undo the bookkeeping already done and attempt to wake
+                # up someone else.
                 self._value += 1
-                self._wake_up_next()
             raise
 
-        if self._value > 0:
-            self._wake_up_next()
+        finally:
+            # New waiters may have arrived but had to wait due to FIFO.
+            # Wake up as many as are allowed.
+            while self._value > 0:
+                if not self._wake_up_next():
+                    break  # There was no-one to wake up.
         return True
 
     def release(self):
         """Release a semaphore, incrementing the internal counter by one.
 
-        When it was zero on entry and another coroutine is waiting for it to
-        become larger than zero again, wake up that coroutine.
+        When it was zero on entry and another task is waiting for it to
+        become larger than zero again, wake up that task.
         """
         self._value += 1
         self._wake_up_next()
@@ -408,13 +437,15 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     def _wake_up_next(self):
         """Wake up the first waiter that isn't done."""
         if not self._waiters:
-            return
+            return False
 
         for fut in self._waiters:
             if not fut.done():
                 self._value -= 1
                 fut.set_result(True)
-                return
+                # `fut` is now `done()` and not `cancelled()`.
+                return True
+        return False
 
 
 class BoundedSemaphore(Semaphore):
@@ -454,7 +485,7 @@ class Barrier(mixins._LoopBoundMixin):
     def __init__(self, parties):
         """Create a barrier, initialised to 'parties' tasks."""
         if parties < 1:
-            raise ValueError('parties must be > 0')
+            raise ValueError('parties must be >= 1')
 
         self._cond = Condition() # notify all tasks when state changes
 

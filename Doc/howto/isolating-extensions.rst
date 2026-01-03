@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _isolating-extensions-howto:
+
 ***************************
 Isolating Extension Modules
 ***************************
@@ -62,7 +64,7 @@ Enter Per-Module State
 
 Instead of focusing on per-interpreter state, Python's C API is evolving
 to better support the more granular *per-module* state.
-This means that C-level data is be attached to a *module object*.
+This means that C-level data should be attached to a *module object*.
 Each interpreter creates its own module object, keeping the data separate.
 For testing the isolation, multiple module objects corresponding to a single
 extension can even be loaded in a single interpreter.
@@ -166,7 +168,7 @@ possible, consider explicit locking.
 If it is necessary to use process-global state, the simplest way to
 avoid issues with multiple interpreters is to explicitly prevent a
 module from being loaded more than once per process—see
-`Opt-Out: Limiting to One Module Object per Process`_.
+:ref:`isolating-extensions-optout`.
 
 
 Managing Per-Module State
@@ -205,6 +207,8 @@ An example of a module with per-module state is currently available as
 example module initialization shown at the bottom of the file.
 
 
+.. _isolating-extensions-optout:
+
 Opt-Out: Limiting to One Module Object per Process
 --------------------------------------------------
 
@@ -213,19 +217,34 @@ multiple interpreters correctly. If this is not yet the case for your
 module, you can explicitly make your module loadable only once per
 process. For example::
 
+   // A process-wide flag
    static int loaded = 0;
+
+   // Mutex to provide thread safety (only needed for free-threaded Python)
+   static PyMutex modinit_mutex = {0};
 
    static int
    exec_module(PyObject* module)
    {
+       PyMutex_Lock(&modinit_mutex);
        if (loaded) {
+           PyMutex_Unlock(&modinit_mutex);
            PyErr_SetString(PyExc_ImportError,
                            "cannot load module more than once per process");
            return -1;
        }
        loaded = 1;
+       PyMutex_Unlock(&modinit_mutex);
        // ... rest of initialization
    }
+
+
+If your module's :c:member:`PyModuleDef.m_clear` function is able to prepare
+for future re-initialization, it should clear the ``loaded`` flag.
+In this case, your module won't support multiple instances existing
+*concurrently*, but it will, for example, support being loaded after
+Python runtime shutdown (:c:func:`Py_FinalizeEx`) and re-initialization
+(:c:func:`Py_Initialize`).
 
 
 Module State Access from Functions
@@ -298,10 +317,10 @@ Watch out for the following two points in particular (but note that this is not
 a comprehensive list):
 
 * Unlike static types, heap type objects are mutable by default.
-  Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
+  Use the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag to prevent mutability.
 * Heap types inherit :c:member:`~PyTypeObject.tp_new` by default,
   so it may become possible to instantiate them from Python code.
-  You can prevent this with the :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
+  You can prevent this with the :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
 
 
 Defining Heap Types
@@ -333,16 +352,48 @@ To avoid memory leaks, instances of heap types must implement the
 garbage collection protocol.
 That is, heap types should:
 
-- Have the :c:data:`Py_TPFLAGS_HAVE_GC` flag.
-- Define a traverse function using ``Py_tp_traverse``, which
-  visits the type (e.g. using :c:expr:`Py_VISIT(Py_TYPE(self))`).
+- Have the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
+- Define a traverse function using :c:data:`Py_tp_traverse`, which
+  visits the type (e.g. using ``Py_VISIT(Py_TYPE(self))``).
 
-Please refer to the :ref:`the documentation <type-structs>` of
-:c:data:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
+Please refer to the documentation of
+:c:macro:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
 for additional considerations.
 
-If your traverse function delegates to the ``tp_traverse`` of its base class
-(or another type), ensure that ``Py_TYPE(self)`` is visited only once.
+The API for defining heap types grew organically, leaving it
+somewhat awkward to use in its current state.
+The following sections will guide you through common issues.
+
+
+``tp_traverse`` in Python 3.8 and lower
+.......................................
+
+The requirement to visit the type from ``tp_traverse`` was added in Python 3.9.
+If you support Python 3.8 and lower, the traverse function must *not*
+visit the type, so it must be more complicated::
+
+   static int my_traverse(PyObject *self, visitproc visit, void *arg)
+   {
+       if (Py_Version >= 0x03090000) {
+           Py_VISIT(Py_TYPE(self));
+       }
+       return 0;
+   }
+
+Unfortunately, :c:data:`Py_Version` was only added in Python 3.11.
+As a replacement, use:
+
+* :c:macro:`PY_VERSION_HEX`, if not using the stable ABI, or
+* :py:data:`sys.version_info` (via :c:func:`PySys_GetObject` and
+  :c:func:`PyArg_ParseTuple`).
+
+
+Delegating ``tp_traverse``
+..........................
+
+If your traverse function delegates to the :c:member:`~PyTypeObject.tp_traverse`
+of its base class (or another type), ensure that ``Py_TYPE(self)`` is visited
+only once.
 Note that only heap type are expected to visit the type in ``tp_traverse``.
 
 For example, if your traverse function includes::
@@ -354,11 +405,70 @@ For example, if your traverse function includes::
     if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         // a heap type's tp_traverse already visited Py_TYPE(self)
     } else {
-        Py_VISIT(Py_TYPE(self));
+        if (Py_Version >= 0x03090000) {
+            Py_VISIT(Py_TYPE(self));
+        }
     }
 
-It is not necessary to handle the type's reference count in ``tp_new``
-and ``tp_clear``.
+It is not necessary to handle the type's reference count in
+:c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_clear`.
+
+
+Defining ``tp_dealloc``
+.......................
+
+If your type has a custom :c:member:`~PyTypeObject.tp_dealloc` function,
+it needs to:
+
+- call :c:func:`PyObject_GC_UnTrack` before any fields are invalidated, and
+- decrement the reference count of the type.
+
+To keep the type valid while ``tp_free`` is called, the type's refcount needs
+to be decremented *after* the instance is deallocated. For example::
+
+   static void my_dealloc(PyObject *self)
+   {
+       PyObject_GC_UnTrack(self);
+       ...
+       PyTypeObject *type = Py_TYPE(self);
+       type->tp_free(self);
+       Py_DECREF(type);
+   }
+
+The default ``tp_dealloc`` function does this, so
+if your type does *not* override
+``tp_dealloc`` you don't need to add it.
+
+
+Not overriding ``tp_free``
+..........................
+
+The :c:member:`~PyTypeObject.tp_free` slot of a heap type must be set to
+:c:func:`PyObject_GC_Del`.
+This is the default; do not override it.
+
+
+Avoiding ``PyObject_New``
+.........................
+
+GC-tracked objects need to be allocated using GC-aware functions.
+
+If you use :c:func:`PyObject_New` or :c:func:`PyObject_NewVar`:
+
+- Get and call type's :c:member:`~PyTypeObject.tp_alloc` slot, if possible.
+  That is, replace ``TYPE *o = PyObject_New(TYPE, typeobj)`` with::
+
+      TYPE *o = typeobj->tp_alloc(typeobj, 0);
+
+  Replace ``o = PyObject_NewVar(TYPE, typeobj, size)`` with the same,
+  but use size instead of the 0.
+
+- If the above is not possible (e.g. inside a custom ``tp_alloc``),
+  call :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`::
+
+      TYPE *o = PyObject_GC_New(TYPE, typeobj);
+
+      TYPE *o = PyObject_GC_NewVar(TYPE, typeobj, size);
 
 
 Module State Access from Classes
@@ -372,7 +482,7 @@ To save a some tedious error-handling boilerplate code, you can combine
 these two steps with :c:func:`PyType_GetModuleState`, resulting in::
 
    my_struct *state = (my_struct*)PyType_GetModuleState(type);
-   if (state === NULL) {
+   if (state == NULL) {
        return NULL;
    }
 
@@ -389,7 +499,7 @@ The largest roadblock is getting *the class a method was defined in*, or
 that method's "defining class" for short. The defining class can have a
 reference to the module it is part of.
 
-Do not confuse the defining class with :c:expr:`Py_TYPE(self)`. If the method
+Do not confuse the defining class with ``Py_TYPE(self)``. If the method
 is called on a *subclass* of your type, ``Py_TYPE(self)`` will refer to
 that subclass, which may be defined in different module than yours.
 
@@ -411,7 +521,7 @@ that subclass, which may be defined in different module than yours.
           pass
 
 For a method to get its "defining class", it must use the
-:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+:ref:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS <METH_METHOD-METH_FASTCALL-METH_KEYWORDS>`
 :c:type:`calling convention <PyMethodDef>`
 and the corresponding :c:type:`PyCMethod` signature::
 
@@ -435,7 +545,7 @@ For example::
            PyObject *kwnames)
    {
        my_struct *state = (my_struct*)PyType_GetModuleState(defining_class);
-       if (state === NULL) {
+       if (state == NULL) {
            return NULL;
        }
        ... // rest of logic
@@ -461,13 +571,13 @@ Module State Access from Slot Methods, Getters and Setters
 
    .. After adding to limited API:
 
-      If you use the :ref:`limited API <stable>,
+      If you use the :ref:`limited API <limited-c-api>`,
       you must update ``Py_LIMITED_API`` to ``0x030b0000``, losing ABI
       compatibility with earlier versions.
 
 Slot methods—the fast C equivalents for special methods, such as
 :c:member:`~PyNumberMethods.nb_add` for :py:attr:`~object.__add__` or
-:c:member:`~PyType.tp_new` for initialization—have a very simple API that
+:c:member:`~PyTypeObject.tp_new` for initialization—have a very simple API that
 doesn't allow passing in the defining class, unlike with :c:type:`PyCMethod`.
 The same goes for getters and setters defined with
 :c:type:`PyGetSetDef`.
@@ -479,18 +589,18 @@ to get the state::
 
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &module_def);
     my_struct *state = (my_struct*)PyModule_GetState(module);
-    if (state === NULL) {
+    if (state == NULL) {
         return NULL;
     }
 
-``PyType_GetModuleByDef`` works by searching the
+:c:func:`!PyType_GetModuleByDef` works by searching the
 :term:`method resolution order` (i.e. all superclasses) for the first
 superclass that has a corresponding module.
 
 .. note::
 
    In very exotic cases (inheritance chains spanning multiple modules
-   created from the same definition), ``PyType_GetModuleByDef`` might not
+   created from the same definition), :c:func:`!PyType_GetModuleByDef` might not
    return the module of the true defining class. However, it will always
    return a module with the same definition, ensuring a compatible
    C memory layout.
@@ -516,8 +626,7 @@ Open Issues
 
 Several issues around per-module state and heap types are still open.
 
-Discussions about improving the situation are best held on the `capi-sig
-mailing list <https://mail.python.org/mailman3/lists/capi-sig.python.org/>`__.
+Discussions about improving the situation are best held on the `discuss forum under c-api tag <https://discuss.python.org/c/core-dev/c-api/30>`__.
 
 
 Per-Class Scope

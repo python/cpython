@@ -108,7 +108,7 @@ a slice at the start of the ``bytearray`` to a shorter byte string).
 .. nonce: WfTdfg
 .. section: Core and Builtins
 
-Fix the :c:func:`_PyUnicode_FromId` function (_Py_IDENTIFIER(var) API) when
+Fix the :c:func:`!_PyUnicode_FromId` function (_Py_IDENTIFIER(var) API) when
 :c:func:`Py_Initialize` / :c:func:`Py_Finalize` is called multiple times:
 preserve ``_PyRuntime.unicode_ids.next_index`` value.
 
@@ -426,7 +426,7 @@ specified using a relative path and the current directory changed.
 .. nonce: Jq6Az-
 .. section: Library
 
-Fix CLI of :mod:`cProfile` and :mod:`profile` to catch
+Fix CLI of :mod:`!cProfile` and :mod:`!profile` to catch
 :exc:`BrokenPipeError`.
 
 ..
@@ -499,7 +499,7 @@ Araujo.
 .. nonce: HY2beA
 .. section: Documentation
 
-Updated importlib.utils.resolve_name() doc to use __spec__.parent instead of
+Updated importlib.util.resolve_name() doc to use __spec__.parent instead of
 __package__. (Thanks Yair Frid.)
 
 ..
@@ -667,4 +667,4 @@ exception (if an exception is set). Patch by Victor Stinner.
 .. section: C API
 
 Fixed a compiler warning in :c:func:`Py_UNICODE_ISSPACE()` on platforms with
-signed ``wchar_t``.
+signed :c:type:`wchar_t`.

@@ -14,7 +14,7 @@ from test.support import socket_helper
 here = os.path.dirname(__file__)
 
 HOST = socket_helper.HOST
-CERTFILE = os.path.join(here, 'keycert.pem')
+CERTFILE = os.path.join(here, 'certdata', 'keycert.pem')
 
 # This one's based on HTTPServer, which is based on socketserver
 

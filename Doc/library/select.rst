@@ -1,15 +1,15 @@
-:mod:`select` --- Waiting for I/O completion
-============================================
+:mod:`!select` --- Waiting for I/O completion
+=============================================
 
 .. module:: select
    :synopsis: Wait for I/O completion on multiple streams.
 
 --------------
 
-This module provides access to the :c:func:`select` and :c:func:`poll` functions
-available in most operating systems, :c:func:`devpoll` available on
-Solaris and derivatives, :c:func:`epoll` available on Linux 2.5+ and
-:c:func:`kqueue` available on most BSD.
+This module provides access to the :c:func:`!select` and :c:func:`!poll` functions
+available in most operating systems, :c:func:`!devpoll` available on
+Solaris and derivatives, :c:func:`!epoll` available on Linux 2.5+ and
+:c:func:`!kqueue` available on most BSD.
 Note that on Windows, it only works for sockets; on other operating systems,
 it also works for other file types (in particular, on Unix, it works on pipes).
 It cannot be used on regular files to determine whether a file has grown since
@@ -41,10 +41,10 @@ The module defines the following:
    polling object; see section :ref:`devpoll-objects` below for the
    methods supported by devpoll objects.
 
-   :c:func:`devpoll` objects are linked to the number of file
+   :c:func:`!devpoll` objects are linked to the number of file
    descriptors allowed at the time of instantiation. If your program
-   reduces this value, :c:func:`devpoll` will fail. If your program
-   increases this value, :c:func:`devpoll` may return an
+   reduces this value, :c:func:`!devpoll` will fail. If your program
+   increases this value, :c:func:`!devpoll` may return an
    incomplete list of active file descriptors.
 
    The new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
@@ -62,7 +62,7 @@ The module defines the following:
 
    *sizehint* informs epoll about the expected number of events to be
    registered.  It must be positive, or ``-1`` to use the default. It is only
-   used on older systems where :c:func:`epoll_create1` is not available;
+   used on older systems where :c:func:`!epoll_create1` is not available;
    otherwise it has no effect (though its value is still checked).
 
    *flags* is deprecated and completely ignored.  However, when supplied, its
@@ -115,9 +115,9 @@ The module defines the following:
    :ref:`kevent-objects` below for the methods supported by kevent objects.
 
 
-.. function:: select(rlist, wlist, xlist[, timeout])
+.. function:: select(rlist, wlist, xlist, timeout=None)
 
-   This is a straightforward interface to the Unix :c:func:`select` system call.
+   This is a straightforward interface to the Unix :c:func:`!select` system call.
    The first three arguments are iterables of 'waitable objects': either
    integers representing file descriptors or objects with a parameterless method
    named :meth:`~io.IOBase.fileno` returning such an integer:
@@ -129,8 +129,9 @@ The module defines the following:
 
    Empty iterables are allowed, but acceptance of three empty iterables is
    platform-dependent. (It is known to work on Unix but not on Windows.)  The
-   optional *timeout* argument specifies a time-out as a floating point number
-   in seconds.  When the *timeout* argument is omitted the function blocks until
+   optional *timeout* argument specifies a time-out in seconds; it may be
+   a non-integer to specify fractions of seconds.
+   When the *timeout* argument is omitted or ``None``, the function blocks until
    at least one file descriptor is ready.  A time-out value of zero specifies a
    poll and never blocks.
 
@@ -154,7 +155,7 @@ The module defines the following:
       .. index:: single: WinSock
 
       File objects on Windows are not acceptable, but sockets are.  On Windows,
-      the underlying :c:func:`select` function is provided by the WinSock
+      the underlying :c:func:`!select` function is provided by the WinSock
       library, and does not handle file descriptors that don't originate from
       WinSock.
 
@@ -164,12 +165,15 @@ The module defines the following:
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timeout*, not only integer or float.
 
-.. attribute:: PIPE_BUF
+
+.. data:: PIPE_BUF
 
    The minimum number of bytes which can be written without blocking to a pipe
    when the pipe has been reported as ready for writing by :func:`~select.select`,
-   :func:`poll` or another interface in this module.  This doesn't apply
+   :func:`!poll` or another interface in this module.  This doesn't apply
    to other kind of file-like objects such as sockets.
 
    This value is guaranteed by POSIX to be at least 512.
@@ -184,11 +188,11 @@ The module defines the following:
 ``/dev/poll`` Polling Objects
 -----------------------------
 
-Solaris and derivatives have ``/dev/poll``. While :c:func:`select` is
-O(highest file descriptor) and :c:func:`poll` is O(number of file
-descriptors), ``/dev/poll`` is O(active file descriptors).
+Solaris and derivatives have ``/dev/poll``. While :c:func:`!select` is
+*O*\ (*highest file descriptor*) and :c:func:`!poll` is *O*\ (*number of file
+descriptors*), ``/dev/poll`` is *O*\ (*active file descriptors*).
 
-``/dev/poll`` behaviour is very close to the standard :c:func:`poll`
+``/dev/poll`` behaviour is very close to the standard :c:func:`!poll`
 object.
 
 
@@ -222,7 +226,7 @@ object.
    implement :meth:`!fileno`, so they can also be used as the argument.
 
    *eventmask* is an optional bitmask describing the type of events you want to
-   check for. The constants are the same that with :c:func:`poll`
+   check for. The constants are the same that with :c:func:`!poll`
    object. The default value is a combination of the constants :const:`POLLIN`,
    :const:`POLLPRI`, and :const:`POLLOUT`.
 
@@ -231,7 +235,7 @@ object.
       Registering a file descriptor that's already registered is not an
       error, but the result is undefined. The appropriate action is to
       unregister or modify it first. This is an important difference
-      compared with :c:func:`poll`.
+      compared with :c:func:`!poll`.
 
 
 .. method:: devpoll.modify(fd[, eventmask])
@@ -269,6 +273,9 @@ object.
       a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
+
+   .. versionchanged:: 3.15
+      Accepts any real number as *timeout*, not only integer or float.
 
 
 .. _epoll-objects:
@@ -317,9 +324,15 @@ Edge and Level Trigger Polling (epoll) Objects
    +-------------------------+-----------------------------------------------+
    | :const:`EPOLLMSG`       | Ignored.                                      |
    +-------------------------+-----------------------------------------------+
+   | :const:`EPOLLWAKEUP`    | Prevents sleep during event waiting.          |
+   +-------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.6
       :const:`EPOLLEXCLUSIVE` was added.  It's only supported by Linux Kernel 4.5
+      or later.
+
+   .. versionadded:: 3.14
+      :const:`EPOLLWAKEUP` was added. It's only supported by Linux Kernel 3.5
       or later.
 
 .. method:: epoll.close()
@@ -362,7 +375,9 @@ Edge and Level Trigger Polling (epoll) Objects
 
 .. method:: epoll.poll(timeout=None, maxevents=-1)
 
-   Wait for events. timeout in seconds (float)
+   Wait for events.
+   If *timeout* is given, it specifies the length of time in seconds
+   (may be non-integer) which the system will wait for events before returning.
 
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by
@@ -370,19 +385,22 @@ Edge and Level Trigger Polling (epoll) Objects
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timeout*, not only integer or float.
+
 
 .. _poll-objects:
 
 Polling Objects
 ---------------
 
-The :c:func:`poll` system call, supported on most Unix systems, provides better
+The :c:func:`!poll` system call, supported on most Unix systems, provides better
 scalability for network servers that service many, many clients at the same
-time. :c:func:`poll` scales better because the system call only requires listing
-the file descriptors of interest, while :c:func:`select` builds a bitmap, turns
+time. :c:func:`!poll` scales better because the system call only requires listing
+the file descriptors of interest, while :c:func:`!select` builds a bitmap, turns
 on bits for the fds of interest, and then afterward the whole bitmap has to be
-linearly scanned again. :c:func:`select` is O(highest file descriptor), while
-:c:func:`poll` is O(number of file descriptors).
+linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), while
+:c:func:`!poll` is *O*\ (*number of file descriptors*).
 
 
 .. method:: poll.register(fd[, eventmask])
@@ -458,6 +476,9 @@ linearly scanned again. :c:func:`select` is O(highest file descriptor), while
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timeout*, not only integer or float.
+
 
 .. _kqueue-objects:
 
@@ -490,7 +511,7 @@ Kqueue Objects
 
    - changelist must be an iterable of kevent objects or ``None``
    - max_events must be 0 or a positive integer
-   - timeout in seconds (floats possible); the default is ``None``,
+   - timeout in seconds (non-integers are possible); the default is ``None``,
      to wait forever
 
    .. versionchanged:: 3.5
@@ -499,13 +520,16 @@ Kqueue Objects
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timeout*, not only integer or float.
+
 
 .. _kevent-objects:
 
 Kevent Objects
 --------------
 
-https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
+https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
 .. attribute:: kevent.ident
 

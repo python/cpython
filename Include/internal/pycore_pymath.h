@@ -33,7 +33,7 @@ extern "C" {
 static inline void _Py_ADJUST_ERANGE1(double x)
 {
     if (errno == 0) {
-        if (x == Py_HUGE_VAL || x == -Py_HUGE_VAL) {
+        if (x == INFINITY || x == -INFINITY) {
             errno = ERANGE;
         }
     }
@@ -44,8 +44,8 @@ static inline void _Py_ADJUST_ERANGE1(double x)
 
 static inline void _Py_ADJUST_ERANGE2(double x, double y)
 {
-    if (x == Py_HUGE_VAL || x == -Py_HUGE_VAL ||
-        y == Py_HUGE_VAL || y == -Py_HUGE_VAL)
+    if (x == INFINITY || x == -INFINITY ||
+        y == INFINITY || y == -INFINITY)
     {
         if (errno == 0) {
             errno = ERANGE;
@@ -55,21 +55,6 @@ static inline void _Py_ADJUST_ERANGE2(double x, double y)
         errno = 0;
     }
 }
-
-// Return the maximum value of integral type *type*.
-#define _Py_IntegralTypeMax(type) \
-    (_Py_IS_TYPE_SIGNED(type) ? (((((type)1 << (sizeof(type)*CHAR_BIT - 2)) - 1) << 1) + 1) : ~(type)0)
-
-// Return the minimum value of integral type *type*.
-#define _Py_IntegralTypeMin(type) \
-    (_Py_IS_TYPE_SIGNED(type) ? -_Py_IntegralTypeMax(type) - 1 : 0)
-
-// Check whether *v* is in the range of integral type *type*. This is most
-// useful if *v* is floating-point, since demoting a floating-point *v* to an
-// integral type that cannot represent *v*'s integral part is undefined
-// behavior.
-#define _Py_InIntegralTypeRange(type, v) \
-    (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
 
 
 //--- HAVE_PY_SET_53BIT_PRECISION macro ------------------------------------
@@ -161,17 +146,17 @@ extern void _Py_set_387controlword(unsigned short);
     unsigned int old_fpcr, new_fpcr
 #define _Py_SET_53BIT_PRECISION_START                                   \
     do {                                                                \
-        __asm__ ("fmove.l %%fpcr,%0" : "=g" (old_fpcr));                \
+        __asm__ ("fmove.l %%fpcr,%0" : "=dm" (old_fpcr));               \
         /* Set double precision / round to nearest.  */                 \
         new_fpcr = (old_fpcr & ~0xf0) | 0x80;                           \
         if (new_fpcr != old_fpcr) {                                     \
-              __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (new_fpcr));\
+            __asm__ volatile ("fmove.l %0,%%fpcr" : : "dm" (new_fpcr)); \
         }                                                               \
     } while (0)
 #define _Py_SET_53BIT_PRECISION_END                                     \
     do {                                                                \
         if (new_fpcr != old_fpcr) {                                     \
-            __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (old_fpcr));  \
+            __asm__ volatile ("fmove.l %0,%%fpcr" : : "dm" (old_fpcr)); \
         }                                                               \
     } while (0)
 #endif

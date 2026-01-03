@@ -34,9 +34,7 @@ def _io_wrapper(file, mode='r', *args, **kwargs):
         return TextIOWrapper(file, *args, **kwargs)
     elif mode == 'rb':
         return file
-    raise ValueError(
-        f"Invalid mode value '{mode}', only 'r' and 'rb' are supported"
-    )
+    raise ValueError(f"Invalid mode value '{mode}', only 'r' and 'rb' are supported")
 
 
 class CompatibilityFiles:

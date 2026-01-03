@@ -7,8 +7,9 @@ import os
 import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
-           'getsize', 'isdir', 'isfile', 'samefile', 'sameopenfile',
-           'samestat']
+           'getsize', 'isdevdrive', 'isdir', 'isfile', 'isjunction', 'islink',
+           'lexists', 'samefile', 'sameopenfile', 'samestat',
+           'ALL_BUT_LAST', 'ALLOW_MISSING']
 
 
 # Does a path exist?
@@ -21,6 +22,15 @@ def exists(path):
         return False
     return True
 
+
+# Being true for dangling symbolic links is also useful.
+def lexists(path):
+    """Test whether a path exists.  Returns True for broken symbolic links"""
+    try:
+        os.lstat(path)
+    except (OSError, ValueError):
+        return False
+    return True
 
 # This follows symbolic links, so both islink() and isdir() can be true
 # for the same path on systems that support symlinks
@@ -45,28 +55,55 @@ def isdir(s):
     return stat.S_ISDIR(st.st_mode)
 
 
-def getsize(filename):
+# Is a path a symbolic link?
+# This will always return false on systems where os.lstat doesn't exist.
+
+def islink(path):
+    """Test whether a path is a symbolic link"""
+    try:
+        st = os.lstat(path)
+    except (OSError, ValueError, AttributeError):
+        return False
+    return stat.S_ISLNK(st.st_mode)
+
+
+# Is a path a junction?
+def isjunction(path):
+    """Test whether a path is a junction
+    Junctions are not supported on the current platform"""
+    os.fspath(path)
+    return False
+
+
+def isdevdrive(path):
+    """Determines whether the specified path is on a Windows Dev Drive.
+    Dev Drives are not supported on the current platform"""
+    os.fspath(path)
+    return False
+
+
+def getsize(filename, /):
     """Return the size of a file, reported by os.stat()."""
     return os.stat(filename).st_size
 
 
-def getmtime(filename):
+def getmtime(filename, /):
     """Return the last modification time of a file, reported by os.stat()."""
     return os.stat(filename).st_mtime
 
 
-def getatime(filename):
+def getatime(filename, /):
     """Return the last access time of a file, reported by os.stat()."""
     return os.stat(filename).st_atime
 
 
-def getctime(filename):
+def getctime(filename, /):
     """Return the metadata change time of a file, reported by os.stat()."""
     return os.stat(filename).st_ctime
 
 
 # Return the longest prefix of all list elements.
-def commonprefix(m):
+def commonprefix(m, /):
     "Given a list of pathnames, returns the longest common leading component"
     if not m: return ''
     # Some people pass in a list of pathname parts to operate in an OS-agnostic
@@ -84,14 +121,14 @@ def commonprefix(m):
 
 # Are two stat buffers (obtained from stat, fstat or lstat)
 # describing the same file?
-def samestat(s1, s2):
+def samestat(s1, s2, /):
     """Test whether two stat buffers reference the same file"""
     return (s1.st_ino == s2.st_ino and
             s1.st_dev == s2.st_dev)
 
 
 # Are two filenames really pointing to the same file?
-def samefile(f1, f2):
+def samefile(f1, f2, /):
     """Test whether two pathnames reference the same actual file or directory
 
     This is determined by the device number and i-node number and
@@ -153,3 +190,22 @@ def _check_arg_types(funcname, *args):
                             f'os.PathLike object, not {s.__class__.__name__!r}') from None
     if hasstr and hasbytes:
         raise TypeError("Can't mix strings and bytes in path components") from None
+
+
+# Singletons with a true boolean value.
+
+@object.__new__
+class ALL_BUT_LAST:
+    """Special value for use in realpath()."""
+    def __repr__(self):
+        return 'os.path.ALL_BUT_LAST'
+    def __reduce__(self):
+        return self.__class__.__name__
+
+@object.__new__
+class ALLOW_MISSING:
+    """Special value for use in realpath()."""
+    def __repr__(self):
+        return 'os.path.ALLOW_MISSING'
+    def __reduce__(self):
+        return self.__class__.__name__

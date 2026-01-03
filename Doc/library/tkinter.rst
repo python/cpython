@@ -1,5 +1,5 @@
-:mod:`tkinter` --- Python interface to Tcl/Tk
-=============================================
+:mod:`!tkinter` --- Python interface to Tcl/Tk
+==============================================
 
 .. module:: tkinter
    :synopsis: Interface to Tcl/Tk for graphical user interfaces
@@ -36,6 +36,8 @@ details that are unchanged.
    Most documentation you will find online still uses the old API and
    can be woefully outdated.
 
+.. include:: ../includes/optional-module.rst
+
 .. seealso::
 
    * `TkDocs <https://tkdocs.com/>`_
@@ -58,8 +60,8 @@ details that are unchanged.
    * `Modern Tkinter for Busy Python Developers <https://tkdocs.com/book.html>`_
       By Mark Roseman. (ISBN 978-1999149567)
 
-   * `Python and Tkinter Programming <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
-      By Alan Moore. (ISBN 978-1788835886)
+   * `Python GUI programming with Tkinter <https://www.packtpub.com/en-us/product/python-gui-programming-with-tkinter-9781788835886>`_
+      By Alan D. Moore. (ISBN 978-1788835886)
 
    * `Programming Python <https://learning-python.com/about-pp4e.html>`_
       By Mark Lutz; has excellent coverage of Tkinter. (ISBN 978-0596158101)
@@ -163,7 +165,7 @@ the modern themed widget set and API::
    interpreter and calls :func:`exec` on the contents of
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
    profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :attr:`os.curdir`.
+   isn't defined, then :data:`os.curdir`.
 
    .. attribute:: tk
 
@@ -232,6 +234,9 @@ The modules that provide Tk support include:
 
 Additional modules:
 
+.. module:: _tkinter
+   :synopsis: A binary module that contains the low-level interface to Tcl/Tk.
+
 :mod:`_tkinter`
    A binary module that contains the low-level interface to Tcl/Tk.
    It is automatically imported by the main :mod:`tkinter` module,
@@ -251,10 +256,6 @@ Additional modules:
 :mod:`tkinter.dnd`
    (experimental) Drag-and-drop support for :mod:`tkinter`. This will
    become deprecated when it is replaced with the Tk DND.
-
-:mod:`tkinter.tix`
-   (deprecated) An older third-party Tcl/Tk package that adds several new
-   widgets. Better alternatives for most can be found in :mod:`tkinter.ttk`.
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
@@ -352,7 +353,7 @@ Understanding How Tkinter Wraps Tcl/Tk
 
 When your application uses Tkinter's classes and methods, internally Tkinter
 is assembling strings representing Tcl/Tk commands, and executing those
-commands in the Tcl interpreter attached to your applicaton's :class:`Tk`
+commands in the Tcl interpreter attached to your application's :class:`Tk`
 instance.
 
 Whether it's trying to navigate reference documentation, trying to find
@@ -393,7 +394,7 @@ by spaces. Without getting into too many details, notice the following:
 * Operations which are implemented as separate *commands* in Tcl (like
   ``grid`` or ``destroy``) are represented as *methods* on Tkinter widget
   objects. As you'll see shortly, at other times Tcl uses what appear to be
-  method calls on widget objects, which more closely mirror what would is
+  method calls on widget objects, which more closely mirror what is
   used in Tkinter.
 
 
@@ -533,24 +534,24 @@ interpreter will fail.
 
 A number of special cases exist:
 
-  * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
-    :mod:`tkinter` calls the library from the originating Python thread, even
-    if this is different than the thread that created the Tcl interpreter. A global
-    lock ensures only one call occurs at a time.
+* Tcl/Tk libraries can be built so they are not thread-aware. In this case,
+  :mod:`tkinter` calls the library from the originating Python thread, even
+  if this is different than the thread that created the Tcl interpreter. A global
+  lock ensures only one call occurs at a time.
 
-  * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
-    object (with its own interpreter), all interpreters that are part of the same
-    thread share a common event queue, which gets ugly fast. In practice, don't create
-    more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
-    them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+* While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+  object (with its own interpreter), all interpreters that are part of the same
+  thread share a common event queue, which gets ugly fast. In practice, don't create
+  more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
+  them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
 
-  * Blocking event handlers are not the only way to prevent the Tcl interpreter from
-    reentering the event loop. It is even possible to run multiple nested event loops
-    or abandon the event loop entirely. If you're doing anything tricky when it comes
-    to events or threads, be aware of these possibilities.
+* Blocking event handlers are not the only way to prevent the Tcl interpreter from
+  reentering the event loop. It is even possible to run multiple nested event loops
+  or abandon the event loop entirely. If you're doing anything tricky when it comes
+  to events or threads, be aware of these possibilities.
 
-  * There are a few select :mod:`tkinter` functions that presently work only when
-    called from the thread that created the Tcl interpreter.
+* There are a few select :mod:`tkinter` functions that presently work only when
+  called from the thread that created the Tcl interpreter.
 
 
 Handy Reference
@@ -840,8 +841,7 @@ geometry
    For example: ``fred["geometry"] = "200x100"``.
 
 justify
-   Legal values are the strings: ``"left"``, ``"center"``, ``"right"``, and
-   ``"fill"``.
+   Legal values are the strings: ``"left"``, ``"center"``, and ``"right"``.
 
 region
    This is a string with four space-delimited elements, each of which is a legal
@@ -979,6 +979,15 @@ of :class:`tkinter.Image`:
 
 Either type of image is created through either the ``file`` or the ``data``
 option (other options are available as well).
+
+.. versionchanged:: 3.13
+   Added the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
+   from one image to other image, possibly with pixel zooming and/or
+   subsampling.
+   Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy`,
+   :meth:`!zoom` and :meth:`!subsample`.
+   Add *zoom* and *subsample* parameters to :class:`!PhotoImage` method
+   :meth:`!copy`.
 
 The image object can then be used wherever an ``image`` option is supported by
 some widget (e.g. labels, buttons, menus). In these cases, Tk will not keep a

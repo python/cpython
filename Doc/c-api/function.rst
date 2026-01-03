@@ -5,7 +5,7 @@
 Function Objects
 ----------------
 
-.. index:: object: function
+.. index:: pair: object; function
 
 There are a few functions specific to Python functions.
 
@@ -34,18 +34,20 @@ There are a few functions specific to Python functions.
    Return a new function object associated with the code object *code*. *globals*
    must be a dictionary with the global variables accessible to the function.
 
-   The function's docstring and name are retrieved from the code object. *__module__*
+   The function's docstring and name are retrieved from the code object.
+   :attr:`~function.__module__`
    is retrieved from *globals*. The argument defaults, annotations and closure are
-   set to ``NULL``. *__qualname__* is set to the same value as the code object's
-   ``co_qualname`` field.
+   set to ``NULL``. :attr:`~function.__qualname__` is set to the same value as
+   the code object's :attr:`~codeobject.co_qualname` field.
 
 
 .. c:function:: PyObject* PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 
    As :c:func:`PyFunction_New`, but also allows setting the function object's
-   ``__qualname__`` attribute.  *qualname* should be a unicode object or ``NULL``;
-   if ``NULL``, the ``__qualname__`` attribute is set to the same value as the
-   code object's ``co_qualname`` field.
+   :attr:`~function.__qualname__` attribute.
+   *qualname* should be a unicode object or ``NULL``;
+   if ``NULL``, the :attr:`!__qualname__` attribute is set to the same value as
+   the code object's :attr:`~codeobject.co_qualname` field.
 
    .. versionadded:: 3.3
 
@@ -62,11 +64,12 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject* PyFunction_GetModule(PyObject *op)
 
-   Return a :term:`borrowed reference` to the *__module__* attribute of the
-   function object *op*. It can be *NULL*.
+   Return a :term:`borrowed reference` to the :attr:`~function.__module__`
+   attribute of the :ref:`function object <user-defined-funcs>` *op*.
+   It can be *NULL*.
 
-   This is normally a string containing the module name, but can be set to any
-   other object by Python code.
+   This is normally a :class:`string <str>` containing the module name,
+   but can be set to any other object by Python code.
 
 
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)
@@ -91,6 +94,22 @@ There are a few functions specific to Python functions.
    of the unaltered (default) vectorcall function!
 
    .. versionadded:: 3.12
+
+
+.. c:function:: PyObject* PyFunction_GetKwDefaults(PyObject *op)
+
+   Return the keyword-only argument default values of the function object *op*. This can be a
+   dictionary of arguments or ``NULL``.
+
+
+.. c:function:: int PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
+
+   Set the keyword-only argument default values of the function object *op*.
+   *defaults* must be a dictionary of keyword-only arguments or ``Py_None``.
+
+   This function returns ``0`` on success, and returns ``-1`` with an exception
+   set on failure.
+
 
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 
@@ -120,6 +139,19 @@ There are a few functions specific to Python functions.
    Raises :exc:`SystemError` and returns ``-1`` on failure.
 
 
+.. c:function:: PyObject *PyFunction_GET_CODE(PyObject *op)
+                PyObject *PyFunction_GET_GLOBALS(PyObject *op)
+                PyObject *PyFunction_GET_MODULE(PyObject *op)
+                PyObject *PyFunction_GET_DEFAULTS(PyObject *op)
+                PyObject *PyFunction_GET_KW_DEFAULTS(PyObject *op)
+                PyObject *PyFunction_GET_CLOSURE(PyObject *op)
+                PyObject *PyFunction_GET_ANNOTATIONS(PyObject *op)
+
+   These functions are similar to their ``PyFunction_Get*`` counterparts, but
+   do not do type checking. Passing anything other than an instance of
+   :c:data:`PyFunction_Type` is undefined behavior.
+
+
 .. c:function:: int PyFunction_AddWatcher(PyFunction_WatchCallback callback)
 
    Register *callback* as a function watcher for the current interpreter.
@@ -142,15 +174,19 @@ There are a few functions specific to Python functions.
 
 .. c:type:: PyFunction_WatchEvent
 
-   Enumeration of possible function watcher events:
-   - ``PyFunction_EVENT_CREATE``
-   - ``PyFunction_EVENT_DESTROY``
-   - ``PyFunction_EVENT_MODIFY_CODE``
-   - ``PyFunction_EVENT_MODIFY_DEFAULTS``
-   - ``PyFunction_EVENT_MODIFY_KWDEFAULTS``
+    Enumeration of possible function watcher events:
+
+    - ``PyFunction_EVENT_CREATE``
+    - ``PyFunction_EVENT_DESTROY``
+    - ``PyFunction_EVENT_MODIFY_CODE``
+    - ``PyFunction_EVENT_MODIFY_DEFAULTS``
+    - ``PyFunction_EVENT_MODIFY_KWDEFAULTS``
 
    .. versionadded:: 3.12
 
+    - ``PyFunction_PYFUNC_EVENT_MODIFY_QUALNAME``
+
+   .. versionadded:: 3.15
 
 .. c:type:: int (*PyFunction_WatchCallback)(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 
@@ -165,16 +201,27 @@ There are a few functions specific to Python functions.
    unpredictable effects, including infinite recursion.
 
    If *event* is ``PyFunction_EVENT_CREATE``, then the callback is invoked
-   after `func` has been fully initialized. Otherwise, the callback is invoked
+   after *func* has been fully initialized. Otherwise, the callback is invoked
    before the modification to *func* takes place, so the prior state of *func*
    can be inspected. The runtime is permitted to optimize away the creation of
    function objects when possible. In such cases no event will be emitted.
-   Although this creates the possitibility of an observable difference of
+   Although this creates the possibility of an observable difference of
    runtime behavior depending on optimization decisions, it does not change
    the semantics of the Python code being executed.
 
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+   If *event* is ``PyFunction_EVENT_DESTROY``, taking a reference in the
+   callback to the about-to-be-destroyed function will resurrect it, preventing
+   it from being freed at this time. When the resurrected object is destroyed
+   later, any watcher callbacks active at that time will be called again.
+
+   If the callback sets an exception, it must return ``-1``; this exception will
+   be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.
+   Otherwise it should return ``0``.
+
+   There may already be a pending exception set on entry to the callback. In
+   this case, the callback should return ``0`` with the same exception still
+   set. This means the callback may not call any other API that can set an
+   exception unless it saves and clears the exception state first, and restores
+   it before returning.
 
    .. versionadded:: 3.12

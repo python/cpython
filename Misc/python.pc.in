@@ -9,5 +9,5 @@ Description: Build a C extension for Python
 Requires:
 Version: @VERSION@
 Libs.private: @LIBS@
-Libs:
+Libs: -L${libdir} @LIBPYTHON@
 Cflags: -I${includedir}/python@VERSION@@ABIFLAGS@

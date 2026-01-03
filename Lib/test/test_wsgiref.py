@@ -109,7 +109,7 @@ class IntegrationTests(TestCase):
                 sys.version.split()[0])
         self.assertEqual(out,
             ("HTTP/1.0 200 OK\r\n"
-            "Server: WSGIServer/0.2 " + pyver +"\r\n"
+            "Server: WSGIServer " + pyver + "\r\n"
             "Content-Type: text/plain\r\n"
             "Date: Mon, 05 Jun 2006 18:49:54 GMT\r\n" +
             (has_length and  "Content-Length: 13\r\n" or "") +
@@ -137,7 +137,7 @@ class IntegrationTests(TestCase):
     def test_request_length(self):
         out, err = run_amock(data=b"GET " + (b"x" * 65537) + b" HTTP/1.0\n\n")
         self.assertEqual(out.splitlines()[0],
-                         b"HTTP/1.0 414 Request-URI Too Long")
+                         b"HTTP/1.0 414 URI Too Long")
 
     def test_validated_hello(self):
         out, err = run_amock(validator(hello_app))
@@ -149,9 +149,9 @@ class IntegrationTests(TestCase):
             start_response("200 OK", ('Content-Type','text/plain'))
             return ["Hello, world!"]
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2],
             "AssertionError: Headers (('Content-Type', 'text/plain')) must"
@@ -174,9 +174,9 @@ class IntegrationTests(TestCase):
         for status, exc_message in tests:
             with self.subTest(status=status):
                 out, err = run_amock(create_bad_app(status))
-                self.assertTrue(out.endswith(
+                self.assertEndsWith(out,
                     b"A server error occurred.  Please contact the administrator."
-                ))
+                )
                 self.assertEqual(err.splitlines()[-2], exc_message)
 
     def test_wsgi_input(self):
@@ -185,9 +185,9 @@ class IntegrationTests(TestCase):
             s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
             return [b"data"]
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2], "AssertionError"
         )
@@ -200,13 +200,13 @@ class IntegrationTests(TestCase):
                 ])
             return [b"data"]
         out, err = run_amock(validator(app))
-        self.assertTrue(err.endswith('"GET / HTTP/1.0" 200 4\n'))
+        self.assertEndsWith(err, '"GET / HTTP/1.0" 200 4\n')
         ver = sys.version.split()[0].encode('ascii')
         py  = python_implementation().encode('ascii')
         pyver = py + b"/" + ver
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.2 "+ pyver + b"\r\n"
+                b"Server: WSGIServer " + pyver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
@@ -838,6 +838,18 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.headers)
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        from wsgiref import simple_server
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(simple_server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":
