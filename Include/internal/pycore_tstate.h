@@ -151,8 +151,8 @@ typedef struct _PyThreadStateImpl {
 #endif
 #if _Py_TIER2
     _PyJitTracerState jit_tracer_state;
-    _PyPolicy policy;
 #endif
+    _PyPolicy policy;
 } _PyThreadStateImpl;
 
 #ifdef __cplusplus
