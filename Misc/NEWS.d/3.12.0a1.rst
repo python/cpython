@@ -924,7 +924,7 @@ constructed without an instance of the compiler struct.
 .. date: 2022-07-24-00-27-47
 .. gh-issue: 95185
 .. nonce: ghYTZx
-.. section: Library
+.. section: Core and Builtins
 
 Prevented crashes in the AST constructor when compiling some absurdly long
 expressions like ``"+0"*1000000``. :exc:`RecursionError` is now raised
