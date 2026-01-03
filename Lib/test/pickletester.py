@@ -2630,6 +2630,7 @@ class AbstractPicklingErrorTests:
 class AbstractPickleTests:
     # Subclass must define self.dumps, self.loads.
 
+    py_version = sys.version_info  # for test_xpickle
     optimized = False
 
     _testdata = AbstractUnpickleTests._testdata
@@ -3218,8 +3219,15 @@ class AbstractPickleTests:
                     self.assertIs(self.loads(s), t)
 
     def test_builtin_exceptions(self):
+        new_names = {'EncodingWarning': (3, 10),
+                     'BaseExceptionGroup': (3, 11),
+                     'ExceptionGroup': (3, 11),
+                     '_IncompleteInputError': (3, 13),
+                     'PythonFinalizationError': (3, 13)}
         for t in builtins.__dict__.values():
             if isinstance(t, type) and issubclass(t, BaseException):
+                if t.__name__ in new_names and self.py_version < new_names[t.__name__]:
+                    continue
                 for proto in protocols:
                     s = self.dumps(t, proto)
                     u = self.loads(s)
@@ -3231,8 +3239,11 @@ class AbstractPickleTests:
                         self.assertIs(u, t)
 
     def test_builtin_functions(self):
+        new_names = {'aiter': (3, 10), 'anext': (3, 10)}
         for t in builtins.__dict__.values():
             if isinstance(t, types.BuiltinFunctionType):
+                if t.__name__ in new_names and self.py_version < new_names[t.__name__]:
+                    continue
                 for proto in protocols:
                     s = self.dumps(t, proto)
                     self.assertIs(self.loads(s), t)

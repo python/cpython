@@ -1,16 +1,17 @@
 # This test covers backwards compatibility with
 # previous version of Python by bouncing pickled objects through Python 3.6
 # and Python 3.9 by running xpickle_worker.py.
+import io
 import os
 import pathlib
 import pickle
 import subprocess
 import sys
+import unittest
 
 
 from test import support
 from test import pickletester
-from test.test_pickle import PyPicklerTests
 
 try:
     import _pickle
@@ -70,38 +71,41 @@ def have_python_version(py_version):
     if py_version not in py_executable_map:
         with open(os.devnull, 'w') as devnull:
             for target in targets[0 if is_windows else 1:]:
-                worker = subprocess.Popen([*target, '-c','import test.support'],
-                                          stdout=devnull,
-                                          stderr=devnull,
-                                          shell=is_windows)
-                worker.communicate()
-                if worker.returncode == 0:
-                    py_executable_map[py_version] = target
+                try:
+                    worker = subprocess.Popen([*target, '-c','import test.support'],
+                                              stdout=devnull,
+                                              stderr=devnull,
+                                              shell=is_windows)
+                    worker.communicate()
+                    if worker.returncode == 0:
+                        py_executable_map[py_version] = target
+                    break
+                except FileNotFoundError:
+                    pass
 
     return py_executable_map.get(py_version, None)
 
 
-
-class AbstractCompatTests(PyPicklerTests):
+class AbstractCompatTests(pickletester.AbstractPickleTests):
     py_version = None
     _OLD_HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
 
-    def setUp(self):
-        self.assertIsNotNone(self.py_version,
-                             msg='Needs a python version tuple')
-        if not have_python_version(self.py_version):
-            py_version_str = ".".join(map(str, self.py_version))
-            self.skipTest(f'Python {py_version_str} not available')
-
+    @classmethod
+    def setUpClass(cls):
+        assert cls.py_version is not None, 'Needs a python version tuple'
+        if not have_python_version(cls.py_version):
+            py_version_str = ".".join(map(str, cls.py_version))
+            raise unittest.SkipTest(f'Python {py_version_str} not available')
         # Override the default pickle protocol to match what xpickle worker
         # will be running.
-        highest_protocol = highest_proto_for_py_version(self.py_version)
+        highest_protocol = highest_proto_for_py_version(cls.py_version)
         pickletester.protocols = range(highest_protocol + 1)
         pickle.HIGHEST_PROTOCOL = highest_protocol
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         # Set the highest protocol back to the default.
-        pickle.HIGHEST_PROTOCOL = self._OLD_HIGHEST_PROTOCOL
+        pickle.HIGHEST_PROTOCOL = cls._OLD_HIGHEST_PROTOCOL
         pickletester.protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
     @staticmethod
@@ -131,6 +135,11 @@ class AbstractCompatTests(PyPicklerTests):
         except (pickle.UnpicklingError, EOFError):
             raise RuntimeError(stderr)
         else:
+            if support.verbose > 1:
+                print()
+                print(f'{data   = }')
+                print(f'{stdout = }')
+                print(f'{stderr = }')
             if isinstance(exception, Exception):
                 # To allow for tests which test for errors.
                 raise exception
@@ -144,12 +153,18 @@ class AbstractCompatTests(PyPicklerTests):
         # it works in a different Python version.
         if 'buffer_callback' in kwargs:
             self.skipTest('Test does not support "buffer_callback" argument.')
-        data = super().dumps((proto, arg), proto, **kwargs)
+        f = io.BytesIO()
+        p = self.pickler(f, proto, **kwargs)
+        p.dump((proto, arg))
+        f.seek(0)
+        data = bytes(f.read())
         python = py_executable_map[self.py_version]
         return self.send_to_worker(python, data)
 
-    def loads(self, *args, **kwargs):
-        return super().loads(*args, **kwargs)
+    def loads(self, buf, **kwds):
+        f = io.BytesIO(buf)
+        u = self.unpickler(f, **kwds)
+        return u.load()
 
     # A scaled-down version of test_bytes from pickletester, to reduce
     # the number of calls to self.dumps() and hence reduce the number of
@@ -174,9 +189,6 @@ class AbstractCompatTests(PyPicklerTests):
     test_global_ext2 = None
     test_global_ext4 = None
 
-    # Backwards compatibility was explicitly broken in r67934 to fix a bug.
-    test_unicode_high_plane = None
-
     # These tests fail because they require classes from pickletester
     # which cannot be properly imported by the xpickle worker.
     test_c_methods = None
@@ -185,76 +197,64 @@ class AbstractCompatTests(PyPicklerTests):
 
     test_recursive_dict_key = None
     test_recursive_nested_names = None
+    test_recursive_nested_names2 = None
     test_recursive_set = None
 
     # Attribute lookup problems are expected, disable the test
     test_dynamic_class = None
+    test_evil_class_mutating_dict = None
 
-# Base class for tests using Python 3.7 and earlier
-class CompatLowerPython37(AbstractCompatTests):
-    # Python versions 3.7 and earlier are incompatible with these tests:
-
-    # This version does not support buffers
-    test_in_band_buffers = None
+    # Expected exception is raised during unpickling in a subprocess.
+    test_pickle_setstate_None = None
 
 
-# Base class for tests using Python 3.6 and earlier
-class CompatLowerPython36(CompatLowerPython37):
-    # Python versions 3.6 and earlier are incompatible with these tests:
-    # This version has changes in framing using protocol 4
-    test_framing_large_objects = None
-
-    # These fail for protocol 0
-    test_simple_newobj = None
-    test_complex_newobj = None
-    test_complex_newobj_ex = None
-
-
-# Test backwards compatibility with Python 3.6.
-class PicklePython36Compat(CompatLowerPython36):
-    py_version = (3, 6)
-
-# Test backwards compatibility with Python 3.7.
-class PicklePython37Compat(CompatLowerPython37):
-    py_version = (3, 7)
-
-# Test backwards compatibility with Python 3.8.
-class PicklePython38Compat(AbstractCompatTests):
-    py_version = (3, 8)
-
-# Test backwards compatibility with Python 3.9.
-class PicklePython39Compat(AbstractCompatTests):
-    py_version = (3, 9)
-
+class PyPicklePythonCompat(AbstractCompatTests):
+    pickler = pickle._Pickler
+    unpickler = pickle._Unpickler
 
 if has_c_implementation:
-    class CPicklePython36Compat(PicklePython36Compat):
-        pickler = pickle._Pickler
-        unpickler = pickle._Unpickler
+    class CPicklePythonCompat(AbstractCompatTests):
+        pickler = _pickle.Pickler
+        unpickler = _pickle.Unpickler
 
-    class CPicklePython37Compat(PicklePython37Compat):
-        pickler = pickle._Pickler
-        unpickler = pickle._Unpickler
 
-    class CPicklePython38Compat(PicklePython38Compat):
-        pickler = pickle._Pickler
-        unpickler = pickle._Unpickler
+skip_tests = {
+    (3, 6): [
+        # This version has changes in framing using protocol 4
+        'test_framing_large_objects',
 
-    class CPicklePython39Compat(PicklePython39Compat):
-        pickler = pickle._Pickler
-        unpickler = pickle._Unpickler
+        # These fail for protocol 0
+        'test_simple_newobj',
+        'test_complex_newobj',
+        'test_complex_newobj_ex',
+    ],
+    (3, 7): [
+        # This version does not support buffers
+        'test_in_band_buffers',
+    ],
+}
 
-def test_main():
-    support.requires('xpickle')
-    tests = [PicklePython36Compat,
-             PicklePython37Compat, PicklePython38Compat,
-             PicklePython39Compat]
-    if has_c_implementation:
-        tests.extend([CPicklePython36Compat,
-                      CPicklePython37Compat, CPicklePython38Compat,
-                      CPicklePython39Compat])
-    support.run_unittest(*tests)
+
+def make_test(py_version, base):
+    class_dict = {'py_version': py_version}
+    for key, value in skip_tests.items():
+        if py_version <= key:
+            for test_name in value:
+                class_dict[test_name] = None
+    name = base.__name__.replace('Python', 'Python%d%d' % py_version)
+    return type(name, (base, unittest.TestCase), class_dict)
+
+def load_tests(loader, tests, pattern):
+    major = sys.version_info.major
+    assert major == 3
+    for minor in range(sys.version_info.minor):
+        test_class = make_test((major, minor), PyPicklePythonCompat)
+        tests.addTest(loader.loadTestsFromTestCase(test_class))
+        if has_c_implementation:
+            test_class = make_test((major, minor), CPicklePythonCompat)
+            tests.addTest(loader.loadTestsFromTestCase(test_class))
+    return tests
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
