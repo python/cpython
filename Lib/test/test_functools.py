@@ -3518,6 +3518,20 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(a.v(0), ('special', 0))
         self.assertEqual(a.v(2.5), ('general', 2.5))
 
+    def test_method_self_annotation(self):
+        """See GH-130827."""
+        class A:
+            @functools.singledispatchmethod
+            def u(self: typing.Self, arg: int | str) -> int | str: ...
+
+            @u.register
+            def _(self: typing.Self, arg: int) -> int:
+                return arg
+
+        a = A()
+        self.assertEqual(a.u(42), 42)
+        self.assertEqual(a.u("hello"), "hello")
+
 
 class CachedCostItem:
     _cost = 1
