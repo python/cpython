@@ -3,7 +3,6 @@
 # and Python 3.9 by running xpickle_worker.py.
 import io
 import os
-import pathlib
 import pickle
 import subprocess
 import sys
@@ -116,7 +115,7 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
         Returns:
             The pickled data received from the child process.
         """
-        target = pathlib.Path(__file__).parent / 'xpickle_worker.py'
+        target = os.path.join(os.path.dirname(__file__), 'xpickle_worker.py')
         worker = subprocess.Popen([*python, target],
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE,
