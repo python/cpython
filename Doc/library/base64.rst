@@ -63,7 +63,7 @@ POST request.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
-   If *wrapcol* is zero (default), do not add any newlines.
+   If *wrapcol* is zero (default), do not insert any newlines.
 
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
@@ -223,7 +223,7 @@ Refer to the documentation of the individual functions for more information.
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
-   If *wrapcol* is zero (default), do not add any newlines.
+   If *wrapcol* is zero (default), do not insert any newlines.
 
    *pad* controls whether the input is padded to a multiple of 4
    before encoding. Note that the ``btoa`` implementation always pads.

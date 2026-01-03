@@ -74,7 +74,7 @@ The :mod:`binascii` module defines the following functions:
 
    If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
    after at most every *wrapcol* characters.
-   If *wrapcol* is zero (default), do not add any newlines.
+   If *wrapcol* is zero (default), do not insert any newlines.
 
    If *newline* is true (default), a newline character will be added
    at the end of the output.
