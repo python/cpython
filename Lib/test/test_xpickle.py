@@ -69,19 +69,18 @@ def have_python_version(py_version):
     python_str = ".".join(map(str, py_version))
     targets = [('py', f'-{python_str}'), (f'python{python_str}',)]
     if py_version not in py_executable_map:
-        with open(os.devnull, 'w') as devnull:
-            for target in targets[0 if is_windows else 1:]:
-                try:
-                    worker = subprocess.Popen([*target, '-c','import test.support'],
-                                              stdout=devnull,
-                                              stderr=devnull,
-                                              shell=is_windows)
-                    worker.communicate()
-                    if worker.returncode == 0:
-                        py_executable_map[py_version] = target
-                    break
-                except FileNotFoundError:
-                    pass
+        for target in targets[0 if is_windows else 1:]:
+            try:
+                worker = subprocess.Popen([*target, '-c','import test.support'],
+                                          stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.DEVNULL,
+                                          shell=is_windows)
+                worker.communicate()
+                if worker.returncode == 0:
+                    py_executable_map[py_version] = target
+                break
+            except FileNotFoundError:
+                pass
 
     return py_executable_map.get(py_version, None)
 
