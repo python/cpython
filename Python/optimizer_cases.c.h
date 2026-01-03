@@ -787,6 +787,22 @@
             break;
         }
 
+        case _BINARY_OP_SUBSCR_NCSTR_INT: {
+            JitOptRef res;
+            JitOptRef s;
+            JitOptRef i;
+            res = sym_new_not_null(ctx);
+            s = sym_new_not_null(ctx);
+            i = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = s;
+            stack_pointer[0] = i;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _GUARD_NOS_TUPLE: {
             JitOptRef nos;
             nos = stack_pointer[-2];

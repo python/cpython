@@ -2240,9 +2240,14 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     specialize(instr, BINARY_OP_SUBSCR_TUPLE_INT);
                     return;
                 }
-                if (PyUnicode_CheckExact(lhs) && PyUnicode_IS_COMPACT_ASCII(lhs)) {
-                    specialize(instr, BINARY_OP_SUBSCR_STR_INT);
-                    return;
+                if (PyUnicode_CheckExact(lhs)) {
+                    if (PyUnicode_IS_COMPACT_ASCII(lhs)) {
+                        specialize(instr, BINARY_OP_SUBSCR_STR_INT);
+                        return;
+                    } else {
+                        specialize(instr, BINARY_OP_SUBSCR_NCSTR_INT);
+                        return;
+                    }
                 }
             }
             if (PyDict_CheckExact(lhs)) {

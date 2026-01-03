@@ -914,6 +914,95 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_SUBSCR_NCSTR_INT) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = BINARY_OP_SUBSCR_NCSTR_INT;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(BINARY_OP_SUBSCR_NCSTR_INT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
+            _PyStackRef value;
+            _PyStackRef nos;
+            _PyStackRef str_st;
+            _PyStackRef sub_st;
+            _PyStackRef res;
+            _PyStackRef s;
+            _PyStackRef i;
+            // _GUARD_TOS_INT
+            {
+                value = stack_pointer[-1];
+                PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+                if (!_PyLong_CheckExactAndCompact(value_o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+            }
+            // _GUARD_NOS_UNICODE
+            {
+                nos = stack_pointer[-2];
+                PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+                if (!PyUnicode_CheckExact(o)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+            }
+            /* Skip 5 cache entries */
+            // _BINARY_OP_SUBSCR_NCSTR_INT
+            {
+                sub_st = value;
+                str_st = nos;
+                PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+                PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
+                assert(PyLong_CheckExact(sub));
+                assert(PyUnicode_CheckExact(str));
+                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+                if (PyUnicode_GET_LENGTH(str) <= index) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
+                if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                STAT_INC(BINARY_OP, hit);
+                PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
+                s = str_st;
+                i = sub_st;
+                res = PyStackRef_FromPyObjectBorrow(res_o);
+            }
+            // _POP_TOP_INT
+            {
+                value = i;
+                assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+            }
+            // _POP_TOP
+            {
+                value = s;
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            DISPATCH();
+        }
+
         TARGET(BINARY_OP_SUBSCR_STR_INT) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_STR_INT;

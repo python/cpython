@@ -121,6 +121,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_SUBSCR_LIST_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_STR_INT] = HAS_DEOPT_FLAG,
+    [_BINARY_OP_SUBSCR_NCSTR_INT] = HAS_DEOPT_FLAG,
     [_GUARD_NOS_TUPLE] = HAS_EXIT_FLAG,
     [_GUARD_TOS_TUPLE] = HAS_EXIT_FLAG,
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS] = HAS_DEOPT_FLAG,
@@ -1140,6 +1141,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 3, 2, _BINARY_OP_SUBSCR_STR_INT_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_BINARY_OP_SUBSCR_NCSTR_INT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_SUBSCR_NCSTR_INT_r23 },
             { -1, -1, -1 },
         },
     },
@@ -3496,6 +3506,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_SUBSCR_LIST_INT_r23] = _BINARY_OP_SUBSCR_LIST_INT,
     [_BINARY_OP_SUBSCR_LIST_SLICE_r21] = _BINARY_OP_SUBSCR_LIST_SLICE,
     [_BINARY_OP_SUBSCR_STR_INT_r23] = _BINARY_OP_SUBSCR_STR_INT,
+    [_BINARY_OP_SUBSCR_NCSTR_INT_r23] = _BINARY_OP_SUBSCR_NCSTR_INT,
     [_GUARD_NOS_TUPLE_r02] = _GUARD_NOS_TUPLE,
     [_GUARD_NOS_TUPLE_r12] = _GUARD_NOS_TUPLE,
     [_GUARD_NOS_TUPLE_r22] = _GUARD_NOS_TUPLE,
@@ -4026,6 +4037,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_SUBSCR_LIST_INT_r23] = "_BINARY_OP_SUBSCR_LIST_INT_r23",
     [_BINARY_OP_SUBSCR_LIST_SLICE] = "_BINARY_OP_SUBSCR_LIST_SLICE",
     [_BINARY_OP_SUBSCR_LIST_SLICE_r21] = "_BINARY_OP_SUBSCR_LIST_SLICE_r21",
+    [_BINARY_OP_SUBSCR_NCSTR_INT] = "_BINARY_OP_SUBSCR_NCSTR_INT",
+    [_BINARY_OP_SUBSCR_NCSTR_INT_r23] = "_BINARY_OP_SUBSCR_NCSTR_INT_r23",
     [_BINARY_OP_SUBSCR_STR_INT] = "_BINARY_OP_SUBSCR_STR_INT",
     [_BINARY_OP_SUBSCR_STR_INT_r23] = "_BINARY_OP_SUBSCR_STR_INT_r23",
     [_BINARY_OP_SUBSCR_TUPLE_INT] = "_BINARY_OP_SUBSCR_TUPLE_INT",
@@ -5200,6 +5213,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_OP_SUBSCR_LIST_SLICE:
             return 2;
         case _BINARY_OP_SUBSCR_STR_INT:
+            return 2;
+        case _BINARY_OP_SUBSCR_NCSTR_INT:
             return 2;
         case _GUARD_NOS_TUPLE:
             return 0;
