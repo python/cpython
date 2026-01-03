@@ -263,6 +263,9 @@ manipulation of WSGI response headers using a mapping-like interface.
 
          Content-Disposition: attachment; filename="bud.gif"
 
+      This method does not reject input containing CRLF sequences allowing the
+      possibility of CRLF injection, where a single method call can inject
+      multiple arbitrary headers.
 
    .. versionchanged:: 3.5
       *headers* parameter is optional.
@@ -896,4 +899,10 @@ directory and port number (default: 8000) on the command line::
             print("Shutting down.")
             httpd.server_close()
 
+Security considerations
+-----------------------
 
+The :class:`wsgiref.headers.Headers` class assumes sanitized input for header
+names and values and does not perform input validation such as checking for the
+presence of CRLF sequences. Untrusted input may result in CRLF injection
+attacks.

@@ -287,6 +287,10 @@ instantiation, of which this module provides three different variants:
       specifying its value. Note that, after the send_header calls are done,
       :meth:`end_headers` MUST BE called in order to complete the operation.
 
+      This method does not reject input containing CRLF sequences allowing the
+      possibility of CRLF injection, where a single method call can inject
+      multiple arbitrary headers.
+
       .. versionchanged:: 3.2
          Headers are stored in an internal buffer.
 
@@ -554,6 +558,10 @@ Security considerations
 :class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
 requests, this makes it possible for files outside of the specified directory
 to be served.
+
+The :meth:`BaseHTTPRequestHandler.send_header` method assumes sanitized input
+and does not perform input validation such as checking for the presence of CRLF
+sequences. Untrusted input may result in CRLF injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the
