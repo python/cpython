@@ -25,6 +25,12 @@ is_windows = sys.platform.startswith('win')
 # Python binary to execute and its arguments.
 py_executable_map = {}
 
+protocols_map = {
+    3: (3, 0),
+    4: (3, 4),
+    5: (3, 8),
+}
+
 def highest_proto_for_py_version(py_version):
     """Finds the highest supported pickle protocol for a given Python version.
     Args:
@@ -33,20 +39,12 @@ def highest_proto_for_py_version(py_version):
     Returns:
         int for the highest supported pickle protocol
     """
-    major = sys.version_info.major
-    minor = sys.version_info.minor
-    # Versions older than py 3 only supported up until protocol 2.
-    if py_version < (3, 0):
-        return 2
-    elif py_version < (3, 4):
-        return 3
-    elif py_version < (3, 8):
-        return 4
-    elif py_version <= (major, minor):
-        return 5
-    else:
-        # Safe option.
-        return 2
+    proto = 2
+    for p, v in protocols_map.items():
+        if py_version < v:
+            break
+        proto = p
+    return proto
 
 def have_python_version(py_version):
     """Check whether a Python binary exists for the given py_version and has
