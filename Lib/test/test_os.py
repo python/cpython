@@ -2255,6 +2255,40 @@ class ExecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
+    # See https://github.com/python/cpython/issues/137934 and the other
+    # related issues for the reason why we cannot test this on Windows.
+    @unittest.skipIf(os.name == "nt", "POSIX-specific test")
+    def test_execve_env_concurrent_mutation_with_fspath_posix(self):
+        # Prevent crash when mutating environment during parsing.
+        # Regression test for https://github.com/python/cpython/issues/143309.
+
+        message = "hello from execve"
+        code = """
+        import os, sys
+
+        class MyPath:
+            def __fspath__(self):
+                mutated.clear()
+                return b"pwn"
+
+        mutated = KEYS = VALUES = [MyPath()]
+
+        class MyEnv:
+            def __getitem__(self): raise RuntimeError("must not be called")
+            def __len__(self): return 1
+            def keys(self): return KEYS
+            def values(self): return VALUES
+
+        args = [sys.executable, '-c', "print({message!r})"]
+        os.execve(args[0], args, MyEnv())
+        """.format(message=message)
+
+        # Use '__cleanenv' to signal to assert_python_ok() not
+        # to do a copy of os.environ on its own.
+        rc, out, _ = assert_python_ok('-c', code, __cleanenv=True)
+        self.assertEqual(rc, 0)
+        self.assertIn(bytes(message, "ascii"), out)
+
     @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
     def test_execve_with_empty_path(self):
         # bpo-32890: Check GetLastError() misuse
