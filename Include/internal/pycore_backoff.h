@@ -127,10 +127,9 @@ trigger_backoff_counter(void)
 #define JUMP_BACKWARD_INITIAL_VALUE 4000
 #define JUMP_BACKWARD_INITIAL_BACKOFF 6
 static inline _Py_BackoffCounter
-initial_jump_backoff_counter(void)
+initial_jump_backoff_counter(uint16_t initial_value, uint16_t initial_backoff)
 {
-    return make_backoff_counter(JUMP_BACKWARD_INITIAL_VALUE,
-                                JUMP_BACKWARD_INITIAL_BACKOFF);
+    return make_backoff_counter(initial_value, initial_backoff);
 }
 
 /* Initial exit temperature.
@@ -141,10 +140,9 @@ initial_jump_backoff_counter(void)
 #define SIDE_EXIT_INITIAL_BACKOFF 6
 
 static inline _Py_BackoffCounter
-initial_temperature_backoff_counter(void)
+initial_temperature_backoff_counter(uint16_t initial_value, uint16_t initial_backoff)
 {
-    return make_backoff_counter(SIDE_EXIT_INITIAL_VALUE,
-                                SIDE_EXIT_INITIAL_BACKOFF);
+    return make_backoff_counter(initial_value, initial_backoff);
 }
 
 /* Unreachable backoff counter. */

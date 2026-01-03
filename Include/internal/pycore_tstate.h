@@ -52,6 +52,13 @@ typedef struct _PyJitTracerState {
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
 } _PyJitTracerState;
+
+typedef struct _PyJitMetrics {
+    uint16_t jump_backward_initial_value;
+    uint16_t jump_backward_initial_backoff;
+    uint16_t side_exit_initial_value;
+    uint16_t side_exit_initial_backoff;
+} _PyJitMetrics;
 #endif
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -131,6 +138,7 @@ typedef struct _PyThreadStateImpl {
 #endif
 #if _Py_TIER2
     _PyJitTracerState jit_tracer_state;
+    _PyJitMetrics jit_metrics;
 #endif
 } _PyThreadStateImpl;
 

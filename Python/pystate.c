@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
+#include "pycore_backoff.h"       // JUMP_BACKWARD_INITIAL_VALUE, SIDE_EXIT_INITIAL_VALUE
 #include "pycore_ceval.h"         // _PyEval_AcquireLock()
 #include "pycore_codecs.h"        // _PyCodec_Fini()
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
@@ -1526,6 +1527,44 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
 #ifdef _Py_TIER2
     _tstate->jit_tracer_state.code_buffer = NULL;
+
+    // Initialize JIT metrics from environment variables
+    _tstate->jit_metrics.jump_backward_initial_value = JUMP_BACKWARD_INITIAL_VALUE;
+    _tstate->jit_metrics.jump_backward_initial_backoff = JUMP_BACKWARD_INITIAL_BACKOFF;
+    _tstate->jit_metrics.side_exit_initial_value = SIDE_EXIT_INITIAL_VALUE;
+    _tstate->jit_metrics.side_exit_initial_backoff = SIDE_EXIT_INITIAL_BACKOFF;
+
+    char *env = Py_GETENV("PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE");
+    if (env && *env != '\0') {
+        long value = atol(env);
+        if (value > 0 && value <= MAX_VALUE) {
+            _tstate->jit_metrics.jump_backward_initial_value = (uint16_t)value;
+        }
+    }
+
+    env = Py_GETENV("PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF");
+    if (env && *env != '\0') {
+        long value = atol(env);
+        if (value >= 0 && value <= MAX_BACKOFF) {
+            _tstate->jit_metrics.jump_backward_initial_backoff = (uint16_t)value;
+        }
+    }
+
+    env = Py_GETENV("PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE");
+    if (env && *env != '\0') {
+        long value = atol(env);
+        if (value > 0 && value <= MAX_VALUE) {
+            _tstate->jit_metrics.side_exit_initial_value = (uint16_t)value;
+        }
+    }
+
+    env = Py_GETENV("PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF");
+    if (env && *env != '\0') {
+        long value = atol(env);
+        if (value >= 0 && value <= MAX_BACKOFF) {
+            _tstate->jit_metrics.side_exit_initial_backoff = (uint16_t)value;
+        }
+    }
 #endif
     tstate->delete_later = NULL;
 
