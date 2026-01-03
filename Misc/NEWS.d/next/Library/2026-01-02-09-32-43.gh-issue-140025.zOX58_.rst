@@ -1,1 +1,1 @@
-Fix ``queue.SimpleQueue.__sizeof__()`` computation.
+:mod:`queue`: Fix :meth:`SimpleQueue.__sizeof__ <object.__sizeof__>` computation.
