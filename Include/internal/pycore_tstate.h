@@ -59,6 +59,7 @@ typedef struct _PyJitMetrics {
     uint16_t side_exit_initial_value;
     uint16_t side_exit_initial_backoff;
 } _PyJitMetrics;
+
 #endif
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The

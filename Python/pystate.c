@@ -1524,10 +1524,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
-
 #ifdef _Py_TIER2
-    _tstate->jit_tracer_state.code_buffer = NULL;
-
     // Initialize JIT metrics from environment variables
     _tstate->jit_metrics.jump_backward_initial_value = JUMP_BACKWARD_INITIAL_VALUE;
     _tstate->jit_metrics.jump_backward_initial_backoff = JUMP_BACKWARD_INITIAL_BACKOFF;
@@ -1565,6 +1562,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
             _tstate->jit_metrics.side_exit_initial_backoff = (uint16_t)value;
         }
     }
+    _tstate->jit_tracer_state.code_buffer = NULL;
 #endif
     tstate->delete_later = NULL;
 
