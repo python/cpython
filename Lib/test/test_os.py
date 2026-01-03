@@ -2263,8 +2263,7 @@ class ExecTests(unittest.TestCase):
         # Regression test for https://github.com/python/cpython/issues/143309.
 
         message = "hello from execve"
-        code = """
-        import os, sys
+        code = """import os, sys
 
         class MyPath:
             def __fspath__(self):
