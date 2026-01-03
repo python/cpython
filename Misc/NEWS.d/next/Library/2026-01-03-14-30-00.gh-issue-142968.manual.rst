@@ -1,0 +1,1 @@
+Add type checks to :func:`token.ISTERMINAL` and :func:`token.ISNONTERMINAL`.
