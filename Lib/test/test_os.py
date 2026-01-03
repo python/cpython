@@ -2282,7 +2282,7 @@ class ExecTests(unittest.TestCase):
         args = [sys.executable, '-c', "print({message!r})"]
         os.execve(args[0], args, MyEnv())
         """.format(message=message)
-
+        code = textwrap.dedent(code)
         # Use '__cleanenv' to signal to assert_python_ok() not
         # to do a copy of os.environ on its own.
         rc, out, _ = assert_python_ok('-c', code, __cleanenv=True)
