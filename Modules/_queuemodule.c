@@ -240,22 +240,6 @@ simplequeue_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 /*[clinic input]
-@critical_section
-_queue.SimpleQueue.__sizeof__ -> Py_ssize_t
-
-Returns size in memory, in bytes.
-[clinic start generated code]*/
-
-static Py_ssize_t
-_queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
-/*[clinic end generated code: output=58ce4e3bbc078fd4 input=a3a7f05c9616598f]*/
-{
-    Py_ssize_t res = sizeof(simplequeueobject);
-    res += self->buf.items_cap * sizeof(PyObject *);
-    return res;
-}
-
-/*[clinic input]
 @classmethod
 _queue.SimpleQueue.__new__ as simplequeue_new
 
@@ -514,6 +498,22 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
 /*[clinic end generated code: output=f9dcd9d0a90e121e input=e218623cb8c16a79]*/
 {
     return RingBuf_Len(&self->buf);
+}
+
+/*[clinic input]
+@critical_section
+_queue.SimpleQueue.__sizeof__ -> Py_ssize_t
+
+Returns size in memory, in bytes.
+[clinic start generated code]*/
+
+static Py_ssize_t
+_queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
+/*[clinic end generated code: output=58ce4e3bbc078fd4 input=a3a7f05c9616598f]*/
+{
+    Py_ssize_t res = sizeof(simplequeueobject);
+    res += self->buf.items_cap * sizeof(PyObject *);
+    return res;
 }
 
 static int

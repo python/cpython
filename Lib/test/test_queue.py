@@ -2,6 +2,7 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
+import struct
 import threading
 import time
 import unittest
@@ -9,7 +10,6 @@ import weakref
 from test.support import gc_collect, bigmemtest
 from test.support import import_helper
 from test.support import threading_helper
-import sys
 from test import support
 
 # queue module depends on threading primitives

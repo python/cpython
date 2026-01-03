@@ -9,36 +9,6 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 
-PyDoc_STRVAR(_queue_SimpleQueue___sizeof____doc__,
-"__sizeof__($self, /)\n"
-"--\n"
-"\n"
-"Returns size in memory, in bytes.");
-
-#define _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF    \
-    {"__sizeof__", (PyCFunction)_queue_SimpleQueue___sizeof__, METH_NOARGS, _queue_SimpleQueue___sizeof____doc__},
-
-static Py_ssize_t
-_queue_SimpleQueue___sizeof___impl(simplequeueobject *self);
-
-static PyObject *
-_queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    _return_value = _queue_SimpleQueue___sizeof___impl((simplequeueobject *)self);
-    Py_END_CRITICAL_SECTION();
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(simplequeue_new__doc__,
 "SimpleQueue()\n"
 "--\n"
@@ -388,4 +358,34 @@ _queue_SimpleQueue_qsize(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e6a05dc21a1e9fca input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_queue_SimpleQueue___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Returns size in memory, in bytes.");
+
+#define _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_queue_SimpleQueue___sizeof__, METH_NOARGS, _queue_SimpleQueue___sizeof____doc__},
+
+static Py_ssize_t
+_queue_SimpleQueue___sizeof___impl(simplequeueobject *self);
+
+static PyObject *
+_queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _return_value = _queue_SimpleQueue___sizeof___impl((simplequeueobject *)self);
+    Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=4af5d1b1ea31ac7d input=a9049054013a1b77]*/
