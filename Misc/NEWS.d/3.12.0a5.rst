@@ -45,7 +45,7 @@ Fix wrong lineno in exception message on :keyword:`continue` or
 .. date: 2023-01-28-20-31-42
 .. gh-issue: 101372
 .. nonce: 8BcpCC
-.. section: Core and Builtins
+.. section: Library
 
 Fix :func:`~unicodedata.is_normalized` to properly handle the UCD 3.2.0
 cases. Patch by Donghee Na.
@@ -138,7 +138,7 @@ embed the mask into the oparg.
 .. date: 2023-01-10-14-11-17
 .. gh-issue: 100892
 .. nonce: qfBVYI
-.. section: Core and Builtins
+.. section: Library
 
 Fix race while iterating over thread states in clearing
 :class:`threading.local`. Patch by Kumar Aditya.
@@ -181,7 +181,7 @@ regen-all``.
 .. bpo: 32780
 .. date: 2018-02-05-21-54-46
 .. nonce: Dtiz8z
-.. section: Core and Builtins
+.. section: Library
 
 Inter-field padding is now inserted into the PEP3118 format strings obtained
 from :class:`ctypes.Structure` objects, reflecting their true representation

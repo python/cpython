@@ -82,7 +82,7 @@ Grigoryev Semyon
 .. date: 2024-03-26-17-22-38
 .. gh-issue: 117266
 .. nonce: Kwh79O
-.. section: Core and Builtins
+.. section: Library
 
 Fix crashes for certain user-created subclasses of :class:`ast.AST`. Such
 classes are now expected to set the ``_field_types`` attribute.
@@ -92,7 +92,7 @@ classes are now expected to set the ``_field_types`` attribute.
 .. date: 2024-03-25-17-04-54
 .. gh-issue: 99108
 .. nonce: 8bjdO6
-.. section: Core and Builtins
+.. section: Library
 
 Updated the :mod:`hashlib` built-in `HACL\* project`_ C code from upstream
 that we use for many implementations when they are not present via OpenSSL
@@ -139,7 +139,7 @@ event.
 .. date: 2024-03-12-20-31-57
 .. gh-issue: 113964
 .. nonce: bJppzg
-.. section: Core and Builtins
+.. section: Library
 
 Starting new threads and process creation through :func:`os.fork` are now
 only prevented once all non-daemon threads exit.
@@ -224,7 +224,7 @@ When the collecting space becomes empty, the two spaces are swapped.
 .. date: 2023-10-14-00-05-17
 .. gh-issue: 109870
 .. nonce: oKpJ3P
-.. section: Core and Builtins
+.. section: Library
 
 Dataclasses now calls :func:`exec` once per dataclass, instead of once per
 method being added.  This can speed up dataclass creation by up to 20%.
@@ -234,7 +234,7 @@ method being added.  This can speed up dataclass creation by up to 20%.
 .. date: 2022-10-05-09-33-48
 .. gh-issue: 97901
 .. nonce: BOLluU
-.. section: Core and Builtins
+.. section: Library
 
 Mime type ``text/rtf`` is now supported by :mod:`mimetypes`.
 

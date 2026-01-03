@@ -60,7 +60,7 @@ for speed.
 .. date: 2024-05-03-18-01-26
 .. gh-issue: 95382
 .. nonce: 73FSEv
-.. section: Core and Builtins
+.. section: Library
 
 Improve performance of :func:`json.dumps` and :func:`json.dump` when using
 the argument *indent*. Depending on the data the encoding using
@@ -120,7 +120,7 @@ the GIL is always enabled.  In the free-threaded build, it may return
 .. date: 2024-05-02-15-57-07
 .. gh-issue: 118164
 .. nonce: AF6kwI
-.. section: Core and Builtins
+.. section: Library
 
 Break a loop between the Python implementation of the :mod:`decimal` module
 and the Python code for integer to string conversion. Also optimize integer

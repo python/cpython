@@ -100,7 +100,7 @@ Fix bug where an :exc:`ExceptionGroup` subclass can wrap a
 .. date: 2022-11-16-21-35-30
 .. gh-issue: 99547
 .. nonce: p_c_bp
-.. section: Core and Builtins
+.. section: Library
 
 Add a function to os.path to check if a path is a junction: isjunction. Add
 similar functionality to pathlib.Path as is_junction.
@@ -110,7 +110,7 @@ similar functionality to pathlib.Path as is_junction.
 .. date: 2022-11-12-01-39-57
 .. gh-issue: 99370
 .. nonce: _cu32j
-.. section: Core and Builtins
+.. section: Library
 
 Fix zip path for venv created from a non-installed python on POSIX
 platforms.
@@ -150,7 +150,7 @@ to specialize attribute accesses on types that haven't had
 .. date: 2022-11-05-22-26-35
 .. gh-issue: 99127
 .. nonce: Btk7ih
-.. section: Core and Builtins
+.. section: Library
 
 Allow some features of :mod:`syslog` to the main interpreter only. Patch by
 Donghee Na.
@@ -196,7 +196,7 @@ unpickling.
 .. bpo: 31718
 .. date: 2020-02-23-23-48-15
 .. nonce: sXko5e
-.. section: Core and Builtins
+.. section: Library
 
 Raise :exc:`ValueError` instead of :exc:`SystemError` when methods of
 uninitialized :class:`io.IncrementalNewlineDecoder` objects are called.
@@ -207,7 +207,7 @@ Patch by Oren Milman.
 .. bpo: 38031
 .. date: 2019-09-04-19-09-49
 .. nonce: Yq4L72
-.. section: Core and Builtins
+.. section: Library
 
 Fix a possible assertion failure in :class:`io.FileIO` when the opener
 returns an invalid file descriptor.

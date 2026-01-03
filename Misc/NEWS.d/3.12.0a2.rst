@@ -108,7 +108,7 @@ back to alternative names ("python<MAJOR>", "python<MAJOR>.<MINOR>").
 .. date: 2022-11-06-22-59-02
 .. gh-issue: 96055
 .. nonce: TmQuJn
-.. section: Core and Builtins
+.. section: Library
 
 Update :mod:`faulthandler` to emit an error message with the proper
 unexpected signal number. Patch by Donghee Na.
@@ -333,7 +333,7 @@ aware of this shim frame and the changes to the semantics of
 .. date: 2022-10-19-01-01-08
 .. gh-issue: 98415
 .. nonce: ZS2eWh
-.. section: Core and Builtins
+.. section: Library
 
 Fix detection of MAC addresses for :mod:`uuid` on certain OSs. Patch by
 Chaim Sanders
@@ -353,7 +353,7 @@ aggressively.
 .. date: 2022-10-15-23-15-14
 .. gh-issue: 92119
 .. nonce: PMSwwG
-.. section: Core and Builtins
+.. section: Library
 
 Print exception class name instead of its string representation when raising
 errors from :mod:`ctypes` calls.
@@ -395,7 +395,7 @@ longobject.c to speed up some operations.
 .. date: 2022-07-30-14-10-27
 .. gh-issue: 95389
 .. nonce: nSGEkG
-.. section: Core and Builtins
+.. section: Library
 
 Expose :const:`~socket.ETH_P_ALL` and some of the :ref:`ETHERTYPE_* constants
 <socket-ethernet-types>` in :mod:`socket`. Patch by Noam Cohen.
@@ -405,7 +405,7 @@ Expose :const:`~socket.ETH_P_ALL` and some of the :ref:`ETHERTYPE_* constants
 .. date: 2022-06-10-16-37-44
 .. gh-issue: 93696
 .. nonce: 65BI2R
-.. section: Core and Builtins
+.. section: Library
 
 Allow :mod:`pdb` to locate source for frozen modules in the standard
 library.
