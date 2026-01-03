@@ -622,100 +622,100 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_encoded_word = old_api_only(
 
-        test_get_encoded_word_missing_start_raises = C(
-                                    'abc',
-                    exception=(errors.HeaderParseError, '.*'),
+        missing_start_raises = C(
+            'abc',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_encoded_word_missing_end_raises = C(
-                                    '=?abc',
-                    exception=(errors.HeaderParseError, '.*'),
+        missing_end_raises = C(
+            '=?abc',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_encoded_word_missing_middle_raises = C(
-                                    '=?abc?=',
-                    exception=(errors.HeaderParseError, '.*'),
+        missing_middle_raises = C(
+            '=?abc?=',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_encoded_word_invalid_cte = C(
-                                    '=?utf-8?X?abc?=',
-                    exception=(errors.HeaderParseError, '.*'),
+        invalid_cte = C(
+            '=?utf-8?X?abc?=',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_encoded_word_valid_ew = C(
-                         '=?us-ascii?q?this_is_a_test?=  bird',
-                         'this is a test',
-                         'this is a test',
-                         [],
-                         '  bird')
-                         ,
+        valid_ew = C(
+            '=?us-ascii?q?this_is_a_test?=  bird',
+            'this is a test',
+            'this is a test',
+            [],
+            '  bird',
+            ),
 
-        test_get_encoded_word_internal_spaces = C(
-                         '=?us-ascii?q?this is a test?=  bird',
-                         'this is a test',
-                         'this is a test',
-                         [errors.InvalidHeaderDefect],
-                         '  bird')
-                         ,
+        internal_spaces = C(
+            '=?us-ascii?q?this is a test?=  bird',
+            'this is a test',
+            'this is a test',
+            [errors.InvalidHeaderDefect],
+            '  bird',
+            ),
 
-        test_get_encoded_word_gets_first = C(
-                         '=?us-ascii?q?first?=  =?utf-8?q?second?=',
-                         'first',
-                         'first',
-                         [],
-                         '  =?utf-8?q?second?=')
-                         ,
+        gets_first = C(
+            '=?us-ascii?q?first?=  =?utf-8?q?second?=',
+            'first',
+            'first',
+            [],
+            '  =?utf-8?q?second?=',
+            ),
 
-        test_get_encoded_word_gets_first_even_if_no_space = C(
-                         '=?us-ascii?q?first?==?utf-8?q?second?=',
-                         'first',
-                         'first',
-                         [errors.InvalidHeaderDefect],
-                         '=?utf-8?q?second?=')
-                         ,
+        gets_first_even_if_no_space = C(
+            '=?us-ascii?q?first?==?utf-8?q?second?=',
+            'first',
+            'first',
+            [errors.InvalidHeaderDefect],
+            '=?utf-8?q?second?=',
+            ),
 
-        test_get_encoded_word_sets_extra_attributes = C(
-                         '=?us-ascii*jive?q?first_second?=',
-                         'first second',
-                         'first second',
-                         [],
-                         '',
-                         lang='jive',
-                         ),
+        sets_extra_attributes = C(
+            '=?us-ascii*jive?q?first_second?=',
+            'first second',
+            'first second',
+            [],
+            '',
+            lang='jive',
+            ),
 
-        test_get_encoded_word_lang_default_is_blank = C(
-                         '=?us-ascii?q?first_second?=',
-                         'first second',
-                         'first second',
-                         [],
-                         '')
-                         ,
+        lang_default_is_blank = C(
+            '=?us-ascii?q?first_second?=',
+            'first second',
+            'first second',
+            [],
+            '',
+            ),
 
-        test_get_encoded_word_non_printable_defect = C(
-                         '=?us-ascii?q?first\x02second?=',
-                         'first\x02second',
-                         'first\x02second',
-                         [errors.NonPrintableDefect],
-                         '')
-                         ,
+        non_printable_defect = C(
+            '=?us-ascii?q?first\x02second?=',
+            'first\x02second',
+            'first\x02second',
+            [errors.NonPrintableDefect],
+            '',
+            ),
 
-        test_get_encoded_word_leading_internal_space = C(
-                        '=?us-ascii?q?=20foo?=',
-                        ' foo',
-                        ' foo',
-                        [],
-                        '')
-                        ,
+        leading_internal_space = C(
+            '=?us-ascii?q?=20foo?=',
+            ' foo',
+            ' foo',
+            [],
+            '',
+            ),
 
-        test_get_encoded_word_quopri_utf_escape_follows_cte = C(
+        quopri_utf_escape_follows_cte = C(
         # Issue 18044
-                        '=?utf-8?q?=C3=89ric?=',
-                        'Éric',
-                        'Éric',
-                        [],
-                        '',
-                        charset='utf-8',
-                        ),
+            '=?utf-8?q?=C3=89ric?=',
+            'Éric',
+            'Éric',
+            [],
+            '',
+            charset='utf-8',
+            ),
 
         )
 
