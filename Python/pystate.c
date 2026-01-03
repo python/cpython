@@ -1440,7 +1440,7 @@ decref_threadstate(_PyThreadStateImpl *tstate)
 }
 
 static inline void
-init_jit_metric(uint16_t *target, const char *env_name, uint16_t default_value,
+init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
                 long min_value, long max_value)
 {
     *target = default_value;
@@ -1539,20 +1539,20 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
     // Initialize interpreter policy from environment variables
-    init_jit_metric(&_tstate->policy.interp.jump_backward_initial_value,
-                    "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
-                    JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
-    init_jit_metric(&_tstate->policy.interp.jump_backward_initial_backoff,
-                    "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
-                    JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+    init_policy(&_tstate->policy.interp.jump_backward_initial_value,
+                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
+                JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
+    init_policy(&_tstate->policy.interp.jump_backward_initial_backoff,
+                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
+                JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
 #ifdef _Py_TIER2
     // Initialize JIT policy from environment variables
-    init_jit_metric(&_tstate->policy.jit.side_exit_initial_value,
-                    "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
-                    SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
-    init_jit_metric(&_tstate->policy.jit.side_exit_initial_backoff,
-                    "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
-                    SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+    init_policy(&_tstate->policy.jit.side_exit_initial_value,
+                "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
+                SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
+    init_policy(&_tstate->policy.jit.side_exit_initial_backoff,
+                "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
+                SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     _tstate->jit_tracer_state.code_buffer = NULL;
 #endif
     tstate->delete_later = NULL;

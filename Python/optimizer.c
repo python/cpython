@@ -1343,9 +1343,7 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
     cold->vm_data.chain_depth = chain_depth;
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].index = i;
-        executor->exits[i].temperature = initial_temperature_backoff_counter(
-            tstate->policy.jit.side_exit_initial_value,
-            tstate->policy.jit.side_exit_initial_backoff);
+        executor->exits[i].temperature = initial_temperature_backoff_counter(&tstate->policy);
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];

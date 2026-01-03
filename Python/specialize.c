@@ -49,9 +49,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     if (enable_counters) {
         PyThreadState *tstate = _PyThreadState_GET();
         _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-        jump_counter = initial_jump_backoff_counter(
-            tstate_impl->policy.interp.jump_backward_initial_value,
-            tstate_impl->policy.interp.jump_backward_initial_backoff);
+        jump_counter = initial_jump_backoff_counter(&tstate_impl->policy);
         adaptive_counter = adaptive_counter_warmup();
     }
     else {
