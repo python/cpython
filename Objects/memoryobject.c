@@ -3122,7 +3122,8 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
     }
     vv = VIEW_ADDR(v);
 
-    if (PyMemoryView_Check(w)) {
+    int w_is_mv = PyMemoryView_Check(w);
+    if (w_is_mv) {
         if (BASE_INACCESSIBLE(w)) {
             equal = (v == w);
             goto result;
@@ -3169,7 +3170,7 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
        reshaped during a mixed format comparison loop. */
     // See https://github.com/python/cpython/issues/142663.
     ((PyMemoryViewObject *)v)->exports++;
-    if (PyMemoryView_Check(w)) {
+    if (w_is_mv) {
         ((PyMemoryViewObject *)w)->exports++;
     }
 
@@ -3191,7 +3192,7 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
     }
 
     ((PyMemoryViewObject *)v)->exports--;
-    if (PyMemoryView_Check(w)) {
+    if (w_is_mv) {
         ((PyMemoryViewObject *)w)->exports--;
     }
 
