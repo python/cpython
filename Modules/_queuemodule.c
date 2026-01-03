@@ -254,6 +254,7 @@ _queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
     res += self->buf.items_cap * sizeof(PyObject *);
     return res;
 }
+
 /*[clinic input]
 @classmethod
 _queue.SimpleQueue.__new__ as simplequeue_new
