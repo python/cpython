@@ -1541,17 +1541,17 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
 #ifdef _Py_TIER2
-    // Initialize JIT metrics from environment variables
-    init_jit_metric(&_tstate->jit_metrics.jump_backward_initial_value,
+    // Initialize JIT policy from environment variables
+    init_jit_metric(&_tstate->policy.jit.jump_backward_initial_value,
                     "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
                     JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
-    init_jit_metric(&_tstate->jit_metrics.jump_backward_initial_backoff,
+    init_jit_metric(&_tstate->policy.jit.jump_backward_initial_backoff,
                     "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
                     JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
-    init_jit_metric(&_tstate->jit_metrics.side_exit_initial_value,
+    init_jit_metric(&_tstate->policy.jit.side_exit_initial_value,
                     "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
                     SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
-    init_jit_metric(&_tstate->jit_metrics.side_exit_initial_backoff,
+    init_jit_metric(&_tstate->policy.jit.side_exit_initial_backoff,
                     "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                     SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     _tstate->jit_tracer_state.code_buffer = NULL;
