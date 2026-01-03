@@ -2139,21 +2139,31 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
  * argument for where to start processing the arguments for packing, and a
  * character buffer for writing the packed string.  The caller must insure
  * that the buffer may contain the required length for packing the arguments.
- * 0 is returned on success, 1 is returned if there is an error.
+ * 0 is returned on success, -1 is returned if there is an error.
  *
  */
 static int
 s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 char* buf, _structmodulestate *state)
 {
-    formatcode *code;
+    formatcode *code, *frozen_codes;
     /* XXX(nnorwitz): why does i need to be a local?  can we use
        the offset parameter or do we need the wider width? */
-    Py_ssize_t i;
+    Py_ssize_t i, frozen_size = 1;
 
+    /* Take copy of soself->s_codes, as dunder methods of arguments (e.g.
+     __bool__ of __float__) could modify the struct object during packing. */
+    for (code = soself->s_codes; code->fmtdef != NULL; code++) {
+        frozen_size++;
+    }
+    frozen_codes = PyMem_Malloc(frozen_size * sizeof(formatcode));
+    if (!frozen_codes) {
+        goto err;
+    }
+    memcpy(frozen_codes, soself->s_codes, frozen_size * sizeof(formatcode));
     memset(buf, '\0', soself->s_size);
     i = offset;
-    for (code = soself->s_codes; code->fmtdef != NULL; code++) {
+    for (code = frozen_codes; code->fmtdef != NULL; code++) {
         const formatdef *e = code->fmtdef;
         char *res = buf + code->offset;
         Py_ssize_t j = code->repeat;
@@ -2167,7 +2177,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(state->StructError,
                                     "argument for 's' must be a bytes object");
-                    return -1;
+                    goto err;
                 }
                 if (isstring) {
                     n = PyBytes_GET_SIZE(v);
@@ -2189,7 +2199,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(state->StructError,
                                     "argument for 'p' must be a bytes object");
-                    return -1;
+                    goto err;
                 }
                 if (isstring) {
                     n = PyBytes_GET_SIZE(v);
@@ -2215,7 +2225,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
                         PyErr_SetString(state->StructError,
                                         "int too large to convert");
-                    return -1;
+                    goto err;
                 }
             }
             res += code->size;
@@ -2223,7 +2233,12 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
     }
 
     /* Success */
+    PyMem_Free(frozen_codes);
     return 0;
+err:
+    /* Failure */
+    PyMem_Free(frozen_codes);
+    return -1;
 }
 
 
@@ -2257,6 +2272,9 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
     char *buf = PyBytesWriter_GetData(writer);
+    /* Take copy of soself->s_size, as dunder methods of arguments (e.g.
+     __bool__ of __float__) could modify the struct object during packing. */
+    Py_ssize_t frozen_size = soself->s_size;
 
     /* Call the guts */
     if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
@@ -2264,7 +2282,7 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
-    return PyBytesWriter_FinishWithSize(writer, soself->s_size);
+    return PyBytesWriter_FinishWithSize(writer, frozen_size);
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,

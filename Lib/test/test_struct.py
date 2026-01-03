@@ -817,6 +817,17 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             results = executor.map(exec, [code] * 5)
             self.assertListEqual(list(results), [None] * 5)
 
+    def test_Struct_object_mutation_via_dunders(self):
+        S = struct.Struct('?I')
+
+        class Evil():
+            def __bool__(self):
+                # This rebuilds format codes during S.pack().
+                S.__init__('I')
+                return True
+
+        self.assertEqual(S.pack(Evil(), 1), struct.Struct('?I').pack(True, 1))
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
