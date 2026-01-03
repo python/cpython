@@ -66,7 +66,6 @@ typedef struct _PyInterpreterPolicy {
 } _PyInterpreterPolicy;
 
 typedef struct _PyPolicy {
-
     _PyJitPolicy jit;
     _PyInterpreterPolicy interp;
 } _PyPolicy;
