@@ -1584,12 +1584,12 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
 
         class ZI(self.klass):
             pass
-        # Must set AFTER class creation to override __init_subclass__
+        # Class attribute must be set after class creation
+        # to override zoneinfo.Zoneinfo.__init_subclass__.
         ZI._weak_cache = Cache()
 
         with self.assertRaises(TypeError) as te:
             ZI("America/Los_Angeles")
-        # Heap type objects' tp_name should just be the type name, i.e. ZI
         self.assertEqual(str(te.exception), "expected ZI, got int")
 
     def test_inconsistent_weak_cache_setdefault(self):
@@ -1601,12 +1601,12 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
 
         class ZI(self.klass):
             pass
-        # Must set AFTER class creation to override __init_subclass__
+        # Class attribute must be set after class creation
+        # to override zoneinfo.Zoneinfo.__init_subclass__.
         ZI._weak_cache = Cache()
 
         with self.assertRaises(TypeError) as te:
             ZI("America/Los_Angeles")
-        # Heap type objects' tp_name should just be the type name, i.e. ZI
         self.assertEqual(str(te.exception), "expected ZI, got int")
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
