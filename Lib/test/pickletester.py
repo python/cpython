@@ -4090,6 +4090,35 @@ class AbstractPickleTests:
         # 2-D, non-contiguous
         check_array(arr[::2])
 
+    def test_concurrent_mutation_in_buffer_with_bytearray(self):
+        def factory():
+            s = b"a" * 16
+            return bytearray(s), s
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
+
+    def test_concurrent_mutation_in_buffer_with_memoryview(self):
+        def factory():
+            obj = memoryview(b"a" * 32)[10:26]
+            sub = b"a" * len(obj)
+            return obj, sub
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
+
+    def do_test_concurrent_mutation_in_buffer_callback(self, factory):
+        # See: https://github.com/python/cpython/issues/143308.
+        class R:
+            def __bool__(self):
+                buf.release()
+                return True
+
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            obj, sub = factory()
+            buf = pickle.PickleBuffer(obj)
+            buffer_callback = lambda _: R()
+
+            with self.subTest(proto=proto, obj=obj, sub=sub):
+                res = self.dumps(buf, proto, buffer_callback=buffer_callback)
+                self.assertIn(sub, res)
+
     def test_evil_class_mutating_dict(self):
         # https://github.com/python/cpython/issues/92930
         from random import getrandbits
