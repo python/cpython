@@ -1716,7 +1716,7 @@ Subcommands
    :class:`ArgumentParser` supports the creation of such subcommands with the
    :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
-   has a single method, :meth:`~_SubParsersAction.add_parser`:
+   has a single method:
 
 .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
 
