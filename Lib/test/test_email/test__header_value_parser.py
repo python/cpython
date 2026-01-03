@@ -612,6 +612,17 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_encoded_word
 
+    @params
+    def test_get_encoded_word(self, s, *args, charset='us-ascii', lang='', **kw):
+        res = self._test_parse(parser.get_encoded_word, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertEqual(res.charset, charset)
+        self.assertEqual(res.lang, lang)
+
+    params_test_get_encoded_word = old_api_only(
+        )
+
     def test_get_encoded_word_missing_start_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_encoded_word('abc')
