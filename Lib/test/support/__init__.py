@@ -1,7 +1,5 @@
 """Supporting definitions for the Python regression tests."""
 
-from __future__ import annotations  # for test_xpickle
-
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
@@ -271,7 +269,7 @@ def _is_gui_available():
             reason = "unable to detect macOS launchd job manager"
         else:
             if managername != "Aqua":
-                reason = f"{managername=} -- can only run in a macOS GUI session"
+                reason = f"{managername!r} -- can only run in a macOS GUI session"
 
     # check on every platform whether tkinter can actually do anything
     if not reason:
@@ -803,7 +801,7 @@ def sortdict(dict):
     return "{%s}" % withcommas
 
 
-def run_code(code: str, extra_names: dict[str, object] | None = None) -> dict[str, object]:
+def run_code(code: str, extra_names: 'dict[str, object] | None' = None) -> 'dict[str, object]':
     """Run a piece of code after dedenting it, and return its global namespace."""
     ns = {}
     if extra_names:
@@ -3053,7 +3051,7 @@ def force_not_colorized_test_class(cls):
     return cls
 
 
-def make_clean_env() -> dict[str, str]:
+def make_clean_env() -> 'dict[str, str]':
     clean_env = os.environ.copy()
     for k in clean_env.copy():
         if k.startswith("PYTHON"):

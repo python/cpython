@@ -3239,7 +3239,7 @@ class AbstractPickleTests:
                         self.assertIs(u, t)
 
     def test_builtin_functions(self):
-        new_names = {'aiter': (3, 10), 'anext': (3, 10)}
+        new_names = {'breakpoint': (3, 7), 'aiter': (3, 10), 'anext': (3, 10)}
         for t in builtins.__dict__.values():
             if isinstance(t, types.BuiltinFunctionType):
                 if t.__name__ in new_names and self.py_version < new_names[t.__name__]:
@@ -3259,6 +3259,7 @@ class AbstractPickleTests:
             else:
                 self.assertEqual(count_opcode(pickle.PROTO, pickled), 0)
 
+    def test_bad_proto(self):
         oob = protocols[-1] + 1     # a future protocol
         build_none = pickle.NONE + pickle.STOP
         badpickle = pickle.PROTO + bytes([oob]) + build_none

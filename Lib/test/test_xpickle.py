@@ -231,6 +231,9 @@ skip_tests = {
     (3, 7): [
         # This version does not support buffers
         'test_in_band_buffers',
+
+        # No protocol validation in this version
+        'test_bad_proto',
     ],
 }
 
