@@ -25,9 +25,9 @@ typedef struct {
     uint8_t opcode;
     uint8_t oparg;
     uint8_t valid;
-    uint8_t linked;
     uint8_t chain_depth;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
     bool warm;
+    uint8_t pending_deletion;
     int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
@@ -55,11 +55,6 @@ typedef struct _PyExecutorObject {
     _PyExitData exits[1];
 } _PyExecutorObject;
 
-/* If pending deletion list gets large enough, then scan,
- * and free any executors that aren't executing
- * i.e. any that aren't a thread's current_executor. */
-#define EXECUTOR_DELETE_LIST_MAX 100
-
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
@@ -80,7 +75,6 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)
-#  define _Py_Executors_InvalidateCold(A) ((void)0)
 
 #endif
 
