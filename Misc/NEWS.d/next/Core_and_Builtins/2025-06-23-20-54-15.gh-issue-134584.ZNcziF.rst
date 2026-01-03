@@ -1,0 +1,1 @@
+Eliminate redundant refcounting from ``_CALL_TYPE_1``. Patch by Tomas Roun

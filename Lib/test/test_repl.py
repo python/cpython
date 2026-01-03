@@ -385,6 +385,12 @@ class TestAsyncioREPL(unittest.TestCase):
         expected = "toplevel contextvar test: ok"
         self.assertIn(expected, output, expected)
 
+    def test_quiet_mode(self):
+        p = spawn_repl("-q", "-m", "asyncio", custom=True)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual(output[:3], ">>>")
+
     def test_pythonstartup_success(self):
         startup_code = "import sys\nprint('notice from pythonstartup in asyncio repl', file=sys.stderr)"
         startup_env = self.enterContext(new_startup_env(code=startup_code, histfile=".asyncio_history"))
@@ -433,7 +439,6 @@ class TestAsyncioREPL(unittest.TestCase):
             'exiting asyncio REPL...',
         ]
         self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
-
 
 if __name__ == "__main__":
     unittest.main()

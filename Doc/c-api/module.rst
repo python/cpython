@@ -571,7 +571,7 @@ A module's token -- and the *your_token* value to use in the above code -- is:
   of that slot;
 - For modules created from an ``PyModExport_*``
   :ref:`export hook <extension-export-hook>`: the slots array that the export
-  hook returned (unless overriden with :c:macro:`Py_mod_token`).
+  hook returned (unless overridden with :c:macro:`Py_mod_token`).
 
 .. c:macro:: Py_mod_token
 
