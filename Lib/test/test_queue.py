@@ -1033,15 +1033,13 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue.SimpleQueue)
 
-    def test_simplequeue_sizeof_reflects_buffer_growth(self):
+    def test_simplequeue_sizeof(self):
         q = self.type2test()
-        before = sys.getsizeof(q)
+        basesize = support.calcobjsize('?nnPnnP')
+        support.check_sizeof(self, q, basesize + struct.calcsize(8 * 'P'))
         for _ in range(1000):
             q.put(object())
-        after = sys.getsizeof(q)
-        self.assertGreater(after, before)
-        ptr = support.calcobjsize("P") - support.calcobjsize("")
-        self.assertEqual((after - before) % ptr, 0)
+        support.check_sizeof(self, q, basesize + struct.calcsize(1024 * 'P'))
 
     def test_reentrancy(self):
         # bpo-14976: put() may be called reentrantly in an asynchronous
