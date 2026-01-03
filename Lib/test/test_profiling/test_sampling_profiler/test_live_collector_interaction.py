@@ -383,10 +383,9 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def test_finished_state_freezes_time(self):
         """Test that time displays are frozen when finished."""
-        import time as time_module
 
         # Set up collector with known start time
-        self.collector.start_time = time_module.perf_counter() - 10.0  # 10 seconds ago
+        self.collector.start_time = time.perf_counter() - 10.0  # 10 seconds ago
 
         # Mark as finished - this should freeze the time
         self.collector.mark_finished()
@@ -396,7 +395,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         frozen_time_display = self.collector.current_time_display
 
         # Wait a bit to ensure time would advance
-        time_module.sleep(0.1)
+        time.sleep(0.1)
 
         # Time should remain frozen
         self.assertEqual(self.collector.elapsed_time, frozen_elapsed)
@@ -1215,7 +1214,6 @@ class TestLiveCollectorNewFeatures(unittest.TestCase):
 
     def test_time_display_fix_when_finished(self):
         """Test that time display shows correct frozen time when finished."""
-        import time as time_module
 
         # Mark as finished to freeze time
         self.collector.mark_finished()
@@ -1228,7 +1226,7 @@ class TestLiveCollectorNewFeatures(unittest.TestCase):
         frozen_time = self.collector.current_time_display
 
         # Wait a bit
-        time_module.sleep(0.1)
+        time.sleep(0.1)
 
         # Should still show the same frozen time (not jump to wrong time)
         self.assertEqual(self.collector.current_time_display, frozen_time)
