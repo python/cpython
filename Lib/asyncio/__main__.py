@@ -96,7 +96,7 @@ class REPLThread(threading.Thread):
 
                 console.write(banner)
 
-            if startup_path := os.getenv("PYTHONSTARTUP"):
+            if not sys.flags.isolated and (startup_path := os.getenv("PYTHONSTARTUP")):
                 sys.audit("cpython.run_startup", startup_path)
 
                 import tokenize
