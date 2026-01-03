@@ -1,5 +1,2 @@
-paragraph. # Don't start with "- Issue #<n>: " or "- gh-issue-<n>: " or that
-sort of stuff.
-###########################################################################
-Factor out tracing and optimization heuristics into a single object. Patch
-by Donghee Na.
+Factor out tracing and optimization heuristics into a single object.
+Patch by Donghee Na.
