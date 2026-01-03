@@ -12,11 +12,11 @@ import sys
 # pickletester requires some test.support functions (such as os_helper)
 # which are not available in versions below Python 3.10.
 test_mod_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                             '__init__.py'))
-spec = importlib.util.spec_from_file_location('test', test_mod_path)
+                                             'picklecommon.py'))
+spec = importlib.util.spec_from_file_location('test.picklecommon', test_mod_path)
 test_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(test_module)
-sys.modules['test'] = test_module
+sys.modules['test.picklecommon'] = test_module
 
 
 # To unpickle certain objects, the structure of the class needs to be known.

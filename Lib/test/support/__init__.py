@@ -3,6 +3,7 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
+import annotationlib
 import contextlib
 import functools
 import inspect
@@ -269,7 +270,7 @@ def _is_gui_available():
             reason = "unable to detect macOS launchd job manager"
         else:
             if managername != "Aqua":
-                reason = f"{managername!r} -- can only run in a macOS GUI session"
+                reason = f"{managername=} -- can only run in a macOS GUI session"
 
     # check on every platform whether tkinter can actually do anything
     if not reason:
@@ -644,7 +645,7 @@ def requires_working_socket(*, module=False):
         return unittest.skipUnless(has_socket_support, msg)
 
 
-@functools.lru_cache()
+@functools.cache
 def has_remote_subprocess_debugging():
     """Check if we have permissions to debug subprocesses remotely.
 
@@ -801,7 +802,7 @@ def sortdict(dict):
     return "{%s}" % withcommas
 
 
-def run_code(code: str, extra_names: 'dict[str, object] | None' = None) -> 'dict[str, object]':
+def run_code(code: str, extra_names: dict[str, object] | None = None) -> dict[str, object]:
     """Run a piece of code after dedenting it, and return its global namespace."""
     ns = {}
     if extra_names:
@@ -2544,7 +2545,7 @@ def requires_venv_with_pip():
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
 
 
-@functools.lru_cache()
+@functools.cache
 def _findwheel(pkgname):
     """Try to find a wheel with the package specified as pkgname.
 
@@ -2788,10 +2789,7 @@ skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-try:
-    _JIT_ENABLED = sys._jit.is_enabled()
-except AttributeError:
-    _JIT_ENABLED = False
+_JIT_ENABLED = sys._jit.is_enabled()
 requires_jit_enabled = unittest.skipUnless(_JIT_ENABLED, "requires JIT enabled")
 requires_jit_disabled = unittest.skipIf(_JIT_ENABLED, "requires JIT disabled")
 
@@ -2998,8 +2996,10 @@ def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
 
-    with swap_attr(_colorize, "can_colorize", lambda *, file=None: color), \
-         EnvironmentVarGuard() as env:
+    with (
+        swap_attr(_colorize, "can_colorize", lambda *, file=None: color),
+        EnvironmentVarGuard() as env,
+    ):
         env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
         env.set("FORCE_COLOR" if color else "NO_COLOR", "1")
         yield
@@ -3051,7 +3051,7 @@ def force_not_colorized_test_class(cls):
     return cls
 
 
-def make_clean_env() -> 'dict[str, str]':
+def make_clean_env() -> dict[str, str]:
     clean_env = os.environ.copy()
     for k in clean_env.copy():
         if k.startswith("PYTHON"):
@@ -3218,11 +3218,9 @@ class EqualToForwardRef:
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
         self.__owner__ = owner
-        import annotationlib
-        self._ForwardRef = annotationlib.ForwardRef
 
     def __eq__(self, other):
-        if not isinstance(other, (EqualToForwardRef, self._ForwardRef)):
+        if not isinstance(other, (EqualToForwardRef, annotationlib.ForwardRef)):
             return NotImplemented
         return (
             self.__forward_arg__ == other.__forward_arg__

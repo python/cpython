@@ -190,11 +190,8 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
     test_c_methods = None
     test_py_methods = None
     test_nested_names = None
-
-    test_recursive_dict_key = None
     test_recursive_nested_names = None
     test_recursive_nested_names2 = None
-    test_recursive_set = None
 
     # Attribute lookup problems are expected, disable the test
     test_dynamic_class = None
