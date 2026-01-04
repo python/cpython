@@ -69,13 +69,16 @@ spawn_asyncio_repl = partial(spawn_repl, "-m", "asyncio", custom=True)
 
 
 @contextmanager
-def new_startup_env(*, code: str, histfile: str = ".pythonhist"):
+def new_pythonstartup_env(*, code: str, histfile: str = ".pythonhist"):
     """Create environment variables for a PYTHONSTARTUP script in a temporary directory."""
     with os_helper.temp_dir() as tmpdir:
         filename = os.path.join(tmpdir, "pythonstartup.py")
         with open(filename, "w") as f:
             f.write('\n'.join(code.splitlines()))
-        yield {"PYTHONSTARTUP": filename, "PYTHON_HISTORY": os.path.join(tmpdir, histfile)}
+        yield {
+            "PYTHONSTARTUP": filename,
+            "PYTHON_HISTORY": os.path.join(tmpdir, histfile)
+        }
 
 
 def run_on_interactive_mode(source):
@@ -369,7 +372,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
         # errors based on https://github.com/python/cpython/issues/137576
         # case 1: error in user input, but PYTHONSTARTUP is fine
         startup_code = "print('notice from pythonstartup')"
-        startup_env = self.enterContext(new_startup_env(code=startup_code))
+        startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
+
         # -q to suppress noise
         p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
         p.stdin.write("1/0")
@@ -389,7 +393,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
     def test_pythonstartup_failure(self):
         # case 2: error in PYTHONSTARTUP triggered by user input
         startup_code = "def foo():\n    1/0\n"
-        startup_env = self.enterContext(new_startup_env(code=startup_code))
+        startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
+
         # -q to suppress noise
         p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
         p.stdin.write("foo()")
@@ -479,7 +484,9 @@ class TestAsyncioREPL(unittest.TestCase):
 
     def test_pythonstartup_success(self):
         startup_code = "import sys\nprint('notice from pythonstartup in asyncio repl', file=sys.stderr)"
-        startup_env = self.enterContext(new_startup_env(code=startup_code, histfile=".asyncio_history"))
+        startup_env = self.enterContext(
+            new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
+
         p = spawn_asyncio_repl(env=os.environ | startup_env, stderr=subprocess.PIPE, isolated=False)
         p.stdin.write("1/0")
         kill_python(p)
@@ -503,7 +510,9 @@ class TestAsyncioREPL(unittest.TestCase):
 
     def test_pythonstartup_failure(self):
         startup_code = "def foo():\n    1/0\n"
-        startup_env = self.enterContext(new_startup_env(code=startup_code, histfile=".asyncio_history"))
+        startup_env = self.enterContext(
+            new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
+
         p = spawn_asyncio_repl(env=os.environ | startup_env, stderr=subprocess.PIPE, isolated=False)
         p.stdin.write("foo()")
         kill_python(p)
