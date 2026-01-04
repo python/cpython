@@ -142,9 +142,9 @@ extern "C" {
 #define BINARY_OP_SUBSCR_GETITEM               136
 #define BINARY_OP_SUBSCR_LIST_INT              137
 #define BINARY_OP_SUBSCR_LIST_SLICE            138
-#define BINARY_OP_SUBSCR_NCSTR_INT             139
-#define BINARY_OP_SUBSCR_STR_INT               140
-#define BINARY_OP_SUBSCR_TUPLE_INT             141
+#define BINARY_OP_SUBSCR_STR_INT               139
+#define BINARY_OP_SUBSCR_TUPLE_INT             140
+#define BINARY_OP_SUBSCR_USTR_INT              141
 #define BINARY_OP_SUBTRACT_FLOAT               142
 #define BINARY_OP_SUBTRACT_INT                 143
 #define CALL_ALLOC_AND_ENTER_INIT              144

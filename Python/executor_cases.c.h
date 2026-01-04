@@ -5344,7 +5344,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_NCSTR_INT_r23: {
+        case _BINARY_OP_SUBSCR_USTR_INT_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef sub_st;

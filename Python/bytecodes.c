@@ -594,7 +594,7 @@ dummy_func(
             BINARY_OP_SUBSCR_LIST_SLICE,
             BINARY_OP_SUBSCR_TUPLE_INT,
             BINARY_OP_SUBSCR_STR_INT,
-            BINARY_OP_SUBSCR_NCSTR_INT,
+            BINARY_OP_SUBSCR_USTR_INT,
             BINARY_OP_SUBSCR_DICT,
             BINARY_OP_SUBSCR_GETITEM,
             BINARY_OP_INPLACE_ADD_UNICODE,
@@ -964,10 +964,10 @@ dummy_func(
             res = PyStackRef_FromPyObjectBorrow(res_o);
         }
 
-        macro(BINARY_OP_SUBSCR_NCSTR_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_SUBSCR_NCSTR_INT + _POP_TOP_INT + POP_TOP;
+        macro(BINARY_OP_SUBSCR_USTR_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_SUBSCR_USTR_INT + _POP_TOP_INT + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_NCSTR_INT, (str_st, sub_st -- res, s, i)) {
+        op(_BINARY_OP_SUBSCR_USTR_INT, (str_st, sub_st -- res, s, i)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
 

@@ -2247,7 +2247,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                         specialize(instr, BINARY_OP_SUBSCR_STR_INT);
                         return;
                     } else {
-                        specialize(instr, BINARY_OP_SUBSCR_NCSTR_INT);
+                        specialize(instr, BINARY_OP_SUBSCR_USTR_INT);
                         return;
                     }
                 }

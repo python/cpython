@@ -787,7 +787,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_NCSTR_INT: {
+        case _BINARY_OP_SUBSCR_USTR_INT: {
             JitOptRef res;
             JitOptRef s;
             JitOptRef i;
