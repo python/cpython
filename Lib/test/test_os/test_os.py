@@ -2660,8 +2660,7 @@ class ExecTests(unittest.TestCase):
         with os_helper.EnvironmentVarGuard() as env:
             env.clear()
             env.update(minimal)
-            rc, out, _ = assert_python_ok('-c', code, **env)
-        self.assertEqual(rc, 0)
+            _, out, _ = assert_python_ok('-c', code, **env)
         self.assertIn(bytes(message, "ascii"), out)
 
     @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
