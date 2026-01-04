@@ -202,9 +202,14 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
     }
 
     Py_buffer buf;
+    /* Issue #143378: Prevent re-entrant mutation during PyObject_GetBuffer() */
+    self->exports++;
     if (PyObject_GetBuffer(b, &buf, PyBUF_CONTIG_RO) < 0) {
+        self->exports--;
         return -1;
     }
+    self->exports--;
+
     Py_ssize_t len = buf.len;
     if (len == 0) {
         goto done;

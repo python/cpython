@@ -856,6 +856,37 @@ class CBytesIOTest(PyBytesIOTest):
         memio = self.ioclass(ba)
         self.assertEqual(sys.getrefcount(ba), old_rc)
 
+    @support.cpython_only
+    def test_uaf_buffer_write(self):
+        # Prevent use-after-free when write() triggers a re-entrant call that
+        # closes or mutates the BytesIO object.
+        # See: https://github.com/python/cpython/issues/143378
+        class TBuf:
+            def __init__(self, bio):
+                self.bio = bio
+            def __buffer__(self, flags):
+                self.bio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.write, TBuf(memio))
+
+    @support.cpython_only
+    def test_uaf_buffer_writelines(self):
+        # Prevent use-after-free when writelines() triggers a re-entrant call that
+        # closes or mutates the BytesIO object.
+        # See: https://github.com/python/cpython/issues/143378
+        class TBuf:
+            def __init__(self, bio):
+                self.bio = bio
+            def __buffer__(self, flags):
+                self.bio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.writelines, [TBuf(memio)])
+
+
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
     UnsupportedOperation = io.UnsupportedOperation

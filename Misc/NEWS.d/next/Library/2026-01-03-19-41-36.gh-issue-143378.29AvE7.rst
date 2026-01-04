@@ -1,0 +1,2 @@
+Fix use-after-free crashes when a :class:`_io.BytesIO` object is mutated during
+buffer writes via :meth:`write` or :meth:`writelines`.
