@@ -331,4 +331,3 @@ class PyMethodsTest:
 class Subclass(tuple):
     class Nested(str):
         pass
-
