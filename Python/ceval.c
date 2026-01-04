@@ -1071,6 +1071,65 @@ cleanup:
     return res;
 }
 
+PyObject*
+_Py_VectorCallInstrumentation_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef* arguments,
+    int total_args,
+    _PyStackRef kwnames,
+    bool call_instrumentation,
+    _PyInterpreterFrame* frame,
+    _Py_CODEUNIT* this_instr,
+    PyThreadState* tstate)
+{
+    PyObject* res;
+    STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
+    if (CONVERSION_FAILED(args_o)) {
+        res = NULL;
+        goto cleanup;
+    }
+    PyObject* callable_o = PyStackRef_AsPyObjectBorrow(callable);
+    PyObject* kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
+    int positional_args = total_args;
+    if (kwnames_o != NULL) {
+        positional_args -= (int)PyTuple_GET_SIZE(kwnames_o);
+    }
+    res = PyObject_Vectorcall(
+        callable_o, args_o,
+        positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames_o);
+    STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+    if (call_instrumentation) {
+        PyObject* arg = total_args == 0 ?
+            &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(arguments[0]);
+        if (res == NULL) {
+            _Py_call_instrumentation_exc2(
+                tstate, PY_MONITORING_EVENT_C_RAISE,
+                frame, this_instr, callable_o, arg);
+        }
+        else {
+            int err = _Py_call_instrumentation_2args(
+                tstate, PY_MONITORING_EVENT_C_RETURN,
+                frame, this_instr, callable_o, arg);
+            if (err < 0) {
+                Py_CLEAR(res);
+            }
+        }
+    }
+    assert((res != NULL) ^ (PyErr_Occurred() != NULL));
+cleanup:
+    PyStackRef_XCLOSE(kwnames);
+    // arguments is a pointer into the GC visible stack,
+    // so we must NULL out values as we clear them.
+    for (int i = total_args - 1; i >= 0; i--) {
+        _PyStackRef tmp = arguments[i];
+        arguments[i] = PyStackRef_NULL;
+        PyStackRef_CLOSE(tmp);
+    }
+    PyStackRef_CLOSE(callable);
+    return res;
+}
+
 PyObject *
 _Py_BuiltinCallFast_StackRefSteal(
     _PyStackRef callable,
@@ -1214,7 +1273,7 @@ _Py_CallBuiltinClass_StackRefSteal(
         goto cleanup;
     }
     PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(callable);
-    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
+    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
 cleanup:
@@ -1414,7 +1473,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
             _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter();
+            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
         }
     }
     else {
@@ -1424,7 +1483,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
             exit->temperature = restart_backoff_counter(exit->temperature);
         }
         else {
-            exit->temperature = initial_temperature_backoff_counter();
+            exit->temperature = initial_temperature_backoff_counter(&_tstate->policy);
         }
     }
     _PyJit_FinalizeTracing(tstate);
@@ -1601,7 +1660,7 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitTrampoline;
+_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitShim;
 #else
 _PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
 #endif
@@ -1617,7 +1676,7 @@ _PyTier2Interpreter(
     const _PyUOpInstruction *next_uop;
     int oparg;
     /* Set up "jit" state after entry from tier 1.
-     * This mimics what the jit trampoline function does. */
+     * This mimics what the jit shim function does. */
     tstate->jit_exit = NULL;
     _PyStackRef _tos_cache0 = PyStackRef_ZERO_BITS;
     _PyStackRef _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -2304,7 +2363,8 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
-    gen->gi_frame_state = FRAME_CLEARED;
+    FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_CLEARED);
+    ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_RETURN;
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
@@ -3979,15 +4039,13 @@ _PyEval_GetAwaitable(PyObject *iterable, int oparg)
             Py_TYPE(iterable), oparg);
     }
     else if (PyCoro_CheckExact(iter)) {
-        PyObject *yf = _PyGen_yf((PyGenObject*)iter);
-        if (yf != NULL) {
-            /* `iter` is a coroutine object that is being
-                awaited, `yf` is a pointer to the current awaitable
-                being awaited on. */
-            Py_DECREF(yf);
+        PyCoroObject *coro = (PyCoroObject *)iter;
+        int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(coro->cr_frame_state);
+        if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
+            /* `iter` is a coroutine object that is being awaited. */
             Py_CLEAR(iter);
             _PyErr_SetString(PyThreadState_GET(), PyExc_RuntimeError,
-                                "coroutine is being awaited already");
+                             "coroutine is being awaited already");
         }
     }
     return iter;

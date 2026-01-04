@@ -53,7 +53,7 @@ counts**, not direct measurements. Tachyon counts how many times each function
 appears in the collected samples, then multiplies by the sampling interval to
 estimate time.
 
-For example, with a 100 microsecond sampling interval over a 10-second profile,
+For example, with a 10 kHz sampling rate over a 10-second profile,
 Tachyon collects approximately 100,000 samples. If a function appears in 5,000
 samples (5% of total), Tachyon estimates it consumed 5% of the 10-second
 duration, or about 500 milliseconds. This is a statistical estimate, not a
@@ -142,7 +142,7 @@ Use live mode for real-time monitoring (press ``q`` to quit)::
 
 Profile for 60 seconds with a faster sampling rate::
 
-   python -m profiling.sampling run -d 60 -i 50 script.py
+   python -m profiling.sampling run -d 60 -r 20khz script.py
 
 Generate a line-by-line heatmap::
 
@@ -200,6 +200,36 @@ On most systems, attaching to another process requires appropriate permissions.
 See :ref:`profiling-permissions` for platform-specific requirements.
 
 
+.. _replay-command:
+
+The ``replay`` command
+----------------------
+
+The ``replay`` command converts binary profile files to other output formats::
+
+   python -m profiling.sampling replay profile.bin
+   python -m profiling.sampling replay --flamegraph -o profile.html profile.bin
+
+This command is useful when you have captured profiling data in binary format
+and want to analyze it later or convert it to a visualization format. Binary
+profiles can be replayed multiple times to different formats without
+re-profiling.
+
+::
+
+   # Convert binary to pstats (default, prints to stdout)
+   python -m profiling.sampling replay profile.bin
+
+   # Convert binary to flame graph
+   python -m profiling.sampling replay --flamegraph -o output.html profile.bin
+
+   # Convert binary to gecko format for Firefox Profiler
+   python -m profiling.sampling replay --gecko -o profile.json profile.bin
+
+   # Convert binary to heatmap
+   python -m profiling.sampling replay --heatmap -o my_heatmap profile.bin
+
+
 Profiling in production
 -----------------------
 
@@ -211,8 +241,8 @@ is unaware it is being profiled.
 When profiling production systems, keep these guidelines in mind:
 
 Start with shorter durations (10-30 seconds) to get quick results, then extend
-if you need more statistical accuracy. The default 10-second duration is usually
-sufficient to identify major hotspots.
+if you need more statistical accuracy. By default, profiling runs until the
+target process completes, which is usually sufficient to identify major hotspots.
 
 If possible, profile during representative load rather than peak traffic.
 Profiles collected during normal operation are easier to interpret than those
@@ -296,10 +326,10 @@ The default configuration works well for most use cases:
 
    * - Option
      - Default
-   * - Default for ``--interval`` / ``-i``
-     - 100 µs between samples (~10,000 samples/sec)
+   * - Default for ``--sampling-rate`` / ``-r``
+     - 1 kHz
    * - Default for ``--duration`` / ``-d``
-     - 10 seconds
+     - Run to completion
    * - Default for ``--all-threads`` / ``-a``
      - Main thread only
    * - Default for ``--native``
@@ -312,35 +342,35 @@ The default configuration works well for most use cases:
      - Disabled
    * - Default for ``--subprocesses``
      - Disabled
+   * - Default for ``--blocking``
+     - Disabled (non-blocking sampling)
 
 
-Sampling interval and duration
-------------------------------
+Sampling rate and duration
+--------------------------
 
-The two most fundamental parameters are the sampling interval and duration.
+The two most fundamental parameters are the sampling rate and duration.
 Together, these determine how many samples will be collected during a profiling
 session.
 
-The :option:`--interval` option (:option:`-i`) sets the time between samples in
-microseconds. The default is 100 microseconds, which produces approximately
-10,000 samples per second::
+The :option:`--sampling-rate` option (:option:`-r`) sets how frequently samples
+are collected. The default is 1 kHz (10,000 samples per second)::
 
-   python -m profiling.sampling run -i 50 script.py
+   python -m profiling.sampling run -r 20khz script.py
 
-Lower intervals capture more samples and provide finer-grained data at the
-cost of slightly higher profiler CPU usage. Higher intervals reduce profiler
+Higher rates capture more samples and provide finer-grained data at the
+cost of slightly higher profiler CPU usage. Lower rates reduce profiler
 overhead but may miss short-lived functions. For most applications, the
-default interval provides a good balance between accuracy and overhead.
+default rate provides a good balance between accuracy and overhead.
 
-The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. The
-default is 10 seconds::
+The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. By
+default, profiling continues until the target process exits or is interrupted::
 
    python -m profiling.sampling run -d 60 script.py
 
-Longer durations collect more samples and produce more statistically reliable
-results, especially for code paths that execute infrequently. When profiling
-a program that runs for a fixed time, you may want to set the duration to
-match or exceed the expected runtime.
+Specifying a duration is useful when attaching to long-running processes or when
+you want to limit profiling to a specific time window. When profiling a script,
+the default behavior of running to completion is usually what you want.
 
 
 Thread selection
@@ -360,6 +390,50 @@ identify threads that are blocked or starved. Each thread's samples are
 combined in the output, with the ability to filter by thread in some formats.
 This option is particularly useful when investigating concurrency issues or
 when work is distributed across a thread pool.
+
+
+.. _blocking-mode:
+
+Blocking mode
+-------------
+
+By default, Tachyon reads the target process's memory without stopping it.
+This non-blocking approach is ideal for most profiling scenarios because it
+imposes virtually zero overhead on the target application: the profiled
+program runs at full speed and is unaware it is being observed.
+
+However, non-blocking sampling can occasionally produce incomplete or
+inconsistent stack traces in applications with many generators or coroutines
+that rapidly switch between yield points, or in programs with very fast-changing
+call stacks where functions enter and exit between the start and end of a single
+stack read, resulting in reconstructed stacks that mix frames from different
+execution states or that never actually existed.
+
+For these cases, the :option:`--blocking` option stops the target process during
+each sample::
+
+   python -m profiling.sampling run --blocking script.py
+   python -m profiling.sampling attach --blocking 12345
+
+When blocking mode is enabled, the profiler suspends the target process,
+reads its stack, then resumes it. This guarantees that each captured stack
+represents a real, consistent snapshot of what the process was doing at that
+instant. The trade-off is that the target process runs slower because it is
+repeatedly paused.
+
+.. warning::
+
+   Do not use very high sample rates (low ``--interval`` values) with blocking
+   mode. Suspending and resuming a process takes time, and if the sampling
+   interval is too short, the target will spend more time stopped than running.
+   For blocking mode, intervals of 1000 microseconds (1 millisecond) or higher
+   are recommended. The default 100 microsecond interval may cause noticeable
+   slowdown in the target application.
+
+Use blocking mode only when you observe inconsistent stacks in your profiles,
+particularly with generator-heavy or coroutine-heavy code. For most
+applications, the default non-blocking mode provides accurate results with
+zero impact on the target process.
 
 
 Special frames
@@ -497,9 +571,9 @@ appended:
 - For pstats format (which defaults to stdout), subprocesses produce files like
   ``profile_12345.pstats``
 
-The subprocess profilers inherit most sampling options from the parent (interval,
-duration, thread selection, native frames, GC frames, async-aware mode, and
-output format). All Python descendant processes are profiled recursively,
+The subprocess profilers inherit most sampling options from the parent (sampling
+rate, duration, thread selection, native frames, GC frames, async-aware mode,
+and output format). All Python descendant processes are profiled recursively,
 including grandchildren and further descendants.
 
 Subprocess detection works by periodically scanning for new descendants of
@@ -804,9 +878,9 @@ interesting functions that highlights:
 
 Use :option:`--no-summary` to suppress both the legend and summary sections.
 
-To save pstats output to a file instead of stdout::
+To save pstats output to a binary file instead of stdout::
 
-   python -m profiling.sampling run -o profile.txt script.py
+   python -m profiling.sampling run -o profile.pstats script.py
 
 The pstats format supports several options for controlling the display.
 The :option:`--sort` option determines the column used for ordering results::
@@ -1041,6 +1115,59 @@ intuitive view that shows exactly where time is spent without requiring
 interpretation of hierarchical visualizations.
 
 
+Binary format
+-------------
+
+Binary format (:option:`--binary`) produces a compact binary file for efficient
+storage of profiling data::
+
+   python -m profiling.sampling run --binary -o profile.bin script.py
+   python -m profiling.sampling attach --binary -o profile.bin 12345
+
+The :option:`--compression` option controls data compression:
+
+- ``auto`` (default): Use zstd compression if available, otherwise no
+  compression
+- ``zstd``: Force zstd compression (requires :mod:`compression.zstd` support)
+- ``none``: Disable compression
+
+::
+
+   python -m profiling.sampling run --binary --compression=zstd -o profile.bin script.py
+
+To analyze binary profiles, use the :ref:`replay-command` to convert them to
+other formats like flame graphs or pstats output.
+
+
+Record and replay workflow
+==========================
+
+The binary format combined with the replay command enables a record-and-replay
+workflow that separates data capture from analysis. Rather than generating
+visualizations during profiling, you capture raw data to a compact binary file
+and convert it to different formats later.
+
+This approach has three main benefits:
+
+- Sampling runs faster because the work of building data structures for
+  visualization is deferred until replay.
+- A single binary capture can be converted to multiple output formats
+  without re-profiling: pstats for a quick overview, flame graph for visual
+  exploration, heatmap for line-level detail.
+- Binary files are compact and easy to share with colleagues who can convert
+  them to their preferred format.
+
+A typical workflow::
+
+   # Capture profile in production or during tests
+   python -m profiling.sampling attach --binary -o profile.bin 12345
+
+   # Later, analyze with different formats
+   python -m profiling.sampling replay profile.bin
+   python -m profiling.sampling replay --flamegraph -o profile.html profile.bin
+   python -m profiling.sampling replay --heatmap -o heatmap profile.bin
+
+
 Live mode
 =========
 
@@ -1252,17 +1379,21 @@ Global options
 
    Attach to and profile a running process by PID.
 
+.. option:: replay
+
+   Convert a binary profile file to another output format.
+
 
 Sampling options
 ----------------
 
-.. option:: -i <microseconds>, --interval <microseconds>
+.. option:: -r <rate>, --sampling-rate <rate>
 
-   Sampling interval in microseconds. Default: 100.
+   Sampling rate (for example, ``10000``, ``10khz``, ``10k``). Default: ``1khz``.
 
 .. option:: -d <seconds>, --duration <seconds>
 
-   Profiling duration in seconds. Default: 10.
+   Profiling duration in seconds. Default: run to completion.
 
 .. option:: -a, --all-threads
 
@@ -1296,6 +1427,13 @@ Sampling options
    Also profile subprocesses. Each subprocess gets its own profiler
    instance and output file. Incompatible with ``--live``.
 
+.. option:: --blocking
+
+   Pause the target process during each sample. This ensures consistent
+   stack traces at the cost of slowing down the target. Use with longer
+   intervals (1000 µs or higher) to minimize impact. See :ref:`blocking-mode`
+   for details.
+
 
 Mode options
 ------------
@@ -1317,7 +1455,9 @@ Output options
 
 .. option:: --pstats
 
-   Generate text statistics output. This is the default.
+   Generate pstats statistics. This is the default.
+   When written to stdout, the output is a text table; with :option:`-o`,
+   it is a binary pstats file.
 
 .. option:: --collapsed
 
@@ -1335,12 +1475,30 @@ Output options
 
    Generate HTML heatmap with line-level sample counts.
 
+.. option:: --binary
+
+   Generate high-performance binary format for later conversion with the
+   ``replay`` command.
+
+.. option:: --compression <type>
+
+   Compression for binary format: ``auto`` (use zstd if available, default),
+   ``zstd``, or ``none``.
+
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   ``--pstats`` writes to stdout, ``--flamegraph`` and ``--gecko`` generate
-   files like ``flamegraph.PID.html``, and ``--heatmap`` creates a directory
-   named ``heatmap_PID``.
+   :option:`--pstats` prints a text table to stdout, while ``-o`` writes a
+   binary pstats file. Other formats generate a file named
+   ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
+   :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
+
+.. option:: --browser
+
+   Automatically open HTML output (:option:`--flamegraph` and
+   :option:`--heatmap`) in your default web browser after generation.
+   When profiling with :option:`--subprocesses`, only the main process
+   opens the browser; subprocess outputs are never auto-opened.
 
 
 pstats display options

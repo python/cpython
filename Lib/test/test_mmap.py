@@ -1166,6 +1166,21 @@ class MmapTests(unittest.TestCase):
             m.flush(PAGESIZE)
             m.flush(PAGESIZE, PAGESIZE)
 
+            if hasattr(mmap, 'MS_SYNC'):
+                m.flush(0, PAGESIZE, flags=mmap.MS_SYNC)
+            if hasattr(mmap, 'MS_ASYNC'):
+                m.flush(flags=mmap.MS_ASYNC)
+            if hasattr(mmap, 'MS_INVALIDATE'):
+                m.flush(PAGESIZE * 2, flags=mmap.MS_INVALIDATE)
+            if hasattr(mmap, 'MS_ASYNC') and hasattr(mmap, 'MS_INVALIDATE'):
+                if sys.platform == 'freebsd':
+                    # FreeBSD doesn't support this combination
+                    with self.assertRaises(OSError) as cm:
+                        m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
+                    self.assertEqual(cm.exception.errno, errno.EINVAL)
+                else:
+                    m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
+
     @unittest.skipUnless(sys.platform == 'linux', 'Linux only')
     @support.requires_linux_version(5, 17, 0)
     def test_set_name(self):
