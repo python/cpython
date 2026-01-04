@@ -87,7 +87,9 @@ struct _ceval_runtime_state {
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
         Py_ssize_t persist_after_fork;
-       _PyFrameEvalFunction prev_eval_frame;
+        _PyFrameEvalFunction prev_eval_frame;
+        Py_ssize_t trampoline_refcount;
+        int code_watcher_id;
 #else
         int _not_used;
 #endif
@@ -179,6 +181,10 @@ struct gc_collection_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects considered for collection and traversed:
+    Py_ssize_t candidates;
+    // Duration of the collection in seconds:
+    double duration;
 };
 
 /* Running stats per generation */
@@ -189,6 +195,10 @@ struct gc_generation_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects considered for collection and traversed:
+    Py_ssize_t candidates;
+    // Duration of the collection in seconds:
+    double duration;
 };
 
 enum _GCPhase {
@@ -939,7 +949,6 @@ struct _is {
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
     struct _PyExecutorObject *cold_dynamic_executor;
-    int executor_deletion_list_remaining_capacity;
     size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
