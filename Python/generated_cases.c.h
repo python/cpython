@@ -991,16 +991,15 @@
                 assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
             }
-            // _POP_TOP
+            // _POP_TOP_UNICODE
             {
                 value = s;
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_XCLOSE(value);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
 
@@ -1172,16 +1171,15 @@
                 assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
             }
-            // _POP_TOP
+            // _POP_TOP_UNICODE
             {
                 value = s;
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_XCLOSE(value);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
 
