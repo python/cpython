@@ -1922,6 +1922,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
+    def test_binary_subcsr_ustr_int_narrows_to_str(self):
+        def testfunc(n):
+            x = []
+            s = "바이트코f드_특수화"
+            for _ in range(n):
+                y = s[4]       # _BINARY_OP_SUBSCR_USTR_INT
+                z = "bar" + y  # (_GUARD_TOS_UNICODE) + _BINARY_OP_ADD_UNICODE
+                x.append(z)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, ["barf"] * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_USTR_INT", uops)
+        # _BINARY_OP_SUBSCR_USTR_INT narrows the result to 'str' so
+        # the unicode guard before _BINARY_OP_ADD_UNICODE is removed.
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+
     def test_binary_op_subscr_str_int(self):
         def testfunc(n):
             x = 0
@@ -1937,6 +1957,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
+        self.assertIn("_COMPARE_OP_STR", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
+
+    def test_binary_op_subscr_ustr_int(self):
+        def testfunc(n):
+            x = 0
+            s = "hello바"
+            for _ in range(n):
+                c = s[1]  # _BINARY_OP_SUBSCR_USTR_INT
+                if c == 'e':
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_USTR_INT", uops)
         self.assertIn("_COMPARE_OP_STR", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)

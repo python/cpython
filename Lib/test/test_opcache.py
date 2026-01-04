@@ -1825,6 +1825,7 @@ class TestSpecializer(TestBase):
                     self.assertEqual(a[idx], expected)
 
         binary_subscr_str_int_non_compact()
+        self.assert_specialized(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_USTR_INT")
         self.assert_no_opcode(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_STR_INT")
 
         def binary_subscr_getitems():
