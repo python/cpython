@@ -410,12 +410,18 @@
         case _TO_BOOL_STR: {
             JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            v = value;
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
             }
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

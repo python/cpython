@@ -431,8 +431,9 @@ dummy_func(void) {
         sym_set_type(value, &PyUnicode_Type);
     }
 
-    op(_TO_BOOL_STR, (value -- res)) {
+    op(_TO_BOOL_STR, (value -- res, v)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        v = value;
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }

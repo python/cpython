@@ -547,23 +547,25 @@ dummy_func(
             EXIT_IF(!PyUnicode_CheckExact(value_o));
         }
 
-        op(_TO_BOOL_STR, (value -- res)) {
+        op(_TO_BOOL_STR, (value -- res, v)) {
             STAT_INC(TO_BOOL, hit);
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             if (value_o == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value_o));
+                v = value;
                 DEAD(value);
                 res = PyStackRef_False;
             }
             else {
                 assert(Py_SIZE(value_o));
-                PyStackRef_CLOSE(value);
+                v = value;
+                DEAD(value);
                 res = PyStackRef_True;
             }
         }
 
         macro(TO_BOOL_STR) =
-            _GUARD_TOS_UNICODE + unused/1 + unused/2 + _TO_BOOL_STR;
+            _GUARD_TOS_UNICODE + unused/1 + unused/2 + _TO_BOOL_STR + _POP_TOP_UNICODE;
 
         op(_REPLACE_WITH_TRUE, (value -- res)) {
             PyStackRef_CLOSE(value);

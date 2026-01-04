@@ -11511,6 +11511,7 @@
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef res;
+            _PyStackRef v;
             // _GUARD_TOS_UNICODE
             {
                 value = stack_pointer[-1];
@@ -11529,18 +11530,20 @@
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
                 if (value_o == &_Py_STR(empty)) {
                     assert(_Py_IsImmortal(value_o));
+                    v = value;
                     res = PyStackRef_False;
                 }
                 else {
                     assert(Py_SIZE(value_o));
-                    stack_pointer += -1;
-                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PyStackRef_CLOSE(value);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    v = value;
                     res = PyStackRef_True;
-                    stack_pointer += 1;
                 }
+            }
+            // _POP_TOP_UNICODE
+            {
+                value = v;
+                assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             }
             stack_pointer[-1] = res;
             DISPATCH();
