@@ -1790,6 +1790,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(header));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(headers));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hi));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hook));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hour));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hours));

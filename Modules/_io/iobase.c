@@ -553,7 +553,6 @@ _io__IOBase_isatty_impl(PyObject *self)
 /*[clinic input]
 _io._IOBase.readline
     size as limit: Py_ssize_t(accept={int, NoneType}) = -1
-    /
 
 Read and return a line from the stream.
 
@@ -566,7 +565,7 @@ terminator(s) recognized.
 
 static PyObject *
 _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
-/*[clinic end generated code: output=4479f79b58187840 input=d0c596794e877bff]*/
+/*[clinic end generated code: output=4479f79b58187840 input=5ed037c83054bf41]*/
 {
     /* For backwards compatibility, a (slowish) readline(). */
 
@@ -703,7 +702,7 @@ iobase_iternext(PyObject *self)
 /*[clinic input]
 _io._IOBase.readlines
     hint: Py_ssize_t(accept={int, NoneType}) = -1
-    /
+
 
 Return a list of lines from the stream.
 
@@ -714,7 +713,7 @@ lines so far exceeds hint.
 
 static PyObject *
 _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
-/*[clinic end generated code: output=2f50421677fa3dea input=9400c786ea9dc416]*/
+/*[clinic end generated code: output=2f50421677fa3dea input=ca109061c220173b]*/
 {
     Py_ssize_t length = 0;
     PyObject *result, *it = NULL;

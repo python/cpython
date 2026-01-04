@@ -1788,6 +1788,7 @@ extern "C" {
     INIT_ID(header), \
     INIT_ID(headers), \
     INIT_ID(hi), \
+    INIT_ID(hint), \
     INIT_ID(hook), \
     INIT_ID(hour), \
     INIT_ID(hours), \

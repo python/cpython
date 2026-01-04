@@ -513,6 +513,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(header)
         STRUCT_FOR_ID(headers)
         STRUCT_FOR_ID(hi)
+        STRUCT_FOR_ID(hint)
         STRUCT_FOR_ID(hook)
         STRUCT_FOR_ID(hour)
         STRUCT_FOR_ID(hours)
