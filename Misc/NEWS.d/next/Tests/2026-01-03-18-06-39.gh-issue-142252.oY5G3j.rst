@@ -1,1 +1,0 @@
-Improve tests for `functools.cached_property` to verify that assigning to the attribute on an instance overrides the cached value, and that deleting it forces recomputation.
