@@ -74,7 +74,7 @@ def new_pythonstartup_env(*, code: str, histfile: str = ".pythonhist"):
     with os_helper.temp_dir() as tmpdir:
         filename = os.path.join(tmpdir, "pythonstartup.py")
         with open(filename, "w") as f:
-            f.write('\n'.join(code.splitlines()))
+            f.write(code)
         yield {
             "PYTHONSTARTUP": filename,
             "PYTHON_HISTORY": os.path.join(tmpdir, histfile)
