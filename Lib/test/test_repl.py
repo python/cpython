@@ -483,57 +483,63 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(output[:3], ">>>")
 
     def test_pythonstartup_success(self):
-        startup_code = "import sys\nprint('notice from pythonstartup in asyncio repl', file=sys.stderr)"
+        startup_code = dedent("""\
+        import sys
+        print('notice from pythonstartup in asyncio repl', file=sys.stderr)
+        """)
         startup_env = self.enterContext(
             new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
 
-        p = spawn_asyncio_repl(env=os.environ | startup_env, stderr=subprocess.PIPE, isolated=False)
+        p = spawn_repl(
+            "-qm", "asyncio",
+            env=os.environ | startup_env,
+            stderr=subprocess.PIPE,
+            isolated=False,
+            custom=True)
         p.stdin.write("1/0")
         kill_python(p)
-        output_lines = p.stderr.read().splitlines()
+        output = p.stderr.read()
         p.stderr.close()
+        self.assertStartsWith(output, 'notice from pythonstartup in asyncio repl')
 
-        self.assertEqual(output_lines[3], 'notice from pythonstartup in asyncio repl')
+        expected = dedent("""\
+          File "<stdin>", line 1, in <module>
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
 
-        tb_start_lines = output_lines[5:6]
-        tb_final_lines = output_lines[13:]
-        expected_lines = [
-            'Traceback (most recent call last):',
-            '  File "<stdin>", line 1, in <module>',
-            '    1/0',
-            '    ~^~',
-            'ZeroDivisionError: division by zero',
-            '',
-            'exiting asyncio REPL...',
-        ]
-        self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
+        exiting asyncio REPL...
+        """)
+        self.assertEndsWith(output, expected)
 
     def test_pythonstartup_failure(self):
         startup_code = "def foo():\n    1/0\n"
         startup_env = self.enterContext(
             new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
 
-        p = spawn_asyncio_repl(env=os.environ | startup_env, stderr=subprocess.PIPE, isolated=False)
+        p = spawn_repl(
+            "-qm", "asyncio",
+            env=os.environ | startup_env,
+            stderr=subprocess.PIPE,
+            isolated=False,
+            custom=True)
         p.stdin.write("foo()")
         kill_python(p)
-        output_lines = p.stderr.read().splitlines()
+        output = p.stderr.read()
         p.stderr.close()
 
-        tb_start_lines = output_lines[4:5]
-        tb_final_lines = output_lines[12:]
-        expected_lines = [
-            'Traceback (most recent call last):',
-            '  File "<stdin>", line 1, in <module>',
-            '    foo()',
-            '    ~~~^^',
-            f'  File "{startup_env['PYTHONSTARTUP']}", line 2, in foo',
-            '    1/0',
-            '    ~^~',
-            'ZeroDivisionError: division by zero',
-            '',
-            'exiting asyncio REPL...',
-        ]
-        self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
+        expected = dedent(f"""\
+          File "<stdin>", line 1, in <module>
+            foo()
+            ~~~^^
+          File "{startup_env['PYTHONSTARTUP']}", line 2, in foo
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
+
+        exiting asyncio REPL...
+        """)
+        self.assertEndsWith(output, expected)
 
 if __name__ == "__main__":
     unittest.main()
