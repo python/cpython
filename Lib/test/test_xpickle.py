@@ -85,7 +85,6 @@ def have_python_version(py_version):
 @support.requires_resource('cpu')
 class AbstractCompatTests(pickletester.AbstractPickleTests):
     py_version = None
-    _OLD_HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
 
     @classmethod
     def setUpClass(cls):
@@ -96,14 +95,10 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
         # Override the default pickle protocol to match what xpickle worker
         # will be running.
         highest_protocol = highest_proto_for_py_version(cls.py_version)
-        pickletester.protocols = range(highest_protocol + 1)
-        pickle.HIGHEST_PROTOCOL = highest_protocol
-
-    @classmethod
-    def tearDownClass(cls):
-        # Set the highest protocol back to the default.
-        pickle.HIGHEST_PROTOCOL = cls._OLD_HIGHEST_PROTOCOL
-        pickletester.protocols = range(pickle.HIGHEST_PROTOCOL + 1)
+        cls.enterClassContext(support.swap_attr(pickletester, 'protocols',
+                                                range(highest_protocol + 1)))
+        cls.enterClassContext(support.swap_attr(pickle, 'HIGHEST_PROTOCOL',
+                                                highest_protocol))
 
     @staticmethod
     def send_to_worker(python, data):
