@@ -2654,9 +2654,13 @@ class ExecTests(unittest.TestCase):
         os.execve(args[0], args, MyEnv())
         """.format(unix_shell=unix_shell, message=message)
 
-        # Use '__cleanenv' to signal to assert_python_ok() not
-        # to do a copy of os.environ on its own.
-        rc, out, _ = assert_python_ok('-c', code, __cleanenv=True)
+        # Make sure to forward "LD_*" variables so that assert_python_ok()
+        # can run correctly.
+        minimal = {k: v for k, v in os.environ.items() if k.startswith("LD_")}
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env.update(minimal)
+            rc, out, _ = assert_python_ok('-c', code, **env)
         self.assertEqual(rc, 0)
         self.assertIn(bytes(message, "ascii"), out)
 
