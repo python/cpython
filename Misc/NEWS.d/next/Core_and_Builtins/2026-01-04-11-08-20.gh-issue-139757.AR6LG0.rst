@@ -1,0 +1,2 @@
+Add ``BINARY_OP_SUBSCR_USTR_INT`` to specialize reading an ASCII character
+from any string. Patch by Chris Eibl.

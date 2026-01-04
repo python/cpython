@@ -334,6 +334,12 @@ dummy_func(void) {
         i = sub_st;
     }
 
+    op(_BINARY_OP_SUBSCR_USTR_INT, (str_st, sub_st -- res, s, i)) {
+        res = sym_new_type(ctx, &PyUnicode_Type);
+        s = str_st;
+        i = sub_st;
+    }
+
     op(_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS, (tuple_st, sub_st -- tuple_st, sub_st)) {
         assert(sym_matches_type(tuple_st, &PyTuple_Type));
         if (sym_is_const(ctx, sub_st)) {
