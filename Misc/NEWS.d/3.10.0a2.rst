@@ -65,7 +65,7 @@ parser.
 .. bpo: 41796
 .. date: 2020-10-29-12-49-08
 .. nonce: tkGdHq
-.. section: Core and Builtins
+.. section: Library
 
 The :mod:`ast` module internal state is now per interpreter. Patch by Victor
 Stinner.
@@ -212,7 +212,7 @@ Micro optimization for range.index if step is 1. Patch by Donghee Na.
 .. bpo: 41435
 .. date: 2020-08-07-13-42-48
 .. nonce: qPWjJA
-.. section: Core and Builtins
+.. section: Library
 
 Add ``sys._current_exceptions()`` function to retrieve a dictionary mapping
 each thread's identifier to the topmost exception currently active in that

@@ -95,7 +95,7 @@ by Pablo Galindo.
 .. bpo: 42924
 .. date: 2021-01-13-14-06-01
 .. nonce: _WS1Ok
-.. section: Core and Builtins
+.. section: Library
 
 Fix ``bytearray`` repetition incorrectly copying data from the start of the
 buffer, even if the data is offset within the buffer (e.g. after reassigning
@@ -136,7 +136,7 @@ frame.f_lineno is correct even if frame.f_trace is set to True
 .. bpo: 37324
 .. date: 2020-12-12-20-09-12
 .. nonce: jB-9_U
-.. section: Core and Builtins
+.. section: Library
 
 Remove deprecated aliases to :ref:`collections-abstract-base-classes` from
 the :mod:`collections` module.
@@ -146,7 +146,7 @@ the :mod:`collections` module.
 .. bpo: 41994
 .. date: 2020-10-10-14-16-03
 .. nonce: Xop8sV
-.. section: Core and Builtins
+.. section: Library
 
 Fixed possible leak in ``import`` when ``sys.modules`` is not a ``dict``.
 
@@ -155,7 +155,7 @@ Fixed possible leak in ``import`` when ``sys.modules`` is not a ``dict``.
 .. bpo: 27772
 .. date: 2018-12-20-23-59-23
 .. nonce: idHEcj
-.. section: Core and Builtins
+.. section: Library
 
 In string formatting, preceding the *width* field by ``'0'`` no longer
 affects the default alignment for strings.

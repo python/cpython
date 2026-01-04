@@ -119,7 +119,7 @@ perform tracing and optimizer checks.
 .. bpo: 46208
 .. date: 2022-01-04-01-53-35
 .. nonce: i00Vz5
-.. section: Core and Builtins
+.. section: Library
 
 Fix the regression of os.path.normpath("A/../../B") not returning expected
 "../B" but "B".
@@ -178,7 +178,7 @@ sequence of other opcodes.
 .. bpo: 46085
 .. date: 2021-12-30-00-23-41
 .. nonce: bDuJqu
-.. section: Core and Builtins
+.. section: Library
 
 Fix iterator cache mechanism of :class:`OrderedDict`.
 
@@ -334,7 +334,7 @@ Deepfreeze :mod:`runpy`, patch by Kumar Aditya.
 .. bpo: 46025
 .. date: 2021-12-09-11-41-35
 .. nonce: pkEvW9
-.. section: Core and Builtins
+.. section: Library
 
 Fix a crash in the :mod:`atexit` module involving functions that unregister
 themselves before raising exceptions. Patch by Pablo Galindo.
@@ -344,7 +344,7 @@ themselves before raising exceptions. Patch by Pablo Galindo.
 .. bpo: 46000
 .. date: 2021-12-07-11-42-44
 .. nonce: v_ru3k
-.. section: Core and Builtins
+.. section: Library
 
 Improve compatibility of the :mod:`curses` module with NetBSD curses.
 

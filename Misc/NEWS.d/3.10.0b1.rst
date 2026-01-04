@@ -202,7 +202,7 @@ line number tables more robust in some circumstances.
 .. bpo: 43908
 .. date: 2021-04-26-21-20-41
 .. nonce: 2L51nO
-.. section: Core and Builtins
+.. section: Library
 
 Make :mod:`re` types immutable. Patch by Erlend E. Aasland.
 
@@ -211,7 +211,7 @@ Make :mod:`re` types immutable. Patch by Erlend E. Aasland.
 .. bpo: 43908
 .. date: 2021-04-26-20-59-17
 .. nonce: -COW4-
-.. section: Core and Builtins
+.. section: Library
 
 Make the :class:`array.array` type immutable. Patch by Erlend E. Aasland.
 
@@ -370,7 +370,7 @@ Patch by Pablo Galindo.
 .. bpo: 43798
 .. date: 2021-04-10-00-01-43
 .. nonce: p_nJFM
-.. section: Core and Builtins
+.. section: Library
 
 :class:`ast.alias` nodes now include source location metadata attributes
 e.g. lineno, col_offset.
@@ -442,7 +442,7 @@ coroutine.
 .. bpo: 43105
 .. date: 2021-03-31-20-35-11
 .. nonce: PBVmHm
-.. section: Core and Builtins
+.. section: Library
 
 Importlib now resolves relative paths when creating module spec objects from
 file locations.

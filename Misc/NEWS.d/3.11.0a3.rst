@@ -133,7 +133,7 @@ additional allocation when the frame object outlives the frame activation.
 .. bpo: 45614
 .. date: 2021-11-23-12-06-41
 .. nonce: fIekgI
-.. section: Core and Builtins
+.. section: Library
 
 Fix :mod:`traceback` display for exceptions with invalid module name.
 
@@ -242,7 +242,7 @@ of function pointers (rather than switching on the oparg).
 .. bpo: 42540
 .. date: 2021-11-15-12-08-27
 .. nonce: V2w107
-.. section: Core and Builtins
+.. section: Library
 
 Fix crash when :func:`os.fork` is called with an active non-default memory
 allocator.
