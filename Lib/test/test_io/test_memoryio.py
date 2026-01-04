@@ -872,10 +872,9 @@ class CBytesIOTest(PyBytesIOTest):
         self.assertRaises(BufferError, memio.write, TBuf(memio))
 
     @support.cpython_only
-    def test_uaf_buffer_writelines(self):
-        # Prevent use-after-free when writelines() triggers a re-entrant call that
-        # closes or mutates the BytesIO object.
-        # See: https://github.com/python/cpython/issues/143378
+    def test_writelines_concurrent_mutation(self):
+        # Prevent crashes when buf.writelines() concurrently mutates 'buf'.
+        # See: https://github.com/python/cpython/issues/143378.
         class TBuf:
             def __init__(self, bio):
                 self.bio = bio
