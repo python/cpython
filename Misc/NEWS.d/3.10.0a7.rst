@@ -120,7 +120,7 @@ convention. Patch by Donghee Na.
 .. bpo: 42137
 .. date: 2021-03-20-19-54-47
 .. nonce: A8aQvj
-.. section: Library
+.. section: Core and Builtins
 
 The import system now prefers using ``__spec__`` for ``ModuleType.__repr__``
 over ``module_repr()``.
@@ -150,7 +150,7 @@ continuation characters. Patch by Pablo Galindo.
 .. bpo: 43517
 .. date: 2021-03-16-17-12-54
 .. nonce: zAo6Ws
-.. section: Library
+.. section: Core and Builtins
 
 Fix misdetection of circular imports when using ``from pkg.mod import
 attr``, which caused false positives in non-trivial multi-threaded code.

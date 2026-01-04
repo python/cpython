@@ -500,7 +500,7 @@ at runtime where types are known at C compile time.
 .. bpo: 46045
 .. date: 2021-12-11-11-36-48
 .. nonce: sfThay
-.. section: Library
+.. section: Core and Builtins
 
 Do not use POSIX semaphores on NetBSD
 

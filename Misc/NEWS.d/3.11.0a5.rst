@@ -54,7 +54,7 @@ path.
 .. bpo: 46527
 .. date: 2022-01-25-19-34-55
 .. nonce: mQLNPk
-.. section: Library
+.. section: Core and Builtins
 
 Allow passing ``iterable`` as a keyword argument to :func:`enumerate` again.
 Patch by Jelle Zijlstra.

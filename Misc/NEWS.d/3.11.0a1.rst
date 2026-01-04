@@ -206,7 +206,7 @@ in the :mod:`__main__` module.
 .. bpo: 37330
 .. date: 2021-09-02-01-28-01
 .. nonce: QDjM_l
-.. section: Library
+.. section: Core and Builtins
 
 :func:`open`, :func:`io.open`, :func:`codecs.open` and
 :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")

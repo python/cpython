@@ -95,7 +95,7 @@ by Pablo Galindo.
 .. bpo: 42924
 .. date: 2021-01-13-14-06-01
 .. nonce: _WS1Ok
-.. section: Library
+.. section: Core and Builtins
 
 Fix ``bytearray`` repetition incorrectly copying data from the start of the
 buffer, even if the data is offset within the buffer (e.g. after reassigning
@@ -155,7 +155,7 @@ Fixed possible leak in ``import`` when ``sys.modules`` is not a ``dict``.
 .. bpo: 27772
 .. date: 2018-12-20-23-59-23
 .. nonce: idHEcj
-.. section: Library
+.. section: Core and Builtins
 
 In string formatting, preceding the *width* field by ``'0'`` no longer
 affects the default alignment for strings.
