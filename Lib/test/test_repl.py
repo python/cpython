@@ -211,6 +211,66 @@ class TestInteractiveInterpreter(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_pythonstartup_error_reporting(self):
+        # errors based on https://github.com/python/cpython/issues/137576
+
+        def make_repl(env):
+            return subprocess.Popen(
+                [os.path.join(os.path.dirname(sys.executable), '<stdin>'), "-i"],
+                executable=sys.executable,
+                text=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env,
+            )
+
+        # case 1: error in user input, but PYTHONSTARTUP is fine
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("print('from pythonstartup')\n")
+
+            env = os.environ.copy()
+            env['PYTHONSTARTUP'] = script
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".pythonhist")
+            p = make_repl(env)
+            p.stdin.write("1/0")
+            output = kill_python(p)
+        expected = dedent("""
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+                1/0
+                ~^~
+            ZeroDivisionError: division by zero
+        """)
+        self.assertIn("from pythonstartup", output)
+        self.assertIn(expected, output)
+
+        # case 2: error in PYTHONSTARTUP triggered by user input
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("def foo():\n    1/0\n")
+
+            env = os.environ.copy()
+            env['PYTHONSTARTUP'] = script
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".pythonhist")
+            p = make_repl(env)
+            p.stdin.write('foo()')
+            output = kill_python(p)
+        expected = dedent("""
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+                foo()
+                ~~~^^
+              File "%s", line 2, in foo
+                1/0
+                ~^~
+            ZeroDivisionError: division by zero
+        """) % script
+        self.assertIn(expected, output)
+
     def test_runsource_show_syntax_error_location(self):
         user_input = dedent("""def f(x, x): ...
                             """)
@@ -243,6 +303,67 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
+
+    def test_asyncio_repl_reaches_python_startup_script(self):
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("print('pythonstartup done!')\n")
+            env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
+            env["PYTHONSTARTUP"] = script
+            p = spawn_asyncio_repl(isolated=False, env=env)
+            output = kill_python(p)
+            self.assertEqual(p.returncode, 0)
+            self.assertIn("pythonstartup done!", output)
+
+    def test_asyncio_repl_respects_isolated_mode(self):
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("print('should not print')\n")
+            env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
+            env["PYTHONSTARTUP"] = script
+            p = spawn_asyncio_repl(isolated=True, env=env)
+            output = kill_python(p)
+            self.assertEqual(p.returncode, 0)
+            self.assertNotIn("should not print", output)
+
+    @unittest.skipUnless(pty, "requires pty")
+    def test_asyncio_repl_is_ok(self):
+        m, s = pty.openpty()
+        cmd = [sys.executable, "-I", "-m", "asyncio"]
+        env = os.environ.copy()
+        proc = subprocess.Popen(
+            cmd,
+            stdin=s,
+            stdout=s,
+            stderr=s,
+            text=True,
+            close_fds=True,
+            env=env,
+        )
+        os.close(s)
+        os.write(m, b"await asyncio.sleep(0)\n")
+        os.write(m, b"exit()\n")
+        output = []
+        while select.select([m], [], [], SHORT_TIMEOUT)[0]:
+            try:
+                data = os.read(m, 1024).decode("utf-8")
+                if not data:
+                    break
+            except OSError:
+                break
+            output.append(data)
+        os.close(m)
+        try:
+            exit_code = proc.wait(timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            exit_code = proc.wait()
+
+        self.assertEqual(exit_code, 0, "".join(output))
 
     def test_pythonstartup_success(self):
         # errors based on https://github.com/python/cpython/issues/137576
@@ -284,41 +405,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
             'ZeroDivisionError: division by zero',
         ]
         self.assertEqual(traceback_lines, expected_lines)
-
-    @unittest.skipUnless(pty, "requires pty")
-    def test_asyncio_repl_is_ok(self):
-        m, s = pty.openpty()
-        cmd = [sys.executable, "-I", "-m", "asyncio"]
-        env = os.environ.copy()
-        proc = subprocess.Popen(
-            cmd,
-            stdin=s,
-            stdout=s,
-            stderr=s,
-            text=True,
-            close_fds=True,
-            env=env,
-        )
-        os.close(s)
-        os.write(m, b"await asyncio.sleep(0)\n")
-        os.write(m, b"exit()\n")
-        output = []
-        while select.select([m], [], [], SHORT_TIMEOUT)[0]:
-            try:
-                data = os.read(m, 1024).decode("utf-8")
-                if not data:
-                    break
-            except OSError:
-                break
-            output.append(data)
-        os.close(m)
-        try:
-            exit_code = proc.wait(timeout=SHORT_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            exit_code = proc.wait()
-
-        self.assertEqual(exit_code, 0, "".join(output))
 
 
 @support.force_not_colorized_test_class
