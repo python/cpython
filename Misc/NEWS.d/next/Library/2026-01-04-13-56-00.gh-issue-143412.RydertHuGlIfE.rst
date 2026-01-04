@@ -1,0 +1,2 @@
+Allow passing ``hint`` and ``size`` as keyword arguments to
+:meth:`io.IOBase.readlines` and :meth:`io.IOBase.readline` respectively.
