@@ -439,11 +439,11 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                *target_local = PyStackRef_NULL;
                 if (temp == NULL) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
                 res = PyStackRef_FromPyObjectSteal(temp);
-                *target_local = PyStackRef_NULL;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
