@@ -274,8 +274,7 @@ _PyDict_SendEvent(int watcher_bits,
                   PyObject *value);
 
 static inline void
-_PyDict_NotifyEvent(PyInterpreterState *interp,
-                    PyDict_WatchEvent event,
+_PyDict_NotifyEvent(PyDict_WatchEvent event,
                     PyDictObject *mp,
                     PyObject *key,
                     PyObject *value)

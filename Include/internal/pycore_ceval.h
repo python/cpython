@@ -103,7 +103,6 @@ extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
 extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
-extern void _PyPerfTrampoline_FreeArenas(void);
 extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -123,7 +122,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
 
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_Py_CODEUNIT *_Py_LazyJitTrampoline(
+_Py_CODEUNIT *_Py_LazyJitShim(
     struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );
@@ -427,6 +426,17 @@ _Py_VectorCall_StackRefSteal(
     int total_args,
     _PyStackRef kwnames);
 
+PyAPI_FUNC(PyObject*)
+_Py_VectorCallInstrumentation_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef* arguments,
+    int total_args,
+    _PyStackRef kwnames,
+    bool call_instrumentation,
+    _PyInterpreterFrame* frame,
+    _Py_CODEUNIT* this_instr,
+    PyThreadState* tstate);
+
 PyAPI_FUNC(PyObject *)
 _Py_BuiltinCallFast_StackRefSteal(
     _PyStackRef callable,
@@ -475,6 +485,11 @@ PyAPI_FUNC(void)
 _Py_assert_within_stack_bounds(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     const char *filename, int lineno);
+
+// Like PyMapping_GetOptionalItem, but returns the PyObject* instead of taking
+// it as an out parameter. This helps MSVC's escape analysis when used with
+// tail calling.
+PyAPI_FUNC(PyObject*) _PyMapping_GetOptionalItem2(PyObject* obj, PyObject* key, int* err);
 
 #ifdef __cplusplus
 }

@@ -858,6 +858,8 @@ HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
 LIBOBJS
+REMOTE_DEBUGGING_LIBS
+REMOTE_DEBUGGING_CFLAGS
 LIBZSTD_LIBS
 LIBZSTD_CFLAGS
 LIBLZMA_LIBS
@@ -18188,6 +18190,7 @@ else case e in #(
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }
 _ACEOF
@@ -23022,6 +23025,22 @@ else
 printf "%s\n" "yes" >&6; }
         have_libzstd=yes
 fi
+
+if test "x$have_libzstd" = xyes
+then :
+
+  REMOTE_DEBUGGING_CFLAGS="-DHAVE_ZSTD $LIBZSTD_CFLAGS"
+  REMOTE_DEBUGGING_LIBS="$LIBZSTD_LIBS"
+
+else case e in #(
+  e)
+  REMOTE_DEBUGGING_CFLAGS=""
+  REMOTE_DEBUGGING_LIBS=""
+ ;;
+esac
+fi
+
+
 
 
 
@@ -31644,8 +31663,8 @@ fi
   if test "x$py_cv_module__remote_debugging" = xyes
 then :
 
-
-
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_CFLAGS=$REMOTE_DEBUGGING_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_LDFLAGS=$REMOTE_DEBUGGING_LIBS$as_nl"
 
 fi
 
