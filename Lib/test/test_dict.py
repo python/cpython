@@ -1581,7 +1581,7 @@ class DictTest(unittest.TestCase):
         with check_unhashable_key():
             d.get(key)
 
-        # Only TypeError exception is overriden,
+        # Only TypeError exception is overridden,
         # other exceptions are left unchanged.
         class HashError:
             def __hash__(self):
@@ -1620,6 +1620,14 @@ class DictTest(unittest.TestCase):
             d.setdefault(X(), None)
 
         self.assertEqual(len(d), 1)
+
+    def test_split_table_update_with_str_subclass(self):
+        class MyStr(str): pass
+        class MyClass: pass
+        obj = MyClass()
+        obj.attr = 1
+        obj.__dict__[MyStr('attr')] = 2
+        self.assertEqual(obj.attr, 2)
 
 
 class CAPITest(unittest.TestCase):

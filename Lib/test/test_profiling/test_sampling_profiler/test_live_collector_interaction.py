@@ -35,7 +35,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         )
         self.collector.start_time = time.perf_counter()
         # Set a consistent display update interval for tests
-        self.collector.display_update_interval = 0.1
+        self.collector.display_update_interval_sec = 0.1
 
     def tearDown(self):
         """Clean up after test."""
@@ -110,45 +110,45 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def test_increase_refresh_rate(self):
         """Test increasing refresh rate (faster updates)."""
-        initial_interval = self.collector.display_update_interval
+        initial_interval = self.collector.display_update_interval_sec
 
         # Simulate '+' key press (faster = smaller interval)
         self.display.simulate_input(ord("+"))
         self.collector._handle_input()
 
-        self.assertLess(self.collector.display_update_interval, initial_interval)
+        self.assertLess(self.collector.display_update_interval_sec, initial_interval)
 
     def test_decrease_refresh_rate(self):
         """Test decreasing refresh rate (slower updates)."""
-        initial_interval = self.collector.display_update_interval
+        initial_interval = self.collector.display_update_interval_sec
 
         # Simulate '-' key press (slower = larger interval)
         self.display.simulate_input(ord("-"))
         self.collector._handle_input()
 
-        self.assertGreater(self.collector.display_update_interval, initial_interval)
+        self.assertGreater(self.collector.display_update_interval_sec, initial_interval)
 
     def test_refresh_rate_minimum(self):
         """Test that refresh rate has a minimum (max speed)."""
-        self.collector.display_update_interval = 0.05  # Set to minimum
+        self.collector.display_update_interval_sec = 0.05  # Set to minimum
 
         # Try to go faster
         self.display.simulate_input(ord("+"))
         self.collector._handle_input()
 
         # Should stay at minimum
-        self.assertEqual(self.collector.display_update_interval, 0.05)
+        self.assertEqual(self.collector.display_update_interval_sec, 0.05)
 
     def test_refresh_rate_maximum(self):
         """Test that refresh rate has a maximum (min speed)."""
-        self.collector.display_update_interval = 1.0  # Set to maximum
+        self.collector.display_update_interval_sec = 1.0  # Set to maximum
 
         # Try to go slower
         self.display.simulate_input(ord("-"))
         self.collector._handle_input()
 
         # Should stay at maximum
-        self.assertEqual(self.collector.display_update_interval, 1.0)
+        self.assertEqual(self.collector.display_update_interval_sec, 1.0)
 
     def test_help_toggle(self):
         """Test help screen toggle."""
@@ -172,6 +172,19 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.collector._handle_input()
 
         self.assertTrue(self.collector.show_help)
+
+    def test_help_dismiss_with_q_does_not_quit(self):
+        """Test that pressing 'q' while help is shown only closes help, not quit"""
+        self.assertFalse(self.collector.show_help)
+        self.display.simulate_input(ord("h"))
+        self.collector._handle_input()
+        self.assertTrue(self.collector.show_help)
+
+        self.display.simulate_input(ord("q"))
+        self.collector._handle_input()
+
+        self.assertFalse(self.collector.show_help)
+        self.assertTrue(self.collector.running)
 
     def test_filter_clear(self):
         """Test clearing filter."""
@@ -276,23 +289,23 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def test_increase_refresh_rate_with_equals(self):
         """Test increasing refresh rate with '=' key."""
-        initial_interval = self.collector.display_update_interval
+        initial_interval = self.collector.display_update_interval_sec
 
         # Simulate '=' key press (alternative to '+')
         self.display.simulate_input(ord("="))
         self.collector._handle_input()
 
-        self.assertLess(self.collector.display_update_interval, initial_interval)
+        self.assertLess(self.collector.display_update_interval_sec, initial_interval)
 
     def test_decrease_refresh_rate_with_underscore(self):
         """Test decreasing refresh rate with '_' key."""
-        initial_interval = self.collector.display_update_interval
+        initial_interval = self.collector.display_update_interval_sec
 
         # Simulate '_' key press (alternative to '-')
         self.display.simulate_input(ord("_"))
         self.collector._handle_input()
 
-        self.assertGreater(self.collector.display_update_interval, initial_interval)
+        self.assertGreater(self.collector.display_update_interval_sec, initial_interval)
 
     def test_finished_state_displays_banner(self):
         """Test that finished state shows prominent banner."""
@@ -370,10 +383,9 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def test_finished_state_freezes_time(self):
         """Test that time displays are frozen when finished."""
-        import time as time_module
 
         # Set up collector with known start time
-        self.collector.start_time = time_module.perf_counter() - 10.0  # 10 seconds ago
+        self.collector.start_time = time.perf_counter() - 10.0  # 10 seconds ago
 
         # Mark as finished - this should freeze the time
         self.collector.mark_finished()
@@ -383,7 +395,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         frozen_time_display = self.collector.current_time_display
 
         # Wait a bit to ensure time would advance
-        time_module.sleep(0.1)
+        time.sleep(0.1)
 
         # Time should remain frozen
         self.assertEqual(self.collector.elapsed_time, frozen_elapsed)
@@ -1202,7 +1214,6 @@ class TestLiveCollectorNewFeatures(unittest.TestCase):
 
     def test_time_display_fix_when_finished(self):
         """Test that time display shows correct frozen time when finished."""
-        import time as time_module
 
         # Mark as finished to freeze time
         self.collector.mark_finished()
@@ -1215,7 +1226,7 @@ class TestLiveCollectorNewFeatures(unittest.TestCase):
         frozen_time = self.collector.current_time_display
 
         # Wait a bit
-        time_module.sleep(0.1)
+        time.sleep(0.1)
 
         # Should still show the same frozen time (not jump to wrong time)
         self.assertEqual(self.collector.current_time_display, frozen_time)

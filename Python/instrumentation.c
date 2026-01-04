@@ -18,7 +18,6 @@
 #include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
 
 #include "opcode_ids.h"
-#include "pycore_optimizer.h"
 
 
 /* Uncomment this to dump debugging output when assertions fail */
@@ -2021,12 +2020,12 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
     if (existing_events == events) {
         return 0;
     }
-    set_events(&interp->monitors, tool_id, events);
     uint32_t new_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     if (new_version == 0) {
         PyErr_Format(PyExc_OverflowError, "events set too many times");
         return -1;
     }
+    set_events(&interp->monitors, tool_id, events);
     set_global_version(tstate, new_version);
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 1);
