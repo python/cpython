@@ -1,11 +1,13 @@
 import contextlib
 import itertools
 import sys
+import traceback
 import types
 import unittest
 import warnings
 
-from test.support import import_helper
+from test import support
+from test.support import import_helper, swap_attr
 
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
 _interpreters = import_helper.import_module('_interpreters')
@@ -1489,6 +1491,51 @@ class ShareableTypeTests(_GetXIDataTests):
             # types.TracebackType
             ns['TRACEBACK'],
         ])
+
+
+class CaptureExceptionTests(unittest.TestCase):
+
+    # Prevent crashes with incompatible TracebackException.format().
+    # Regression test for https://github.com/python/cpython/issues/143377.
+
+    def capture_with_formatter(self, exc, formatter):
+        with swap_attr(traceback.TracebackException, "format", formatter):
+            return _interpreters.capture_exception(exc)
+
+    def test_capture_exception(self):
+        captured = _interpreters.capture_exception(ValueError("hello"))
+
+        self.assertEqual(captured.type.__name__, "ValueError")
+        self.assertEqual(captured.type.__qualname__, "ValueError")
+        self.assertEqual(captured.type.__module__, "builtins")
+
+        self.assertEqual(captured.msg, "hello")
+        self.assertEqual(captured.formatted, "ValueError: hello")
+
+    def test_capture_exception_custom_format(self):
+        exc = ValueError("good bye!")
+        formatter = lambda self: ["hello\n", "world\n"]
+        captured = self.capture_with_formatter(exc, formatter)
+        self.assertEqual(captured.msg, "good bye!")
+        self.assertEqual(captured.formatted, "ValueError: good bye!")
+        self.assertEqual(captured.errdisplay, "hello\nworld")
+
+    @support.subTests("exc_lines", ([], ["x-no-nl"], ["x-no-nl", "y-no-nl"]))
+    def test_capture_exception_invalid_format(self, exc_lines):
+        formatter = lambda self: exc_lines
+        captured = self.capture_with_formatter(ValueError(), formatter)
+        self.assertEqual(captured.msg, "")
+        self.assertEqual(captured.formatted, "ValueError: ")
+        self.assertEqual(captured.errdisplay, "".join(exc_lines))
+
+    def test_capture_exception_unraisable_exception(self):
+        formatter = lambda self: 1
+        with support.catch_unraisable_exception() as cm:
+            captured = self.capture_with_formatter(ValueError(), formatter)
+            self.assertNotHasAttr(captured, "errdisplay")
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "can only join an iterable")
 
 
 if __name__ == '__main__':

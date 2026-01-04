@@ -1141,9 +1141,14 @@ _format_TracebackException(PyObject *tbexc)
     Py_ssize_t size = -1;
     const char *formatted = _copy_string_obj_raw(formatted_obj, &size);
     Py_DECREF(formatted_obj);
-    // We remove trailing the newline added by TracebackException.format().
-    assert(formatted[size-1] == '\n');
-    ((char *)formatted)[size-1] = '\0';
+    if (formatted == NULL || size == 0) {
+        return formatted;
+    }
+    assert(formatted[size] == '\0');
+    // Remove a trailing newline if needed.
+    if (formatted[size-1] == '\n') {
+        ((char *)formatted)[size-1] = '\0';
+    }
     return formatted;
 }
 
