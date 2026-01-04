@@ -2759,7 +2759,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH_SAME_OPARG();
                 }
-                OPCODE_DEFERRED_INC(SEND);
+                OPCODE_DEFERRED_INC(CALL_FUNCTION_EX);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION_FT */
             }
@@ -10466,7 +10466,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH_SAME_OPARG();
                 }
-                OPCODE_DEFERRED_INC(CALL_FUNCTION_EX);
+                OPCODE_DEFERRED_INC(SEND);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION_FT */
             }
