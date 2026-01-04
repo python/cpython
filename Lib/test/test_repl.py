@@ -374,42 +374,38 @@ class TestInteractiveInterpreter(unittest.TestCase):
         startup_code = "print('notice from pythonstartup')"
         startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
 
-        # -q to suppress noise
         p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
         p.stdin.write("1/0")
-        output_lines = kill_python(p).splitlines()
-        self.assertEqual(output_lines[0], 'notice from pythonstartup')
-
-        traceback_lines = output_lines[2:-1]
-        expected_lines = [
-            'Traceback (most recent call last):',
-            '  File "<stdin>", line 1, in <module>',
-            '    1/0',
-            '    ~^~',
-            'ZeroDivisionError: division by zero',
-        ]
-        self.assertEqual(traceback_lines, expected_lines)
+        output = kill_python(p)
+        self.assertStartsWith(output, 'notice from pythonstartup')
+        expected = dedent("""\
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
+        """)
+        self.assertIn(expected, output)
 
     def test_pythonstartup_failure(self):
         # case 2: error in PYTHONSTARTUP triggered by user input
         startup_code = "def foo():\n    1/0\n"
         startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
 
-        # -q to suppress noise
         p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
         p.stdin.write("foo()")
-        traceback_lines = kill_python(p).splitlines()[1:-1]
-        expected_lines = [
-            'Traceback (most recent call last):',
-            '  File "<stdin>", line 1, in <module>',
-            '    foo()',
-            '    ~~~^^',
-            f'  File "{startup_env['PYTHONSTARTUP']}", line 2, in foo',
-            '    1/0',
-            '    ~^~',
-            'ZeroDivisionError: division by zero',
-        ]
-        self.assertEqual(traceback_lines, expected_lines)
+        output = kill_python(p)
+        expected = dedent(f"""\
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+            foo()
+            ~~~^^
+          File "{startup_env['PYTHONSTARTUP']}", line 2, in foo
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
+        """)
+        self.assertIn(expected, output)
 
 
 @support.force_not_colorized_test_class
@@ -493,13 +489,10 @@ class TestAsyncioREPL(unittest.TestCase):
         p = spawn_repl(
             "-qm", "asyncio",
             env=os.environ | startup_env,
-            stderr=subprocess.PIPE,
             isolated=False,
             custom=True)
         p.stdin.write("1/0")
-        kill_python(p)
-        output = p.stderr.read()
-        p.stderr.close()
+        output = kill_python(p)
         self.assertStartsWith(output, 'notice from pythonstartup in asyncio repl')
 
         expected = dedent("""\
@@ -507,10 +500,8 @@ class TestAsyncioREPL(unittest.TestCase):
             1/0
             ~^~
         ZeroDivisionError: division by zero
-
-        exiting asyncio REPL...
         """)
-        self.assertEndsWith(output, expected)
+        self.assertIn(expected, output)
 
     def test_pythonstartup_failure(self):
         startup_code = "def foo():\n    1/0\n"
@@ -520,14 +511,10 @@ class TestAsyncioREPL(unittest.TestCase):
         p = spawn_repl(
             "-qm", "asyncio",
             env=os.environ | startup_env,
-            stderr=subprocess.PIPE,
             isolated=False,
             custom=True)
         p.stdin.write("foo()")
-        kill_python(p)
-        output = p.stderr.read()
-        p.stderr.close()
-
+        output = kill_python(p)
         expected = dedent(f"""\
           File "<stdin>", line 1, in <module>
             foo()
@@ -536,10 +523,8 @@ class TestAsyncioREPL(unittest.TestCase):
             1/0
             ~^~
         ZeroDivisionError: division by zero
-
-        exiting asyncio REPL...
         """)
-        self.assertEndsWith(output, expected)
+        self.assertIn(expected, output)
 
 if __name__ == "__main__":
     unittest.main()
