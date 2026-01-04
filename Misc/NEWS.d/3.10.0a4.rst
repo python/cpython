@@ -11,7 +11,7 @@ Fix undefined behavior in ``Objects/genericaliasobject.c``.
 .. bpo: 42806
 .. date: 2021-01-03-00-20-38
 .. nonce: mLAobJ
-.. section: Library
+.. section: Core and Builtins
 
 Fix the column offsets for f-strings :mod:`ast` nodes surrounded by
 parentheses and for nodes that spawn multiple lines. Patch by Pablo Galindo.

@@ -65,7 +65,7 @@ parser.
 .. bpo: 41796
 .. date: 2020-10-29-12-49-08
 .. nonce: tkGdHq
-.. section: Library
+.. section: Core and Builtins
 
 The :mod:`ast` module internal state is now per interpreter. Patch by Victor
 Stinner.

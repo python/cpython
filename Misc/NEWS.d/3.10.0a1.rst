@@ -267,7 +267,7 @@ Port the :mod:`zlib` extension module to multi-phase initialization
 .. bpo: 41631
 .. date: 2020-08-26-11-23-31
 .. nonce: 3jZcd9
-.. section: Library
+.. section: Core and Builtins
 
 The ``_ast`` module uses again a global state. Using a module state per
 module instance is causing subtle practical problems. For example, the
@@ -653,7 +653,7 @@ only imported when it is the filesystem encoding or the stdio encoding.
 .. bpo: 40636
 .. date: 2020-06-17-10-27-17
 .. nonce: MYaCIe
-.. section: Library
+.. section: Core and Builtins
 
 :func:`zip` now supports :pep:`618`'s ``strict`` parameter, which raises a
 :exc:`ValueError` if the arguments are exhausted at different lengths. Patch
