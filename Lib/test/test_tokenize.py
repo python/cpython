@@ -3420,7 +3420,7 @@ class StringPrefixTest(unittest.TestCase):
         # some uppercase-only prefix is added.
         for letter in itertools.chain(string.ascii_lowercase, string.ascii_uppercase):
             try:
-                eval(f'{letter}""')
+                eval(f'{letter}"""\n"""')  # d-string needs multiline
                 single_char_valid_prefixes.add(letter.lower())
             except SyntaxError:
                 pass
@@ -3444,7 +3444,7 @@ class StringPrefixTest(unittest.TestCase):
                             # because it's a valid expression: not ""
                             continue
                         try:
-                            eval(f'{p}""')
+                            eval(f'{p}"""\n"""')  # d-string needs multiline
 
                             # No syntax error, so p is a valid string
                             # prefix.
