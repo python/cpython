@@ -691,26 +691,38 @@ class HelpFormatter(object):
 
         t = self._theme
 
-        if not t.reset:
-            return help_string % params
+        result = help_string % params
 
-        # Format first to preserve types for specifiers, like %x that require int.
+        if not t.reset:
+            return result
+
+        # Match format specifiers like: %s, %d, %(key)s, etc.
+        fmt_spec = r'''
+            %
+            (?:
+                %                           # %% escape
+                |
+                (?:\((?P<key>[^)]*)\))?     # key
+                [-#0\ +]*                   # flags
+                (?:\*|\d+)?                 # width
+                (?:\.(?:\*|\d+))?           # precision
+                [hlL]?                      # length modifier
+                [diouxXeEfFgGcrsa]          # conversion type
+            )
+        '''
+
         def colorize(match):
-            spec, name = match.group(0, 1)
+            spec, key = match.group(0, 'key')
             if spec == '%%':
                 return '%'
-            if name in params:
-                formatted = spec % {name: params[name]}
+            if key is not None:
+                # %(key)... - format and colorize
+                formatted = spec % {key: params[key]}
                 return f'{t.interpolated_value}{formatted}{t.reset}'
-            return spec
+            # bare %s etc. - format with full params dict, no colorization
+            return spec % params
 
-        # Match %% or %(name)... format specifiers
-        result = _re.sub(r'%%|%\((\w+)\)[^a-z]*[a-z]', colorize,
-                         help_string, flags=_re.IGNORECASE)
-
-        if '%' in result:
-            raise ValueError(f"invalid format specifier in: {help_string!r}")
-        return result
+        return _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
 
     def _iter_indented_subactions(self, action):
         try:
