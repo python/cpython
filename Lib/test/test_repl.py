@@ -479,10 +479,7 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(output[:3], ">>>")
 
     def test_pythonstartup_success(self):
-        startup_code = dedent("""\
-        import sys
-        print('notice from pythonstartup in asyncio repl', file=sys.stderr)
-        """)
+        startup_code = dedent("print('notice from pythonstartup in asyncio repl')")
         startup_env = self.enterContext(
             new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
 
