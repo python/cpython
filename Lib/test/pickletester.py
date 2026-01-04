@@ -2800,7 +2800,7 @@ class AbstractPickleTests:
             self.assertEqual(list(x[0].attr.keys()), [1])
             self.assertIs(x[0].attr[1], x)
 
-    def _test_recursive_collection_and_inst(self, factory):
+    def _test_recursive_collection_and_inst(self, factory, oldminproto=0):
         # Mutable object containing a collection containing the original
         # object.
         o = Object()
@@ -2818,6 +2818,8 @@ class AbstractPickleTests:
         # collection.
         o = o.attr
         for proto in protocols:
+            if self.py_version < (3, 4) and proto < oldminproto:
+                continue
             s = self.dumps(o, proto)
             x = self.loads(s)
             self.assertIsInstance(x, t)
@@ -2835,25 +2837,25 @@ class AbstractPickleTests:
         self._test_recursive_collection_and_inst(dict.fromkeys)
 
     def test_recursive_set_and_inst(self):
-        self._test_recursive_collection_and_inst(set)
+        self._test_recursive_collection_and_inst(set, oldminproto=4)
 
     def test_recursive_frozenset_and_inst(self):
-        self._test_recursive_collection_and_inst(frozenset)
+        self._test_recursive_collection_and_inst(frozenset, oldminproto=4)
 
     def test_recursive_list_subclass_and_inst(self):
-        self._test_recursive_collection_and_inst(MyList)
+        self._test_recursive_collection_and_inst(MyList, oldminproto=2)
 
     def test_recursive_tuple_subclass_and_inst(self):
-        self._test_recursive_collection_and_inst(MyTuple)
+        self._test_recursive_collection_and_inst(MyTuple, oldminproto=4)
 
     def test_recursive_dict_subclass_and_inst(self):
-        self._test_recursive_collection_and_inst(MyDict.fromkeys)
+        self._test_recursive_collection_and_inst(MyDict.fromkeys, oldminproto=2)
 
     def test_recursive_set_subclass_and_inst(self):
-        self._test_recursive_collection_and_inst(MySet)
+        self._test_recursive_collection_and_inst(MySet, oldminproto=4)
 
     def test_recursive_frozenset_subclass_and_inst(self):
-        self._test_recursive_collection_and_inst(MyFrozenSet)
+        self._test_recursive_collection_and_inst(MyFrozenSet, oldminproto=4)
 
     def test_recursive_inst_state(self):
         # Mutable object containing itself.
@@ -2926,8 +2928,11 @@ class AbstractPickleTests:
                 self.assert_is_copy(s, self.loads(p))
 
     def test_bytes_memoization(self):
+        array_types = [bytes]
+        if self.py_version >= (3, 4):
+            array_types += [ZeroCopyBytes]
         for proto in protocols:
-            for array_type in [bytes, ZeroCopyBytes]:
+            for array_type in array_types:
                 for s in b'', b'xyz', b'xyz'*100:
                     with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
                         b = array_type(s)
@@ -2964,8 +2969,11 @@ class AbstractPickleTests:
                     self.assertTrue(opcode_in_pickle(pickle.BYTEARRAY8, p))
 
     def test_bytearray_memoization(self):
+        array_types = [bytearray]
+        if self.py_version >= (3, 4):
+            array_types += [ZeroCopyBytearray]
         for proto in protocols:
-            for array_type in [bytearray, ZeroCopyBytearray]:
+            for array_type in array_types:
                 for s in b'', b'xyz', b'xyz'*100:
                     with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
                         b = array_type(s)
@@ -3039,10 +3047,13 @@ class AbstractPickleTests:
 
     def test_reduce(self):
         for proto in protocols:
-            inst = AAA()
-            dumped = self.dumps(inst, proto)
-            loaded = self.loads(dumped)
-            self.assertEqual(loaded, REDUCE_A)
+            if self.py_version < (3, 4) and proto < 3:
+                continue
+            with self.subTest(proto=proto):
+                inst = AAA()
+                dumped = self.dumps(inst, proto)
+                loaded = self.loads(dumped)
+                self.assertEqual(loaded, REDUCE_A)
 
     def test_getinitargs(self):
         for proto in protocols:
@@ -3076,6 +3087,8 @@ class AbstractPickleTests:
             s = self.dumps(t, proto)
             u = self.loads(s)
             self.assert_is_copy(t, u)
+            if self.py_version < (3, 4):
+                continue
             t = os.stat(os.curdir)
             s = self.dumps(t, proto)
             u = self.loads(s)
@@ -3087,12 +3100,16 @@ class AbstractPickleTests:
                 self.assert_is_copy(t, u)
 
     def test_ellipsis(self):
+        if self.py_version < (3, 3):
+            self.skipTest('not supported in Python < 3.3')
         for proto in protocols:
             s = self.dumps(..., proto)
             u = self.loads(s)
             self.assertIs(..., u)
 
     def test_notimplemented(self):
+        if self.py_version < (3, 3):
+            self.skipTest('not supported in Python < 3.3')
         for proto in protocols:
             s = self.dumps(NotImplemented, proto)
             u = self.loads(s)
@@ -3100,6 +3117,8 @@ class AbstractPickleTests:
 
     def test_singleton_types(self):
         # Issue #6477: Test that types of built-in singletons can be pickled.
+        if self.py_version < (3, 3):
+            self.skipTest('not supported in Python < 3.3')
         singletons = [None, ..., NotImplemented]
         for singleton in singletons:
             for proto in protocols:
@@ -3110,12 +3129,34 @@ class AbstractPickleTests:
     def test_builtin_types(self):
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):
+                if t is str and self.py_version < (3, 4):
+                    continue
+                if t.__name__ == 'BuiltinImporter' and self.py_version < (3, 3):
+                    continue
                 for proto in protocols:
-                    s = self.dumps(t, proto)
-                    self.assertIs(self.loads(s), t)
+                    with self.subTest(name=t.__name__, proto=proto):
+                        s = self.dumps(t, proto)
+                        self.assertIs(self.loads(s), t)
 
     def test_builtin_exceptions(self):
         new_names = {
+            'BlockingIOError': (3, 3),
+            'BrokenPipeError': (3, 3),
+            'ChildProcessError': (3, 3),
+            'ConnectionError': (3, 3),
+            'ConnectionAbortedError': (3, 3),
+            'ConnectionRefusedError': (3, 3),
+            'ConnectionResetError': (3, 3),
+            'FileExistsError': (3, 3),
+            'FileNotFoundError': (3, 3),
+            'InterruptedError': (3, 3),
+            'IsADirectoryError': (3, 3),
+            'NotADirectoryError': (3, 3),
+            'PermissionError': (3, 3),
+            'ProcessLookupError': (3, 3),
+            'TimeoutError': (3, 3),
+            'RecursionError': (3, 5),
+            'StopAsyncIteration': (3, 5),
             'ModuleNotFoundError': (3, 6),
             'EncodingWarning': (3, 10),
             'BaseExceptionGroup': (3, 11),
@@ -3128,14 +3169,17 @@ class AbstractPickleTests:
                 if t.__name__ in new_names and self.py_version < new_names[t.__name__]:
                     continue
                 for proto in protocols:
-                    s = self.dumps(t, proto)
-                    u = self.loads(s)
-                    if proto <= 2 and issubclass(t, OSError) and t is not BlockingIOError:
-                        self.assertIs(u, OSError)
-                    elif proto <= 2 and issubclass(t, ImportError):
-                        self.assertIs(u, ImportError)
-                    else:
-                        self.assertIs(u, t)
+                    if self.py_version < (3, 3) and proto < 3:
+                        continue
+                    with self.subTest(name=t.__name__, proto=proto):
+                        s = self.dumps(t, proto)
+                        u = self.loads(s)
+                        if proto <= 2 and issubclass(t, OSError) and t is not BlockingIOError:
+                            self.assertIs(u, OSError)
+                        elif proto <= 2 and issubclass(t, ImportError):
+                            self.assertIs(u, ImportError)
+                        else:
+                            self.assertIs(u, t)
 
     def test_builtin_functions(self):
         new_names = {'breakpoint': (3, 7), 'aiter': (3, 10), 'anext': (3, 10)}
@@ -3144,8 +3188,9 @@ class AbstractPickleTests:
                 if t.__name__ in new_names and self.py_version < new_names[t.__name__]:
                     continue
                 for proto in protocols:
-                    s = self.dumps(t, proto)
-                    self.assertIs(self.loads(s), t)
+                    with self.subTest(name=t.__name__, proto=proto):
+                        s = self.dumps(t, proto)
+                        self.assertIs(self.loads(s), t)
 
     # Tests for protocol 2
 
@@ -3160,7 +3205,7 @@ class AbstractPickleTests:
 
     def test_bad_proto(self):
         if self.py_version < (3, 8):
-            self.skipTest('No protocol validation in this version')
+            self.skipTest('no protocol validation in Python < 3.8')
         oob = protocols[-1] + 1     # a future protocol
         build_none = pickle.NONE + pickle.STOP
         badpickle = pickle.PROTO + bytes([oob]) + build_none
@@ -3272,6 +3317,8 @@ class AbstractPickleTests:
     def test_newobj_generic(self):
         for proto in protocols:
             for C in myclasses:
+                if self.py_version < (3, 4) and proto < 3 and C in (MyStr, MyUnicode):
+                    continue
                 B = C.__base__
                 x = C(C.sample)
                 x.foo = 42
@@ -3290,6 +3337,8 @@ class AbstractPickleTests:
             classes.remove(c)
         for proto in protocols:
             for C in classes:
+                if self.py_version < (3, 4) and proto < 3 and C in (MyStr, MyUnicode):
+                    continue
                 B = C.__base__
                 x = C(C.sample)
                 x.foo = 42
@@ -3314,6 +3363,8 @@ class AbstractPickleTests:
 
     def test_newobj_not_class(self):
         # Issue 24552
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
         o = SimpleNewObj.__new__(SimpleNewObj)
         b = self.dumps(o, 4)
         with support.swap_attr(picklecommon, 'SimpleNewObj', 42):
@@ -3448,9 +3499,10 @@ class AbstractPickleTests:
                         self.assertIn(b'64206', s)  # INT or LONG
                 else:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
-                self.assertEqual(opcode_in_pickle(pickle.NEWOBJ, s),
-                                 2 <= proto)
-                self.assertFalse(opcode_in_pickle(pickle.NEWOBJ_EX, s))
+                if not (self.py_version < (3, 5) and proto == 4):
+                    self.assertEqual(opcode_in_pickle(pickle.NEWOBJ, s),
+                                     2 <= proto)
+                    self.assertFalse(opcode_in_pickle(pickle.NEWOBJ_EX, s))
                 y = self.loads(s)   # will raise TypeError if __init__ called
                 self.assert_is_copy(x, y)
 
@@ -3471,9 +3523,10 @@ class AbstractPickleTests:
                     self.assertIn(b'X\x04\x00\x00\x00FACE', s)  # BINUNICODE
                 else:
                     self.assertIn(b'\x8c\x04FACE', s)  # SHORT_BINUNICODE
-                self.assertEqual(opcode_in_pickle(pickle.NEWOBJ, s),
-                                 2 <= proto)
-                self.assertFalse(opcode_in_pickle(pickle.NEWOBJ_EX, s))
+                if not (self.py_version < (3, 5) and proto == 4):
+                    self.assertEqual(opcode_in_pickle(pickle.NEWOBJ, s),
+                                     2 <= proto)
+                    self.assertFalse(opcode_in_pickle(pickle.NEWOBJ_EX, s))
                 y = self.loads(s)   # will raise TypeError if __init__ called
                 self.assert_is_copy(x, y)
 
@@ -3608,6 +3661,8 @@ class AbstractPickleTests:
 
     def test_int_pickling_efficiency(self):
         # Test compacity of int representation (see issue #12744)
+        if self.py_version < (3, 3):
+            self.skipTest('not supported in Python < 3.3')
         for proto in protocols:
             with self.subTest(proto=proto):
                 pickles = [self.dumps(2**n, proto) for n in range(70)]
@@ -3852,7 +3907,12 @@ class AbstractPickleTests:
                                  chunk_sizes)
 
     def test_nested_names(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
+        # required protocol 4 in Python 3.4
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            if self.py_version < (3, 5) and proto < 4:
+                continue
             for obj in [Nested.A, Nested.A.B, Nested.A.B.C]:
                 with self.subTest(proto=proto, obj=obj):
                     unpickled = self.loads(self.dumps(obj, proto))
@@ -3883,10 +3943,21 @@ class AbstractPickleTests:
         del Recursive.ref # break reference loop
 
     def test_py_methods(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
         py_methods = (
-            PyMethodsTest.cheese,
             PyMethodsTest.wine,
             PyMethodsTest().biscuits,
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for method in py_methods:
+                with self.subTest(proto=proto, method=method):
+                    unpickled = self.loads(self.dumps(method, proto))
+                    self.assertEqual(method(), unpickled())
+
+        # required protocol 4 in Python 3.4
+        py_methods = (
+            PyMethodsTest.cheese,
             PyMethodsTest.Nested.ketchup,
             PyMethodsTest.Nested.maple,
             PyMethodsTest.Nested().pie
@@ -3896,6 +3967,8 @@ class AbstractPickleTests:
             (PyMethodsTest.Nested.pie, PyMethodsTest.Nested)
         )
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            if self.py_version < (3, 5) and proto < 4:
+                continue
             for method in py_methods:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
@@ -3916,6 +3989,8 @@ class AbstractPickleTests:
                     self.assertRaises(TypeError, self.dumps, descr, proto)
 
     def test_c_methods(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
         c_methods = (
             # bound built-in method
             ("abcd".index, ("c",)),
@@ -3936,10 +4011,21 @@ class AbstractPickleTests:
             # subclass methods
             (Subclass([1,2,2]).count, (2,)),
             (Subclass.count, (Subclass([1,2,2]), 2)),
-            (Subclass.Nested("sweet").count, ("e",)),
             (Subclass.Nested.count, (Subclass.Nested("sweet"), "e")),
         )
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for method, args in c_methods:
+                with self.subTest(proto=proto, method=method):
+                    unpickled = self.loads(self.dumps(method, proto))
+                    self.assertEqual(method(*args), unpickled(*args))
+
+        # required protocol 4 in Python 3.4
+        c_methods = (
+            (Subclass.Nested("sweet").count, ("e",)),
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            if self.py_version < (3, 5) and proto < 4:
+                continue
             for method, args in c_methods:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
@@ -3955,6 +4041,8 @@ class AbstractPickleTests:
                     self.assertRaises(TypeError, self.dumps, descr, proto)
 
     def test_compat_pickle(self):
+        if self.py_version < (3, 4):
+            self.skipTest("doesn't work in Python < 3.4'")
         tests = [
             (range(1, 7), '__builtin__', 'xrange'),
             (map(int, '123'), 'itertools', 'imap'),

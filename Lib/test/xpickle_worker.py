@@ -10,10 +10,17 @@ import sys
 # since some of the pickle objects hold references to picklecommon.py.
 test_mod_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              'picklecommon.py'))
-spec = importlib.util.spec_from_file_location('test.picklecommon', test_mod_path)
-test_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(test_module)
-sys.modules['test.picklecommon'] = test_module
+if sys.version_info >= (3, 5):
+    spec = importlib.util.spec_from_file_location('test.picklecommon', test_mod_path)
+    test_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(test_module)
+    sys.modules['test.picklecommon'] = test_module
+else:
+    test_module = type(sys)('test.picklecommon')
+    sys.modules['test.picklecommon'] = test_module
+    with open(test_mod_path, 'rb') as f:
+        sources = f.read()
+    exec(sources, vars(test_module))
 
 
 in_stream = sys.stdin.buffer

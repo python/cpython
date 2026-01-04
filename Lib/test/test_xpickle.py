@@ -1,5 +1,5 @@
 # This test covers backwards compatibility with
-# previous version of Python by bouncing pickled objects through Python 3.5
+# previous version of Python by bouncing pickled objects through Python 3.2
 # and the current version by running xpickle_worker.py.
 import io
 import os
@@ -222,7 +222,7 @@ def make_test(py_version, base):
 def load_tests(loader, tests, pattern):
     major = sys.version_info.major
     assert major == 3
-    for minor in range(5, sys.version_info.minor):
+    for minor in range(2, sys.version_info.minor):
         test_class = make_test((major, minor), PyPicklePythonCompat)
         tests.addTest(loader.loadTestsFromTestCase(test_class))
         if has_c_implementation:
