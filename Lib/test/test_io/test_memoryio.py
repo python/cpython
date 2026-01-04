@@ -857,10 +857,10 @@ class CBytesIOTest(PyBytesIOTest):
         self.assertEqual(sys.getrefcount(ba), old_rc)
 
     @support.cpython_only
-    def test_uaf_buffer_write(self):
-        # Prevent use-after-free when write() triggers a re-entrant call that
-        # closes or mutates the BytesIO object.
-        # See: https://github.com/python/cpython/issues/143378
+    def test_write_concurrent_mutation(self):
+        # Prevent crashes when buf.write() concurrently mutates 'buf'.
+        # See: https://github.com/python/cpython/issues/143378.
+
         class TBuf:
             def __init__(self, bio):
                 self.bio = bio
