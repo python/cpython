@@ -287,9 +287,7 @@ instantiation, of which this module provides three different variants:
       specifying its value. Note that, after the send_header calls are done,
       :meth:`end_headers` MUST BE called in order to complete the operation.
 
-      This method does not reject input containing CRLF sequences allowing the
-      possibility of CRLF injection, where a single method call can inject
-      multiple arbitrary headers.
+      This method does not reject input containing CRLF sequences.
 
       .. versionchanged:: 3.2
          Headers are stored in an internal buffer.

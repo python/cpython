@@ -263,9 +263,7 @@ manipulation of WSGI response headers using a mapping-like interface.
 
          Content-Disposition: attachment; filename="bud.gif"
 
-      This method does not reject input containing CRLF sequences allowing the
-      possibility of CRLF injection, where a single method call can inject
-      multiple arbitrary headers.
+      This method does not reject input containing CRLF sequences.
 
    .. versionchanged:: 3.5
       *headers* parameter is optional.
