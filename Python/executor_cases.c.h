@@ -4954,6 +4954,13 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
+            if (!_PyObject_IsUniquelyReferenced(PyStackRef_AsPyObjectBorrow(*target_local))) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = right;
+                _tos_cache0 = left;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
             STAT_INC(BINARY_OP, hit);
             assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);

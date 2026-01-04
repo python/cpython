@@ -788,17 +788,17 @@ dummy_func(
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
             DEOPT_IF(PyStackRef_AsPyObjectBorrow(*target_local) != left_o);
+            /* gh-143401: The local should be uniquely referenced to modify this in-place.
+             * This check is required as 3.14 no longer creates new references when pushing
+             * values to the stack in some cases.
+             */
+            DEOPT_IF(!_PyObject_IsUniquelyReferenced(PyStackRef_AsPyObjectBorrow(*target_local)));
             STAT_INC(BINARY_OP, hit);
             /* Handle `left = left + right` or `left += right` for str.
              *
              * When possible, extend `left` in place rather than
              * allocating a new PyUnicodeObject. This attempts to avoid
              * quadratic behavior when one neglects to use str.join().
-             *
-             * If `left` has only two references remaining (one from
-             * the stack, one in the locals), DECREFing `left` leaves
-             * only the locals reference, so PyUnicode_Append knows
-             * that the string is safe to mutate.
              */
             assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);

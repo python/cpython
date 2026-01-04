@@ -425,6 +425,11 @@
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
+                if (!_PyObject_IsUniquelyReferenced(PyStackRef_AsPyObjectBorrow(*target_local))) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
                 STAT_INC(BINARY_OP, hit);
                 assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
                 PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
