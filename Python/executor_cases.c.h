@@ -4957,30 +4957,22 @@
             STAT_INC(BINARY_OP, hit);
             assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            stack_pointer[0] = left;
-            stack_pointer[1] = right;
-            stack_pointer += 2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
+            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyUnicode_Append(&temp, right_o);
+            _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            *target_local = PyStackRef_NULL;
             if (temp == NULL) {
-                stack_pointer += -2;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             res = PyStackRef_FromPyObjectSteal(temp);
-            *target_local = PyStackRef_NULL;
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
