@@ -897,6 +897,9 @@ directory and port number (default: 8000) on the command line::
             print("Shutting down.")
             httpd.server_close()
 
+
+.. _wsgiref-security:
+
 Security considerations
 -----------------------
 
