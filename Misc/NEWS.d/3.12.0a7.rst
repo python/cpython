@@ -138,7 +138,7 @@ collection. Patch by Kumar Aditya.
 .. date: 2023-03-03-23-21-16
 .. gh-issue: 102406
 .. nonce: XLqYO3
-.. section: Library
+.. section: Core and Builtins
 
 :mod:`codecs` encoding/decoding errors now get the context information
 (which operation and which codecs) attached as :pep:`678` notes instead of
@@ -187,7 +187,7 @@ Improve build support for the Xbox. Patch by Max Bachmann.
 .. date: 2023-02-21-23-42-39
 .. gh-issue: 102027
 .. nonce: fQARG0
-.. section: Library
+.. section: Build
 
 Fix SSE2 and SSE3 detection in ``_blake2`` internal module. Patch by Max
 Bachmann.

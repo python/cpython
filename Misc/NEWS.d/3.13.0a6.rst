@@ -82,7 +82,7 @@ Grigoryev Semyon
 .. date: 2024-03-26-17-22-38
 .. gh-issue: 117266
 .. nonce: Kwh79O
-.. section: Library
+.. section: Core and Builtins
 
 Fix crashes for certain user-created subclasses of :class:`ast.AST`. Such
 classes are now expected to set the ``_field_types`` attribute.

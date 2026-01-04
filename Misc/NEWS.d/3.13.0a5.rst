@@ -166,7 +166,7 @@ a resource leak was detected. It still exits with status code 0 otherwise.
 .. date: 2023-06-16-21-29-06
 .. gh-issue: 105858
 .. nonce: Q7h0EV
-.. section: Library
+.. section: Core and Builtins
 
 Improve the constructors for :mod:`ast` nodes. Arguments of list types now
 default to an empty list if omitted, and optional fields default to

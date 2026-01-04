@@ -333,7 +333,7 @@ aware of this shim frame and the changes to the semantics of
 .. date: 2022-10-19-01-01-08
 .. gh-issue: 98415
 .. nonce: ZS2eWh
-.. section: Library
+.. section: Build
 
 Fix detection of MAC addresses for :mod:`uuid` on certain OSs. Patch by
 Chaim Sanders

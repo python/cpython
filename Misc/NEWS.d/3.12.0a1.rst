@@ -245,7 +245,7 @@ Long deprecated, ``module_repr()`` should now be completely eradicated.
 .. date: 2022-10-04-14-04-40
 .. gh-issue: 86298
 .. nonce: QVM7G1
-.. section: Library
+.. section: Core and Builtins
 
 In cases where ``warnings.warn_explicit()`` consults the module's loader, an
 ``DeprecationWarning`` is issued when ``m.__loader__`` differs from
@@ -935,7 +935,7 @@ instead. Patch by Pablo Galindo
 .. date: 2022-07-23-19-16-25
 .. gh-issue: 93351
 .. nonce: 0Jyvu-
-.. section: Library
+.. section: Core and Builtins
 
 :class:`ast.AST` node positions are now validated when provided to
 :func:`compile` and other related functions. If invalid positions are
