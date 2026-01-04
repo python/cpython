@@ -1,2 +1,0 @@
-Document CRLF injection vulnerability in :mod:`http.server` and
-:mod:`wsgiref` modules.
