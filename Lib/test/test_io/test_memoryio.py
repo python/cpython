@@ -860,7 +860,6 @@ class CBytesIOTest(PyBytesIOTest):
     def test_write_concurrent_mutation(self):
         # Prevent crashes when buf.write() concurrently mutates 'buf'.
         # See: https://github.com/python/cpython/issues/143378.
-
         class B:
             def __buffer__(self, flags):
                 memio.close()
