@@ -3359,6 +3359,10 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+    if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
+        return -1;
+    }
+
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return -1;
     }
@@ -3512,11 +3516,17 @@ _testcapi_exec(PyObject *m)
     if (_PyTestCapi_Init_Function(m) < 0) {
         return -1;
     }
+    if (_PyTestCapi_Init_Module(m) < 0) {
+        return -1;
+    }
 
     return 0;
 }
 
+PyABIInfo_VAR(abi_info);
+
 static PyModuleDef_Slot _testcapi_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_exec, _testcapi_exec},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
