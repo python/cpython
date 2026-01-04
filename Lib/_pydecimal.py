@@ -3891,14 +3891,14 @@ class Context(object):
         if traps is None:
             self.traps = dc.traps.copy()
         elif not isinstance(traps, dict):
-            self.traps = dict((s, int(s in traps)) for s in _signals + traps)
+            self.traps = {s: int(s in traps) for s in _signals + traps}
         else:
             self.traps = traps
 
         if flags is None:
             self.flags = dict.fromkeys(_signals, 0)
         elif not isinstance(flags, dict):
-            self.flags = dict((s, int(s in flags)) for s in _signals + flags)
+            self.flags = {s: int(s in flags) for s in _signals + flags}
         else:
             self.flags = flags
 

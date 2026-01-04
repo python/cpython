@@ -1985,7 +1985,7 @@ class verify:
                     raise ValueError('aliases found in %r: %s' %
                             (enumeration, alias_details))
             elif check is CONTINUOUS:
-                values = set(e.value for e in enumeration)
+                values = {e.value for e in enumeration}
                 if len(values) < 2:
                     continue
                 low, high = min(values), max(values)
