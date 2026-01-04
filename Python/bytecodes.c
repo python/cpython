@@ -951,7 +951,7 @@ dummy_func(
 
             assert(PyLong_CheckExact(sub));
             assert(PyUnicode_CheckExact(str));
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
+            assert(_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index);
             uint8_t c = PyUnicode_1BYTE_DATA(str)[index];
@@ -973,7 +973,7 @@ dummy_func(
 
             assert(PyLong_CheckExact(sub));
             assert(PyUnicode_CheckExact(str));
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
+            assert(_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index);
             // Specialize for reading an ASCII character from any string:
