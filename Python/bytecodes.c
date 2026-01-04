@@ -1318,7 +1318,7 @@ dummy_func(
                 _Py_Specialize_Send(receiver, next_instr);
                 DISPATCH_SAME_OPARG();
             }
-            OPCODE_DEFERRED_INC(SEND);
+            OPCODE_DEFERRED_INC(CALL_FUNCTION_EX);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
@@ -4884,12 +4884,18 @@ dummy_func(
             _DO_CALL_FUNCTION_EX +
             _CHECK_PERIODIC_AT_END;
 
+        op(_CHECK_IS_PY_CALLABLE_EX, (func_st, unused, unused, unused -- func_st, unused, unused, unused)) {
+            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+            EXIT_IF(Py_TYPE(func) != &PyFunction_Type);
+            EXIT_IF(((PyFunctionObject *)func)->vectorcall != _PyFunction_Vectorcall);
+        }
+
         op(_PY_FRAME_EX, (func_st, null, callargs_st, kwargs_st -- ex_frame)) {
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
-            DEOPT_IF(Py_TYPE(func) != &PyFunction_Type);
-            DEOPT_IF(((PyFunctionObject *)func)->vectorcall != _PyFunction_Vectorcall);
             PyObject *callargs = PyStackRef_AsPyObjectSteal(callargs_st);
             assert(PyTuple_CheckExact(callargs));
+            assert(Py_TYPE(func) == &PyFunction_Type);
+            assert(((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall);
             PyObject *kwargs = PyStackRef_IsNull(kwargs_st) ? NULL : PyStackRef_AsPyObjectSteal(kwargs_st);
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
             Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
@@ -4911,6 +4917,7 @@ dummy_func(
             unused/1 +
             _CHECK_PEP_523 +
             _MAKE_CALLARGS_A_TUPLE +
+            _CHECK_IS_PY_CALLABLE_EX +
             _PY_FRAME_EX +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;

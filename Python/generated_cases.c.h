@@ -2569,10 +2569,8 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
-            // _PY_FRAME_EX
+            // _CHECK_IS_PY_CALLABLE_EX
             {
-                kwargs_st = stack_pointer[-1];
-                callargs_st = callargs;
                 func_st = func;
                 PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
                 if (Py_TYPE(func) != &PyFunction_Type) {
@@ -2585,8 +2583,16 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL_FUNCTION_EX));
                     JUMP_TO_PREDICTED(CALL_FUNCTION_EX);
                 }
+            }
+            // _PY_FRAME_EX
+            {
+                kwargs_st = stack_pointer[-1];
+                callargs_st = callargs;
+                PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
                 PyObject *callargs = PyStackRef_AsPyObjectSteal(callargs_st);
                 assert(PyTuple_CheckExact(callargs));
+                assert(Py_TYPE(func) == &PyFunction_Type);
+                assert(((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall);
                 PyObject *kwargs = PyStackRef_IsNull(kwargs_st) ? NULL : PyStackRef_AsPyObjectSteal(kwargs_st);
                 assert(kwargs == NULL || PyDict_CheckExact(kwargs));
                 Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);

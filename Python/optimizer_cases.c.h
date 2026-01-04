@@ -3059,6 +3059,10 @@
 
         /* _DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
+        case _CHECK_IS_PY_CALLABLE_EX: {
+            break;
+        }
+
         case _PY_FRAME_EX: {
             JitOptRef ex_frame;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);

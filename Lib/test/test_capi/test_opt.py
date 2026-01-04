@@ -416,6 +416,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_PY_FRAME_EX", uops)
 
     def test_branch_taken(self):
         def testfunc(n):
