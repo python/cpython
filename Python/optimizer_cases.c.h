@@ -788,12 +788,16 @@
         }
 
         case _BINARY_OP_SUBSCR_USTR_INT: {
+            JitOptRef sub_st;
+            JitOptRef str_st;
             JitOptRef res;
             JitOptRef s;
             JitOptRef i;
-            res = sym_new_not_null(ctx);
-            s = sym_new_not_null(ctx);
-            i = sym_new_not_null(ctx);
+            sub_st = stack_pointer[-1];
+            str_st = stack_pointer[-2];
+            res = sym_new_type(ctx, &PyUnicode_Type);
+            s = str_st;
+            i = sub_st;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = s;
