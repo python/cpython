@@ -82,6 +82,7 @@ def have_python_version(py_version):
     return py_executable_map.get(py_version, None)
 
 
+@support.requires_resource('cpu')
 class AbstractCompatTests(pickletester.AbstractPickleTests):
     py_version = None
     _OLD_HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
@@ -197,6 +198,16 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
     # Expected exception is raised during unpickling in a subprocess.
     test_pickle_setstate_None = None
 
+    # Other Python version may not have NumPy.
+    test_buffers_numpy = None
+
+    # Skip tests that require buffer_callback arguments since
+    # there isn't a reliable way to marshal/pickle the callback and ensure
+    # it works in a different Python version.
+    test_in_band_buffers = None
+    test_buffers_error = None
+    test_oob_buffers = None
+    test_oob_buffers_writable_to_readonly = None
 
 class PyPicklePythonCompat(AbstractCompatTests):
     pickler = pickle._Pickler
@@ -208,32 +219,8 @@ if has_c_implementation:
         unpickler = _pickle.Unpickler
 
 
-skip_tests = {
-    (3, 6): [
-        # This version has changes in framing using protocol 4
-        'test_framing_large_objects',
-
-        # These fail for protocol 0
-        'test_simple_newobj',
-        'test_complex_newobj',
-        'test_complex_newobj_ex',
-    ],
-    (3, 7): [
-        # This version does not support buffers
-        'test_in_band_buffers',
-
-        # No protocol validation in this version
-        'test_bad_proto',
-    ],
-}
-
-
 def make_test(py_version, base):
     class_dict = {'py_version': py_version}
-    for key, value in skip_tests.items():
-        if py_version <= key:
-            for test_name in value:
-                class_dict[test_name] = None
     name = base.__name__.replace('Python', 'Python%d%d' % py_version)
     return type(name, (base, unittest.TestCase), class_dict)
 

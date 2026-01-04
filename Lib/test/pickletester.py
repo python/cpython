@@ -158,6 +158,83 @@ def create_dynamic_class(name, bases):
     return result
 
 
+if _testbuffer is not None:
+
+    class PicklableNDArray:
+        # A not-really-zero-copy picklable ndarray, as the ndarray()
+        # constructor doesn't allow for it
+
+        zero_copy_reconstruct = False
+
+        def __init__(self, *args, **kwargs):
+            self.array = _testbuffer.ndarray(*args, **kwargs)
+
+        def __getitem__(self, idx):
+            cls = type(self)
+            new = cls.__new__(cls)
+            new.array = self.array[idx]
+            return new
+
+        @property
+        def readonly(self):
+            return self.array.readonly
+
+        @property
+        def c_contiguous(self):
+            return self.array.c_contiguous
+
+        @property
+        def f_contiguous(self):
+            return self.array.f_contiguous
+
+        def __eq__(self, other):
+            if not isinstance(other, PicklableNDArray):
+                return NotImplemented
+            return (other.array.format == self.array.format and
+                    other.array.shape == self.array.shape and
+                    other.array.strides == self.array.strides and
+                    other.array.readonly == self.array.readonly and
+                    other.array.tobytes() == self.array.tobytes())
+
+        def __ne__(self, other):
+            if not isinstance(other, PicklableNDArray):
+                return NotImplemented
+            return not (self == other)
+
+        def __repr__(self):
+            return ("{name}(shape={array.shape},"
+                    "strides={array.strides}, "
+                    "bytes={array.tobytes()})").format(
+                    name=type(self).__name__, array=self.array.shape)
+
+        def __reduce_ex__(self, protocol):
+            if not self.array.contiguous:
+                raise NotImplementedError("Reconstructing a non-contiguous "
+                                          "ndarray does not seem possible")
+            ndarray_kwargs = {"shape": self.array.shape,
+                              "strides": self.array.strides,
+                              "format": self.array.format,
+                              "flags": (0 if self.readonly
+                                        else _testbuffer.ND_WRITABLE)}
+            pb = pickle.PickleBuffer(self.array)
+            if protocol >= 5:
+                return (type(self)._reconstruct,
+                        (pb, ndarray_kwargs))
+            else:
+                # Need to serialize the bytes in physical order
+                with pb.raw() as m:
+                    return (type(self)._reconstruct,
+                            (m.tobytes(), ndarray_kwargs))
+
+        @classmethod
+        def _reconstruct(cls, obj, kwargs):
+            with memoryview(obj) as m:
+                # For some reason, ndarray() wants a list of integers...
+                # XXX This only works if format == 'B'
+                items = list(m.tobytes())
+            return cls(items, **kwargs)
+
+
 # DATA0 .. DATA4 are the pickles we expect under the various protocols, for
 # the object returned by create_data().
 
@@ -3082,6 +3159,8 @@ class AbstractPickleTests:
                 self.assertEqual(count_opcode(pickle.PROTO, pickled), 0)
 
     def test_bad_proto(self):
+        if self.py_version < (3, 8):
+            self.skipTest('No protocol validation in this version')
         oob = protocols[-1] + 1     # a future protocol
         build_none = pickle.NONE + pickle.STOP
         badpickle = pickle.PROTO + bytes([oob]) + build_none
@@ -3363,7 +3442,10 @@ class AbstractPickleTests:
             with self.subTest(proto=proto):
                 s = self.dumps(x, proto)
                 if proto < 1:
-                    self.assertIn(b'\nI64206', s)  # INT
+                    if self.py_version >= (3, 7):
+                        self.assertIn(b'\nI64206', s)  # INT
+                    else:  # for test_xpickle
+                        self.assertIn(b'64206', s)  # INT or LONG
                 else:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
                 self.assertEqual(opcode_in_pickle(pickle.NEWOBJ, s),
@@ -3379,7 +3461,10 @@ class AbstractPickleTests:
             with self.subTest(proto=proto):
                 s = self.dumps(x, proto)
                 if proto < 1:
-                    self.assertIn(b'\nI64206', s)  # INT
+                    if self.py_version >= (3, 7):
+                        self.assertIn(b'\nI64206', s)  # INT
+                    else:  # for test_xpickle
+                        self.assertIn(b'64206', s)  # INT or LONG
                 elif proto < 2:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
                 elif proto < 4:
@@ -3395,11 +3480,14 @@ class AbstractPickleTests:
     def test_complex_newobj_ex(self):
         x = ComplexNewObjEx.__new__(ComplexNewObjEx, 0xface)  # avoid __init__
         x.abc = 666
-        for proto in protocols:
+        for proto in protocols if self.py_version >= (3, 6) else protocols[4:]:
             with self.subTest(proto=proto):
                 s = self.dumps(x, proto)
                 if proto < 1:
-                    self.assertIn(b'\nI64206', s)  # INT
+                    if self.py_version >= (3, 7):
+                        self.assertIn(b'\nI64206', s)  # INT
+                    else:  # for test_xpickle
+                        self.assertIn(b'64206', s)  # INT or LONG
                 elif proto < 2:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
                 elif proto < 4:
@@ -3648,11 +3736,12 @@ class AbstractPickleTests:
                                      [len(x) for x in unpickled])
                     # Perform full equality check if the lengths match.
                     self.assertEqual(obj, unpickled)
-                    n_frames = count_opcode(pickle.FRAME, pickled)
-                    # A single frame for small objects between
-                    # first two large objects.
-                    self.assertEqual(n_frames, 1)
-                    self.check_frame_opcodes(pickled)
+                    if self.py_version >= (3, 7):
+                        n_frames = count_opcode(pickle.FRAME, pickled)
+                        # A single frame for small objects between
+                        # first two large objects.
+                        self.assertEqual(n_frames, 1)
+                        self.check_frame_opcodes(pickled)
 
     def test_optional_frames(self):
         if pickle.HIGHEST_PROTOCOL < 4:
