@@ -861,29 +861,25 @@ class CBytesIOTest(PyBytesIOTest):
         # Prevent crashes when buf.write() concurrently mutates 'buf'.
         # See: https://github.com/python/cpython/issues/143378.
 
-        class TBuf:
-            def __init__(self, bio):
-                self.bio = bio
+        class B:
             def __buffer__(self, flags):
-                self.bio.close()
+                memio.close()
                 return memoryview(b"A")
 
         memio = self.ioclass()
-        self.assertRaises(BufferError, memio.write, TBuf(memio))
+        self.assertRaises(BufferError, memio.write, B())
 
     @support.cpython_only
     def test_writelines_concurrent_mutation(self):
         # Prevent crashes when buf.writelines() concurrently mutates 'buf'.
         # See: https://github.com/python/cpython/issues/143378.
-        class TBuf:
-            def __init__(self, bio):
-                self.bio = bio
+        class B:
             def __buffer__(self, flags):
-                self.bio.close()
+                memio.close()
                 return memoryview(b"A")
 
         memio = self.ioclass()
-        self.assertRaises(BufferError, memio.writelines, [TBuf(memio)])
+        self.assertRaises(BufferError, memio.writelines, [B()])
 
 
 class CStringIOTest(PyStringIOTest):
