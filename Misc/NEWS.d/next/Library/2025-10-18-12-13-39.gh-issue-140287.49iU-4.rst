@@ -1,2 +1,4 @@
-The asyncio REPL now properly handles exceptions in ``PYTHONSTARTUP``
-scripts. Patch by Bartosz Sławecki in :gh:`140287`.
+The :mod:`asyncio` REPL now properly handles exceptions in :envvar:`PYTHONSTARTUP` scripts.
+Previously, those would prevent the REPL from starting or even cause a fatal error.
+
+Patch by Bartosz Sławecki in :gh:`140287`.
