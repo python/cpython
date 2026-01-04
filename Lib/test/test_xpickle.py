@@ -187,9 +187,6 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
 
     # These tests fail because they require classes from pickletester
     # which cannot be properly imported by the xpickle worker.
-    test_c_methods = None
-    test_py_methods = None
-    test_nested_names = None
     test_recursive_nested_names = None
     test_recursive_nested_names2 = None
 

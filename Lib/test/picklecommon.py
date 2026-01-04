@@ -1,7 +1,12 @@
+# Classes used for pickle testing.
+# They are moved to separate file, so they can be loaded
+# in other Python version for test_xpickle.
+
 class C:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
+# For test_load_classic_instance
 class D(C):
     def __init__(self, arg):
         pass
@@ -31,10 +36,12 @@ class K:
         # Shouldn't support the recursion itself
         return K, (self.value,)
 
+# For test_misc
 class myint(int):
     def __init__(self, x):
         self.str = str(x)
 
+# For test_misc and test_getinitargs
 class initarg(C):
 
     def __init__(self, a, b):
@@ -44,6 +51,7 @@ class initarg(C):
     def __getinitargs__(self):
         return self.a, self.b
 
+# For test_metaclass
 class metaclass(type):
     pass
 
@@ -140,14 +148,17 @@ class REX_state(object):
     def __reduce__(self):
         return type(self), (), self.state
 
+# For test_reduce_ex_None
 class REX_None:
     """ Setting __reduce_ex__ to None should fail """
     __reduce_ex__ = None
 
+# For test_reduce_None
 class R_None:
     """ Setting __reduce__ to None should fail """
     __reduce__ = None
 
+# For test_pickle_setstate_None
 class C_None_setstate:
     """  Setting __setstate__ to None should fail """
     def __getstate__(self):
@@ -157,6 +168,8 @@ class C_None_setstate:
 
 
 # Test classes for newobj
+
+# For test_newobj_generic and test_newobj_proxies
 
 class MyInt(int):
     sample = 1
@@ -193,6 +206,7 @@ myclasses = [MyInt, MyFloat,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]
 
+# For test_newobj_overridden_new
 class MyIntWithNew(int):
     def __new__(cls, value):
         raise AssertionError
@@ -201,6 +215,7 @@ class MyIntWithNew2(MyIntWithNew):
     __new__ = int.__new__
 
 
+# For test_newobj_list_slots
 class SlotList(MyList):
     __slots__ = ["foo"]
 
@@ -220,16 +235,6 @@ class ComplexNewObj(SimpleNewObj):
 class ComplexNewObjEx(SimpleNewObj):
     def __getnewargs_ex__(self):
         return ('%X' % self,), {'base': 16}
-
-class BadGetattr:
-    def __getattr__(self, key):
-        self.foo
-
-class NoNew:
-    def __getattribute__(self, name):
-        if name == '__new__':
-            raise AttributeError
-        return super().__getattribute__(name)
 
 
 class ZeroCopyBytes(bytes):
@@ -371,3 +376,42 @@ if _testbuffer is not None:
                 # XXX This only works if format == 'B'
                 items = list(m.tobytes())
             return cls(items, **kwargs)
+
+
+# For test_nested_names
+class Nested:
+    class A:
+        class B:
+            class C:
+                pass
+
+# For test_py_methods
+class PyMethodsTest:
+    @staticmethod
+    def cheese():
+        return "cheese"
+    @classmethod
+    def wine(cls):
+        assert cls is PyMethodsTest
+        return "wine"
+    def biscuits(self):
+        assert isinstance(self, PyMethodsTest)
+        return "biscuits"
+    class Nested:
+        "Nested class"
+        @staticmethod
+        def ketchup():
+            return "ketchup"
+        @classmethod
+        def maple(cls):
+            assert cls is PyMethodsTest.Nested
+            return "maple"
+        def pie(self):
+            assert isinstance(self, PyMethodsTest.Nested)
+            return "pie"
+
+# For test_c_methods
+class Subclass(tuple):
+    class Nested(str):
+        pass
+
