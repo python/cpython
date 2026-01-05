@@ -503,6 +503,40 @@ class HeaderTests(TestCase):
             '\r\n'
         )
 
+    validation_cases = (
+        ('Invalid\r\nName', 'ValidValue'),
+        ('Invalid\rName', 'ValidValue'),
+        ('Invalid\nName', 'ValidValue'),
+        ('\r\nInvalidName', 'ValidValue'),
+        ('\rInvalidName', 'ValidValue'),
+        ('\nInvalidName', 'ValidValue'),
+        (' InvalidName', 'ValidValue'),
+        ('\tInvalidName', 'ValidValue'),
+        ('Invalid:Name', 'ValidValue'),
+        (':InvalidName', 'ValidValue'),
+        ('ValidName', 'Invalid\r\nValue'),
+        ('ValidName', 'Invalid\rValue'),
+        ('ValidName', 'Invalid\nValue'),
+        ('ValidName', 'InvalidValue\r\n'),
+        ('ValidName', 'InvalidValue\r'),
+        ('ValidName', 'InvalidValue\n'),
+        (b'InvalidName', 'ValidValue', AssertionError),
+        ('ValidName', b'InvalidValue', AssertionError)
+    )
+
+    def test_add_header_validation(self):
+        h = Headers([])
+        for name, value, *exception in self.validation_cases:
+            with self.subTest((name, value, exception)):
+                with self.assertRaises(exception[0]) if len(exception) else self.assertRaisesRegex(ValueError, 'Invalid header'):
+                    h.add_header(name, value)
+
+    def test_initialize_validation(self):
+        for name, value, *exception in self.validation_cases:
+            with self.subTest((name, value, exception)):
+                with self.assertRaises(exception[0]) if len(exception) else self.assertRaisesRegex(ValueError, 'Invalid header'):
+                    Headers([(name, value)])
+
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
 
