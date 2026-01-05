@@ -365,14 +365,8 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_STRING);
         return -1;
     }
-    Py_ssize_t index = _PyDict_LookupIndex(dict, &_Py_ID(__getattr__));
+    Py_ssize_t index = _PyDict_LookupIndex(dict, name);
     assert(index != DKIX_ERROR);
-    if (index != DKIX_EMPTY) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND);
-        return -1;
-    }
-    index = _PyDict_LookupIndex(dict, name);
-    assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(LOAD_ATTR,
                             index == DKIX_EMPTY ?
