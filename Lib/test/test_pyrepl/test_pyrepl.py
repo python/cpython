@@ -1009,7 +1009,6 @@ class TestPyReplModuleCompleter(TestCase):
             ModuleInfo(None, "_private", True),
         ],
     )
-    @patch.dict(sys.modules, {"foo": object()})  # don't propose to import it
     def test_sub_module_private_completions(self):
         cases = (
             # Return public methods by default
@@ -1288,19 +1287,20 @@ class TestPyReplModuleCompleter(TestCase):
                         self.assertEqual(output, expected)
                 self.assertNotIn("boom", sys.modules)
 
+    @patch.dict(sys.modules)
     def test_attribute_completion_error_on_attributes_access(self):
-        class BrokenModule:
-            def __dir__(self):
-                raise ValueError("boom")
-
-        with (patch.dict(sys.modules, {"boom": BrokenModule()}),
-              patch("_pyrepl._module_completer.ModuleCompleter.iter_submodules",
-                    lambda *_: [ModuleInfo(None, "submodule", False)])):
-            events = code_to_events("from boom import \t\n")
-            reader = self.prepare_reader(events, namespace={})
-            output = reader.readline()
-            # ignore attributes, just propose submodule
-            self.assertEqual(output, "from boom import submodule")
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "boom").mkdir()
+            (dir / "boom"/"__init__.py").write_text("def __dir__(): raise ValueError()")
+            (dir / "boom"/"submodule.py").touch()
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                events = code_to_events("from boom import \t\t\n")  # trigger import
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertIn("boom", sys.modules)
+                # ignore attributes, just propose submodule
+                self.assertEqual(output, "from boom import submodule")
 
     @patch.dict(sys.modules)
     def test_attribute_completion_private_and_invalid_names(self):
