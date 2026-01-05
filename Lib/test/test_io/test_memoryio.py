@@ -587,6 +587,52 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.ioclass(initial_bytes=buf)
         self.assertRaises(TypeError, self.ioclass, buf, foo=None)
 
+    def test_write_concurrent_close(self):
+        # Prevent crashes when memio.write() concurrently closes 'memio'.
+        # See: https://github.com/python/cpython/issues/143378.
+        class B:
+            def __buffer__(self, flags):
+                memio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(ValueError, memio.write, B())
+
+    def test_writelines_concurrent_close(self):
+        # Prevent crashes when memio.writelines() concurrently closes 'memio'.
+        # See: https://github.com/python/cpython/issues/143378.
+        class B:
+            def __buffer__(self, flags):
+                memio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(ValueError, memio.writelines, [B()])
+
+    def test_write_concurrent_export(self):
+        # Prevent crashes when memio.write() concurrently exports 'memio'.
+        # See: https://github.com/python/cpython/issues/143378.
+        class B:
+            buf = None
+            def __buffer__(self, flags):
+                self.buf = memio.getbuffer()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.write, B())
+
+    def test_writelines_concurrent_export(self):
+        # Prevent crashes when memio.writelines() concurrently exports 'memio'.
+        # See: https://github.com/python/cpython/issues/143378.
+        class B:
+            buf = None
+            def __buffer__(self, flags):
+                self.buf = memio.getbuffer()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.writelines, [B()])
+
 
 class TextIOTestMixin:
 
@@ -855,31 +901,6 @@ class CBytesIOTest(PyBytesIOTest):
         old_rc = sys.getrefcount(ba)
         memio = self.ioclass(ba)
         self.assertEqual(sys.getrefcount(ba), old_rc)
-
-    @support.cpython_only
-    def test_write_concurrent_mutation(self):
-        # Prevent crashes when buf.write() concurrently mutates 'buf'.
-        # See: https://github.com/python/cpython/issues/143378.
-        class B:
-            def __buffer__(self, flags):
-                memio.close()
-                return memoryview(b"A")
-
-        memio = self.ioclass()
-        self.assertRaises(BufferError, memio.write, B())
-
-    @support.cpython_only
-    def test_writelines_concurrent_mutation(self):
-        # Prevent crashes when buf.writelines() concurrently mutates 'buf'.
-        # See: https://github.com/python/cpython/issues/143378.
-        class B:
-            def __buffer__(self, flags):
-                memio.close()
-                return memoryview(b"A")
-
-        memio = self.ioclass()
-        self.assertRaises(BufferError, memio.writelines, [B()])
-
 
 class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO

@@ -202,14 +202,17 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
     }
 
     Py_buffer buf;
-    self->exports++;
+    Py_ssize_t len;
     if (PyObject_GetBuffer(b, &buf, PyBUF_CONTIG_RO) < 0) {
-        self->exports--;
         return -1;
     }
-    self->exports--;
 
-    Py_ssize_t len = buf.len;
+    if (check_closed(self) || check_exports(self)) {
+        len = -1;
+        goto done;
+    }
+
+    len = buf.len;
     if (len == 0) {
         goto done;
     }
