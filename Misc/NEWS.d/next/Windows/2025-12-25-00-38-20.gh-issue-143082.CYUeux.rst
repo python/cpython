@@ -1,0 +1,1 @@
+Fix :mod:`pdb` arrow key history not working when ``stdin`` is ``sys.stdin``.
