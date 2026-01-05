@@ -944,7 +944,7 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Skip NaN encoding checks for MIPS because `math.nan` changes its value
         # depending on toolchain settings. See:
-        # https://gcc.gnu.org/onlinedocs/gcc-15.2.0/gcc/MIPS-Options.html#index-mnan_003d2008
+        # https://gcc.gnu.org/onlinedocs/gcc/MIPS-Options.html#index-mnan_003d2008
         if not platform.machine().startswith('mips'):
             packed = struct.pack('<e', math.nan)
             self.assertEqual(packed[1] & 0x7e, expected)
