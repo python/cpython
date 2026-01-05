@@ -827,7 +827,7 @@ _PyJit_translate_single_bytecode_to_trace(
                 // We don't want to continue tracing as we might get stuck in the
                 // inner loop. Instead, end the trace where the executor of the
                 // inner loop might start and let the traces rejoin.
-                if (_tstate->jit_tracer_state.prev_state.jump_backward_seen >= 1 ||
+                if (_tstate->jit_tracer_state.translator_state.jump_backward_seen >= 1 ||
                     // Also end the trace early if we probably have no more space left, as it's better
                     // to link to another backwards jump trace.
                     trace_length >= (_tstate->jit_tracer_state.prev_state.code_max_size / 3)) {
@@ -839,8 +839,8 @@ _PyJit_translate_single_bytecode_to_trace(
                     goto done;
                 }
                 else {
-                    assert(_tstate->jit_tracer_state.prev_state.jump_backward_seen == 0);
-                    _tstate->jit_tracer_state.prev_state.jump_backward_seen++;
+                    assert(_tstate->jit_tracer_state.translator_state.jump_backward_seen == 0);
+                    _tstate->jit_tracer_state.translator_state.jump_backward_seen++;
                 }
             }
             break;
@@ -1073,7 +1073,7 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.initial_state.exit = exit;
     _tstate->jit_tracer_state.initial_state.stack_depth = curr_stackdepth;
     _tstate->jit_tracer_state.initial_state.chain_depth = chain_depth;
-    _tstate->jit_tracer_state.prev_state.jump_backward_seen = 0;
+    _tstate->jit_tracer_state.translator_state.jump_backward_seen = 0;
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
     _tstate->jit_tracer_state.prev_state.dependencies_still_valid = true;
     _tstate->jit_tracer_state.prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
