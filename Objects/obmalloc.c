@@ -320,7 +320,7 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
         return NULL;
     }
 
-    // Free threaded Python allows safe access to the PyObject reference count
+    // Free threaded Python allows access from other threads to the PyObject reference count
     // fields for a period of time after the object is freed (see InternalDocs/qsbr.md).
     // These fields are typically initialized by PyObject_Init() using relaxed
     // atomic stores. We need to copy these fields in a thread-safe way here.
