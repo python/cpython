@@ -41,7 +41,9 @@ try:
 except ImportError:
     LiveStatsCollector = None
 
-_FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+# FIX: Use bool() to correctly detect 0 as False on Windows non-free-threaded builds
+_FREE_THREADED_BUILD = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+
 # Minimum number of samples required before showing the TUI
 # If fewer samples are collected, we skip the TUI and just print a message
 MIN_SAMPLES_FOR_TUI = 200
@@ -71,11 +73,19 @@ class SampleProfiler:
                 cache_frames=True, stats=self.collect_stats
             )
         else:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
+            # FIX: Properly handle all_threads vs only_active_thread parameters
+            if self.all_threads:
+                unwinder = _remote_debugging.RemoteUnwinder(
+                    self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
+                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                    cache_frames=True, stats=self.collect_stats
+                )
+            else:
+                unwinder = _remote_debugging.RemoteUnwinder(
+                    self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
+                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                    cache_frames=True, stats=self.collect_stats
+                )
         return unwinder
 
     def sample(self, collector, duration_sec=None, *, async_aware=False):
