@@ -965,248 +965,253 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ),
             ),
 
-        )
-
-    def _get_unst(self, value):
-        token = parser.get_unstructured(value)
-        return token, ''
-
         # XXX XXX TEMP test1
-    def test_get_unstructured_null(self):
-        self._test_get_x(self._get_unst, '', '', '', [], '')
+        test_get_unstructured_null = C(
+                                         '', '', '', [], ''),
 
         # XXX XXX TEMP test2
-    def test_get_unstructured_one_word(self):
-        self._test_get_x(self._get_unst, 'foo', 'foo', 'foo', [], '')
+        test_get_unstructured_one_word = C(
+                                         'foo', 'foo', 'foo', [], ''),
 
-    def test_get_unstructured_normal_phrase(self):
-        self._test_get_x(self._get_unst, 'foo bar bird',
+        test_get_unstructured_normal_phrase = C(
+                                         'foo bar bird',
                                          'foo bar bird',
                                          'foo bar bird',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_normal_phrase_with_whitespace(self):
-        self._test_get_x(self._get_unst, 'foo \t bar      bird',
+        test_get_unstructured_normal_phrase_with_whitespace = C(
+                                         'foo \t bar      bird',
                                          'foo \t bar      bird',
                                          'foo bar bird',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_leading_whitespace(self):
-        self._test_get_x(self._get_unst, '  foo bar',
+        test_get_unstructured_leading_whitespace = C(
+                                         '  foo bar',
                                          '  foo bar',
                                          ' foo bar',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_trailing_whitespace(self):
-        self._test_get_x(self._get_unst, 'foo bar  ',
+        test_get_unstructured_trailing_whitespace = C(
+                                         'foo bar  ',
                                          'foo bar  ',
                                          'foo bar ',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_leading_and_trailing_whitespace(self):
-        self._test_get_x(self._get_unst, '  foo bar  ',
+        test_get_unstructured_leading_and_trailing_whitespace = C(
+                                         '  foo bar  ',
                                          '  foo bar  ',
                                          ' foo bar ',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_one_valid_ew_no_ws(self):
-        self._test_get_x(self._get_unst, '=?us-ascii?q?bar?=',
+        test_get_unstructured_one_valid_ew_no_ws = C(
+                                         '=?us-ascii?q?bar?=',
                                          'bar',
                                          'bar',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_one_ew_trailing_ws(self):
-        self._test_get_x(self._get_unst, '=?us-ascii?q?bar?=  ',
+        test_get_unstructured_one_ew_trailing_ws = C(
+                                         '=?us-ascii?q?bar?=  ',
                                          'bar  ',
                                          'bar ',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_one_valid_ew_trailing_text(self):
-        self._test_get_x(self._get_unst, '=?us-ascii?q?bar?= bird',
+        test_get_unstructured_one_valid_ew_trailing_text = C(
+                                         '=?us-ascii?q?bar?= bird',
                                          'bar bird',
                                          'bar bird',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_phrase_with_ew_in_middle_of_text(self):
-        self._test_get_x(self._get_unst, 'foo =?us-ascii?q?bar?= bird',
+        test_get_unstructured_phrase_with_ew_in_middle_of_text = C(
+                                         'foo =?us-ascii?q?bar?= bird',
                                          'foo bar bird',
                                          'foo bar bird',
                                          [],
                                          '')
+                                         ,
 
-    def test_get_unstructured_phrase_with_two_ew(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_phrase_with_two_ew = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=',
             'foo barbird',
             'foo barbird',
             [],
             '')
+            ,
 
-    def test_get_unstructured_phrase_with_two_ew_trailing_ws(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_phrase_with_two_ew_trailing_ws = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=   ',
             'foo barbird   ',
             'foo barbird ',
             [],
             '')
+            ,
 
-    def test_get_unstructured_phrase_with_ew_with_leading_ws(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_phrase_with_ew_with_leading_ws = C(
             '  =?us-ascii?q?bar?=',
             '  bar',
             ' bar',
             [],
             '')
+            ,
 
-    def test_get_unstructured_phrase_with_two_ew_extra_ws(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_phrase_with_two_ew_extra_ws = C(
             'foo =?us-ascii?q?bar?= \t  =?us-ascii?q?bird?=',
             'foo barbird',
             'foo barbird',
             [],
             '')
+            ,
 
-    def test_get_unstructured_two_ew_extra_ws_trailing_text(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_two_ew_extra_ws_trailing_text = C(
             '=?us-ascii?q?test?=   =?us-ascii?q?foo?=  val',
             'testfoo  val',
             'testfoo val',
             [],
             '')
+            ,
 
-    def test_get_unstructured_ew_with_internal_ws(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_ew_with_internal_ws = C(
             '=?iso-8859-1?q?hello=20world?=',
             'hello world',
             'hello world',
             [],
             '')
+            ,
 
-    def test_get_unstructured_ew_with_internal_leading_ws(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_ew_with_internal_leading_ws = C(
             '   =?us-ascii?q?=20test?=   =?us-ascii?q?=20foo?=  val',
             '    test foo  val',
             '  test foo val',
             [],
             '')
+            ,
 
-    def test_get_unstructured_invalid_ew(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_invalid_ew = C(
             '=?test val',
             '=?test val',
             '=?test val',
             [],
             '')
+            ,
 
-    def test_get_unstructured_undecodable_bytes(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_undecodable_bytes = C(
             b'test \xACfoo  val'.decode('ascii', 'surrogateescape'),
             'test \uDCACfoo  val',
             'test \uDCACfoo val',
             [errors.UndecodableBytesDefect],
             '')
+            ,
 
-    def test_get_unstructured_undecodable_bytes_in_EW(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_undecodable_bytes_in_EW = C(
             (b'=?us-ascii?q?=20test?=   =?us-ascii?q?=20\xACfoo?='
                 b'  val').decode('ascii', 'surrogateescape'),
             ' test \uDCACfoo  val',
             ' test \uDCACfoo val',
             [errors.UndecodableBytesDefect]*2,
             '')
+            ,
 
-    def test_get_unstructured_missing_base64_padding(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_missing_base64_padding = C(
             '=?utf-8?b?dmk?=',
             'vi',
             'vi',
             [errors.InvalidBase64PaddingDefect],
             '')
+            ,
 
-    def test_get_unstructured_invalid_base64_character(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_invalid_base64_character = C(
             '=?utf-8?b?dm\x01k===?=',
             'vi',
             'vi',
             [errors.InvalidBase64CharactersDefect],
             '')
+            ,
 
-    def test_get_unstructured_invalid_base64_character_and_bad_padding(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_invalid_base64_character_and_bad_padding = C(
             '=?utf-8?b?dm\x01k?=',
             'vi',
             'vi',
             [errors.InvalidBase64CharactersDefect,
              errors.InvalidBase64PaddingDefect],
             '')
+            ,
 
-    def test_get_unstructured_invalid_base64_length(self):
+        test_get_unstructured_invalid_base64_length = C(
         # bpo-27397/gh-71584: there's no way to decode this.
-        self._test_get_x(self._get_unst,
             '=?utf-8?b?abcde?=',
             '=?utf-8?b?abcde?=',
             '=?utf-8?b?abcde?=',
             [],
             '')
+            ,
 
-    def test_get_unstructured_no_whitespace_between_ews(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_no_whitespace_between_ews = C(
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
             'foobar',
             'foobar',
             [errors.InvalidHeaderDefect,
             errors.InvalidHeaderDefect],
             '')
+            ,
 
-    def test_get_unstructured_ew_without_leading_whitespace(self):
-        self._test_get_x(
-            self._get_unst,
+        test_get_unstructured_ew_without_leading_whitespace = C(
             'nowhitespace=?utf-8?q?somevalue?=',
             'nowhitespacesomevalue',
             'nowhitespacesomevalue',
             [errors.InvalidHeaderDefect],
             '')
+            ,
 
-    def test_get_unstructured_ew_without_trailing_whitespace(self):
-        self._test_get_x(
-            self._get_unst,
+        test_get_unstructured_ew_without_trailing_whitespace = C(
             '=?utf-8?q?somevalue?=nowhitespace',
             'somevaluenowhitespace',
             'somevaluenowhitespace',
             [errors.InvalidHeaderDefect],
             '')
+            ,
 
-    def test_get_unstructured_without_trailing_whitespace_hang_case(self):
-        self._test_get_x(self._get_unst,
+    # bpo-37764
+        test_get_unstructured_without_trailing_whitespace_hang_case = C(
             '=?utf-8?q?somevalue?=aa',
             'somevalueaa',
             'somevalueaa',
             [errors.InvalidHeaderDefect],
             '')
+            ,
 
-    def test_get_unstructured_invalid_ew2(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_invalid_ew2 = C(
             '=?utf-8?q?=somevalue?=',
             '=?utf-8?q?=somevalue?=',
             '=?utf-8?q?=somevalue?=',
             [],
             '')
+            ,
 
-    def test_get_unstructured_invalid_ew_cte(self):
-        self._test_get_x(self._get_unst,
+        test_get_unstructured_invalid_ew_cte = C(
             '=?utf-8?X?=somevalue?=',
             '=?utf-8?X?=somevalue?=',
             '=?utf-8?X?=somevalue?=',
             [],
             '')
+            ,
+
+        )
+
 
     # get_qp_ctext
 
