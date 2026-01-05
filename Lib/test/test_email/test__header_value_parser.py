@@ -967,198 +967,135 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         null = C(
             '',
-            '',
-            '',
-            [],
-            '',
             ),
 
         one_word = C(
             'foo',
-            'foo',
-            'foo',
-            [],
-            '',
             ),
 
         normal_phrase = C(
             'foo bar bird',
-            'foo bar bird',
-            'foo bar bird',
-            [],
-            '',
             ),
 
         normal_phrase_with_whitespace = C(
             'foo \t bar      bird',
-            'foo \t bar      bird',
-            'foo bar bird',
-            [],
-            '',
+            value='foo bar bird',
             ),
 
         leading_whitespace = C(
             '  foo bar',
-            '  foo bar',
-            ' foo bar',
-            [],
-            '',
+            value=' foo bar',
             ),
 
         trailing_whitespace = C(
             'foo bar  ',
-            'foo bar  ',
-            'foo bar ',
-            [],
-            '',
+            value='foo bar ',
             ),
 
         leading_and_trailing_whitespace = C(
             '  foo bar  ',
-            '  foo bar  ',
-            ' foo bar ',
-            [],
-            '',
+            value=' foo bar ',
             ),
 
         one_valid_ew_no_ws = C(
             '=?us-ascii?q?bar?=',
-            'bar',
-            'bar',
-            [],
-            '',
+            stringified='bar',
+            value='bar',
             ),
 
         one_ew_trailing_ws = C(
             '=?us-ascii?q?bar?=  ',
-            'bar  ',
-            'bar ',
-            [],
-            '',
+            stringified='bar  ',
+            value='bar ',
             ),
 
         one_valid_ew_trailing_text = C(
             '=?us-ascii?q?bar?= bird',
-            'bar bird',
-            'bar bird',
-            [],
-            '',
+            stringified='bar bird',
             ),
 
         phrase_with_ew_in_middle_of_text = C(
             'foo =?us-ascii?q?bar?= bird',
-            'foo bar bird',
-            'foo bar bird',
-            [],
-            '',
+            stringified='foo bar bird',
             ),
 
         phrase_with_two_ew = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=',
-            'foo barbird',
-            'foo barbird',
-            [],
-            '',
+            stringified='foo barbird',
             ),
 
         phrase_with_two_ew_trailing_ws = C(
             'foo =?us-ascii?q?bar?= =?us-ascii?q?bird?=   ',
-            'foo barbird   ',
-            'foo barbird ',
-            [],
-            '',
+            stringified='foo barbird   ',
+            value='foo barbird ',
             ),
 
         phrase_with_ew_with_leading_ws = C(
             '  =?us-ascii?q?bar?=',
-            '  bar',
-            ' bar',
-            [],
-            '',
+            stringified='  bar',
+            value=' bar',
             ),
 
         phrase_with_two_ew_extra_ws = C(
             'foo =?us-ascii?q?bar?= \t  =?us-ascii?q?bird?=',
-            'foo barbird',
-            'foo barbird',
-            [],
-            '',
+            stringified='foo barbird',
             ),
 
         two_ew_extra_ws_trailing_text = C(
             '=?us-ascii?q?test?=   =?us-ascii?q?foo?=  val',
-            'testfoo  val',
-            'testfoo val',
-            [],
-            '',
+            stringified='testfoo  val',
+            value='testfoo val',
             ),
 
         ew_with_internal_ws = C(
             '=?iso-8859-1?q?hello=20world?=',
-            'hello world',
-            'hello world',
-            [],
-            '',
+            stringified='hello world',
             ),
 
         ew_with_internal_leading_ws = C(
             '   =?us-ascii?q?=20test?=   =?us-ascii?q?=20foo?=  val',
-            '    test foo  val',
-            '  test foo val',
-            [],
-            '',
+            stringified='    test foo  val',
+            value='  test foo val',
             ),
 
         invalid_ew = C(
             '=?test val',
-            '=?test val',
-            '=?test val',
-            [],
-            '',
             ),
 
         undecodable_bytes = C(
             b'test \xACfoo  val'.decode('ascii', 'surrogateescape'),
-            'test \uDCACfoo  val',
-            'test \uDCACfoo val',
-            [errors.UndecodableBytesDefect],
-            '',
+            stringified='test \uDCACfoo  val',
+            value='test \uDCACfoo val',
+            defects=[errors.UndecodableBytesDefect],
             ),
 
         undecodable_bytes_in_EW = C(
             (b'=?us-ascii?q?=20test?=   =?us-ascii?q?=20\xACfoo?='
                 b'  val').decode('ascii', 'surrogateescape'),
-            ' test \uDCACfoo  val',
-            ' test \uDCACfoo val',
-            [errors.UndecodableBytesDefect]*2,
-            '',
+            stringified=' test \uDCACfoo  val',
+            value=' test \uDCACfoo val',
+            defects=[errors.UndecodableBytesDefect]*2,
             ),
 
         missing_base64_padding = C(
             '=?utf-8?b?dmk?=',
-            'vi',
-            'vi',
-            [errors.InvalidBase64PaddingDefect],
-            '',
+            stringified='vi',
+            defects=[errors.InvalidBase64PaddingDefect],
             ),
 
         invalid_base64_character = C(
             '=?utf-8?b?dm\x01k===?=',
-            'vi',
-            'vi',
-            [errors.InvalidBase64CharactersDefect],
-            '',
+            stringified='vi',
+            defects=[errors.InvalidBase64CharactersDefect],
             ),
 
         invalid_base64_character_and_bad_padding = C(
             '=?utf-8?b?dm\x01k?=',
-            'vi',
-            'vi',
-            [
+            stringified='vi',
+            defects=[
                 errors.InvalidBase64CharactersDefect,
                 errors.InvalidBase64PaddingDefect,
                 ],
-            '',
             ),
 
         # bpo-27397/gh-71584: there's no way to decode this.
@@ -1172,54 +1109,38 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         no_whitespace_between_ews = C(
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
-            'foobar',
-            'foobar',
-            [
+            stringified='foobar',
+            defects=[
                 errors.InvalidHeaderDefect,
                 errors.InvalidHeaderDefect,
                 ],
-            '',
             ),
 
         ew_without_leading_whitespace = C(
             'nowhitespace=?utf-8?q?somevalue?=',
-            'nowhitespacesomevalue',
-            'nowhitespacesomevalue',
-            [errors.InvalidHeaderDefect],
-            '',
+            stringified='nowhitespacesomevalue',
+            defects=[errors.InvalidHeaderDefect],
             ),
 
         ew_without_trailing_whitespace = C(
             '=?utf-8?q?somevalue?=nowhitespace',
-            'somevaluenowhitespace',
-            'somevaluenowhitespace',
-            [errors.InvalidHeaderDefect],
-            '',
+            stringified='somevaluenowhitespace',
+            defects=[errors.InvalidHeaderDefect],
             ),
 
         # bpo-37764
         without_trailing_whitespace_hang_case = C(
             '=?utf-8?q?somevalue?=aa',
-            'somevalueaa',
-            'somevalueaa',
-            [errors.InvalidHeaderDefect],
-            '',
+            stringified='somevalueaa',
+            defects=[errors.InvalidHeaderDefect],
             ),
 
         invalid_ew2 = C(
             '=?utf-8?q?=somevalue?=',
-            '=?utf-8?q?=somevalue?=',
-            '=?utf-8?q?=somevalue?=',
-            [],
-            '',
             ),
 
         invalid_ew_cte = C(
             '=?utf-8?X?=somevalue?=',
-            '=?utf-8?X?=somevalue?=',
-            '=?utf-8?X?=somevalue?=',
-            [],
-            '',
             ),
 
         )
