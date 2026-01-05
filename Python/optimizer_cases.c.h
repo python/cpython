@@ -420,10 +420,18 @@
         }
 
         case _REPLACE_WITH_TRUE: {
+            JitOptRef value;
             JitOptRef res;
-            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+            JitOptRef v;
+            value = stack_pointer[-1];
+            REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
             res = sym_new_const(ctx, Py_True);
+            v = value;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -3465,6 +3473,19 @@
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = value;
             stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _INSERT_1_LOAD_CONST_INLINE_BORROW: {
+            JitOptRef res;
+            JitOptRef l;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
