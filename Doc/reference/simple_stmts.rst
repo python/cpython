@@ -882,25 +882,25 @@ Lazy imports
    pair: lazy; import
    single: lazy import
 
-The :keyword:`lazy` keyword marks an import as lazy. It is a :ref:`soft keyword
-<soft-keywords>` that only has special meaning when it appears immediately
-before an :keyword:`import` or :keyword:`from` statement.
+The :keyword:`lazy` keyword is a :ref:`soft keyword <soft-keywords>` that
+only has special meaning when it appears immediately before an
+:keyword:`import` or :keyword:`from` statement. When an import statement is
+preceded by the :keyword:`lazy` keyword, the import becomes *lazy*: the
+module is not loaded immediately at the import statement. Instead, a lazy
+proxy object is created and bound to the name. The actual module is loaded
+on first use of that name.
 
-When an import statement is preceded by the :keyword:`lazy` keyword,
-the import becomes *lazy*: the module is not loaded immediately at the import
-statement. Instead, a lazy proxy object is created and bound to the name. The
-actual module is loaded on first use of that name.
-
-Lazy imports are only permitted at module scope. Using ``lazy`` inside a
-function, class body, or :keyword:`try`/:keyword:`except`/:keyword:`finally`
-block raises a :exc:`SyntaxError`. Star imports cannot be lazy (``lazy from
-module import *`` is a syntax error), and :ref:`future statements <future>`
-cannot be lazy.
+Lazy imports are only permitted at module scope. Using :keyword:`lazy`
+inside a function, class body, or
+:keyword:`try`/:keyword:`except`/:keyword:`finally` block raises a
+:exc:`SyntaxError`. Star imports cannot be lazy (``lazy from module import
+*`` is a syntax error), and :ref:`future statements <future>` cannot be
+lazy.
 
 When using ``lazy from ... import``, each imported name is bound to a lazy
 proxy object. The first access to any of these names triggers loading of the
-entire module and resolves only that specific name to its actual value. Other
-names remain as lazy proxies until they are accessed.
+entire module and resolves only that specific name to its actual value.
+Other names remain as lazy proxies until they are accessed.
 
 Example::
 
