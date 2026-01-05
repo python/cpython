@@ -1056,15 +1056,31 @@ class PyFramePtr:
                 self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
 
     @staticmethod
+    def get_thread_state():
+        exprs = [
+            '_Py_tss_gilstate',  # 3.15+
+            '_Py_tss_tstate',    # 3.12+ (and not when GIL is released)
+            'pthread_getspecific(_PyRuntime.autoTSSkey._key)',  # only live programs
+            '((struct pthread*)$fs_base)->specific_1stblock[_PyRuntime.autoTSSkey._key].data'  # x86-64
+        ]
+        for expr in exprs:
+            try:
+                val = gdb.parse_and_eval(f'(PyThreadState*)({expr})')
+            except gdb.error:
+                continue
+            if int(val) != 0:
+                return val
+        return None
+
+    @staticmethod
     def get_thread_local_frame():
-        try:
-            return PyFramePtr(gdb.parse_and_eval('_Py_tss_gilstate->current_frame'))
-        except gdb.error:
-            pass
-        try:
-            return PyFramePtr(gdb.parse_and_eval('_Py_tss_tstate->current_frame'))
-        except gdb.error:
+        thread_state = PyFramePtr.get_thread_state()
+        if thread_state is None:
             return None
+        current_frame = thread_state['current_frame']
+        if int(current_frame) == 0:
+            return None
+        return PyFramePtr(current_frame)
 
     def is_optimized_out(self):
         return self._gdbval.is_optimized_out
