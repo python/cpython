@@ -2945,7 +2945,7 @@ class TestUopsOptimization(unittest.TestCase):
                 if not a:
                     return 0
             return 1
-        
+
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, 1)
         self.assertIsNotNone(ex)
