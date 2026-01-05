@@ -2,6 +2,8 @@
 # They are moved to separate file, so they can be loaded
 # in other Python version for test_xpickle.
 
+import sys
+
 class C:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -55,8 +57,15 @@ class initarg(C):
 class metaclass(type):
     pass
 
+if sys.version_info >= (3,):
+    # Syntax not compatible with Python 2
+    exec('''
 class use_metaclass(object, metaclass=metaclass):
     pass
+''')
+else:
+    class use_metaclass(object):
+        __metaclass__ = metaclass
 
 
 # Test classes for reduce_ex
@@ -174,6 +183,13 @@ class C_None_setstate:
 class MyInt(int):
     sample = 1
 
+if sys.version_info >= (3,):
+    class MyLong(int):
+        sample = 1
+else:
+    class MyLong(long):
+        sample = long(1)
+
 class MyFloat(float):
     sample = 1.0
 
@@ -183,8 +199,12 @@ class MyComplex(complex):
 class MyStr(str):
     sample = "hello"
 
-class MyUnicode(str):
-    sample = "hello \u1234"
+if sys.version_info >= (3,):
+    class MyUnicode(str):
+        sample = "hello \u1234"
+else:
+    class MyUnicode(unicode):
+        sample = unicode(r"hello \u1234", "raw-unicode-escape")
 
 class MyTuple(tuple):
     sample = (1, 2, 3)
@@ -201,7 +221,7 @@ class MySet(set):
 class MyFrozenSet(frozenset):
     sample = frozenset({"a", "b"})
 
-myclasses = [MyInt, MyFloat,
+myclasses = [MyInt, MyLong, MyFloat,
              MyComplex,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]

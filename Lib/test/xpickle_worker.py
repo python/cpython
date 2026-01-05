@@ -1,6 +1,5 @@
 # This script is called by test_xpickle as a subprocess to load and dump
 # pickles in a different Python version.
-import importlib.util
 import os
 import pickle
 import sys
@@ -11,6 +10,7 @@ import sys
 test_mod_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              'picklecommon.py'))
 if sys.version_info >= (3, 5):
+    import importlib.util
     spec = importlib.util.spec_from_file_location('test.picklecommon', test_mod_path)
     test_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(test_module)
@@ -23,8 +23,8 @@ else:
     exec(sources, vars(test_module))
 
 
-in_stream = sys.stdin.buffer
-out_stream = sys.stdout.buffer
+in_stream = getattr(sys.stdin, 'buffer', sys.stdin)
+out_stream = getattr(sys.stdout, 'buffer', sys.stdout)
 
 try:
     message = pickle.load(in_stream)

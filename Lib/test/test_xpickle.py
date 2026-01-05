@@ -1,6 +1,5 @@
-# This test covers backwards compatibility with
-# previous version of Python by bouncing pickled objects through Python 3.2
-# and the current version by running xpickle_worker.py.
+# This test covers backwards compatibility with previous versions of Python
+# by bouncing pickled objects through Python versions by running xpickle_worker.py.
 import io
 import os
 import pickle
@@ -164,6 +163,8 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
     # much faster (the one from pickletester takes 3-4 minutes when running
     # under text_xpickle).
     def test_bytes(self):
+        if self.py_version < (3, 0):
+            self.skipTest('not supported in Python < 3.0')
         for proto in pickletester.protocols:
             for s in b'', b'xyz', b'xyz'*100:
                 p = self.dumps(s, proto)
@@ -220,14 +221,18 @@ def make_test(py_version, base):
     return type(name, (base, unittest.TestCase), class_dict)
 
 def load_tests(loader, tests, pattern):
-    major = sys.version_info.major
-    assert major == 3
-    for minor in range(2, sys.version_info.minor):
-        test_class = make_test((major, minor), PyPicklePythonCompat)
+    def add_tests(py_version):
+        test_class = make_test(py_version, PyPicklePythonCompat)
         tests.addTest(loader.loadTestsFromTestCase(test_class))
         if has_c_implementation:
-            test_class = make_test((major, minor), CPicklePythonCompat)
+            test_class = make_test(py_version, CPicklePythonCompat)
             tests.addTest(loader.loadTestsFromTestCase(test_class))
+
+    major = sys.version_info.major
+    assert major == 3
+    add_tests((2, 7))
+    for minor in range(2, sys.version_info.minor):
+        add_tests((major, minor))
     return tests
 
 
