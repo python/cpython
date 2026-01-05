@@ -91,12 +91,12 @@ whitespace_inside_ew_defect = (
 
 missing_whitespace_before_ew_defect = (
     errors.InvalidHeaderDefect,
-    'missing whitespace before encoded word',
+    'missing whitespace before encoded-word',
     )
 
 missing_whitespace_after_ew_defect = (
     errors.InvalidHeaderDefect,
-    'missing trailing whitespace after encoded-word',
+    'missing whitespace after encoded-word',
     )
 
 def charset_defect(chars):
@@ -245,6 +245,8 @@ class TestDeprecations(TestEmailBase):
     @params(as_value(
         # XXX XXX make sure this is completely filled in with all the
         # names we expect to be deprecated.
+        '_InvalidEwError',
+        'rfc2047_matcher',
         ))
     def test_deprecated_names(self, name):
         with check_all_warnings((
@@ -1271,8 +1273,22 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
 
 
-    # get_unstructured
+    # parse_unstructured
 
+    @params
+    def test_parse_unstructured(self, s, *args, **kw):
+        result = self._test_parse(
+            parser.parse_unstructured,
+            C(s),
+            *args,
+            test_start=False,
+            no_end=True,
+            **kw,
+            )
+        self.assertIsInstance(result, parser.UnstructuredTokenList)
+        self.verify_terminal_types(result, 'utext', 'fws')
+
+    # XXX POSTDEP: delete from here...
     @params
     def test_get_unstructured(self, s, *args, **kw):
         result = self._test_parse(
@@ -1280,25 +1296,29 @@ class TestParser(TestParserMixin, TestEmailBase):
             C(s),
             *args,
             test_start=False,
-            warnings=...,   # XXX XXX ignore warnings until after refactor.
+            no_end=True,
+            warnings=[
+                (DeprecationWarning, r".*is.*deprecated.*parse_unstructured"),
+                ],
             **kw,
             )
         self.assertIsInstance(result, parser.UnstructuredTokenList)
         self.verify_terminal_types(result, 'utext', 'fws')
+    # XXX POSTDEP: ...to here
 
-    # get_unstructured should correctly decode anything get_encoded_word does,
+    # parse_unstructured should correctly decode anything get_encoded_word does,
     # so it should correctly handle most get_encoded_word parameters.
     @params_map(with_namelist=True)
-    def adapt_get_encoded_word_tests_for_get_unstructured(nl, *args, **kw):
+    def adapt_get_encoded_word_tests_for_parse_unstructured(nl, *args, **kw):
         kw.pop('test_start', None)
         kw.pop('charset', None)
         kw.pop('terminal_type', None)
         kw.pop('lang', None)
-        # get_unstructured parses all of its input, so it will also parse and
+        # parse_unstructured parses all of its input, so it will also parse and
         # return anything get_encoded_word treats as a remainder.
         remainder = kw.pop('remainder', '')
         if '=?' in remainder or 'ew_followed_by' in nl:
-            # The remainder includes something get_unstructured would decode,
+            # The remainder includes something parse_unstructured would decode,
             # or might contain something it would treat as a defect.  Either
             # way, parse_unstructured isn't expected to handle those parameters.
             return
@@ -1315,7 +1335,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         yield 'from_test_get_encoded_word', C(*args, **kw)
 
     @params_map(with_namelist=True)
-    def adapt_get_encoded_word_invalid_input_for_get_unstructured(nl, s, **kw):
+    def adapt_get_encoded_word_invalid_input_for_parse_unstructured(nl, s, **kw):
         # Get unstructured should return the inputs unaltered,
         # except for the ones where the ew itself is valid.
         if 'character_before_valid_ew' in nl:
@@ -1336,13 +1356,14 @@ class TestParser(TestParserMixin, TestEmailBase):
               }
         yield '', C(s, *args, **kw)
 
-    params_test_get_unstructured = Params(
+    # XXX POSTDEP: remove 'params_test_get_unstructured' from next line.
+    params_test_get_unstructured = params_test_parse_unstructured = Params(
 
         add_unstructured_prefix_and_suffix(
-            adapt_get_encoded_word_tests_for_get_unstructured(
+            adapt_get_encoded_word_tests_for_parse_unstructured(
                 params_test_get_encoded_word,
                 ),
-            adapt_get_encoded_word_invalid_input_for_get_unstructured(
+            adapt_get_encoded_word_invalid_input_for_parse_unstructured(
                 params_test_get_encoded_word__invalid_input,
                 ),
             ),

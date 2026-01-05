@@ -115,7 +115,7 @@ def quote_string(value):
 
 
 # Match a RFC 2047 word, looks like =?utf-8?q?someword?=
-rfc2047_matcher = re.compile(r'''
+_deprecated_rfc2047_matcher = re.compile(r'''
    =\?            # literal =?
    [^?]*          # charset
    \?             # literal ?
@@ -973,7 +973,7 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
         return ''
 
 
-class _InvalidEwError(errors.HeaderParseError):
+class _deprecated__InvalidEwError(errors.HeaderParseError):
     """Invalid encoded word found while parsing headers."""
 
 
@@ -1113,6 +1113,16 @@ def _(func):
 #
 # returns a complete 'phrase' from 'start' to 'rest' in the value.
 
+# Often used Defects.  XXX These could become subclasses.
+
+_MissingWhitespaceBeforeEWDefect = errors.InvalidHeaderDefect(
+    "missing whitespace before encoded-word",
+    )
+
+_MissingWhitespaceAfterEWDefect = errors.InvalidHeaderDefect(
+    "missing whitespace after encoded-word",
+    )
+
 _wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(ATOM_ENDS)))).match
@@ -1247,12 +1257,13 @@ def _deprecate_old_encoded_word_api(func):
         kw.setdefault('terminal_type', args[0] if args else 'vtext')
         result = func(value, 0, **kw)
         if result is None:
-            raise _InvalidEwError(f"expected encoded word but found {value}")
+            raise _deprecated__InvalidEwError(
+                f"expected encoded word but found {value}",
+                )
         result, start = result
         ew, value = result, value[start:]
         if value and value[0] not in WSP:
-            ew.defects.append(errors.InvalidHeaderDefect(
-                "missing trailing whitespace after encoded-word"))
+            ew.defects.append(_MissingWhitespaceAfterEWDefect)
         return ew, value
     return dispatch
 
@@ -1333,71 +1344,63 @@ def get_encoded_word(value, start, terminal_type):
         ew.append(t)
     return ew, ew_match.end()
 
-def get_unstructured(value):
+pre_ew_re = re.compile(rf'[^{_WSP + '='}]*')
+def parse_unstructured(value):
     """unstructured = (*([FWS] vchar) *WSP) / obs-unstruct
        obs-unstruct = *((*LF *CR *(obs-utext) *LF *CR)) / FWS)
        obs-utext = %d0 / obs-NO-WS-CTL / LF / CR
+       obs-NO-WS-CTL = <control characters except WSP/CR/LF>
 
-       obs-NO-WS-CTL is control characters except WSP/CR/LF.
-
-    So, basically, we have printable runs, plus control characters or nulls in
-    the obsolete syntax, separated by whitespace.  Since RFC 2047 uses the
-    obsolete syntax in its specification, but requires whitespace on either
-    side of the encoded words, I can see no reason to need to separate the
-    non-printable-non-whitespace from the printable runs if they occur, so we
-    parse this into xtext tokens separated by WSP tokens.
-
-    Because an 'unstructured' value must by definition constitute the entire
-    value, this 'get' routine does not return a remaining value, only the
-    parsed TokenList.
+    Return an UnstructuredTokenList containing whitespace and non-whitespace
+    tokens obtained from value, decoding any encoded words found, regardless of
+    whitespace, into EncodedWord tokens lists.  Register defects if the encoded
+    words are not correctly surrounded by whitespace or the ends of the value
+    or have internal whitespace.  Register defects if the non-whitespace tokens
+    contain any non-printable or invalid characters.  All ValueTerminals
+    should have the token_type 'utext'.
 
     """
-    # XXX: but what about bare CR and LF?  They might signal the start or
-    # end of an encoded word.  YAGNI for now, since our current parsers
-    # will never send us strings with bare CR or LF.
-    unstructured = UnstructuredTokenList()
-    while value:
-        if value[0] in WSP:
-            token, value = get_fws(value)
-            unstructured.append(token)
+    # We don't actually accept LF or CR, we treat them as a non-printable
+    # defect.  This is because the parser is designed to process strings where
+    # unfolding has already been done, pre-handling legal CR/LF characters.
+    tl = UnstructuredTokenList()
+    start, vlen = 0, len(value)
+    while start < vlen:
+        if value[start] in WSP:
+            token, start = get_fws(value, start)
+            tl.append(token)
             continue
-        valid_ew = True
-        if value.startswith('=?'):
-            try:
-                token, value = get_encoded_word(value, 'utext')
-            except _InvalidEwError:
-                valid_ew = False
-            except errors.HeaderParseError:
-                # XXX: Need to figure out how to register defects when
-                # appropriate here.
-                pass
-            else:
-                have_ws = True
-                if len(unstructured) > 0:
-                    if unstructured[-1].token_type != 'fws':
-                        unstructured.defects.append(errors.InvalidHeaderDefect(
-                            "missing whitespace before encoded word"))
-                        have_ws = False
-                if have_ws and len(unstructured) > 1:
-                    if unstructured[-2].token_type == 'encoded-word':
-                        unstructured[-1] = EWWhiteSpaceTerminal(
-                            unstructured[-1], 'fws')
-                unstructured.append(token)
-                continue
-        tok, *remainder = _wsp_splitter(value, 1)
-        # Split in the middle of an atom if there is a rfc2047 encoded word
-        # which does not have WSP on both sides. The defect will be registered
-        # the next time through the loop.
-        # This needs to only be performed when the encoded word is valid;
-        # otherwise, performing it on an invalid encoded word can cause
-        # the parser to go in an infinite loop.
-        if valid_ew and rfc2047_matcher.search(tok):
-            tok, *remainder = value.partition('=?')
-        vtext = ValueTerminal(tok, 'utext')
-        _validate_xtext(vtext)
-        unstructured.append(vtext)
-        value = ''.join(remainder)
-    return unstructured
+        ew = None
+        m = pre_ew_re.match(value, start)
+        end = m.end()
+        if end < vlen:
+            if value[end] == '=':
+                res = get_encoded_word(value, end, 'utext')
+                if res:
+                    ew, end = res
+                else:
+                    m = _non_wsp_re.match(value, start)
+                    ew, end = None, m.end()
+        text = m.group()
+        # At this point we have text, an ew, or both; we can't have neither.
+        if tl and tl[-1].token_type == 'encoded-word':
+            tl.defects.append(_MissingWhitespaceAfterEWDefect)
+        if text:
+            tl.append(_make_xtext(text, ValueTerminal, 'utext'))
+        if ew:
+            if tl:
+                if tl[-1].token_type == 'fws':
+                    if len(tl) > 1 and tl[-2].token_type == 'encoded-word':
+                        tl[-1] = EWWhiteSpaceTerminal(tl[-1], 'fws')
+                else:
+                    tl.defects.append(_MissingWhitespaceBeforeEWDefect)
+            tl.append(ew)
+        start = end
+    return tl
+
+@_deprecate('parse_unstructured')
+def get_unstructured(value):
+    return parse_unstructured(value)
 
 def get_qp_ctext(value):
     r"""ctext = <printable ascii except \ ( )>
@@ -2433,8 +2436,7 @@ def parse_message_ids(value):
 # XXX: As I begin to add additional header parsers, I'm realizing we probably
 # have two level of parser routines: the get_XXX methods that get a token in
 # the grammar, and parse_XXX methods that parse an entire field value.  So
-# get_address_list above should really be a parse_ method, as probably should
-# be get_unstructured.
+# get_address_list above should really be a parse_ method.
 #
 
 def parse_mime_version(value):
