@@ -126,6 +126,18 @@ class ModuleCompleter:
                 return []
 
         modules: Iterable[pkgutil.ModuleInfo] = self.global_cache
+        imported_module = sys.modules.get(path.split('.')[0])
+        if imported_module:
+            # Filter modules to those who name and specs match the
+            # imported module to avoid invalid suggestions
+            spec = imported_module.__spec__
+            if spec:
+                modules = [mod for mod in modules
+                           if mod.name == spec.name
+                           and mod.module_finder.find_spec(mod.name, None) == spec]
+            else:
+                modules = []
+
         is_stdlib_import: bool | None = None
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
@@ -243,7 +255,6 @@ class ModuleCompleter:
         """Global module cache"""
         if not self._global_cache or self._curr_sys_path != sys.path:
             self._curr_sys_path = sys.path[:]
-            # print('getting packages')
             self._global_cache = list(pkgutil.iter_modules())
         return self._global_cache
 
