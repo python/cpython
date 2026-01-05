@@ -2012,6 +2012,17 @@ class TestMain(ReplTestCase):
         self.assertIn(expected_output_sequence, cleaned_output)
 
 
+@skipUnless(sys.platform == "darwin", "macOS only")
+class TestMainAppleTerminal(TestMain):
+    """Test the REPL with Apple Terminal's TERM_PROGRAM set."""
+
+    def run_repl(self, repl_input, env=None, **kwargs):
+        if env is None:
+            env = os.environ.copy()
+        env["TERM_PROGRAM"] = "Apple_Terminal"
+        return super().run_repl(repl_input, env=env, **kwargs)
+
+
 class TestPyReplCtrlD(TestCase):
     """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
 
