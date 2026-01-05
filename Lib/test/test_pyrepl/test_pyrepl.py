@@ -1465,6 +1465,17 @@ class TestMain(ReplTestCase):
             safe_patterns.append(r'\x1b\[\?25[hl]')  # cursor visibility
             safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
 
+        # rmam / smam - automatic margins
+        rmam = ti.get("rmam")
+        smam = ti.get("smam")
+        if rmam:
+            safe_patterns.append(re.escape(rmam.decode("ascii")))
+        if smam:
+            safe_patterns.append(re.escape(smam.decode("ascii")))
+        if not rmam and not smam:
+            safe_patterns.append(r'\x1b\[\?7l') # turn off automatic margins
+            safe_patterns.append(r'\x1b\[\?7h') # turn on automatic margins
+
         # Modern extensions not in standard terminfo - always use patterns
         safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
         safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
