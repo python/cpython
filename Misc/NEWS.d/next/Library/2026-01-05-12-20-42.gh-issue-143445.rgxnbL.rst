@@ -1,0 +1,1 @@
+Optimize deepcopy in :mod:`copy`, pyperformance reports 1.04x speedup.
