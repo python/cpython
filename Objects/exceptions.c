@@ -4601,9 +4601,6 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     if (PyDict_SetItemString(mod_dict, "EnvironmentError", PyExc_OSError)) {
         return -1;
     }
-    if (PyDict_SetItemString(mod_dict, "EnvironmentError", PyExc_OSError)) {
-        return -1;
-    }
     if (PyDict_SetItemString(mod_dict, "IOError", PyExc_OSError)) {
         return -1;
     }
