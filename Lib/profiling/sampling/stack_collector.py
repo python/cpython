@@ -6,6 +6,7 @@ import json
 import linecache
 import os
 import sys
+import sysconfig
 
 from ._css_utils import get_combined_css
 from .collector import Collector, extract_lineno
@@ -244,7 +245,6 @@ class FlamegraphCollector(StackTraceCollector):
             }
 
         # Calculate thread status percentages for display
-        import sysconfig
         is_free_threaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
         total_threads = max(1, self.thread_status_counts["total"])
         thread_stats = {

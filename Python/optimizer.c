@@ -113,7 +113,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
 }
 
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, int chain_depth);
+make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
 
 static int
 uop_optimize(_PyInterpreterFrame *frame, PyThreadState *tstate,
@@ -625,7 +625,6 @@ _PyJit_translate_single_bytecode_to_trace(
     int trace_length = _tstate->jit_tracer_state.prev_state.code_curr_size;
     _PyUOpInstruction *trace = _tstate->jit_tracer_state.code_buffer;
     int max_length = _tstate->jit_tracer_state.prev_state.code_max_size;
-    int exit_op = stop_tracing_opcode == 0 ? _EXIT_TRACE : stop_tracing_opcode;
 
     _Py_CODEUNIT *this_instr =  _tstate->jit_tracer_state.prev_state.instr;
     _Py_CODEUNIT *target_instr = this_instr;
@@ -691,12 +690,17 @@ _PyJit_translate_single_bytecode_to_trace(
         goto full;
     }
 
-    if (stop_tracing_opcode != 0) {
+    if (stop_tracing_opcode == _DEOPT) {
         // gh-143183: It's important we rewind to the last known proper target.
         // The current target might be garbage as stop tracing usually indicates
         // we are in something that we can't trace.
         DPRINTF(2, "Told to stop tracing\n");
         goto unsupported;
+    }
+    else if (stop_tracing_opcode != 0) {
+        assert(stop_tracing_opcode == _EXIT_TRACE);
+        ADD_TO_TRACE(stop_tracing_opcode, 0, 0, target);
+        goto done;
     }
 
     DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
@@ -733,7 +737,7 @@ _PyJit_translate_single_bytecode_to_trace(
                 int32_t old_target = (int32_t)uop_get_target(curr);
                 curr++;
                 trace_length++;
-                curr->opcode = exit_op;
+                curr->opcode = _DEOPT;
                 curr->format = UOP_FORMAT_TARGET;
                 curr->target = old_target;
             }
@@ -1324,7 +1328,7 @@ sanity_check(_PyExecutorObject *executor)
  * and not a NOP.
  */
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, int chain_depth)
+make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies)
 {
     int exit_count = count_exits(buffer, length);
     _PyExecutorObject *executor = allocate_executor(exit_count, length);
@@ -1333,12 +1337,13 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
 
     /* Initialize exits */
+    int chain_depth = tstate->jit_tracer_state.initial_state.chain_depth;
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     _PyExecutorObject *cold_dynamic = _PyExecutor_GetColdDynamicExecutor();
     cold->vm_data.chain_depth = chain_depth;
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].index = i;
-        executor->exits[i].temperature = initial_temperature_backoff_counter();
+        executor->exits[i].temperature = initial_temperature_backoff_counter(&tstate->policy);
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -1506,7 +1511,7 @@ uop_optimize(
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(
-        buffer, length, dependencies, _tstate->jit_tracer_state.initial_state.chain_depth);
+        _tstate, buffer, length, dependencies);
     if (executor == NULL) {
         return -1;
     }

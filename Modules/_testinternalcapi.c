@@ -1244,6 +1244,22 @@ invalidate_executors(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+get_exit_executor(PyObject *self, PyObject *arg)
+{
+    if (!PyLong_CheckExact(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be an ID to an _PyExitData");
+        return NULL;
+    }
+    uint64_t ptr;
+    if (PyLong_AsUInt64(arg, &ptr) < 0) {
+        // Error set by PyLong API
+        return NULL;
+    }
+    _PyExitData *exit = (_PyExitData *)ptr;
+    return Py_NewRef(exit->executor);
+}
+
 #endif
 
 static int _pending_callback(void *arg)
@@ -2545,6 +2561,7 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
+    {"get_exit_executor", get_exit_executor, METH_O, NULL},
 #endif
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},

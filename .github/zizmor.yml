@@ -1,4 +1,4 @@
-# Configuration for the zizmor static analysis tool, run via pre-commit in CI
+# Configuration for the zizmor static analysis tool, run via prek in CI
 # https://woodruffw.github.io/zizmor/configuration/
 rules:
   dangerous-triggers:

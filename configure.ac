@@ -4760,6 +4760,7 @@ if test "$posix_threads" = "yes"; then
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }]])],
       [ac_cv_pthread_system_supported=yes],

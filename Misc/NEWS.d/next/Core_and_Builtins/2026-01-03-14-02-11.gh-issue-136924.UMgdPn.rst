@@ -1,0 +1,2 @@
+The interactive help mode in the :term:`REPL` no longer incorrectly syntax
+highlights text input as Python code. Contributed by Olga Matoula.
