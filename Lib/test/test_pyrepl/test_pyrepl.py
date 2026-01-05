@@ -1192,6 +1192,7 @@ class TestPyReplModuleCompleter(TestCase):
                 (dir1 / mod).mkdir()
                 (dir1 / mod / "__init__.py").touch()
                 (dir1 / mod / "foo.py").touch()
+                pkgutil.get_importer(_dir1).invalidate_caches()
                 module = importlib.import_module(mod)
                 assert module.__spec__
                 if mod == "no_origin":
