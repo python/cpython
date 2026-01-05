@@ -509,10 +509,8 @@ Buffer-related functions
 
    Copy contiguous *len* bytes from *buf* to *view*.
 
-   If *order* is ``'C'``, the data is copied in C-style order.
-   If *order* is ``'F'``, the data is copied in Fortran-style order.
-   If *order* is ``'A'``, either style may be used, whichever is more efficient.
-
+   *order* can be ``'C'`` or ``'F'`` or ``'A'`` (for C-style or Fortran-style
+   ordering or either one).
    ``0`` is returned on success, ``-1`` on error.
 
 
