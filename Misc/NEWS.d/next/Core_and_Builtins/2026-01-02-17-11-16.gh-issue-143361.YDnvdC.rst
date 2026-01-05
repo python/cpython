@@ -1,0 +1,2 @@
+Add ``PY_VECTORCALL_ARGUMENTS_OFFSET`` to ``_Py_CallBuiltinClass_StackRefSteal`` to
+avoid redundant allocations

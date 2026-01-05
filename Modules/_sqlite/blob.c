@@ -118,7 +118,9 @@ static void
 blob_seterror(pysqlite_Blob *self, int rc)
 {
     assert(self->connection != NULL);
-    set_error_from_db(self->connection->state, self->connection->db);
+    assert(rc != SQLITE_OK);
+    set_error_from_code(self->connection->state, rc);
+    assert(PyErr_Occurred());
 }
 
 static PyObject *
@@ -143,23 +145,23 @@ read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
     assert(length <= sqlite3_blob_bytes(self->blob));
     assert(offset < sqlite3_blob_bytes(self->blob));
 
-    PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
-    if (buffer == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
+    char *raw_buffer = PyBytesWriter_GetData(writer);
 
-    char *raw_buffer = PyBytes_AS_STRING(buffer);
     int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_read(self->blob, raw_buffer, (int)length, (int)offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        Py_DECREF(buffer);
+        PyBytesWriter_Discard(writer);
         blob_seterror(self, rc);
         return NULL;
     }
-    return buffer;
+    return PyBytesWriter_Finish(writer);
 }
 
 
@@ -196,7 +198,7 @@ blob_read_impl(pysqlite_Blob *self, int length)
 
     assert(length >= 0);
     if (length == 0) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     PyObject *buffer = read_multiple(self, length, self->offset);
@@ -440,20 +442,25 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
     if (step == 1) {
         return read_multiple(self, len, start);
     }
+
     PyObject *blob = read_multiple(self, stop - start, start);
     if (blob == NULL) {
         return NULL;
     }
-    PyObject *result = PyBytes_FromStringAndSize(NULL, len);
-    if (result != NULL) {
-        char *blob_buf = PyBytes_AS_STRING(blob);
-        char *res_buf = PyBytes_AS_STRING(result);
-        for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
-            res_buf[i] = blob_buf[j];
-        }
+
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
         Py_DECREF(blob);
+        return NULL;
     }
-    return result;
+    char *res_buf = PyBytesWriter_GetData(writer);
+
+    char *blob_buf = PyBytes_AS_STRING(blob);
+    for (Py_ssize_t i = 0, j = 0; i < len; i++, j += step) {
+        res_buf[i] = blob_buf[j];
+    }
+    Py_DECREF(blob);
+    return PyBytesWriter_Finish(writer);
 }
 
 static PyObject *

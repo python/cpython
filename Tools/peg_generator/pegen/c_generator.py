@@ -31,6 +31,7 @@ from pegen.parser_generator import ParserGenerator
 
 EXTENSION_PREFIX = """\
 #include "pegen.h"
+#include "pycore_ceval.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
 #  define D(x) if (p->debug) { x; }
@@ -595,7 +596,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"{node.name}_raw(Parser *p)")
 
     def _should_memoize(self, node: Rule) -> bool:
-        return node.memo and not node.left_recursive
+        return "memo" in node.flags and not node.left_recursive
 
     def _handle_default_rule_body(self, node: Rule, rhs: Rhs, result_type: str) -> None:
         memoize = self._should_memoize(node)

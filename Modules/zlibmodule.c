@@ -8,6 +8,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_CHAR_RELAXED
 
 #include "zlib.h"
 #include "stdbool.h"
@@ -181,15 +182,6 @@ OutputBuffer_WindowOnError(_BlocksOutputBuffer *buffer, _Uint32Window *window)
 }
 
 
-#define ENTER_ZLIB(obj) do {                      \
-    if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-        Py_BEGIN_ALLOW_THREADS                    \
-        PyThread_acquire_lock((obj)->lock, 1);    \
-        Py_END_ALLOW_THREADS                      \
-    } } while (0)
-#define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
-
-
 /* The following parameters are copied from zutil.h, version 0.95 */
 #define DEFLATED   8
 #if MAX_MEM_LEVEL >= 8
@@ -228,7 +220,7 @@ typedef struct
     char eof;
     bool is_initialised;
     PyObject *zdict;
-    PyThread_type_lock lock;
+    PyMutex mutex;
 } compobject;
 
 #define _compobject_CAST(op)    ((compobject *)op)
@@ -291,12 +283,7 @@ newcompobject(PyTypeObject *type)
         Py_DECREF(self);
         return NULL;
     }
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
+    self->mutex = (PyMutex){0};
     return self;
 }
 
@@ -344,7 +331,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     PyObject *return_value;
     int flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = get_zlib_state(module);
 
@@ -445,7 +432,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     zlibstate *state = get_zlib_state(module);
@@ -720,10 +707,10 @@ compobject_dealloc_impl(PyObject *op, int (*dealloc)(z_streamp))
     PyTypeObject *type = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
     compobject *self = _compobject_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
     if (self->is_initialised) {
         (void)dealloc(&self->zst);
     }
-    PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);
@@ -774,10 +761,10 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 {
     PyObject *return_value;
     int err;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     zlibstate *state = PyType_GetModuleState(cls);
 
-    ENTER_ZLIB(self);
+    PyMutex_Lock(&self->mutex);
 
     self->zst.next_in = data->buf;
     Py_ssize_t ibuflen = data->len;
@@ -819,7 +806,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
     OutputBuffer_OnError(&buffer);
     return_value = NULL;
  success:
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     return return_value;
 }
 
@@ -833,22 +820,24 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
            input data in self->unused_data. */
         if (self->zst.avail_in > 0) {
             Py_ssize_t old_size = PyBytes_GET_SIZE(self->unused_data);
-            Py_ssize_t new_size, left_size;
-            PyObject *new_data;
+            Py_ssize_t left_size;
             left_size = (Byte *)data->buf + data->len - self->zst.next_in;
             if (left_size > (PY_SSIZE_T_MAX - old_size)) {
                 PyErr_NoMemory();
                 return -1;
             }
-            new_size = old_size + left_size;
-            new_data = PyBytes_FromStringAndSize(NULL, new_size);
-            if (new_data == NULL)
+            PyBytesWriter *writer = PyBytesWriter_Create(old_size + left_size);
+            if (writer == NULL) {
                 return -1;
-            memcpy(PyBytes_AS_STRING(new_data),
-                      PyBytes_AS_STRING(self->unused_data), old_size);
-            memcpy(PyBytes_AS_STRING(new_data) + old_size,
-                      self->zst.next_in, left_size);
-            Py_SETREF(self->unused_data, new_data);
+            }
+            char *new_data = PyBytesWriter_GetData(writer);
+            memcpy(new_data, PyBytes_AS_STRING(self->unused_data), old_size);
+            memcpy(new_data + old_size, self->zst.next_in, left_size);
+            PyObject *new_unused_data = PyBytesWriter_Finish(writer);
+            if (new_unused_data == NULL) {
+                return -1;
+            }
+            Py_SETREF(self->unused_data, new_unused_data);
             self->zst.avail_in = 0;
         }
     }
@@ -896,7 +885,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     int err = Z_OK;
     Py_ssize_t ibuflen;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL)
@@ -907,7 +896,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         max_length = -1;
     }
 
-    ENTER_ZLIB(self);
+    PyMutex_Lock(&self->mutex);
 
     self->zst.next_in = data->buf;
     ibuflen = data->len;
@@ -960,7 +949,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     if (err == Z_STREAM_END) {
         /* This is the logical place to call inflateEnd, but the old behaviour
            of only calling it on flush() is preserved. */
-        self->eof = 1;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->eof, 1);
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         /* We will only get Z_BUF_ERROR if the output buffer was full
            but there wasn't more output when we tried again, so it is
@@ -979,7 +968,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     OutputBuffer_OnError(&buffer);
     return_value = NULL;
  success:
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     return return_value;
 }
 
@@ -1003,16 +992,16 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 {
     int err;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
        doing any work at all; just return an empty string. */
     if (mode == Z_NO_FLUSH) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
-    ENTER_ZLIB(self);
+    PyMutex_Lock(&self->mutex);
 
     self->zst.avail_in = 0;
 
@@ -1068,7 +1057,7 @@ error:
     OutputBuffer_OnError(&buffer);
     return_value = NULL;
 success:
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     return return_value;
 }
 
@@ -1092,9 +1081,9 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
     if (!return_value) return NULL;
 
     /* Copy the zstream state
-     * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
+     * We use mutex to make this thread-safe
      */
-    ENTER_ZLIB(self);
+    PyMutex_Lock(&self->mutex);
     int err = deflateCopy(&return_value->zst, &self->zst);
     switch (err) {
     case Z_OK:
@@ -1118,11 +1107,11 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
     /* Mark it as being initialized */
     return_value->is_initialised = 1;
 
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     return (PyObject *)return_value;
 
 error:
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     Py_XDECREF(return_value);
     return NULL;
 }
@@ -1176,9 +1165,9 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls)
     if (!return_value) return NULL;
 
     /* Copy the zstream state
-     * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
+     * We use mutex to make this thread-safe
      */
-    ENTER_ZLIB(self);
+    PyMutex_Lock(&self->mutex);
     int err = inflateCopy(&return_value->zst, &self->zst);
     switch (err) {
     case Z_OK:
@@ -1203,11 +1192,11 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls)
     /* Mark it as being initialized */
     return_value->is_initialised = 1;
 
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     return (PyObject *)return_value;
 
 error:
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     Py_XDECREF(return_value);
     return NULL;
 }
@@ -1265,7 +1254,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     Py_buffer data;
     PyObject *return_value;
     Py_ssize_t ibuflen;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     PyObject *module = PyType_GetModule(cls);
@@ -1280,10 +1269,10 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         return NULL;
     }
 
-    ENTER_ZLIB(self);
+    PyMutex_Lock(&self->mutex);
 
     if (PyObject_GetBuffer(self->unconsumed_tail, &data, PyBUF_SIMPLE) == -1) {
-        LEAVE_ZLIB(self);
+        PyMutex_Unlock(&self->mutex);
         return NULL;
     }
 
@@ -1331,7 +1320,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
     /* If at end of stream, clean up any memory allocated by zlib. */
     if (err == Z_STREAM_END) {
-        self->eof = 1;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->eof, 1);
         self->is_initialised = 0;
         err = inflateEnd(&self->zst);
         if (err != Z_OK) {
@@ -1350,7 +1339,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     return_value = NULL;
  success:
     PyBuffer_Release(&data);
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     return return_value;
 }
 
@@ -1359,7 +1348,7 @@ typedef struct {
     PyObject_HEAD
     z_stream zst;
     PyObject *zdict;
-    PyThread_type_lock lock;
+    PyMutex mutex;
     PyObject *unused_data;
     uint8_t *input_buffer;
     Py_ssize_t input_buffer_size;
@@ -1385,7 +1374,7 @@ ZlibDecompressor_dealloc(PyObject *op)
     PyTypeObject *type = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
     ZlibDecompressor *self = ZlibDecompressor_CAST(op);
-    PyThread_free_lock(self->lock);
+    assert(!PyMutex_IsLocked(&self->mutex));
     if (self->is_initialised) {
         inflateEnd(&self->zst);
     }
@@ -1543,7 +1532,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     } while(err != Z_STREAM_END && self->avail_in_real != 0);
 
     if (err == Z_STREAM_END) {
-        self->eof = 1;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->eof, 1);
         self->is_initialised = 0;
         /* Unlike the Decompress object we call inflateEnd here as there are no
            backwards compatibility issues */
@@ -1631,7 +1620,7 @@ decompress(ZlibDecompressor *self, uint8_t *data,
     }
 
     if (self->eof) {
-        self->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->needs_input, 0);
 
         if (self->avail_in_real > 0) {
             PyObject *unused_data = PyBytes_FromStringAndSize(
@@ -1644,10 +1633,10 @@ decompress(ZlibDecompressor *self, uint8_t *data,
     }
     else if (self->avail_in_real == 0) {
         self->zst.next_in = NULL;
-        self->needs_input = 1;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->needs_input, 1);
     }
     else {
-        self->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->needs_input, 0);
 
         /* If we did not use the input buffer, we now have
            to copy the tail from the caller's buffer into the
@@ -1716,14 +1705,14 @@ zlib__ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
 {
     PyObject *result = NULL;
 
-    ENTER_ZLIB(self);
+    PyMutex_Lock(&self->mutex);
     if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
     }
     else {
         result = decompress(self, data->buf, data->len, max_length);
     }
-    LEAVE_ZLIB(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -1764,17 +1753,8 @@ zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
     self->zst.zfree = PyZlib_Free;
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
-    if (self->unused_data == NULL) {
-        Py_CLEAR(self);
-        return NULL;
-    }
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    self->mutex = (PyMutex){0};
     int err = inflateInit2(&(self->zst), wbits);
     switch (err) {
         case Z_OK:
@@ -1829,10 +1809,36 @@ static PyMethodDef ZlibDecompressor_methods[] = {
     {NULL}
 };
 
+static PyObject *
+Decomp_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
+{
+    compobject *self = _compobject_CAST(op);
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyObject *
+Decomp_unconsumed_tail_get(PyObject *op, void *Py_UNUSED(ignored))
+{
+    compobject *self = _compobject_CAST(op);
+    PyMutex_Lock(&self->mutex);
+    assert(self->unconsumed_tail != NULL);
+    PyObject *result = Py_NewRef(self->unconsumed_tail);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef Decomp_getset[] = {
+    {"unused_data", Decomp_unused_data_get, NULL, NULL},
+    {"unconsumed_tail", Decomp_unconsumed_tail_get, NULL, NULL},
+    {NULL},
+};
+
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     _Py_T_OBJECT, COMP_OFF(unused_data), Py_READONLY},
-    {"unconsumed_tail", _Py_T_OBJECT, COMP_OFF(unconsumed_tail), Py_READONLY},
     {"eof",             Py_T_BOOL,   COMP_OFF(eof), Py_READONLY},
     {NULL},
 };
@@ -1846,11 +1852,26 @@ PyDoc_STRVAR(ZlibDecompressor_unused_data__doc__,
 PyDoc_STRVAR(ZlibDecompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
+static PyObject *
+ZlibDecompressor_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
+{
+    ZlibDecompressor *self = ZlibDecompressor_CAST(op);
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef ZlibDecompressor_getset[] = {
+    {"unused_data", ZlibDecompressor_unused_data_get, NULL,
+     ZlibDecompressor_unused_data__doc__},
+    {NULL},
+};
+
 static PyMemberDef ZlibDecompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(ZlibDecompressor, eof),
      Py_READONLY, ZlibDecompressor_eof__doc__},
-    {"unused_data", Py_T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
-     Py_READONLY, ZlibDecompressor_unused_data__doc__},
     {"needs_input", Py_T_BOOL, offsetof(ZlibDecompressor, needs_input), Py_READONLY,
      ZlibDecompressor_needs_input_doc},
     {NULL},
@@ -2017,6 +2038,27 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
     return crc32_combine(crc1, crc2, len);
 }
 
+static PyObject *
+zlib_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString("1.0");
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %R", name);
+    return NULL;
+}
+
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
@@ -2027,6 +2069,7 @@ static PyMethodDef zlib_methods[] =
     ZLIB_CRC32_COMBINE_METHODDEF
     ZLIB_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESSOBJ_METHODDEF
+    {"__getattr__", zlib_getattr, METH_VARARGS, "Module __getattr__"},
     {NULL, NULL}
 };
 
@@ -2043,6 +2086,7 @@ static PyType_Spec Comptype_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
         | Py_TPFLAGS_HAVE_GC
     ),
     .slots= Comptype_slots,
@@ -2053,6 +2097,7 @@ static PyType_Slot Decomptype_slots[] = {
     {Py_tp_traverse, compobject_traverse},
     {Py_tp_methods, Decomp_methods},
     {Py_tp_members, Decomp_members},
+    {Py_tp_getset, Decomp_getset},
     {0, 0},
 };
 
@@ -2062,6 +2107,7 @@ static PyType_Spec Decomptype_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
         | Py_TPFLAGS_HAVE_GC
     ),
     .slots = Decomptype_slots,
@@ -2071,6 +2117,7 @@ static PyType_Slot ZlibDecompressor_type_slots[] = {
     {Py_tp_dealloc, ZlibDecompressor_dealloc},
     {Py_tp_traverse, ZlibDecompressor_traverse},
     {Py_tp_members, ZlibDecompressor_members},
+    {Py_tp_getset, ZlibDecompressor_getset},
     {Py_tp_new, zlib__ZlibDecompressor},
     {Py_tp_doc, (char *)zlib__ZlibDecompressor__doc__},
     {Py_tp_methods, ZlibDecompressor_methods},
@@ -2221,9 +2268,6 @@ zlib_exec(PyObject *mod)
         return -1;
     }
 #endif
-    if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
-        return -1;
-    }
     return 0;
 }
 
