@@ -3304,8 +3304,6 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
         self.assertIn("_YIELD_VALUE", uops)
-        # It's essential for performance that the trace loops around.
-        self.assertIn("_JUMP_TO_TOP", uops)
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 3)
 
@@ -3331,8 +3329,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
         self.assertIn("_YIELD_VALUE", uops)
         self.assertIn("_SEND_GEN_FRAME", uops)
-        # It's essential for performance that the trace loops around.
-        self.assertIn("_JUMP_TO_TOP", uops)
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 2)
 

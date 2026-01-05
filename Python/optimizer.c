@@ -823,25 +823,16 @@ _PyJit_translate_single_bytecode_to_trace(
                 _tstate->jit_tracer_state.initial_state.exit == NULL &&
                 // These are coroutines, and we want to unroll those usually.
                 opcode != JUMP_BACKWARD_NO_INTERRUPT) {
-                // We encountered a second JUMP_BACKWARD but not to the top of our own loop.
+                // We encountered a JUMP_BACKWARD but not to the top of our own loop.
                 // We don't want to continue tracing as we might get stuck in the
                 // inner loop. Instead, end the trace where the executor of the
                 // inner loop might start and let the traces rejoin.
-                if (_tstate->jit_tracer_state.translator_state.jump_backward_seen >= 1 ||
-                    // Also end the trace early if we probably have no more space left, as it's better
-                    // to link to another backwards jump trace.
-                    trace_length >= (_tstate->jit_tracer_state.prev_state.code_max_size / 3)) {
-                    OPT_STAT_INC(inner_loop);
-                    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
-                    trace[trace_length-1].operand1 = true; // is_control_flow
-                    DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr,
-                        _tstate->jit_tracer_state.initial_state.close_loop_instr, _tstate->jit_tracer_state.initial_state.start_instr);
-                    goto done;
-                }
-                else {
-                    assert(_tstate->jit_tracer_state.translator_state.jump_backward_seen == 0);
-                    _tstate->jit_tracer_state.translator_state.jump_backward_seen++;
-                }
+                OPT_STAT_INC(inner_loop);
+                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+                trace[trace_length-1].operand1 = true; // is_control_flow
+                DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr,
+                    _tstate->jit_tracer_state.initial_state.close_loop_instr, _tstate->jit_tracer_state.initial_state.start_instr);
+                goto done;
             }
             break;
         }
@@ -1073,7 +1064,6 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.initial_state.exit = exit;
     _tstate->jit_tracer_state.initial_state.stack_depth = curr_stackdepth;
     _tstate->jit_tracer_state.initial_state.chain_depth = chain_depth;
-    _tstate->jit_tracer_state.translator_state.jump_backward_seen = 0;
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
     _tstate->jit_tracer_state.prev_state.dependencies_still_valid = true;
     _tstate->jit_tracer_state.prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
