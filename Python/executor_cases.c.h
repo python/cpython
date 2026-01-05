@@ -4957,30 +4957,22 @@
             STAT_INC(BINARY_OP, hit);
             assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            stack_pointer[0] = left;
-            stack_pointer[1] = right;
-            stack_pointer += 2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
+            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyUnicode_Append(&temp, right_o);
+            _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            *target_local = PyStackRef_NULL;
             if (temp == NULL) {
-                stack_pointer += -2;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             res = PyStackRef_FromPyObjectSteal(temp);
-            *target_local = PyStackRef_NULL;
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -5314,7 +5306,7 @@
             PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
             assert(PyLong_CheckExact(sub));
             assert(PyUnicode_CheckExact(str));
-            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject*)sub)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = sub_st;
                 _tos_cache0 = str_st;
@@ -5331,6 +5323,58 @@
             }
             uint8_t c = PyUnicode_1BYTE_DATA(str)[index];
             assert(c < 128);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
+            s = str_st;
+            i = sub_st;
+            res = PyStackRef_FromPyObjectBorrow(res_o);
+            _tos_cache2 = i;
+            _tos_cache1 = s;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _BINARY_OP_SUBSCR_USTR_INT_r23: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef sub_st;
+            _PyStackRef str_st;
+            _PyStackRef res;
+            _PyStackRef s;
+            _PyStackRef i;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            sub_st = _stack_item_1;
+            str_st = _stack_item_0;
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
+            assert(PyLong_CheckExact(sub));
+            assert(PyUnicode_CheckExact(str));
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject*)sub)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = sub_st;
+                _tos_cache0 = str_st;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            if (PyUnicode_GET_LENGTH(str) <= index) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = sub_st;
+                _tos_cache0 = str_st;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
+            if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = sub_st;
+                _tos_cache0 = str_st;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
             s = str_st;
