@@ -597,6 +597,7 @@ dummy_func(
             BINARY_OP_SUBSCR_LIST_SLICE,
             BINARY_OP_SUBSCR_TUPLE_INT,
             BINARY_OP_SUBSCR_STR_INT,
+            BINARY_OP_SUBSCR_USTR_INT,
             BINARY_OP_SUBSCR_DICT,
             BINARY_OP_SUBSCR_GETITEM,
             BINARY_OP_INPLACE_ADD_UNICODE,
@@ -805,15 +806,18 @@ dummy_func(
              */
             assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            PyUnicode_Append(&temp, right_o);
-            PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            DEAD(right);
+            PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
+            /* gh-143403: It's critical to close this reference *before*
+             * we append. Otherwise, append can move the underlying
+             * unicode object, which will cause a use after free!
+             */
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             DEAD(left);
+            PyUnicode_Append(&temp, right_o);
+            _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
+            *target_local = PyStackRef_NULL;
             ERROR_IF(temp == NULL);
             res = PyStackRef_FromPyObjectSteal(temp);
-            *target_local = PyStackRef_NULL;
         }
 
        op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
@@ -945,7 +949,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_STR_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_COMPACT_ASCII + unused/5 + _BINARY_OP_SUBSCR_STR_INT + _POP_TOP_INT + POP_TOP;
+            _GUARD_TOS_INT + _GUARD_NOS_COMPACT_ASCII + unused/5 + _BINARY_OP_SUBSCR_STR_INT + _POP_TOP_INT + _POP_TOP_UNICODE;
 
         op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
@@ -953,16 +957,39 @@ dummy_func(
 
             assert(PyLong_CheckExact(sub));
             assert(PyUnicode_CheckExact(str));
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
+            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject*)sub));
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index);
             uint8_t c = PyUnicode_1BYTE_DATA(str)[index];
             assert(c < 128);
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
-            INPUTS_DEAD();
             s = str_st;
             i = sub_st;
+            INPUTS_DEAD();
+            res = PyStackRef_FromPyObjectBorrow(res_o);
+        }
+
+        macro(BINARY_OP_SUBSCR_USTR_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_SUBSCR_USTR_INT + _POP_TOP_INT + _POP_TOP_UNICODE;
+
+        op(_BINARY_OP_SUBSCR_USTR_INT, (str_st, sub_st -- res, s, i)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
+
+            assert(PyLong_CheckExact(sub));
+            assert(PyUnicode_CheckExact(str));
+            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject*)sub));
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index);
+            // Specialize for reading an ASCII character from any string:
+            Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
+            DEOPT_IF(Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
+            s = str_st;
+            i = sub_st;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectBorrow(res_o);
         }
 

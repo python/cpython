@@ -1510,7 +1510,7 @@ that may require changes to your code.
   :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`137044`.)
 
-* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
+* :meth:`mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
 
 * A resource warning is now emitted for an unclosed
