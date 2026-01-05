@@ -1066,7 +1066,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             b'test \xACfoo  val'.decode('ascii', 'surrogateescape'),
             stringified='test \uDCACfoo  val',
             value='test \uDCACfoo val',
-            defects=[errors.UndecodableBytesDefect],
+            defects=[undecodable_bytes_defect],
             ),
 
         undecodable_bytes_in_EW = C(
@@ -1074,39 +1074,99 @@ class TestParser(TestParserMixin, TestEmailBase):
                 b'  val').decode('ascii', 'surrogateescape'),
             stringified=' test \uDCACfoo  val',
             value=' test \uDCACfoo val',
-            defects=[errors.UndecodableBytesDefect]*2,
+            defects=[
+                undecodable_bytes_defect,
+                (undecodable_bytes_in_ew_defect, 'us-ascii'),
+                ],
             ),
+
 
         no_whitespace_between_ews = C(
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
             stringified='foobar',
             defects=[
-                errors.InvalidHeaderDefect,
-                errors.InvalidHeaderDefect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
                 ],
             ),
 
         ew_without_leading_whitespace = C(
             'nowhitespace=?utf-8?q?somevalue?=',
             stringified='nowhitespacesomevalue',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[missing_whitespace_before_ew_defect],
             ),
 
         ew_without_trailing_whitespace = C(
             '=?utf-8?q?somevalue?=nowhitespace',
             stringified='somevaluenowhitespace',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[missing_whitespace_after_ew_defect],
             ),
 
         # bpo-37764
         without_trailing_whitespace_hang_case = C(
             '=?utf-8?q?somevalue?=aa',
             stringified='somevalueaa',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[missing_whitespace_after_ew_defect],
             ),
 
         invalid_ew2 = C(
             '=?utf-8?q?=somevalue?=',
+            ),
+
+        **for_each_character(RFC_PRINTABLES)(
+            printable_around_and_between_ews = C(
+                '{char} =?utf-8?q?foo?= {char} =?utf-8?q?bar?= {char}',
+                stringified='{char} foo {char} bar {char}',
+                ),
+            ),
+
+        # XXX XXX the '?=' skip is a sort-of bug the refactoring will fix.
+        **for_each_character(RFC_PRINTABLES, skip='_?=')(
+            printable_inside_ews = C(
+                '=?utf-8?q?rock{char}?= =?utf-8?q?{char}hard_place?=',
+                stringified='rock{char}{char}hard place',
+                ),
+            ),
+
+        **for_each_character(
+                RFC_NONPRINTABLES,
+                # XXX XXX skip things split considers whitespace. This is buggy.
+                #                         US  RS  GS  FS
+                skip=RFC_WSP + '\r\n\v\f\x1f\x1e\x1d\x1c',
+                )(
+            non_wsp_non_printable = C(
+                'some {char} text',
+                stringified='some {char} text',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_wsp_non_printable_inside_ew = C(
+                '=?utf-8?q?some{char}?= text',
+                stringified='some{char} text',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        unicode = C(
+            '📦',
+            ),
+
+        non_ascii_bytes = C(
+            '📦'.encode().decode('ascii', 'surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
+
+        invalid_ew_charset = C(
+            'a =?invalid?q?=C3=89ric?= b',
+            stringified='a \udcc3\udc89ric b',
+            defects=[charset_defect('invalid'), undecodable_bytes_defect],
+            ),
+
+        ew_start_chrome_before_real_ew = C(
+            'z=?xx =?UTF-8?Q?foo?=',
+            stringified='z=?xx foo',
             ),
 
         )
