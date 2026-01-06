@@ -503,10 +503,11 @@ class TimeTestCase(unittest.TestCase):
         for t in (-2, -1, 0, 1):
             try:
                 tt = time.localtime(t)
+                ts = time.mktime(tt)
             except (OverflowError, OSError):
                 pass
             else:
-                self.assertEqual(time.mktime(tt), t)
+                self.assertEqual(ts, t)
 
     # Issue #13309: passing extreme values to mktime() or localtime()
     # borks the glibc's internal timezone data.
