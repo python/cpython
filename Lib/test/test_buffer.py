@@ -4448,6 +4448,43 @@ class TestBufferProtocol(unittest.TestCase):
             obj.__buffer__(inspect.BufferFlags.WRITE)
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @unittest.skipIf(ctypes is None, "requires ctypes")
+    def test_bytearray_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        max_align = ctypes.alignment(ctypes.c_longdouble)
+        cases = [
+            bytearray(),
+            bytearray(1),
+            bytearray(b"0123456789abcdef"),
+            bytearray(16),
+        ]
+        ptrs = [_testcapi.buffer_pointer_as_int(array) for array in cases]
+        self.assertEqual([ptr % max_align for ptr in ptrs], [0]*len(ptrs))
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @unittest.skipIf(ctypes is None, "requires ctypes")
+    def test_array_alignment(self):
+        # gh-140557: pointer alignment of buffers including empty allocation
+        max_align = ctypes.alignment(ctypes.c_longdouble)
+        cases = [array.array(fmt) for fmt in ARRAY]
+        # Empty arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % max_align
+             for case in cases],
+            [0] * len(cases),
+        )
+        for case in cases:
+            case.append(0)
+        # Allocated arrays
+        self.assertEqual(
+            [_testcapi.buffer_pointer_as_int(case) % max_align
+             for case in cases],
+            [0] * len(cases),
+        )
+
+    @support.cpython_only
     def test_pybuffer_size_from_format(self):
         # basic tests
         for format in ('', 'ii', '3s'):
