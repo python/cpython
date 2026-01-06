@@ -981,6 +981,7 @@ class FormatTest:
             ('.0f', '0e-2', '0'),
             ('.0f', '3.14159265', '3'),
             ('.1f', '3.14159265', '3.1'),
+            ('.01f', '3.14159265', '3.1'), # leading zero in precision
             ('.4f', '3.14159265', '3.1416'),
             ('.6f', '3.14159265', '3.141593'),
             ('.7f', '3.14159265', '3.1415926'), # round-half-even!
@@ -1066,6 +1067,7 @@ class FormatTest:
             ('8,', '123456', ' 123,456'),
             ('08,', '123456', '0,123,456'), # special case: extra 0 needed
             ('+08,', '123456', '+123,456'), # but not if there's a sign
+            ('008,', '123456', '0,123,456'), # leading zero in width
             (' 08,', '123456', ' 123,456'),
             ('08,', '-123456', '-123,456'),
             ('+09,', '123456', '+0,123,456'),
@@ -1087,6 +1089,15 @@ class FormatTest:
             ('07_', '1234.56', '1_234.56'),
             ('_', '1.23456789', '1.23456789'),
             ('_%', '123.456789', '12_345.6789%'),
+            # and now for something completely different...
+            ('.,', '1.23456789', '1.234,567,89'),
+            ('._', '1.23456789', '1.234_567_89'),
+            ('.6_f', '12345.23456789', '12345.234_568'),
+            (',._%', '123.456789', '12,345.678_9%'),
+            (',._e', '123456', '1.234_56e+5'),
+            (',.4_e', '123456', '1.234_6e+5'),
+            (',.3_e', '123456', '1.235e+5'),
+            (',._E', '123456', '1.234_56E+5'),
 
             # negative zero: default behavior
             ('.1f', '-0', '-0.0'),
@@ -1159,6 +1170,10 @@ class FormatTest:
 
         # bytes format argument
         self.assertRaises(TypeError, Decimal(1).__format__, b'-020')
+
+        # precision or fractional part separator should follow after dot
+        self.assertRaises(ValueError, format, Decimal(1), '.f')
+        self.assertRaises(ValueError, format, Decimal(1), '._6f')
 
     def test_negative_zero_format_directed_rounding(self):
         with self.decimal.localcontext() as ctx:
@@ -4459,7 +4474,7 @@ class CheckAttributes(unittest.TestCase):
         self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
         self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
 
-        self.assertEqual(C.__version__, P.__version__)
+        self.assertEqual(C.SPEC_VERSION, P.SPEC_VERSION)
 
         self.assertLessEqual(set(dir(C)), set(dir(P)))
         self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
@@ -5912,6 +5927,23 @@ class SignatureTest(unittest.TestCase):
 
         doit('Decimal')
         doit('Context')
+
+
+class TestModule:
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(self.decimal, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
+@requires_cdecimal
+class CTestModule(TestModule, unittest.TestCase):
+    decimal = C
+class PyTestModule(TestModule, unittest.TestCase):
+    decimal = P
 
 
 def load_tests(loader, tests, pattern):

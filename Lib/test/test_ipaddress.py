@@ -12,6 +12,7 @@ import operator
 import pickle
 import ipaddress
 import weakref
+from collections.abc import Iterator
 from test.support import LARGEST, SMALLEST
 
 
@@ -399,14 +400,16 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_bad_address_split_v6_too_long(self):
         def assertBadSplit(addr):
-            msg = r"At most 39 characters expected in %s"
-            with self.assertAddressError(msg, repr(re.escape(addr[:14]))):
+            msg = r"At most 45 characters expected in '%s"
+            with self.assertAddressError(msg, re.escape(addr[:45])):
                 ipaddress.IPv6Address(addr)
 
         # Long IPv6 address
         long_addr = ("0:" * 10000) + "0"
         assertBadSplit(long_addr)
         assertBadSplit(long_addr + "%zoneid")
+        assertBadSplit(long_addr + ":255.255.255.255")
+        assertBadSplit(long_addr + ":ffff:255.255.255.255")
 
     def test_bad_address_split_v6_too_many_parts(self):
         def assertBadSplit(addr):
@@ -1470,18 +1473,27 @@ class IpaddrUnitTest(unittest.TestCase):
                          self.ipv6_scoped_network.supernet(new_prefix=62))
 
     def testHosts(self):
+        hosts = self.ipv4_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), next(hosts))
         hosts = list(self.ipv4_network.hosts())
         self.assertEqual(254, len(hosts))
         self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), hosts[0])
         self.assertEqual(ipaddress.IPv4Address('1.2.3.254'), hosts[-1])
 
         ipv6_network = ipaddress.IPv6Network('2001:658:22a:cafe::/120')
+        hosts = ipv6_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), next(hosts))
         hosts = list(ipv6_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::ff'), hosts[-1])
 
         ipv6_scoped_network = ipaddress.IPv6Network('2001:658:22a:cafe::%scope/120')
+        hosts = ipv6_scoped_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual((ipaddress.IPv6Address('2001:658:22a:cafe::1')), next(hosts))
         hosts = list(ipv6_scoped_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
@@ -1492,6 +1504,12 @@ class IpaddrUnitTest(unittest.TestCase):
                  ipaddress.IPv4Address('2.0.0.1')]
         str_args = '2.0.0.0/31'
         tpl_args = ('2.0.0.0', 31)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1501,6 +1519,12 @@ class IpaddrUnitTest(unittest.TestCase):
         addrs = [ipaddress.IPv4Address('1.2.3.4')]
         str_args = '1.2.3.4/32'
         tpl_args = ('1.2.3.4', 32)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1510,6 +1534,12 @@ class IpaddrUnitTest(unittest.TestCase):
                  ipaddress.IPv6Address('2001:658:22a:cafe::1')]
         str_args = '2001:658:22a:cafe::/127'
         tpl_args = ('2001:658:22a:cafe::', 127)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1518,6 +1548,12 @@ class IpaddrUnitTest(unittest.TestCase):
         addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::1'), ]
         str_args = '2001:658:22a:cafe::1/128'
         tpl_args = ('2001:658:22a:cafe::1', 128)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -2189,6 +2225,11 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                           ipaddress.ip_address('FFFF::c000:201'))
 
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255'),
+                          ipaddress.ip_address('::ffff:c0a8:ffff'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255'),
+                          ipaddress.ip_address('ffff::c0a8:ffff'))
+
         self.assertEqual(ipaddress.ip_address('::FFFF:192.0.2.1%scope'),
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1%scope'),
@@ -2201,6 +2242,10 @@ class IpaddrUnitTest(unittest.TestCase):
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
         self.assertNotEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                           ipaddress.ip_address('FFFF::c000:201%scope'))
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255%scope'),
+                          ipaddress.ip_address('::ffff:c0a8:ffff%scope'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255%scope'),
+                          ipaddress.ip_address('ffff::c0a8:ffff%scope'))
 
     def testIPVersion(self):
         self.assertEqual(ipaddress.IPv4Address.version, 4)
@@ -2257,6 +2302,10 @@ class IpaddrUnitTest(unittest.TestCase):
                 '224.1.1.1/31').is_multicast)
         self.assertEqual(False, ipaddress.ip_network('240.0.0.0').is_multicast)
         self.assertEqual(True, ipaddress.ip_network('240.0.0.0').is_reserved)
+
+        self.assertTrue(ipaddress.ip_interface('0.0.0.0/32').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('0.0.0.0/31').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('1.2.3.4/32').is_unspecified)
 
         self.assertEqual(True, ipaddress.ip_interface(
                 '192.168.1.1/17').is_private)
@@ -2610,6 +2659,10 @@ class IpaddrUnitTest(unittest.TestCase):
             '::7:6:5:4:3:2:0': '0:7:6:5:4:3:2:0/128',
             '7:6:5:4:3:2:1::': '7:6:5:4:3:2:1:0/128',
             '0:6:5:4:3:2:1::': '0:6:5:4:3:2:1:0/128',
+            '0000:0000:0000:0000:0000:0000:255.255.255.255': '::ffff:ffff/128',
+            '0000:0000:0000:0000:0000:ffff:255.255.255.255': '::ffff:255.255.255.255/128',
+            'ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255':
+                'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128',
             }
         for uncompressed, compressed in list(test_addresses.items()):
             self.assertEqual(compressed, str(ipaddress.IPv6Interface(
@@ -2800,6 +2853,16 @@ class IpaddrUnitTest(unittest.TestCase):
                 "ffff:ffff:ffff:ffff:ffff:ffff:aff:0/112"
             ).__hash__()
         )
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(ipaddress, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == '__main__':

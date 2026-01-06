@@ -535,6 +535,9 @@ Other constructors, all class methods:
       :c:func:`localtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`localtime` failure.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timestamp*, not only integer or float.
+
 
 .. classmethod:: date.fromordinal(ordinal)
 
@@ -1020,6 +1023,10 @@ Other constructors, all class methods:
    .. versionchanged:: 3.6
       :meth:`fromtimestamp` may return instances with :attr:`.fold` set to 1.
 
+   .. versionchanged:: 3.15
+      Accepts any real number as *timestamp*, not only integer or float.
+
+
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
    Return the UTC :class:`.datetime` corresponding to the POSIX timestamp, with
@@ -1059,6 +1066,9 @@ Other constructors, all class methods:
    .. deprecated:: 3.12
 
       Use :meth:`datetime.fromtimestamp` with :const:`UTC` instead.
+
+   .. versionchanged:: 3.15
+      Accepts any real number as *timestamp*, not only integer or float.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -2383,7 +2393,7 @@ locations where different offsets are used in different days of the year or
 where historical changes have been made to civil time.
 
 
-.. class:: timezone(offset, name=None)
+.. class:: timezone(offset[, name])
 
   The *offset* argument must be specified as a :class:`timedelta`
   object representing the difference between the local time and UTC. It must
@@ -2629,7 +2639,10 @@ differences between platforms in handling of unsupported format specifiers.
    ``%G``, ``%u`` and ``%V`` were added.
 
 .. versionadded:: 3.12
-   ``%:z`` was added.
+   ``%:z`` was added for :meth:`~.datetime.strftime`
+
+.. versionadded:: 3.15
+   ``%:z`` was added for :meth:`~.datetime.strptime`
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
@@ -2638,9 +2651,42 @@ Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
 ``time.strftime(fmt, d.timetuple())`` although not all objects support a
 :meth:`~date.timetuple` method.
 
-For the :meth:`.datetime.strptime` class method, the default value is
-``1900-01-01T00:00:00.000``: any components not specified in the format string
-will be pulled from the default value. [#]_
+For the :meth:`.datetime.strptime` and :meth:`.date.strptime` class methods,
+the default value is ``1900-01-01T00:00:00.000``: any components not specified
+in the format string will be pulled from the default value.
+
+.. note::
+   When used to parse partial dates lacking a year, :meth:`.datetime.strptime`
+   and :meth:`.date.strptime` will raise when encountering February 29 because
+   the default year of 1900 is *not* a leap year.  Always add a default leap
+   year to partial date strings before parsing.
+
+
+.. testsetup::
+
+    # doctest seems to turn the warning into an error which makes it
+    # show up and require matching and prevents the actual interesting
+    # exception from being raised.
+    # Manually apply the catch_warnings context manager
+    import warnings
+    catch_warnings = warnings.catch_warnings()
+    catch_warnings.__enter__()
+    warnings.simplefilter("ignore")
+
+.. testcleanup::
+
+    catch_warnings.__exit__()
+
+.. doctest::
+
+    >>> from datetime import datetime
+    >>> value = "2/29"
+    >>> datetime.strptime(value, "%m/%d")
+    Traceback (most recent call last):
+    ...
+    ValueError: day 29 must be in range 1..28 for month 2 in year 1900
+    >>> datetime.strptime(f"1904 {value}", "%Y %m/%d")
+    datetime.datetime(1904, 2, 29, 0, 0)
 
 Using ``datetime.strptime(date_string, format)`` is equivalent to::
 
@@ -2724,12 +2770,18 @@ Notes:
       When the ``%z`` directive is provided to the  :meth:`~.datetime.strptime` method,
       the UTC offsets can have a colon as a separator between hours, minutes
       and seconds.
-      For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
-      In addition, providing ``'Z'`` is identical to ``'+00:00'``.
+      For example, both ``'+010000'`` and ``'+01:00:00'`` will be parsed as an offset
+      of one hour. In addition, providing ``'Z'`` is identical to ``'+00:00'``.
 
    ``%:z``
-      Behaves exactly as ``%z``, but has a colon separator added between
-      hours, minutes and seconds.
+      When used with :meth:`~.datetime.strftime`, behaves exactly as ``%z``,
+      except that a colon separator is added between hours, minutes and seconds.
+
+      When used with :meth:`~.datetime.strptime`, the UTC offset is *required*
+      to have a colon as a separator between hours, minutes and seconds.
+      For example, ``'+01:00:00'`` (but *not* ``'+010000'``) will be parsed as
+      an offset of one hour. In addition, providing ``'Z'`` is identical to
+      ``'+00:00'``.
 
    ``%Z``
       In :meth:`~.datetime.strftime`, ``%Z`` is replaced by an empty string if
@@ -2771,7 +2823,7 @@ Notes:
    include a year in the format.  If the value you need to parse lacks a year,
    append an explicit dummy leap year.  Otherwise your code will raise an
    exception when it encounters leap day because the default year used by the
-   parser is not a leap year.  Users run into this bug every four years...
+   parser (1900) is not a leap year.  Users run into that bug every leap year.
 
    .. doctest::
 
@@ -2798,5 +2850,3 @@ Notes:
 .. [#] See R. H. van Gent's `guide to the mathematics of the ISO 8601 calendar
        <https://web.archive.org/web/20220531051136/https://webspace.science.uu.nl/~gent0113/calendar/isocalendar.htm>`_
        for a good explanation.
-
-.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since 1900 is not a leap year.

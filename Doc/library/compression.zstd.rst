@@ -33,6 +33,8 @@ The :mod:`!compression.zstd` module contains:
 * The :class:`CompressionParameter`, :class:`DecompressionParameter`, and
   :class:`Strategy` classes for setting advanced (de)compression parameters.
 
+.. include:: ../includes/optional-module.rst
+
 
 Exceptions
 ----------
@@ -71,7 +73,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be non-None.
@@ -115,7 +117,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be passed. The
@@ -247,6 +249,27 @@ Compressing and decompressing data in memory
       The *mode* argument is a :class:`ZstdCompressor` attribute, either
       :attr:`~.FLUSH_BLOCK`, or :attr:`~.FLUSH_FRAME`.
 
+   .. method:: set_pledged_input_size(size)
+
+      Specify the amount of uncompressed data *size* that will be provided for
+      the next frame. *size* will be written into the frame header of the next
+      frame unless :attr:`CompressionParameter.content_size_flag` is ``False``
+      or ``0``. A size of ``0`` means that the frame is empty. If *size* is
+      ``None``, the frame header will omit the frame size. Frames that include
+      the uncompressed data size require less memory to decompress, especially
+      at higher compression levels.
+
+      If :attr:`last_mode` is not :attr:`FLUSH_FRAME`, a
+      :exc:`ValueError` is raised as the compressor is not at the start of
+      a frame. If the pledged size does not match the actual size of data
+      provided to :meth:`.compress`, future calls to :meth:`!compress` or
+      :meth:`flush` may raise :exc:`ZstdError` and the last chunk of data may
+      be lost.
+
+      After :meth:`flush` or :meth:`.compress` are called with mode
+      :attr:`FLUSH_FRAME`, the next frame will not include the frame size into
+      the header unless :meth:`!set_pledged_input_size` is called again.
+
    .. attribute:: CONTINUE
 
       Collect more data for compression, which may or may not generate output
@@ -265,6 +288,13 @@ Compressing and decompressing data in memory
       Complete and write out a frame. Future data provided to
       :meth:`~.compress` will be written into a new frame and
       *cannot* reference past data.
+
+   .. attribute:: last_mode
+
+      The last mode passed to either :meth:`~.compress` or :meth:`~.flush`.
+      The value can be one of :attr:`~.CONTINUE`, :attr:`~.FLUSH_BLOCK`, or
+      :attr:`~.FLUSH_FRAME`. The initial value is :attr:`~.FLUSH_FRAME`,
+      signifying that the compressor is at the start of a new frame.
 
 
 .. class:: ZstdDecompressor(zstd_dict=None, options=None)
@@ -495,8 +525,14 @@ Advanced parameter control
    .. attribute:: compression_level
 
       A high-level means of setting other compression parameters that affect
-      the speed and ratio of compressing data. Setting the level to zero uses
-      :attr:`COMPRESSION_LEVEL_DEFAULT`.
+      the speed and ratio of compressing data.
+
+      Regular compression levels are greater than ``0``. Values greater than
+      ``20`` are considered "ultra" compression and require more memory than
+      other levels. Negative values can be used to trade off faster compression
+      for worse compression ratios.
+
+      Setting the level to zero uses :attr:`COMPRESSION_LEVEL_DEFAULT`.
 
    .. attribute:: window_log
 
@@ -614,6 +650,29 @@ Advanced parameter control
       the default value will likely result in a compression ratio decrease.
 
       A value of zero causes the value to be selected automatically.
+
+   .. attribute:: content_size_flag
+
+      Write the size of the data to be compressed into the Zstandard frame
+      header when known prior to compressing.
+
+      This flag only takes effect under the following scenarios:
+
+      * Calling :func:`compress` for one-shot compression
+      * Providing all of the data to be compressed in the frame in a single
+        :meth:`ZstdCompressor.compress` call, with the
+        :attr:`ZstdCompressor.FLUSH_FRAME` mode.
+      * Calling :meth:`ZstdCompressor.set_pledged_input_size` with the exact
+        amount of data that will be provided to the compressor prior to any
+        calls to :meth:`ZstdCompressor.compress` for the current frame.
+        :meth:`!ZstdCompressor.set_pledged_input_size` must be called for each
+        new frame.
+
+      All other compression calls may not write the size information into the
+      frame header.
+
+      ``True`` or ``1`` enable the content size flag while ``False`` or ``0``
+      disable it.
 
    .. attribute:: checksum_flag
 

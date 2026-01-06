@@ -25,7 +25,7 @@ PyDoc_STRVAR(_zstd_ZstdDict_new__doc__,
 "by multiple ZstdCompressor or ZstdDecompressor objects.");
 
 static PyObject *
-_zstd_ZstdDict_new_impl(PyTypeObject *type, PyObject *dict_content,
+_zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
                         int is_raw);
 
 static PyObject *
@@ -63,7 +63,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    PyObject *dict_content;
+    Py_buffer dict_content = {NULL, NULL};
     int is_raw = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
@@ -71,7 +71,9 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    dict_content = fastargs[0];
+    if (PyObject_GetBuffer(fastargs[0], &dict_content, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -80,10 +82,41 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _zstd_ZstdDict_new_impl(type, dict_content, is_raw);
+    return_value = _zstd_ZstdDict_new_impl(type, &dict_content, is_raw);
 
 exit:
+    /* Cleanup for dict_content */
+    if (dict_content.obj) {
+       PyBuffer_Release(&dict_content);
+    }
+
     return return_value;
+}
+
+PyDoc_STRVAR(_zstd_ZstdDict_dict_content__doc__,
+"The content of a Zstandard dictionary, as a bytes object.");
+#if defined(_zstd_ZstdDict_dict_content_DOCSTR)
+#   undef _zstd_ZstdDict_dict_content_DOCSTR
+#endif
+#define _zstd_ZstdDict_dict_content_DOCSTR _zstd_ZstdDict_dict_content__doc__
+
+#if !defined(_zstd_ZstdDict_dict_content_DOCSTR)
+#  define _zstd_ZstdDict_dict_content_DOCSTR NULL
+#endif
+#if defined(_ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF)
+#  undef _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF
+#  define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, (setter)_zstd_ZstdDict_dict_content_set, _zstd_ZstdDict_dict_content_DOCSTR},
+#else
+#  define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, NULL, _zstd_ZstdDict_dict_content_DOCSTR},
+#endif
+
+static PyObject *
+_zstd_ZstdDict_dict_content_get_impl(ZstdDict *self);
+
+static PyObject *
+_zstd_ZstdDict_dict_content_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _zstd_ZstdDict_dict_content_get_impl((ZstdDict *)self);
 }
 
 PyDoc_STRVAR(_zstd_ZstdDict_as_digested_dict__doc__,
@@ -165,7 +198,7 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_prefix__doc__,
 "1. Prefix is compatible with long distance matching, while dictionary is not.\n"
 "2. It only works for the first frame, then the compressor/decompressor will\n"
 "   return to no prefix state.\n"
-"3. When decompressing, must use the same prefix as when compressing.\"");
+"3. When decompressing, must use the same prefix as when compressing.");
 #if defined(_zstd_ZstdDict_as_prefix_DOCSTR)
 #   undef _zstd_ZstdDict_as_prefix_DOCSTR
 #endif
@@ -189,4 +222,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 {
     return _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
 }
-/*[clinic end generated code: output=47b12b5848b53ed8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f41d9e2e2cc2928f input=a9049054013a1b77]*/

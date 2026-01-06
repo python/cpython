@@ -1096,7 +1096,7 @@ Also changed its name and daemonic status, it can be now joined.
 Add :func:`os.path.isreserved`, which identifies reserved pathnames such as
 "NUL", "AUX" and "CON". This function is only available on Windows.
 
-Deprecate :meth:`pathlib.PurePath.is_reserved`.
+Deprecate :meth:`!pathlib.PurePath.is_reserved`.
 
 ..
 

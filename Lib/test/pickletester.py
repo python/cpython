@@ -74,6 +74,15 @@ def count_opcode(code, pickle):
 def identity(x):
     return x
 
+def itersize(start, stop):
+    # Produce geometrical increasing sequence from start to stop
+    # (inclusively) for tests.
+    size = start
+    while size < stop:
+        yield size
+        size <<= 1
+    yield stop
+
 
 class UnseekableIO(io.BytesIO):
     def peek(self, *args):
@@ -853,9 +862,8 @@ class AbstractUnpickleTests:
                 self.assertEqual(getattr(obj, slot, None),
                                  getattr(objcopy, slot, None), msg=msg)
 
-    def check_unpickling_error(self, errors, data):
-        with self.subTest(data=data), \
-             self.assertRaises(errors):
+    def check_unpickling_error_strict(self, errors, data):
+        with self.assertRaises(errors):
             try:
                 self.loads(data)
             except BaseException as exc:
@@ -863,6 +871,10 @@ class AbstractUnpickleTests:
                     print('%-32r - %s: %s' %
                           (data, exc.__class__.__name__, exc))
                 raise
+
+    def check_unpickling_error(self, errors, data):
+        with self.subTest(data=data):
+            self.check_unpickling_error_strict(errors, data)
 
     def test_load_from_data0(self):
         self.assert_is_copy(self._testdata, self.loads(DATA0))
@@ -1012,6 +1024,16 @@ class AbstractUnpickleTests:
         self.assertIs(self.loads(b'I01\n.'), True)
         self.assertIs(self.loads(b'I00\n.'), False)
 
+    def test_issue135241(self):
+        # C implementation should check for hardcoded values 00 and 01
+        # when getting booleans from the INT opcode. Doing a str comparison
+        # to bypass truthy/falsy comparisons. These payloads should return
+        # 0, not False.
+        out1 = self.loads(b'I+0\n.')
+        self.assertEqual(str(out1), '0')
+        out2 = self.loads(b'I 0\n.')
+        self.assertEqual(str(out2), '0')
+
     def test_zero_padded_integers(self):
         self.assertEqual(self.loads(b'I010\n.'), 10)
         self.assertEqual(self.loads(b'I-010\n.'), -10)
@@ -1100,6 +1122,11 @@ class AbstractUnpickleTests:
         self.check_unpickling_error((pickle.UnpicklingError, OverflowError),
                                     dumped)
 
+    def test_large_binstring(self):
+        errmsg = 'BINSTRING pickle has negative byte count'
+        with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
+            self.loads(b'T\0\0\0\x80')
+
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
         unpickled = self.loads(pickled)
@@ -1134,6 +1161,155 @@ class AbstractUnpickleTests:
         # Issue #12847
         dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
         self.check_unpickling_error(ValueError, dumped)
+
+    def test_too_large_put(self):
+        # Test that PUT with large id does not cause allocation of
+        # too large memo table. The C implementation uses a dict-based memo
+        # for sparse indices (when idx > memo_len * 2) instead of allocating
+        # a massive array. This test verifies large sparse indices work without
+        # causing memory exhaustion.
+        #
+        # The following simple pickle creates an empty list, memoizes it
+        # using a large index, then loads it back on the stack, builds
+        # a tuple containing 2 identical empty lists and returns it.
+        data = lambda n: (b'((lp' + str(n).encode() + b'\n' +
+                          b'g' + str(n).encode() + b'\nt.')
+        #    0: (    MARK
+        #    1: (        MARK
+        #    2: l            LIST       (MARK at 1)
+        #    3: p        PUT        1000000000000
+        #   18: g        GET        1000000000000
+        #   33: t        TUPLE      (MARK at 0)
+        #   34: .    STOP
+        for idx in [10**6, 10**9, 10**12]:
+            if idx > sys.maxsize:
+                continue
+            self.assertEqual(self.loads(data(idx)), ([],)*2)
+
+    def test_too_large_long_binput(self):
+        # Test that LONG_BINPUT with large id does not cause allocation of
+        # too large memo table. The C implementation uses a dict-based memo
+        # for sparse indices (when idx > memo_len * 2) instead of allocating
+        # a massive array. This test verifies large sparse indices work without
+        # causing memory exhaustion.
+        #
+        # The following simple pickle creates an empty list, memoizes it
+        # using a large index, then loads it back on the stack, builds
+        # a tuple containing 2 identical empty lists and returns it.
+        data = lambda n: (b'(]r' + struct.pack('<I', n) +
+                          b'j' + struct.pack('<I', n) + b't.')
+        #    0: (    MARK
+        #    1: ]        EMPTY_LIST
+        #    2: r        LONG_BINPUT 4294967295
+        #    7: j        LONG_BINGET 4294967295
+        #   12: t        TUPLE      (MARK at 0)
+        #   13: .    STOP
+        for idx in itersize(1 << 20, min(sys.maxsize, (1 << 32) - 1)):
+            self.assertEqual(self.loads(data(idx)), ([],)*2)
+
+    def _test_truncated_data(self, dumped, expected_error=None):
+        # Test that instructions to read large data without providing
+        # such amount of data do not cause large memory usage.
+        if expected_error is None:
+            expected_error = self.truncated_data_error
+        # BytesIO
+        with self.assertRaisesRegex(*expected_error):
+            self.loads(dumped)
+        if hasattr(self, 'unpickler'):
+            try:
+                with open(TESTFN, 'wb') as f:
+                    f.write(dumped)
+                # buffered file
+                with open(TESTFN, 'rb') as f:
+                    u = self.unpickler(f)
+                    with self.assertRaisesRegex(*expected_error):
+                        u.load()
+                # unbuffered file
+                with open(TESTFN, 'rb', buffering=0) as f:
+                    u = self.unpickler(f)
+                    with self.assertRaisesRegex(*expected_error):
+                        u.load()
+            finally:
+                os_helper.unlink(TESTFN)
+
+    def test_truncated_large_binstring(self):
+        data = lambda size: b'T' + struct.pack('<I', size) + b'.' * 5
+        #    0: T    BINSTRING  '....'
+        #    9: .    STOP
+        self.assertEqual(self.loads(data(4)), '....') # self-testing
+        for size in itersize(1 << 10, min(sys.maxsize - 5, (1 << 31) - 1)):
+            self._test_truncated_data(data(size))
+        self._test_truncated_data(data(1 << 31),
+            (pickle.UnpicklingError, 'truncated|exceeds|negative byte count'))
+
+    def test_truncated_large_binunicode(self):
+        data = lambda size: b'X' + struct.pack('<I', size) + b'.' * 5
+        #    0: X    BINUNICODE '....'
+        #    9: .    STOP
+        self.assertEqual(self.loads(data(4)), '....') # self-testing
+        for size in itersize(1 << 10, min(sys.maxsize - 5, (1 << 32) - 1)):
+            self._test_truncated_data(data(size))
+
+    def test_truncated_large_binbytes(self):
+        data = lambda size: b'B' + struct.pack('<I', size) + b'.' * 5
+        #    0: B    BINBYTES   b'....'
+        #    9: .    STOP
+        self.assertEqual(self.loads(data(4)), b'....') # self-testing
+        for size in itersize(1 << 10, min(sys.maxsize, 1 << 31)):
+            self._test_truncated_data(data(size))
+
+    def test_truncated_large_long4(self):
+        data = lambda size: b'\x8b' + struct.pack('<I', size) + b'.' * 5
+        #    0: \x8b LONG4      0x2e2e2e2e
+        #    9: .    STOP
+        self.assertEqual(self.loads(data(4)), 0x2e2e2e2e) # self-testing
+        for size in itersize(1 << 10, min(sys.maxsize - 5, (1 << 31) - 1)):
+            self._test_truncated_data(data(size))
+        self._test_truncated_data(data(1 << 31),
+            (pickle.UnpicklingError, 'LONG pickle has negative byte count'))
+
+    def test_truncated_large_frame(self):
+        data = lambda size: b'\x95' + struct.pack('<Q', size) + b'N.'
+        #    0: \x95 FRAME      2
+        #    9: N    NONE
+        #   10: .    STOP
+        self.assertIsNone(self.loads(data(2))) # self-testing
+        for size in itersize(1 << 10, sys.maxsize - 9):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1),
+                ((OverflowError, ValueError),
+                 'FRAME length exceeds|frame size > sys.maxsize'))
+
+    def test_truncated_large_binunicode8(self):
+        data = lambda size: b'\x8d' + struct.pack('<Q', size) + b'.' * 5
+        #    0: \x8d BINUNICODE8 '....'
+        #   13: .    STOP
+        self.assertEqual(self.loads(data(4)), '....') # self-testing
+        for size in itersize(1 << 10, sys.maxsize - 9):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1), self.size_overflow_error)
+
+    def test_truncated_large_binbytes8(self):
+        data = lambda size: b'\x8e' + struct.pack('<Q', size) + b'.' * 5
+        #    0: \x8e BINBYTES8  b'....'
+        #   13: .    STOP
+        self.assertEqual(self.loads(data(4)), b'....') # self-testing
+        for size in itersize(1 << 10, sys.maxsize):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1), self.size_overflow_error)
+
+    def test_truncated_large_bytearray8(self):
+        data = lambda size: b'\x96' + struct.pack('<Q', size) + b'.' * 5
+        #    0: \x96 BYTEARRAY8 bytearray(b'....')
+        #   13: .    STOP
+        self.assertEqual(self.loads(data(4)), bytearray(b'....')) # self-testing
+        for size in itersize(1 << 10, sys.maxsize):
+            self._test_truncated_data(data(size))
+        if sys.maxsize + 1 < 1 << 64:
+            self._test_truncated_data(data(sys.maxsize + 1), self.size_overflow_error)
 
     def test_badly_escaped_string(self):
         self.check_unpickling_error(ValueError, b"S'\\'\n.")
@@ -1867,7 +2043,7 @@ class AbstractPicklingErrorTests:
                     with self.assertRaises(TypeError) as cm:
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
-                        'functools.partial() argument after ** must be a mapping, not list')
+                        'Value after ** must be a mapping, not list')
                     self.assertEqual(cm.exception.__notes__, [
                         'when serializing test.pickletester.REX object'])
         else:
@@ -4084,6 +4260,35 @@ class AbstractPickleTests:
         check_array(arr.T)
         # 2-D, non-contiguous
         check_array(arr[::2])
+
+    def test_concurrent_mutation_in_buffer_with_bytearray(self):
+        def factory():
+            s = b"a" * 16
+            return bytearray(s), s
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
+
+    def test_concurrent_mutation_in_buffer_with_memoryview(self):
+        def factory():
+            obj = memoryview(b"a" * 32)[10:26]
+            sub = b"a" * len(obj)
+            return obj, sub
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
+
+    def do_test_concurrent_mutation_in_buffer_callback(self, factory):
+        # See: https://github.com/python/cpython/issues/143308.
+        class R:
+            def __bool__(self):
+                buf.release()
+                return True
+
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            obj, sub = factory()
+            buf = pickle.PickleBuffer(obj)
+            buffer_callback = lambda _: R()
+
+            with self.subTest(proto=proto, obj=obj, sub=sub):
+                res = self.dumps(buf, proto, buffer_callback=buffer_callback)
+                self.assertIn(sub, res)
 
     def test_evil_class_mutating_dict(self):
         # https://github.com/python/cpython/issues/92930

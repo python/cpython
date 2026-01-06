@@ -47,12 +47,69 @@ static inline Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch) {
 
 /* --- Unicode Type ------------------------------------------------------- */
 
+struct _PyUnicodeObject_state {
+    /* If interned is non-zero, the two references from the
+       dictionary to this object are *not* counted in ob_refcnt.
+       The possible values here are:
+           0: Not Interned
+           1: Interned
+           2: Interned and Immortal
+           3: Interned, Immortal, and Static
+       This categorization allows the runtime to determine the right
+       cleanup mechanism at runtime shutdown. */
+#ifdef Py_GIL_DISABLED
+    // Needs to be accessed atomically, so can't be a bit field.
+    unsigned char interned;
+#else
+    unsigned int interned:2;
+#endif
+    /* Character size:
+
+       - PyUnicode_1BYTE_KIND (1):
+
+         * character type = Py_UCS1 (8 bits, unsigned)
+         * all characters are in the range U+0000-U+00FF (latin1)
+         * if ascii is set, all characters are in the range U+0000-U+007F
+         (ASCII), otherwise at least one character is in the range
+         U+0080-U+00FF
+
+       - PyUnicode_2BYTE_KIND (2):
+
+         * character type = Py_UCS2 (16 bits, unsigned)
+         * all characters are in the range U+0000-U+FFFF (BMP)
+         * at least one character is in the range U+0100-U+FFFF
+
+       - PyUnicode_4BYTE_KIND (4):
+
+         * character type = Py_UCS4 (32 bits, unsigned)
+         * all characters are in the range U+0000-U+10FFFF
+         * at least one character is in the range U+10000-U+10FFFF
+       */
+    unsigned int kind:3;
+    /* Compact is with respect to the allocation scheme. Compact unicode
+       objects only require one memory block while non-compact objects use
+       one block for the PyUnicodeObject struct and another for its data
+       buffer. */
+    unsigned int compact:1;
+    /* The string only contains characters in the range U+0000-U+007F (ASCII)
+       and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
+       set, use the PyASCIIObject structure. */
+    unsigned int ascii:1;
+    /* The object is statically allocated. */
+    unsigned int statically_allocated:1;
+#ifndef Py_GIL_DISABLED
+    /* Historical: padding to ensure that PyUnicode_DATA() is always aligned to
+       4 bytes (see issue gh-63736 on m68k) */
+    unsigned int :24;
+#endif
+};
+
 /* ASCII-only strings created through PyUnicode_New use the PyASCIIObject
    structure. state.ascii and state.compact are set, and the data
    immediately follow the structure. utf8_length can be found
    in the length field; the utf8 pointer is equal to the data pointer. */
 typedef struct {
-    /* There are 4 forms of Unicode strings:
+    /* There are 3 forms of Unicode strings:
 
        - compact ascii:
 
@@ -99,67 +156,8 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
-#ifdef Py_GIL_DISABLED
-    /* Ensure 4 byte alignment for PyUnicode_DATA(), see gh-63736 on m68k.
-       In the non-free-threaded build, we'll use explicit padding instead */
-   _Py_ALIGN_AS(4)
-#endif
-    struct {
-        /* If interned is non-zero, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt.
-           The possible values here are:
-               0: Not Interned
-               1: Interned
-               2: Interned and Immortal
-               3: Interned, Immortal, and Static
-           This categorization allows the runtime to determine the right
-           cleanup mechanism at runtime shutdown. */
-#ifdef Py_GIL_DISABLED
-        // Needs to be accessed atomically, so can't be a bit field.
-        unsigned char interned;
-#else
-        unsigned int interned:2;
-#endif
-        /* Character size:
-
-           - PyUnicode_1BYTE_KIND (1):
-
-             * character type = Py_UCS1 (8 bits, unsigned)
-             * all characters are in the range U+0000-U+00FF (latin1)
-             * if ascii is set, all characters are in the range U+0000-U+007F
-               (ASCII), otherwise at least one character is in the range
-               U+0080-U+00FF
-
-           - PyUnicode_2BYTE_KIND (2):
-
-             * character type = Py_UCS2 (16 bits, unsigned)
-             * all characters are in the range U+0000-U+FFFF (BMP)
-             * at least one character is in the range U+0100-U+FFFF
-
-           - PyUnicode_4BYTE_KIND (4):
-
-             * character type = Py_UCS4 (32 bits, unsigned)
-             * all characters are in the range U+0000-U+10FFFF
-             * at least one character is in the range U+10000-U+10FFFF
-         */
-        unsigned int kind:3;
-        /* Compact is with respect to the allocation scheme. Compact unicode
-           objects only require one memory block while non-compact objects use
-           one block for the PyUnicodeObject struct and another for its data
-           buffer. */
-        unsigned int compact:1;
-        /* The string only contains characters in the range U+0000-U+007F (ASCII)
-           and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
-           set, use the PyASCIIObject structure. */
-        unsigned int ascii:1;
-        /* The object is statically allocated. */
-        unsigned int statically_allocated:1;
-#ifndef Py_GIL_DISABLED
-        /* Padding to ensure that PyUnicode_DATA() is always aligned to
-           4 bytes (see issue gh-63736 on m68k) */
-        unsigned int :24;
-#endif
-    } state;
+    /* Ensure 4 byte alignment for PyUnicode_DATA(), see gh-63736 on m68k. */
+   _Py_ALIGNED_DEF(4, struct _PyUnicodeObject_state) state;
 } PyASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
@@ -299,6 +297,16 @@ static inline Py_ssize_t PyUnicode_GET_LENGTH(PyObject *op) {
     return _PyASCIIObject_CAST(op)->length;
 }
 #define PyUnicode_GET_LENGTH(op) PyUnicode_GET_LENGTH(_PyObject_CAST(op))
+
+/* Returns the cached hash, or -1 if not cached yet. */
+static inline Py_hash_t
+PyUnstable_Unicode_GET_CACHED_HASH(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&_PyASCIIObject_CAST(op)->hash);
+#else
+    return _PyASCIIObject_CAST(op)->hash;
+#endif
+}
 
 /* Write into the canonical representation, this function does not do any sanity
    checks and is intended for usage in loops.  The caller should cache the
@@ -475,6 +483,10 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteChar(
     PyUnicodeWriter *writer,
     Py_UCS4 ch);
 PyAPI_FUNC(int) PyUnicodeWriter_WriteUTF8(
+    PyUnicodeWriter *writer,
+    const char *str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteASCII(
     PyUnicodeWriter *writer,
     const char *str,
     Py_ssize_t size);
@@ -766,4 +778,4 @@ static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
 
 // Return an interned Unicode object for an Identifier; may fail if there is no
 // memory.
-PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);

@@ -53,10 +53,12 @@ FLAGS = [
     "ESCAPES",
     "EXIT",
     "PURE",
-    "PASSTHROUGH",
-    "OPARG_AND_1",
+    "SYNC_SP",
     "ERROR_NO_POP",
     "NO_SAVE_IP",
+    "PERIODIC",
+    "UNPREDICTABLE_JUMP",
+    "NEEDS_GUARD_IP",
 ]
 
 
@@ -202,7 +204,7 @@ def generate_metadata_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("struct opcode_metadata {\n")
     out.emit("uint8_t valid_entry;\n")
     out.emit("uint8_t instr_format;\n")
-    out.emit("uint16_t flags;\n")
+    out.emit("uint32_t flags;\n")
     out.emit("};\n\n")
     out.emit(
         f"extern const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}];\n"
@@ -242,14 +244,10 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
             assert name2 in analysis.instructions, f"{name2} doesn't match any instr"
             instr1 = analysis.instructions[name1]
             instr2 = analysis.instructions[name2]
-            assert (
-                len(instr1.parts) == 1
-            ), f"{name1} is not a good superinstruction part"
-            assert (
-                len(instr2.parts) == 1
-            ), f"{name2} is not a good superinstruction part"
-            expansions.append((instr1.parts[0].name, "OPARG_TOP", 0))
-            expansions.append((instr2.parts[0].name, "OPARG_BOTTOM", 0))
+            for part in instr1.parts:
+                expansions.append((part.name, "OPARG_TOP", 0))
+            for part in instr2.parts:
+                expansions.append((part.name, "OPARG_BOTTOM", 0))
         elif not is_viable_expansion(inst):
             continue
         else:

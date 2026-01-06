@@ -18,7 +18,12 @@ import argparse
 import warnings
 
 from enum import StrEnum
-from test.support import captured_stderr
+from test.support import (
+    captured_stderr,
+    force_not_colorized,
+    force_not_colorized_test_class,
+    swap_attr,
+)
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
@@ -576,13 +581,22 @@ class TestOptionalsShortLong(ParserTestCase):
 class TestOptionalsDest(ParserTestCase):
     """Tests various means of setting destination"""
 
-    argument_signatures = [Sig('--foo-bar'), Sig('--baz', dest='zabbaz')]
+    argument_signatures = [
+        Sig('-x', '-foobar', '--foo-bar', '-barfoo', '-X'),
+        Sig('--baz', dest='zabbaz'),
+        Sig('-y', '-qux', '-Y'),
+        Sig('-z'),
+    ]
     failures = ['a']
     successes = [
-        ('--foo-bar f', NS(foo_bar='f', zabbaz=None)),
-        ('--baz g', NS(foo_bar=None, zabbaz='g')),
-        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i')),
-        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j')),
+        ('--foo-bar f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('-x f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('--baz g', NS(foo_bar=None, zabbaz='g', qux=None, z=None)),
+        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i', qux=None, z=None)),
+        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j', qux=None, z=None)),
+        ('-qux l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-y l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-z m', NS(foo_bar=None, zabbaz=None, qux=None, z='m')),
     ]
 
 
@@ -790,6 +804,76 @@ class TestBooleanOptionalAction(ParserTestCase):
             parser.add_argument('--no-foo', action=argparse.BooleanOptionalAction)
         self.assertEqual(str(cm.exception),
                          "invalid option name '--no-foo' for BooleanOptionalAction")
+
+class TestBooleanOptionalActionSingleDash(ParserTestCase):
+    """Tests BooleanOptionalAction with single dash"""
+
+    argument_signatures = [
+        Sig('-foo', '-x', action=argparse.BooleanOptionalAction),
+    ]
+    failures = ['--foo', '--no-foo', '-no-foo', '-no-x', '-nox']
+    successes = [
+        ('', NS(foo=None)),
+        ('-foo', NS(foo=True)),
+        ('-nofoo', NS(foo=False)),
+        ('-x', NS(foo=True)),
+    ]
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('-nofoo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '-nofoo' for BooleanOptionalAction")
+
+class TestBooleanOptionalActionAlternatePrefixChars(ParserTestCase):
+    """Tests BooleanOptionalAction with custom prefixes"""
+
+    parser_signature = Sig(prefix_chars='+-', add_help=False)
+    argument_signatures = [Sig('++foo', action=argparse.BooleanOptionalAction)]
+    failures = ['--foo', '--no-foo']
+    successes = [
+        ('', NS(foo=None)),
+        ('++foo', NS(foo=True)),
+        ('++no-foo', NS(foo=False)),
+    ]
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser(prefix_chars='+/')
+        with self.assertRaisesRegex(ValueError,
+                'BooleanOptionalAction.*is not valid for positional arguments'):
+            parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('++no-foo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '++no-foo' for BooleanOptionalAction")
+
+class TestBooleanOptionalActionSingleAlternatePrefixChar(ParserTestCase):
+    """Tests BooleanOptionalAction with single alternate prefix char"""
+
+    parser_signature = Sig(prefix_chars='+/', add_help=False)
+    argument_signatures = [
+        Sig('+foo', '+x', action=argparse.BooleanOptionalAction),
+    ]
+    failures = ['++foo', '++no-foo', '++nofoo',
+                '-no-foo', '-nofoo', '+no-foo', '-nofoo',
+                '+no-x', '+nox', '-no-x', '-nox']
+    successes = [
+        ('', NS(foo=None)),
+        ('+foo', NS(foo=True)),
+        ('+nofoo', NS(foo=False)),
+        ('+x', NS(foo=True)),
+    ]
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser(prefix_chars='+/')
+        with self.assertRaisesRegex(ValueError,
+                'BooleanOptionalAction.*is not valid for positional arguments'):
+            parser.add_argument('-foo', action=argparse.BooleanOptionalAction)
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('+nofoo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '+nofoo' for BooleanOptionalAction")
 
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
@@ -1007,6 +1091,7 @@ class TestStrEnumChoices(TestCase):
         args = parser.parse_args(['--color', 'red'])
         self.assertEqual(args.color, self.Color.RED)
 
+    @force_not_colorized
     def test_help_message_contains_enum_choices(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--color', choices=self.Color, help='Choose a color')
@@ -1829,7 +1914,7 @@ BIN_STDERR_SENTINEL = object()
 class StdStreamComparer:
     def __init__(self, attr):
         # We try to use the actual stdXXX.buffer attribute as our
-        # marker, but but under some test environments,
+        # marker, but under some test environments,
         # sys.stdout/err are replaced by io.StringIO which won't have .buffer,
         # so we use a sentinel simply to show that the tests do the right thing
         # for any buffer supporting object
@@ -2277,11 +2362,12 @@ class TestNegativeNumber(ParserTestCase):
         ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
+@force_not_colorized_test_class
 class TestArgumentAndSubparserSuggestions(TestCase):
     """Test error handling and suggestion when a user makes a typo"""
 
     def test_wrong_argument_error_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2301,7 +2387,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_wrong_argument_subparsers_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(required=True)
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
@@ -2325,18 +2411,19 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             excinfo.exception.stderr,
         )
 
-    def test_wrong_argument_no_suggestion_implicit(self):
-        parser = ErrorRaisingArgumentParser()
+    def test_wrong_argument_with_suggestion_explicit(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz', maybe you meant"
+             " 'baz'? (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
     def test_suggestions_choices_empty(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2346,7 +2433,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_int(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, 2])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -2356,7 +2443,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_mixed_types(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, '2'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -2403,6 +2490,7 @@ class TestInvalidAction(TestCase):
 # Subparsers tests
 # ================
 
+@force_not_colorized_test_class
 class TestAddSubparsers(TestCase):
     """Test the add_subparsers method"""
 
@@ -2681,6 +2769,16 @@ class TestAddSubparsers(TestCase):
         # No error here
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
+
+    def test_subparser_help_with_parent_required_optional(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--foo', required=True)
+        parser.add_argument('--bar')
+        subparsers = parser.add_subparsers()
+        parser_sub = subparsers.add_parser('sub')
+        parser_sub.add_argument('arg')
+        self.assertEqual(parser_sub.format_usage(),
+                         'usage: PROG --foo FOO sub [-h] arg\n')
 
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
@@ -3009,6 +3107,7 @@ class TestGroupConstructor(TestCase):
 # Parent parser tests
 # ===================
 
+@force_not_colorized_test_class
 class TestParentParsers(TestCase):
     """Tests that parsers can be created with parent parsers"""
 
@@ -3216,6 +3315,7 @@ class TestParentParsers(TestCase):
 # Mutually exclusive group tests
 # ==============================
 
+@force_not_colorized_test_class
 class TestMutuallyExclusiveGroupErrors(TestCase):
 
     def test_invalid_add_argument_group(self):
@@ -3298,12 +3398,11 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
 
-    def test_empty_group(self):
+    def test_usage_empty_group(self):
         # See issue 26952
-        parser = argparse.ArgumentParser()
+        parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group()
-        with self.assertRaises(ValueError):
-            parser.parse_args(['-h'])
+        self.assertEqual(parser.format_usage(), 'usage: PROG [-h]\n')
 
     def test_nested_mutex_groups(self):
         parser = argparse.ArgumentParser(prog='PROG')
@@ -3344,21 +3443,25 @@ class MEMixin(object):
                 actual_ns = parse_args(args_string.split())
                 self.assertEqual(actual_ns, expected_ns)
 
+    @force_not_colorized
     def test_usage_when_not_required(self):
         format_usage = self.get_parser(required=False).format_usage
         expected_usage = self.usage_when_not_required
         self.assertEqual(format_usage(), textwrap.dedent(expected_usage))
 
+    @force_not_colorized
     def test_usage_when_required(self):
         format_usage = self.get_parser(required=True).format_usage
         expected_usage = self.usage_when_required
         self.assertEqual(format_usage(), textwrap.dedent(expected_usage))
 
+    @force_not_colorized
     def test_help_when_not_required(self):
         format_help = self.get_parser(required=False).format_help
         help = self.usage_when_not_required + self.help
         self.assertEqual(format_help(), textwrap.dedent(help))
 
+    @force_not_colorized
     def test_help_when_required(self):
         format_help = self.get_parser(required=True).format_help
         help = self.usage_when_required + self.help
@@ -3567,25 +3670,29 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
         group.add_argument('-b', action='store_true', help='b help')
         parser.add_argument('-y', action='store_true', help='y help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['-a -b', '-b -c', '-a -c', '-a -b -c']
     successes = [
-        ('-a', NS(a=True, b=False, c=False, x=False, y=False)),
-        ('-b', NS(a=False, b=True, c=False, x=False, y=False)),
-        ('-c', NS(a=False, b=False, c=True, x=False, y=False)),
-        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False)),
-        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True)),
-        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True)),
+        ('-a', NS(a=True, b=False, c=False, x=False, y=False, z=False)),
+        ('-b', NS(a=False, b=True, c=False, x=False, y=False, z=False)),
+        ('-c', NS(a=False, b=False, c=True, x=False, y=False, z=False)),
+        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False, z=False)),
+        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True, z=False)),
+        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('', NS(a=False, b=False, c=False, x=False, y=False)),
-        ('-x', NS(a=False, b=False, c=False, x=True, y=False)),
-        ('-y', NS(a=False, b=False, c=False, x=False, y=True)),
+        ('', NS(a=False, b=False, c=False, x=False, y=False, z=False)),
+        ('-x', NS(a=False, b=False, c=False, x=True, y=False, z=False)),
+        ('-y', NS(a=False, b=False, c=False, x=False, y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-x] [-a] [-b] [-y] [-c]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-x] [-a | -b | -c] [-y] [-z]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-x] (-a | -b | -c) [-y] [-z]
         '''
     help = '''\
 
@@ -3596,6 +3703,7 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
           -b          b help
           -y          y help
           -c          c help
+          -z          z help
         '''
 
 
@@ -3649,23 +3757,27 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
         group.add_argument('a', nargs='?', help='a help')
         group.add_argument('-b', action='store_true', help='b help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['X A -b', '-b -c', '-c X A']
     successes = [
-        ('X A', NS(a='A', b=False, c=False, x='X', y=False)),
-        ('X -b', NS(a=None, b=True, c=False, x='X', y=False)),
-        ('X -c', NS(a=None, b=False, c=True, x='X', y=False)),
-        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True)),
-        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True)),
+        ('X A', NS(a='A', b=False, c=False, x='X', y=False, z=False)),
+        ('X -b', NS(a=None, b=True, c=False, x='X', y=False, z=False)),
+        ('X -c', NS(a=None, b=False, c=True, x='X', y=False, z=False)),
+        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True, z=False)),
+        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('X', NS(a=None, b=False, c=False, x='X', y=False)),
-        ('X -y', NS(a=None, b=False, c=False, x='X', y=True)),
+        ('X', NS(a=None, b=False, c=False, x='X', y=False, z=False)),
+        ('X -y', NS(a=None, b=False, c=False, x='X', y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-y] [-b] [-c] x [a]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-y] [-z] x [-b | -c | a]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-y] [-z] x (-b | -c | a)
         '''
     help = '''\
 
@@ -3678,6 +3790,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -y          y help
           -b          b help
           -c          c help
+          -z          z help
         '''
 
 
@@ -4030,11 +4143,13 @@ class TestHelpFormattingMetaclass(type):
                 tester.maxDiff = None
                 tester.assertEqual(expected_text, parser_text)
 
+            @force_not_colorized
             def test_format(self, tester):
                 parser = self._get_parser(tester)
                 format = getattr(parser, 'format_%s' % self.func_suffix)
                 self._test(tester, format())
 
+            @force_not_colorized
             def test_print(self, tester):
                 parser = self._get_parser(tester)
                 print_ = getattr(parser, 'print_%s' % self.func_suffix)
@@ -4047,6 +4162,7 @@ class TestHelpFormattingMetaclass(type):
                     setattr(sys, self.std_name, old_stream)
                 self._test(tester, parser_text)
 
+            @force_not_colorized
             def test_print_file(self, tester):
                 parser = self._get_parser(tester)
                 print_ = getattr(parser, 'print_%s' % self.func_suffix)
@@ -4788,6 +4904,7 @@ class TestHelpUsageMetavarsSpacesParentheses(HelpTestCase):
     version = ''
 
 
+@force_not_colorized_test_class
 class TestHelpUsageNoWhitespaceCrash(TestCase):
 
     def test_all_suppressed_mutex_followed_by_long_arg(self):
@@ -4865,6 +4982,25 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         usage: PROG [-h] [--op1 [MET] | --op2 [MET1 [MET2 ...]] | --op3 [OP3 ...] |
                     --op4 MET1 [MET2 ...] | --op5 OP5 [OP5 ...] | --op6 OP6 OP6 OP6 |
                     --op7 MET1 MET2 MET3]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
+    def test_mutex_groups_with_mixed_optionals_positionals_wrap(self):
+        # https://github.com/python/cpython/issues/75949
+        # Mutually exclusive groups containing both optionals and positionals
+        # should preserve pipe separators when the usage line wraps.
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument('-v', '--verbose', action='store_true')
+        g.add_argument('-q', '--quiet', action='store_true')
+        g.add_argument('-x', '--extra-long-option-name', nargs='?')
+        g.add_argument('-y', '--yet-another-long-option', nargs='?')
+        g.add_argument('positional', nargs='?')
+
+        usage = textwrap.dedent('''\
+        usage: PROG [-h]
+                    [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
+                    -y [YET_ANOTHER_LONG_OPTION] | positional]
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
@@ -5283,6 +5419,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
     argument_signatures = [
         Sig('--foo', help='foo help - oh and by the way, %(default)s'),
         Sig('--bar', action='store_true', help='bar help'),
+        Sig('--required', required=True, help='some help'),
         Sig('--taz', action=argparse.BooleanOptionalAction,
             help='Whether to taz it', default=True),
         Sig('--corge', action=argparse.BooleanOptionalAction,
@@ -5296,8 +5433,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--corge | --no-corge]
-                    [--quux QUUX] [--baz BAZ]
+        usage: PROG [-h] [--foo FOO] [--bar] --required REQUIRED [--taz | --no-taz]
+                    [--corge | --no-corge] [--quux QUUX] [--baz BAZ]
                     spam [badger]
         '''
     help = usage + '''\
@@ -5312,6 +5449,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
           -h, --help           show this help message and exit
           --foo FOO            foo help - oh and by the way, None
           --bar                bar help (default: False)
+          --required REQUIRED  some help
           --taz, --no-taz      Whether to taz it (default: True)
           --corge, --no-corge  Whether to corge it
           --quux QUUX          Set the quux (default: 42)
@@ -5469,6 +5607,7 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
     version = ''
 
 
+@force_not_colorized_test_class
 class TestHelpCustomHelpFormatter(TestCase):
     maxDiff = None
 
@@ -5557,6 +5696,11 @@ class TestHelpCustomHelpFormatter(TestCase):
                 a-very-long-command  command that does something
         '''))
 
+    def test_direct_formatter_instantiation(self):
+        formatter = argparse.HelpFormatter(prog="program")
+        formatter.add_usage(usage=None, actions=[], groups=[])
+        help_text = formatter.format_help()
+        self.assertEqual(help_text, "usage: program\n")
 
 # =====================================
 # Optional/Positional constructor tests
@@ -5591,6 +5735,8 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertTypeError('-', errmsg='dest= is required')
         self.assertTypeError('--', errmsg='dest= is required')
         self.assertTypeError('---', errmsg='dest= is required')
+        self.assertTypeError('-', '--', '---',
+                errmsg="dest= is required for options like '-', '--', '---'")
 
     def test_invalid_prefix(self):
         self.assertValueError('--foo', '+foo',
@@ -5765,6 +5911,7 @@ class TestConflictHandling(TestCase):
         self.assertRaises(argparse.ArgumentError,
                           parser.add_argument, '--spam')
 
+    @force_not_colorized
     def test_resolve_error(self):
         get_parser = argparse.ArgumentParser
         parser = get_parser(prog='PROG', conflict_handler='resolve')
@@ -5812,6 +5959,7 @@ class TestConflictHandling(TestCase):
 # Help and Version option tests
 # =============================
 
+@force_not_colorized_test_class
 class TestOptionalsHelpVersionActions(TestCase):
     """Test the help and version actions"""
 
@@ -6031,6 +6179,7 @@ class TestArgumentError(TestCase):
 
 class TestArgumentTypeError(TestCase):
 
+    @force_not_colorized
     def test_argument_type_error(self):
 
         def spam(string):
@@ -6125,6 +6274,7 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
 # Check that deprecated arguments output warning
 # ==============================================
 
+@force_not_colorized_test_class
 class TestDeprecatedArguments(TestCase):
 
     def test_deprecated_option(self):
@@ -6829,6 +6979,7 @@ class TestWrappingMetavar(TestCase):
         metavar = '<http[s]://example:1234>'
         self.parser.add_argument('--proxy', metavar=metavar)
 
+    @force_not_colorized
     def test_help_with_metavar(self):
         help_text = self.parser.format_help()
         self.assertEqual(help_text, textwrap.dedent('''\
@@ -6994,6 +7145,7 @@ class TestExitOnError(TestCase):
                                self.parser.parse_args, ['@no-such-file'])
 
 
+@force_not_colorized_test_class
 class TestProgName(TestCase):
     source = textwrap.dedent('''\
         import argparse
@@ -7107,7 +7259,8 @@ class TestColorized(TestCase):
     def setUp(self):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
-        _colorize.can_colorize = lambda *args, **kwargs: True
+        self.enterContext(swap_attr(_colorize, 'can_colorize',
+                                     lambda *args, **kwargs: True))
         self.theme = _colorize.get_theme(force_color=True).argparse
 
     def test_argparse_color(self):
@@ -7155,6 +7308,13 @@ class TestColorized(TestCase):
             choices=("Aaaaa", "Bbbbb", "Ccccc", "Ddddd"),
             help="pick one",
         )
+        parser.add_argument(
+            "--optional8",
+            default="A",
+            metavar="X",
+            choices=("A", "B", "C"),
+            help="among %(choices)s, default is %(default)s",
+        )
 
         parser.add_argument("+f")
         parser.add_argument("++bar")
@@ -7180,6 +7340,8 @@ class TestColorized(TestCase):
         short_b = self.theme.short_option
         label_b = self.theme.label
         pos_b = self.theme.action
+        default = self.theme.default
+        interp = self.theme.interpolated_value
         reset = self.theme.reset
 
         # Act
@@ -7192,8 +7354,8 @@ class TestColorized(TestCase):
                 f"""\
                 {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}-v{reset} | {short}-q{reset}] [{short}-o{reset}] [{long}--optional2 {label}OPTIONAL2{reset}] [{long}--optional3 {label}{{X,Y,Z}}{reset}]
                             [{long}--optional4 {label}{{X,Y,Z}}{reset}] [{long}--optional5 {label}{{X,Y,Z}}{reset}] [{long}--optional6 {label}{{X,Y,Z}}{reset}]
-                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}] [{long}-+baz {label}BAZ{reset}]
-                            [{short}-c {label}COUNT{reset}]
+                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{long}--optional8 {label}X{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}]
+                            [{long}-+baz {label}BAZ{reset}] [{short}-c {label}COUNT{reset}]
                             {pos}x{reset} {pos}y{reset} {pos}this_indeed_is_a_very_long_action_name{reset} {pos}{{sub1,sub2}} ...{reset}
 
                 Colorful help
@@ -7206,17 +7368,18 @@ class TestColorized(TestCase):
 
                 {heading}options:{reset}
                   {short_b}-h{reset}, {long_b}--help{reset}            show this help message and exit
-                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam (default: False)
-                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam (default: False)
+                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam {default}(default: {reset}{interp}False{reset}{default}){reset}
+                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam {default}(default: {reset}{interp}False{reset}{default}){reset}
                   {short_b}-o{reset}, {long_b}--optional1{reset}
                   {long_b}--optional2{reset} {label_b}OPTIONAL2{reset}
-                                        pick one (default: None)
+                                        pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
                   {long_b}--optional3{reset} {label_b}{{X,Y,Z}}{reset}
-                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
-                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
-                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
                   {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
-                                        pick one (default: None)
+                                        pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional8{reset} {label_b}X{reset}         among {interp}A, B, C{reset}, default is {interp}A{reset}
                   {short_b}+f{reset} {label_b}F{reset}
                   {long_b}++bar{reset} {label_b}BAR{reset}
                   {long_b}-+baz{reset} {label_b}BAZ{reset}
@@ -7232,7 +7395,28 @@ class TestColorized(TestCase):
             ),
         )
 
-    def test_argparse_color_usage(self):
+    def test_argparse_color_mutually_exclusive_group_usage(self):
+        parser = argparse.ArgumentParser(color=True, prog="PROG")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--foo', action='store_true', help='FOO')
+        group.add_argument('--spam', help='SPAM')
+        group.add_argument('badger', nargs='*', help='BADGER')
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        long = self.theme.summary_long_option
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        reset = self.theme.reset
+
+        self.assertEqual(parser.format_usage(),
+            f"{heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] "
+            f"[{long}--foo{reset} | "
+            f"{long}--spam {label}SPAM{reset} | "
+            f"{pos}badger ...{reset}]\n")
+
+    def test_argparse_color_custom_usage(self):
         # Arrange
         parser = argparse.ArgumentParser(
             add_help=False,
@@ -7290,11 +7474,11 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
     def test_custom_formatter_class(self):
@@ -7327,12 +7511,201 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
+
+    def test_subparser_prog_is_stored_without_color(self):
+        parser = argparse.ArgumentParser(prog='complex', color=True)
+        sub = parser.add_subparsers(dest='command')
+        demo_parser = sub.add_parser('demo')
+
+        self.assertNotIn('\x1b[', demo_parser.prog)
+
+        demo_parser.color = False
+        help_text = demo_parser.format_help()
+        self.assertNotIn('\x1b[', help_text)
+
+    def test_error_and_warning_keywords_colorized(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        error_color = self.theme.error
+        reset = self.theme.reset
+        self.assertIn(f'{error_color}error:{reset}', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        warning_color = self.theme.warning
+        self.assertIn(f'{warning_color}warning:{reset}', warn)
+
+    def test_error_and_warning_not_colorized_when_disabled(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=False)
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        self.assertNotIn('\x1b[', err)
+        self.assertIn('error:', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        self.assertNotIn('\x1b[', warn)
+        self.assertIn('warning:', warn)
+
+    def test_backtick_markup_in_epilog(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Example: `python -m myapp --verbose`',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'Example: {prog_extra}python -m myapp --verbose{reset}',
+                      help_text)
+        self.assertNotIn('`', help_text)
+
+    def test_backtick_markup_in_description(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            description='Run `python -m myapp` to start.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'Run {prog_extra}python -m myapp{reset} to start.',
+                      help_text)
+
+    def test_backtick_markup_multiple(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Try `app run` or `app test`.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}app run{reset}', help_text)
+        self.assertIn(f'{prog_extra}app test{reset}', help_text)
+
+    def test_backtick_markup_not_applied_when_color_disabled(self):
+        # When color is disabled, backticks are preserved as-is
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=False,
+            epilog='Example: `python -m myapp`',
+        )
+
+        help_text = parser.format_help()
+        self.assertIn('`python -m myapp`', help_text)
+        self.assertNotIn('\x1b[', help_text)
+
+    def test_backtick_markup_with_format_string(self):
+        parser = argparse.ArgumentParser(
+            prog='myapp',
+            color=True,
+            epilog='Run `%(prog)s --help` for more info.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}myapp --help{reset}', help_text)
+
+    def test_backtick_markup_in_subparser(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        subparsers = parser.add_subparsers()
+        sub = subparsers.add_parser(
+            'sub',
+            description='Run `PROG sub --foo` to start.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = sub.format_help()
+        self.assertIn(f'{prog_extra}PROG sub --foo{reset}', help_text)
+
+    def test_backtick_markup_special_regex_chars(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='`grep "foo.*bar" | sort`',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}grep "foo.*bar" | sort{reset}', help_text)
+
+    def test_print_help_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_help(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
+
+    def test_print_usage_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_usage(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(argparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def tearDownModule():

@@ -277,15 +277,19 @@ PyDoc_STRVAR(_io_FileIO_readall__doc__,
 "data is available (EAGAIN is returned before bytes are read) returns None.");
 
 #define _IO_FILEIO_READALL_METHODDEF    \
-    {"readall", (PyCFunction)_io_FileIO_readall, METH_NOARGS, _io_FileIO_readall__doc__},
+    {"readall", _PyCFunction_CAST(_io_FileIO_readall), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_readall__doc__},
 
 static PyObject *
-_io_FileIO_readall_impl(fileio *self);
+_io_FileIO_readall_impl(fileio *self, PyTypeObject *cls);
 
 static PyObject *
-_io_FileIO_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_readall(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io_FileIO_readall_impl((fileio *)self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "readall() takes no arguments");
+        return NULL;
+    }
+    return _io_FileIO_readall_impl((fileio *)self, cls);
 }
 
 PyDoc_STRVAR(_io_FileIO_read__doc__,
@@ -543,4 +547,4 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=1902fac9e39358aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e48f3df2f189170 input=a9049054013a1b77]*/

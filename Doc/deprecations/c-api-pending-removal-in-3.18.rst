@@ -1,11 +1,12 @@
 Pending removal in Python 3.18
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Deprecated private functions (:gh:`128863`):
+* The following private functions are deprecated
+  and planned for removal in Python 3.18:
 
   * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
   * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.
-  * :c:func:`!_PyDict_Pop()`: :c:func:`PyDict_Pop`.
+  * :c:func:`!_PyDict_Pop()`: use :c:func:`PyDict_Pop`.
   * :c:func:`!_PyLong_Sign()`: use :c:func:`PyLong_GetSign`.
   * :c:func:`!_PyLong_FromDigits` and :c:func:`!_PyLong_New`:
     use :c:func:`PyLongWriter_Create`.
@@ -31,7 +32,7 @@ Pending removal in Python 3.18
     :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
   * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
     replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+    :c:func:`PyUnicodeWriter_WriteASCII(writer, str) <PyUnicodeWriter_WriteASCII>`.
   * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
     replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
     :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
@@ -41,5 +42,6 @@ Pending removal in Python 3.18
   * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
 
   The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`__ can be used to get these
-  new public functions on Python 3.13 and older.
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
+  these new public functions on Python 3.13 and older.
+  (Contributed by Victor Stinner in :gh:`128863`.)

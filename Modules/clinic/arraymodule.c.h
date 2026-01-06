@@ -419,6 +419,11 @@ array_array_fromfile(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
             goto exit;
         }
         n = ival;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "n cannot be negative");
+            goto exit;
+        }
     }
     return_value = array_array_fromfile_impl((arrayobject *)self, cls, f, n);
 
@@ -773,4 +778,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=dd49451ac1cc3f39 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c993c3598085840e input=a9049054013a1b77]*/

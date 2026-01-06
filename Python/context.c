@@ -190,7 +190,7 @@ context_switched(PyThreadState *ts)
 }
 
 
-static int
+int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
@@ -220,7 +220,7 @@ PyContext_Enter(PyObject *octx)
 }
 
 
-static int
+int
 _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
@@ -342,12 +342,6 @@ PyContextVar_Set(PyObject *ovar, PyObject *val)
 {
     ENSURE_ContextVar(ovar, NULL)
     PyContextVar *var = (PyContextVar *)ovar;
-
-    if (!PyContextVar_CheckExact(var)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -979,7 +973,7 @@ contextvar_tp_repr(PyObject *op)
         return NULL;
     }
 
-    if (PyUnicodeWriter_WriteUTF8(writer, "<ContextVar name=", 17) < 0) {
+    if (PyUnicodeWriter_WriteASCII(writer, "<ContextVar name=", 17) < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteRepr(writer, self->var_name) < 0) {
@@ -987,7 +981,7 @@ contextvar_tp_repr(PyObject *op)
     }
 
     if (self->var_default != NULL) {
-        if (PyUnicodeWriter_WriteUTF8(writer, " default=", 9) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, " default=", 9) < 0) {
             goto error;
         }
         if (PyUnicodeWriter_WriteRepr(writer, self->var_default) < 0) {
@@ -1007,6 +1001,7 @@ error:
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _contextvars.ContextVar.get
     default: object = NULL
     /
@@ -1022,14 +1017,8 @@ If there is no value for the variable in the current context, the method will:
 
 static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
-/*[clinic end generated code: output=0746bd0aa2ced7bf input=30aa2ab9e433e401]*/
+/*[clinic end generated code: output=0746bd0aa2ced7bf input=da66664d5d0af4ad]*/
 {
-    if (!PyContextVar_CheckExact(self)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
-
     PyObject *val;
     if (PyContextVar_Get((PyObject *)self, default_value, &val) < 0) {
         return NULL;
@@ -1044,6 +1033,7 @@ _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _contextvars.ContextVar.set
     value: object
     /
@@ -1058,12 +1048,13 @@ value via the `ContextVar.reset()` method.
 
 static PyObject *
 _contextvars_ContextVar_set_impl(PyContextVar *self, PyObject *value)
-/*[clinic end generated code: output=1b562d35cc79c806 input=c0a6887154227453]*/
+/*[clinic end generated code: output=1b562d35cc79c806 input=73ebbbfc7c98f6cd]*/
 {
     return PyContextVar_Set((PyObject *)self, value);
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _contextvars.ContextVar.reset
     token: object
     /
@@ -1076,7 +1067,7 @@ created the token was used.
 
 static PyObject *
 _contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token)
-/*[clinic end generated code: output=3205d2bdff568521 input=ebe2881e5af4ffda]*/
+/*[clinic end generated code: output=3205d2bdff568521 input=b8bc514a9245242a]*/
 {
     if (!PyContextToken_CheckExact(token)) {
         PyErr_Format(PyExc_TypeError,
@@ -1182,15 +1173,15 @@ token_tp_repr(PyObject *op)
     if (writer == NULL) {
         return NULL;
     }
-    if (PyUnicodeWriter_WriteUTF8(writer, "<Token", 6) < 0) {
+    if (PyUnicodeWriter_WriteASCII(writer, "<Token", 6) < 0) {
         goto error;
     }
     if (self->tok_used) {
-        if (PyUnicodeWriter_WriteUTF8(writer, " used", 5) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, " used", 5) < 0) {
             goto error;
         }
     }
-    if (PyUnicodeWriter_WriteUTF8(writer, " var=", 5) < 0) {
+    if (PyUnicodeWriter_WriteASCII(writer, " var=", 5) < 0) {
         goto error;
     }
     if (PyUnicodeWriter_WriteRepr(writer, (PyObject *)self->tok_var) < 0) {
@@ -1357,11 +1348,8 @@ get_token_missing(void)
 PyStatus
 _PyContext_Init(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     PyObject *missing = get_token_missing();
+    assert(PyUnstable_IsImmortal(missing));
     if (PyDict_SetItemString(
         _PyType_GetDict(&PyContextToken_Type), "MISSING", missing))
     {

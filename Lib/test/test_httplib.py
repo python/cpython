@@ -386,6 +386,52 @@ class HeaderTests(TestCase):
         self.assertEqual(lines[2], "header: Second: val1")
         self.assertEqual(lines[3], "header: Second: val2")
 
+    def test_max_response_headers(self):
+        max_headers = client._MAXHEADERS + 20
+        headers = [f"Name{i}: Value{i}".encode() for i in range(max_headers)]
+        body = b"HTTP/1.1 200 OK\r\n" + b"\r\n".join(headers)
+
+        with self.subTest(max_headers=None):
+            sock = FakeSocket(body)
+            resp = client.HTTPResponse(sock)
+            with self.assertRaisesRegex(
+                client.HTTPException, f"got more than 100 headers"
+            ):
+                resp.begin()
+
+        with self.subTest(max_headers=max_headers):
+            sock = FakeSocket(body)
+            resp = client.HTTPResponse(sock)
+            resp.begin(_max_headers=max_headers)
+
+    def test_max_connection_headers(self):
+        max_headers = client._MAXHEADERS + 20
+        headers = (
+            f"Name{i}: Value{i}".encode() for i in range(max_headers - 1)
+        )
+        body = (
+            b"HTTP/1.1 200 OK\r\n"
+            + b"\r\n".join(headers)
+            + b"\r\nContent-Length: 12\r\n\r\nDummy body\r\n"
+        )
+
+        with self.subTest(max_headers=None):
+            conn = client.HTTPConnection("example.com")
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            with self.assertRaisesRegex(
+                client.HTTPException, f"got more than {client._MAXHEADERS} headers"
+            ):
+                response = conn.getresponse()
+
+        with self.subTest(max_headers=None):
+            conn = client.HTTPConnection(
+                "example.com", max_response_headers=max_headers
+            )
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            response = conn.getresponse()
+            response.read()
 
 class HttpMethodTests(TestCase):
     def test_invalid_method_names(self):
@@ -1464,6 +1510,72 @@ class BasicTest(TestCase):
             conn.close()
         thread.join()
         self.assertEqual(result, b"proxied data\n")
+
+    def test_large_content_length(self):
+        serv = socket.create_server((HOST, 0))
+        self.addCleanup(serv.close)
+
+        def run_server():
+            [conn, address] = serv.accept()
+            with conn:
+                while conn.recv(1024):
+                    conn.sendall(
+                        b"HTTP/1.1 200 Ok\r\n"
+                        b"Content-Length: %d\r\n"
+                        b"\r\n" % size)
+                    conn.sendall(b'A' * (size//3))
+                    conn.sendall(b'B' * (size - size//3))
+
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join, 1.0)
+
+        conn = client.HTTPConnection(*serv.getsockname())
+        try:
+            for w in range(15, 27):
+                size = 1 << w
+                conn.request("GET", "/")
+                with conn.getresponse() as response:
+                    self.assertEqual(len(response.read()), size)
+        finally:
+            conn.close()
+            thread.join(1.0)
+
+    def test_large_content_length_truncated(self):
+        serv = socket.create_server((HOST, 0))
+        self.addCleanup(serv.close)
+
+        def run_server():
+            while True:
+                [conn, address] = serv.accept()
+                with conn:
+                    conn.recv(1024)
+                    if not size:
+                        break
+                    conn.sendall(
+                        b"HTTP/1.1 200 Ok\r\n"
+                        b"Content-Length: %d\r\n"
+                        b"\r\n"
+                        b"Text" % size)
+
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join, 1.0)
+
+        conn = client.HTTPConnection(*serv.getsockname())
+        try:
+            for w in range(18, 65):
+                size = 1 << w
+                conn.request("GET", "/")
+                with conn.getresponse() as response:
+                    self.assertRaises(client.IncompleteRead, response.read)
+                conn.close()
+        finally:
+            conn.close()
+            size = 0
+            conn.request("GET", "/")
+            conn.close()
+            thread.join(1.0)
 
     def test_putrequest_override_domain_validation(self):
         """
