@@ -3522,7 +3522,8 @@ class TestSingleDispatch(unittest.TestCase):
         """See GH-130827."""
         class A:
             @functools.singledispatchmethod
-            def u(self: typing.Self, arg: int | str) -> int | str: ...
+            def u(self: typing.Self, arg: int | str) -> int | str:
+                return None
 
             @u.register
             def _(self: typing.Self, arg: int) -> int:
@@ -3530,7 +3531,7 @@ class TestSingleDispatch(unittest.TestCase):
 
         a = A()
         self.assertEqual(a.u(42), 42)
-        self.assertEqual(a.u("hello"), "hello")
+        self.assertEqual(a.u("hello"), None)
 
 
 class CachedCostItem:
