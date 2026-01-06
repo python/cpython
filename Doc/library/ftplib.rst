@@ -84,6 +84,14 @@ FTP objects
 .. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
 
+   .. warning::
+
+      Use of this class may create a vulnerability to
+      `man-in-the-middle attack <https://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_,
+      please consider using the :class:`FTP_TLS` class, and reflect
+      on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before using an unprotected FTP connection.
+
    Return a new instance of the :class:`FTP` class.
 
    :param str host:
