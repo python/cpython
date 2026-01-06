@@ -502,6 +502,8 @@ The same applies for :func:`entry_points` and :func:`files`.
       A sequence of :class:`!PackagePath`\s contained in this distribution package.
       Like :func:`files`, this returns :const:`None` if there are no records.
 
+   The following two abstract methods need to be implemented when implementing-custom-providers_:
+
    .. method:: locate_file(path)
 
       Like :meth:`!PackagePath.locate`, return a :class:`SimplePath` for the given path.
