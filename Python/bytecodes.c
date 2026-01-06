@@ -550,18 +550,9 @@ dummy_func(
         op(_TO_BOOL_STR, (value -- res, v)) {
             STAT_INC(TO_BOOL, hit);
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (value_o == &_Py_STR(empty)) {
-                assert(_Py_IsImmortal(value_o));
-                v = value;
-                DEAD(value);
-                res = PyStackRef_False;
-            }
-            else {
-                assert(Py_SIZE(value_o));
-                v = value;
-                DEAD(value);
-                res = PyStackRef_True;
-            }
+            res = value_o == &_Py_STR(empty) ? PyStackRef_False : PyStackRef_True;
+            v = value;
+            DEAD(value);
         }
 
         macro(TO_BOOL_STR) =
@@ -5309,6 +5300,12 @@ dummy_func(
             DEAD(null);
             PyStackRef_CLOSE(callable);
             value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_INSERT_1_LOAD_CONST_INLINE_BORROW, (ptr/4, left -- res, l)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            l = left;
+            INPUTS_DEAD();
         }
 
         tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {

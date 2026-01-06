@@ -44,7 +44,8 @@ optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
     JitOptSymbol *value,
-    JitOptSymbol **result_ptr);
+    JitOptSymbol **result_ptr,
+    bool insert_mode);
 
 extern void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit);
@@ -90,7 +91,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
-        value = PyJitRef_Borrow(GETLOCAL(oparg));
+    value = PyJitRef_Borrow(GETLOCAL(oparg));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -377,21 +378,21 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- value)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &value);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &value, false);
         if (!already_bool) {
             sym_set_type(value, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_INT, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_truthiness(ctx, value, true);
@@ -399,14 +400,14 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_LIST, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             sym_set_const(value, Py_None);
             res = sym_new_const(ctx, Py_False);
@@ -432,7 +433,7 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_STR, (value -- res, v)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
         v = value;
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
