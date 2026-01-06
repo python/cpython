@@ -1,0 +1,2 @@
+Forward-port test_xpickle from Python 2 to Python 3 and add the resource
+back to test's command line.
