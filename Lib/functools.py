@@ -907,7 +907,8 @@ def _get_dispatch_annotation(func, param):
     except KeyError:
         raise TypeError(
             f"Invalid first argument to `register()`: {param!r}. "
-            f"Add missing annotation to parameter {param!r} of {func.__qualname__!r} or use `@register(some_class)`."
+            f"Add missing annotation to parameter {param!r} of {func.__qualname__!r} "
+            f"or use `@register(some_class)`."
         ) from None
     if isinstance(ref_or_typeform, str):
         ref_or_typeform = annotationlib.ForwardRef(ref_or_typeform, owner=func)
