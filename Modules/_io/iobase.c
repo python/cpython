@@ -913,42 +913,81 @@ PyDoc_STRVAR(rawiobase_doc,
 
 /*[clinic input]
 _io._RawIOBase.read
-    size as n: Py_ssize_t = -1
+    size: Py_ssize_t = -1
     /
 [clinic start generated code]*/
 
 static PyObject *
-_io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
-/*[clinic end generated code: output=6cdeb731e3c9f13c input=b6d0dcf6417d1374]*/
+_io__RawIOBase_read_impl(PyObject *self, Py_ssize_t size)
+/*[clinic end generated code: output=25e2e6fa930c6cbe input=af5eafca0450e62a]*/
 {
-    PyObject *b, *res;
+    PyObject *res;
+    Py_ssize_t written = 0;
+    Py_buffer buf;
 
-    if (n < 0) {
+    if (size < 0) {
         return PyObject_CallMethodNoArgs(self, &_Py_ID(readall));
     }
 
-    b = PyByteArray_FromStringAndSize(NULL, n);
+    Py_ssize_t allocated = Py_MIN(size, MIN_READ_BUF_SIZE);
+    Py_ssize_t chunksize = allocated;
+
+    PyObject *b = PyByteArray_FromStringAndSize(NULL, allocated);
     if (b == NULL) {
         return NULL;
     }
 
-    res = PyObject_CallMethodObjArgs(self, &_Py_ID(readinto), b, NULL);
-    if (res == NULL || res == Py_None) {
-        goto cleanup;
-    }
+    PyObject *buffer = b;  // borrowed reference
+    while (1) {
+        res = PyObject_CallMethodObjArgs(self, &_Py_ID(readinto), buffer, NULL);
+        if (buffer != b) {  // memoryview
+            Py_DECREF(buffer);
+        }
+        if (res == NULL) {
+            goto cleanup;
+        }
+        if (res == Py_None) {
+            if (!written) {
+                // Nothing was read yet -- return None.
+                goto cleanup;
+            }
+            Py_CLEAR(res);
+            break;
+        }
 
-    Py_ssize_t bytes_filled = PyNumber_AsSsize_t(res, PyExc_ValueError);
-    Py_CLEAR(res);
-    if (bytes_filled == -1 && PyErr_Occurred()) {
-        goto cleanup;
+        Py_ssize_t n = PyNumber_AsSsize_t(res, PyExc_ValueError);
+        Py_CLEAR(res);
+        if (n == -1 && PyErr_Occurred()) {
+            goto cleanup;
+        }
+        if (n < 0 || n > chunksize) {
+            PyErr_Format(PyExc_ValueError,
+                        "readinto returned %zd outside buffer size %zd",
+                        n, chunksize);
+            goto cleanup;
+        }
+        written += n;
+        if (written < allocated || allocated >= size) {
+            break;
+        }
+        chunksize = Py_MIN(allocated, size - allocated);
+        allocated += chunksize;
+        if (PyByteArray_Resize(b, allocated) < 0) {
+            goto cleanup;
+        }
+
+        if (PyBuffer_FillInfo(&buf, NULL,
+                              PyByteArray_AS_STRING(b) + written,
+                              chunksize, 0, PyBUF_CONTIG) < 0)
+        {
+            goto cleanup;
+        }
+        buffer = PyMemoryView_FromBuffer(&buf);
+        if (buffer == NULL) {
+            return NULL;
+        }
     }
-    if (bytes_filled < 0 || bytes_filled > n) {
-        PyErr_Format(PyExc_ValueError,
-                     "readinto returned %zd outside buffer size %zd",
-                     bytes_filled, n);
-        goto cleanup;
-    }
-    if (PyByteArray_Resize(b, bytes_filled) < 0) {
+    if (PyByteArray_Resize(b, written) < 0) {
         goto cleanup;
     }
     res = PyObject_CallMethodNoArgs(b, &_Py_ID(take_bytes));

@@ -3272,3 +3272,13 @@ def linked_to_musl():
         return _linked_to_musl
     _linked_to_musl = tuple(map(int, version.split('.')))
     return _linked_to_musl
+
+
+def itersize(start, stop):
+    # Produce geometrical increasing sequence from start to stop
+    # (inclusively) for tests.
+    size = start
+    while size < stop:
+        yield size
+        size <<= 1
+    yield stop

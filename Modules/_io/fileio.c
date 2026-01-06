@@ -886,25 +886,41 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
         size = _PY_READ_MAX;
     }
 
-    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    Py_ssize_t allocated = Py_MIN(size, MIN_READ_BUF_SIZE);
+    Py_ssize_t written = 0;
+
+    PyBytesWriter *writer = PyBytesWriter_Create(allocated);
     if (writer == NULL) {
         return NULL;
     }
-    char *ptr = PyBytesWriter_GetData(writer);
-
-    Py_ssize_t n = _Py_read(self->fd, ptr, size);
-    if (n == -1) {
-        // copy errno because PyBytesWriter_Discard() can indirectly modify it
-        int err = errno;
-        PyBytesWriter_Discard(writer);
-        if (err == EAGAIN) {
-            PyErr_Clear();
-            Py_RETURN_NONE;
+    while (1) {
+        char *ptr = PyBytesWriter_GetData(writer);
+        Py_ssize_t n = _Py_read(self->fd, ptr + written, allocated - written);
+        if (n == -1) {
+            if (errno == EAGAIN) {
+                if (!written) {
+                    // Nothing was read yet -- return None.
+                    PyBytesWriter_Discard(writer);
+                    PyErr_Clear();
+                    Py_RETURN_NONE;
+                }
+                break;
+            }
+            PyBytesWriter_Discard(writer);
+            return NULL;
         }
-        return NULL;
+        written += n;
+        if (written < allocated || allocated >= size) {
+            break;
+        }
+        allocated += Py_MIN(allocated, size - allocated);
+        if (PyBytesWriter_Resize(writer, allocated) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
     }
 
-    return PyBytesWriter_FinishWithSize(writer, n);
+    return PyBytesWriter_FinishWithSize(writer, written);
 }
 
 /*[clinic input]

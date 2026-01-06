@@ -619,6 +619,9 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_PTSNAME_R_RUNTIME 1
 #endif
 
+// Data larger than this will be read in chunks, to prevent extreme
+// overallocation.
+#define MIN_READ_BUF_SIZE (1 << 20)
 
 // --- os module ------------------------------------------------------------
 
@@ -11945,35 +11948,51 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
 /*[clinic input]
 os.read
     fd: int
-    length: Py_ssize_t
+    size: Py_ssize_t
     /
 
 Read from a file descriptor.  Returns a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-os_read_impl(PyObject *module, int fd, Py_ssize_t length)
-/*[clinic end generated code: output=dafbe9a5cddb987b input=1df2eaa27c0bf1d3]*/
+os_read_impl(PyObject *module, int fd, Py_ssize_t size)
+/*[clinic end generated code: output=418a4484921f48ac input=74aab5415dcf1c3b]*/
 {
-    if (length < 0) {
+    if (size < 0) {
         errno = EINVAL;
         return posix_error();
     }
 
-    length = Py_MIN(length, _PY_READ_MAX);
+    size = Py_MIN(size, _PY_READ_MAX);
+    Py_ssize_t allocated = Py_MIN(size, MIN_READ_BUF_SIZE);
+    Py_ssize_t written = 0;
 
-    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    PyBytesWriter *writer = PyBytesWriter_Create(allocated);
     if (writer == NULL) {
         return NULL;
     }
 
-    Py_ssize_t n = _Py_read(fd, PyBytesWriter_GetData(writer), length);
-    if (n == -1) {
-        PyBytesWriter_Discard(writer);
-        return NULL;
+    while (1) {
+        Py_ssize_t n = _Py_read(fd, PyBytesWriter_GetData(writer), allocated);
+        if (n == -1) {
+            if (written && errno == EAGAIN) {
+                break;
+            }
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
+        written += n;
+        if (written < allocated || allocated >= size) {
+            break;
+        }
+        allocated += Py_MIN(allocated, size - allocated);
+        if (PyBytesWriter_Resize(writer, allocated) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
     }
 
-    return PyBytesWriter_FinishWithSize(writer, n);
+    return PyBytesWriter_FinishWithSize(writer, written);
 }
 
 /*[clinic input]
@@ -12156,27 +12175,42 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
         errno = EINVAL;
         return posix_error();
     }
-    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    Py_ssize_t allocated = Py_MIN(length, MIN_READ_BUF_SIZE);
+    Py_ssize_t written = 0;
+    PyBytesWriter *writer = PyBytesWriter_Create(allocated);
     if (writer == NULL) {
         return NULL;
     }
 
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
-        n = pread(fd, PyBytesWriter_GetData(writer), length, offset);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    while (1) {
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
+            n = pread(fd, PyBytesWriter_GetData(writer) + written,
+                      allocated - written, offset);
+            _Py_END_SUPPRESS_IPH
+            Py_END_ALLOW_THREADS
+        } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-    if (n < 0) {
-        if (!async_err) {
-            posix_error();
+        if (n < 0) {
+            if (!async_err) {
+                posix_error();
+            }
+            PyBytesWriter_Discard(writer);
+            return NULL;
         }
-        PyBytesWriter_Discard(writer);
-        return NULL;
+        written += n;
+        if (written < allocated || allocated >= length) {
+            break;
+        }
+        allocated += Py_MIN(allocated, length - allocated);
+        if (PyBytesWriter_Resize(writer, allocated) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
+        offset += n;
     }
-    return PyBytesWriter_FinishWithSize(writer, n);
+    return PyBytesWriter_FinishWithSize(writer, written);
 }
 #endif /* HAVE_PREAD */
 

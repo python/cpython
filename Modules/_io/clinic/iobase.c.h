@@ -393,13 +393,13 @@ PyDoc_STRVAR(_io__RawIOBase_read__doc__,
     {"read", _PyCFunction_CAST(_io__RawIOBase_read), METH_FASTCALL, _io__RawIOBase_read__doc__},
 
 static PyObject *
-_io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n);
+_io__RawIOBase_read_impl(PyObject *self, Py_ssize_t size);
 
 static PyObject *
 _io__RawIOBase_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t n = -1;
+    Py_ssize_t size = -1;
 
     if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
@@ -417,10 +417,10 @@ _io__RawIOBase_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        n = ival;
+        size = ival;
     }
 skip_optional:
-    return_value = _io__RawIOBase_read_impl(self, n);
+    return_value = _io__RawIOBase_read_impl(self, size);
 
 exit:
     return return_value;
@@ -443,4 +443,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=9359e74d95534bef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5511c22b1ea321a input=a9049054013a1b77]*/

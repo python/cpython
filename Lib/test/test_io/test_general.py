@@ -628,6 +628,11 @@ class IOTest:
             rawio = RawIOKeepsReference([b"1234"])
             rawio.read(4)
 
+    def test_RawIOBase_large_read_from_small_file(self):
+        for size in support.itersize(1 << 20, sys.maxsize):
+            rawio = self.MockRawIOWithoutRead((b"abc",))
+            self.assertEqual(rawio.read(size), b'abc')
+
     def test_types_have_dict(self):
         test = (
             self.IOBase(),

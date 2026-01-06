@@ -9,6 +9,7 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
+from test import support
 from test.support import (
     cpython_only, swap_attr, gc_collect, is_wasi,
     infinite_recursion, strace_helper
@@ -729,6 +730,15 @@ class OtherFileTests:
         fd = os.open(__file__, os.O_RDONLY)
         self.assertRaises(MyException, MyFileIO, fd)
         os.close(fd)  # should not raise OSError(EBADF)
+
+    def test_large_read_from_small_file(self):
+        self.addCleanup(os.remove, TESTFN)
+        data = b'abc'
+        with self.FileIO(TESTFN, 'wb') as f:
+            f.write(data)
+        for size in support.itersize(1 << 20, sys.maxsize):
+            with self.FileIO(TESTFN, 'rb') as f:
+                self.assertEqual(f.read(size), data)
 
 
 class COtherFileTests(OtherFileTests, unittest.TestCase):

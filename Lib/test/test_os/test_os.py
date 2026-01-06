@@ -321,25 +321,15 @@ class FileTests(unittest.TestCase):
             self.assertEqual(s, 4)
             self.assertEqual(buffer, b"spam")
 
-    @support.cpython_only
-    # Skip the test on 32-bit platforms: the number of bytes must fit in a
-    # Py_ssize_t type
-    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX,
-                         "needs INT_MAX < PY_SSIZE_T_MAX")
-    @support.bigmemtest(size=INT_MAX + 10, memuse=1, dry_run=False)
-    def test_large_read(self, size):
+    def test_large_read_from_small_file(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         create_file(os_helper.TESTFN, b'test')
 
         # Issue #21932: Make sure that os.read() does not raise an
         # OverflowError for size larger than INT_MAX
-        with open(os_helper.TESTFN, "rb") as fp:
-            data = os.read(fp.fileno(), size)
-
-        # The test does not try to read more than 2 GiB at once because the
-        # operating system is free to return less bytes than requested.
-        self.assertEqual(data, b'test')
-
+        for size in support.itersize(1 << 20, sys.maxsize):
+            with open(os_helper.TESTFN, "rb") as fp:
+                self.assertEqual(os.read(fp.fileno(), size), b'test')
 
     @support.cpython_only
     # Skip the test on 32-bit platforms: the number of bytes must fit in a

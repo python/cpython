@@ -7726,7 +7726,7 @@ exit:
 }
 
 PyDoc_STRVAR(os_read__doc__,
-"read($module, fd, length, /)\n"
+"read($module, fd, size, /)\n"
 "--\n"
 "\n"
 "Read from a file descriptor.  Returns a bytes object.");
@@ -7735,14 +7735,14 @@ PyDoc_STRVAR(os_read__doc__,
     {"read", _PyCFunction_CAST(os_read), METH_FASTCALL, os_read__doc__},
 
 static PyObject *
-os_read_impl(PyObject *module, int fd, Py_ssize_t length);
+os_read_impl(PyObject *module, int fd, Py_ssize_t size);
 
 static PyObject *
 os_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    Py_ssize_t length;
+    Py_ssize_t size;
 
     if (!_PyArg_CheckPositional("read", nargs, 2, 2)) {
         goto exit;
@@ -7761,9 +7761,9 @@ os_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        length = ival;
+        size = ival;
     }
-    return_value = os_read_impl(module, fd, length);
+    return_value = os_read_impl(module, fd, size);
 
 exit:
     return return_value;
@@ -13610,4 +13610,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=82f60940338c70e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5099bda73ce7aa4 input=a9049054013a1b77]*/
