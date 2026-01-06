@@ -141,6 +141,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN 34
 #define SPEC_FAIL_ATTR_SPLIT_DICT 35
 #define SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED 36
+#define SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS 37
 
 /* Binary subscr and store subscr */
 
@@ -812,6 +813,10 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 return -1;
             }
+            if (dmem->flags & _Py_AFTER_ITEMS) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS);
+                return -1;
+            }
             if (dmem->flags & Py_AUDIT_READ) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_AUDITED_SLOT);
                 return -1;
@@ -1004,6 +1009,10 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
             Py_ssize_t offset = dmem->offset;
             if (!PyObject_TypeCheck(owner, member->d_common.d_type)) {
                 SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_EXPECTED_ERROR);
+                goto fail;
+            }
+            if (dmem->flags & _Py_AFTER_ITEMS) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS);
                 goto fail;
             }
             if (dmem->flags & Py_READONLY) {
