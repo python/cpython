@@ -226,7 +226,7 @@ class Queue:
             except QueueFull:
                 if timeout is not None and time.time() >= end:
                     raise  # re-raise
-                time.sleep(_delay)
+                # time.sleep(_delay)
             else:
                 break
 
@@ -261,7 +261,7 @@ class Queue:
             except QueueEmpty:
                 if timeout is not None and time.time() >= end:
                     raise  # re-raise
-                time.sleep(_delay)
+                # time.sleep(_delay)
             else:
                 break
         if unboundop is not None:

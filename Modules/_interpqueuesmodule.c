@@ -7,6 +7,7 @@
 
 #include "Python.h"
 #include "pycore_crossinterp.h"   // _PyXIData_t
+#include "pycore_lock.h"          // PyEvent
 
 #define REGISTERS_HEAP_TYPES
 #define HAS_FALLBACK
@@ -532,6 +533,8 @@ typedef struct _queue {
         xidata_fallback_t fallback;
         int unboundop;
     } defaults;
+    PyEvent queue_space_available;
+    PyEvent queue_has_item;
 } _queue;
 
 static int
@@ -549,6 +552,8 @@ _queue_init(_queue *queue, Py_ssize_t maxsize, struct _queuedefaults defaults)
             .maxsize = maxsize,
         },
         .defaults = defaults,
+        .queue_space_available = (PyEvent){1},
+        .queue_has_item = (PyEvent){0}
     };
     return 0;
 }
@@ -642,6 +647,7 @@ _queue_add(_queue *queue, int64_t interpid, _PyXIData_t *data, int unboundop)
     }
     if (queue->items.count >= maxsize) {
         _queue_unlock(queue);
+        queue->queue_space_available = (PyEvent){0};
         return ERR_QUEUE_FULL;
     }
 
@@ -661,6 +667,7 @@ _queue_add(_queue *queue, int64_t interpid, _PyXIData_t *data, int unboundop)
     queue->items.last = item;
 
     _queue_unlock(queue);
+    queue->queue_has_item = (PyEvent){1};
     return 0;
 }
 
@@ -676,6 +683,7 @@ _queue_next(_queue *queue, _PyXIData_t **p_data, int *p_unboundop)
     _queueitem *item = queue->items.first;
     if (item == NULL) {
         _queue_unlock(queue);
+        queue->queue_has_item = (PyEvent){0};
         return ERR_QUEUE_EMPTY;
     }
     queue->items.first = item->next;
@@ -1136,6 +1144,9 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, unboundop_t unboundop,
     }
     assert(queue != NULL);
 
+    // Wait for the queue to have space
+    PyEvent_Wait(&queue->queue_space_available);
+
     // Convert the object to cross-interpreter data.
     _PyXIData_t *xidata = _PyXIData_New();
     if (xidata == NULL) {
@@ -1181,6 +1192,9 @@ queue_get(_queues *queues, int64_t qid,
     }
     // Past this point we are responsible for releasing the mutex.
     assert(queue != NULL);
+
+    // Wait for the queue to have some value
+    PyEvent_Wait(&queue->queue_has_item);
 
     // Pop off the next item from the queue.
     _PyXIData_t *data = NULL;
