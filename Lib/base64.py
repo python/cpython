@@ -508,9 +508,9 @@ _z85_decode_translation = bytes.maketrans(
 )
 _z85_encode_translation = bytes.maketrans(_b85alphabet, _z85alphabet)
 
-def z85encode(s):
+def z85encode(s, pad=False):
     """Encode bytes-like object b in z85 format and return a bytes object."""
-    return b85encode(s).translate(_z85_encode_translation)
+    return b85encode(s, pad).translate(_z85_encode_translation)
 
 def z85decode(s):
     """Decode the z85-encoded bytes-like object or ASCII string b
