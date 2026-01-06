@@ -574,7 +574,8 @@ dummy_func(
         macro(TO_BOOL_ALWAYS_TRUE) =
             unused/1 +
             _GUARD_TYPE_VERSION +
-            _REPLACE_WITH_TRUE + POP_TOP;
+            _REPLACE_WITH_TRUE +
+            POP_TOP;
 
         inst(UNARY_INVERT, (value -- res)) {
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
