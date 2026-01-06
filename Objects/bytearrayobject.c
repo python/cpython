@@ -2182,7 +2182,6 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
             Py_DECREF(bytearray_obj);
             return NULL;
         }
-        buf[len++] = value;
         Py_DECREF(item);
 
         if (len >= buf_size) {
@@ -2192,7 +2191,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
                 Py_DECREF(bytearray_obj);
                 return PyErr_NoMemory();
             }
-            addition = len >> 1;
+            addition = len ? len >> 1 : 1;
             if (addition > PY_SSIZE_T_MAX - len - 1)
                 buf_size = PY_SSIZE_T_MAX;
             else
@@ -2206,6 +2205,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
                have invalidated it. */
             buf = PyByteArray_AS_STRING(bytearray_obj);
         }
+        buf[len++] = value;
     }
     Py_DECREF(it);
 
