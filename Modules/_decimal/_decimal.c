@@ -3552,7 +3552,8 @@ dec_format(PyObject *dec, PyObject *args)
 
         if (size > 0 && fmt[size-1] == 'N') {
             if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             "Format specifier 'N' is deprecated", 1) < 0) {
+                             "Format specifier 'N' is deprecated and "
+                             "slated for removal in Python 3.18", 1) < 0) {
                 return NULL;
             }
         }
