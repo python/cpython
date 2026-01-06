@@ -1,0 +1,1 @@
+Support negative timestamps in various :mod:`datetime` functions.
