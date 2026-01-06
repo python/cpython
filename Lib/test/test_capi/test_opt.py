@@ -2952,7 +2952,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
         self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
-        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
