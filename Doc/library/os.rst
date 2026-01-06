@@ -558,7 +558,7 @@ process and user.
 
 .. function:: initgroups(username, gid, /)
 
-   Call the system initgroups() to initialize the group access list with all of
+   Call the system ``initgroups()`` to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
@@ -3404,7 +3404,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: statx_result
@@ -3661,7 +3661,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: STATX_TYPE
@@ -3690,7 +3690,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_FORCE_SYNC
 
@@ -3700,7 +3700,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_DONT_SYNC
 
@@ -3709,7 +3709,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_SYNC_AS_STAT
 
@@ -3721,7 +3721,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: AT_NO_AUTOMOUNT
@@ -3733,7 +3733,7 @@ features:
 
    .. availability:: Linux.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: statvfs(path)
@@ -3872,6 +3872,9 @@ features:
 .. function:: symlink(src, dst, target_is_directory=False, *, dir_fd=None)
 
    Create a symbolic link pointing to *src* named *dst*.
+
+   The *src* parameter refers to the target of the link (the file or directory being linked to),
+   and *dst* is the name of the link being created.
 
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
@@ -5990,7 +5993,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-      :func:`cpu_count` returns the overridden value *n*.
+      :func:`cpu_count` returns the override value *n*.
 
 
 .. function:: getloadavg()
@@ -6012,7 +6015,7 @@ Miscellaneous System Information
    in the **system**.
 
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-   :func:`process_cpu_count` returns the overridden value *n*.
+   :func:`process_cpu_count` returns the override value *n*.
 
    See also the :func:`sched_getaffinity` function.
 

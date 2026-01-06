@@ -3137,7 +3137,7 @@ symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_Source
 
 struct symtable *
 _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
-                              int start, PyCompilerFlags *flags)
+                              int start, PyCompilerFlags *flags, PyObject *module)
 {
     struct symtable *st;
     mod_ty mod;
@@ -3147,7 +3147,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;

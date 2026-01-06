@@ -102,7 +102,7 @@ Error Handling
    * Set *\*err_msg* and return ``1`` if an error is set.
    * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
 
-   An error message is an UTF-8 encoded string.
+   An error message is a UTF-8 encoded string.
 
    If *config* has an exit code, format the exit code as an error
    message.

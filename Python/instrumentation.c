@@ -190,7 +190,7 @@ is_instrumented(int opcode)
 {
     assert(opcode != 0);
     assert(opcode != RESERVED);
-    return opcode != ENTER_EXECUTOR && opcode >= MIN_INSTRUMENTED_OPCODE;
+    return opcode < ENTER_EXECUTOR && opcode >= MIN_INSTRUMENTED_OPCODE;
 }
 
 #ifndef NDEBUG
@@ -525,7 +525,7 @@ valid_opcode(int opcode)
     if (IS_VALID_OPCODE(opcode) &&
         opcode != CACHE &&
         opcode != RESERVED &&
-        opcode < 255)
+        opcode < 254)
     {
        return true;
     }
@@ -1785,6 +1785,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
         _PyCode_Clear_Executors(code);
     }
     _Py_Executors_InvalidateDependency(interp, code, 1);
+    _PyJit_Tracer_InvalidateDependency(PyThreadState_GET(), code);
 #endif
     int code_len = (int)Py_SIZE(code);
     /* Exit early to avoid creating instrumentation
@@ -2019,12 +2020,12 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
     if (existing_events == events) {
         return 0;
     }
-    set_events(&interp->monitors, tool_id, events);
     uint32_t new_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     if (new_version == 0) {
         PyErr_Format(PyExc_OverflowError, "events set too many times");
         return -1;
     }
+    set_events(&interp->monitors, tool_id, events);
     set_global_version(tstate, new_version);
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 1);

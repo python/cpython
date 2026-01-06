@@ -3336,6 +3336,20 @@ case(34)
             lineno=3
         )
 
+    def test_multiline_string_concat_missing_comma_points_to_last_string(self):
+        # gh-142236: For multi-line string concatenations with a missing comma,
+        # the error should point to the last string, not the first.
+        self._check_error(
+            "print(\n"
+            '    "line1"\n'
+            '    "line2"\n'
+            '    "line3"\n'
+            "    x=1\n"
+            ")",
+            "Perhaps you forgot a comma",
+            lineno=4,  # Points to "line3", the last string
+        )
+
     @support.cpython_only
     def test_syntax_error_on_deeply_nested_blocks(self):
         # This raises a SyntaxError, it used to raise a SystemError. Context
