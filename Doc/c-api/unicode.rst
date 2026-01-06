@@ -129,6 +129,20 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
+.. c:macro:: PyUnicode_IS_COMPACT(o)
+
+   Return true if the Unicode object *o* is a compact string.
+
+   .. versionadded:: 3.3
+
+
+.. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
+
+   Return true if the Unicode object *o* is a compact ASCII string.
+
+   .. versionadded:: 3.3
+
+
 .. c:function:: void PyUnicode_WRITE(int kind, void *data, \
                                      Py_ssize_t index, Py_UCS4 value)
 
