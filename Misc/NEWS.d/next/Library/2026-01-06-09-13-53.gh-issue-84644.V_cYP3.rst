@@ -1,0 +1,3 @@
+:func:`functools.singledispatch` and :func:`functools.singledispatchmethod`
+no longer mistakenly honor a misplaced annotation (e.g. the return type)
+as a type of the argument dispatched. Contributed by Bartosz Sławecki.
