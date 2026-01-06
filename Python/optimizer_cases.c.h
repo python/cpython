@@ -299,7 +299,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
             }
@@ -310,7 +310,7 @@
         case _TO_BOOL_BOOL: {
             JitOptRef value;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &value);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &value, false);
             if (!already_bool) {
                 sym_set_type(value, &PyBool_Type);
             }
@@ -322,7 +322,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
             if (!already_bool) {
                 sym_set_type(value, &PyLong_Type);
                 res = sym_new_truthiness(ctx, value, true);
@@ -359,7 +359,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
             if (!already_bool) {
                 res = sym_new_type(ctx, &PyBool_Type);
             }
@@ -371,7 +371,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
             if (!already_bool) {
                 sym_set_const(value, Py_None);
                 res = sym_new_const(ctx, Py_False);
@@ -410,12 +410,18 @@
         case _TO_BOOL_STR: {
             JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+            v = value;
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
             }
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

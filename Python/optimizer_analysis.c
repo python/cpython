@@ -214,7 +214,8 @@ optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
     JitOptRef value,
-    JitOptRef *result_ptr)
+    JitOptRef *result_ptr,
+    bool insert_mode)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -224,7 +225,10 @@ optimize_to_bool(
     int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
-        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        int opcode = insert_mode ?
+            _INSERT_1_LOAD_CONST_INLINE_BORROW :
+            _POP_TOP_LOAD_CONST_INLINE_BORROW;
+        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)load);
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
