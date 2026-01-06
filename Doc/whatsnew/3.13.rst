@@ -1870,6 +1870,7 @@ New Deprecations
   * Deprecate the non-standard and undocumented :class:`~decimal.Decimal`
     format specifier ``'N'``,
     which is only supported in the :mod:`!decimal` module's C implementation.
+    Scheduled to be removed in Python 3.18.
     (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
 * :mod:`dis`:
@@ -2033,6 +2034,8 @@ New Deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
