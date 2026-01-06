@@ -1784,6 +1784,8 @@
     added = '3.2'
 [const.Py_TPFLAGS_BASETYPE]
     added = '3.2'
+[const.Py_TPFLAGS_HEAPTYPE]
+    added = '3.2'
 [const.Py_TPFLAGS_HAVE_GC]
     added = '3.2'
 [const.Py_TPFLAGS_READY]
