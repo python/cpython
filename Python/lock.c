@@ -124,8 +124,11 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
                                      &entry, (flags & _PY_LOCK_DETACH) != 0);
         if (ret == Py_PARK_OK) {
             if (entry.handed_off) {
-                // We own the lock now.
-                assert(_Py_atomic_load_uint8_relaxed(&m->_bits) & _Py_LOCKED);
+                // We own the lock now. thread.Lock allows other threads
+                // to concurrently release the lock so we cannot assert that
+                // it is locked if _PY_LOCK_PYTHONLOCK is set.
+                assert(_Py_atomic_load_uint8_relaxed(&m->_bits) & _Py_LOCKED ||
+                       (flags & _PY_LOCK_PYTHONLOCK) != 0);
                 return PY_LOCK_ACQUIRED;
             }
         }
