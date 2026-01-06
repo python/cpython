@@ -338,7 +338,7 @@ Standard names are defined for the following types:
    The type of frame locals proxy objects, as found on the
    :attr:`frame.f_locals` attribute.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
    .. seealso:: :pep:`667`
 

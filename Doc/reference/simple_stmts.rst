@@ -465,8 +465,8 @@ Deletion of a target list recursively deletes each target, from left to right.
 
 Deletion of a name removes the binding of that name from the local or global
 namespace, depending on whether the name occurs in a :keyword:`global` statement
-in the same code block.  If the name is unbound, a :exc:`NameError` exception
-will be raised.
+in the same code block.  Trying to delete an unbound name raises a
+:exc:`NameError` exception.
 
 .. index:: pair: attribute; deletion
 

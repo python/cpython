@@ -161,7 +161,7 @@ class ThroughModuleAPIMixin(ModuleMixin, CreatorMixin, DigestMixin):
         return _call_digest_func(self.hmac.digest, key, msg, digestmod)
 
 
-@hashlib_helper.requires_hashlib()
+@hashlib_helper.requires_openssl_hashlib()
 class ThroughOpenSSLAPIMixin(CreatorMixin, DigestMixin):
     """Mixin delegating to _hashlib.hmac_new() and _hashlib.hmac_digest()."""
 
@@ -1076,6 +1076,15 @@ class SanityTestCaseMixin(CreatorMixin):
         self.assertEqual(h.digest_size, self.digest_size)
         self.assertEqual(h.block_size, self.block_size)
 
+    def test_copy(self):
+        # Test a generic copy() and the attributes it exposes.
+        # See https://github.com/python/cpython/issues/142451.
+        h1 = self.hmac_new(b"my secret key", digestmod=self.digestname)
+        h2 = h1.copy()
+        self.assertEqual(h1.name, h2.name)
+        self.assertEqual(h1.digest_size, h2.digest_size)
+        self.assertEqual(h1.block_size, h2.block_size)
+
     def test_repr(self):
         # HMAC object representation may differ across implementations
         raise NotImplementedError
@@ -1431,7 +1440,7 @@ class HMACCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
             self.assertIs(self.compare_digest, operator_compare_digest)
 
 
-@hashlib_helper.requires_hashlib()
+@hashlib_helper.requires_openssl_hashlib()
 class OpenSSLCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
     compare_digest = openssl_compare_digest
 
@@ -1509,7 +1518,7 @@ class PyMiscellaneousTests(unittest.TestCase):
         hmac = import_fresh_module("hmac", blocked=["_hmac"])
         self.do_test_hmac_digest_overflow_error_switch_to_slow(hmac, size)
 
-    @hashlib_helper.requires_builtin_hashdigest("_md5", "md5")
+    @hashlib_helper.requires_builtin_hashdigest("md5")
     @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_hmac_digest_overflow_error_builtin_only(self, size):
         hmac = import_fresh_module("hmac", blocked=["_hashlib"])

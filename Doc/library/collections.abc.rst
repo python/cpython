@@ -140,6 +140,9 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``__len__``,
                                                       ``insert``
 
+:class:`ByteString`            :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
+                                                      ``__len__``
+
 :class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                                                       ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
                                                       ``__len__``             ``__sub__``, ``__rsub__``, ``__xor__``, ``__rxor__``
@@ -260,6 +263,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Sequence
            MutableSequence
+           ByteString
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
@@ -284,6 +288,25 @@ Collections Abstract Base Classes -- Detailed Descriptions
       .. versionchanged:: 3.5
          The :meth:`~sequence.index` method gained support for
          the *stop* and *start* arguments.
+
+   .. deprecated-removed:: 3.12 3.17
+      The :class:`ByteString` ABC has been deprecated.
+
+      Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+      implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use
+      in type annotations, either use :class:`Buffer` or a union that
+      explicitly specifies the types your code supports (e.g.,
+      ``bytes | bytearray | memoryview``).
+
+      :class:`!ByteString` was originally intended to be an abstract class that
+      would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+      However, since the ABC never had any methods, knowing that an object was
+      an instance of :class:`!ByteString` never actually told you anything
+      useful about the object. Other common buffer types such as
+      :class:`memoryview` were also never understood as subtypes of
+      :class:`!ByteString` (either at runtime or by static type checkers).
+
+      See :pep:`PEP 688 <688#current-options>` for more details.
 
 .. class:: Set
            MutableSet
@@ -313,7 +336,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. note::
       In CPython, generator-based coroutines (:term:`generators <generator>`
-      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      decorated with :deco:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Awaitable)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
@@ -331,7 +354,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. note::
       In CPython, generator-based coroutines (:term:`generators <generator>`
-      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      decorated with :deco:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.

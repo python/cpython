@@ -841,7 +841,7 @@ and by Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
 cProfile
 --------
 
-The :mod:`cProfile` command line now accepts ``-m module_name`` as an
+The :mod:`!cProfile` command line now accepts ``-m module_name`` as an
 alternative to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
 
 
@@ -2483,7 +2483,7 @@ avoiding possible problems use new functions :c:func:`PySlice_Unpack` and
 CPython bytecode changes
 ------------------------
 
-There are two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`!CALL_METHOD`.
+There are two new opcodes: :opcode:`!LOAD_METHOD` and :opcode:`!CALL_METHOD`.
 (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
 The :opcode:`!STORE_ANNOTATION` opcode has been removed.

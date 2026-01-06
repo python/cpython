@@ -567,6 +567,14 @@ class TestCallCache(TestBase):
         with self.assertRaises(RecursionError):
             test()
 
+    def test_dont_specialize_custom_vectorcall(self):
+        def f():
+            raise Exception("no way")
+
+        _testinternalcapi.set_vectorcall_nop(f)
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            f()
+
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.
@@ -582,7 +590,7 @@ def make_deferred_ref_count_obj():
 class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
-    ITEMS = 1000
+    ITEMS = 1400
     LOOPS = 4
     WRITERS = 2
 
@@ -1777,6 +1785,16 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_subscr_str_int, "BINARY_OP_SUBSCR_STR_INT")
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_OP")
 
+        def binary_subscr_str_int_non_compact():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = "바이트코드_특수화"
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_str_int_non_compact()
+        self.assert_specialized(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_USTR_INT")
+        self.assert_no_opcode(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_STR_INT")
+
         def binary_subscr_getitems():
             class C:
                 def __init__(self, val):
@@ -1863,6 +1881,33 @@ class TestSpecializer(TestBase):
         for_iter_generator()
         self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_call_list_append(self):
+        # gh-141367: only exact lists should use
+        # CALL_LIST_APPEND instruction after specialization.
+
+        r = range(_testinternalcapi.SPECIALIZATION_THRESHOLD)
+
+        def list_append(l):
+            for _ in r:
+                l.append(1)
+
+        list_append([])
+        self.assert_specialized(list_append, "CALL_LIST_APPEND")
+        self.assert_no_opcode(list_append, "CALL_METHOD_DESCRIPTOR_O")
+        self.assert_no_opcode(list_append, "CALL")
+
+        def my_list_append(l):
+            for _ in r:
+                l.append(1)
+
+        class MyList(list): pass
+        my_list_append(MyList())
+        self.assert_specialized(my_list_append, "CALL_METHOD_DESCRIPTOR_O")
+        self.assert_no_opcode(my_list_append, "CALL_LIST_APPEND")
+        self.assert_no_opcode(my_list_append, "CALL")
 
 
 if __name__ == "__main__":
