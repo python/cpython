@@ -18,6 +18,7 @@ if sys.version_info >= (3, 5):
 else:
     test_module = type(sys)('test.picklecommon')
     sys.modules['test.picklecommon'] = test_module
+    sys.modules['test'] = type(sys)('test')
     with open(test_mod_path, 'rb') as f:
         sources = f.read()
     exec(sources, vars(test_module))
