@@ -332,6 +332,9 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
     size_t copy_size = (size < nbytes ? size : nbytes);
     if (copy_size >= offset) {
         for (size_t i = 0; i != offset; i += sizeof(void*)) {
+            // Use memcpy to avoid strict-aliasing issues. However, we probably
+            // still have unavoidable strict-aliasing issues with
+            // _Py_atomic_store_ptr_relaxed here.
             void *word;
             memcpy(&word, (char*)ptr + i, sizeof(void*));
             _Py_atomic_store_ptr_relaxed((void**)((char*)newp + i), word);
