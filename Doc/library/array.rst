@@ -93,7 +93,7 @@ The module defines the following type:
    otherwise, the initializer's iterator is passed to the :meth:`extend` method
    to add initial items to the array.
 
-   Array objects support the ordinary sequence operations of indexing, slicing,
+   Array objects support the ordinary :ref:`mutable <typesseq-mutable>` :term:`sequence` operations of indexing, slicing,
    concatenation, and multiplication.  When using slice assignment, the assigned
    value must be an array object with the same type code; in all other cases,
    :exc:`TypeError` is raised. Array objects also implement the buffer interface,
