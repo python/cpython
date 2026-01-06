@@ -288,8 +288,8 @@ Known values:
     Python 3.15a1 3655 (Fix miscompilation of some module-level annotations)
     Python 3.15a2 3656 (Add TRACE_RECORD instruction, for platforms with switch based interpreter)
     Python 3.15a4 3657 (Add BINARY_OP_SUBSCR_USTR_INT)
-    Python 3.15a4 3658 (Add CALL_FUNCTION_EX specialization)
-
+    Python 3.15a4 3658 (Optimize bytecode for list/set called on genexp)
+    Python 3.15a4 3659 (Add CALL_FUNCTION_EX specialization)
 
     Python 3.16 will start with 3700
 
@@ -302,7 +302,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3658
+#define PYC_MAGIC_NUMBER 3659
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
