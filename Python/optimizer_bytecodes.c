@@ -109,8 +109,10 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_STORE_FAST, (value --)) {
+    op(_SWAP_FAST, (value -- trash)) {
+        JitOptRef tmp = GETLOCAL(oparg);
         GETLOCAL(oparg) = value;
+        trash = tmp;
     }
 
     op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
@@ -332,6 +334,12 @@ dummy_func(void) {
         i = sub_st;
     }
 
+    op(_BINARY_OP_SUBSCR_USTR_INT, (str_st, sub_st -- res, s, i)) {
+        res = sym_new_type(ctx, &PyUnicode_Type);
+        s = str_st;
+        i = sub_st;
+    }
+
     op(_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS, (tuple_st, sub_st -- tuple_st, sub_st)) {
         assert(sym_matches_type(tuple_st, &PyTuple_Type));
         if (sym_is_const(ctx, sub_st)) {
@@ -409,6 +417,10 @@ dummy_func(void) {
         if (sym_matches_type(nos, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
+        sym_set_type(nos, &PyUnicode_Type);
+    }
+
+    op(_GUARD_NOS_COMPACT_ASCII, (nos, unused -- nos, unused)) {
         sym_set_type(nos, &PyUnicode_Type);
     }
 

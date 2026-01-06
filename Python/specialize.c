@@ -47,7 +47,9 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     #if ENABLE_SPECIALIZATION_FT
     _Py_BackoffCounter jump_counter, adaptive_counter;
     if (enable_counters) {
-        jump_counter = initial_jump_backoff_counter();
+        PyThreadState *tstate = _PyThreadState_GET();
+        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+        jump_counter = initial_jump_backoff_counter(&tstate_impl->policy);
         adaptive_counter = adaptive_counter_warmup();
     }
     else {
@@ -139,6 +141,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN 34
 #define SPEC_FAIL_ATTR_SPLIT_DICT 35
 #define SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED 36
+#define SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS 37
 
 /* Binary subscr and store subscr */
 
@@ -810,6 +813,10 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 return -1;
             }
+            if (dmem->flags & _Py_AFTER_ITEMS) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS);
+                return -1;
+            }
             if (dmem->flags & Py_AUDIT_READ) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_AUDITED_SLOT);
                 return -1;
@@ -1002,6 +1009,10 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
             Py_ssize_t offset = dmem->offset;
             if (!PyObject_TypeCheck(owner, member->d_common.d_type)) {
                 SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_EXPECTED_ERROR);
+                goto fail;
+            }
+            if (dmem->flags & _Py_AFTER_ITEMS) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS);
                 goto fail;
             }
             if (dmem->flags & Py_READONLY) {
@@ -2240,9 +2251,14 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     specialize(instr, BINARY_OP_SUBSCR_TUPLE_INT);
                     return;
                 }
-                if (PyUnicode_CheckExact(lhs)) {
-                    specialize(instr, BINARY_OP_SUBSCR_STR_INT);
-                    return;
+                if (PyUnicode_CheckExact(lhs) && _PyLong_IsNonNegativeCompact((PyLongObject*)rhs)) {
+                    if (PyUnicode_IS_COMPACT_ASCII(lhs)) {
+                        specialize(instr, BINARY_OP_SUBSCR_STR_INT);
+                        return;
+                    } else {
+                        specialize(instr, BINARY_OP_SUBSCR_USTR_INT);
+                        return;
+                    }
                 }
             }
             if (PyDict_CheckExact(lhs)) {
