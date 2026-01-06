@@ -125,8 +125,8 @@ Entry points
    :meth:`!select` method for comparison to the attributes of
    the individual entry point definitions.
 
-   Note: it is not currently possible to query for entry points based on
-   their :attr:`!EntryPoint.dist` attribute (as different :class:`!Distribution`
+   Note: to query for entry points based on :attr:`!EntryPoint.dist` attribute,
+   use :meth:`!Distribution.entry_points` instead (as different :class:`!Distribution`
    instances do not currently compare equal, even if they have the same attributes)
 
 .. class:: EntryPoints
