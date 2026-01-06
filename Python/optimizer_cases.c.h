@@ -2640,8 +2640,7 @@
                 PyFunctionObject *func = (PyFunctionObject *)operand;
                 ctx->frame->func = func;
             }
-            if ((this_instr-1)->opcode == _SAVE_RETURN_OFFSET ||
-                (this_instr-1)->opcode == _CREATE_INIT_FRAME) {
+            if ((this_instr-1)->opcode == _CREATE_INIT_FRAME) {
                 assert((this_instr+1)->opcode == _GUARD_IP__PUSH_FRAME);
                 REPLACE_OP(this_instr+1, _NOP, 0, 0);
             }
@@ -3111,6 +3110,40 @@
         }
 
         /* _DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+
+        case _CHECK_IS_PY_CALLABLE_EX: {
+            break;
+        }
+
+        case _PY_FRAME_EX: {
+            JitOptRef ex_frame;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            ex_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer[-4] = ex_frame;
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE_EX: {
+            break;
+        }
+
+        case _CALL_FUNCTION_EX_NON_PY_GENERAL: {
+            JitOptRef result;
+            result = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer[-4] = result;
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
 
         case _MAKE_FUNCTION: {
             JitOptRef func;
