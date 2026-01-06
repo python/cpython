@@ -912,9 +912,14 @@ def _get_dispatch_annotation(func, param):
         ref_or_typeform = annotationlib.ForwardRef(ref_or_typeform, owner=func)
     if isinstance(ref_or_typeform, annotationlib.ForwardRef):
         try:
-            return ref_or_typeform.evaluate(owner=func)
+            ref_or_typeform = ref_or_typeform.evaluate(owner=func)
         except Exception:
             pass  # Forward reference is unresolved.
+    if ref_or_typeform is None:
+        ref_or_typeform = type(None)
+    if not isinstance(ref_or_typeform, annotationlib.ForwardRef):
+        import typing
+        ref_or_typeform = typing._strip_annotations(ref_or_typeform)
     return ref_or_typeform
 
 def _get_dispatch_param_and_annotation(func, *, skip_first=False):
