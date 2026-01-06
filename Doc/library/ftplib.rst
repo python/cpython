@@ -454,10 +454,6 @@ FTP_TLS objects
    Connect to port 21 implicitly securing the FTP control connection
    before authenticating.
 
-   .. note::
-      The user must explicitly secure the data connection
-      by calling the :meth:`prot_p` method.
-
    :param str host:
       The hostname to connect to.
       If given, :code:`connect(host)` is implicitly called by the constructor.
@@ -516,8 +512,6 @@ FTP_TLS objects
       >>> ftps = FTP_TLS('ftp.pureftpd.org')
       >>> ftps.login()
       '230 Anonymous user logged in'
-      >>> ftps.prot_p()
-      '200 Data protection level set to "private"'
       >>> ftps.nlst()
       ['6jack', 'OpenBSD', 'antilink', 'blogbench', 'bsdcam', 'clockspeed', 'djbdns-jedi', 'docs', 'eaccelerator-jedi', 'favicon.ico', 'francotone', 'fugu', 'ignore', 'libpuzzle', 'metalog', 'minidentd', 'misc', 'mysql-udf-global-user-variables', 'php-jenkins-hash', 'php-skein-hash', 'php-webdav', 'phpaudit', 'phpbench', 'pincaster', 'ping', 'posto', 'pub', 'public', 'public_keys', 'pure-ftpd', 'qscan', 'qtc', 'sharedance', 'skycache', 'sound', 'tmp', 'ucarp']
 

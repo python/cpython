@@ -917,7 +917,6 @@ class TestTLS_FTPClassMixin(TestFTPClass):
         self.client.connect(self.server.host, self.server.port)
         # enable TLS
         self.client.auth()
-        self.client.prot_p()
 
 
 @skipUnless(ssl, "SSL not available")
@@ -944,15 +943,9 @@ class TestTLS_FTPClass(TestCase):
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
 
     def test_data_connection(self):
-        # clear text
-        with self.client.transfercmd('list') as sock:
-            self.assertNotIsInstance(sock, ssl.SSLSocket)
-            self.assertEqual(sock.recv(1024),
-                             LIST_DATA.encode(self.client.encoding))
-        self.assertEqual(self.client.voidresp(), "226 transfer complete")
+        self.client.login()
 
-        # secured, after PROT P
-        self.client.prot_p()
+        # secured
         with self.client.transfercmd('list') as sock:
             self.assertIsInstance(sock, ssl.SSLSocket)
             # consume from SSL socket to finalize handshake and avoid
@@ -961,7 +954,7 @@ class TestTLS_FTPClass(TestCase):
                              LIST_DATA.encode(self.client.encoding))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
-        # PROT C is issued, the connection must be in cleartext again
+        # PROT C is issued, the connection must be in cleartext
         self.client.prot_c()
         with self.client.transfercmd('list') as sock:
             self.assertNotIsInstance(sock, ssl.SSLSocket)
@@ -1000,7 +993,6 @@ class TestTLS_FTPClass(TestCase):
         self.assertIs(self.client.sock.context, ctx)
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
 
-        self.client.prot_p()
         with self.client.transfercmd('list') as sock:
             self.assertIs(sock.context, ctx)
             self.assertIsInstance(sock, ssl.SSLSocket)
@@ -1028,7 +1020,6 @@ class TestTLS_FTPClass(TestCase):
         # exception quits connection
 
         self.client.connect(self.server.host, self.server.port)
-        self.client.prot_p()
         with self.assertRaises(ssl.CertificateError):
             with self.client.transfercmd("list") as sock:
                 pass
@@ -1039,7 +1030,6 @@ class TestTLS_FTPClass(TestCase):
         self.client.quit()
 
         self.client.connect("localhost", self.server.port)
-        self.client.prot_p()
         with self.client.transfercmd("list") as sock:
             pass
 
