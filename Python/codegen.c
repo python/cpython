@@ -227,19 +227,25 @@ static int codegen_call_helper(compiler *c, location loc,
 static int codegen_try_except(compiler *, stmt_ty);
 static int codegen_try_star_except(compiler *, stmt_ty);
 
+typedef enum {
+    ITERABLE_IN_LOCAL = 0,
+    ITERABLE_ON_STACK = 1,
+    ITERATOR_ON_STACK = 2,
+} IterStackState;
+
 static int codegen_sync_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack);
+                                      IterStackState iter_on_stack);
 
 static int codegen_async_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack);
+                                      IterStackState iter_on_stack);
 
 static int codegen_pattern(compiler *, pattern_ty, pattern_context *);
 static int codegen_match(compiler *, stmt_ty);
@@ -665,6 +671,18 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
     if (scope_type == COMPILE_SCOPE_MODULE) {
         loc.lineno = 0;
     }
+    /* Add the generator prefix instructions. */
+
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    if (ste->ste_coroutine || ste->ste_generator) {
+        /* Note that RETURN_GENERATOR + POP_TOP have a net stack effect
+         * of 0. This is because RETURN_GENERATOR pushes the generator
+         before returning. */
+        location loc = LOCATION(lineno, lineno, -1, -1);
+        ADDOP(c, loc, RETURN_GENERATOR);
+        ADDOP(c, loc, POP_TOP);
+    }
+
     ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
     if (scope_type == COMPILE_SCOPE_MODULE) {
         ADDOP(c, loc, ANNOTATIONS_PLACEHOLDER);
@@ -1187,10 +1205,15 @@ codegen_wrap_in_stopiteration_handler(compiler *c)
 {
     NEW_JUMP_TARGET_LABEL(c, handler);
 
-    /* Insert SETUP_CLEANUP at start */
+    /* Insert SETUP_CLEANUP just before RESUME */
+    instr_sequence *seq = INSTR_SEQUENCE(c);
+    int resume = 0;
+    while (_PyInstructionSequence_GetInstruction(seq, resume).i_opcode != RESUME) {
+        resume++;
+    }
     RETURN_IF_ERROR(
         _PyInstructionSequence_InsertInstruction(
-            INSTR_SEQUENCE(c), 0,
+            seq, resume,
             SETUP_CLEANUP, handler.id, NO_LOCATION));
 
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
@@ -4401,7 +4424,7 @@ codegen_comprehension_generator(compiler *c, location loc,
                                 asdl_comprehension_seq *generators, int gen_index,
                                 int depth,
                                 expr_ty elt, expr_ty val, int type,
-                                int iter_on_stack)
+                                IterStackState iter_on_stack)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
@@ -4421,7 +4444,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                                      asdl_comprehension_seq *generators,
                                      int gen_index, int depth,
                                      expr_ty elt, expr_ty val, int type,
-                                     int iter_on_stack)
+                                     IterStackState iter_on_stack)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -4433,7 +4456,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (!iter_on_stack) {
+    if (iter_on_stack == ITERABLE_IN_LOCAL) {
         if (gen_index == 0) {
             assert(METADATA(c)->u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -4468,9 +4491,12 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
     }
 
     if (IS_JUMP_TARGET_LABEL(start)) {
-        depth += 2;
-        ADDOP(c, LOC(gen->iter), GET_ITER);
+        if (iter_on_stack != ITERATOR_ON_STACK) {
+            ADDOP(c, LOC(gen->iter), GET_ITER);
+            depth += 1;
+        }
         USE_LABEL(c, start);
+        depth += 1;
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
@@ -4486,7 +4512,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         RETURN_IF_ERROR(
             codegen_comprehension_generator(c, loc,
                                             generators, gen_index, depth,
-                                            elt, val, type, 0));
+                                            elt, val, type, ITERABLE_IN_LOCAL));
     }
 
     location elt_loc = LOC(elt);
@@ -4545,7 +4571,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      int iter_on_stack)
+                                      IterStackState iter_on_stack)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, send);
@@ -4555,7 +4581,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (!iter_on_stack) {
+    if (iter_on_stack == ITERABLE_IN_LOCAL) {
         if (gen_index == 0) {
             assert(METADATA(c)->u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -4565,7 +4591,9 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             VISIT(c, expr, gen->iter);
         }
     }
-    ADDOP(c, LOC(gen->iter), GET_AITER);
+    if (iter_on_stack != ITERATOR_ON_STACK) {
+        ADDOP(c, LOC(gen->iter), GET_AITER);
+    }
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
@@ -4795,11 +4823,13 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     location loc = LOC(e);
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
+    IterStackState iter_state;
     if (is_inlined) {
         VISIT(c, expr, outermost->iter);
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }
+        iter_state = ITERABLE_ON_STACK;
     }
     else {
         /* Receive outermost iter as an implicit argument */
@@ -4809,6 +4839,23 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         if (codegen_enter_scope(c, name, COMPILE_SCOPE_COMPREHENSION,
                                 (void *)e, e->lineno, NULL, &umd) < 0) {
             goto error;
+        }
+        if (type == COMP_GENEXP) {
+            /* Insert GET_ITER before RETURN_GENERATOR.
+               https://docs.python.org/3/reference/expressions.html#generator-expressions */
+            RETURN_IF_ERROR(
+                _PyInstructionSequence_InsertInstruction(
+                    INSTR_SEQUENCE(c), 0,
+                    LOAD_FAST, 0, LOC(outermost->iter)));
+            RETURN_IF_ERROR(
+                _PyInstructionSequence_InsertInstruction(
+                    INSTR_SEQUENCE(c), 1,
+                    outermost->is_async ? GET_AITER : GET_ITER,
+                    0, LOC(outermost->iter)));
+            iter_state = ITERATOR_ON_STACK;
+        }
+        else {
+            iter_state = ITERABLE_IN_LOCAL;
         }
     }
     Py_CLEAR(entry);
@@ -4836,9 +4883,8 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
             ADDOP_I(c, loc, SWAP, 2);
         }
     }
-
     if (codegen_comprehension_generator(c, loc, generators, 0, 0,
-                                        elt, val, type, is_inlined) < 0) {
+                                        elt, val, type, iter_state) < 0) {
         goto error_in_scope;
     }
 

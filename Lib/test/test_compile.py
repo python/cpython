@@ -1298,7 +1298,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 4, 2, 0, 4]
+        genexp_lines = [4, 0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[0]
         code_lines = self.get_code_lines(genexp_code)
