@@ -290,8 +290,12 @@ Passing ``--dry-run`` will generate output and logs, but will not modify any
 installs.
 
 In addition to the above options, the ``--target`` option will extract the
-runtime to the specified directory instead of doing a normal install. This is
-useful for embedding runtimes into larger applications.
+runtime to the specified directory instead of doing a normal install.
+This is useful for embedding runtimes into larger applications.
+Unlike a normal install, ``py`` will not be aware of the extracted runtime,
+and no Start menu or other shortcuts will be created.
+To launch the runtime, directly execute the main executable (typically
+``python.exe``) in the target directory.
 
 .. code::
 
@@ -378,10 +382,13 @@ overridden installs may resolve settings differently.
 
 A global configuration file may be configured by an administrator, and would be
 read first. The user configuration file is stored at
-:file:`%AppData%\\Python\\pymanager.json` (by default) and is read next,
+:file:`%AppData%\\Python\\pymanager.json`
+(note that this location is under ``Roaming``, not ``Local``) and is read next,
 overwriting any settings from earlier files. An additional configuration file
 may be specified as the ``PYTHON_MANAGER_CONFIG`` environment variable or the
 ``--config`` command line option (but not both).
+These locations may be modified by administrative customization options listed
+later.
 
 The following settings are those that are considered likely to be modified in
 normal use. Later sections list those that are intended for administrative
@@ -420,8 +427,8 @@ customization.
 
    * - ``automatic_install``
      - ``PYTHON_MANAGER_AUTOMATIC_INSTALL``
-     - True to allow automatic installs when specifying a particular runtime
-       to launch.
+     - True to allow automatic installs when using ``py exec`` to launch.
+       Other commands will not automatically install.
        By default, true.
 
    * - ``include_unmanaged``
@@ -799,6 +806,12 @@ default).
    * -
      - Check that the ``py`` and ``pymanager`` commands work.
 
+   * -
+     - Ensure your :envvar:`PATH` variable contains the entry for
+       ``%UserProfile%\AppData\Local\Microsoft\WindowsApps``.
+       The operating system includes this entry once by default, after other
+       user paths. If removed, shortcuts will not be found.
+
    * - ``py`` gives me a "command not found" error when I type it in my terminal.
      - Did you :ref:`install the Python install manager <pymanager>`?
 
@@ -808,6 +821,12 @@ default).
        If they already are, try disabling and re-enabling to refresh the command.
        The "Python (default windowed)" and "Python install manager" commands
        may also need refreshing.
+
+   * -
+     - Ensure your :envvar:`PATH` variable contains the entry for
+       ``%UserProfile%\AppData\Local\Microsoft\WindowsApps``.
+       The operating system includes this entry once by default, after other
+       user paths. If removed, shortcuts will not be found.
 
    * - ``py`` gives me a "can't open file" error when I type commands in my
        terminal.
@@ -839,7 +858,7 @@ default).
      - Prerelease and experimental installs that are not managed by the Python
        install manager may be chosen ahead of stable releases.
        Configure your default tag or uninstall the prerelease runtime
-       and reinstall using ``py install``.
+       and reinstall it using ``py install``.
 
    * - ``pythonw`` or ``pyw`` don't launch the same runtime as ``python`` or ``py``
      - Click Start, open "Manage app execution aliases", and check that your
@@ -869,6 +888,20 @@ default).
        the `legacy launcher`_, or with the Python install manager when installed
        from the MSI.
 
+   * - I have installed the Python install manager multiple times.
+     - It is possible to install from the Store or WinGet, from the MSIX on
+       the Python website, and from the MSI, all at once.
+       They are all compatible and will share configuration and runtimes.
+
+   * -
+     - See the earlier :ref:`pymanager-advancedinstall` section for ways to
+       uninstall the install manager other than the typical Installed Apps
+       (Add and Remove Programs) settings page.
+
+   * - My old ``py.ini`` settings no longer work.
+     - The new Python install manager no longer supports this configuration file
+       or its settings, and so it will be ignored.
+       See :ref:`pymanager-config` for information about configuration settings.
 
 .. _windows-embeddable:
 
@@ -886,7 +919,7 @@ To install an embedded distribution, we recommend using ``py install`` with the
 
 .. code::
 
-   $> py install 3.14-embed --target=runtime
+   $> py install 3.14-embed --target=<directory>
 
 When extracted, the embedded distribution is (almost) fully isolated from the
 user's system, including environment variables, system registry settings, and

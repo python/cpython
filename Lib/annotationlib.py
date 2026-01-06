@@ -844,14 +844,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
     if not annotate.__closure__:
         return None, None
-    freevars = annotate.__code__.co_freevars
     new_closure = []
     cell_dict = {}
-    for i, cell in enumerate(annotate.__closure__):
-        if i < len(freevars):
-            name = freevars[i]
-        else:
-            name = "__cell__"
+    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
         cell_dict[name] = cell
         new_cell = None
         if allow_evaluation:

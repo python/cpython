@@ -590,7 +590,7 @@ def make_deferred_ref_count_obj():
 class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
-    ITEMS = 1000
+    ITEMS = 1400
     LOOPS = 4
     WRITERS = 2
 
@@ -1784,6 +1784,16 @@ class TestSpecializer(TestBase):
         binary_subscr_str_int()
         self.assert_specialized(binary_subscr_str_int, "BINARY_OP_SUBSCR_STR_INT")
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_OP")
+
+        def binary_subscr_str_int_non_compact():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = "바이트코드_특수화"
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_str_int_non_compact()
+        self.assert_specialized(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_USTR_INT")
+        self.assert_no_opcode(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_STR_INT")
 
         def binary_subscr_getitems():
             class C:

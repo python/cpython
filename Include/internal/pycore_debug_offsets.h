@@ -102,13 +102,22 @@ typedef struct _Py_DebugOffsets {
         uint64_t next;
         uint64_t interp;
         uint64_t current_frame;
+        uint64_t base_frame;
+        uint64_t last_profiled_frame;
         uint64_t thread_id;
         uint64_t native_thread_id;
         uint64_t datastack_chunk;
         uint64_t status;
         uint64_t holds_gil;
         uint64_t gil_requested;
+        uint64_t current_exception;
+        uint64_t exc_state;
     } thread_state;
+
+    // Exception stack item offset
+    struct {
+        uint64_t exc_value;
+    } err_stackitem;
 
     // InterpreterFrame offset;
     struct _interpreter_frame {
@@ -272,12 +281,19 @@ typedef struct _Py_DebugOffsets {
         .next = offsetof(PyThreadState, next), \
         .interp = offsetof(PyThreadState, interp), \
         .current_frame = offsetof(PyThreadState, current_frame), \
+        .base_frame = offsetof(PyThreadState, base_frame), \
+        .last_profiled_frame = offsetof(PyThreadState, last_profiled_frame), \
         .thread_id = offsetof(PyThreadState, thread_id), \
         .native_thread_id = offsetof(PyThreadState, native_thread_id), \
         .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \
         .status = offsetof(PyThreadState, _status), \
         .holds_gil = offsetof(PyThreadState, holds_gil), \
         .gil_requested = offsetof(PyThreadState, gil_requested), \
+        .current_exception = offsetof(PyThreadState, current_exception), \
+        .exc_state = offsetof(PyThreadState, exc_state), \
+    }, \
+    .err_stackitem = { \
+        .exc_value = offsetof(_PyErr_StackItem, exc_value), \
     }, \
     .interpreter_frame = { \
         .size = sizeof(_PyInterpreterFrame), \

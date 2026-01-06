@@ -24,11 +24,11 @@ typedef struct _PyExecutorLinkListNode {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint8_t valid:1;
-    uint8_t linked:1;
-    uint8_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
+    uint8_t valid;
+    uint8_t chain_depth;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
     bool warm;
-    int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
+    uint8_t pending_deletion;
+    int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
@@ -36,7 +36,8 @@ typedef struct {
 
 typedef struct _PyExitData {
     uint32_t target;
-    uint16_t index:14;
+    uint16_t index:12;
+    uint16_t stack_cache:2;
     uint16_t is_dynamic:1;
     uint16_t is_control_flow:1;
     _Py_BackoffCounter temperature;
@@ -53,11 +54,6 @@ typedef struct _PyExecutorObject {
     void *jit_code;
     _PyExitData exits[1];
 } _PyExecutorObject;
-
-/* If pending deletion list gets large enough, then scan,
- * and free any executors that aren't executing
- * i.e. any that aren't a thread's current_executor. */
-#define EXECUTOR_DELETE_LIST_MAX 100
 
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
@@ -79,7 +75,6 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)
-#  define _Py_Executors_InvalidateCold(A) ((void)0)
 
 #endif
 
@@ -343,17 +338,6 @@ extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
 extern _PyExecutorObject *_PyExecutor_GetColdDynamicExecutor(void);
 
 PyAPI_FUNC(void) _PyExecutor_ClearExit(_PyExitData *exit);
-
-static inline int is_terminator(const _PyUOpInstruction *uop)
-{
-    int opcode = uop->opcode;
-    return (
-        opcode == _EXIT_TRACE ||
-        opcode == _DEOPT ||
-        opcode == _JUMP_TO_TOP ||
-        opcode == _DYNAMIC_EXIT
-    );
-}
 
 extern void _PyExecutor_Free(_PyExecutorObject *self);
 

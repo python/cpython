@@ -1346,6 +1346,18 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertNotHasAttr(x, "a")
         self.assertEqual(list(x), [1, 2, 3])
 
+    def test_slots_after_items(self):
+        class C(tuple):
+            __slots__ = ['a']
+        x = C((1, 2, 3))
+        self.assertNotHasAttr(x, "__dict__")
+        self.assertNotHasAttr(x, "a")
+        x.a = 42
+        self.assertEqual(x.a, 42)
+        del x.a
+        self.assertNotHasAttr(x, "a")
+        self.assertEqual(x, (1, 2, 3))
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -1440,6 +1452,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertIs(weakref.ref(a)(), a)
         self.assertEqual(a, base(arg))
 
+    @support.subTests('base', [int, bytes])
+    def test_unsupported_slots(self, base):
         with self.assertRaises(TypeError):
             class X(base):
                 __slots__ = ['x']

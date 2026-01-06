@@ -472,7 +472,7 @@ remote server into a single request [#]_.
 
    Create an object used to boxcar method calls. *server* is the eventual target of
    the call. Calls can be made to the result object, but they will immediately
-   return ``None``, and only store the call name and parameters in the
+   return ``None``, and only store the call name and arguments in the
    :class:`MultiCall` object. Calling the object itself causes all stored calls to
    be transmitted as a single ``system.multicall`` request. The result of this call
    is a :term:`generator`; iterating over this generator yields the individual
