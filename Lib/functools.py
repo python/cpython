@@ -915,7 +915,7 @@ def _get_dispatch_annotation(func, param):
         try:
             return ref_or_typeform.evaluate(owner=func)
         except Exception:
-            pass
+            pass  # Forward reference is unresolved.
     return ref_or_typeform
 
 
