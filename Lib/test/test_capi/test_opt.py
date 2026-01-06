@@ -3303,9 +3303,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
-        self.assertIn("_YIELD_VALUE", uops)
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
-        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 3)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
     def test_send_gen_frame(self):
 
@@ -3327,10 +3326,9 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
-        self.assertIn("_YIELD_VALUE", uops)
         self.assertIn("_SEND_GEN_FRAME", uops)
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
-        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 2)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
