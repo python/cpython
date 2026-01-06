@@ -1087,9 +1087,22 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
+            JitOptRef v;
             JitOptRef gen_frame;
-            gen_frame = PyJitRef_NULL;
-            ctx->done = true;
+            v = stack_pointer[-1];
+            assert((this_instr + 1)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 1));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+            if (new_frame == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame->stack[0] = PyJitRef_StripReferenceInfo(v);
+            gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
             stack_pointer[-1] = gen_frame;
             break;
         }
@@ -2273,8 +2286,19 @@
 
         case _FOR_ITER_GEN_FRAME: {
             JitOptRef gen_frame;
-            gen_frame = PyJitRef_NULL;
-            ctx->done = true;
+            assert((this_instr + 1)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 1));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+            if (new_frame == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame->stack[0] = sym_new_const(ctx, Py_None);
+            gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = gen_frame;
             stack_pointer += 1;
@@ -2622,8 +2646,7 @@
                 PyFunctionObject *func = (PyFunctionObject *)operand;
                 ctx->frame->func = func;
             }
-            if ((this_instr-1)->opcode == _SAVE_RETURN_OFFSET ||
-                (this_instr-1)->opcode == _CREATE_INIT_FRAME) {
+            if ((this_instr-1)->opcode == _CREATE_INIT_FRAME) {
                 assert((this_instr+1)->opcode == _GUARD_IP__PUSH_FRAME);
                 REPLACE_OP(this_instr+1, _NOP, 0, 0);
             }
@@ -3093,6 +3116,40 @@
         }
 
         /* _DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+
+        case _CHECK_IS_PY_CALLABLE_EX: {
+            break;
+        }
+
+        case _PY_FRAME_EX: {
+            JitOptRef ex_frame;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            ex_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer[-4] = ex_frame;
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _CHECK_IS_NOT_PY_CALLABLE_EX: {
+            break;
+        }
+
+        case _CALL_FUNCTION_EX_NON_PY_GENERAL: {
+            JitOptRef result;
+            result = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-3);
+            stack_pointer[-4] = result;
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
 
         case _MAKE_FUNCTION: {
             JitOptRef func;
