@@ -558,15 +558,17 @@ dummy_func(
         macro(TO_BOOL_STR) =
             _GUARD_TOS_UNICODE + unused/1 + unused/2 + _TO_BOOL_STR + _POP_TOP_UNICODE;
 
-        op(_REPLACE_WITH_TRUE, (value -- res)) {
-            PyStackRef_CLOSE(value);
+        op(_REPLACE_WITH_TRUE, (value -- res, v)) {
             res = PyStackRef_True;
+            v = value;
+            DEAD(value);
         }
 
         macro(TO_BOOL_ALWAYS_TRUE) =
             unused/1 +
             _GUARD_TYPE_VERSION +
-            _REPLACE_WITH_TRUE;
+            _REPLACE_WITH_TRUE +
+            POP_TOP;
 
         inst(UNARY_INVERT, (value -- res)) {
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));

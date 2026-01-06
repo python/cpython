@@ -2952,6 +2952,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_to_bool_always_true(self):
+        def testfunc(n):
+            class A:
+                pass
+
+            a = A()
+            for _ in range(n):
+                if not a:
+                    return 0
+            return 1
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_REPLACE_WITH_TRUE", uops)
+        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.

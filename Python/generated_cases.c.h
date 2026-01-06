@@ -11335,6 +11335,7 @@
             _PyStackRef owner;
             _PyStackRef value;
             _PyStackRef res;
+            _PyStackRef v;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -11351,16 +11352,17 @@
             // _REPLACE_WITH_TRUE
             {
                 value = owner;
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(value);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = PyStackRef_True;
+                v = value;
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            // _POP_TOP
+            {
+                value = v;
+                stack_pointer[-1] = res;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 
