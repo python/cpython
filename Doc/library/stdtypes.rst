@@ -1907,7 +1907,18 @@ expression support in the :mod:`re` module).
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
-   not found.
+   not found. For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.index('eggs')
+      Traceback (most recent call last):
+        File "<python-input-0>", line 1, in <module>
+          'spam, spam, spam'.index('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`rindex`.
 
 
 .. method:: str.isalnum()
