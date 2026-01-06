@@ -17,6 +17,8 @@ try:
 except ModuleNotFoundError:
     has_c_implementation = False
 
+support.requires('xpickle')
+
 is_windows = sys.platform.startswith('win')
 
 # Map python version to a tuple containing the name of a corresponding valid
