@@ -2762,6 +2762,8 @@ class AbstractPickleTests:
         self._test_recursive_tuple_and_dict_key(REX_seven, asdict=lambda x: x.table)
 
     def test_recursive_set(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
         # Set containing an immutable object containing the original set.
         y = set()
         y.add(K(y))
@@ -2840,7 +2842,7 @@ class AbstractPickleTests:
             for proto in protocols:
                 with self.subTest(proto=proto):
                     if self.py_version < (3, 4) and proto < oldminproto:
-                        self.skipTest('not supported in Python < 3.4')
+                        self.skipTest(f'requires protocol {oldminproto} in Python < 3.4')
                     s = self.dumps(o, proto)
                     x = self.loads(s)
                     self.assertIsInstance(x, t)
@@ -3588,10 +3590,14 @@ class AbstractPickleTests:
                 self.assert_is_copy(x, y)
 
     def test_complex_newobj_ex(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
         x = ComplexNewObjEx.__new__(ComplexNewObjEx, 0xface)  # avoid __init__
         x.abc = 666
-        for proto in protocols if self.py_version >= (3, 6) else protocols[4:]:
+        for proto in protocols:
             with self.subTest(proto=proto):
+                if self.py_version < (3, 6) and proto < 4:
+                    self.skipTest('requires protocol 4 in Python < 3.6')
                 s = self.dumps(x, proto)
                 if proto < 1:
                     if self.py_version >= (3, 7):
@@ -3749,7 +3755,7 @@ class AbstractPickleTests:
                     self._check_pickling_with_opcode(obj, pickle.APPEND, proto)
                 else:
                     if self.py_version < (3, 0):
-                        self.skipTest('not supported in Python < 3.0')
+                        self.skipTest('not supported in Python 2')
                     self._check_pickling_with_opcode(obj, pickle.APPENDS, proto)
 
     def test_setitems_on_non_dicts(self):
@@ -3815,6 +3821,8 @@ class AbstractPickleTests:
     @support.skip_if_pgo_task
     @support.requires_resource('cpu')
     def test_framing_many_objects(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -3830,6 +3838,8 @@ class AbstractPickleTests:
                 self.check_frame_opcodes(pickled)
 
     def test_framing_large_objects(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
         N = 1024 * 1024
         small_items = [[i] for i in range(10)]
         obj = [b'x' * N, *small_items, b'y' * N, 'z' * N]
@@ -3863,8 +3873,8 @@ class AbstractPickleTests:
                         self.check_frame_opcodes(pickled)
 
     def test_optional_frames(self):
-        if pickle.HIGHEST_PROTOCOL < 4:
-            return
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
 
         def remove_frames(pickled, keep_frame=None):
             """Remove frame opcodes from the given pickle."""
@@ -3906,6 +3916,9 @@ class AbstractPickleTests:
 
     @support.skip_if_pgo_task
     def test_framed_write_sizes_with_delayed_writer(self):
+        if self.py_version < (3, 4):
+            self.skipTest('not supported in Python < 3.4')
+
         class ChunkAccumulator:
             """Accumulate pickler output in a list of raw chunks."""
             def __init__(self):
