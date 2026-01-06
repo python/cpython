@@ -279,6 +279,8 @@ _UNSPECIFIED = ['not specified']
 _MISSING_AS_NONE_DEFAULT = False
 
 class _ResultBase:
+    __slots__ = ()
+
     def __replace__(self, /, **kwargs):
         result = super().__replace__(**kwargs)
         try:
@@ -303,6 +305,8 @@ class _ResultBase:
 
 
 class _DefragResultBase(_ResultBase, namedtuple('_DefragResultBase', 'url fragment')):
+    __slots__ = ('_keep_empty',)
+
     def geturl(self):
         if self.fragment or (self.fragment is not None and
                              getattr(self, '_keep_empty', _MISSING_AS_NONE_DEFAULT)):
@@ -312,11 +316,15 @@ class _DefragResultBase(_ResultBase, namedtuple('_DefragResultBase', 'url fragme
 
 class _SplitResultBase(_ResultBase, namedtuple(
     '_SplitResultBase', 'scheme netloc path query fragment')):
+    __slots__ = ('_keep_empty',)
+
     def geturl(self):
         return urlunsplit(self)
 
 class _ParseResultBase(_ResultBase, namedtuple(
     '_ParseResultBase', 'scheme netloc path params query fragment')):
+    __slots__ = ('_keep_empty',)
+
     def geturl(self):
         return urlunparse(self)
 
