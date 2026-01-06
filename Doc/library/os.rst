@@ -1980,7 +1980,7 @@ created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
 execution of a new program, other file descriptors are inherited. Note that
-non-inheritable file descriptors are still *inherited* by child process on :func:`os.fork`.
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
