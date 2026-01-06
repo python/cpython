@@ -1466,8 +1466,8 @@ class TestMain(ReplTestCase):
             safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
 
         # rmam / smam - automatic margins
-        rmam = ti.get("rmam")
-        smam = ti.get("smam")
+        rmam = curses.tigetstr("rmam")
+        smam = curses.tigetstr("smam")
         if rmam:
             safe_patterns.append(re.escape(rmam.decode("ascii")))
         if smam:
