@@ -1941,6 +1941,23 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         with self.assertRaises(BufferError):
             ba.rsplit(evil)
 
+    def test_extend_empty_buffer_overflow(self):
+        # gh-143003
+        class EvilIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return next(source)
+            def __length_hint__(self):
+                return 0
+
+        # Use ASCII digits so float() takes the fast path that expects a NUL terminator.
+        source = iter(b'42')
+        ba = bytearray()
+        ba.extend(EvilIter())
+
+        self.assertRaises(ValueError, float, bytearray())
+
     def test_hex_use_after_free(self):
         # Prevent UAF in bytearray.hex(sep) with re-entrant sep.__len__.
         # Regression test for https://github.com/python/cpython/issues/143195.
