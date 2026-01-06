@@ -184,6 +184,26 @@ class PrivateMethods:
     def get_method(self):
         return self.__private_method
 
+    @classmethod
+    def get_unbound_method(cls):
+        return cls.__private_method
+
+    @classmethod
+    def __private_classmethod(cls):
+        return 43
+
+    @classmethod
+    def get_classmethod(cls):
+        return cls.__private_classmethod
+
+    @staticmethod
+    def __private_staticmethod():
+        return 44
+
+    @classmethod
+    def get_staticmethod(cls):
+        return cls.__private_staticmethod
+
 class myint(int):
     def __init__(self, x):
         self.str = str(x)
@@ -4088,6 +4108,12 @@ class AbstractPickleTests:
             with self.subTest(proto=proto):
                 unpickled = self.loads(self.dumps(obj.get_method(), proto))
                 self.assertEqual(unpickled(), 42)
+                unpickled = self.loads(self.dumps(obj.get_unbound_method(), proto))
+                self.assertEqual(unpickled(obj), 42)
+                unpickled = self.loads(self.dumps(obj.get_classmethod(), proto))
+                self.assertEqual(unpickled(), 43)
+                unpickled = self.loads(self.dumps(obj.get_staticmethod(), proto))
+                self.assertEqual(unpickled(), 44)
 
     def test_compat_pickle(self):
         tests = [
