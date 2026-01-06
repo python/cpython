@@ -1329,7 +1329,6 @@ class UrlParseTestCase(unittest.TestCase):
             check(func(burl, missing_as_none=True))
 
     def test_result_pickling(self):
-        import pickletools
         def check(result):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 pickled = pickle.dumps(result, proto)
