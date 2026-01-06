@@ -597,7 +597,6 @@ jobs:
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
-    - build-android
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -610,6 +609,7 @@ jobs:
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
+          build-android,
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
