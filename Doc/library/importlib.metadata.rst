@@ -454,7 +454,7 @@ The same applies for :func:`entry_points` and :func:`files`.
       Return a :class:`!Distribution` instance at the given path or
       with the given name.
 
-   .. classmethod:: discover(*, context: Context | None, **kwargs)
+   .. classmethod:: discover(*, context=None, **kwargs)
 
       Returns an iterable of :class:`Distribution` instances for all packages
       (see distribution-discovery_).
