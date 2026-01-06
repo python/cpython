@@ -1909,6 +1909,44 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(my_list_append, "CALL_LIST_APPEND")
         self.assert_no_opcode(my_list_append, "CALL")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_load_attr_module_with_getattr(self):
+        module = types.ModuleType("test_module_with_getattr")
+        module.__dict__["some_attr"] = "foo"
+
+        def module_getattr(name):
+            if name == "missing_attr":
+                return 42
+            raise AttributeError(f"module has no attribute {name}")
+
+        module.__dict__["__getattr__"] = module_getattr
+
+        import sys
+        sys.modules.pop("test_module_with_getattr", None)
+        sys.modules["test_module_with_getattr"] = module
+        try:
+            def load_module_attr_present():
+                import test_module_with_getattr
+                return test_module_with_getattr.some_attr
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(load_module_attr_present(), "foo")
+
+            self.assert_specialized(load_module_attr_present, "LOAD_ATTR_MODULE")
+            self.assert_no_opcode(load_module_attr_present, "LOAD_ATTR")
+
+            def load_module_attr_missing():
+                import test_module_with_getattr
+                return test_module_with_getattr.missing_attr
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(load_module_attr_missing(), 42)
+
+            self.assert_no_opcode(load_module_attr_missing, "LOAD_ATTR_MODULE")
+        finally:
+            sys.modules.pop("test_module_with_getattr", None)
+
 
 if __name__ == "__main__":
     unittest.main()
