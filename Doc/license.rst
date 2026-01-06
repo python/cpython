@@ -1204,7 +1204,7 @@ The d3.js library contains the following notice::
 Pixi packages
 -------------
 
-The Pixi package definitions found in :file:`Tools/pixi-packages` are derivative
+The Pixi package definitions found in :file:`Tools/pixi-packages` are derived
 from https://github.com/conda-forge/python-feedstock which contains the following
 license::
 
