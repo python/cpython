@@ -56,8 +56,8 @@ Note that holding an :term:`attached thread state` is not required for these API
    Open the ``/tmp/perf-$pid.map`` file and append the content of *parent_filename*
    to it.
 
-   :param parent_filename: The name of the file to copy.
-   :return: 0 on success, -1 on failure.
+   This function is only available on platforms that support perf maps (currently
+   Linux). Return ``0`` on success, ``-1`` on failure.
 
    .. versionadded:: 3.13
 
