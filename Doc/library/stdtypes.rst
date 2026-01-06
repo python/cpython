@@ -1846,10 +1846,10 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
-      >>> 'straße'.lower() == 'strasse'
-      False
-      >>> 'straße'.casefold() == 'strasse'
-      True
+      >>> 'straße'.lower()
+      'straße'
+      >>> 'straße'.casefold()
+      'strasse'
 
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
