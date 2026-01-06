@@ -3,16 +3,3 @@
 # the free-threaded build.
 #
 # reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
-
-## Free-threaded suppressions
-
-
-# These entries are for warnings that trigger in a library function, as called
-# by a CPython function.
-
-# These warnings trigger directly in a CPython function.
-
-race_top:_PyObject_TryGetInstanceAttribute
-
-# https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
-thread:pthread_create
