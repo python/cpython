@@ -250,3 +250,39 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
+.. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
+
+   Index for the "skip" kind in :c:var:`PyUnstable_ExecutableKinds`.
+   Indicates that the frame's code object should be skipped.
+
+   .. versionadded:: 3.12
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
+
+   Index for the "Python function" kind in :c:var:`PyUnstable_ExecutableKinds`.
+
+   .. versionadded:: 3.12
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
+
+   Index for the "built-in function" kind in :c:var:`PyUnstable_ExecutableKinds`.
+
+   .. versionadded:: 3.12
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
+
+   Index for the "method descriptor" kind in :c:var:`PyUnstable_ExecutableKinds`.
+
+   .. versionadded:: 3.12
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KINDS
+
+   The number of entries in :c:var:`PyUnstable_ExecutableKinds`.
+
+   .. versionadded:: 3.12
+
+
