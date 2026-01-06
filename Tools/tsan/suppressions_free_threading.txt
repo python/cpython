@@ -16,7 +16,3 @@ race_top:_PyObject_TryGetInstanceAttribute
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
-
-# PyObject_Realloc internally does memcpy which isn't atomic so can race
-# with non-locking reads. See #132070
-race:PyObject_Realloc
