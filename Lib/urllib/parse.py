@@ -303,6 +303,17 @@ class _ResultBase:
     def __deepcopy__(self, memo):
         return self
 
+    def __getstate__(self):
+        state = super().__getstate__()
+        try:
+            if state[1]['_keep_empty'] == _MISSING_AS_NONE_DEFAULT:
+                del state[1]['_keep_empty']
+                if state == (None, {}):
+                    state = None
+        except LookupError:
+            pass
+        return state
+
 
 class _DefragResultBase(_ResultBase, namedtuple('_DefragResultBase', 'url fragment')):
     __slots__ = ('_keep_empty',)

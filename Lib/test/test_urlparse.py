@@ -1,4 +1,5 @@
 import copy
+import pickle
 import sys
 import unicodedata
 import unittest
@@ -1306,14 +1307,35 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_result_copying(self):
         def check(result):
-            self.assertEqual(copy.copy(result), result)
-            self.assertEqual(copy.copy(result).geturl(), result.geturl())
-            self.assertEqual(copy.deepcopy(result), result)
-            self.assertEqual(copy.deepcopy(result).geturl(), result.geturl())
-            self.assertEqual(copy.replace(result), result)
-            self.assertEqual(copy.replace(result).geturl(), result.geturl())
-            self.assertEqual(result._replace(), result)
-            self.assertEqual(result._replace().geturl(), result.geturl())
+            result2 = copy.copy(result)
+            self.assertEqual(result2, result)
+            self.assertEqual(result2.geturl(), result.geturl())
+            result2 = copy.deepcopy(result)
+            self.assertEqual(result2, result)
+            self.assertEqual(result2.geturl(), result.geturl())
+            result2 = copy.replace(result)
+            self.assertEqual(result2, result)
+            self.assertEqual(result2.geturl(), result.geturl())
+            result2 = result._replace()
+            self.assertEqual(result2, result)
+            self.assertEqual(result2.geturl(), result.geturl())
+
+        url = 'http://example.com/?#'
+        burl = url.encode()
+        for func in urldefrag, urlsplit, urlparse:
+            check(func(url))
+            check(func(url, missing_as_none=True))
+            check(func(burl))
+            check(func(burl, missing_as_none=True))
+
+    def test_result_pickling(self):
+        import pickletools
+        def check(result):
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                pickled = pickle.dumps(result, proto)
+                result2 = pickle.loads(pickled)
+                self.assertEqual(result2, result)
+                self.assertEqual(result2.geturl(), result.geturl())
 
         url = 'http://example.com/?#'
         burl = url.encode()
