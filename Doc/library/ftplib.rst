@@ -550,11 +550,18 @@ FTP_TLS objects
 
    .. method:: FTP_TLS.prot_p()
 
-      Set up secure data connection.
+      Set up secure data connection (with TLS).
 
    .. method:: FTP_TLS.prot_c()
 
-      Set up clear text data connection.
+      Set up clear text data connection (without TLS).
+
+      .. warning::
+
+         Calling this method may create a vulnerability to
+         `man-in-the-middle attack <https://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_.
+         Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+         before requesting clear text data connection without TLS.
 
 
 Module variables
