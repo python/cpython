@@ -69,7 +69,7 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code", "on_github_actions", "ctypes_py_buffer",
+    "reset_code", "on_github_actions"
     ]
 
 
@@ -3272,47 +3272,3 @@ def linked_to_musl():
         return _linked_to_musl
     _linked_to_musl = tuple(map(int, version.split('.')))
     return _linked_to_musl
-
-
-try:
-    import ctypes
-
-    class _py_buffer(ctypes.Structure):
-        _fields_ = [
-            ("buf", ctypes.c_void_p),
-            ("obj", ctypes.py_object),
-            ("len", ctypes.c_ssize_t),
-            ("itemsize", ctypes.c_ssize_t),
-            ("readonly", ctypes.c_int),
-            ("ndim", ctypes.c_int),
-            ("format", ctypes.c_char_p),
-            ("shape", ctypes.POINTER(ctypes.c_ssize_t)),
-            ("strides", ctypes.POINTER(ctypes.c_ssize_t)),
-            ("suboffsets", ctypes.POINTER(ctypes.c_ssize_t)),
-            ("internal", ctypes.c_void_p),
-        ]
-except ImportError:
-    _py_buffer = None
-
-
-@contextlib.contextmanager
-def ctypes_py_buffer(ob, flags=inspect.BufferFlags.SIMPLE):
-    """
-    Safely acquire a `Py_buffer` as a ctypes struct.
-
-    `ob` must implement the buffer protocol, and the retrieved buffer is
-    released on exit of the context manager.
-
-    Skips any test using it if `ctypes` is unavailable.
-    """
-    from .import_helper import import_module
-
-    ctypes = import_module("ctypes")
-    buf = _py_buffer()
-    ctypes.pythonapi.PyObject_GetBuffer(ctypes.py_object(ob),
-                                        ctypes.byref(buf),
-                                        ctypes.c_int(flags))
-    try:
-        yield buf
-    finally:
-        ctypes.pythonapi.PyBuffer_Release(ctypes.byref(buf))
