@@ -652,6 +652,9 @@ fail:
     PyUnicodeWriter_Discard(writer);
 }
 
+// Set the appropriate SSL error exception.
+// err - error information from SSL and libc
+// exc - if not NULL, an exception from _debughelpers.c callback to be chained
 static PyObject *
 PySSL_SetError(PySSLSocket *sslsock, _PySSLError err, PyObject *exc,
                const char *filename, int lineno)
@@ -762,9 +765,7 @@ PySSL_SetError(PySSLSocket *sslsock, _PySSLError err, PyObject *exc,
     }
     fill_and_set_sslerror(state, sslsock, type, p, errstr, lineno, e);
     ERR_clear_error();
-    if (exc != NULL) {
-        _PyErr_ChainExceptions1(exc);
-    }
+    _PyErr_ChainExceptions1(exc);  // chain any exceptions from callbacks
     return NULL;
 }
 
@@ -3131,8 +3132,8 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
         return NULL;
     }
     else if (exc != NULL) {
-        PyErr_SetRaisedException(exc);
         Py_XDECREF(sock);
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
     if (sock)
