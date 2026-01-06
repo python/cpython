@@ -2052,6 +2052,15 @@ expression support in the :mod:`re` module).
    Nonprintable characters are those in group Separator or Other (Z or C),
    except the ASCII space.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isprintable(), ' '.isprintable()
+      (True, True)
+      >>> '\t'.isprintable(), '\n'.isprintable()
+      (False, False)
+
 
 .. method:: str.isspace()
 
