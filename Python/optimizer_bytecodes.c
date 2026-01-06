@@ -91,7 +91,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
-    value = PyJitRef_Borrow(GETLOCAL(oparg));
+        value = PyJitRef_Borrow(GETLOCAL(oparg));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
