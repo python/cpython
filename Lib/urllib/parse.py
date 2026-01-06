@@ -326,14 +326,14 @@ class _DefragResultBase(_ResultBase, namedtuple('_DefragResultBase', 'url fragme
             return self.url
 
 class _SplitResultBase(_ResultBase, namedtuple(
-    '_SplitResultBase', 'scheme netloc path query fragment')):
+        '_SplitResultBase', 'scheme netloc path query fragment')):
     __slots__ = ('_keep_empty',)
 
     def geturl(self):
         return urlunsplit(self)
 
 class _ParseResultBase(_ResultBase, namedtuple(
-    '_ParseResultBase', 'scheme netloc path params query fragment')):
+        '_ParseResultBase', 'scheme netloc path params query fragment')):
     __slots__ = ('_keep_empty',)
 
     def geturl(self):
