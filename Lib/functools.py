@@ -888,7 +888,6 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-
 def _get_dispatch_param_name(func, *, skip_first=False):
     if not hasattr(func, '__code__'):
         skip_first = not isinstance(func, staticmethod)
@@ -897,7 +896,6 @@ def _get_dispatch_param_name(func, *, skip_first=False):
     pos_param_count = func_code.co_argcount
     params = func_code.co_varnames
     return next(iter(params[skip_first:pos_param_count]), None)
-
 
 def _get_dispatch_annotation(func, param):
     import annotationlib
@@ -919,11 +917,9 @@ def _get_dispatch_annotation(func, param):
             pass  # Forward reference is unresolved.
     return ref_or_typeform
 
-
 def _get_dispatch_param_and_annotation(func, *, skip_first=False):
     param = _get_dispatch_param_name(func, skip_first=skip_first)
     return param, _get_dispatch_annotation(func, param)
-
 
 def singledispatch(func):
     """Single-dispatch generic function decorator.
