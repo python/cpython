@@ -273,6 +273,86 @@ _PyTime_AsCLong(PyTime_t t, long *t2)
     *t2 = (long)t;
     return 0;
 }
+
+// 369 years + 89 leap days
+#define SECS_BETWEEN_EPOCHS 11644473600LL /* Seconds between 1601-01-01 and 1970-01-01 */
+#define HUNDRED_NS_PER_SEC 10000000LL
+
+// Convert time_t to struct tm using Windows FILETIME API.
+// If is_local is true, convert to local time. */
+// Fallback for negative timestamps that localtime_s/gmtime_s cannot handle.
+// Return 0 on success. Return -1 on error.
+static int
+_PyTime_windows_filetime(time_t timer, struct tm *tm, int is_local)
+{
+    /* Check for underflow - FILETIME epoch is 1601-01-01 */
+    if (timer < -SECS_BETWEEN_EPOCHS) {
+        PyErr_SetString(PyExc_OverflowError, "timestamp out of range for Windows FILETIME");
+        return -1;
+    }
+
+    /* Convert time_t to FILETIME (100-nanosecond intervals since 1601-01-01) */
+    ULONGLONG ticks = ((ULONGLONG)timer + SECS_BETWEEN_EPOCHS) * HUNDRED_NS_PER_SEC;
+    FILETIME ft;
+    ft.dwLowDateTime = (DWORD)(ticks); // cast to DWORD truncates to low 32 bits
+    ft.dwHighDateTime = (DWORD)(ticks >> 32);
+
+    /* Convert FILETIME to SYSTEMTIME */
+    SYSTEMTIME st_result;
+    if (is_local) {
+        /* Convert to local time */
+        FILETIME ft_local;
+        if (!FileTimeToLocalFileTime(&ft, &ft_local) ||
+            !FileTimeToSystemTime(&ft_local, &st_result)) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+    }
+    else {
+        /* Convert to UTC */
+        if (!FileTimeToSystemTime(&ft, &st_result)) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+    }
+
+    /* Convert SYSTEMTIME to struct tm */
+    tm->tm_year = st_result.wYear - 1900;
+    tm->tm_mon = st_result.wMonth - 1; /* SYSTEMTIME: 1-12, tm: 0-11 */
+    tm->tm_mday = st_result.wDay;
+    tm->tm_hour = st_result.wHour;
+    tm->tm_min = st_result.wMinute;
+    tm->tm_sec = st_result.wSecond;
+    tm->tm_wday = st_result.wDayOfWeek; /* 0=Sunday */
+
+    /* Calculate day of year using Windows FILETIME difference */
+    // SYSTEMTIME st_jan1 = {st_result.wYear, 1, 0, 1, 0, 0, 0, 0};
+    // FILETIME ft_jan1, ft_date;
+    // if (!SystemTimeToFileTime(&st_jan1, &ft_jan1) ||
+    //     !SystemTimeToFileTime(&st_result, &ft_date)) {
+    //     PyErr_SetFromWindowsErr(0);
+    //     return -1;
+    // }
+    // ULARGE_INTEGER jan1, date;
+    // jan1.LowPart = ft_jan1.dwLowDateTime;
+    // jan1.HighPart = ft_jan1.dwHighDateTime;
+    // date.LowPart = ft_date.dwLowDateTime;
+    // date.HighPart = ft_date.dwHighDateTime;
+    // /* Convert 100-nanosecond intervals to days */
+    // LONGLONG days_diff = (date.QuadPart - jan1.QuadPart) / (24LL * 60 * 60 * HUNDRED_NS_PER_SEC);
+
+    // tm->tm_yday = (int)days_diff;
+
+    // datetime doesn't rely on tm_yday, so set invalid value and skip calculation
+    // time.gmtime / time.localtime will return struct_time with out of range tm_yday
+    // time.mktime doesn't support pre-epoch struct_time on windows anyway
+    tm->tm_yday = -1;
+
+    /* DST flag: -1 (unknown) for local time on historical dates, 0 for UTC */
+    tm->tm_isdst = is_local ? -1 : 0;
+
+    return 0;
+}
 #endif
 
 
@@ -882,10 +962,8 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     GetSystemTimePreciseAsFileTime(&system_time);
     large.u.LowPart = system_time.dwLowDateTime;
     large.u.HighPart = system_time.dwHighDateTime;
-    /* 11,644,473,600,000,000,000: number of nanoseconds between
-       the 1st january 1601 and the 1st january 1970 (369 years + 89 leap
-       days). */
-    PyTime_t ns = (large.QuadPart - 116444736000000000) * 100;
+
+    PyTime_t ns = (large.QuadPart - SECS_BETWEEN_EPOCHS * HUNDRED_NS_PER_SEC) * 100;
     *tp = ns;
     if (info) {
         // GetSystemTimePreciseAsFileTime() is implemented using
@@ -1242,15 +1320,19 @@ int
 _PyTime_localtime(time_t t, struct tm *tm)
 {
 #ifdef MS_WINDOWS
-    int error;
-
-    error = localtime_s(tm, &t);
-    if (error != 0) {
-        errno = error;
-        PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
+    if (t >= 0) {
+        /* For non-negative timestamps, use standard conversion */
+        int error = localtime_s(tm, &t);
+        if (error != 0) {
+            errno = error;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        return 0;
     }
-    return 0;
+
+    /* For negative timestamps, use FILETIME-based conversion */
+    return _PyTime_windows_filetime(t, tm, 1);
 #else /* !MS_WINDOWS */
 
 #if defined(_AIX) && (SIZEOF_TIME_T < 8)
@@ -1281,15 +1363,19 @@ int
 _PyTime_gmtime(time_t t, struct tm *tm)
 {
 #ifdef MS_WINDOWS
-    int error;
-
-    error = gmtime_s(tm, &t);
-    if (error != 0) {
-        errno = error;
-        PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
+    /* For non-negative timestamps, use standard conversion */
+    if (t >= 0) {
+        int error = gmtime_s(tm, &t);
+        if (error != 0) {
+            errno = error;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        return 0;
     }
-    return 0;
+
+    /* For negative timestamps, use FILETIME-based conversion */
+    return _PyTime_windows_filetime(t, tm, 0);
 #else /* !MS_WINDOWS */
     if (gmtime_r(&t, tm) == NULL) {
 #ifdef EINVAL
