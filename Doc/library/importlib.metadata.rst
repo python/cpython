@@ -465,9 +465,7 @@ The same applies for :func:`entry_points` and :func:`files`.
       :class:`!DistributionFinder.Context`.
 
    .. attribute:: metadata
-   .. attribute:: name
-   .. attribute:: requires
-   .. attribute:: version
+      :type: PackageMetadata
 
       There are all kinds of additional metadata available on :class:`!Distribution`
       instances as a :class:`PackageMetadata` instance::
@@ -479,6 +477,19 @@ The same applies for :func:`entry_points` and :func:`files`.
 
       The full set of available metadata is not described here.
       See the PyPA `Core metadata specification <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
+
+   .. attribute:: name
+      :type: str
+   .. attribute:: requires
+      :type: list[str]
+   .. attribute:: version
+      :type: str
+
+      A few metadata fields are also available as shortcut properties.
+
+      .. versionadded:: 3.10
+
+         The ``name`` shortcut was added.
 
    .. attribute:: origin
 
@@ -494,12 +505,14 @@ The same applies for :func:`entry_points` and :func:`files`.
       .. versionadded:: 3.13
 
    .. attribute:: entry_points
+      :type: EntryPoints
 
-      The :class:`!EntryPoints` provided by this distribution package.
+      The entry points provided by this distribution package.
 
    .. attribute:: files
+      :type: list[PackagePath] | None
 
-      A sequence of :class:`!PackagePath`\s contained in this distribution package.
+      All files contained in this distribution package.
       Like :func:`files`, this returns :const:`None` if there are no records.
 
    The following two abstract methods need to be implemented when implementing-custom-providers_:
