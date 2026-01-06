@@ -888,6 +888,31 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
+
+def _get_dispatch_param_name(func, *, skip_first=False):
+    func_code = func.__code__
+    pos_param_count = func_code.co_argcount
+    params = func_code.co_varnames
+    return next(iter(params[skip_first:pos_param_count]), None)
+
+
+def _get_dispatch_annotation(func, param):
+    import annotationlib
+    annotations = annotationlib.get_annotations(func, format=annotationlib.Format.FORWARDREF)
+    try:
+        return annotations[param]
+    except KeyError:
+        raise TypeError(
+            f"Invalid first argument to `register()`: {param!r}. "
+            f"Add missing annotation to parameter {param!r} of {func.__qualname__!r} or use `@register(some_class)`."
+        ) from None
+
+
+def _get_dispatch_param_and_annotation(func, *, skip_first=False):
+    param = _get_dispatch_param_name(func, skip_first=skip_first)
+    return param, _get_dispatch_annotation(func, param)
+
+
 def singledispatch(func):
     """Single-dispatch generic function decorator.
 
@@ -935,7 +960,7 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
-    def register(cls, func=None):
+    def register(cls, func=None, _func_is_method=False):
         """generic_func.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_func*.
@@ -960,10 +985,11 @@ def singledispatch(func):
                 )
             func = cls
 
-            # only import typing if annotation parsing is necessary
-            from typing import get_type_hints
-            from annotationlib import Format, ForwardRef
-            argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
+            argname, cls = _get_dispatch_param_and_annotation(
+                func, skip_first=_func_is_method)
+
+            from annotationlib import ForwardRef
+
             if not _is_valid_dispatch_type(cls):
                 if isinstance(cls, UnionType):
                     raise TypeError(
@@ -1027,7 +1053,7 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        return self.dispatcher.register(cls, func=method)
+        return self.dispatcher.register(cls, func=method, _func_is_method=True)
 
     def __get__(self, obj, cls=None):
         return _singledispatchmethod_get(self, obj, cls)
