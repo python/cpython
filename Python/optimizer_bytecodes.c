@@ -1171,9 +1171,10 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_REPLACE_WITH_TRUE, (value -- res)) {
-        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+    op(_REPLACE_WITH_TRUE, (value -- res, v)) {
+        REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
         res = sym_new_const(ctx, Py_True);
+        v = value;
     }
 
     op(_BUILD_TUPLE, (values[oparg] -- tup)) {
