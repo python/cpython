@@ -890,6 +890,9 @@ def _find_impl(cls, registry):
 
 
 def _get_dispatch_param_name(func, *, skip_first=False):
+    if not hasattr(func, '__code__'):
+        skip_first = not isinstance(func, staticmethod)
+        func = func.__func__
     func_code = func.__code__
     pos_param_count = func_code.co_argcount
     params = func_code.co_varnames
@@ -900,12 +903,20 @@ def _get_dispatch_annotation(func, param):
     import annotationlib
     annotations = annotationlib.get_annotations(func, format=annotationlib.Format.FORWARDREF)
     try:
-        return annotations[param]
+        ref_or_type = annotations[param]
     except KeyError:
         raise TypeError(
             f"Invalid first argument to `register()`: {param!r}. "
             f"Add missing annotation to parameter {param!r} of {func.__qualname__!r} or use `@register(some_class)`."
         ) from None
+    if isinstance(ref_or_type, str):
+        ref_or_type = annotationlib.ForwardRef(ref_or_type, owner=func)
+    if isinstance(ref_or_type, annotationlib.ForwardRef):
+        try:
+            return ref_or_type.evaluate(owner=func)
+        except Exception:
+            pass
+    return ref_or_type
 
 
 def _get_dispatch_param_and_annotation(func, *, skip_first=False):
