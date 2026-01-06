@@ -49,3 +49,34 @@ Note that holding an :term:`attached thread state` is not required for these API
    This is called by the runtime itself during interpreter shut-down. In
    general, there shouldn't be a reason to explicitly call this, except to
    handle specific scenarios such as forking.
+
+
+.. c:function:: int PyUnstable_CopyPerfMapFile(const char *parent_filename)
+
+   Open the ``/tmp/perf-$pid.map`` file and append the content of *parent_filename*
+   to it.
+
+   :param parent_filename: The name of the file to copy.
+   :return: 0 on success, -1 on failure.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *code)
+
+   Compile the given code object using the current perf trampoline.
+
+   :param code: The code object to compile.
+   :return: 0 on success, -1 on failure.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable)
+
+   Set whether the perf trampoline should persist after a fork.
+
+   :param enable: 1 to enable, 0 to disable.
+   :return: 0 on success, -1 on failure.
+
+   .. versionadded:: 3.13
