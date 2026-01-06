@@ -424,7 +424,7 @@ Distributions
 
       The optional argument *context* is a :class:`DistributionFinder.Context`
       instance, used to modify the search for distributions. Alternatively,
-      *kwargs* may contian keyword arguments for constructing a new
+      *kwargs* may contain keyword arguments for constructing a new
       :class:`!DistributionFinder.Context`.
 
 
