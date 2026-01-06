@@ -174,13 +174,15 @@ class K:
         # Shouldn't support the recursion itself
         return K, (self.value,)
 
-class L:
-    def __init__(self):
-        self.attr = self.__foo
+class PrivateMethods:
+    def __init__(self, value):
+        self.value = value
 
-    def __foo(self):
-        return 42
+    def __private_method(self):
+        return self.value
 
+    def get_method(self):
+        return self.__private_method
 
 class myint(int):
     def __init__(self, x):
@@ -3663,13 +3665,6 @@ class AbstractPickleTests:
                 loaded = self.loads(dumped)
                 self.assert_is_copy(obj, loaded)
 
-    def test_mangled_private_methods_roundtrip(self):
-        obj = L()
-        for proto in protocols:
-            with self.subTest(proto=proto):
-                loaded = self.loads(self.dumps(obj, proto))
-                self.assertEqual(loaded.attr(), 42)
-
     def test_attribute_name_interning(self):
         # Test that attribute names of pickled objects are interned when
         # unpickling.
@@ -4086,6 +4081,13 @@ class AbstractPickleTests:
             for descr in descriptors:
                 with self.subTest(proto=proto, descr=descr):
                     self.assertRaises(TypeError, self.dumps, descr, proto)
+
+    def test_private_methods(self):
+        obj = PrivateMethods(42)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj.get_method(), proto))
+                self.assertEqual(unpickled(), 42)
 
     def test_compat_pickle(self):
         tests = [
