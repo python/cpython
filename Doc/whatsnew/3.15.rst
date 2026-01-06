@@ -903,7 +903,11 @@ Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
 `3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`__
 geometric mean performance improvement for the JIT over the standard CPython
-interpreter built with all optimizations enabled. The speedups for JIT
+interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
+macOS, the JIT has a
+`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260103-3.15.0a3%2B-9609574-JIT/bm-20260103-macm4pro-arm64-python-9609574e7fd36edfaa8b-3.15.0a3%2B-9609574-vs-base.svg>`__
+speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
+with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 20% slowdown to over
 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
 x86-64 Linux and AArch64 macOS systems.
@@ -1182,6 +1186,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
