@@ -126,7 +126,7 @@ Entry points
    the individual entry point definitions.
 
    Note: to query for entry points based on :attr:`!EntryPoint.dist` attribute,
-   use :meth:`!Distribution.entry_points` instead (as different :class:`!Distribution`
+   use :meth:`Distribution.entry_points` instead (as different :class:`Distribution`
    instances do not currently compare equal, even if they have the same attributes)
 
 .. class:: EntryPoints
@@ -413,7 +413,7 @@ Distributions
 =============
 
 While the module level API described above is the most common and convenient usage,
-you can get all of that information from the :class:`!Distribution` class.
+you can get all of that information from the :class:`Distribution` class.
 :class:`!Distribution` is an abstract object that represents the metadata for
 a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.
 You can get the concrete :class:`!Distribution` subclass instance for an installed
@@ -433,7 +433,7 @@ distribution package by calling the :func:`distribution` function::
    package is not installed in the current Python environment.
 
 Thus, an alternative way to get e.g. the version number is through the
-:attr:`!Distribution.version` attribute::
+:attr:`Distribution.version` attribute::
 
     >>> dist.version  # doctest: +SKIP
     '0.32.3'
@@ -456,7 +456,7 @@ The same applies for :func:`entry_points` and :func:`files`.
 
    .. classmethod:: discover(*, context=None, **kwargs)
 
-      Returns an iterable of :class:`Distribution` instances for all packages
+      Returns an iterable of :class:`!Distribution` instances for all packages
       (see distribution-discovery_).
 
       The optional argument *context* is a :class:`DistributionFinder.Context`
