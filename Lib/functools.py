@@ -888,14 +888,14 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_dispatch_param_name(func, *, skip_first=False):
+def _get_dispatch_param_name(func, *, skip_first_param=False):
     if not hasattr(func, '__code__'):
-        skip_first = not isinstance(func, staticmethod)
+        skip_first_param = not isinstance(func, staticmethod)
         func = func.__func__
     func_code = func.__code__
     pos_param_count = func_code.co_argcount
     params = func_code.co_varnames
-    return next(iter(params[skip_first:pos_param_count]), None)
+    return next(iter(params[skip_first_param:pos_param_count]), None)
 
 def _get_dispatch_annotation(func, param):
     import annotationlib
@@ -922,8 +922,8 @@ def _get_dispatch_annotation(func, param):
         fwdref_or_typeform = typing._strip_annotations(fwdref_or_typeform)
     return fwdref_or_typeform
 
-def _get_dispatch_param_and_annotation(func, *, skip_first=False):
-    param = _get_dispatch_param_name(func, skip_first=skip_first)
+def _get_dispatch_param_and_annotation(func, *, skip_first_param=False):
+    param = _get_dispatch_param_name(func, skip_first_param=skip_first_param)
     return param, _get_dispatch_annotation(func, param)
 
 def singledispatch(func):
@@ -999,7 +999,7 @@ def singledispatch(func):
             func = cls
 
             argname, cls = _get_dispatch_param_and_annotation(
-                func, skip_first=_func_is_method)
+                func, skip_first_param=_func_is_method)
 
             from annotationlib import ForwardRef
 
