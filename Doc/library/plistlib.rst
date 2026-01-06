@@ -1,5 +1,5 @@
-:mod:`plistlib` --- Generate and parse Apple ``.plist`` files
-=============================================================
+:mod:`!plistlib` --- Generate and parse Apple ``.plist`` files
+==============================================================
 
 .. module:: plistlib
    :synopsis: Generate and parse Apple plist files.
@@ -27,7 +27,7 @@ top level object is a dictionary.
 To write out and to parse a plist file, use the :func:`dump` and
 :func:`load` functions.
 
-To work with plist data in bytes objects, use :func:`dumps`
+To work with plist data in bytes or string objects, use :func:`dumps`
 and :func:`loads`.
 
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
@@ -71,15 +71,14 @@ This module defines the following functions:
 
    When *aware_datetime* is true, fields with type ``datetime.datetime`` will
    be created as :ref:`aware object <datetime-naive-aware>`, with
-   :attr:`!tzinfo` as :attr:`datetime.UTC`.
+   :attr:`!tzinfo` as :const:`datetime.UTC`.
 
    XML data for the :data:`FMT_XML` format is parsed using the Expat parser
    from :mod:`xml.parsers.expat` -- see its documentation for possible
    exceptions on ill-formed XML.  Unknown elements will simply be ignored
    by the plist parser.
 
-   The parser for the binary format raises :exc:`InvalidFileException`
-   when the file cannot be parsed.
+   The parser raises :exc:`InvalidFileException` when the file cannot be parsed.
 
    .. versionadded:: 3.4
 
@@ -89,15 +88,17 @@ This module defines the following functions:
 
 .. function:: loads(data, *, fmt=None, dict_type=dict, aware_datetime=False)
 
-   Load a plist from a bytes object. See :func:`load` for an explanation of
-   the keyword arguments.
+   Load a plist from a bytes or string object. See :func:`load` for an
+   explanation of the keyword arguments.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      *data* can be a string when *fmt* equals :data:`FMT_XML`.
 
 .. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
-   Write *value* to a plist file. *Fp* should be a writable, binary
+   Write *value* to a plist file. *fp* should be a writable, binary
    file object.
 
    The *fmt* argument specifies the format of the plist file and can be
@@ -115,7 +116,7 @@ This module defines the following functions:
    when a key of a dictionary is not a string, otherwise such keys are skipped.
 
    When *aware_datetime* is true and any field with type ``datetime.datetime``
-   is set as a :ref:`aware object <datetime-naive-aware>`, it will convert to
+   is set as an :ref:`aware object <datetime-naive-aware>`, it will convert to
    UTC timezone before writing it.
 
    A :exc:`TypeError` will be raised if the object is of an unsupported type or
@@ -146,8 +147,9 @@ The following classes are available:
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
    encoded data, which contains UID (see PList manual).
 
-   It has one attribute, :attr:`data`, which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
+   .. attribute:: data
+
+      Int value of the UID.  It must be in the range ``0 <= data < 2**64``.
 
    .. versionadded:: 3.8
 
@@ -164,6 +166,15 @@ The following constants are available:
 .. data:: FMT_BINARY
 
    The binary format for plist files
+
+   .. versionadded:: 3.4
+
+
+The module defines the following exceptions:
+
+.. exception:: InvalidFileException
+
+   Raised when a file cannot be parsed.
 
    .. versionadded:: 3.4
 

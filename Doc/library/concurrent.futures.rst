@@ -1,13 +1,14 @@
-:mod:`concurrent.futures` --- Launching parallel tasks
-======================================================
+:mod:`!concurrent.futures` --- Launching parallel tasks
+=======================================================
 
 .. module:: concurrent.futures
    :synopsis: Execute computations concurrently using threads or processes.
 
 .. versionadded:: 3.2
 
-**Source code:** :source:`Lib/concurrent/futures/thread.py`
-and :source:`Lib/concurrent/futures/process.py`
+**Source code:** :source:`Lib/concurrent/futures/thread.py`,
+:source:`Lib/concurrent/futures/process.py`,
+and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
@@ -15,9 +16,10 @@ The :mod:`concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
 The asynchronous execution can be performed with threads, using
-:class:`ThreadPoolExecutor`, or separate processes, using
-:class:`ProcessPoolExecutor`.  Both implement the same interface, which is
-defined by the abstract :class:`Executor` class.
+:class:`ThreadPoolExecutor` or :class:`InterpreterPoolExecutor`,
+or separate processes, using :class:`ProcessPoolExecutor`.
+Each implements the same interface, which is defined
+by the abstract :class:`Executor` class.
 
 .. include:: ../includes/wasm-notavail.rst
 
@@ -39,14 +41,17 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
-   .. method:: map(func, *iterables, timeout=None, chunksize=1)
+   .. method:: map(fn, *iterables, timeout=None, chunksize=1, buffersize=None)
 
-      Similar to :func:`map(func, *iterables) <map>` except:
+      Similar to :func:`map(fn, *iterables) <map>` except:
 
-      * the *iterables* are collected immediately rather than lazily;
+      * The *iterables* are collected immediately rather than lazily, unless a
+        *buffersize* is specified to limit the number of submitted tasks whose
+        results have not yet been yielded. If the buffer is full, iteration over
+        the *iterables* pauses until a result is yielded from the buffer.
 
-      * *func* is executed asynchronously and several calls to
-        *func* may be made concurrently.
+      * *fn* is executed asynchronously and several calls to
+        *fn* may be made concurrently.
 
       The returned iterator raises a :exc:`TimeoutError`
       if :meth:`~iterator.__next__` is called and the result isn't available
@@ -54,7 +59,7 @@ Executor Objects
       *timeout* can be an int or a float.  If *timeout* is not specified or
       ``None``, there is no limit to the wait time.
 
-      If a *func* call raises an exception, then that exception will be
+      If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
 
       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
@@ -63,10 +68,14 @@ Executor Objects
       setting *chunksize* to a positive integer.  For very long iterables,
       using a large value for *chunksize* can significantly improve
       performance compared to the default size of 1.  With
-      :class:`ThreadPoolExecutor`, *chunksize* has no effect.
+      :class:`ThreadPoolExecutor` and :class:`InterpreterPoolExecutor`,
+      *chunksize* has no effect.
 
       .. versionchanged:: 3.5
-         Added the *chunksize* argument.
+         Added the *chunksize* parameter.
+
+      .. versionchanged:: 3.14
+         Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
@@ -92,10 +101,10 @@ Executor Objects
       executor has started running will be completed prior to this method
       returning. The remaining futures are cancelled.
 
-      You can avoid having to call this method explicitly if you use the
-      :keyword:`with` statement, which will shutdown the :class:`Executor`
-      (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
-      ``True``)::
+      You can avoid having to call this method explicitly if you use the executor
+      as a :term:`context manager` via the  :keyword:`with` statement, which
+      will shutdown the :class:`Executor` (waiting as if :meth:`Executor.shutdown`
+      were called with *wait* set to ``True``)::
 
          import shutil
          with ThreadPoolExecutor(max_workers=4) as e:
@@ -171,8 +180,8 @@ And::
       should be higher than the number of workers
       for :class:`ProcessPoolExecutor`.
 
-   .. versionadded:: 3.6
-      The *thread_name_prefix* argument was added to allow users to
+   .. versionchanged:: 3.6
+      Added the *thread_name_prefix* parameter to allow users to
       control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
@@ -206,7 +215,7 @@ ThreadPoolExecutor Example
            'http://www.cnn.com/',
            'http://europe.wsj.com/',
            'http://www.bbc.co.uk/',
-           'http://nonexistant-subdomain.python.org/']
+           'http://nonexistent-subdomain.python.org/']
 
    # Retrieve a single page and report the URL and contents
    def load_url(url, timeout):
@@ -227,6 +236,98 @@ ThreadPoolExecutor Example
                print('%r page is %d bytes' % (url, len(data)))
 
 
+InterpreterPoolExecutor
+-----------------------
+
+.. versionadded:: 3.14
+
+The :class:`InterpreterPoolExecutor` class uses a pool of interpreters
+to execute calls asynchronously.  It is a :class:`ThreadPoolExecutor`
+subclass, which means each worker is running in its own thread.
+The difference here is that each worker has its own interpreter,
+and runs each task using that interpreter.
+
+The biggest benefit to using interpreters instead of only threads
+is true multi-core parallelism.  Each interpreter has its own
+:term:`Global Interpreter Lock <global interpreter lock>`, so code
+running in one interpreter can run on one CPU core, while code in
+another interpreter runs unblocked on a different core.
+
+The tradeoff is that writing concurrent code for use with multiple
+interpreters can take extra effort.  However, this is because it
+forces you to be deliberate about how and when interpreters interact,
+and to be explicit about what data is shared between interpreters.
+This results in several benefits that help balance the extra effort,
+including true multi-core parallelism,  For example, code written
+this way can make it easier to reason about concurrency.  Another
+major benefit is that you don't have to deal with several of the
+big pain points of using threads, like race conditions.
+
+Each worker's interpreter is isolated from all the other interpreters.
+"Isolated" means each interpreter has its own runtime state and
+operates completely independently.  For example, if you redirect
+:data:`sys.stdout` in one interpreter, it will not be automatically
+redirected to any other interpreter.  If you import a module in one
+interpreter, it is not automatically imported in any other.  You
+would need to import the module separately in interpreter where
+you need it.  In fact, each module imported in an interpreter is
+a completely separate object from the same module in a different
+interpreter, including :mod:`sys`, :mod:`builtins`,
+and even ``__main__``.
+
+Isolation means a mutable object, or other data, cannot be used
+by more than one interpreter at the same time.  That effectively means
+interpreters cannot actually share such objects or data.  Instead,
+each interpreter must have its own copy, and you will have to
+synchronize any changes between the copies manually.  Immutable
+objects and data, like the builtin singletons, strings, and tuples
+of immutable objects, don't have these limitations.
+
+Communicating and synchronizing between interpreters is most effectively
+done using dedicated tools, like those proposed in :pep:`734`.  One less
+efficient alternative is to serialize with :mod:`pickle` and then send
+the bytes over a shared :mod:`socket <socket>` or
+:func:`pipe <os.pipe>`.
+
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+
+   A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
+   using a pool of at most *max_workers* threads.  Each thread runs
+   tasks in its own interpreter.  The worker interpreters are isolated
+   from each other, which means each has its own runtime state and that
+   they can't share any mutable objects or other data.  Each interpreter
+   has its own :term:`Global Interpreter Lock <global interpreter lock>`,
+   which means code run with this executor has true multi-core parallelism.
+
+   The optional *initializer* and *initargs* arguments have the same
+   meaning as for :class:`!ThreadPoolExecutor`: the initializer is run
+   when each worker is created, though in this case it is run in
+   the worker's interpreter.  The executor serializes the *initializer*
+   and *initargs* using :mod:`pickle` when sending them to the worker's
+   interpreter.
+
+   .. note::
+      The executor may replace uncaught exceptions from *initializer*
+      with :class:`~concurrent.interpreters.ExecutionFailed`.
+
+   Other caveats from parent :class:`ThreadPoolExecutor` apply here.
+
+:meth:`~Executor.submit` and :meth:`~Executor.map` work like normal,
+except the worker serializes the callable and arguments using
+:mod:`pickle` when sending them to its interpreter.  The worker
+likewise serializes the return value when sending it back.
+
+When a worker's current task raises an uncaught exception, the worker
+always tries to preserve the exception as-is.  If that is successful
+then it also sets the ``__cause__`` to a corresponding
+:class:`~concurrent.interpreters.ExecutionFailed`
+instance, which contains a summary of the original exception.
+In the uncommon case that the worker is not able to preserve the
+original as-is then it directly preserves the corresponding
+:class:`~concurrent.interpreters.ExecutionFailed`
+instance instead.
+
+
 ProcessPoolExecutor
 -------------------
 
@@ -242,6 +343,11 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
+
+Note that the restrictions on functions and arguments needing to picklable as
+per :class:`multiprocessing.Process` apply when using :meth:`~Executor.submit`
+and :meth:`~Executor.map` on a :class:`ProcessPoolExecutor`. A function defined
+in a REPL or a lambda should not be expected to work.
 
 .. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
 
@@ -273,9 +379,15 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    default in absence of a *mp_context* parameter. This feature is incompatible
    with the "fork" start method.
 
+   .. note::
+      Bugs have been reported when using the *max_tasks_per_child* feature that
+      can result in the :class:`ProcessPoolExecutor` hanging in some
+      circumstances. Follow its eventual resolution in :gh:`115634`.
+
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
-      :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
+      :exc:`~concurrent.futures.process.BrokenProcessPool` error is now raised.
+      Previously, behaviour
       was undefined but operations on the executor or its futures would often
       freeze or deadlock.
 
@@ -284,14 +396,6 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       start_method for worker processes created by the pool.
 
       Added the *initializer* and *initargs* arguments.
-
-      .. note::
-         The default :mod:`multiprocessing` start method
-         (see :ref:`multiprocessing-start-methods`) will change away from
-         *fork* in Python 3.14.  Code that requires *fork* be used for their
-         :class:`ProcessPoolExecutor` should explicitly specify that by
-         passing a ``mp_context=multiprocessing.get_context("fork")``
-         parameter.
 
    .. versionchanged:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
@@ -308,6 +412,36 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    .. versionchanged:: 3.13
       *max_workers* uses :func:`os.process_cpu_count` by default, instead of
       :func:`os.cpu_count`.
+
+   .. versionchanged:: 3.14
+      The default process start method (see
+      :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
+      require the *fork* start method for :class:`ProcessPoolExecutor` you must
+      explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. method:: terminate_workers()
+
+      Attempt to terminate all living worker processes immediately by calling
+      :meth:`Process.terminate <multiprocessing.Process.terminate>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: 3.14
+
+   .. method:: kill_workers()
+
+      Attempt to kill all living worker processes immediately by calling
+      :meth:`Process.kill <multiprocessing.Process.kill>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: 3.14
 
 .. _processpoolexecutor-example:
 
@@ -493,23 +627,22 @@ Module Functions
    *return_when* indicates when this function should return.  It must be one of
    the following constants:
 
-   .. tabularcolumns:: |l|L|
+   .. list-table::
+      :header-rows: 1
 
-   +-----------------------------+----------------------------------------+
-   | Constant                    | Description                            |
-   +=============================+========================================+
-   | :const:`FIRST_COMPLETED`    | The function will return when any      |
-   |                             | future finishes or is cancelled.       |
-   +-----------------------------+----------------------------------------+
-   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
-   |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
-   |                             | exception then it is equivalent to     |
-   |                             | :const:`ALL_COMPLETED`.                |
-   +-----------------------------+----------------------------------------+
-   | :const:`ALL_COMPLETED`      | The function will return when all      |
-   |                             | futures finish or are cancelled.       |
-   +-----------------------------+----------------------------------------+
+      * - Constant
+        - Description
+
+      * - .. data:: FIRST_COMPLETED
+        - The function will return when any future finishes or is cancelled.
+
+      * - .. data:: FIRST_EXCEPTION
+        - The function will return when any future finishes by raising an
+          exception. If no future raises an exception
+          then it is equivalent to :const:`ALL_COMPLETED`.
+
+      * - .. data:: ALL_COMPLETED
+        - The function will return when all futures finish or are cancelled.
 
 .. function:: as_completed(fs, timeout=None)
 
@@ -570,10 +703,22 @@ Exception classes
 .. exception:: BrokenThreadPool
 
    Derived from :exc:`~concurrent.futures.BrokenExecutor`, this exception
-   class is raised when one of the workers of a :class:`ThreadPoolExecutor`
+   class is raised when one of the workers
+   of a :class:`~concurrent.futures.ThreadPoolExecutor`
    has failed initializing.
 
    .. versionadded:: 3.7
+
+.. currentmodule:: concurrent.futures.interpreter
+
+.. exception:: BrokenInterpreterPool
+
+   Derived from :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   this exception class is raised when one of the workers
+   of a :class:`~concurrent.futures.InterpreterPoolExecutor`
+   has failed initializing.
+
+   .. versionadded:: 3.14
 
 .. currentmodule:: concurrent.futures.process
 
@@ -581,7 +726,8 @@ Exception classes
 
    Derived from :exc:`~concurrent.futures.BrokenExecutor` (formerly
    :exc:`RuntimeError`), this exception class is raised when one of the
-   workers of a :class:`ProcessPoolExecutor` has terminated in a non-clean
+   workers of a :class:`~concurrent.futures.ProcessPoolExecutor`
+   has terminated in a non-clean
    fashion (for example, if it was killed from the outside).
 
    .. versionadded:: 3.3

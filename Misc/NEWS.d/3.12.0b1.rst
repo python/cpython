@@ -37,7 +37,7 @@ or lacks SHA3.
 
 :func:`urllib.parse.urlsplit` now strips leading C0 control and space
 characters following the specification for URLs defined by WHATWG in
-response to CVE-2023-24329. Patch by Illia Volochii.
+response to :cve:`2023-24329`. Patch by Illia Volochii.
 
 ..
 
@@ -395,7 +395,7 @@ Fix bug in line numbers of instructions emitted for :keyword:`except*
 .. section: Core and Builtins
 
 Clarify :exc:`SyntaxWarning` with literal ``is`` comparison by specifying
-which literal is problematic, since comparisons using ``is`` with e.g. None
+which literal is problematic, since comparisons using ``is`` with e.g. ``None``
 and bool literals are idiomatic.
 
 ..
@@ -563,10 +563,10 @@ Complex function calls are now faster and consume no C stack space.
 .. nonce: fvgsCl
 .. section: Core and Builtins
 
-``len()`` for 0-dimensional :class:`memoryview`` objects (such as
+``len()`` for 0-dimensional :class:`memoryview` objects (such as
 ``memoryview(ctypes.c_uint8(42))``) now raises a :exc:`TypeError`.
 Previously this returned ``1``, which was not consistent with ``mem_0d[0]``
-raising an :exc:`IndexError``.
+raising an :exc:`IndexError`.
 
 ..
 
@@ -1008,7 +1008,7 @@ Update the bundled copy of pip to version 23.1.2.
 .. nonce: pst8iT
 .. section: Library
 
-Make :mod:`dis` display the value of oparg of :opcode:`KW_NAMES`.
+Make :mod:`dis` display the value of oparg of :opcode:`!KW_NAMES`.
 
 ..
 
@@ -1257,7 +1257,7 @@ defined by any build system or documented for manual use.
 .. nonce: n_AfcS
 .. section: Library
 
-Update :mod:`cProfile` to use PEP 669 API
+Update :mod:`!cProfile` to use PEP 669 API
 
 ..
 
@@ -1446,7 +1446,7 @@ Adapt the :mod:`winsound` extension module to :pep:`687`.
 .. nonce: jurMzv
 .. section: Library
 
-Remove deprecation of enum ``memmber.member`` access.
+Remove deprecation of enum ``member.member`` access.
 
 ..
 
@@ -1750,7 +1750,7 @@ Remove the long-deprecated ``imp`` module.
 .. nonce: N46coo
 .. section: Library
 
-Deprecate :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader` in
+Deprecate :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader` in
 favor of :func:`importlib.util.find_spec`.
 
 ..
@@ -1828,7 +1828,7 @@ is relative.
 .. nonce: 511Tbh
 .. section: Library
 
-Convert private :meth:`_posixsubprocess.fork_exec` to use Argument Clinic.
+Convert private :meth:`!_posixsubprocess.fork_exec` to use Argument Clinic.
 
 ..
 
@@ -2371,7 +2371,7 @@ Add a new C-API function to eagerly assign a version tag to a PyTypeObject:
 .. nonce: _paFIF
 .. section: C API
 
-:c:func:`PyObject_GC_Resize` should calculate preheader size if needed.
+:c:macro:`PyObject_GC_Resize` should calculate preheader size if needed.
 Patch by Donghee Na.
 
 ..

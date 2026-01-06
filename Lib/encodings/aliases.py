@@ -17,7 +17,7 @@
 """
 aliases = {
 
-    # Please keep this list sorted alphabetically by value !
+    # Please keep this list sorted alphabetically by value!
 
     # ascii codec
     '646'                : 'ascii',
@@ -204,11 +204,17 @@ aliases = {
     'csibm869'           : 'cp869',
     'ibm869'             : 'cp869',
 
+    # cp874 codec
+    '874'                : 'cp874',
+    'ms874'              : 'cp874',
+    'windows_874'        : 'cp874',
+
     # cp932 codec
     '932'                : 'cp932',
     'ms932'              : 'cp932',
     'mskanji'            : 'cp932',
     'ms_kanji'           : 'cp932',
+    'windows_31j'        : 'cp932',
 
     # cp949 codec
     '949'                : 'cp949',
@@ -240,6 +246,7 @@ aliases = {
     'ks_c_5601_1987'     : 'euc_kr',
     'ksx1001'            : 'euc_kr',
     'ks_x_1001'          : 'euc_kr',
+    'cseuckr'            : 'euc_kr',
 
     # gb18030 codec
     'gb18030_2000'       : 'gb18030',
@@ -311,6 +318,7 @@ aliases = {
     'iso_ir_157'         : 'iso8859_10',
     'l6'                 : 'iso8859_10',
     'latin6'             : 'iso8859_10',
+    'latin_6'            : 'iso8859_10',
 
     # iso8859_11 codec
     'thai'               : 'iso8859_11',
@@ -321,6 +329,7 @@ aliases = {
     'iso_8859_13'        : 'iso8859_13',
     'l7'                 : 'iso8859_13',
     'latin7'             : 'iso8859_13',
+    'latin_7'            : 'iso8859_13',
 
     # iso8859_14 codec
     'iso_8859_14'        : 'iso8859_14',
@@ -329,11 +338,13 @@ aliases = {
     'iso_ir_199'         : 'iso8859_14',
     'l8'                 : 'iso8859_14',
     'latin8'             : 'iso8859_14',
+    'latin_8'            : 'iso8859_14',
 
     # iso8859_15 codec
     'iso_8859_15'        : 'iso8859_15',
     'l9'                 : 'iso8859_15',
     'latin9'             : 'iso8859_15',
+    'latin_9'            : 'iso8859_15',
 
     # iso8859_16 codec
     'iso_8859_16'        : 'iso8859_16',
@@ -341,6 +352,7 @@ aliases = {
     'iso_ir_226'         : 'iso8859_16',
     'l10'                : 'iso8859_16',
     'latin10'            : 'iso8859_16',
+    'latin_10'           : 'iso8859_16',
 
     # iso8859_2 codec
     'csisolatin2'        : 'iso8859_2',
@@ -349,6 +361,7 @@ aliases = {
     'iso_ir_101'         : 'iso8859_2',
     'l2'                 : 'iso8859_2',
     'latin2'             : 'iso8859_2',
+    'latin_2'            : 'iso8859_2',
 
     # iso8859_3 codec
     'csisolatin3'        : 'iso8859_3',
@@ -357,6 +370,7 @@ aliases = {
     'iso_ir_109'         : 'iso8859_3',
     'l3'                 : 'iso8859_3',
     'latin3'             : 'iso8859_3',
+    'latin_3'            : 'iso8859_3',
 
     # iso8859_4 codec
     'csisolatin4'        : 'iso8859_4',
@@ -365,6 +379,7 @@ aliases = {
     'iso_ir_110'         : 'iso8859_4',
     'l4'                 : 'iso8859_4',
     'latin4'             : 'iso8859_4',
+    'latin_4'            : 'iso8859_4',
 
     # iso8859_5 codec
     'csisolatincyrillic' : 'iso8859_5',
@@ -398,6 +413,8 @@ aliases = {
     'iso_8859_8'         : 'iso8859_8',
     'iso_8859_8_1988'    : 'iso8859_8',
     'iso_ir_138'         : 'iso8859_8',
+    'iso_8859_8_i'       : 'iso8859_8',
+    'iso_8859_8_e'       : 'iso8859_8',
 
     # iso8859_9 codec
     'csisolatin5'        : 'iso8859_9',
@@ -406,6 +423,7 @@ aliases = {
     'iso_ir_148'         : 'iso8859_9',
     'l5'                 : 'iso8859_9',
     'latin5'             : 'iso8859_9',
+    'latin_5'            : 'iso8859_9',
 
     # johab codec
     'cp1361'             : 'johab',
@@ -535,6 +553,9 @@ aliases = {
     'utf8_ucs2'          : 'utf_8',
     'utf8_ucs4'          : 'utf_8',
     'cp65001'            : 'utf_8',
+
+    # utf_8_sig codec
+    'utf8_sig'           : 'utf_8_sig',
 
     # uu_codec codec
     'uu'                 : 'uu_codec',

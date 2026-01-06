@@ -1,3 +1,0 @@
-Document that :mod:`dbm.ndbm` can silently corrupt DBM files on updates when
-exceeding undocumented platform limits, and can crash (segmentation fault)
-when reading such a corrupted file. (FB8919203)

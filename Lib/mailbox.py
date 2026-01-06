@@ -750,9 +750,13 @@ class _singlefileMailbox(Mailbox):
         _sync_close(new_file)
         # self._file is about to get replaced, so no need to sync.
         self._file.close()
-        # Make sure the new file's mode is the same as the old file's
-        mode = os.stat(self._path).st_mode
-        os.chmod(new_file.name, mode)
+        # Make sure the new file's mode and owner are the same as the old file's
+        info = os.stat(self._path)
+        os.chmod(new_file.name, info.st_mode)
+        try:
+            os.chown(new_file.name, info.st_uid, info.st_gid)
+        except (AttributeError, OSError):
+            pass
         try:
             os.rename(new_file.name, self._path)
         except FileExistsError:
@@ -830,10 +834,11 @@ class _mboxMMDF(_singlefileMailbox):
         """Return a Message representation or raise a KeyError."""
         start, stop = self._lookup(key)
         self._file.seek(start)
-        from_line = self._file.readline().replace(linesep, b'')
+        from_line = self._file.readline().replace(linesep, b'').decode('ascii')
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(linesep, b'\n'))
-        msg.set_from(from_line[5:].decode('ascii'))
+        msg.set_unixfrom(from_line)
+        msg.set_from(from_line[5:])
         return msg
 
     def get_string(self, key, from_=False):
@@ -1141,10 +1146,24 @@ class MH(Mailbox):
         """Return a count of messages in the mailbox."""
         return len(list(self.iterkeys()))
 
+    def _open_mh_sequences_file(self, text):
+        mode = '' if text else 'b'
+        kwargs = {'encoding': 'ASCII'} if text else {}
+        path = os.path.join(self._path, '.mh_sequences')
+        while True:
+            try:
+                return open(path, 'r+' + mode, **kwargs)
+            except FileNotFoundError:
+                pass
+            try:
+                return open(path, 'x+' + mode, **kwargs)
+            except FileExistsError:
+                pass
+
     def lock(self):
         """Lock the mailbox."""
         if not self._locked:
-            self._file = open(os.path.join(self._path, '.mh_sequences'), 'rb+')
+            self._file = self._open_mh_sequences_file(text=False)
             _lock_file(self._file)
             self._locked = True
 
@@ -1225,8 +1244,9 @@ class MH(Mailbox):
 
     def set_sequences(self, sequences):
         """Set sequences using the given name-to-key-list dictionary."""
-        f = open(os.path.join(self._path, '.mh_sequences'), 'w', encoding='ASCII')
+        f = self._open_mh_sequences_file(text=True)
         try:
+            os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))
             for name, keys in sequences.items():
                 if len(keys) == 0:
                     continue
@@ -2070,8 +2090,6 @@ class _ProxyFile:
             return False
         return self._file.closed
 
-    __class_getitem__ = classmethod(GenericAlias)
-
 
 class _PartialFile(_ProxyFile):
     """A read-only wrapper of part of a file."""
@@ -2163,11 +2181,7 @@ def _unlock_file(f):
 
 def _create_carefully(path):
     """Create a file if it doesn't exist and open for reading and writing."""
-    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR, 0o666)
-    try:
-        return open(path, 'rb+')
-    finally:
-        os.close(fd)
+    return open(path, 'xb+')
 
 def _create_temporary(path):
     """Create a temp file based on path and open for reading and writing."""

@@ -51,7 +51,7 @@ Roughly it has the following features added:
   turtle. So the turtles can more easily be used as a visual feedback
   instrument by the (beginning) programmer.
 
-- Different turtle shapes, gif-images as turtle shapes, user defined
+- Different turtle shapes, image files as turtle shapes, user defined
   and user controllable turtle shapes, among them compound
   (multicolored) shapes. Turtle shapes can be stretched and tilted, which
   makes turtles very versatile geometrical objects.
@@ -106,6 +106,8 @@ import inspect
 import sys
 
 from os.path import isfile, split, join
+from pathlib import Path
+from contextlib import contextmanager
 from copy import deepcopy
 from tkinter import simpledialog
 
@@ -113,23 +115,24 @@ _tg_classes = ['ScrolledCanvas', 'TurtleScreen', 'Screen',
                'RawTurtle', 'Turtle', 'RawPen', 'Pen', 'Shape', 'Vec2D']
 _tg_screen_functions = ['addshape', 'bgcolor', 'bgpic', 'bye',
         'clearscreen', 'colormode', 'delay', 'exitonclick', 'getcanvas',
-        'getshapes', 'listen', 'mainloop', 'mode', 'numinput',
+        'getshapes', 'listen', 'mainloop', 'mode', 'no_animation', 'numinput',
         'onkey', 'onkeypress', 'onkeyrelease', 'onscreenclick', 'ontimer',
-        'register_shape', 'resetscreen', 'screensize', 'setup',
-        'setworldcoordinates', 'textinput', 'title', 'tracer', 'turtles', 'update',
-        'window_height', 'window_width']
+        'register_shape', 'resetscreen', 'screensize', 'save', 'setup',
+        'setworldcoordinates', 'textinput', 'title', 'tracer', 'turtles',
+        'update', 'window_height', 'window_width']
 _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
         'circle', 'clear', 'clearstamp', 'clearstamps', 'clone', 'color',
         'degrees', 'distance', 'dot', 'down', 'end_fill', 'end_poly', 'fd',
-        'fillcolor', 'filling', 'forward', 'get_poly', 'getpen', 'getscreen', 'get_shapepoly',
-        'getturtle', 'goto', 'heading', 'hideturtle', 'home', 'ht', 'isdown',
-        'isvisible', 'left', 'lt', 'onclick', 'ondrag', 'onrelease', 'pd',
-        'pen', 'pencolor', 'pendown', 'pensize', 'penup', 'pos', 'position',
-        'pu', 'radians', 'right', 'reset', 'resizemode', 'rt',
-        'seth', 'setheading', 'setpos', 'setposition',
-        'setundobuffer', 'setx', 'sety', 'shape', 'shapesize', 'shapetransform', 'shearfactor', 'showturtle',
-        'speed', 'st', 'stamp', 'teleport', 'tilt', 'tiltangle', 'towards',
-        'turtlesize', 'undo', 'undobufferentries', 'up', 'width',
+        'fillcolor', 'fill', 'filling', 'forward', 'get_poly', 'getpen',
+        'getscreen', 'get_shapepoly', 'getturtle', 'goto', 'heading',
+        'hideturtle', 'home', 'ht', 'isdown', 'isvisible', 'left', 'lt',
+        'onclick', 'ondrag', 'onrelease', 'pd', 'pen', 'pencolor', 'pendown',
+        'pensize', 'penup', 'poly', 'pos', 'position', 'pu', 'radians', 'right',
+        'reset', 'resizemode', 'rt', 'seth', 'setheading', 'setpos',
+        'setposition', 'setundobuffer', 'setx', 'sety', 'shape', 'shapesize',
+        'shapetransform', 'shearfactor', 'showturtle', 'speed', 'st', 'stamp',
+        'teleport', 'tilt', 'tiltangle', 'towards', 'turtlesize', 'undo',
+        'undobufferentries', 'up', 'width',
         'write', 'xcor', 'ycor']
 _tg_utilities = ['write_docstringdict', 'done']
 
@@ -467,7 +470,7 @@ class TurtleScreenBase(object):
 
     def _image(self, filename):
         """return an image object containing the
-        imagedata from a gif-file named filename.
+        imagedata from an image file named filename.
         """
         return TK.PhotoImage(file=filename, master=self.cv)
 
@@ -562,7 +565,7 @@ class TurtleScreenBase(object):
         """Check if the string color is a legal Tkinter color string.
         """
         try:
-            rgb = self.cv.winfo_rgb(color)
+            self.cv.winfo_rgb(color)
             ok = True
         except TK.TclError:
             ok = False
@@ -871,10 +874,7 @@ class Shape(object):
             if isinstance(data, list):
                 data = tuple(data)
         elif type_ == "image":
-            if isinstance(data, str):
-                if data.lower().endswith(".gif") and isfile(data):
-                    data = TurtleScreen._image(data)
-                # else data assumed to be PhotoImage
+            assert(isinstance(data, TK.PhotoImage))
         elif type_ == "compound":
             data = []
         else:
@@ -1099,14 +1099,18 @@ class TurtleScreen(TurtleScreenBase):
         """Adds a turtle shape to TurtleScreen's shapelist.
 
         Arguments:
-        (1) name is the name of a gif-file and shape is None.
+        (1) name is the name of an image file (PNG, GIF, PGM, and PPM) and shape is None.
             Installs the corresponding image shape.
             !! Image-shapes DO NOT rotate when turning the turtle,
             !! so they do not display the heading of the turtle!
-        (2) name is an arbitrary string and shape is a tuple
+        (2) name is an arbitrary string and shape is the name of an image file (PNG, GIF, PGM, and PPM).
+            Installs the corresponding image shape.
+            !! Image-shapes DO NOT rotate when turning the turtle,
+            !! so they do not display the heading of the turtle!
+        (3) name is an arbitrary string and shape is a tuple
             of pairs of coordinates. Installs the corresponding
             polygon shape
-        (3) name is an arbitrary string and shape is a
+        (4) name is an arbitrary string and shape is a
             (compound) Shape object. Installs the corresponding
             compound shape.
         To use a shape, you have to issue the command shape(shapename).
@@ -1119,12 +1123,9 @@ class TurtleScreen(TurtleScreenBase):
 
         """
         if shape is None:
-            # image
-            if name.lower().endswith(".gif"):
-                shape = Shape("image", self._image(name))
-            else:
-                raise TurtleGraphicsError("Bad arguments for register_shape.\n"
-                                          + "Use  help(register_shape)" )
+            shape = Shape("image", self._image(name))
+        elif isinstance(shape, str):
+            shape = Shape("image", self._image(shape))
         elif isinstance(shape, tuple):
             shape = Shape("polygon", shape)
         ## else shape assumed to be Shape-instance
@@ -1213,16 +1214,32 @@ class TurtleScreen(TurtleScreenBase):
     def bgcolor(self, *args):
         """Set or return backgroundcolor of the TurtleScreen.
 
-        Arguments (if given): a color string or three numbers
-        in the range 0..colormode or a 3-tuple of such numbers.
+        Four input formats are allowed:
+          - bgcolor()
+            Return the current background color as color specification
+            string or as a tuple (see example).  May be used as input
+            to another color/pencolor/fillcolor/bgcolor call.
+          - bgcolor(colorstring)
+            Set the background color to colorstring, which is a Tk color
+            specification string, such as "red", "yellow", or "#33cc8c".
+          - bgcolor((r, g, b))
+            Set the background color to the RGB color represented by
+            the tuple of r, g, and b.  Each of r, g, and b must be in
+            the range 0..colormode, where colormode is either 1.0 or 255
+            (see colormode()).
+          - bgcolor(r, g, b)
+            Set the background color to the RGB color represented by
+            r, g, and b.  Each of r, g, and b must be in the range
+            0..colormode.
 
         Example (for a TurtleScreen instance named screen):
         >>> screen.bgcolor("orange")
         >>> screen.bgcolor()
         'orange'
-        >>> screen.bgcolor(0.5,0,0.5)
+        >>> colormode(255)
+        >>> screen.bgcolor('#800080')
         >>> screen.bgcolor()
-        '#800080'
+        (128.0, 0.0, 128.0)
         """
         if args:
             color = self._colorstr(args)
@@ -1275,6 +1292,26 @@ class TurtleScreen(TurtleScreenBase):
         if delay is None:
             return self._delayvalue
         self._delayvalue = int(delay)
+
+    @contextmanager
+    def no_animation(self):
+        """Temporarily turn off auto-updating the screen.
+
+        This is useful for drawing complex shapes where even the fastest setting
+        is too slow. Once this context manager is exited, the drawing will
+        be displayed.
+
+        Example (for a TurtleScreen instance named screen
+        and a Turtle instance named turtle):
+        >>> with screen.no_animation():
+        ...    turtle.circle(50)
+        """
+        tracer = self.tracer()
+        try:
+            self.tracer(0)
+            yield
+        finally:
+            self.tracer(tracer)
 
     def _incrementudc(self):
         """Increment update counter."""
@@ -1453,7 +1490,7 @@ class TurtleScreen(TurtleScreenBase):
         """Set background image or return name of current backgroundimage.
 
         Optional argument:
-        picname -- a string, name of a gif-file or "nopic".
+        picname -- a string, name of an image file (PNG, GIF, PGM, and PPM) or "nopic".
 
         If picname is a filename, set the corresponding image as background.
         If picname is "nopic", delete backgroundimage, if present.
@@ -1491,6 +1528,39 @@ class TurtleScreen(TurtleScreenBase):
         >>> # e.g. to search for an erroneously escaped turtle ;-)
         """
         return self._resize(canvwidth, canvheight, bg)
+
+    def save(self, filename, *, overwrite=False):
+        """Save the drawing as a PostScript file
+
+        Arguments:
+        filename -- a string, the path of the created file.
+                    Must end with '.ps' or '.eps'.
+
+        Optional arguments:
+        overwrite -- boolean, if true, then existing files will be overwritten
+
+        Example (for a TurtleScreen instance named screen):
+        >>> screen.save('my_drawing.eps')
+        """
+        filename = Path(filename)
+        if not filename.parent.exists():
+            raise FileNotFoundError(
+                f"The directory '{filename.parent}' does not exist."
+                " Cannot save to it."
+            )
+        if not overwrite and filename.exists():
+            raise FileExistsError(
+                f"The file '{filename}' already exists. To overwrite it use"
+                " the 'overwrite=True' argument of the save function."
+            )
+        if (ext := filename.suffix) not in {".ps", ".eps"}:
+            raise ValueError(
+                f"Unknown file extension: '{ext}',"
+                 " must be one of {'.ps', '.eps'}"
+            )
+
+        postscript = self.cv.postscript()
+        filename.write_text(postscript)
 
     onscreenclick = onclick
     resetscreen = reset
@@ -1624,7 +1694,7 @@ class TNavigator(object):
 
         Example (for a Turtle instance named turtle):
         >>> turtle.position()
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.forward(25)
         >>> turtle.position()
         (25.00,0.00)
@@ -1647,10 +1717,10 @@ class TNavigator(object):
 
         Example (for a Turtle instance named turtle):
         >>> turtle.position()
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.backward(30)
         >>> turtle.position()
-        (-30.00, 0.00)
+        (-30.00,0.00)
         """
         self._go(-distance)
 
@@ -1718,7 +1788,7 @@ class TNavigator(object):
         >>> reset()
         >>> turtle.left(60)
         >>> turtle.forward(100)
-        >>> print turtle.xcor()
+        >>> print(turtle.xcor())
         50.0
         """
         return self._position[0]
@@ -1732,7 +1802,7 @@ class TNavigator(object):
         >>> reset()
         >>> turtle.left(60)
         >>> turtle.forward(100)
-        >>> print turtle.ycor()
+        >>> print(turtle.ycor())
         86.6025403784
         """
         return self._position[1]
@@ -1757,7 +1827,7 @@ class TNavigator(object):
         Example (for a Turtle instance named turtle):
         >>> tp = turtle.pos()
         >>> tp
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.setpos(60,30)
         >>> turtle.pos()
         (60.00,30.00)
@@ -1837,7 +1907,7 @@ class TNavigator(object):
 
         Example (for a Turtle instance named turtle):
         >>> turtle.pos()
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.distance(30,40)
         50.0
         >>> pen = Turtle()
@@ -2176,19 +2246,17 @@ class TPen(object):
 
         Arguments:
         Several input formats are allowed.
-        They use 0, 1, 2, or 3 arguments as follows:
-
-        color()
-            Return the current pencolor and the current fillcolor
-            as a pair of color specification strings as are returned
-            by pencolor and fillcolor.
-        color(colorstring), color((r,g,b)), color(r,g,b)
-            inputs as in pencolor, set both, fillcolor and pencolor,
+        They use 0 to 3 arguments as follows:
+          - color()
+            Return the current pencolor and the current fillcolor as
+            a pair of color specification strings or tuples as returned
+            by pencolor() and fillcolor().
+          - color(colorstring), color((r,g,b)), color(r,g,b)
+            Inputs as in pencolor(), set both, fillcolor and pencolor,
             to the given value.
-        color(colorstring1, colorstring2),
-        color((r1,g1,b1), (r2,g2,b2))
-            equivalent to pencolor(colorstring1) and fillcolor(colorstring2)
-            and analogously, if the other input format is used.
+          - color(colorstring1, colorstring2), color((r1,g1,b1), (r2,g2,b2))
+            Equivalent to pencolor(colorstring1) and fillcolor(colorstring2)
+            and analogously if the other input format is used.
 
         If turtleshape is a polygon, outline and interior of that polygon
         is drawn with the newly set colors.
@@ -2199,9 +2267,9 @@ class TPen(object):
         >>> turtle.color()
         ('red', 'green')
         >>> colormode(255)
-        >>> color((40, 80, 120), (160, 200, 240))
+        >>> color(('#285078', '#a0c8f0'))
         >>> color()
-        ('#285078', '#a0c8f0')
+        ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
         """
         if args:
             l = len(args)
@@ -2223,28 +2291,32 @@ class TPen(object):
         Arguments:
         Four input formats are allowed:
           - pencolor()
-            Return the current pencolor as color specification string,
-            possibly in hex-number format (see example).
-            May be used as input to another color/pencolor/fillcolor call.
+            Return the current pencolor as color specification string or
+            as a tuple (see example).  May be used as input to another
+            color/pencolor/fillcolor/bgcolor call.
           - pencolor(colorstring)
-            s is a Tk color specification string, such as "red" or "yellow"
+            Set pencolor to colorstring, which is a Tk color
+            specification string, such as "red", "yellow", or "#33cc8c".
           - pencolor((r, g, b))
-            *a tuple* of r, g, and b, which represent, an RGB color,
-            and each of r, g, and b are in the range 0..colormode,
-            where colormode is either 1.0 or 255
+            Set pencolor to the RGB color represented by the tuple of
+            r, g, and b.  Each of r, g, and b must be in the range
+            0..colormode, where colormode is either 1.0 or 255 (see
+            colormode()).
           - pencolor(r, g, b)
-            r, g, and b represent an RGB color, and each of r, g, and b
-            are in the range 0..colormode
+            Set pencolor to the RGB color represented by r, g, and b.
+            Each of r, g, and b must be in the range 0..colormode.
 
         If turtleshape is a polygon, the outline of that polygon is drawn
         with the newly set pencolor.
 
         Example (for a Turtle instance named turtle):
         >>> turtle.pencolor('brown')
-        >>> tup = (0.2, 0.8, 0.55)
-        >>> turtle.pencolor(tup)
         >>> turtle.pencolor()
-        '#33cc8c'
+        'brown'
+        >>> colormode(255)
+        >>> turtle.pencolor('#32c18f')
+        >>> turtle.pencolor()
+        (50.0, 193.0, 143.0)
         """
         if args:
             color = self._colorstr(args)
@@ -2261,26 +2333,31 @@ class TPen(object):
         Four input formats are allowed:
           - fillcolor()
             Return the current fillcolor as color specification string,
-            possibly in hex-number format (see example).
-            May be used as input to another color/pencolor/fillcolor call.
+            possibly in tuple format (see example).  May be used as
+            input to another color/pencolor/fillcolor/bgcolor call.
           - fillcolor(colorstring)
-            s is a Tk color specification string, such as "red" or "yellow"
+            Set fillcolor to colorstring, which is a Tk color
+            specification string, such as "red", "yellow", or "#33cc8c".
           - fillcolor((r, g, b))
-            *a tuple* of r, g, and b, which represent, an RGB color,
-            and each of r, g, and b are in the range 0..colormode,
-            where colormode is either 1.0 or 255
+            Set fillcolor to the RGB color represented by the tuple of
+            r, g, and b.  Each of r, g, and b must be in the range
+            0..colormode, where colormode is either 1.0 or 255 (see
+            colormode()).
           - fillcolor(r, g, b)
-            r, g, and b represent an RGB color, and each of r, g, and b
-            are in the range 0..colormode
+            Set fillcolor to the RGB color represented by r, g, and b.
+            Each of r, g, and b must be in the range 0..colormode.
 
         If turtleshape is a polygon, the interior of that polygon is drawn
         with the newly set fillcolor.
 
         Example (for a Turtle instance named turtle):
         >>> turtle.fillcolor('violet')
-        >>> col = turtle.pencolor()
-        >>> turtle.fillcolor(col)
-        >>> turtle.fillcolor(0, .5, 0)
+        >>> turtle.fillcolor()
+        'violet'
+        >>> colormode(255)
+        >>> turtle.fillcolor('#ffffff')
+        >>> turtle.fillcolor()
+        (255.0, 255.0, 255.0)
         """
         if args:
             color = self._colorstr(args)
@@ -2335,7 +2412,7 @@ class TPen(object):
 
         Example (for a Turtle instance named turtle):
         >>> turtle.hideturtle()
-        >>> print turtle.isvisible():
+        >>> print(turtle.isvisible())
         False
         """
         return self._shown
@@ -3348,6 +3425,24 @@ class RawTurtle(TPen, TNavigator):
         """
         return isinstance(self._fillpath, list)
 
+    @contextmanager
+    def fill(self):
+        """A context manager for filling a shape.
+
+        Implicitly ensures the code block is wrapped with
+        begin_fill() and end_fill().
+
+        Example (for a Turtle instance named turtle):
+        >>> turtle.color("black", "red")
+        >>> with turtle.fill():
+        ...     turtle.circle(60)
+        """
+        self.begin_fill()
+        try:
+            yield
+        finally:
+            self.end_fill()
+
     def begin_fill(self):
         """Called just before drawing a shape to be filled.
 
@@ -3367,7 +3462,6 @@ class RawTurtle(TPen, TNavigator):
         if self.undobuffer:
             self.undobuffer.push(("beginfill", self._fillitem))
         self._update()
-
 
     def end_fill(self):
         """Fill the shape drawn after the call begin_fill().
@@ -3471,6 +3565,27 @@ class RawTurtle(TPen, TNavigator):
             self.setpos(end, y)
         if self.undobuffer:
             self.undobuffer.cumulate = False
+
+    @contextmanager
+    def poly(self):
+        """A context manager for recording the vertices of a polygon.
+
+        Implicitly ensures that the code block is wrapped with
+        begin_poly() and end_poly()
+
+        Example (for a Turtle instance named turtle) where we create a
+        triangle as the polygon and move the turtle 100 steps forward:
+        >>> with turtle.poly():
+        ...     for side in range(3)
+        ...         turtle.forward(50)
+        ...         turtle.right(60)
+        >>> turtle.forward(100)
+        """
+        self.begin_poly()
+        try:
+            yield
+        finally:
+            self.end_poly()
 
     def begin_poly(self):
         """Start recording the vertices of a polygon.
@@ -3632,7 +3747,7 @@ class RawTurtle(TPen, TNavigator):
         if action == "rot":
             angle, degPAU = data
             self._rotate(-angle*degPAU/self._degreesPerAU)
-            dummy = self.undobuffer.pop()
+            self.undobuffer.pop()
         elif action == "stamp":
             stitem = data[0]
             self.clearstamp(stitem)

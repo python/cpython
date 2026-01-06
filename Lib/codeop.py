@@ -44,9 +44,10 @@ __all__ = ["compile_command", "Compile", "CommandCompiler"]
 # Caveat emptor: These flags are undocumented on purpose and depending
 # on their effect outside the standard library is **unsupported**.
 PyCF_DONT_IMPLY_DEDENT = 0x200
+PyCF_ONLY_AST = 0x400
 PyCF_ALLOW_INCOMPLETE_INPUT = 0x4000
 
-def _maybe_compile(compiler, source, filename, symbol):
+def _maybe_compile(compiler, source, filename, symbol, flags):
     # Check for source consisting of only blank lines and comments.
     for line in source.split("\n"):
         line = line.strip()
@@ -60,26 +61,26 @@ def _maybe_compile(compiler, source, filename, symbol):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", (SyntaxWarning, DeprecationWarning))
         try:
-            compiler(source, filename, symbol)
+            compiler(source, filename, symbol, flags=flags)
         except SyntaxError:  # Let other compile() errors propagate.
             try:
-                compiler(source + "\n", filename, symbol)
+                compiler(source + "\n", filename, symbol, flags=flags)
                 return None
-            except SyntaxError as e:
-                if "incomplete input" in str(e):
-                    return None
+            except _IncompleteInputError:
+                return None
+            except SyntaxError:
+                pass
                 # fallthrough
 
     return compiler(source, filename, symbol, incomplete_input=False)
 
-def _compile(source, filename, symbol, incomplete_input=True):
-    flags = 0
+def _compile(source, filename, symbol, incomplete_input=True, *, flags=0):
     if incomplete_input:
         flags |= PyCF_ALLOW_INCOMPLETE_INPUT
         flags |= PyCF_DONT_IMPLY_DEDENT
     return compile(source, filename, symbol, flags)
 
-def compile_command(source, filename="<input>", symbol="single"):
+def compile_command(source, filename="<input>", symbol="single", flags=0):
     r"""Compile a command and determine whether it is incomplete.
 
     Arguments:
@@ -98,7 +99,7 @@ def compile_command(source, filename="<input>", symbol="single"):
       syntax error (OverflowError and ValueError can be produced by
       malformed literals).
     """
-    return _maybe_compile(_compile, source, filename, symbol)
+    return _maybe_compile(_compile, source, filename, symbol, flags)
 
 class Compile:
     """Instances of this class behave much like the built-in compile
@@ -108,12 +109,14 @@ class Compile:
     def __init__(self):
         self.flags = PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT
 
-    def __call__(self, source, filename, symbol, **kwargs):
-        flags = self.flags
+    def __call__(self, source, filename, symbol, flags=0, **kwargs):
+        flags |= self.flags
         if kwargs.get('incomplete_input', True) is False:
             flags &= ~PyCF_DONT_IMPLY_DEDENT
             flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT
         codeob = compile(source, filename, symbol, flags, True)
+        if flags & PyCF_ONLY_AST:
+            return codeob  # this is an ast.Module in this case
         for feature in _features:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
@@ -148,4 +151,4 @@ class CommandCompiler:
           syntax error (OverflowError and ValueError can be produced by
           malformed literals).
         """
-        return _maybe_compile(self.compiler, source, filename, symbol)
+        return _maybe_compile(self.compiler, source, filename, symbol, flags=self.compiler.flags)

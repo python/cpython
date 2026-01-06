@@ -4,8 +4,8 @@
 .. release date: 2020-10-05
 .. section: Security
 
-Fixes `python3x._pth` being ignored on Windows, caused by the fix for
-:issue:`29778` (CVE-2020-15801).
+Fixes ``python3x._pth`` being ignored on Windows, caused by the fix for
+:issue:`29778` (:cve:`2020-15801`).
 
 ..
 
@@ -25,7 +25,7 @@ events.
 .. section: Security
 
 Ensure :file:`python3.dll` is loaded from correct locations when Python is
-embedded (CVE-2020-15523).
+embedded (:cve:`2020-15523`).
 
 ..
 
@@ -97,7 +97,7 @@ convention. Patch by Donghee Na.
 .. nonce: aJS9B3
 .. section: Core and Builtins
 
-Port the :mod:`_bisect` module to the multi-phase initialization API
+Port the :mod:`!_bisect` module to the multi-phase initialization API
 (:pep:`489`).
 
 ..
@@ -128,7 +128,7 @@ Taskaya.
 .. nonce: lh335O
 .. section: Core and Builtins
 
-Port the :mod:`_lsprof` extension module to multi-phase initialization
+Port the :mod:`!_lsprof` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -148,7 +148,7 @@ Port the :mod:`cmath` extension module to multi-phase initialization
 .. nonce: jiXmyT
 .. section: Core and Builtins
 
-Port the :mod:`_scproxy` extension module to multi-phase initialization
+Port the :mod:`!_scproxy` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -168,7 +168,7 @@ Port the :mod:`termios` extension module to multi-phase initialization
 .. nonce: QuDIut
 .. section: Core and Builtins
 
-Convert the :mod:`_sha256` extension module types to heap types.
+Convert the :mod:`!_sha256` extension module types to heap types.
 
 ..
 
@@ -187,7 +187,7 @@ classes with a huge amount of arguments. Patch by Pablo Galindo.
 .. nonce: CnRME3
 .. section: Core and Builtins
 
-Port the :mod:`_overlapped` extension module to multi-phase initialization
+Port the :mod:`!_overlapped` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -197,7 +197,7 @@ Port the :mod:`_overlapped` extension module to multi-phase initialization
 .. nonce: X9CZgo
 .. section: Core and Builtins
 
-Port the :mod:`_curses_panel` extension module to multi-phase initialization
+Port the :mod:`!_curses_panel` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -207,7 +207,7 @@ Port the :mod:`_curses_panel` extension module to multi-phase initialization
 .. nonce: 5jZymK
 .. section: Core and Builtins
 
-Port the :mod:`_opcode` extension module to multi-phase initialization
+Port the :mod:`!_opcode` extension module to multi-phase initialization
 (:pep:`489`).
 
 ..
@@ -217,7 +217,7 @@ Port the :mod:`_opcode` extension module to multi-phase initialization
 .. nonce: 3-VJiH
 .. section: Core and Builtins
 
-Fixes the wrong error description in the error raised by using 2 `,` in
+Fixes the wrong error description in the error raised by using 2 ``,`` in
 format string in f-string and :meth:`str.format`.
 
 ..
@@ -282,7 +282,7 @@ initialized ``_ast`` module.
 .. nonce: vcxSUa
 .. section: Core and Builtins
 
-Convert :mod:`_operator` to use :c:func:`PyType_FromSpec`.
+Convert :mod:`!_operator` to use :c:func:`PyType_FromSpec`.
 
 ..
 
@@ -291,7 +291,7 @@ Convert :mod:`_operator` to use :c:func:`PyType_FromSpec`.
 .. nonce: fubBkb
 .. section: Core and Builtins
 
-Port :mod:`_sha3` to multi-phase init.  Convert static types to heap types.
+Port :mod:`!_sha3` to multi-phase init.  Convert static types to heap types.
 
 ..
 
@@ -300,7 +300,7 @@ Port :mod:`_sha3` to multi-phase init.  Convert static types to heap types.
 .. nonce: FC13e7
 .. section: Core and Builtins
 
-Port the :mod:`_blake2` extension module to the multi-phase initialization
+Port the :mod:`!_blake2` extension module to the multi-phase initialization
 API (:pep:`489`).
 
 ..
@@ -339,7 +339,7 @@ The output of ``python --help`` contains now only ASCII characters.
 .. nonce: O0d3ym
 .. section: Core and Builtins
 
-Port the :mod:`_sha1`, :mod:`_sha512`, and :mod:`_md5` extension modules to
+Port the :mod:`!_sha1`, :mod:`!_sha512`, and :mod:`!_md5` extension modules to
 multi-phase initialization API (:pep:`489`).
 
 ..
@@ -636,7 +636,7 @@ Remove the remaining files from the old parser and the :mod:`symbol` module.
 .. nonce: _yI-ax
 .. section: Core and Builtins
 
-Convert :mod:`_bz2` to use :c:func:`PyType_FromSpec`.
+Convert :mod:`!_bz2` to use :c:func:`PyType_FromSpec`.
 
 ..
 
@@ -666,7 +666,7 @@ by Brandt Bucher.
 .. nonce: 61iyYh
 .. section: Core and Builtins
 
-Port :mod:`_gdbm` to multiphase initialization.
+Port :mod:`!_gdbm` to multiphase initialization.
 
 ..
 
@@ -696,7 +696,7 @@ for emitting syntax errors. Patch by Pablo Galindo.
 .. nonce: mmlp3Q
 .. section: Core and Builtins
 
-Port :mod:`_dbm` to multiphase initialization.
+Port :mod:`!_dbm` to multiphase initialization.
 
 ..
 
@@ -747,7 +747,7 @@ Galindo.
 
 Fix a bug where a line with only a line continuation character is not
 considered a blank line at tokenizer level. In such cases, more than a
-single `NEWLINE` token was emitted. The old parser was working around the
+single ``NEWLINE`` token was emitted. The old parser was working around the
 issue, but the new parser threw a :exc:`SyntaxError` for valid input due to
 this. For example, an empty line following a line continuation character was
 interpreted as a :exc:`SyntaxError`.
@@ -1010,7 +1010,7 @@ Port :mod:`mmap` to multiphase initialization.
 .. nonce: Kfe9fT
 .. section: Core and Builtins
 
-Port :mod:`_lzma` to multiphase initialization.
+Port :mod:`!_lzma` to multiphase initialization.
 
 ..
 
@@ -1032,7 +1032,7 @@ the :meth:`~object.__int__` method but do not have the
 .. nonce: AkRzjb
 .. section: Core and Builtins
 
-Add :meth:`int.bit_count()`, counting the number of ones in the binary
+Add :meth:`int.bit_count`, counting the number of ones in the binary
 representation of an integer. Patch by Niklas Fiekas.
 
 ..
@@ -1157,7 +1157,7 @@ The :class:`threading.Thread` constructor now uses the target name if the
 .. nonce: bnh-VG
 .. section: Library
 
-fix `tkinter.EventType` Enum so all members are strings, and none are tuples
+fix ``tkinter.EventType`` Enum so all members are strings, and none are tuples
 
 ..
 
@@ -1220,7 +1220,7 @@ class
 
 Previously there was no way to check that without using private API. See the
 `relevant issue in python/typing
-<https://github.com/python/typing/issues/751>`
+<https://github.com/python/typing/issues/751>`_.
 
 ..
 
@@ -1229,8 +1229,8 @@ Previously there was no way to check that without using private API. See the
 .. nonce: pI_uZQ
 .. section: Library
 
-Honor `object` overrides in `Enum` class creation (specifically, `__str__`,
-`__repr__`, `__format__`, and `__reduce_ex__`).
+Honor ``object`` overrides in ``Enum`` class creation (specifically, ``__str__``,
+``__repr__``, ``__format__``, and ``__reduce_ex__``).
 
 ..
 
@@ -1239,7 +1239,7 @@ Honor `object` overrides in `Enum` class creation (specifically, `__str__`,
 .. nonce: IpYkEe
 .. section: Library
 
-`enum.Flag` and `enum.IntFlag` members are now iterable
+``enum.Flag`` and ``enum.IntFlag`` members are now iterable.
 
 ..
 
@@ -1499,7 +1499,7 @@ used to cause ZeroDivisionError now cause an OverflowError instead.
 .. nonce: rju34k
 .. section: Library
 
-Add :func:`os.cpu_count()` support for VxWorks RTOS.
+Add :func:`os.cpu_count` support for VxWorks RTOS.
 
 ..
 
@@ -1557,7 +1557,7 @@ activation.
 .. nonce: wqrj8C
 .. section: Library
 
-Recursive evaluation of `typing.ForwardRef` in `get_type_hints`.
+Recursive evaluation of ``typing.ForwardRef`` in ``get_type_hints``.
 
 ..
 
@@ -1596,7 +1596,7 @@ UnpicklingError instead of crashing.
 .. section: Library
 
 Avoid infinite loop when reading specially crafted TAR files using the
-tarfile module (CVE-2019-20907).
+tarfile module (:cve:`2019-20907`).
 
 ..
 
@@ -1851,8 +1851,8 @@ Merry.
 .. nonce: 1dk8Bu
 .. section: Library
 
-:mod:`ensurepip` now disables the use of `pip` cache when installing the
-bundled versions of `pip` and `setuptools`.  Patch by Krzysztof Konopko.
+:mod:`ensurepip` now disables the use of ``pip`` cache when installing the
+bundled versions of ``pip`` and ``setuptools``.  Patch by Krzysztof Konopko.
 
 ..
 
@@ -1861,8 +1861,8 @@ bundled versions of `pip` and `setuptools`.  Patch by Krzysztof Konopko.
 .. nonce: _dx3OO
 .. section: Library
 
-Removed :meth:`asyncio.Task.current_task` and
-:meth:`asyncio.Task.all_tasks`. Patch contributed by Rémi Lapeyre.
+Removed :meth:`!asyncio.Task.current_task` and
+:meth:`!asyncio.Task.all_tasks`. Patch contributed by Rémi Lapeyre.
 
 ..
 
@@ -1933,7 +1933,7 @@ Smith and Tal Einat.
 .. nonce: n7fOwS
 .. section: Library
 
-Added a `defaults` parameter to :class:`logging.Formatter`, to allow
+Added a ``defaults`` parameter to :class:`logging.Formatter`, to allow
 specifying default values for custom fields. Patch by Asaf Alon and Bar
 Harel.
 
@@ -2225,7 +2225,7 @@ policy.
 .. nonce: ps7Yf1
 .. section: Library
 
-func:`hashlib.new` passed ``usedforsecurity`` to OpenSSL EVP constructor
+:func:`hashlib.new` passed ``usedforsecurity`` to OpenSSL EVP constructor
 ``_hashlib.new()``. test_hashlib and test_smtplib handle strict security
 policy better.
 
@@ -2393,8 +2393,8 @@ closes connection during TLS negotiation
 .. nonce: kOOaHn
 .. section: Library
 
-fix default `_missing_` so a duplicate `ValueError` is not set as the
-`__context__` of the original `ValueError`
+fix default ``_missing_`` so a duplicate ``ValueError`` is not set as the
+``__context__`` of the original ``ValueError``.
 
 ..
 
@@ -2452,7 +2452,7 @@ Added the *root_dir* and *dir_fd* parameters in :func:`glob.glob`.
 .. nonce: X-TJZO
 .. section: Library
 
-Fix :meth:`IMAP4.noop()` when debug mode is enabled (ex: ``imaplib.Debug =
+Fix :meth:`IMAP4.noop` when debug mode is enabled (ex: ``imaplib.Debug =
 3``).
 
 ..
@@ -3275,8 +3275,8 @@ Types created with :c:func:`PyType_FromSpec` now make any signature in their
 .. nonce: u6Xfr2
 .. section: C API
 
-Fix bug in PyOS_mystrnicmp and PyOS_mystricmp that incremented pointers
-beyond the end of a string.
+Fix bug in :c:func:`PyOS_mystrnicmp` and :c:func:`PyOS_mystricmp` that
+incremented pointers beyond the end of a string.
 
 ..
 

@@ -1,5 +1,5 @@
-:mod:`textwrap` --- Text wrapping and filling
-=============================================
+:mod:`!textwrap` --- Text wrapping and filling
+==============================================
 
 .. module:: textwrap
    :synopsis: Text wrapping and filling
@@ -102,6 +102,10 @@ functions should be good enough; otherwise, you should use an instance of
           print(repr(s))          # prints '    hello\n      world\n    '
           print(repr(dedent(s)))  # prints 'hello\n  world\n'
 
+   .. versionchanged:: 3.14
+      The :func:`!dedent` function now correctly normalizes blank lines containing
+      only whitespace characters. Previously, the implementation only normalized
+      blank lines containing tabs and spaces.
 
 .. function:: indent(text, prefix, predicate=None)
 
@@ -154,7 +158,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       wrapper = TextWrapper()
       wrapper.initial_indent = "* "
 
-   You can re-use the same :class:`TextWrapper` object many times, and you can
+   You can reuse the same :class:`TextWrapper` object many times, and you can
    change any of its options through direct assignment to instance attributes
    between uses.
 

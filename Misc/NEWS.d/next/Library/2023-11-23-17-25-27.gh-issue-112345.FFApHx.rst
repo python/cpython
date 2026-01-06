@@ -1,3 +1,0 @@
-Improve error message when trying to call :func:`issubclass` against a
-:class:`typing.Protocol` that has non-method members.
-Patch by Randolf Scholz.

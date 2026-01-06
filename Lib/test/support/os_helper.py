@@ -1,6 +1,7 @@
 import collections.abc
 import contextlib
 import errno
+import logging
 import os
 import re
 import stat
@@ -22,8 +23,8 @@ TESTFN_ASCII = "{}_{}_tmp".format(TESTFN_ASCII, os.getpid())
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN_ASCII + "-\xe0\xf2\u0258\u0141\u011f"
-if sys.platform == 'darwin':
-    # In Mac OS X's VFS API file names are, by definition, canonically
+if support.is_apple:
+    # On Apple's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
@@ -48,8 +49,8 @@ if os.name == 'nt':
                   'encoding (%s). Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
-# macOS and Emscripten deny unencodable filenames (invalid utf-8)
-elif sys.platform not in {'darwin', 'emscripten', 'wasi'}:
+# Apple and Emscripten deny unencodable filenames (invalid utf-8)
+elif not support.is_apple and sys.platform not in {"emscripten", "wasi"}:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(sys.getfilesystemencoding())
@@ -198,6 +199,23 @@ def skip_unless_symlink(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+_can_hardlink = None
+
+def can_hardlink():
+    global _can_hardlink
+    if _can_hardlink is None:
+        # Android blocks hard links using SELinux
+        # (https://stackoverflow.com/q/32365690).
+        _can_hardlink = hasattr(os, "link") and not support.is_android
+    return _can_hardlink
+
+
+def skip_unless_hardlink(test):
+    ok = can_hardlink()
+    msg = "requires hardlink support"
+    return test if ok else unittest.skip(msg)(test)
+
+
 _can_xattr = None
 
 
@@ -275,6 +293,33 @@ def skip_unless_working_chmod(test):
     ok = can_chmod()
     msg = "requires working os.chmod()"
     return test if ok else unittest.skip(msg)(test)
+
+
+@contextlib.contextmanager
+def save_mode(path, *, quiet=False):
+    """Context manager that restores the mode (permissions) of *path* on exit.
+
+    Arguments:
+
+      path: Path of the file to restore the mode of.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+    saved_mode = os.stat(path)
+    try:
+        yield
+    finally:
+        try:
+            os.chmod(path, saved_mode.st_mode)
+        except OSError as exc:
+            if not quiet:
+                raise
+            warnings.warn(f'tests may fail, unable to restore the mode of '
+                          f'{path!r} to {saved_mode.st_mode}: {exc}',
+                          RuntimeWarning, stacklevel=3)
 
 
 # Check whether the current effective user has the capability to override
@@ -361,8 +406,12 @@ if sys.platform.startswith("win"):
             # Increase the timeout and try again
             time.sleep(timeout)
             timeout *= 2
-        warnings.warn('tests may fail, delete still pending for ' + pathname,
-                      RuntimeWarning, stacklevel=4)
+        logging.getLogger(__name__).warning(
+            'tests may fail, delete still pending for %s',
+            pathname,
+            stack_info=True,
+            stacklevel=4,
+        )
 
     def _unlink(filename):
         _waitfor(os.unlink, filename)
@@ -477,9 +526,14 @@ def temp_dir(path=None, quiet=False):
         except OSError as exc:
             if not quiet:
                 raise
-            warnings.warn(f'tests may fail, unable to create '
-                          f'temporary directory {path!r}: {exc}',
-                          RuntimeWarning, stacklevel=3)
+            logging.getLogger(__name__).warning(
+                "tests may fail, unable to create temporary directory %r: %s",
+                path,
+                exc,
+                exc_info=exc,
+                stack_info=True,
+                stacklevel=3,
+            )
     if dir_created:
         pid = os.getpid()
     try:
@@ -510,9 +564,15 @@ def change_cwd(path, quiet=False):
     except OSError as exc:
         if not quiet:
             raise
-        warnings.warn(f'tests may fail, unable to change the current working '
-                      f'directory to {path!r}: {exc}',
-                      RuntimeWarning, stacklevel=3)
+        logging.getLogger(__name__).warning(
+            'tests may fail, unable to change the current working directory '
+            'to %r: %s',
+            path,
+            exc,
+            exc_info=exc,
+            stack_info=True,
+            stacklevel=3,
+        )
     try:
         yield os.getcwd()
     finally:
@@ -595,9 +655,9 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
+    if sys.platform.startswith(('linux', 'android', 'freebsd', 'emscripten')):
         fd_path = "/proc/self/fd"
-    elif sys.platform == "darwin":
+    elif support.is_apple:
         fd_path = "/dev/fd"
     else:
         fd_path = None
@@ -676,9 +736,10 @@ else:
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
+    """Class to help protect the environment variable properly.
 
-    """Class to help protect the environment variable properly.  Can be used as
-    a context manager."""
+    Can be used as a context manager.
+    """
 
     def __init__(self):
         self._environ = os.environ
@@ -712,8 +773,10 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
     def set(self, envvar, value):
         self[envvar] = value
 
-    def unset(self, envvar):
-        del self[envvar]
+    def unset(self, envvar, /, *envvars):
+        """Unset one or more environment variables."""
+        for ev in (envvar, *envvars):
+            del self[ev]
 
     def copy(self):
         # We do what os.environ.copy() does.

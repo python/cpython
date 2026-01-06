@@ -255,8 +255,8 @@ struct pool_header {
     union { pymem_block *_padding;
             uint count; } ref;          /* number of allocated blocks    */
     pymem_block *freeblock;             /* pool's free list head         */
-    struct pool_header *nextpool;       /* next pool of this size class  */
-    struct pool_header *prevpool;       /* previous pool       ""        */
+    struct pool_header *nextpool;       /* see "Pool table" for meaning  */
+    struct pool_header *prevpool;       /* "                             */
     uint arenaindex;                    /* index into arenas of base adr */
     uint szidx;                         /* block size class index        */
     uint nextoffset;                    /* bytes to virgin block         */
@@ -686,6 +686,8 @@ extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
     _Py_GetGlobalAllocatedBlocks()
 extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
 extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
+extern int _PyMem_init_obmalloc(PyInterpreterState *interp);
+extern bool _PyMem_obmalloc_state_on_heap(PyInterpreterState *interp);
 
 
 #ifdef WITH_PYMALLOC

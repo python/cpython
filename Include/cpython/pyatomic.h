@@ -321,6 +321,27 @@ _Py_atomic_load_ptr(const void *obj);
 static inline int
 _Py_atomic_load_int_relaxed(const int *obj);
 
+static inline char
+_Py_atomic_load_char_relaxed(const char *obj);
+
+static inline unsigned char
+_Py_atomic_load_uchar_relaxed(const unsigned char *obj);
+
+static inline short
+_Py_atomic_load_short_relaxed(const short *obj);
+
+static inline unsigned short
+_Py_atomic_load_ushort_relaxed(const unsigned short *obj);
+
+static inline long
+_Py_atomic_load_long_relaxed(const long *obj);
+
+static inline double
+_Py_atomic_load_double_relaxed(const double *obj);
+
+static inline long long
+_Py_atomic_load_llong_relaxed(const long long *obj);
+
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj);
 
@@ -360,6 +381,8 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj);
 static inline void *
 _Py_atomic_load_ptr_relaxed(const void *obj);
 
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj);
 
 // --- _Py_atomic_store ------------------------------------------------------
 // Atomically performs `*obj = value` (sequential consistency)
@@ -452,6 +475,34 @@ _Py_atomic_store_ptr_relaxed(void *obj, void *value);
 static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value);
 
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value);
+
+static inline void
+_Py_atomic_store_char_relaxed(char *obj, char value);
+
+static inline void
+_Py_atomic_store_uchar_relaxed(unsigned char *obj, unsigned char value);
+
+static inline void
+_Py_atomic_store_short_relaxed(short *obj, short value);
+
+static inline void
+_Py_atomic_store_ushort_relaxed(unsigned short *obj, unsigned short value);
+
+static inline void
+_Py_atomic_store_long_relaxed(long *obj, long value);
+
+static inline void
+_Py_atomic_store_float_relaxed(float *obj, float value);
+
+static inline void
+_Py_atomic_store_double_relaxed(double *obj, double value);
+
+static inline void
+_Py_atomic_store_llong_relaxed(long long *obj, long long value);
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
@@ -459,15 +510,44 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value);
 static inline void *
 _Py_atomic_load_ptr_acquire(const void *obj);
 
+static inline uintptr_t
+_Py_atomic_load_uintptr_acquire(const uintptr_t *obj);
+
 // Stores `*obj = value` (release operation)
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value);
+
+static inline void
+_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value);
+
+static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
+
+static inline void
+_Py_atomic_store_int8_release(int8_t *obj, int8_t value);
 
 static inline void
 _Py_atomic_store_int_release(int *obj, int value);
 
 static inline int
 _Py_atomic_load_int_acquire(const int *obj);
+
+static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value);
+
+static inline void
+_Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value);
+
+static inline uint64_t
+_Py_atomic_load_uint64_acquire(const uint64_t *obj);
+
+static inline uint32_t
+_Py_atomic_load_uint32_acquire(const uint32_t *obj);
+
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
+
+
 
 
 // --- _Py_atomic_fence ------------------------------------------------------
@@ -477,6 +557,9 @@ _Py_atomic_load_int_acquire(const int *obj);
 // generally do not require explicit use of a fence.
 // See https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence
 static inline void _Py_atomic_fence_seq_cst(void);
+
+// Acquire fence
+static inline void _Py_atomic_fence_acquire(void);
 
 // Release fence
 static inline void _Py_atomic_fence_release(void);
@@ -494,15 +577,15 @@ static inline void _Py_atomic_fence_release(void);
 
 #if _Py_USE_GCC_BUILTIN_ATOMICS
 #  define Py_ATOMIC_GCC_H
-#  include "cpython/pyatomic_gcc.h"
+#  include "pyatomic_gcc.h"
 #  undef Py_ATOMIC_GCC_H
 #elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
 #  define Py_ATOMIC_STD_H
-#  include "cpython/pyatomic_std.h"
+#  include "pyatomic_std.h"
 #  undef Py_ATOMIC_STD_H
 #elif defined(_MSC_VER)
 #  define Py_ATOMIC_MSC_H
-#  include "cpython/pyatomic_msc.h"
+#  include "pyatomic_msc.h"
 #  undef Py_ATOMIC_MSC_H
 #else
 #  error "no available pyatomic implementation for this platform/compiler"
@@ -510,6 +593,17 @@ static inline void _Py_atomic_fence_release(void);
 
 
 // --- aliases ---------------------------------------------------------------
+
+// Compilers don't really support "consume" semantics, so we fake it. Use
+// "acquire" with TSan to support false positives. Use "relaxed" otherwise,
+// because CPUs on all platforms we support respect address dependencies without
+// extra barriers.
+// See 2.6.7 in https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2055r0.pdf
+#if defined(_Py_THREAD_SANITIZER)
+# define _Py_atomic_load_ptr_consume _Py_atomic_load_ptr_acquire
+#else
+# define _Py_atomic_load_ptr_consume _Py_atomic_load_ptr_relaxed
+#endif
 
 #if SIZEOF_LONG == 8
 # define _Py_atomic_load_ulong(p) \

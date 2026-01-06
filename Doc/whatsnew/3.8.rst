@@ -428,9 +428,9 @@ Other Language Changes
   normal assignment syntax::
 
     >>> def parse(family):
-            lastname, *members = family.split()
-            return lastname.upper(), *members
-
+    ...     lastname, *members = family.split()
+    ...     return lastname.upper(), *members
+    ...
     >>> parse('simpsons homer marge bart lisa maggie')
     ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
 
@@ -536,7 +536,7 @@ Other Language Changes
   element is a callable with a ``(obj, state)`` signature.  This allows the
   direct control over the state-updating behavior of a specific object.  If
   not *None*, this callable will have priority over the object's
-  :meth:`~__setstate__` method.
+  :meth:`~object.__setstate__` method.
   (Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
 
 New Modules
@@ -754,8 +754,8 @@ datetime
 --------
 
 Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number, and weekday;
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`~datetime.date` and
+:class:`~datetime.datetime` objects respectively from ISO year, week number, and weekday;
 these are the inverse of each class's ``isocalendar`` method.
 (Contributed by Paul Ganssle in :issue:`36004`.)
 
@@ -936,7 +936,7 @@ Add option ``--json-lines`` to parse every input line as a separate JSON object.
 logging
 -------
 
-Added a *force* keyword argument to :func:`logging.basicConfig()`
+Added a *force* keyword argument to :func:`logging.basicConfig`.
 When set to true, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.
@@ -1035,9 +1035,9 @@ symlinks and directory junctions) has been delegated to the operating system.
 Specifically, :func:`os.stat` will now traverse anything supported by the
 operating system, while :func:`os.lstat` will only open reparse points that
 identify as "name surrogates" while others are opened as for :func:`os.stat`.
-In all cases, :attr:`stat_result.st_mode` will only have ``S_IFLNK`` set for
+In all cases, :attr:`os.stat_result.st_mode` will only have ``S_IFLNK`` set for
 symbolic links and not other kinds of reparse points. To identify other kinds
-of reparse point, check the new :attr:`stat_result.st_reparse_tag` attribute.
+of reparse point, check the new :attr:`os.stat_result.st_reparse_tag` attribute.
 
 On Windows, :func:`os.readlink` is now able to read directory junctions. Note
 that :func:`~os.path.islink` will return ``False`` for directory junctions,
@@ -1077,16 +1077,16 @@ pathlib
 -------
 
 :mod:`pathlib.Path` methods that return a boolean result like
-:meth:`~pathlib.Path.exists()`, :meth:`~pathlib.Path.is_dir()`,
-:meth:`~pathlib.Path.is_file()`, :meth:`~pathlib.Path.is_mount()`,
-:meth:`~pathlib.Path.is_symlink()`, :meth:`~pathlib.Path.is_block_device()`,
-:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
-:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+:meth:`~pathlib.Path.exists`, :meth:`~pathlib.Path.is_dir`,
+:meth:`~pathlib.Path.is_file`, :meth:`~pathlib.Path.is_mount`,
+:meth:`~pathlib.Path.is_symlink`, :meth:`~pathlib.Path.is_block_device`,
+:meth:`~pathlib.Path.is_char_device`, :meth:`~pathlib.Path.is_fifo`,
+:meth:`~pathlib.Path.is_socket` now return ``False`` instead of raising
 :exc:`ValueError` or its subclass :exc:`UnicodeEncodeError` for paths that
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
-Added :meth:`!pathlib.Path.link_to()` which creates a hard link pointing
+Added :meth:`!pathlib.Path.link_to` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
 Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
@@ -1170,13 +1170,13 @@ recursively removing their contents first.
 socket
 ------
 
-Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
+Added :meth:`~socket.create_server` and :meth:`~socket.has_dualstack_ipv6`
 convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
 
-The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
-:func:`socket.if_indextoname()` functions have been implemented on Windows.
+The :func:`socket.if_nameindex`, :func:`socket.if_nametoindex`, and
+:func:`socket.if_indextoname` functions have been implemented on Windows.
 (Contributed by Zackery Spytz in :issue:`37007`.)
 
 
@@ -1192,11 +1192,11 @@ post-handshake authentication.
 statistics
 ----------
 
-Added :func:`statistics.fmean` as a faster, floating point variant of
-:func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
+Added :func:`statistics.fmean` as a faster, floating-point variant of
+:func:`statistics.mean`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 
-Added :func:`statistics.geometric_mean()`
+Added :func:`statistics.geometric_mean`
 (Contributed by Raymond Hettinger in :issue:`27181`.)
 
 Added :func:`statistics.multimode` that returns a list of the most
@@ -1285,20 +1285,20 @@ now matches what the C tokenizer does internally.
 tkinter
 -------
 
-Added methods :meth:`~tkinter.Spinbox.selection_from`,
-:meth:`~tkinter.Spinbox.selection_present`,
-:meth:`~tkinter.Spinbox.selection_range` and
-:meth:`~tkinter.Spinbox.selection_to`
-in the :class:`tkinter.Spinbox` class.
+Added methods :meth:`!selection_from`,
+:meth:`!selection_present`,
+:meth:`!selection_range` and
+:meth:`!selection_to`
+in the :class:`!tkinter.Spinbox` class.
 (Contributed by Juliette Monsel in :issue:`34829`.)
 
-Added method :meth:`~tkinter.Canvas.moveto`
-in the :class:`tkinter.Canvas` class.
+Added method :meth:`!moveto`
+in the :class:`!tkinter.Canvas` class.
 (Contributed by Juliette Monsel in :issue:`23831`.)
 
-The :class:`tkinter.PhotoImage` class now has
-:meth:`~tkinter.PhotoImage.transparency_get` and
-:meth:`~tkinter.PhotoImage.transparency_set` methods.  (Contributed by
+The :class:`!tkinter.PhotoImage` class now has
+:meth:`!transparency_get` and
+:meth:`!transparency_set` methods.  (Contributed by
 Zackery Spytz in :issue:`25451`.)
 
 
@@ -1367,10 +1367,10 @@ Added :class:`~unittest.mock.AsyncMock` to support an asynchronous version of
 have been added as well.
 (Contributed by Lisa Roach in :issue:`26467`).
 
-Added :func:`~unittest.addModuleCleanup()` and
-:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
-cleanups for :func:`~unittest.setUpModule()` and
-:meth:`~unittest.TestCase.setUpClass()`.
+Added :func:`~unittest.addModuleCleanup` and
+:meth:`~unittest.TestCase.addClassCleanup` to unittest to support
+cleanups for :func:`~unittest.setUpModule` and
+:meth:`~unittest.TestCase.setUpClass`.
 (Contributed by Lisa Roach in :issue:`24412`.)
 
 Several mock assert functions now also print a list of actual calls upon
@@ -1432,7 +1432,7 @@ and ``{namespace}*`` which returns all tags in the given namespace.
 (Contributed by Stefan Behnel in :issue:`28238`.)
 
 The :mod:`xml.etree.ElementTree` module provides a new function
-:func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
+:func:`~xml.etree.ElementTree.canonicalize` that implements C14N 2.0.
 (Contributed by Stefan Behnel in :issue:`13611`.)
 
 The target object of :class:`xml.etree.ElementTree.XMLParser` can
@@ -1573,7 +1573,7 @@ Build and C API Changes
 
   * :c:func:`Py_INCREF`, :c:func:`Py_DECREF`
   * :c:func:`Py_XINCREF`, :c:func:`Py_XDECREF`
-  * :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`
+  * :c:macro:`!PyObject_INIT`, :c:macro:`!PyObject_INIT_VAR`
   * Private functions: :c:func:`!_PyObject_GC_TRACK`,
     :c:func:`!_PyObject_GC_UNTRACK`, :c:func:`!_Py_Dealloc`
 
@@ -1623,14 +1623,14 @@ Build and C API Changes
   allocation or deallocation may need to be adjusted.
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
-* The new function :c:func:`PyCode_NewWithPosOnlyArgs` allows to create
-  code objects like :c:func:`PyCode_New`, but with an extra *posonlyargcount*
+* The new function :c:func:`!PyCode_NewWithPosOnlyArgs` allows to create
+  code objects like :c:func:`!PyCode_New`, but with an extra *posonlyargcount*
   parameter for indicating the number of positional-only arguments.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
 * :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
-  path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
-  (:c:func:`Py_GetProgramName`).
+  path (:c:func:`!Py_GetProgramFullPath`) rather than to the program name
+  (:c:func:`!Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
 
 
@@ -1677,7 +1677,7 @@ Deprecated
   constant nodes.
   (Contributed by Serhiy Storchaka in :issue:`36917`.)
 
-* The :func:`asyncio.coroutine` :term:`decorator` is deprecated and will be
+* The :deco:`!asyncio.coroutine` :term:`decorator` is deprecated and will be
   removed in version 3.10.  Instead of ``@asyncio.coroutine``, use
   :keyword:`async def` instead.
   (Contributed by Andrew Svetlov in :issue:`36921`.)
@@ -1697,22 +1697,22 @@ Deprecated
   (Contributed by Yury Selivanov in :issue:`34790`.)
 
 * The following functions and methods are deprecated in the :mod:`gettext`
-  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
-  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
+  module: :func:`!lgettext`, :func:`!ldgettext`,
+  :func:`!lngettext` and :func:`!ldngettext`.
   They return encoded bytes, and it's possible that you will get unexpected
   Unicode-related exceptions if there are encoding problems with the
   translated strings. It's much better to use alternatives which return
   Unicode strings in Python 3. These functions have been broken for a long time.
 
-  Function :func:`~gettext.bind_textdomain_codeset`, methods
-  :meth:`~gettext.NullTranslations.output_charset` and
-  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
+  Function :func:`!bind_textdomain_codeset`, methods
+  :meth:`!NullTranslations.output_charset` and
+  :meth:`!NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
-* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
+* The :meth:`!isAlive` method of :class:`threading.Thread`
   has been deprecated.
   (Contributed by Donghee Na in :issue:`35283`.)
 
@@ -1727,7 +1727,7 @@ Deprecated
 * Deprecated passing the following arguments as keyword arguments:
 
   - *func* in :func:`functools.partialmethod`, :func:`weakref.finalize`,
-    :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
+    :meth:`profile.Profile.runcall`, :meth:`!cProfile.Profile.runcall`,
     :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
     :func:`curses.wrapper`.
   - *function* in :meth:`unittest.TestCase.addCleanup`.
@@ -1735,11 +1735,11 @@ Deprecated
     :class:`concurrent.futures.ThreadPoolExecutor` and
     :class:`concurrent.futures.ProcessPoolExecutor`.
   - *callback* in :meth:`contextlib.ExitStack.callback`,
-    :meth:`contextlib.AsyncExitStack.callback` and
+    :meth:`!contextlib.AsyncExitStack.callback` and
     :meth:`contextlib.AsyncExitStack.push_async_callback`.
-  - *c* and *typeid* in the :meth:`~multiprocessing.managers.Server.create`
-    method of :class:`multiprocessing.managers.Server` and
-    :class:`multiprocessing.managers.SharedMemoryServer`.
+  - *c* and *typeid* in the :meth:`!create`
+    method of :class:`!multiprocessing.managers.Server` and
+    :class:`!multiprocessing.managers.SharedMemoryServer`.
   - *obj* in :func:`weakref.finalize`.
 
   In future releases of Python, they will be :ref:`positional-only
@@ -1755,16 +1755,16 @@ The following features and APIs have been removed from Python 3.8:
 *  Starting with Python 3.3, importing ABCs from :mod:`collections` was
    deprecated, and importing should be done from :mod:`collections.abc`. Being
    able to import from collections was marked for removal in 3.8, but has been
-   delayed to 3.9. (See :issue:`36952`.)
+   delayed to 3.9. (See :gh:`81134`.)
 
-* The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
+* The :mod:`!macpath` module, deprecated in Python 3.7, has been removed.
   (Contributed by Victor Stinner in :issue:`35471`.)
 
-* The function :func:`platform.popen` has been removed, after having been
+* The function :func:`!platform.popen` has been removed, after having been
   deprecated since Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
-* The function :func:`time.clock` has been removed, after having been
+* The function :func:`!time.clock` has been removed, after having been
   deprecated since Python 3.3: use :func:`time.perf_counter` or
   :func:`time.process_time` instead, depending
   on your requirements, to have well-defined behavior.
@@ -1800,8 +1800,8 @@ The following features and APIs have been removed from Python 3.8:
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
   has been removed. :issue:`36952` (Contributed by Matthias Bussonnier.)
 
-* The functions :func:`sys.set_coroutine_wrapper` and
-  :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
+* The functions :func:`!sys.set_coroutine_wrapper` and
+  :func:`!sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
   :issue:`36933` (Contributed by Matthias Bussonnier.)
 
 
@@ -1864,9 +1864,10 @@ Changes in the Python API
 
 * :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
   for better performance. On Windows Subsystem for Linux and QEMU User
-  Emulation, the :class:`Popen` constructor using :func:`os.posix_spawn` no longer raises an
-  exception on errors like "missing program".  Instead the child process fails with a
-  non-zero :attr:`~Popen.returncode`.
+  Emulation, the :class:`~subprocess.Popen` constructor using
+  :func:`os.posix_spawn` no longer raises an exception on errors like
+  "missing program".  Instead the child process fails with a
+  non-zero :attr:`~subprocess.Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
 
 * The *preexec_fn* argument of * :class:`subprocess.Popen` is no longer
@@ -1875,11 +1876,11 @@ Changes in the Python API
   (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
   in :issue:`37951`.)
 
-* The :meth:`imap.IMAP4.logout` method no longer silently ignores arbitrary
+* The :meth:`imaplib.IMAP4.logout` method no longer silently ignores arbitrary
   exceptions.
   (Contributed by Victor Stinner in :issue:`36348`.)
 
-* The function :func:`platform.popen` has been removed, after having been deprecated since
+* The function :func:`!platform.popen` has been removed, after having been deprecated since
   Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
@@ -1894,9 +1895,11 @@ Changes in the Python API
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
 
-* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of
-  :mod:`xml.dom.minidom`, and the :meth:`write` method of :mod:`xml.etree`,
-  now preserve the attribute order specified by the user.
+* The :meth:`~xml.dom.minidom.Node.writexml`, :meth:`~xml.dom.minidom.Node.toxml`
+  and :meth:`~xml.dom.minidom.Node.toprettyxml` methods of
+  :mod:`xml.dom.minidom` and the :meth:`~xml.etree.ElementTree.ElementTree.write`
+  method of :mod:`xml.etree.ElementTree` now preserve the attribute order
+  specified by the user.
   (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
@@ -1916,8 +1919,8 @@ Changes in the Python API
   ``type.__new__``.  A :exc:`DeprecationWarning` was emitted in Python
   3.6--3.7.  (Contributed by Serhiy Storchaka in :issue:`23722`.)
 
-* The :class:`cProfile.Profile` class can now be used as a context
-  manager. (Contributed by Scott Sanderson in :issue:`29235`.)
+* The :class:`cProfile.Profile <profile.Profile>` class can now be used as
+  a context manager. (Contributed by Scott Sanderson in :issue:`29235`.)
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
@@ -1952,7 +1955,7 @@ Changes in the Python API
   (Contributed by Christian Heimes in :issue:`17239`.)
 
 * Deleting a key from a read-only :mod:`dbm` database (:mod:`dbm.dumb`,
-  :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
+  :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`!error` (:exc:`dbm.dumb.error`,
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
 
@@ -2044,7 +2047,7 @@ Changes in the C API
   :c:func:`PyType_FromSpec`) hold a reference to their type object.
   Increasing the reference count of these type objects has been moved from
   :c:func:`PyType_GenericAlloc` to the more low-level functions,
-  :c:func:`PyObject_Init` and :c:func:`PyObject_INIT`.
+  :c:func:`PyObject_Init` and :c:macro:`!PyObject_INIT`.
   This makes types created through :c:func:`PyType_FromSpec` behave like
   other classes in managed code.
 
@@ -2064,7 +2067,7 @@ Changes in the C API
     This may happen after calling :c:macro:`PyObject_New`,
     :c:macro:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
     :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
-    :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
+    :c:func:`PyObject_Init` or :c:macro:`!PyObject_INIT`.
 
     Example:
 
@@ -2152,11 +2155,11 @@ CPython bytecode changes
   cleaning-up code for :keyword:`break`, :keyword:`continue` and
   :keyword:`return`.
 
-  Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
-  :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
-  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY`, :opcode:`CALL_FINALLY` and
-  :opcode:`POP_FINALLY`.  Changed the behavior of :opcode:`END_FINALLY`
-  and :opcode:`WITH_CLEANUP_START`.
+  Removed opcodes :opcode:`!BREAK_LOOP`, :opcode:`!CONTINUE_LOOP`,
+  :opcode:`!SETUP_LOOP` and :opcode:`!SETUP_EXCEPT`.  Added new opcodes
+  :opcode:`!ROT_FOUR`, :opcode:`!BEGIN_FINALLY`, :opcode:`!CALL_FINALLY` and
+  :opcode:`!POP_FINALLY`.  Changed the behavior of :opcode:`!END_FINALLY`
+  and :opcode:`!WITH_CLEANUP_START`.
 
   (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
   :issue:`17611`.)
@@ -2243,6 +2246,21 @@ details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
 
+Notable changes in Python 3.8.2
+===============================
+
+Fixed a regression with the ``ignore`` callback of :func:`shutil.copytree`.
+The argument types are now str and List[str] again.
+(Contributed by Manuel Barkhau and Giampaolo Rodola in :gh:`83571`.)
+
+Notable changes in Python 3.8.3
+===============================
+
+The constant values of future flags in the :mod:`__future__` module
+are updated in order to prevent collision with compiler flags. Previously
+``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
+(Contributed by Batuhan Taskaya in :gh:`83743`)
+
 Notable changes in Python 3.8.8
 ===============================
 
@@ -2256,8 +2274,54 @@ functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
 
+Notable changes in Python 3.8.9
+===============================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+Notable changes in Python 3.8.10
+================================
+
+macOS 11.0 (Big Sur) and Apple Silicon Mac support
+--------------------------------------------------
+
+As of 3.8.10, Python now supports building and running on macOS 11
+(Big Sur) and on Apple Silicon Macs (based on the ``ARM64`` architecture).
+A new universal build variant, ``universal2``, is now available to natively
+support both ``ARM64`` and ``Intel 64`` in one set of executables.
+Note that support for "weaklinking", building binaries targeted for newer
+versions of macOS that will also run correctly on older versions by
+testing at runtime for missing features, is not included in this backport
+from Python 3.9; to support a range of macOS versions, continue to target
+for and build on the oldest version in the range.
+
+(Originally contributed by Ronald Oussoren and Lawrence D'Anna in :gh:`85272`,
+with fixes by FX Coudert and Eli Rykoff, and backported to 3.8 by Maxime Bélanger
+and Ned Deily)
+
+Notable changes in Python 3.8.10
+================================
+
+urllib.parse
+------------
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates :rfc:`3986`,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser in :mod:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :issue:`43882`)
+
+
 Notable changes in Python 3.8.12
 ================================
+
+Changes in the Python API
+-------------------------
 
 Starting with Python 3.8.12 the :mod:`ipaddress` module no longer accepts
 any leading zeros in IPv4 address strings. Leading zeros are ambiguous and
@@ -2268,3 +2332,32 @@ any leading zeros.
 
 (Originally contributed by Christian Heimes in :issue:`36384`, and backported
 to 3.8 by Achraf Merzouki.)
+
+Notable security feature in 3.8.14
+==================================
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for :cve:`2020-10735`.
+This limit can be configured or disabled by environment variable, command
+line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+length limitation <int_max_str_digits>` documentation.  The default limit
+is 4300 digits in string form.
+
+Notable changes in 3.8.17
+=========================
+
+tarfile
+-------
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.12, use without the *filter* argument will show a
+  :exc:`DeprecationWarning`.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)

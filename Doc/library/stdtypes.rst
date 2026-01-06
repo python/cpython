@@ -46,8 +46,10 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 By default, an object is considered true unless its class defines either a
 :meth:`~object.__bool__` method that returns ``False`` or a
 :meth:`~object.__len__` method that
-returns zero, when called with the object. [1]_  Here are most of the built-in
-objects considered false:
+returns zero, when called with the object. [1]_ If one of the methods raises an
+exception when called, the exception is propagated and the object does
+not have a truth value (for example, :data:`NotImplemented`).
+Here are most of the built-in objects considered false:
 
 .. index::
    single: None (Built-in object)
@@ -164,7 +166,7 @@ This table summarizes the comparison operations:
    pair: object; numeric
    pair: objects; comparing
 
-Objects of different types, except different numeric types, never compare equal.
+Unless stated otherwise, objects of different types never compare equal.
 The ``==`` operator is always defined but for some object types (for example,
 class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
 operators are only defined where they make sense; for example, they raise a
@@ -209,18 +211,18 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
    pair: object; numeric
    pair: object; Boolean
    pair: object; integer
-   pair: object; floating point
+   pair: object; floating-point
    pair: object; complex number
    pair: C; language
 
-There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
-point numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
-subtype of integers.  Integers have unlimited precision.  Floating point
+There are three distinct numeric types: :dfn:`integers`, :dfn:`floating-point
+numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
+subtype of integers.  Integers have unlimited precision.  Floating-point
 numbers are usually implemented using :c:expr:`double` in C; information
-about the precision and internal representation of floating point
+about the precision and internal representation of floating-point
 numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
-part, which are each a floating point number.  To extract these parts
+part, which are each a floating-point number.  To extract these parts
 from a complex number *z*, use ``z.real`` and ``z.imag``. (The standard
 library includes the additional numeric types :mod:`fractions.Fraction`, for
 rationals, and :mod:`decimal.Decimal`, for floating-point numbers with
@@ -229,7 +231,7 @@ user-definable precision.)
 .. index::
    pair: numeric; literals
    pair: integer; literals
-   pair: floating point; literals
+   pair: floating-point; literals
    pair: complex number; literals
    pair: hexadecimal; literals
    pair: octal; literals
@@ -238,10 +240,13 @@ user-definable precision.)
 Numbers are created by numeric literals or as the result of built-in functions
 and operators.  Unadorned integer literals (including hex, octal and binary
 numbers) yield integers.  Numeric literals containing a decimal point or an
-exponent sign yield floating point numbers.  Appending ``'j'`` or ``'J'`` to a
+exponent sign yield floating-point numbers.  Appending ``'j'`` or ``'J'`` to a
 numeric literal yields an imaginary number (a complex number with a zero real
 part) which you can add to an integer or float to get a complex number with real
 and imaginary parts.
+
+The constructors :func:`int`, :func:`float`, and
+:func:`complex` can be used to produce numbers of a specific type.
 
 .. index::
    single: arithmetic
@@ -262,12 +267,15 @@ and imaginary parts.
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point,
-which is narrower than complex. A comparison between numbers of different types
-behaves as though the exact values of those numbers were being compared. [2]_
+widened to that of the other, where integer is narrower than floating point.
+Arithmetic with complex and real operands is defined by the usual mathematical
+formula, for example::
 
-The constructors :func:`int`, :func:`float`, and
-:func:`complex` can be used to produce numbers of a specific type.
+    x + complex(u, v) = complex(x + u, v)
+    x * complex(u, v) = complex(x * u, x * v)
+
+A comparison between numbers of different types behaves as though the exact
+values of those numbers were being compared. [2]_
 
 All numeric types (except complex) support the following operations (for priorities of
 the operations, see :ref:`operator-summary`):
@@ -625,6 +633,23 @@ Additional Methods on Float
 The float type implements the :class:`numbers.Real` :term:`abstract base
 class`. float also has the following additional methods.
 
+.. classmethod:: float.from_number(x)
+
+   Class method to return a floating-point number constructed from a number *x*.
+
+   If the argument is an integer or a floating-point number, a
+   floating-point number with the same value (within Python's floating-point
+   precision) is returned.  If the argument is outside the range of a Python
+   float, an :exc:`OverflowError` will be raised.
+
+   For a general Python object ``x``, ``float.from_number(x)`` delegates to
+   ``x.__float__()``.
+   If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
+
+   .. versionadded:: 3.14
+
+
 .. method:: float.as_integer_ratio()
 
    Return a pair of integers whose ratio is exactly equal to the
@@ -701,6 +726,25 @@ hexadecimal string representing the same number::
 
    >>> float.hex(3740.0)
    '0x1.d380000000000p+11'
+
+
+Additional Methods on Complex
+-----------------------------
+
+The :class:`!complex` type implements the :class:`numbers.Complex`
+:term:`abstract base class`.
+:class:`!complex` also has the following additional methods.
+
+.. classmethod:: complex.from_number(x)
+
+   Class method to convert a number to a complex number.
+
+   For a general Python object ``x``, ``complex.from_number(x)`` delegates to
+   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
+
+   .. versionadded:: 3.14
 
 
 .. _numeric-hash:
@@ -832,7 +876,7 @@ over ``&``, ``|`` and ``^``.
 .. deprecated:: 3.12
 
    The use of the bitwise inversion operator ``~`` is deprecated and will
-   raise an error in Python 3.14.
+   raise an error in Python 3.16.
 
 :class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
 many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, respectively.
@@ -907,9 +951,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~object.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`~iterator.__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -958,8 +1002,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
    pair: slice; operation
    pair: operator; in
    pair: operator; not in
-   single: count() (sequence method)
-   single: index() (sequence method)
 
 +--------------------------+--------------------------------+----------+
 | Operation                | Result                         | Notes    |
@@ -976,7 +1018,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
 | ``n * s``                | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
-| ``s[i]``                 | *i*\ th item of *s*, origin 0  | \(3)     |
+| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(8)   |
 +--------------------------+--------------------------------+----------+
 | ``s[i:j]``               | slice of *s* from *i* to *j*   | (3)(4)   |
 +--------------------------+--------------------------------+----------+
@@ -988,13 +1030,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``min(s)``               | smallest item of *s*           |          |
 +--------------------------+--------------------------------+----------+
 | ``max(s)``               | largest item of *s*            |          |
-+--------------------------+--------------------------------+----------+
-| ``s.index(x[, i[, j]])`` | index of the first occurrence  | \(8)     |
-|                          | of *x* in *s* (at or after     |          |
-|                          | index *i* and before index *j*)|          |
-+--------------------------+--------------------------------+----------+
-| ``s.count(x)``           | total number of occurrences of |          |
-|                          | *x* in *s*                     |          |
 +--------------------------+--------------------------------+----------+
 
 Sequences of the same type also support comparisons.  In particular, tuples
@@ -1101,12 +1136,41 @@ Notes:
   concatenation or repetition.
 
 (8)
-   ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   Not all implementations support passing the additional arguments *i* and *j*.
-   These arguments allow efficient searching of subsections of the sequence. Passing
-   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
-   without copying any data and with the returned index being relative to
-   the start of the sequence rather than the start of the slice.
+   An :exc:`IndexError` is raised if *i* is outside the sequence range.
+
+.. rubric:: Sequence Methods
+
+Sequence types also support the following methods:
+
+.. method:: list.count(value, /)
+            range.count(value, /)
+            tuple.count(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.count(value, /)
+
+   Return the total number of occurrences of *value* in *sequence*.
+
+.. method:: list.index(value[, start[, stop])
+            range.index(value[, start[, stop])
+            tuple.index(value[, start[, stop])
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.index(value[, start[, stop])
+
+   Return the index of the first occurrence of *value* in *sequence*.
+
+   Raises :exc:`ValueError` if *value* is not found in *sequence*.
+
+   The *start* or *stop* arguments allow for efficient searching
+   of subsections of the sequence, beginning at *start* and ending at *stop*.
+   This is roughly equivalent to ``start + sequence[start:stop].index(value)``,
+   only without copying any data.
+
+   .. caution::
+      Not all sequence types support passing the *start* and *stop* arguments.
 
 
 .. _typesseq-immutable:
@@ -1157,14 +1221,6 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    pair: subscript; assignment
    pair: slice; assignment
    pair: statement; del
-   single: append() (sequence method)
-   single: clear() (sequence method)
-   single: copy() (sequence method)
-   single: extend() (sequence method)
-   single: insert() (sequence method)
-   single: pop() (sequence method)
-   single: remove() (sequence method)
-   single: reverse() (sequence method)
 
 +------------------------------+--------------------------------+---------------------+
 | Operation                    | Result                         | Notes               |
@@ -1172,11 +1228,15 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s[i] = x``                 | item *i* of *s* is replaced by |                     |
 |                              | *x*                            |                     |
 +------------------------------+--------------------------------+---------------------+
+| ``del s[i]``                 | removes item *i* of *s*        |                     |
++------------------------------+--------------------------------+---------------------+
 | ``s[i:j] = t``               | slice of *s* from *i* to *j*   |                     |
 |                              | is replaced by the contents of |                     |
 |                              | the iterable *t*               |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``del s[i:j]``               | same as ``s[i:j] = []``        |                     |
+| ``del s[i:j]``               | removes the elements of        |                     |
+|                              | ``s[i:j]`` from the list       |                     |
+|                              | (same as ``s[i:j] = []``)      |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j:k] = t``             | the elements of ``s[i:j:k]``   | \(1)                |
 |                              | are replaced by those of *t*   |                     |
@@ -1184,71 +1244,120 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``del s[i:j:k]``             | removes the elements of        |                     |
 |                              | ``s[i:j:k]`` from the list     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.append(x)``              | appends *x* to the end of the  |                     |
-|                              | sequence (same as              |                     |
-|                              | ``s[len(s):len(s)] = [x]``)    |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from *s*     | \(5)                |
-|                              | (same as ``del s[:]``)         |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
-|                              | (same as ``s[:]``)             |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.extend(t)`` or           | extends *s* with the           |                     |
-| ``s += t``                   | contents of *t* (for the       |                     |
+| ``s += t``                   | extends *s* with the           |                     |
+|                              | contents of *t* (for the       |                     |
 |                              | most part the same as          |                     |
 |                              | ``s[len(s):len(s)] = t``)      |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s *= n``                   | updates *s* with its contents  | \(6)                |
+| ``s *= n``                   | updates *s* with its contents  | \(2)                |
 |                              | repeated *n* times             |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.insert(i, x)``           | inserts *x* into *s* at the    |                     |
-|                              | index given by *i*             |                     |
-|                              | (same as ``s[i:i] = [x]``)     |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
-|                              | also removes it from *s*       |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.remove(x)``              | remove the first item from *s* | \(3)                |
-|                              | where ``s[i]`` is equal to *x* |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
-|                              | place                          |                     |
-+------------------------------+--------------------------------+---------------------+
-
 
 Notes:
 
 (1)
-   *t* must have the same length as the slice it is replacing.
+   If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
 
 (2)
-   The optional argument *i* defaults to ``-1``, so that by default the last
-   item is removed and returned.
-
-(3)
-   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
-
-(4)
-   The :meth:`reverse` method modifies the sequence in place for economy of
-   space when reversing a large sequence.  To remind users that it operates by
-   side effect, it does not return the reversed sequence.
-
-(5)
-   :meth:`clear` and :meth:`!copy` are included for consistency with the
-   interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
-   :class:`collections.abc.MutableSequence` ABC, but most concrete
-   mutable sequence classes provide it.
-
-   .. versionadded:: 3.3
-      :meth:`clear` and :meth:`!copy` methods.
-
-(6)
    The value *n* is an integer, or an object implementing
    :meth:`~object.__index__`.  Zero and negative values of *n* clear
    the sequence.  Items in the sequence are not copied; they are referenced
    multiple times, as explained for ``s * n`` under :ref:`typesseq-common`.
+
+.. rubric:: Mutable Sequence Methods
+
+Mutable sequence types also support the following methods:
+
+.. method:: bytearray.append(value, /)
+            list.append(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.append(value, /)
+
+   Append *value* to the end of the sequence
+   This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
+
+.. method:: bytearray.clear()
+            list.clear()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.clear()
+
+   .. versionadded:: 3.3
+
+   Remove all items from *sequence*.
+   This is equivalent to writing ``del sequence[:]``.
+
+.. method:: bytearray.copy()
+            list.copy()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.copy()
+
+   .. versionadded:: 3.3
+
+   Create a shallow copy of *sequence*.
+   This is equivalent to writing ``sequence[:]``.
+
+   .. hint:: The :meth:`!copy` method is not part of the
+             :class:`~collections.abc.MutableSequence` :class:`~abc.ABC`,
+             but most concrete mutable sequence types provide it.
+
+.. method:: bytearray.extend(iterable, /)
+            list.extend(iterable, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.extend(iterable, /)
+
+   Extend *sequence* with the contents of *iterable*.
+   For the most part, this is the same as writing
+   ``seq[len(seq):len(seq)] = iterable``.
+
+.. method:: bytearray.insert(index, value, /)
+            list.insert(index, value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.insert(index, value, /)
+
+   Insert *value* into *sequence* at the given *index*.
+   This is equivalent to writing ``sequence[index:index] = [value]``.
+
+.. method:: bytearray.pop(index=-1, /)
+            list.pop(index=-1, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.pop(index=-1, /)
+
+   Retrieve the item at *index* and also removes it from *sequence*.
+   By default, the last item in *sequence* is removed and returned.
+
+.. method:: bytearray.remove(value, /)
+            list.remove(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.remove(value, /)
+
+   Remove the first item from *sequence* where ``sequence[i] == value``.
+
+   Raises :exc:`ValueError` if *value* is not found in *sequence*.
+
+.. method:: bytearray.reverse()
+            list.reverse()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.reverse()
+
+   Reverse the items of *sequence* in place.
+   This method maintains economy of space when reversing a large sequence.
+   To remind users that it operates by side-effect, it returns ``None``.
 
 
 .. _typesseq-list:
@@ -1262,7 +1371,7 @@ Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
 application).
 
-.. class:: list([iterable])
+.. class:: list(iterable=(), /)
 
    Lists may be constructed in several ways:
 
@@ -1343,7 +1452,7 @@ built-in). Tuples are also used for cases where an immutable sequence of
 homogeneous data is needed (such as allowing storage in a :class:`set` or
 :class:`dict` instance).
 
-.. class:: tuple([iterable])
+.. class:: tuple(iterable=(), /)
 
    Tuples may be constructed in a number of ways:
 
@@ -1385,8 +1494,8 @@ The :class:`range` type represents an immutable sequence of numbers and is
 commonly used for looping a specific number of times in :keyword:`for`
 loops.
 
-.. class:: range(stop)
-           range(start, stop[, step])
+.. class:: range(stop, /)
+           range(start, stop, step=1, /)
 
    The arguments to the range constructor must be integers (either built-in
    :class:`int` or any object that implements the :meth:`~object.__index__` special
@@ -1491,20 +1600,113 @@ objects that compare equal might have different :attr:`~range.start`,
    sequence of values they define (instead of comparing based on
    object identity).
 
-.. versionadded:: 3.3
-   The :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
+   Added the :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
    attributes.
 
 .. seealso::
 
-   * The `linspace recipe <https://code.activestate.com/recipes/579000/>`_
-     shows how to implement a lazy version of range suitable for floating
-     point applications.
+   * The `linspace recipe <https://code.activestate.com/recipes/579000-equally-spaced-numbers-linspace/>`_
+     shows how to implement a lazy version of range suitable for floating-point
+     applications.
 
 .. index::
    single: string; text sequence type
    single: str (built-in class); (see also string)
    pair: object; string
+
+.. _text-methods-summary:
+
+Text and Binary Sequence Type Methods Summary
+=============================================
+The following table summarizes the text and binary sequence types methods by
+category.
+
+
++--------------------------+-------------------------------------------+---------------------------------------------------+
+| Category                 |  :class:`str` methods                     |   :class:`bytes` and :class:`bytearray` methods   |
++==========================+===========================================+===================================================+
+| Formatting               |  :meth:`str.format`                       |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.format_map`                   |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :ref:`f-strings`                         |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :ref:`old-string-formatting`             |  :ref:`bytes-formatting`                          |
++--------------------------+------------------+------------------------+--------------------+------------------------------+
+| Searching and Replacing  | :meth:`str.find` | :meth:`str.rfind`      | :meth:`bytes.find` | :meth:`bytes.rfind`          |
+|                          +------------------+------------------------+--------------------+------------------------------+
+|                          | :meth:`str.index`| :meth:`str.rindex`     | :meth:`bytes.index`| :meth:`bytes.rindex`         |
+|                          +------------------+------------------------+--------------------+------------------------------+
+|                          |  :meth:`str.startswith`                   |  :meth:`bytes.startswith`                         |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.endswith`                     |  :meth:`bytes.endswith`                           |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.count`                        |  :meth:`bytes.count`                              |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.replace`                      |  :meth:`bytes.replace`                            |
++--------------------------+-------------------+-----------------------+---------------------+-----------------------------+
+| Splitting and Joining    | :meth:`str.split` | :meth:`str.rsplit`    | :meth:`bytes.split` | :meth:`bytes.rsplit`        |
+|                          +-------------------+-----------------------+---------------------+-----------------------------+
+|                          |  :meth:`str.splitlines`                   |  :meth:`bytes.splitlines`                         |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.partition`                    |  :meth:`bytes.partition`                          |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.rpartition`                   |  :meth:`bytes.rpartition`                         |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.join`                         |  :meth:`bytes.join`                               |
++--------------------------+-------------------------------------------+---------------------------------------------------+
+| String Classification    |  :meth:`str.isalpha`                      |  :meth:`bytes.isalpha`                            |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isdecimal`                    |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isdigit`                      |  :meth:`bytes.isdigit`                            |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isnumeric`                    |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isalnum`                      |  :meth:`bytes.isalnum`                            |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isidentifier`                 |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.islower`                      |  :meth:`bytes.islower`                            |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isupper`                      |  :meth:`bytes.isupper`                            |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.istitle`                      |  :meth:`bytes.istitle`                            |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isspace`                      |  :meth:`bytes.isspace`                            |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.isprintable`                  |                                                   |
++--------------------------+-------------------------------------------+---------------------------------------------------+
+| Case Manipulation        |  :meth:`str.lower`                        |  :meth:`bytes.lower`                              |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.upper`                        |  :meth:`bytes.upper`                              |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.casefold`                     |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.capitalize`                   |  :meth:`bytes.capitalize`                         |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.title`                        |  :meth:`bytes.title`                              |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.swapcase`                     |  :meth:`bytes.swapcase`                           |
++--------------------------+-------------------+-----------------------+---------------------+-----------------------------+
+| Padding and Stripping    | :meth:`str.ljust` | :meth:`str.rjust`     | :meth:`bytes.ljust` | :meth:`bytes.rjust`         |
+|                          +-------------------+-----------------------+---------------------+-----------------------------+
+|                          |  :meth:`str.center`                       |  :meth:`bytes.center`                             |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.expandtabs`                   |  :meth:`bytes.expandtabs`                         |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.strip`                        |  :meth:`bytes.strip`                              |
+|                          +--------------------+----------------------+----------------------+----------------------------+
+|                          | :meth:`str.lstrip` | :meth:`str.rstrip`   | :meth:`bytes.lstrip` | :meth:`bytes.rstrip`       |
++--------------------------+--------------------+----------------------+----------------------+----------------------------+
+| Translation and Encoding |  :meth:`str.translate`                    |  :meth:`bytes.translate`                          |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.maketrans`                    |  :meth:`bytes.maketrans`                          |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.encode`                       |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |                                           |  :meth:`bytes.decode`                             |
++--------------------------+-------------------------------------------+---------------------------------------------------+
 
 .. _textseq:
 
@@ -1528,7 +1730,7 @@ between them will be implicitly converted to a single string literal. That
 is, ``("spam " "eggs") == "spam eggs"``.
 
 See :ref:`strings` for more about the various forms of string literal,
-including supported escape sequences, and the ``r`` ("raw") prefix that
+including supported :ref:`escape sequences <escape-sequences>`, and the ``r`` ("raw") prefix that
 disables most escape sequence processing.
 
 Strings may also be created from other objects using the :class:`str`
@@ -1553,8 +1755,10 @@ multiple fragments.
 .. index::
    single: string; str (built-in class)
 
-.. class:: str(object='')
-           str(object=b'', encoding='utf-8', errors='strict')
+.. class:: str(*, encoding='utf-8', errors='strict')
+           str(object)
+           str(object, encoding, errors='strict')
+           str(object, *, errors)
 
    Return a :ref:`string <textseq>` version of *object*.  If *object* is not
    provided, returns the empty string.  Otherwise, the behavior of ``str()``
@@ -1641,19 +1845,25 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
+   The casefolding algorithm is `described in section 3.13.3 'Default Case
+   Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G53253>`__.
 
    .. versionadded:: 3.3
 
 
-.. method:: str.center(width[, fillchar])
+.. method:: str.center(width, fillchar=' ', /)
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.  For example::
 
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1663,8 +1873,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one.
+   which is the length of the string plus one. For example::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+      >>> 'spam, spam, spam'.count('')
+      17
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
@@ -1684,6 +1904,14 @@ expression support in the :mod:`re` module).
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
+   For example::
+
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
+      <class 'bytes'>
+      >>> encoded_str_to_bytes
+      b'Python'
+
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1698,7 +1926,19 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   at that position. Using *start* and *end* is equivalent to
+   ``str[start:end].endswith(suffix)``. For example::
+
+      >>> 'Python'.endswith('on')
+      True
+      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
+      False
+      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
+      True
+      >>> 'Python is amazing'.endswith('is', 0, 9)
+      True
+
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1714,12 +1954,15 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed.
+   printed. For example::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
@@ -1727,6 +1970,14 @@ expression support in the :mod:`re` module).
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
    interpreted as in slice notation.  Return ``-1`` if *sub* is not found.
+   For example::
+
+      >>> 'spam, spam, spam'.find('sp')
+      0
+      >>> 'spam, spam, spam'.find('sp', 5)
+      6
+
+   See also :meth:`rfind` and :meth:`index`.
 
    .. note::
 
@@ -1745,10 +1996,16 @@ expression support in the :mod:`re` module).
    ``{}``.  Each replacement field contains either the numeric index of a
    positional argument, or the name of a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
-   the corresponding argument.
+   the corresponding argument. For example:
+
+   .. doctest::
 
       >>> "The sum of 1 + 2 is {0}".format(1+2)
       'The sum of 1 + 2 is 3'
+      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      'The sum of 1 + 2 is 3'
+      >>> "{1} expects the {0} Inquisition!".format("Spanish", "Nobody")
+      'Nobody expects the Spanish Inquisition!'
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
@@ -1769,7 +2026,7 @@ expression support in the :mod:`re` module).
       cases.
 
 
-.. method:: str.format_map(mapping)
+.. method:: str.format_map(mapping, /)
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful
@@ -1807,14 +2064,33 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
+   For example:
+
+   .. doctest::
+
+      >>> 'Letters and spaces'.isalpha()
+      False
+      >>> 'LettersOnly'.isalpha()
+      True
+      >>> 'µ'.isalpha()  # non-ASCII characters can be considered alphabetical too
+      True
+
+   See :ref:`unicode-properties`.
 
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F.
+   ASCII characters have code points in the range U+0000-U+007F. For example:
+
+   .. doctest::
+
+      >>> 'ASCII characters'.isascii()
+      True
+      >>> 'µ'.isascii()
+      False
 
    .. versionadded:: 3.7
 
@@ -1824,9 +2100,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are decimal
    characters and there is at least one character, ``False``
    otherwise. Decimal characters are those that can be used to form
-   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
+   numbers in base 10, such as U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd".
+   General Category "Nd". For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdecimal()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # Arabic-Indic digits zero to nine
+      True
+      >>> 'alphabetic'.isdecimal()
+      False
 
 
 .. method:: str.isdigit()
@@ -1872,17 +2157,38 @@ expression support in the :mod:`re` module).
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isnumeric()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      True
+      >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
+      True
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
+   a superset of decimal numbers.
 
 
 .. method:: str.isprintable()
 
-   Return ``True`` if all characters in the string are printable or the string is
-   empty, ``False`` otherwise.  Nonprintable characters are those characters defined
-   in the Unicode character database as "Other" or "Separator", excepting the
-   ASCII space (0x20) which is considered printable.  (Note that printable
-   characters in this context are those which should not be escaped when
-   :func:`repr` is invoked on a string.  It has no bearing on the handling of
-   strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
+   Return ``True`` if all characters in the string are printable, ``False`` if it
+   contains at least one non-printable character.
+
+   Here "printable" means the character is suitable for :func:`repr` to use in
+   its output; "non-printable" means that :func:`repr` on built-in types will
+   hex-escape the character.  It has no bearing on the handling of strings
+   written to :data:`sys.stdout` or :data:`sys.stderr`.
+
+   The printable characters are those which in the Unicode character database
+   (see :mod:`unicodedata`) have a general category in group Letter, Mark,
+   Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
+   Nonprintable characters are those in group Separator or Other (Z or C),
+   except the ASCII space.
 
 
 .. method:: str.isspace()
@@ -1901,6 +2207,19 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string is a titlecased string and there is at least one
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return ``False`` otherwise.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Spam, Spam, Spam'.istitle()
+      True
+      >>> 'spam, spam, spam'.istitle()
+      False
+      >>> 'SPAM, SPAM, SPAM'.istitle()
+      False
+
+   See also :meth:`title`.
 
 
 .. method:: str.isupper()
@@ -1921,19 +2240,41 @@ expression support in the :mod:`re` module).
 
 .. _meth-str-join:
 
-.. method:: str.join(iterable)
+.. method:: str.join(iterable, /)
 
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method.
+   elements is the string providing this method. For example:
+
+   .. doctest::
+
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
+
+   See also :meth:`split`.
 
 
-.. method:: str.ljust(width[, fillchar])
+.. method:: str.ljust(width, fillchar=' ', /)
 
    Return the string left justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.ljust(10)
+      'Python    '
+      >>> 'Python'.ljust(10, '.')
+      'Python....'
+      >>> 'Monty Python'.ljust(10, '.')
+      'Monty Python'
+
+   See also :meth:`rjust`.
 
 
 .. method:: str.lower()
@@ -1941,12 +2282,12 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
+   The lowercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
-.. method:: str.lstrip([chars])
+.. method:: str.lstrip(chars=None, /)
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
@@ -1967,7 +2308,8 @@ expression support in the :mod:`re` module).
       'three!'
 
 
-.. staticmethod:: str.maketrans(x[, y[, z]])
+.. staticmethod:: str.maketrans(dict, /)
+                  str.maketrans(from, to, remove='', /)
 
    This static method returns a translation table usable for :meth:`str.translate`.
 
@@ -1977,12 +2319,12 @@ expression support in the :mod:`re` module).
    converted to ordinals.
 
    If there are two arguments, they must be strings of equal length, and in the
-   resulting dictionary, each character in x will be mapped to the character at
-   the same position in y.  If there is a third argument, it must be a string,
+   resulting dictionary, each character in *from* will be mapped to the character at
+   the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
 
 
-.. method:: str.partition(sep)
+.. method:: str.partition(sep, /)
 
    Split the string at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
@@ -2018,7 +2360,7 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.9
 
 
-.. method:: str.replace(old, new, count=-1)
+.. method:: str.replace(old, new, /, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
    *new*.  If *count* is given, only the first *count* occurrences are replaced.
@@ -2041,14 +2383,14 @@ expression support in the :mod:`re` module).
    found.
 
 
-.. method:: str.rjust(width[, fillchar])
+.. method:: str.rjust(width, fillchar=' ', /)
 
    Return the string right justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
 
-.. method:: str.rpartition(sep)
+.. method:: str.rpartition(sep, /)
 
    Split the string at the last occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
@@ -2065,7 +2407,7 @@ expression support in the :mod:`re` module).
    :meth:`split` which is described in detail below.
 
 
-.. method:: str.rstrip([chars])
+.. method:: str.rstrip(chars=None, /)
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
@@ -2096,8 +2438,9 @@ expression support in the :mod:`re` module).
    If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
    ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
-   (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
-   Splitting an empty string with a specified separator returns ``['']``.
+   as a single delimiter (to split with multiple delimiters, use
+   :func:`re.split`). Splitting an empty string with a specified separator
+   returns ``['']``.
 
    For example::
 
@@ -2107,6 +2450,8 @@ expression support in the :mod:`re` module).
       ['1', '2,3']
       >>> '1,2,,3,'.split(',')
       ['1', '2', '', '3', '']
+      >>> '1<>2<>3<4'.split('<>')
+      ['1', '2', '3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
    applied: runs of consecutive whitespace are regarded as a single separator,
@@ -2123,6 +2468,20 @@ expression support in the :mod:`re` module).
       ['1', '2 3']
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
+
+   If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
+   leading runs of consecutive whitespace are considered.
+
+   For example::
+
+      >>> "".split(None, 0)
+      []
+      >>> "   ".split(None, 0)
+      []
+      >>> "   foo   ".split(maxsplit=0)
+      ['foo   ']
+
+   See also :meth:`join`.
 
 
 .. index::
@@ -2199,7 +2558,7 @@ expression support in the :mod:`re` module).
    string at that position.
 
 
-.. method:: str.strip([chars])
+.. method:: str.strip(chars=None, /)
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
@@ -2263,8 +2622,10 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
+   See also :meth:`istitle`.
 
-.. method:: str.translate(table)
+
+.. method:: str.translate(table, /)
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
@@ -2290,12 +2651,12 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
+   The uppercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
-.. method:: str.zfill(width)
+.. method:: str.zfill(width, /)
 
    Return a copy of the string left filled with ASCII ``'0'`` digits to
    make a string of length *width*. A leading sign prefix (``'+'``/``'-'``)
@@ -2310,6 +2671,172 @@ expression support in the :mod:`re` module).
       >>> "-42".zfill(5)
       '-0042'
 
+
+.. index::
+   single: ! formatted string literal
+   single: formatted string literals
+   single: ! f-string
+   single: f-strings
+   single: fstring
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: {} (curly brackets); in formatted string literal
+   single: ! (exclamation mark); in formatted string literal
+   single: : (colon); in formatted string literal
+   single: = (equals); for help in debugging using string literals
+
+.. _stdtypes-fstrings:
+
+Formatted String Literals (f-strings)
+-------------------------------------
+
+.. versionadded:: 3.6
+.. versionchanged:: 3.7
+   The :keyword:`await` and :keyword:`async for` can be used in expressions
+   within f-strings.
+.. versionchanged:: 3.8
+   Added the debug specifier (``=``)
+.. versionchanged:: 3.12
+   Many restrictions on expressions within f-strings have been removed.
+   Notably, nested strings, comments, and backslashes are now permitted.
+
+An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
+a string literal that is prefixed with ``f`` or ``F``.
+This type of string literal allows embedding the results of arbitrary Python
+expressions within *replacement fields*, which are delimited by curly
+brackets (``{}``).
+Each replacement field must contain an expression, optionally followed by:
+
+* a *debug specifier* -- an equal sign (``=``);
+* a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
+* a *format specifier* prefixed with a colon (``:``).
+
+See the :ref:`Lexical Analysis section on f-strings <f-strings>` for details
+on the syntax of these fields.
+
+Debug specifier
+^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.8
+
+If a debug specifier -- an equal sign (``=``) -- appears after the replacement
+field expression, the resulting f-string will contain the expression's source,
+the equal sign, and the value of the expression.
+This is often useful for debugging::
+
+   >>> number = 14.3
+   >>> f'{number=}'
+   'number=14.3'
+
+Whitespace before, inside and after the expression, as well as whitespace
+after the equal sign, is significant --- it is retained in the result::
+
+   >>> f'{ number  -  4  = }'
+   ' number  -  4  = 10.3'
+
+
+Conversion specifier
+^^^^^^^^^^^^^^^^^^^^
+
+By default, the value of a replacement field expression is converted to
+a string using :func:`str`::
+
+   >>> from fractions import Fraction
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third}'
+   '1/3'
+
+When a debug specifier but no format specifier is used, the default conversion
+instead uses :func:`repr`::
+
+   >>> f'{one_third = }'
+   'one_third = Fraction(1, 3)'
+
+The conversion can be specified explicitly using one of these specifiers:
+
+* ``!s`` for :func:`str`
+* ``!r`` for :func:`repr`
+* ``!a`` for :func:`ascii`
+
+For example::
+
+   >>> str(one_third)
+   '1/3'
+   >>> repr(one_third)
+   'Fraction(1, 3)'
+
+   >>> f'{one_third!s} is {one_third!r}'
+   '1/3 is Fraction(1, 3)'
+
+   >>> string = "¡kočka 😸!"
+   >>> ascii(string)
+   "'\\xa1ko\\u010dka \\U0001f638!'"
+
+   >>> f'{string = !a}'
+   "string = '\\xa1ko\\u010dka \\U0001f638!'"
+
+
+Format specifier
+^^^^^^^^^^^^^^^^
+
+After the expression has been evaluated, and possibly converted using an
+explicit conversion specifier, it is formatted using the :func:`format` function.
+If the replacement field includes a *format specifier* introduced by a colon
+(``:``), the specifier is passed to :func:`!format` as the second argument.
+The result of :func:`!format` is then used as the final value for the
+replacement field. For example::
+
+   >>> from fractions import Fraction
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third:.6f}'
+   '0.333333'
+   >>> f'{one_third:_^+10}'
+   '___+1/3___'
+   >>> >>> f'{one_third!r:_^20}'
+   '___Fraction(1, 3)___'
+   >>> f'{one_third = :~>10}~'
+   'one_third = ~~~~~~~1/3~'
+
+.. _stdtypes-tstrings:
+
+Template String Literals (t-strings)
+------------------------------------
+
+An :dfn:`t-string` (formally a :dfn:`template string literal`) is
+a string literal that is prefixed with ``t`` or ``T``.
+
+These strings follow the same syntax and evaluation rules as
+:ref:`formatted string literals <stdtypes-fstrings>`,
+with for the following differences:
+
+* Rather than evaluating to a ``str`` object, template string literals evaluate
+  to a :class:`string.templatelib.Template` object.
+
+* The :func:`format` protocol is not used.
+  Instead, the format specifier and conversions (if any) are passed to
+  a new :class:`~string.templatelib.Interpolation` object that is created
+  for each evaluated expression.
+  It is up to code that processes the resulting :class:`~string.templatelib.Template`
+  object to decide how to handle format specifiers and conversions.
+
+* Format specifiers containing nested replacement fields are evaluated eagerly,
+  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
+  evaluate the inner expression ``{precision}`` to determine the value of the
+  ``format_spec`` attribute.
+  If ``precision`` were to be ``2``, the resulting format specifier
+  would be ``'.2f'``.
+
+* When the equals sign ``'='`` is provided in an interpolation expression,
+  the text of the expression is appended to the literal string that precedes
+  the relevant interpolation.
+  This includes the equals sign and any surrounding whitespace.
+  The :class:`!Interpolation` instance for the expression will be created as
+  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
+  be set to '``r``' (:func:`repr`) by default.
+  If an explicit conversion or format specifier are provided,
+  this will override the default behaviour.
 
 
 .. _old-string-formatting:
@@ -2330,17 +2857,24 @@ expression support in the :mod:`re` module).
 
    The formatting operations described here exhibit a variety of quirks that
    lead to a number of common errors (such as failing to display tuples and
-   dictionaries correctly).  Using the newer :ref:`formatted string literals
-   <f-strings>`, the :meth:`str.format` interface, or :ref:`template strings
-   <template-strings>` may help avoid these errors.  Each of these
-   alternatives provides their own trade-offs and benefits of simplicity,
-   flexibility, and/or extensibility.
+   dictionaries correctly).
+
+   Using :ref:`formatted string literals <f-strings>`, the :meth:`str.format`
+   interface, or :class:`string.Template` may help avoid these errors.
+   Each of these alternatives provides their own trade-offs and benefits of
+   simplicity, flexibility, and/or extensibility.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a string), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
+For example:
+
+.. doctest::
+
+   >>> print('%s has %d quote types.' % ('Python', 2))
+   Python has 2 quote types.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -2434,19 +2968,19 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'X'``    | Signed hexadecimal (uppercase).                     | \(2)  |
 +------------+-----------------------------------------------------+-------+
-| ``'e'``    | Floating point exponential format (lowercase).      | \(3)  |
+| ``'e'``    | Floating-point exponential format (lowercase).      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'E'``    | Floating point exponential format (uppercase).      | \(3)  |
+| ``'E'``    | Floating-point exponential format (uppercase).      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'f'``    | Floating point decimal format.                      | \(3)  |
+| ``'f'``    | Floating-point decimal format.                      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'F'``    | Floating point decimal format.                      | \(3)  |
+| ``'F'``    | Floating-point decimal format.                      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'g'``    | Floating point format. Uses lowercase exponential   | \(4)  |
+| ``'g'``    | Floating-point format. Uses lowercase exponential   | \(4)  |
 |            | format if exponent is less than -4 or not less than |       |
 |            | precision, decimal format otherwise.                |       |
 +------------+-----------------------------------------------------+-------+
-| ``'G'``    | Floating point format. Uses uppercase exponential   | \(4)  |
+| ``'G'``    | Floating-point format. Uses uppercase exponential   | \(4)  |
 |            | format if exponent is less than -4 or not less than |       |
 |            | precision, decimal format otherwise.                |       |
 +------------+-----------------------------------------------------+-------+
@@ -2540,7 +3074,8 @@ binary protocols are based on the ASCII text encoding, bytes objects offer
 several methods that are only valid when working with ASCII compatible
 data and are closely related to string objects in a variety of other ways.
 
-.. class:: bytes([source[, encoding[, errors]]])
+.. class:: bytes(source=b'')
+           bytes(source, encoding, errors='strict')
 
    Firstly, the syntax for bytes literals is largely the same as that for string
    literals, except that a ``b`` prefix is added:
@@ -2580,7 +3115,7 @@ data and are closely related to string objects in a variety of other ways.
    numbers are a commonly used format for describing binary data. Accordingly,
    the bytes type has an additional class method to read data in that format:
 
-   .. classmethod:: fromhex(string)
+   .. classmethod:: fromhex(string, /)
 
       This :class:`bytes` class method returns a bytes object, decoding the
       given string object.  The string must contain two hexadecimal digits per
@@ -2593,10 +3128,15 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
+      .. versionchanged:: 3.14
+         :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
+
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
-   .. method:: hex([sep[, bytes_per_sep]])
+   .. method:: hex(*, bytes_per_sep=1)
+               hex(sep, bytes_per_sep=1)
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2645,7 +3185,8 @@ Bytearray Objects
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
 objects.
 
-.. class:: bytearray([source[, encoding[, errors]]])
+.. class:: bytearray(source=b'')
+           bytearray(source, encoding, errors='strict')
 
    There is no dedicated literal syntax for bytearray objects, instead
    they are always created by calling the constructor:
@@ -2665,7 +3206,7 @@ objects.
    numbers are a commonly used format for describing binary data. Accordingly,
    the bytearray type has an additional class method to read data in that format:
 
-   .. classmethod:: fromhex(string)
+   .. classmethod:: fromhex(string, /)
 
       This :class:`bytearray` class method returns bytearray object, decoding
       the given string object.  The string must contain two hexadecimal digits
@@ -2678,10 +3219,15 @@ objects.
          :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
+      .. versionchanged:: 3.14
+         :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
+
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
 
-   .. method:: hex([sep[, bytes_per_sep]])
+   .. method:: hex(*, bytes_per_sep=1)
+               hex(sep, bytes_per_sep=1)
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2695,6 +3241,62 @@ objects.
          Similar to :meth:`bytes.hex`, :meth:`bytearray.hex` now supports
          optional *sep* and *bytes_per_sep* parameters to insert separators
          between bytes in the hex output.
+
+   .. method:: resize(size, /)
+
+      Resize the :class:`bytearray` to contain *size* bytes. *size* must be
+      greater than or equal to 0.
+
+      If the :class:`bytearray` needs to shrink, bytes beyond *size* are truncated.
+
+      If the :class:`bytearray` needs to grow, all new bytes, those beyond *size*,
+      will be set to null bytes.
+
+
+      This is equivalent to:
+
+      >>> def resize(ba, size):
+      ...     if len(ba) > size:
+      ...         del ba[size:]
+      ...     else:
+      ...         ba += b'\0' * (size - len(ba))
+
+      Examples:
+
+      >>> shrink = bytearray(b'abc')
+      >>> shrink.resize(1)
+      >>> (shrink, len(shrink))
+      (bytearray(b'a'), 1)
+      >>> grow = bytearray(b'abc')
+      >>> grow.resize(5)
+      >>> (grow, len(grow))
+      (bytearray(b'abc\x00\x00'), 5)
+
+      .. versionadded:: 3.14
+
+   .. method:: take_bytes(n=None, /)
+
+      Remove the first *n* bytes from the bytearray and return them as an immutable
+      :class:`bytes`.
+      By default (if *n* is ``None``), return all bytes and clear the bytearray.
+
+      If *n* is negative, index from the end and take the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds, raise :exc:`IndexError`.
+
+      Taking less than the full length will leave remaining bytes in the
+      :class:`bytearray`, which requires a copy. If the remaining bytes should be
+      discarded, use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      then :func:`~bytearray.take_bytes` without a size.
+
+      .. impl-detail::
+
+         Taking all bytes is a zero-copy operation.
+
+      .. versionadded:: 3.15
+
+         See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
+         common code patterns which can be optimized with
+         :meth:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -2887,8 +3489,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.join(iterable)
-            bytearray.join(iterable)
+.. method:: bytes.join(iterable, /)
+            bytearray.join(iterable, /)
 
    Return a bytes or bytearray object which is the concatenation of the
    binary data sequences in *iterable*.  A :exc:`TypeError` will be raised
@@ -2898,8 +3500,8 @@ arbitrary binary data.
    bytearray object providing this method.
 
 
-.. staticmethod:: bytes.maketrans(from, to)
-                  bytearray.maketrans(from, to)
+.. staticmethod:: bytes.maketrans(from, to, /)
+                  bytearray.maketrans(from, to, /)
 
    This static method returns a translation table usable for
    :meth:`bytes.translate` that will map each character in *from* into the
@@ -2909,8 +3511,8 @@ arbitrary binary data.
    .. versionadded:: 3.1
 
 
-.. method:: bytes.partition(sep)
-            bytearray.partition(sep)
+.. method:: bytes.partition(sep, /)
+            bytearray.partition(sep, /)
 
    Split the sequence at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself or its
@@ -2922,8 +3524,8 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.replace(old, new[, count])
-            bytearray.replace(old, new[, count])
+.. method:: bytes.replace(old, new, count=-1, /)
+            bytearray.replace(old, new, count=-1, /)
 
    Return a copy of the sequence with all occurrences of subsequence *old*
    replaced by *new*.  If the optional argument *count* is given, only the
@@ -2966,8 +3568,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.rpartition(sep)
-            bytearray.rpartition(sep)
+.. method:: bytes.rpartition(sep, /)
+            bytearray.rpartition(sep, /)
 
    Split the sequence at the last occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself or its
@@ -3017,8 +3619,8 @@ with arbitrary binary data by passing appropriate arguments. Note that all of
 the bytearray methods in this section do *not* operate in place, and instead
 produce new objects.
 
-.. method:: bytes.center(width[, fillbyte])
-            bytearray.center(width[, fillbyte])
+.. method:: bytes.center(width, fillbyte=b' ', /)
+            bytearray.center(width, fillbyte=b' ', /)
 
    Return a copy of the object centered in a sequence of length *width*.
    Padding is done using the specified *fillbyte* (default is an ASCII
@@ -3031,8 +3633,8 @@ produce new objects.
       it always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.ljust(width[, fillbyte])
-            bytearray.ljust(width[, fillbyte])
+.. method:: bytes.ljust(width, fillbyte=b' ', /)
+            bytearray.ljust(width, fillbyte=b' ', /)
 
    Return a copy of the object left justified in a sequence of length *width*.
    Padding is done using the specified *fillbyte* (default is an ASCII
@@ -3045,14 +3647,13 @@ produce new objects.
       it always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.lstrip([chars])
-            bytearray.lstrip([chars])
+.. method:: bytes.lstrip(bytes=None, /)
+            bytearray.lstrip(bytes=None, /)
 
    Return a copy of the sequence with specified leading bytes removed.  The
-   *chars* argument is a binary sequence specifying the set of byte values to
-   be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *chars* argument defaults
-   to removing ASCII whitespace.  The *chars* argument is not a prefix;
+   *bytes* argument is a binary sequence specifying the set of byte values to
+   be removed.  If omitted or ``None``, the *bytes* argument defaults
+   to removing ASCII whitespace.  The *bytes* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -3076,8 +3677,8 @@ produce new objects.
       it always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.rjust(width[, fillbyte])
-            bytearray.rjust(width[, fillbyte])
+.. method:: bytes.rjust(width, fillbyte=b' ', /)
+            bytearray.rjust(width, fillbyte=b' ', /)
 
    Return a copy of the object right justified in a sequence of length *width*.
    Padding is done using the specified *fillbyte* (default is an ASCII
@@ -3101,14 +3702,13 @@ produce new objects.
    :meth:`split` which is described in detail below.
 
 
-.. method:: bytes.rstrip([chars])
-            bytearray.rstrip([chars])
+.. method:: bytes.rstrip(bytes=None, /)
+            bytearray.rstrip(bytes=None, /)
 
    Return a copy of the sequence with specified trailing bytes removed.  The
-   *chars* argument is a binary sequence specifying the set of byte values to
-   be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *chars* argument defaults to
-   removing ASCII whitespace.  The *chars* argument is not a suffix; rather,
+   *bytes* argument is a binary sequence specifying the set of byte values to
+   be removed.  If omitted or ``None``, the *bytes* argument defaults to
+   removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -3144,10 +3744,9 @@ produce new objects.
    If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty subsequences (for example, ``b'1,,2'.split(b',')``
    returns ``[b'1', b'', b'2']``).  The *sep* argument may consist of a
-   multibyte sequence (for example, ``b'1<>2<>3'.split(b'<>')`` returns
-   ``[b'1', b'2', b'3']``). Splitting an empty sequence with a specified
-   separator returns ``[b'']`` or ``[bytearray(b'')]`` depending on the type
-   of object being split.  The *sep* argument may be any
+   multibyte sequence as a single delimiter. Splitting an empty sequence with
+   a specified separator returns ``[b'']`` or ``[bytearray(b'')]`` depending
+   on the type of object being split.  The *sep* argument may be any
    :term:`bytes-like object`.
 
    For example::
@@ -3158,6 +3757,8 @@ produce new objects.
       [b'1', b'2,3']
       >>> b'1,2,,3,'.split(b',')
       [b'1', b'2', b'', b'3', b'']
+      >>> b'1<>2<>3<4'.split(b'<>')
+      [b'1', b'2', b'3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
    is applied: runs of consecutive ASCII whitespace are regarded as a single
@@ -3177,14 +3778,13 @@ produce new objects.
       [b'1', b'2', b'3']
 
 
-.. method:: bytes.strip([chars])
-            bytearray.strip([chars])
+.. method:: bytes.strip(bytes=None, /)
+            bytearray.strip(bytes=None, /)
 
    Return a copy of the sequence with specified leading and trailing bytes
-   removed. The *chars* argument is a binary sequence specifying the set of
-   byte values to be removed - the name refers to the fact this method is
-   usually used with ASCII characters.  If omitted or ``None``, the *chars*
-   argument defaults to removing ASCII whitespace. The *chars* argument is
+   removed. The *bytes* argument is a binary sequence specifying the set of
+   byte values to be removed.  If omitted or ``None``, the *bytes*
+   argument defaults to removing ASCII whitespace. The *bytes* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
@@ -3431,7 +4031,7 @@ place, and instead produce new objects.
    ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
    are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
 
-   Unlike :func:`str.swapcase()`, it is always the case that
+   Unlike :func:`str.swapcase`, it is always the case that
    ``bin.swapcase().swapcase() == bin`` for the binary versions. Case
    conversions are symmetrical in ASCII, even though that is not generally
    true for arbitrary Unicode code points.
@@ -3506,8 +4106,8 @@ place, and instead produce new objects.
       always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.zfill(width)
-            bytearray.zfill(width)
+.. method:: bytes.zfill(width, /)
+            bytearray.zfill(width, /)
 
    Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
    make a sequence of length *width*. A leading sign prefix (``b'+'``/
@@ -3652,19 +4252,19 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'X'``    | Signed hexadecimal (uppercase).                     | \(2)  |
 +------------+-----------------------------------------------------+-------+
-| ``'e'``    | Floating point exponential format (lowercase).      | \(3)  |
+| ``'e'``    | Floating-point exponential format (lowercase).      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'E'``    | Floating point exponential format (uppercase).      | \(3)  |
+| ``'E'``    | Floating-point exponential format (uppercase).      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'f'``    | Floating point decimal format.                      | \(3)  |
+| ``'f'``    | Floating-point decimal format.                      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'F'``    | Floating point decimal format.                      | \(3)  |
+| ``'F'``    | Floating-point decimal format.                      | \(3)  |
 +------------+-----------------------------------------------------+-------+
-| ``'g'``    | Floating point format. Uses lowercase exponential   | \(4)  |
+| ``'g'``    | Floating-point format. Uses lowercase exponential   | \(4)  |
 |            | format if exponent is less than -4 or not less than |       |
 |            | precision, decimal format otherwise.                |       |
 +------------+-----------------------------------------------------+-------+
-| ``'G'``    | Floating point format. Uses uppercase exponential   | \(4)  |
+| ``'G'``    | Floating-point format. Uses uppercase exponential   | \(4)  |
 |            | format if exponent is less than -4 or not less than |       |
 |            | precision, decimal format otherwise.                |       |
 +------------+-----------------------------------------------------+-------+
@@ -3843,6 +4443,9 @@ copying.
    .. versionchanged:: 3.5
       memoryviews can now be indexed with tuple of integers.
 
+   .. versionchanged:: 3.14
+      memoryview is now a :term:`generic type`.
+
    :class:`memoryview` has several methods:
 
    .. method:: __eq__(exporter)
@@ -3886,7 +4489,7 @@ copying.
          >>> a == b
          False
 
-      Note that, as with floating point numbers, ``v is w`` does *not* imply
+      Note that, as with floating-point numbers, ``v is w`` does *not* imply
       ``v == w`` for memoryview objects.
 
       .. versionchanged:: 3.3
@@ -3916,7 +4519,8 @@ copying.
          in-memory Fortran order is preserved. For non-contiguous views, the
          data is converted to C first. *order=None* is the same as *order='C'*.
 
-   .. method:: hex([sep[, bytes_per_sep]])
+   .. method:: hex(*, bytes_per_sep=1)
+               hex(sep, bytes_per_sep=1)
 
       Return a string object containing two hexadecimal digits for each
       byte in the buffer. ::
@@ -3977,7 +4581,7 @@ copying.
       dangling resources) as soon as possible.
 
       After this method has been called, any further operation on the view
-      raises a :class:`ValueError` (except :meth:`release()` itself which can
+      raises a :class:`ValueError` (except :meth:`release` itself which can
       be called multiple times)::
 
          >>> m = memoryview(b'abc')
@@ -4001,7 +4605,8 @@ copying.
 
       .. versionadded:: 3.2
 
-   .. method:: cast(format[, shape])
+   .. method:: cast(format, /)
+               cast(format, shape, /)
 
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
@@ -4093,6 +4698,21 @@ copying.
 
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
+
+   .. method:: count(value, /)
+
+      Count the number of occurrences of *value*.
+
+      .. versionadded:: 3.14
+
+   .. method:: index(value, start=0, stop=sys.maxsize, /)
+
+      Return the index of the first occurrence of *value* (at or after
+      index *start* and before index *stop*).
+
+      Raises a :exc:`ValueError` if *value* cannot be found.
+
+      .. versionadded:: 3.14
 
    There are also several readonly attributes available:
 
@@ -4236,11 +4856,12 @@ other sequence-like behavior.
 
 There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
-like :meth:`~set.add` and :meth:`~set.remove`.  Since it is mutable, it has no
-hash value and cannot be used as either a dictionary key or as an element of
-another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
-its contents cannot be altered after it is created; it can therefore be used as
-a dictionary key or as an element of another set.
+like :meth:`~set.add` and :meth:`~set.remove`.
+Since it is mutable, it has no hash value and cannot be used as
+either a dictionary key or as an element of another set.
+The :class:`frozenset` type is immutable and :term:`hashable` ---
+its contents cannot be altered after it is created;
+it can therefore be used as a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
@@ -4248,8 +4869,8 @@ of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to t
 
 The constructors for both classes work the same:
 
-.. class:: set([iterable])
-           frozenset([iterable])
+.. class:: set(iterable=(), /)
+           frozenset(iterable=(), /)
 
    Return a new set or frozenset object whose elements are taken from
    *iterable*.  The elements of a set must be :term:`hashable`.  To
@@ -4257,164 +4878,172 @@ The constructors for both classes work the same:
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
-   Sets can be created by several means:
+Sets can be created by several means:
 
-   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
-   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
-   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+* Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+* Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+* Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
 
-   Instances of :class:`set` and :class:`frozenset` provide the following
-   operations:
+Instances of :class:`set` and :class:`frozenset` provide the following
+operations:
 
-   .. describe:: len(s)
+.. describe:: len(s)
 
-      Return the number of elements in set *s* (cardinality of *s*).
+   Return the number of elements in set *s* (cardinality of *s*).
 
-   .. describe:: x in s
+.. describe:: x in s
 
-      Test *x* for membership in *s*.
+   Test *x* for membership in *s*.
 
-   .. describe:: x not in s
+.. describe:: x not in s
 
-      Test *x* for non-membership in *s*.
+   Test *x* for non-membership in *s*.
 
-   .. method:: isdisjoint(other)
+.. method:: frozenset.isdisjoint(other, /)
+            set.isdisjoint(other, /)
 
-      Return ``True`` if the set has no elements in common with *other*.  Sets are
-      disjoint if and only if their intersection is the empty set.
+   Return ``True`` if the set has no elements in common with *other*.  Sets are
+   disjoint if and only if their intersection is the empty set.
 
-   .. method:: issubset(other)
-               set <= other
+.. method:: frozenset.issubset(other, /)
+            set.issubset(other, /)
+.. describe:: set <= other
 
-      Test whether every element in the set is in *other*.
+   Test whether every element in the set is in *other*.
 
-   .. method:: set < other
+.. describe:: set < other
 
-      Test whether the set is a proper subset of *other*, that is,
-      ``set <= other and set != other``.
+   Test whether the set is a proper subset of *other*, that is,
+   ``set <= other and set != other``.
 
-   .. method:: issuperset(other)
-               set >= other
+.. method:: frozenset.issuperset(other, /)
+            set.issuperset(other, /)
+.. describe:: set >= other
 
-      Test whether every element in *other* is in the set.
+   Test whether every element in *other* is in the set.
 
-   .. method:: set > other
+.. describe:: set > other
 
-      Test whether the set is a proper superset of *other*, that is, ``set >=
-      other and set != other``.
+   Test whether the set is a proper superset of *other*, that is, ``set >=
+   other and set != other``.
 
-   .. method:: union(*others)
-               set | other | ...
+.. method:: frozenset.union(*others)
+            set.union(*others)
+.. describe:: set | other | ...
 
-      Return a new set with elements from the set and all others.
+   Return a new set with elements from the set and all others.
 
-   .. method:: intersection(*others)
-               set & other & ...
+.. method:: frozenset.intersection(*others)
+            set.intersection(*others)
+.. describe:: set & other & ...
 
-      Return a new set with elements common to the set and all others.
+   Return a new set with elements common to the set and all others.
 
-   .. method:: difference(*others)
-               set - other - ...
+.. method:: frozenset.difference(*others)
+            set.difference(*others)
+.. describe:: set - other - ...
 
-      Return a new set with elements in the set that are not in the others.
+   Return a new set with elements in the set that are not in the others.
 
-   .. method:: symmetric_difference(other)
-               set ^ other
+.. method:: frozenset.symmetric_difference(other, /)
+            set.symmetric_difference(other, /)
+.. describe:: set ^ other
 
-      Return a new set with elements in either the set or *other* but not both.
+   Return a new set with elements in either the set or *other* but not both.
 
-   .. method:: copy()
+.. method:: frozenset.copy()
+            set.copy()
 
-      Return a shallow copy of the set.
-
-
-   Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
-   :meth:`issuperset` methods will accept any iterable as an argument.  In
-   contrast, their operator based counterparts require their arguments to be
-   sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
-   in favor of the more readable ``set('abc').intersection('cbs')``.
-
-   Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
-   sets are equal if and only if every element of each set is contained in the
-   other (each is a subset of the other). A set is less than another set if and
-   only if the first set is a proper subset of the second set (is a subset, but
-   is not equal). A set is greater than another set if and only if the first set
-   is a proper superset of the second set (is a superset, but is not equal).
-
-   Instances of :class:`set` are compared to instances of :class:`frozenset`
-   based on their members.  For example, ``set('abc') == frozenset('abc')``
-   returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
-
-   The subset and equality comparisons do not generalize to a total ordering
-   function.  For example, any two nonempty disjoint sets are not equal and are not
-   subsets of each other, so *all* of the following return ``False``: ``a<b``,
-   ``a==b``, or ``a>b``.
-
-   Since sets only define partial ordering (subset relationships), the output of
-   the :meth:`list.sort` method is undefined for lists of sets.
-
-   Set elements, like dictionary keys, must be :term:`hashable`.
-
-   Binary operations that mix :class:`set` instances with :class:`frozenset`
-   return the type of the first operand.  For example: ``frozenset('ab') |
-   set('bc')`` returns an instance of :class:`frozenset`.
-
-   The following table lists operations available for :class:`set` that do not
-   apply to immutable instances of :class:`frozenset`:
-
-   .. method:: update(*others)
-               set |= other | ...
-
-      Update the set, adding elements from all others.
-
-   .. method:: intersection_update(*others)
-               set &= other & ...
-
-      Update the set, keeping only elements found in it and all others.
-
-   .. method:: difference_update(*others)
-               set -= other | ...
-
-      Update the set, removing elements found in others.
-
-   .. method:: symmetric_difference_update(other)
-               set ^= other
-
-      Update the set, keeping only elements found in either set, but not in both.
-
-   .. method:: add(elem)
-
-      Add element *elem* to the set.
-
-   .. method:: remove(elem)
-
-      Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
-      not contained in the set.
-
-   .. method:: discard(elem)
-
-      Remove element *elem* from the set if it is present.
-
-   .. method:: pop()
-
-      Remove and return an arbitrary element from the set.  Raises
-      :exc:`KeyError` if the set is empty.
-
-   .. method:: clear()
-
-      Remove all elements from the set.
+   Return a shallow copy of the set.
 
 
-   Note, the non-operator versions of the :meth:`update`,
-   :meth:`intersection_update`, :meth:`difference_update`, and
-   :meth:`symmetric_difference_update` methods will accept any iterable as an
-   argument.
+Note, the non-operator versions of :meth:`~frozenset.union`,
+:meth:`~frozenset.intersection`, :meth:`~frozenset.difference`, :meth:`~frozenset.symmetric_difference`, :meth:`~frozenset.issubset`, and
+:meth:`~frozenset.issuperset` methods will accept any iterable as an argument.  In
+contrast, their operator based counterparts require their arguments to be
+sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
+in favor of the more readable ``set('abc').intersection('cbs')``.
 
-   Note, the *elem* argument to the :meth:`~object.__contains__`,
-   :meth:`remove`, and
-   :meth:`discard` methods may be a set.  To support searching for an equivalent
-   frozenset, a temporary one is created from *elem*.
+Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
+sets are equal if and only if every element of each set is contained in the
+other (each is a subset of the other). A set is less than another set if and
+only if the first set is a proper subset of the second set (is a subset, but
+is not equal). A set is greater than another set if and only if the first set
+is a proper superset of the second set (is a superset, but is not equal).
+
+Instances of :class:`set` are compared to instances of :class:`frozenset`
+based on their members.  For example, ``set('abc') == frozenset('abc')``
+returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
+
+The subset and equality comparisons do not generalize to a total ordering
+function.  For example, any two nonempty disjoint sets are not equal and are not
+subsets of each other, so *all* of the following return ``False``: ``a<b``,
+``a==b``, or ``a>b``.
+
+Since sets only define partial ordering (subset relationships), the output of
+the :meth:`list.sort` method is undefined for lists of sets.
+
+Set elements, like dictionary keys, must be :term:`hashable`.
+
+Binary operations that mix :class:`set` instances with :class:`frozenset`
+return the type of the first operand.  For example: ``frozenset('ab') |
+set('bc')`` returns an instance of :class:`frozenset`.
+
+The following table lists operations available for :class:`set` that do not
+apply to immutable instances of :class:`frozenset`:
+
+.. method:: set.update(*others)
+.. describe:: set |= other | ...
+
+   Update the set, adding elements from all others.
+
+.. method:: set.intersection_update(*others)
+.. describe:: set &= other & ...
+
+   Update the set, keeping only elements found in it and all others.
+
+.. method:: set.difference_update(*others)
+.. describe:: set -= other | ...
+
+   Update the set, removing elements found in others.
+
+.. method:: set.symmetric_difference_update(other, /)
+.. describe:: set ^= other
+
+   Update the set, keeping only elements found in either set, but not in both.
+
+.. method:: set.add(elem, /)
+
+   Add element *elem* to the set.
+
+.. method:: set.remove(elem, /)
+
+   Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
+   not contained in the set.
+
+.. method:: set.discard(elem, /)
+
+   Remove element *elem* from the set if it is present.
+
+.. method:: set.pop()
+
+   Remove and return an arbitrary element from the set.  Raises
+   :exc:`KeyError` if the set is empty.
+
+.. method:: set.clear()
+
+   Remove all elements from the set.
+
+
+Note, the non-operator versions of the :meth:`~set.update`,
+:meth:`~set.intersection_update`, :meth:`~set.difference_update`, and
+:meth:`~set.symmetric_difference_update` methods will accept any iterable as an
+argument.
+
+Note, the *elem* argument to the :meth:`~object.__contains__`,
+:meth:`~set.remove`, and
+:meth:`~set.discard` methods may be a set.  To support searching for an equivalent
+frozenset, a temporary one is created from *elem*.
 
 
 .. _typesmapping:
@@ -4444,8 +5073,8 @@ Values that compare equal (such as ``1``, ``1.0``, and ``True``)
 can be used interchangeably to index the same dictionary entry.
 
 .. class:: dict(**kwargs)
-           dict(mapping, **kwargs)
-           dict(iterable, **kwargs)
+           dict(mapping, /, **kwargs)
+           dict(iterable, /, **kwargs)
 
    Return a new dictionary initialized from an optional positional argument
    and a possibly empty set of keyword arguments.
@@ -4459,21 +5088,24 @@ can be used interchangeably to index the same dictionary entry.
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
    If no positional argument is given, an empty dictionary is created.
-   If a positional argument is given and it is a mapping object, a dictionary
-   is created with the same key-value pairs as the mapping object.  Otherwise,
-   the positional argument must be an :term:`iterable` object.  Each item in
-   the iterable must itself be an iterable with exactly two objects.  The
-   first object of each item becomes a key in the new dictionary, and the
-   second object the corresponding value.  If a key occurs more than once, the
-   last value for that key becomes the corresponding value in the new
-   dictionary.
+   If a positional argument is given and it defines a ``keys()`` method, a
+   dictionary is created by calling :meth:`~object.__getitem__` on the argument with
+   each returned key from the method.  Otherwise, the positional argument must be an
+   :term:`iterable` object.  Each item in the iterable must itself be an iterable
+   with exactly two elements.  The first element of each item becomes a key in the
+   new dictionary, and the second element the corresponding value.  If a key occurs
+   more than once, the last value for that key becomes the corresponding value in
+   the new dictionary.
 
    If keyword arguments are given, the keyword arguments and their values are
    added to the dictionary created from the positional argument.  If a key
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
 
-   To illustrate, the following examples all return a dictionary equal to
+   Dictionaries compare equal if and only if they have the same ``(key,
+   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
+   :exc:`TypeError`.  To illustrate dictionary creation and equality,
+   the following examples all return a dictionary equal to
    ``{"one": 1, "two": 2, "three": 3}``::
 
       >>> a = dict(one=1, two=2, three=3)
@@ -4488,6 +5120,27 @@ can be used interchangeably to index the same dictionary entry.
    Providing keyword arguments as in the first example only works for keys that
    are valid Python identifiers.  Otherwise, any valid keys can be used.
 
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(d)
+      ['one', 'two', 'three', 'four']
+      >>> list(d.values())
+      [1, 2, 3, 4]
+      >>> d["one"] = 42
+      >>> d
+      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
+      >>> del d["two"]
+      >>> d["two"] = None
+      >>> d
+      {'one': 42, 'three': 3, 'four': 4, 'two': None}
+
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.  This behavior was
+      an implementation detail of CPython from 3.6.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -4507,13 +5160,13 @@ can be used interchangeably to index the same dictionary entry.
 
       .. index:: __missing__()
 
-      If a subclass of dict defines a method :meth:`__missing__` and *key*
+      If a subclass of dict defines a method :meth:`~object.__missing__` and *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
       returned or raised by the ``__missing__(key)`` call.
-      No other operations or methods invoke :meth:`__missing__`. If
-      :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
-      :meth:`__missing__` must be a method; it cannot be an instance variable::
+      No other operations or methods invoke :meth:`~object.__missing__`. If
+      :meth:`~object.__missing__` is not defined, :exc:`KeyError` is raised.
+      :meth:`~object.__missing__` must be a method; it cannot be an instance variable::
 
           >>> class Counter(dict):
           ...     def __missing__(self, key):
@@ -4527,7 +5180,8 @@ can be used interchangeably to index the same dictionary entry.
           1
 
       The example above shows part of the implementation of
-      :class:`collections.Counter`.  A different ``__missing__`` method is used
+      :class:`collections.Counter`.
+      A different :meth:`!__missing__` method is used
       by :class:`collections.defaultdict`.
 
    .. describe:: d[key] = value
@@ -4560,7 +5214,7 @@ can be used interchangeably to index the same dictionary entry.
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(iterable[, value])
+   .. classmethod:: fromkeys(iterable, value=None, /)
 
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
@@ -4570,7 +5224,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key[, default])
+   .. method:: get(key, default=None, /)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4586,7 +5240,8 @@ can be used interchangeably to index the same dictionary entry.
       Return a new view of the dictionary's keys.  See the :ref:`documentation
       of view objects <dict-views>`.
 
-   .. method:: pop(key[, default])
+   .. method:: pop(key, /)
+               pop(key, default, /)
 
       If *key* is in the dictionary, remove it and return its value, else return
       *default*.  If *default* is not given and *key* is not in the dictionary,
@@ -4612,21 +5267,24 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key[, default])
+   .. method:: setdefault(key, default=None, /)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
       ``None``.
 
-   .. method:: update([other])
+   .. method:: update(**kwargs)
+               update(mapping, /, **kwargs)
+               update(iterable, /, **kwargs)
 
-      Update the dictionary with the key/value pairs from *other*, overwriting
+      Update the dictionary with the key/value pairs from *mapping* or *iterable* and *kwargs*, overwriting
       existing keys.  Return ``None``.
 
-      :meth:`update` accepts either another dictionary object or an iterable of
-      key/value pairs (as tuples or other iterables of length two).  If keyword
-      arguments are specified, the dictionary is then updated with those
-      key/value pairs: ``d.update(red=1, blue=2)``.
+      :meth:`update` accepts either another object with a ``keys()`` method (in
+      which case :meth:`~object.__getitem__` is called with every key returned from
+      the method) or an iterable of key/value pairs (as tuples or other iterables
+      of length two). If keyword arguments are specified, the dictionary is then
+      updated with those key/value pairs: ``d.update(red=1, blue=2)``.
 
    .. method:: values()
 
@@ -4656,32 +5314,6 @@ can be used interchangeably to index the same dictionary entry.
       values of *other* take priority when *d* and *other* share keys.
 
       .. versionadded:: 3.9
-
-   Dictionaries compare equal if and only if they have the same ``(key,
-   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
-   :exc:`TypeError`.
-
-   Dictionaries preserve insertion order.  Note that updating a key does not
-   affect the order.  Keys added after deletion are inserted at the end. ::
-
-      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
-      >>> d
-      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
-      >>> list(d)
-      ['one', 'two', 'three', 'four']
-      >>> list(d.values())
-      [1, 2, 3, 4]
-      >>> d["one"] = 42
-      >>> d
-      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
-      >>> del d["two"]
-      >>> d["two"] = None
-      >>> d
-      {'one': 42, 'three': 3, 'four': 4, 'two': None}
-
-   .. versionchanged:: 3.7
-      Dictionary order is guaranteed to be insertion order.  This behavior was
-      an implementation detail of CPython from 3.6.
 
    Dictionaries and dictionary views are reversible. ::
 
@@ -4855,9 +5487,11 @@ before the statement body is executed and exited when the statement ends:
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
    following the :keyword:`!with` statement. Otherwise the exception continues
-   propagating after this method has finished executing. Exceptions that occur
-   during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`!with` statement.
+   propagating after this method has finished executing.
+
+   If this method raises an exception while handling an earlier exception from the
+   :keyword:`with` block, the new exception is raised, and the original exception
+   is stored in its :attr:`~BaseException.__context__` attribute.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
@@ -5033,6 +5667,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`
@@ -5162,7 +5798,7 @@ Union Type
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
 primarily for :term:`type annotations <annotation>`. The union type expression
-enables cleaner type hinting syntax compared to :data:`typing.Union`.
+enables cleaner type hinting syntax compared to subscripting :class:`typing.Union`.
 
 .. describe:: X | Y | ...
 
@@ -5198,9 +5834,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       int | str == str | int
 
-   * It is compatible with :data:`typing.Union`::
+   * It creates instances of :class:`typing.Union`::
 
       int | str == typing.Union[int, str]
+      type(int | str) is typing.Union
 
    * Optional types can be spelled as a union with ``None``::
 
@@ -5226,16 +5863,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
-instantiated from the type::
+:class:`typing.Union` and used for :func:`isinstance` checks::
 
-   >>> import types
-   >>> isinstance(int | str, types.UnionType)
+   >>> import typing
+   >>> isinstance(int | str, typing.Union)
    True
-   >>> types.UnionType()
+   >>> typing.Union()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.UnionType' instances
+   TypeError: cannot create 'typing.Union' instances
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
@@ -5261,6 +5897,11 @@ instantiated from the type::
    :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
 
 .. versionadded:: 3.10
+
+.. versionchanged:: 3.14
+
+   Union objects are now instances of :class:`typing.Union`. Previously, they were instances
+   of :class:`types.UnionType`, which remains an alias for :class:`typing.Union`.
 
 
 .. _typesother:
@@ -5327,9 +5968,10 @@ Methods
 
 .. index:: pair: object; method
 
-Methods are functions that are called using the attribute notation. There are
-two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`append`
-on lists) and :ref:`class instance method <instance-methods>`.
+Methods are functions that are called using the attribute notation.
+There are two flavors: :ref:`built-in methods <builtin-methods>`
+(such as :meth:`~list.append` on lists)
+and :ref:`class instance method <instance-methods>`.
 Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an
@@ -5435,12 +6077,33 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used by slicing (see :ref:`slicings`).  It supports no
-special operations.  There is exactly one ellipsis object, named
+This object is commonly used to indicate that something is omitted.
+It supports no special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.
 
 It is written as ``Ellipsis`` or ``...``.
+
+In typical use, ``...`` as the ``Ellipsis`` object appears in a few different
+places, for instance:
+
+- In type annotations, such as :ref:`callable arguments <annotating-callables>`
+  or :ref:`tuple elements <annotating-tuples>`.
+
+- As the body of a function instead of a :ref:`pass statement <tut-pass>`.
+
+- In third-party libraries, such as `Numpy's slicing and striding
+  <https://numpy.org/doc/stable/user/basics.indexing.html#slicing-and-striding>`_.
+
+Python also uses three dots in ways that are not ``Ellipsis`` objects, for instance:
+
+- Doctest's :const:`ELLIPSIS <doctest.ELLIPSIS>`, as a pattern for missing content.
+
+- The default Python prompt of the :term:`interactive` shell when partial input is incomplete.
+
+Lastly, the Python documentation often uses three dots in conventional English
+usage to mean omitted content, even in code examples that also use them as the
+``Ellipsis``.
 
 
 .. _bltin-notimplemented-object:
@@ -5450,10 +6113,10 @@ The NotImplemented Object
 
 This object is returned from comparisons and binary operations when they are
 asked to operate on types they don't support. See :ref:`comparisons` for more
-information.  There is exactly one ``NotImplemented`` object.
-``type(NotImplemented)()`` produces the singleton instance.
+information.  There is exactly one :data:`NotImplemented` object.
+:code:`type(NotImplemented)()` produces the singleton instance.
 
-It is written as ``NotImplemented``.
+It is written as :code:`NotImplemented`.
 
 
 .. _typesinternal:
@@ -5476,22 +6139,6 @@ types, where they are relevant.  Some of these are not reported by the
 :func:`dir` built-in function.
 
 
-.. attribute:: object.__dict__
-
-   A dictionary or other mapping object used to store an object's (writable)
-   attributes.
-
-
-.. attribute:: instance.__class__
-
-   The class to which a class instance belongs.
-
-
-.. attribute:: class.__bases__
-
-   The tuple of base classes of a class object.
-
-
 .. attribute:: definition.__name__
 
    The name of the class, function, method, descriptor, or
@@ -5506,35 +6153,23 @@ types, where they are relevant.  Some of these are not reported by the
    .. versionadded:: 3.3
 
 
+.. attribute:: definition.__module__
+
+   The name of the module in which a class or function was defined.
+
+
+.. attribute:: definition.__doc__
+
+   The documentation string of a class or function, or ``None`` if undefined.
+
+
 .. attribute:: definition.__type_params__
 
    The :ref:`type parameters <type-params>` of generic classes, functions,
-   and :ref:`type aliases <type-aliases>`.
+   and :ref:`type aliases <type-aliases>`. For classes and functions that
+   are not generic, this will be an empty tuple.
 
    .. versionadded:: 3.12
-
-
-.. attribute:: class.__mro__
-
-   This attribute is a tuple of classes that are considered when looking for
-   base classes during method resolution.
-
-
-.. method:: class.mro()
-
-   This method can be overridden by a metaclass to customize the method
-   resolution order for its instances.  It is called at class instantiation, and
-   its result is stored in :attr:`~class.__mro__`.
-
-
-.. method:: class.__subclasses__
-
-   Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.  The list is in
-   definition order.  Example::
-
-      >>> int.__subclasses__()
-      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 
 .. _int_max_str_digits:
@@ -5554,8 +6189,7 @@ a string to a binary integer or a binary integer to a string in linear time,
 have sub-quadratic complexity. Converting a large value such as ``int('1' *
 500_000)`` can take over a second on a fast CPU.
 
-Limiting conversion size offers a practical way to avoid `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+Limiting conversion size offers a practical way to avoid :cve:`2020-10735`.
 
 The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores

@@ -73,6 +73,9 @@ from xml.parsers.expat import ParserCreate
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
 globals().update(PlistFormat.__members__)
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
 
 class UID:
     def __init__(self, data):
@@ -508,12 +511,24 @@ class _BinaryPlistParser:
 
         return tokenL
 
+    def _read(self, size):
+        cursize = min(size, _MIN_READ_BUF_SIZE)
+        data = self._fp.read(cursize)
+        while True:
+            if len(data) != cursize:
+                raise InvalidFileException
+            if cursize == size:
+                return data
+            delta = min(cursize, size - cursize)
+            data += self._fp.read(delta)
+            cursize += delta
+
     def _read_ints(self, n, size):
-        data = self._fp.read(size * n)
+        data = self._read(size * n)
         if size in _BINARY_FORMAT:
             return struct.unpack(f'>{n}{_BINARY_FORMAT[size]}', data)
         else:
-            if not size or len(data) != size * n:
+            if not size:
                 raise InvalidFileException()
             return tuple(int.from_bytes(data[i: i + size], 'big')
                          for i in range(0, size * n, size))
@@ -573,22 +588,16 @@ class _BinaryPlistParser:
 
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
-            result = self._fp.read(s)
-            if len(result) != s:
-                raise InvalidFileException()
+            result = self._read(s)
 
         elif tokenH == 0x50:  # ascii string
             s = self._get_size(tokenL)
-            data = self._fp.read(s)
-            if len(data) != s:
-                raise InvalidFileException()
+            data = self._read(s)
             result = data.decode('ascii')
 
         elif tokenH == 0x60:  # unicode string
             s = self._get_size(tokenL) * 2
-            data = self._fp.read(s)
-            if len(data) != s:
-                raise InvalidFileException()
+            data = self._read(s)
             result = data.decode('utf-16be')
 
         elif tokenH == 0x80:  # UID
@@ -600,7 +609,8 @@ class _BinaryPlistParser:
             obj_refs = self._read_refs(s)
             result = []
             self._objects[ref] = result
-            result.extend(self._read_object(x) for x in obj_refs)
+            for x in obj_refs:
+                result.append(self._read_object(x))
 
         # tokenH == 0xB0 is documented as 'ordset', but is not actually
         # implemented in the Apple reference code.
@@ -906,6 +916,11 @@ def loads(value, *, fmt=None, dict_type=dict, aware_datetime=False):
     """Read a .plist file from a bytes object.
     Return the unpacked root object (which usually is a dictionary).
     """
+    if isinstance(value, str):
+        if fmt == FMT_BINARY:
+            raise TypeError("value must be bytes-like object when fmt is "
+                            "FMT_BINARY")
+        value = value.encode()
     fp = BytesIO(value)
     return load(fp, fmt=fmt, dict_type=dict_type, aware_datetime=aware_datetime)
 

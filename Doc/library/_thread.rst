@@ -1,5 +1,5 @@
-:mod:`_thread` --- Low-level threading API
-==========================================
+:mod:`!_thread` --- Low-level threading API
+===========================================
 
 .. module:: _thread
    :synopsis: Low-level threading API.
@@ -120,12 +120,15 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Solaris.
 
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
+
+   .. versionchanged:: 3.15
+      Added support for Solaris.
 
 
 .. function:: stack_size([size])
@@ -169,14 +172,14 @@ Lock objects have the following methods:
    time can acquire a lock --- that's their reason for existence).
 
    If the *blocking* argument is present, the action depends on its
-   value: if it is False, the lock is only acquired if it can be acquired
-   immediately without waiting, while if it is True, the lock is acquired
+   value: if it is false, the lock is only acquired if it can be acquired
+   immediately without waiting, while if it is true, the lock is acquired
    unconditionally as above.
 
    If the floating-point *timeout* argument is present and positive, it
    specifies the maximum wait time in seconds before returning.  A negative
    *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if *blocking* is False.
+   a *timeout* if *blocking* is false.
 
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not.
@@ -186,6 +189,9 @@ Lock objects have the following methods:
 
    .. versionchanged:: 3.2
       Lock acquires can now be interrupted by signals on POSIX.
+
+   .. versionchanged:: 3.14
+      Lock acquires can now be interrupted by signals on Windows.
 
 
 .. method:: lock.release()
@@ -213,23 +219,14 @@ In addition to these methods, lock objects can also be used via the
 
 .. index:: pair: module; signal
 
-* Threads interact strangely with interrupts: the :exc:`KeyboardInterrupt`
-  exception will be received by an arbitrary thread.  (When the :mod:`signal`
-  module is available, interrupts always go to the main thread.)
+* Interrupts always go to the main thread (the :exc:`KeyboardInterrupt`
+  exception will be received by that thread.)
 
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`_thread.exit`.
-
-* It is not possible to interrupt the :meth:`~threading.Lock.acquire` method on
-  a lock --- the :exc:`KeyboardInterrupt` exception will happen after the lock
-  has been acquired.
 
 * When the main thread exits, it is system defined whether the other threads
   survive.  On most systems, they are killed without executing
   :keyword:`try` ... :keyword:`finally` clauses or executing object
   destructors.
-
-* When the main thread exits, it does not do any of its usual cleanup (except
-  that :keyword:`try` ... :keyword:`finally` clauses are honored), and the
-  standard I/O files are not flushed.
 

@@ -1,5 +1,5 @@
-:mod:`warnings` --- Warning control
-===================================
+:mod:`!warnings` --- Warning control
+====================================
 
 .. module:: warnings
    :synopsis: Issue warning messages and control their disposition.
@@ -80,7 +80,9 @@ The following warnings category classes are currently defined:
 |                                  | unless triggered by code in ``__main__``).    |
 +----------------------------------+-----------------------------------------------+
 | :exc:`SyntaxWarning`             | Base category for warnings about dubious      |
-|                                  | syntactic features.                           |
+|                                  | syntactic features (typically emitted when    |
+|                                  | compiling Python source code, and hence       |
+|                                  | may not be suppressed by runtime filters)     |
 +----------------------------------+-----------------------------------------------+
 | :exc:`RuntimeWarning`            | Base category for warnings about dubious      |
 |                                  | runtime features.                             |
@@ -145,6 +147,8 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
   | ``"always"``  | always print matching warnings               |
   +---------------+----------------------------------------------+
+  | ``"all"``     | alias to "always"                            |
+  +---------------+----------------------------------------------+
   | ``"module"``  | print the first occurrence of matching       |
   |               | warnings for each module where the warning   |
   |               | is issued (regardless of line number)        |
@@ -155,8 +159,10 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *message* is a string containing a regular expression that the start of
   the warning message must match, case-insensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
-  warning message must contain (case-insensitively), ignoring any whitespace at
+  :envvar:`PYTHONWARNINGS`, if *message* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the start of the
+  warning message must match (case-insensitively), ignoring any whitespace at
   the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
@@ -164,7 +170,9 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *module* is a string containing a regular expression that the start of the
   fully qualified module name must match, case-sensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  :envvar:`PYTHONWARNINGS`, if *module* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the
   fully qualified module name must be equal to (case-sensitively), ignoring any
   whitespace at the start or end of *module*.
 
@@ -176,6 +184,19 @@ class, to turn a warning into an error we simply raise ``category(message)``.
 
 If a warning is reported and doesn't match any registered filter then the
 "default" action is applied (hence its name).
+
+
+
+.. _repeated-warning-suppression-criteria:
+
+Repeated Warning Suppression Criteria
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The filters that suppress repeated warnings apply the following criteria to determine if a warning is considered a repeat:
+
+- ``"default"``: A warning is considered a repeat only if the (*message*, *category*, *module*, *lineno*) are all the same.
+- ``"module"``: A warning is considered a repeat if the (*message*, *category*, *module*) are the same, ignoring the line number.
+- ``"once"``: A warning is considered a repeat if the (*message*, *category*) are the same, ignoring the module and line number.
 
 
 .. _describing-warning-filters:
@@ -309,11 +330,13 @@ the warning using the :class:`catch_warnings` context manager::
 While within the context manager all warnings will simply be ignored. This
 allows you to use known-deprecated code without having to see the warning while
 not suppressing the warning for other code that might not be aware of its use
-of deprecated code.  Note: this can only be guaranteed in a single-threaded
-application. If two or more threads use the :class:`catch_warnings` context
-manager at the same time, the behavior is undefined.
+of deprecated code.
 
+    .. note::
 
+        See :ref:`warning-concurrent-safe` for details on the
+        concurrency-safety of the :class:`catch_warnings` context manager when
+        used in programs using multiple threads or async functions.
 
 .. _warning-testing:
 
@@ -349,10 +372,13 @@ the warning has been cleared.
 Once the context manager exits, the warnings filter is restored to its state
 when the context was entered. This prevents tests from changing the warnings
 filter in unexpected ways between tests and leading to indeterminate test
-results. The :func:`showwarning` function in the module is also restored to
-its original value.  Note: this can only be guaranteed in a single-threaded
-application. If two or more threads use the :class:`catch_warnings` context
-manager at the same time, the behavior is undefined.
+results.
+
+    .. note::
+
+        See :ref:`warning-concurrent-safe` for details on the
+        concurrency-safety of the :class:`catch_warnings` context manager when
+        used in programs using multiple threads or async functions.
 
 When testing multiple operations that raise the same kind of warning, it
 is important to test them in a manner that confirms each operation is raising
@@ -396,7 +422,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1, source=None, \*, skip_file_prefixes=None)
+.. function:: warn(message, category=None, stacklevel=1, source=None, *, skip_file_prefixes=())
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a :ref:`warning category class <warning-categories>`; it
@@ -438,7 +464,7 @@ Available Functions
           lower.one_way(**kw)
 
    This makes the warning refer to both the ``example.lower.one_way()`` and
-   ``package.higher.another_way()`` call sites only from calling code living
+   ``example.higher.another_way()`` call sites only from calling code living
    outside of ``example`` package.
 
    *source*, if supplied, is the destroyed object which emitted a
@@ -454,13 +480,27 @@ Available Functions
 .. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)
 
    This is a low-level interface to the functionality of :func:`warn`, passing in
-   explicitly the message, category, filename and line number, and optionally the
-   module name and the registry (which should be the ``__warningregistry__``
-   dictionary of the module).  The module name defaults to the filename with
-   ``.py`` stripped; if no registry is passed, the warning is never suppressed.
+   explicitly the message, category, filename and line number, and optionally
+   other arguments.
    *message* must be a string and *category* a subclass of :exc:`Warning` or
    *message* may be a :exc:`Warning` instance, in which case *category* will be
    ignored.
+
+   *module*, if supplied, should be the module name.
+   If no module is passed, the module regular expression in
+   :ref:`warnings filter <warning-filter>` will be tested against the module
+   names constructed from the path components starting from all parent
+   directories (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw``
+   stripped) and against the filename with ``.py`` stripped.
+   For example, when the filename is ``'/path/to/package/module.py'``, it will
+   be tested against  ``'path.to.package.module'``, ``'to.package.module'``
+   ``'package.module'``, ``'module'``, and ``'/path/to/package/module'``.
+
+   *registry*, if supplied, should be the ``__warningregistry__`` dictionary
+   of the module.
+   If no registry is passed, each warning is treated as the first occurrence,
+   that is, filter actions ``"default"``, ``"module"`` and ``"once"`` are
+   handled as ``"always"``.
 
    *module_globals*, if supplied, should be the global namespace in use by the code
    for which the warning is issued.  (This argument is used to support displaying
@@ -472,6 +512,10 @@ Available Functions
 
    .. versionchanged:: 3.6
       Add the *source* parameter.
+
+   .. versionchanged:: 3.15
+      If no module is passed, test the filter regular expression against
+      module names created from the path, not only the path itself.
 
 
 .. function:: showwarning(message, category, filename, lineno, file=None, line=None)
@@ -564,7 +608,7 @@ Available Functions
    The deprecation message passed to the decorator is saved in the
    ``__deprecated__`` attribute on the decorated object.
    If applied to an overload, the decorator
-   must be after the :func:`@overload <typing.overload>` decorator
+   must be after the :deco:`~typing.overload` decorator
    for the attribute to exist on the overload as returned by
    :func:`typing.get_overloads`.
 
@@ -595,14 +639,76 @@ Available Context Managers
     passed to :func:`simplefilter` as if it were called immediately on
     entering the context.
 
+    See :ref:`warning-filter` for the meaning of the *category* and *lineno*
+    parameters.
+
     .. note::
 
-        The :class:`catch_warnings` manager works by replacing and
-        then later restoring the module's
-        :func:`showwarning` function and internal list of filter
-        specifications.  This means the context manager is modifying
-        global state and therefore is not thread-safe.
+        See :ref:`warning-concurrent-safe` for details on the
+        concurrency-safety of the :class:`catch_warnings` context manager when
+        used in programs using multiple threads or async functions.
+
 
     .. versionchanged:: 3.11
 
         Added the *action*, *category*, *lineno*, and *append* parameters.
+
+
+.. _warning-concurrent-safe:
+
+Concurrent safety of Context Managers
+-------------------------------------
+
+The behavior of :class:`catch_warnings` context manager depends on the
+:data:`sys.flags.context_aware_warnings` flag.  If the flag is true, the
+context manager behaves in a concurrent-safe fashion and otherwise not.
+Concurrent-safe means that it is both thread-safe and safe to use within
+:ref:`asyncio coroutines <coroutine>` and tasks.  Being thread-safe means
+that behavior is predictable in a multi-threaded program.  The flag defaults
+to true for free-threaded builds and false otherwise.
+
+If the :data:`~sys.flags.context_aware_warnings` flag is false, then
+:class:`catch_warnings` will modify the global attributes of the
+:mod:`warnings` module.  This is not safe if used within a concurrent program
+(using multiple threads or using asyncio coroutines).  For example, if two
+or more threads use the :class:`catch_warnings` class at the same time, the
+behavior is undefined.
+
+If the flag is true, :class:`catch_warnings` will not modify global
+attributes and will instead use a :class:`~contextvars.ContextVar` to
+store the newly established warning filtering state.  A context variable
+provides thread-local storage and it makes the use of :class:`catch_warnings`
+thread-safe.
+
+The *record* parameter of the context handler also behaves differently
+depending on the value of the flag.  When *record* is true and the flag is
+false, the context manager works by replacing and then later restoring the
+module's :func:`showwarning` function.  That is not concurrent-safe.
+
+When *record* is true and the flag is true, the :func:`showwarning` function
+is not replaced.  Instead, the recording status is indicated by an internal
+property in the context variable.  In this case, the :func:`showwarning`
+function will not be restored when exiting the context handler.
+
+The :data:`~sys.flags.context_aware_warnings` flag can be set the :option:`-X
+context_aware_warnings<-X>` command-line option or by the
+:envvar:`PYTHON_CONTEXT_AWARE_WARNINGS` environment variable.
+
+    .. note::
+
+        It is likely that most programs that desire thread-safe
+        behaviour of the warnings module will also want to set the
+        :data:`~sys.flags.thread_inherit_context` flag to true.  That flag
+        causes threads created by :class:`threading.Thread` to start
+        with a copy of the context variables from the thread starting
+        it.  When true, the context established by :class:`catch_warnings`
+        in one thread will also apply to new threads started by it.  If false,
+        new threads will start with an empty warnings context variable,
+        meaning that any filtering that was established by a
+        :class:`catch_warnings` context manager will no longer be active.
+
+.. versionchanged:: 3.14
+
+   Added the :data:`sys.flags.context_aware_warnings` flag and the use of a
+   context variable for :class:`catch_warnings` if the flag is true.  Previous
+   versions of Python acted as if the flag was always set to false.

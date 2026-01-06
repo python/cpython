@@ -8,11 +8,12 @@
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyThreadState_GetFrame()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -173,7 +174,7 @@ timeval_from_double(PyObject *obj, struct timeval *tv)
         return 0;
     }
 
-    _PyTime_t t;
+    PyTime_t t;
     if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_CEILING) < 0) {
         return -1;
     }
@@ -244,7 +245,8 @@ report_wakeup_write_error(void *data)
     errno = (int) (intptr_t) data;
     PyObject *exc = PyErr_GetRaisedException();
     PyErr_SetFromErrno(PyExc_OSError);
-    PyErr_FormatUnraisable("Exception ignored when trying to write to the signal wakeup fd");
+    PyErr_FormatUnraisable("Exception ignored while "
+                           "trying to write to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     errno = save_errno;
     return 0;
@@ -261,7 +263,8 @@ report_wakeup_send_error(void* data)
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
     PyErr_SetExcFromWindowsErr(PyExc_OSError, send_errno);
-    PyErr_FormatUnraisable("Exception ignored when trying to send to the signal wakeup fd");
+    PyErr_FormatUnraisable("Exception ignored while "
+                           "trying to send to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     return 0;
 }
@@ -276,11 +279,7 @@ trip_signal(int sig_num)
        cleared in PyErr_CheckSignals() before .tripped. */
     _Py_atomic_store_int(&is_tripped, 1);
 
-    /* Signals are always handled by the main interpreter */
-    PyInterpreterState *interp = _PyInterpreterState_Main();
-
-    /* Notify ceval.c */
-    _PyEval_SignalReceived(interp);
+    _PyEval_SignalReceived();
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the _PyEval_SignalReceived. We used to write to the wakeup fd
@@ -303,6 +302,7 @@ trip_signal(int sig_num)
 
     int fd = wakeup.fd;
     if (fd != INVALID_FD) {
+        PyInterpreterState *interp = _PyInterpreterState_Main();
         unsigned char byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
         if (wakeup.use_send) {
@@ -460,6 +460,7 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 signal.signal
 
     signalnum: int
@@ -478,7 +479,7 @@ the first is the signal number, the second is the interrupted stack frame.
 
 static PyObject *
 signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
-/*[clinic end generated code: output=b44cfda43780f3a1 input=deee84af5fa0432c]*/
+/*[clinic end generated code: output=b44cfda43780f3a1 input=7608656f34fa378b]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
     PyObject *old_handler;
@@ -640,7 +641,7 @@ signal_strsignal_impl(PyObject *module, int signalnum)
             res = "Aborted";
             break;
         case SIGFPE:
-            res = "Floating point exception";
+            res = "Floating-point exception";
             break;
         case SIGSEGV:
             res = "Segmentation fault";
@@ -708,35 +709,44 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 #endif
 
 
-static PyObject*
-signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
+/*[clinic input]
+@permit_long_summary
+signal.set_wakeup_fd
+
+    fd as fdobj: object
+    /
+    *
+    warn_on_full_buffer: bool = True
+
+Sets the fd to be written to (with the signal number) when a signal comes in.
+
+A library can use this to wakeup select or poll.
+The previous fd or -1 is returned.
+
+The fd must be non-blocking.
+[clinic start generated code]*/
+
+static PyObject *
+signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
+                          int warn_on_full_buffer)
+/*[clinic end generated code: output=2280d72dd2a54c4f input=1b914d48079e9274]*/
 {
     struct _Py_stat_struct status;
-    static char *kwlist[] = {
-        "", "warn_on_full_buffer", NULL,
-    };
-    int warn_on_full_buffer = 1;
 #ifdef MS_WINDOWS
-    PyObject *fdobj;
     SOCKET_T sockfd, old_sockfd;
     int res;
     int res_size = sizeof res;
     PyObject *mod;
     int is_socket;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$p:set_wakeup_fd", kwlist,
-                                     &fdobj, &warn_on_full_buffer))
-        return NULL;
-
     sockfd = PyLong_AsSocket_t(fdobj);
     if (sockfd == (SOCKET_T)(-1) && PyErr_Occurred())
         return NULL;
 #else
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "i|$p:set_wakeup_fd", kwlist,
-                                     &fd, &warn_on_full_buffer))
+    int fd = PyLong_AsInt(fdobj);
+    if (fd == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 #endif
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -822,15 +832,6 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
 }
 
-PyDoc_STRVAR(set_wakeup_fd_doc,
-"set_wakeup_fd(fd, *, warn_on_full_buffer=True) -> fd\n\
-\n\
-Sets the fd to be written to (with the signal number) when a signal\n\
-comes in.  A library can use this to wakeup select or poll.\n\
-The previous fd or -1 is returned.\n\
-\n\
-The fd must be non-blocking.");
-
 /* C API for the same, without all the error checking */
 int
 PySignal_SetWakeupFd(int fd)
@@ -848,6 +849,7 @@ PySignal_SetWakeupFd(int fd)
 
 #ifdef HAVE_SETITIMER
 /*[clinic input]
+@permit_long_docstring_body
 signal.setitimer
 
     which:    int
@@ -866,7 +868,7 @@ Returns old values as a tuple: (delay, interval).
 static PyObject *
 signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
                       PyObject *interval)
-/*[clinic end generated code: output=65f9dcbddc35527b input=de43daf194e6f66f]*/
+/*[clinic end generated code: output=65f9dcbddc35527b input=ab5bf2b8f5cff3f4]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
 
@@ -1181,7 +1183,13 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
         err = sigwaitinfo(&sigset, &si);
         Py_END_ALLOW_THREADS
     } while (err == -1
-             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+             && (errno == EINTR
+#if defined(__NetBSD__)
+                 /* NetBSD's implementation violates POSIX by setting
+                  * errno to ECANCELED instead of EINTR. */
+                 || errno == ECANCELED
+#endif
+            ) && !(async_err = PyErr_CheckSignals()));
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
@@ -1202,15 +1210,15 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating point numbers allowed.
+The timeout is specified in seconds, rounded up to nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=87fd39237cf0b7ba]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=f89af57d645e48e0]*/
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
                                   timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return NULL;
@@ -1220,7 +1228,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         return NULL;
     }
 
-    _PyTime_t deadline = _PyDeadline_Init(timeout);
+    PyTime_t deadline = _PyDeadline_Init(timeout);
     siginfo_t si;
 
     do {
@@ -1302,7 +1310,9 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 #endif   /* #if defined(HAVE_PTHREAD_KILL) */
 
 
-#if defined(__linux__) && defined(__NR_pidfd_send_signal)
+// This system call always crashes on older Android versions.
+#if defined(__linux__) && defined(__NR_pidfd_send_signal) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
 /*[clinic input]
 signal.pidfd_send_signal
 
@@ -1346,7 +1356,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
+    SIGNAL_SET_WAKEUP_FD_METHODDEF
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
@@ -1622,7 +1632,7 @@ signal_module_exec(PyObject *m)
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
 #ifdef PYHAVE_ITIMER_ERROR
-    modstate->itimer_error = PyErr_NewException("signal.itimer_error",
+    modstate->itimer_error = PyErr_NewException("signal.ItimerError",
                                                 PyExc_OSError, NULL);
     if (modstate->itimer_error == NULL) {
         return -1;
@@ -1701,6 +1711,7 @@ _signal_module_free(void *module)
 static PyModuleDef_Slot signal_slots[] = {
     {Py_mod_exec, signal_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
@@ -1770,10 +1781,14 @@ PyErr_CheckSignals(void)
        Python code to ensure signals are handled. Checking for the GC here
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
-    if (_Py_eval_breaker_bit_is_set(tstate->interp, _PY_GC_SCHEDULED_BIT)) {
-        _Py_set_eval_breaker_bit(tstate->interp, _PY_GC_SCHEDULED_BIT, 0);
+    if (_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT)) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
 
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
@@ -1837,7 +1852,8 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
             PyErr_Format(PyExc_OSError,
                          "Signal %i ignored due to race condition",
                          i);
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "calling signal handler");
             continue;
         }
         PyObject *arglist = NULL;
@@ -1933,7 +1949,7 @@ signal_install_handlers(void)
 /* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * If this function is updated, update also _posix_spawn() of subprocess.py.

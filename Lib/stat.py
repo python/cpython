@@ -110,19 +110,25 @@ S_IWOTH = 0o0002  # write by others
 S_IXOTH = 0o0001  # execute by others
 
 # Names for file flags
-
+UF_SETTABLE  = 0x0000ffff  # owner settable flags
 UF_NODUMP    = 0x00000001  # do not dump file
 UF_IMMUTABLE = 0x00000002  # file may not be changed
 UF_APPEND    = 0x00000004  # file may only be appended to
 UF_OPAQUE    = 0x00000008  # directory is opaque when viewed through a union stack
 UF_NOUNLINK  = 0x00000010  # file may not be renamed or deleted
-UF_COMPRESSED = 0x00000020 # OS X: file is hfs-compressed
-UF_HIDDEN    = 0x00008000  # OS X: file should not be displayed
+UF_COMPRESSED = 0x00000020 # macOS: file is compressed
+UF_TRACKED   = 0x00000040  # macOS: used for handling document IDs
+UF_DATAVAULT = 0x00000080  # macOS: entitlement needed for I/O
+UF_HIDDEN    = 0x00008000  # macOS: file should not be displayed
+SF_SETTABLE  = 0xffff0000  # superuser settable flags
 SF_ARCHIVED  = 0x00010000  # file may be archived
 SF_IMMUTABLE = 0x00020000  # file may not be changed
 SF_APPEND    = 0x00040000  # file may only be appended to
+SF_RESTRICTED = 0x00080000 # macOS: entitlement needed for writing
 SF_NOUNLINK  = 0x00100000  # file may not be renamed or deleted
 SF_SNAPSHOT  = 0x00200000  # file is a snapshot file
+SF_FIRMLINK  = 0x00800000  # macOS: file is a firmlink
+SF_DATALESS  = 0x40000000  # macOS: file is a dataless object
 
 
 _filemode_table = (
@@ -192,6 +198,21 @@ FILE_ATTRIBUTE_SPARSE_FILE = 512
 FILE_ATTRIBUTE_SYSTEM = 4
 FILE_ATTRIBUTE_TEMPORARY = 256
 FILE_ATTRIBUTE_VIRTUAL = 65536
+
+
+# Linux STATX_ATTR constants for interpreting os.statx()'s
+# "stx_attributes" and "stx_attributes_mask" members
+
+STATX_ATTR_COMPRESSED = 0x00000004
+STATX_ATTR_IMMUTABLE = 0x00000010
+STATX_ATTR_APPEND = 0x00000020
+STATX_ATTR_NODUMP = 0x00000040
+STATX_ATTR_ENCRYPTED = 0x00000800
+STATX_ATTR_AUTOMOUNT = 0x00001000
+STATX_ATTR_MOUNT_ROOT = 0x00002000
+STATX_ATTR_VERITY = 0x00100000
+STATX_ATTR_DAX = 0x00200000
+STATX_ATTR_WRITE_ATOMIC = 0x00400000
 
 
 # If available, use C implementation

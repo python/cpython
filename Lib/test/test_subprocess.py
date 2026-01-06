@@ -4,6 +4,7 @@ from test import support
 from test.support import check_sanitizer
 from test.support import import_helper
 from test.support import os_helper
+from test.support import strace_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 import subprocess
@@ -25,7 +26,6 @@ import threading
 import gc
 import textwrap
 import json
-import pathlib
 from test.support.os_helper import FakePath
 
 try:
@@ -41,6 +41,10 @@ try:
     import grp
 except ImportError:
     grp = None
+try:
+    import resource
+except ImportError:
+    resource = None
 
 try:
     import fcntl
@@ -158,6 +162,20 @@ class ProcessTestCase(BaseTestCase):
                           [sys.executable, "-c", "while True: pass"],
                           timeout=0.1)
 
+    def test_timeout_exception(self):
+        try:
+            subprocess.run([sys.executable, '-c', 'import time;time.sleep(9)'], timeout = -1)
+        except subprocess.TimeoutExpired as e:
+            self.assertIn("-1 seconds", str(e))
+        else:
+            self.fail("Expected TimeoutExpired exception not raised")
+        try:
+            subprocess.run([sys.executable, '-c', 'import time;time.sleep(9)'], timeout = 0)
+        except subprocess.TimeoutExpired as e:
+            self.assertIn("0 seconds", str(e))
+        else:
+            self.fail("Expected TimeoutExpired exception not raised")
+
     def test_check_call_zero(self):
         # check_call() function with zero return code
         rc = subprocess.check_call(ZERO_RETURN_CMD)
@@ -269,21 +287,13 @@ class ProcessTestCase(BaseTestCase):
         self.assertIn('stdin', c.exception.args[0])
         self.assertIn('input', c.exception.args[0])
 
-    @support.requires_resource('walltime')
     def test_check_output_timeout(self):
         # check_output() function with timeout arg
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             output = subprocess.check_output(
                     [sys.executable, "-c",
-                     "import sys, time\n"
-                     "sys.stdout.write('BDFL')\n"
-                     "sys.stdout.flush()\n"
-                     "time.sleep(3600)"],
-                    # Some heavily loaded buildbots (sparc Debian 3.x) require
-                    # this much time to start and print.
-                    timeout=3)
-            self.fail("Expected TimeoutExpired.")
-        self.assertEqual(c.exception.output, b'BDFL')
+                     "import time; time.sleep(3600)"],
+                    timeout=0.1)
 
     def test_call_kwargs(self):
         # call() function with keyword args
@@ -791,6 +801,19 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange")
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows only issue")
+    def test_win32_duplicate_envs(self):
+        newenv = os.environ.copy()
+        newenv["fRUit"] = "cherry"
+        newenv["fruit"] = "lemon"
+        newenv["FRUIT"] = "orange"
+        newenv["frUit"] = "banana"
+        with subprocess.Popen(["CMD", "/c", "SET", "fruit"],
+                              stdout=subprocess.PIPE,
+                              env=newenv) as p:
+            stdout, _ = p.communicate()
+            self.assertEqual(stdout.strip(), b"frUit=banana")
+
     # Windows requires at least the SYSTEMROOT environment variable to start
     # Python
     @unittest.skipIf(sys.platform == 'win32',
@@ -821,6 +844,26 @@ class ProcessTestCase(BaseTestCase):
             child_env_names = [k for k in child_env_names
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
+
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'The Python shared library cannot be loaded '
+                     'without some system environments.')
+    @unittest.skipIf(check_sanitizer(address=True),
+                     'AddressSanitizer adds to the environment.')
+    def test_one_environment_variable(self):
+        newenv = {'fruit': 'orange'}
+        cmd = [sys.executable, '-c',
+                               'import sys,os;'
+                               'sys.stdout.write("fruit="+os.getenv("fruit"))']
+        if sys.platform == "win32":
+            cmd = ["CMD", "/c", "SET", "fruit"]
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newenv) as p:
+            stdout, stderr = p.communicate()
+            if p.returncode and support.verbose:
+                print("STDOUT:", stdout.decode("ascii", "replace"))
+                print("STDERR:", stderr.decode("ascii", "replace"))
+            self.assertEqual(p.returncode, 0)
+            self.assertEqual(stdout.strip(), b"fruit=orange")
 
     def test_invalid_cmd(self):
         # null character in the command name
@@ -862,6 +905,19 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange=lemon")
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows only issue")
+    def test_win32_invalid_env(self):
+        # '=' in the environment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=VEGETABLE"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
+
+        newenv = os.environ.copy()
+        newenv["==FRUIT"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
+
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys;'
@@ -901,6 +957,48 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, b"banana")
         self.assertEqual(stderr, b"pineapple")
 
+    def test_communicate_memoryview_input(self):
+        # Test memoryview input with byte elements
+        test_data = b"Hello, memoryview!"
+        mv = memoryview(test_data)
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys; sys.stdout.write(sys.stdin.read())'],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stdin.close)
+        (stdout, stderr) = p.communicate(mv)
+        self.assertEqual(stdout, test_data)
+        self.assertIsNone(stderr)
+
+    def test_communicate_memoryview_input_nonbyte(self):
+        # Test memoryview input with non-byte elements (e.g., int32)
+        # This tests the fix for gh-134453 where non-byte memoryviews
+        # had incorrect length tracking on POSIX
+        import array
+        # Create an array of 32-bit integers that's large enough to trigger
+        # the chunked writing behavior (> PIPE_BUF)
+        pipe_buf = getattr(select, 'PIPE_BUF', 512)
+        # Each 'i' element is 4 bytes, so we need more than pipe_buf/4 elements
+        # Add some extra to ensure we exceed the buffer size
+        num_elements = pipe_buf + 1
+        test_array = array.array('i', [0x64306f66 for _ in range(num_elements)])
+        expected_bytes = test_array.tobytes()
+        mv = memoryview(test_array)
+
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys; '
+                              'data = sys.stdin.buffer.read(); '
+                              'sys.stdout.buffer.write(data)'],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stdin.close)
+        (stdout, stderr) = p.communicate(mv)
+        self.assertEqual(stdout, expected_bytes,
+                         msg=f"{len(stdout)=} =? {len(expected_bytes)=}")
+        self.assertIsNone(stderr)
+
     def test_communicate_timeout(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os,time;'
@@ -935,6 +1033,62 @@ class ProcessTestCase(BaseTestCase):
         self.assertRaises(subprocess.TimeoutExpired, p.communicate, timeout=0.4)
         (stdout, _) = p.communicate()
         self.assertEqual(len(stdout), 4 * 64 * 1024)
+
+    def test_communicate_timeout_large_input(self):
+        # Test that timeout is enforced when writing large input to a
+        # slow-to-read subprocess, and that partial input is preserved
+        # for continuation after timeout (gh-141473).
+        #
+        # This is a regression test for Windows matching POSIX behavior.
+        # On POSIX, select() is used to multiplex I/O with timeout checking.
+        # On Windows, stdin writing must also honor the timeout rather than
+        # blocking indefinitely when the pipe buffer fills.
+
+        # Input larger than typical pipe buffer (4-64KB on Windows)
+        input_data = b"x" * (128 * 1024)
+
+        p = subprocess.Popen(
+            [sys.executable, "-c",
+             "import sys, time; "
+             "time.sleep(30); "  # Don't read stdin for a long time
+             "sys.stdout.buffer.write(sys.stdin.buffer.read())"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+        try:
+            timeout = 0.2
+            start = time.monotonic()
+            try:
+                p.communicate(input_data, timeout=timeout)
+                # If we get here without TimeoutExpired, the timeout was ignored
+                elapsed = time.monotonic() - start
+                self.fail(
+                    f"TimeoutExpired not raised. communicate() completed in "
+                    f"{elapsed:.2f}s, but subprocess sleeps for 30s. "
+                    "Stdin writing blocked without enforcing timeout.")
+            except subprocess.TimeoutExpired:
+                elapsed = time.monotonic() - start
+
+            # Timeout should occur close to the specified timeout value,
+            # not after waiting for the subprocess to finish sleeping.
+            # Allow generous margin for slow CI, but must be well under
+            # the subprocess sleep time.
+            self.assertLess(elapsed, 5.0,
+                f"TimeoutExpired raised after {elapsed:.2f}s; expected ~{timeout}s. "
+                "Stdin writing blocked without checking timeout.")
+
+            # After timeout, continue communication. The remaining input
+            # should be sent and we should receive all data back.
+            stdout, stderr = p.communicate()
+
+            # Verify all input was eventually received by the subprocess
+            self.assertEqual(len(stdout), len(input_data),
+                f"Expected {len(input_data)} bytes output but got {len(stdout)}")
+            self.assertEqual(stdout, input_data)
+        finally:
+            p.kill()
+            p.wait()
 
     # Test for the fd leak reported in http://bugs.python.org/issue2791.
     def test_communicate_pipe_fd_leak(self):
@@ -1005,6 +1159,19 @@ class ProcessTestCase(BaseTestCase):
         (stdout, stderr) = p.communicate(b"split")
         self.assertEqual(stdout, b"bananasplit")
         self.assertEqual(stderr, b"")
+
+    def test_communicate_stdin_closed_before_call(self):
+        # gh-70560, gh-74389: stdin.close() before communicate()
+        # should not raise ValueError from stdin.flush()
+        with subprocess.Popen([sys.executable, "-c",
+                               'import sys; sys.exit(0)'],
+                              stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as p:
+            p.stdin.close()  # Close stdin before communicate
+            # This should not raise ValueError
+            (stdout, stderr) = p.communicate()
+            self.assertEqual(p.returncode, 0)
 
     def test_universal_newlines_and_text(self):
         args = [
@@ -1122,7 +1289,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual("line1\nline2\nline3\nline4\nline5\n", stdout)
         # Python debug build push something like "[42442 refs]\n"
         # to stderr at exit of subprocess.
-        self.assertTrue(stderr.startswith("eline2\neline6\neline7\n"))
+        self.assertStartsWith(stderr, "eline2\neline6\neline7\n")
 
     def test_universal_newlines_communicate_encodings(self):
         # Check that universal newlines mode works for various encodings,
@@ -1173,6 +1340,16 @@ class ProcessTestCase(BaseTestCase):
             max_handles = 1026 # too much for most UNIX systems
         else:
             max_handles = 2050 # too much for (at least some) Windows setups
+        if resource:
+            # And if it is not too much, try to make it too much.
+            try:
+                soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+                if soft > 1024:
+                    resource.setrlimit(resource.RLIMIT_NOFILE, (1024, hard))
+                    self.addCleanup(resource.setrlimit, resource.RLIMIT_NOFILE,
+                                    (soft, hard))
+            except (OSError, ValueError):
+                pass
         handles = []
         tmpdir = tempfile.mkdtemp()
         try:
@@ -1187,7 +1364,9 @@ class ProcessTestCase(BaseTestCase):
             else:
                 self.skipTest("failed to reach the file descriptor limit "
                     "(tried %d)" % max_handles)
-            # Close a couple of them (should be enough for a subprocess)
+            # Close a couple of them (should be enough for a subprocess).
+            # Close lower file descriptors, so select() will work.
+            handles.reverse()
             for i in range(10):
                 os.close(handles.pop())
             # Loop creating some subprocesses. If one of them leaks some fds,
@@ -1362,7 +1541,7 @@ class ProcessTestCase(BaseTestCase):
         t = threading.Thread(target=open_fds)
         t.start()
         try:
-            with self.assertRaises(EnvironmentError):
+            with self.assertRaises(OSError):
                 subprocess.Popen(NONEXISTING_CMD,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
@@ -1442,7 +1621,7 @@ class ProcessTestCase(BaseTestCase):
                 "[sys.executable, '-c', 'print(\"Hello World!\")'])",
             'assert retcode == 0'))
         output = subprocess.check_output([sys.executable, '-c', code])
-        self.assertTrue(output.startswith(b'Hello World!'), ascii(output))
+        self.assertStartsWith(output, b'Hello World!')
 
     def test_handles_closed_on_exception(self):
         # If CreateProcess exits with an error, ensure the
@@ -1476,9 +1655,6 @@ class ProcessTestCase(BaseTestCase):
         p.communicate(b"x" * 2**20)
 
     def test_repr(self):
-        path_cmd = pathlib.Path("my-tool.py")
-        pathlib_cls = path_cmd.__class__.__name__
-
         cases = [
             ("ls", True, 123, "<Popen: returncode: 123 args: 'ls'>"),
             ('a' * 100, True, 0,
@@ -1486,7 +1662,8 @@ class ProcessTestCase(BaseTestCase):
             (["ls"], False, None, "<Popen: returncode: None args: ['ls']>"),
             (["ls", '--my-opts', 'a' * 100], False, None,
              "<Popen: returncode: None args: ['ls', '--my-opts', 'aaaaaaaaaaaaaaaaaaaaaaaa...>"),
-            (path_cmd, False, 7, f"<Popen: returncode: 7 args: {pathlib_cls}('my-tool.py')>")
+            (os_helper.FakePath("my-tool.py"), False, 7,
+             "<Popen: returncode: 7 args: <FakePath 'my-tool.py'>>")
         ]
         with unittest.mock.patch.object(subprocess.Popen, '_execute_child'):
             for cmd, shell, code, sx in cases:
@@ -1561,6 +1738,56 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
+    @unittest.skipUnless(hasattr(subprocess, '_winapi'),
+                         'need subprocess._winapi')
+    def test_wait_negative_timeout(self):
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
+        with proc:
+            patch = mock.patch.object(
+                subprocess._winapi,
+                'WaitForSingleObject',
+                return_value=subprocess._winapi.WAIT_OBJECT_0)
+            with patch as mock_wait:
+                proc.wait(-1)  # negative timeout
+                mock_wait.assert_called_once_with(proc._handle, 0)
+                proc.returncode = None
+
+            self.assertEqual(proc.wait(), 0)
+
+    def test_post_timeout_communicate_sends_input(self):
+        """GH-141473 regression test; the stdin pipe must close"""
+        with subprocess.Popen(
+                [sys.executable, "-uc", """\
+import sys
+while c := sys.stdin.read(512):
+    sys.stdout.write(c)
+print()
+"""],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+        ) as proc:
+            try:
+                data = f"spam{'#'*4096}beans"
+                proc.communicate(
+                    input=data,
+                    timeout=0,
+                )
+            except subprocess.TimeoutExpired as exc:
+                pass
+            # Prior to the bugfix, this would hang as the stdin
+            # pipe to the child had not been closed.
+            try:
+                stdout, stderr = proc.communicate(timeout=15)
+            except subprocess.TimeoutExpired as exc:
+                self.fail("communicate() hung waiting on child process that should have seen its stdin pipe close and exit")
+            self.assertEqual(
+                    proc.returncode, 0,
+                    msg=f"STDERR:\n{stderr}\nSTDOUT:\n{stdout}")
+            self.assertStartsWith(stdout, "spam")
+            self.assertIn("beans", stdout)
+
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -1634,20 +1861,11 @@ class RunFuncTestCase(BaseTestCase):
         self.assertIn('stdin', c.exception.args[0])
         self.assertIn('input', c.exception.args[0])
 
-    @support.requires_resource('walltime')
     def test_check_output_timeout(self):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
-            cp = self.run_python((
-                     "import sys, time\n"
-                     "sys.stdout.write('BDFL')\n"
-                     "sys.stdout.flush()\n"
-                     "time.sleep(3600)"),
-                    # Some heavily loaded buildbots (sparc Debian 3.x) require
-                    # this much time to start and print.
-                    timeout=3, stdout=subprocess.PIPE)
-        self.assertEqual(c.exception.output, b'BDFL')
-        # output is aliased to stdout
-        self.assertEqual(c.exception.stdout, b'BDFL')
+            cp = self.run_python(
+                    "import time; time.sleep(3600)",
+                    timeout=0.1, stdout=subprocess.PIPE)
 
     def test_run_kwargs(self):
         newenv = os.environ.copy()
@@ -1700,6 +1918,13 @@ class RunFuncTestCase(BaseTestCase):
                              capture_output=True)
         self.assertIn(b'BDFL', cp.stdout)
         self.assertIn(b'FLUFL', cp.stderr)
+
+    def test_stdout_stdout(self):
+        # run() refuses to accept stdout=STDOUT
+        with self.assertRaises(ValueError,
+                msg=("STDOUT can only be used for stderr")):
+            self.run_python("print('will not be run')",
+                            stdout=subprocess.STDOUT)
 
     def test_stdout_with_capture_output_arg(self):
         # run() refuses to accept 'stdout' with 'capture_output'
@@ -1754,9 +1979,9 @@ class RunFuncTestCase(BaseTestCase):
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
                             capture_output=True)
         lines = cp.stderr.splitlines()
-        self.assertEqual(len(lines), 4, lines)
-        self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
-        self.assertTrue(lines[2].startswith(b"<string>:3: EncodingWarning: "))
+        self.assertEqual(len(lines), 2, lines)
+        self.assertStartsWith(lines[0], b"<string>:2: EncodingWarning: ")
+        self.assertStartsWith(lines[1], b"<string>:3: EncodingWarning: ")
 
 
 def _get_test_grp_name():
@@ -1945,9 +2170,9 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
     def test_user(self):
-        # For code coverage of the user parameter.  We don't care if we get an
-        # EPERM error from it depending on the test execution environment, that
-        # still indicates that it was called.
+        # For code coverage of the user parameter.  We don't care if we get a
+        # permission error from it depending on the test execution environment,
+        # that still indicates that it was called.
 
         uid = os.geteuid()
         test_users = [65534 if uid != 65534 else 65533, uid]
@@ -1971,11 +2196,11 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getuid())"],
                                 user=user,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
-                    except OSError as e:
-                        if e.errno not in (errno.EACCES, errno.EPERM):
-                            raise
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        if e.errno == errno.EACCES:
+                            self.assertEqual(e.filename, sys.executable)
+                        else:
+                            self.assertIsNone(e.filename)
                     else:
                         if isinstance(user, str):
                             user_uid = pwd.getpwnam(user).pw_uid
@@ -2019,8 +2244,8 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getgid())"],
                                 group=group,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        self.assertIsNone(e.filename)
                     else:
                         if isinstance(group, str):
                             group_gid = grp.getgrnam(group).gr_gid
@@ -2068,7 +2293,8 @@ class POSIXProcessTestCase(BaseTestCase):
                     [sys.executable, "-c",
                      "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
                     extra_groups=group_list)
-        except PermissionError:
+        except PermissionError as e:
+            self.assertIsNone(e.filename)
             self.skipTest("setgroup() EPERM; this test may require root.")
         else:
             parent_groups = os.getgroups()
@@ -3211,7 +3437,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True, 0,
                         None, None, None, -1,
-                        None, True)
+                        None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -3335,38 +3561,20 @@ class POSIXProcessTestCase(BaseTestCase):
         def dummy():
             pass
 
-        def exit_handler():
-            subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
-            print("shouldn't be printed")
-
-        atexit.register(exit_handler)
+        class AtFinalization:
+            def __del__(self):
+                print("OK")
+                subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
+                print("shouldn't be printed")
+        at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
                      "vfork() not enabled by configure.")
-    @mock.patch("subprocess._fork_exec")
-    @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
-    def test__use_vfork(self, mock_fork_exec):
-        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
-        mock_fork_exec.side_effect = RuntimeError("just testing args")
-        with self.assertRaises(RuntimeError):
-            subprocess.run([sys.executable, "-c", "pass"])
-        mock_fork_exec.assert_called_once()
-        # NOTE: These assertions are *ugly* as they require the last arg
-        # to remain the have_vfork boolean. We really need to refactor away
-        # from the giant "wall of args" internal C extension API.
-        self.assertTrue(mock_fork_exec.call_args.args[-1])
-        with mock.patch.object(subprocess, '_USE_VFORK', False):
-            with self.assertRaises(RuntimeError):
-                subprocess.run([sys.executable, "-c", "pass"])
-            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
-
-    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
-                     "vfork() not enabled by configure.")
-    @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
+    @strace_helper.requires_strace()
     @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
     def test_vfork_used_when_expected(self):
         # This is a performance regression test to ensure we default to using
@@ -3374,52 +3582,39 @@ class POSIXProcessTestCase(BaseTestCase):
         # Technically this test could pass when posix_spawn is used as well
         # because libc tends to implement that internally using vfork. But
         # that'd just be testing a libc+kernel implementation detail.
-        strace_binary = "/usr/bin/strace"
-        # The only system calls we are interested in.
-        strace_filter = "--trace=clone,clone2,clone3,fork,vfork,exit,exit_group"
-        true_binary = "/bin/true"
-        strace_command = [strace_binary, strace_filter]
 
-        try:
-            does_strace_work_process = subprocess.run(
-                    strace_command + [true_binary],
-                    stderr=subprocess.PIPE,
-                    stdout=subprocess.DEVNULL,
-            )
-            rc = does_strace_work_process.returncode
-            stderr = does_strace_work_process.stderr
-        except OSError:
-            rc = -1
-            stderr = ""
-        if rc or (b"+++ exited with 0 +++" not in stderr):
-            self.skipTest("strace not found or not working as expected.")
+        # Are intersted in the system calls:
+        # clone,clone2,clone3,fork,vfork,exit,exit_group
+        # Unfortunately using `--trace` with that list to strace fails because
+        # not all are supported on all platforms (ex. clone2 is ia64 only...)
+        # So instead use `%process` which is recommended by strace, and contains
+        # the above.
+        true_binary = "/bin/true"
+        strace_args = ["--trace=%process"]
 
         with self.subTest(name="default_is_vfork"):
-            vfork_result = assert_python_ok(
-                    "-c",
-                    textwrap.dedent(f"""\
-                    import subprocess
-                    subprocess.check_call([{true_binary!r}])"""),
-                    __run_using_command=strace_command,
+            vfork_result = strace_helper.strace_python(
+                f"""\
+                import subprocess
+                subprocess.check_call([{true_binary!r}])""",
+                strace_args
             )
             # Match both vfork() and clone(..., flags=...|CLONE_VFORK|...)
-            self.assertRegex(vfork_result.err, br"(?i)vfork")
+            self.assertRegex(vfork_result.event_bytes, br"(?i)vfork")
             # Do NOT check that fork() or other clones did not happen.
             # If the OS denys the vfork it'll fallback to plain fork().
 
         # Test that each individual thing that would disable the use of vfork
         # actually disables it.
         for sub_name, preamble, sp_kwarg, expect_permission_error in (
-                ("!use_vfork", "subprocess._USE_VFORK = False", "", False),
                 ("preexec", "", "preexec_fn=lambda: None", False),
                 ("setgid", "", f"group={os.getgid()}", True),
                 ("setuid", "", f"user={os.getuid()}", True),
                 ("setgroups", "", "extra_groups=[]", True),
         ):
             with self.subTest(name=sub_name):
-                non_vfork_result = assert_python_ok(
-                    "-c",
-                    textwrap.dedent(f"""\
+                non_vfork_result = strace_helper.strace_python(
+                    f"""\
                     import subprocess
                     {preamble}
                     try:
@@ -3427,11 +3622,11 @@ class POSIXProcessTestCase(BaseTestCase):
                                 [{true_binary!r}], **dict({sp_kwarg}))
                     except PermissionError:
                         if not {expect_permission_error}:
-                            raise"""),
-                    __run_using_command=strace_command,
+                            raise""",
+                    strace_args
                 )
                 # Ensure neither vfork() or clone(..., flags=...|CLONE_VFORK|...).
-                self.assertNotRegex(non_vfork_result.err, br"(?i)vfork")
+                self.assertNotRegex(non_vfork_result.event_bytes, br"(?i)vfork")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

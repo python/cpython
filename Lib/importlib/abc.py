@@ -13,9 +13,6 @@ except ImportError:
     _frozen_importlib_external = _bootstrap_external
 from ._abc import Loader
 import abc
-import warnings
-
-from .resources import abc as _resources_abc
 
 
 __all__ = [
@@ -23,19 +20,6 @@ __all__ = [
     'ResourceLoader', 'InspectLoader', 'ExecutionLoader',
     'FileLoader', 'SourceLoader',
 ]
-
-
-def __getattr__(name):
-    """
-    For backwards compatibility, continue to make names
-    from _resources_abc available through this module. #93963
-    """
-    if name in _resources_abc.__all__:
-        obj = getattr(_resources_abc, name)
-        warnings._deprecated(f"{__name__}.{name}", remove=(3, 14))
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 def _register(abstract_cls, *classes):
@@ -80,9 +64,12 @@ _register(PathEntryFinder, machinery.FileFinder)
 class ResourceLoader(Loader):
 
     """Abstract base class for loaders which can return data from their
-    back-end storage.
+    back-end storage to facilitate reading data to perform an import.
 
     This ABC represents one of the optional protocols specified by PEP 302.
+
+    For directly loading resources, use TraversableResources instead. This class
+    primarily exists for backwards compatibility with other ABCs in this module.
 
     """
 
@@ -121,7 +108,7 @@ class InspectLoader(Loader):
         source = self.get_source(fullname)
         if source is None:
             return None
-        return self.source_to_code(source)
+        return self.source_to_code(source, '<string>', fullname)
 
     @abc.abstractmethod
     def get_source(self, fullname):
@@ -133,15 +120,14 @@ class InspectLoader(Loader):
         raise ImportError
 
     @staticmethod
-    def source_to_code(data, path='<string>'):
+    def source_to_code(data, path='<string>', fullname=None):
         """Compile 'data' into a code object.
 
         The 'data' argument can be anything that compile() can handle. The'path'
         argument should be where the data was retrieved (when applicable)."""
-        return compile(data, path, 'exec', dont_inherit=True)
+        return compile(data, path, 'exec', dont_inherit=True, module=fullname)
 
     exec_module = _bootstrap_external._LoaderBasics.exec_module
-    load_module = _bootstrap_external._LoaderBasics.load_module
 
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 
@@ -176,11 +162,14 @@ class ExecutionLoader(InspectLoader):
         try:
             path = self.get_filename(fullname)
         except ImportError:
-            return self.source_to_code(source)
-        else:
-            return self.source_to_code(source, path)
+            path = '<string>'
+        return self.source_to_code(source, path, fullname)
 
-_register(ExecutionLoader, machinery.ExtensionFileLoader)
+_register(
+    ExecutionLoader,
+    machinery.ExtensionFileLoader,
+    machinery.AppleFrameworkLoader,
+)
 
 
 class FileLoader(_bootstrap_external.FileLoader, ResourceLoader, ExecutionLoader):
@@ -211,6 +200,10 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 
     def path_mtime(self, path):
         """Return the (int) modification time for the path (str)."""
+        import warnings
+        warnings.warn('SourceLoader.path_mtime is deprecated in favour of '
+                      'SourceLoader.path_stats().',
+                      DeprecationWarning, stacklevel=2)
         if self.path_stats.__func__ is SourceLoader.path_stats:
             raise OSError
         return int(self.path_stats(path)['mtime'])

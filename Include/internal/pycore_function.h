@@ -8,32 +8,44 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern PyObject* _PyFunction_Vectorcall(
+PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,
     size_t nargsf,
     PyObject *kwnames);
 
-#define FUNC_MAX_WATCHERS 8
 
-#define FUNC_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
-struct _py_func_state {
-    uint32_t next_version;
-    // Borrowed references to function objects whose
-    // func_version % FUNC_VERSION_CACHE_SIZE
-    // once was equal to the index in the table.
-    // They are cleared when the function is deallocated.
-    PyFunctionObject *func_version_cache[FUNC_VERSION_CACHE_SIZE];
-};
+#define FUNC_VERSION_UNSET 0
+#define FUNC_VERSION_CLEARED 1
+#define FUNC_VERSION_FIRST_VALID 2
 
 extern PyFunctionObject* _PyFunction_FromConstructor(PyFrameConstructor *constr);
 
+static inline int
+_PyFunction_IsVersionValid(uint32_t version)
+{
+    return version >= FUNC_VERSION_FIRST_VALID;
+}
+
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
-extern void _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);
-PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version);
+PyAPI_FUNC(void) _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);
+void _PyFunction_ClearCodeByVersion(uint32_t version);
+PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code);
 
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);
+
+
+/* See pycore_code.h for explanation about what "stateless" means. */
+
+PyAPI_FUNC(int)
+_PyFunction_VerifyStateless(PyThreadState *, PyObject *);
+
+static inline PyObject* _PyFunction_GET_BUILTINS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_builtins;
+}
+#define _PyFunction_GET_BUILTINS(func) _PyFunction_GET_BUILTINS(_PyObject_CAST(func))
+
 
 #ifdef __cplusplus
 }

@@ -297,7 +297,7 @@ _Py_atomic_load_ssize(const Py_ssize_t *obj)
 
 static inline void *
 _Py_atomic_load_ptr(const void *obj)
-{ return (void *)__atomic_load_n((void **)obj, __ATOMIC_SEQ_CST); }
+{ return (void *)__atomic_load_n((void * const *)obj, __ATOMIC_SEQ_CST); }
 
 
 // --- _Py_atomic_load_relaxed -----------------------------------------------
@@ -305,6 +305,34 @@ _Py_atomic_load_ptr(const void *obj)
 static inline int
 _Py_atomic_load_int_relaxed(const int *obj)
 { return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline char
+_Py_atomic_load_char_relaxed(const char *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline unsigned char
+_Py_atomic_load_uchar_relaxed(const unsigned char *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline short
+_Py_atomic_load_short_relaxed(const short *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline unsigned short
+_Py_atomic_load_ushort_relaxed(const unsigned short *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline long
+_Py_atomic_load_long_relaxed(const long *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline float
+_Py_atomic_load_float_relaxed(const float *obj)
+{ float ret; __atomic_load(obj, &ret, __ATOMIC_RELAXED); return ret; }
+
+static inline double
+_Py_atomic_load_double_relaxed(const double *obj)
+{ double ret; __atomic_load(obj, &ret, __ATOMIC_RELAXED); return ret; }
 
 static inline int8_t
 _Py_atomic_load_int8_relaxed(const int8_t *obj)
@@ -356,7 +384,15 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj)
 
 static inline void *
 _Py_atomic_load_ptr_relaxed(const void *obj)
-{ return (void *)__atomic_load_n((const void **)obj, __ATOMIC_RELAXED); }
+{ return (void *)__atomic_load_n((void * const *)obj, __ATOMIC_RELAXED); }
+
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline long long
+_Py_atomic_load_llong_relaxed(const long long *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
 
 
 // --- _Py_atomic_store ------------------------------------------------------
@@ -476,31 +512,107 @@ static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
 { __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
 
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_char_relaxed(char *obj, char value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_uchar_relaxed(unsigned char *obj, unsigned char value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_short_relaxed(short *obj, short value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_ushort_relaxed(unsigned short *obj, unsigned short value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_long_relaxed(long *obj, long value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_float_relaxed(float *obj, float value)
+{ __atomic_store(obj, &value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_double_relaxed(double *obj, double value)
+{ __atomic_store(obj, &value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_llong_relaxed(long long *obj, long long value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
 static inline void *
 _Py_atomic_load_ptr_acquire(const void *obj)
-{ return (void *)__atomic_load_n((void **)obj, __ATOMIC_ACQUIRE); }
+{ return (void *)__atomic_load_n((void * const *)obj, __ATOMIC_ACQUIRE); }
+
+static inline uintptr_t
+_Py_atomic_load_uintptr_acquire(const uintptr_t *obj)
+{ return (uintptr_t)__atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value)
 { __atomic_store_n((void **)obj, value, __ATOMIC_RELEASE); }
 
 static inline void
+_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
 _Py_atomic_store_int_release(int *obj, int value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
+_Py_atomic_store_int8_release(int8_t *obj, int8_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline int
 _Py_atomic_load_int_acquire(const int *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
+static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
+_Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline uint64_t
+_Py_atomic_load_uint64_acquire(const uint64_t *obj)
+{ return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
+
+static inline uint32_t
+_Py_atomic_load_uint32_acquire(const uint32_t *obj)
+{ return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
+
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
+{ return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
 // --- _Py_atomic_fence ------------------------------------------------------
 
 static inline void
 _Py_atomic_fence_seq_cst(void)
 { __atomic_thread_fence(__ATOMIC_SEQ_CST); }
+
+ static inline void
+_Py_atomic_fence_acquire(void)
+{ __atomic_thread_fence(__ATOMIC_ACQUIRE); }
 
  static inline void
 _Py_atomic_fence_release(void)

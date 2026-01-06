@@ -1,5 +1,5 @@
-:mod:`mmap` --- Memory-mapped file support
-==========================================
+:mod:`!mmap` --- Memory-mapped file support
+===========================================
 
 .. module:: mmap
    :synopsis: Interface to memory-mapped files for Unix and Windows.
@@ -48,10 +48,11 @@ update the underlying file.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
-.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT[, offset])
+.. class:: mmap(fileno, length, tagname=None, \
+                access=ACCESS_DEFAULT, offset=0, *, trackfd=True)
 
    **(Windows version)** Maps *length* bytes from the file specified by the
-   file handle *fileno*, and creates a mmap object.  If *length* is larger
+   file descriptor *fileno*, and creates a mmap object.  If *length* is larger
    than the current size of the file, the file is extended to contain *length*
    bytes.  If *length* is ``0``, the maximum length of the map is the current
    size of the file, except that if the file is empty Windows raises an
@@ -62,16 +63,28 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    the same file.  If you specify the name of an existing tag, that tag is
    opened, otherwise a new tag of this name is created.  If this parameter is
    omitted or ``None``, the mapping is created without a name.  Avoiding the
-   use of the tag parameter will assist in keeping your code portable between
-   Unix and Windows.
+   use of the *tagname* parameter will assist in keeping your code portable
+   between Unix and Windows.
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
    defaults to 0.  *offset* must be a multiple of the :const:`ALLOCATIONGRANULARITY`.
 
+   If *trackfd* is ``False``, the file handle corresponding to *fileno* will
+   not be duplicated, and the resulting :class:`!mmap` object will not
+   be associated with the map's underlying file.
+   This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
+   methods will fail.
+   This mode is useful to limit the number of open file handles.
+   The original file can be renamed (but not deleted) after closing *fileno*.
+
+   .. versionchanged:: 3.15
+      The *trackfd* parameter was added.
+
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
-.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
+.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, \
+                access=ACCESS_DEFAULT, offset=0, *, trackfd=True)
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
@@ -102,9 +115,19 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    defaults to 0. *offset* must be a multiple of :const:`ALLOCATIONGRANULARITY`
    which is equal to :const:`PAGESIZE` on Unix systems.
 
+   If *trackfd* is ``False``, the file descriptor specified by *fileno* will
+   not be duplicated, and the resulting :class:`!mmap` object will not
+   be associated with the map's underlying file.
+   This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
+   methods will fail.
+   This mode is useful to limit the number of open file descriptors.
+
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
    with the physical backing store on macOS.
+
+   .. versionchanged:: 3.13
+      The *trackfd* parameter was added.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
@@ -189,7 +212,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Writable :term:`bytes-like object` is now accepted.
 
 
-   .. method:: flush([offset[, size]])
+   .. method:: flush([offset[, size]], *, flags=MS_SYNC)
 
       Flushes changes made to the in-memory copy of a file back to disk. Without
       use of this call there is no guarantee that changes are written back before
@@ -198,6 +221,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       whole extent of the mapping is flushed.  *offset* must be a multiple of the
       :const:`PAGESIZE` or :const:`ALLOCATIONGRANULARITY`.
 
+      The *flags* parameter specifies the synchronization behavior.
+      *flags* must be one of the :ref:`MS_* constants <ms-constants>` available
+      on the system.
+
+      On Windows, the *flags* parameter is ignored.
+
       ``None`` is returned to indicate success.  An exception is raised when the
       call failed.
 
@@ -205,6 +234,15 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Previously, a nonzero value was returned on success; zero was returned
          on error under Windows.  A zero value was returned on success; an
          exception was raised on error under Unix.
+
+      .. versionchanged:: 3.15
+         Allow specifying *offset* without *size*. Previously, both *offset*
+         and *size* parameters were required together. Now *offset* can be
+         specified alone, and the flush operation will extend from *offset*
+         to the end of the mmap.
+
+      .. versionchanged:: next
+         Added *flags* parameter to control synchronization behavior.
 
 
    .. method:: madvise(option[, start[, length]])
@@ -254,14 +292,19 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. method:: resize(newsize)
 
-      Resizes the map and the underlying file, if any. If the mmap was created
-      with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
-      raise a :exc:`TypeError` exception.
+      Resizes the map and the underlying file, if any.
+
+      Resizing a map created with *access* of :const:`ACCESS_READ` or
+      :const:`ACCESS_COPY`, will raise a :exc:`TypeError` exception.
+      Resizing a map created with *trackfd* set to ``False``,
+      will raise a :exc:`ValueError` exception.
 
       **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
       maps against the same named file. Resizing an anonymous map (ie against the
       pagefile) will silently create a new map with the original data copied over
       up to the length of the new size.
+
+      Availability: Windows and systems with the ``mremap()`` system call.
 
       .. versionchanged:: 3.11
          Correctly fails if attempting to resize when another map is held
@@ -294,10 +337,25 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       .. versionadded:: 3.13
 
+   .. method:: set_name(name, /)
+
+      Annotate the memory mapping with the given *name* for easier identification
+      in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
+      to Python or if Python is built in :ref:`debug mode <debug-build>`.
+      The length of *name* must not exceed 67 bytes including the ``'\0'`` terminator.
+
+      .. availability:: Linux >= 5.17 (kernel built with ``CONFIG_ANON_VMA_NAME`` option)
+
+      .. versionadded:: next
+
    .. method:: size()
 
       Return the length of the file, which can be larger than the size of the
       memory-mapped area.
+      For an anonymous mapping, return its size.
+
+      .. versionchanged:: 3.15
+         Anonymous mappings are now supported on Unix.
 
 
    .. method:: tell()
@@ -372,14 +430,25 @@ MAP_* Constants
 
 .. data:: MAP_SHARED
           MAP_PRIVATE
-          MAP_DENYWRITE
-          MAP_EXECUTABLE
+          MAP_32BIT
+          MAP_ALIGNED_SUPER
           MAP_ANON
           MAP_ANONYMOUS
-          MAP_POPULATE
-          MAP_STACK
-          MAP_ALIGNED_SUPER
           MAP_CONCEAL
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
+          MAP_HASSEMAPHORE
+          MAP_JIT
+          MAP_NOCACHE
+          MAP_NOEXTEND
+          MAP_NORESERVE
+          MAP_POPULATE
+          MAP_RESILIENT_CODESIGN
+          MAP_RESILIENT_MEDIA
+          MAP_STACK
+          MAP_TPRO
+          MAP_TRANSLATED_ALLOW_EXECUTE
+          MAP_UNIX03
 
     These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
     is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
@@ -392,5 +461,31 @@ MAP_* Constants
        Added :data:`MAP_STACK` constant.
 
     .. versionadded:: 3.12
-       Added :data:`MAP_ALIGNED_SUPER` constant.
-       Added :data:`MAP_CONCEAL` constant.
+       Added :data:`MAP_ALIGNED_SUPER` and :data:`MAP_CONCEAL` constants.
+
+    .. versionadded:: 3.13
+       Added :data:`MAP_32BIT`, :data:`MAP_HASSEMAPHORE`, :data:`MAP_JIT`,
+       :data:`MAP_NOCACHE`, :data:`MAP_NOEXTEND`, :data:`MAP_NORESERVE`,
+       :data:`MAP_RESILIENT_CODESIGN`, :data:`MAP_RESILIENT_MEDIA`,
+       :data:`MAP_TPRO`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`, and
+       :data:`MAP_UNIX03` constants.
+
+.. _ms-constants:
+
+MS_* Constants
+++++++++++++++
+
+.. data:: MS_SYNC
+          MS_ASYNC
+          MS_INVALIDATE
+
+    These flags control the synchronization behavior for :meth:`mmap.flush`:
+
+    * :data:`MS_SYNC` - Synchronous flush: writes are scheduled and the call
+      blocks until they are physically written to storage.
+    * :data:`MS_ASYNC` - Asynchronous flush: writes are scheduled but the call
+      returns immediately without waiting for completion.
+    * :data:`MS_INVALIDATE` - Invalidate cached data: invalidates other mappings
+      of the same file so they can see the changes.
+
+    .. versionadded:: next

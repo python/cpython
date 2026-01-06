@@ -105,9 +105,13 @@ def collect_sys(info_add):
     )
     copy_attributes(info_add, sys, 'sys.%s', attributes)
 
-    call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
-    call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
-    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
+    for func in (
+        '_is_gil_enabled',
+        'getandroidapilevel',
+        'getrecursionlimit',
+        'getwindowsversion',
+    ):
+        call_func(info_add, f'sys.{func}', sys, func)
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -141,6 +145,8 @@ def collect_sys(info_add):
     else:
         text = 'No (sys.getobjects() missing)'
     info_add('build.Py_TRACE_REFS', text)
+
+    info_add('sys.is_remote_debug_enabled', sys.is_remote_debug_enabled())
 
 
 def collect_platform(info_add):
@@ -178,6 +184,9 @@ def collect_platform(info_add):
                 continue
             info_add(f'platform.freedesktop_os_release[{key}]',
                      os_release[key])
+
+    if sys.platform == 'android':
+        call_func(info_add, 'platform.android_ver', platform, 'android_ver')
 
 
 def collect_locale(info_add):
@@ -282,11 +291,14 @@ def collect_os(info_add):
         "DISTUTILS_USE_SDK",
         "DYLD_LIBRARY_PATH",
         "ENSUREPIP_OPTIONS",
+        "FORCE_COLOR",
+        "GITHUB_ACTIONS",
         "HISTORY_FILE",
         "HOME",
         "HOMEDRIVE",
         "HOMEPATH",
         "IDLESTARTUP",
+        "IPHONEOS_DEPLOYMENT_TARGET",
         "LANG",
         "LDFLAGS",
         "LDSHARED",
@@ -297,11 +309,13 @@ def collect_os(info_add):
         "MAKEFLAGS",
         "MIXERDEV",
         "MSSDK",
+        "NO_COLOR",
         "PATH",
         "PATHEXT",
         "PIP_CONFIG_FILE",
         "PLAT",
         "POSIXLY_CORRECT",
+        "PYTHON_COLORS",
         "PY_SAX_PARSER",
         "ProgramFiles",
         "ProgramFiles(x86)",
@@ -326,6 +340,7 @@ def collect_os(info_add):
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
+        "_PYTHON_SYSCONFIGDATA_PATH",
         "__PYVENV_LAUNCHER__",
 
         # Sanitizer options
@@ -509,6 +524,7 @@ def collect_sysconfig(info_add):
         'MACHDEP',
         'MULTIARCH',
         'OPT',
+        'PGO_PROF_USE_FLAG',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',
@@ -518,8 +534,10 @@ def collect_sysconfig(info_add):
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'Py_GIL_DISABLED',
+        'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
+        'TEST_MODULES',
         'abs_builddir',
         'abs_srcdir',
         'prefix',
@@ -543,7 +561,6 @@ def collect_sysconfig(info_add):
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
-        'WITH_FREELISTS',
         'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',
@@ -641,8 +658,18 @@ def collect_zlib(info_add):
     except ImportError:
         return
 
-    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION')
+    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION', 'ZLIBNG_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
+
+
+def collect_zstd(info_add):
+    try:
+        import _zstd
+    except ImportError:
+        return
+
+    attributes = ('zstd_version',)
+    copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
 
 
 def collect_expat(info_add):
@@ -674,7 +701,6 @@ def collect_testcapi(info_add):
     for name in (
         'LONG_MAX',         # always 32-bit on Windows, 64-bit on 64-bit Unix
         'PY_SSIZE_T_MAX',
-        'Py_C_RECURSION_LIMIT',
         'SIZEOF_TIME_T',    # 32-bit or 64-bit depending on the platform
         'SIZEOF_WCHAR_T',   # 16-bit or 32-bit depending on the platform
     ):
@@ -740,6 +766,7 @@ def collect_support(info_add):
         'is_emscripten',
         'is_jython',
         'is_wasi',
+        'is_wasm32',
     )
     copy_attributes(info_add, support, 'support.%s', attributes)
 
@@ -865,34 +892,52 @@ def collect_subprocess(info_add):
 
 
 def collect_windows(info_add):
+    if sys.platform != "win32":
+        # Code specific to Windows
+        return
+
+    # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
+    # windows.is_admin: IsUserAnAdmin()
     try:
         import ctypes
+        if not hasattr(ctypes, 'WinDLL'):
+            raise ImportError
     except ImportError:
-        return
-
-    if not hasattr(ctypes, 'WinDLL'):
-        return
-
-    ntdll = ctypes.WinDLL('ntdll')
-    BOOLEAN = ctypes.c_ubyte
-
-    try:
-        RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
-    except AttributeError:
-        res = '<function not available>'
+        pass
     else:
-        RtlAreLongPathsEnabled.restype = BOOLEAN
-        RtlAreLongPathsEnabled.argtypes = ()
-        res = bool(RtlAreLongPathsEnabled())
-    info_add('windows.RtlAreLongPathsEnabled', res)
+        ntdll = ctypes.WinDLL('ntdll')
+        BOOLEAN = ctypes.c_ubyte
+        try:
+            RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+        except AttributeError:
+            res = '<function not available>'
+        else:
+            RtlAreLongPathsEnabled.restype = BOOLEAN
+            RtlAreLongPathsEnabled.argtypes = ()
+            res = bool(RtlAreLongPathsEnabled())
+        info_add('windows.RtlAreLongPathsEnabled', res)
+
+        shell32 = ctypes.windll.shell32
+        IsUserAnAdmin = shell32.IsUserAnAdmin
+        IsUserAnAdmin.restype = BOOLEAN
+        IsUserAnAdmin.argtypes = ()
+        info_add('windows.is_admin', IsUserAnAdmin())
 
     try:
         import _winapi
-        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
-        info_add('windows.dll_path', dll_path)
-    except (ImportError, AttributeError):
+    except ImportError:
         pass
+    else:
+        try:
+            dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+            info_add('windows.dll_path', dll_path)
+        except AttributeError:
+            pass
 
+        call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
+        call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
+
+    # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess
     try:
         # When wmic.exe output is redirected to a pipe,
@@ -919,6 +964,7 @@ def collect_windows(info_add):
                 if line:
                     info_add('windows.version', line)
 
+    # windows.ver: "ver" command
     try:
         proc = subprocess.Popen(["ver"], shell=True,
                                 stdout=subprocess.PIPE,
@@ -936,6 +982,22 @@ def collect_windows(info_add):
         line = output.splitlines()[0]
         if line:
             info_add('windows.ver', line)
+
+    # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
+    import winreg
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock")
+        subkey = "AllowDevelopmentWithoutDevLicense"
+        try:
+            value, value_type = winreg.QueryValueEx(key, subkey)
+        finally:
+            winreg.CloseKey(key)
+    except OSError:
+        pass
+    else:
+        info_add('windows.developer_mode', "enabled" if value else "disabled")
 
 
 def collect_fips(info_add):
@@ -1011,6 +1073,7 @@ def collect_info(info):
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_zstd,
         collect_libregrtest_utils,
 
         # Collecting from tests should be last as they have side effects.

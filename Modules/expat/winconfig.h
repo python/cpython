@@ -9,7 +9,8 @@
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2005      Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2017-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2017-2023 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2023      Orgad Shaneh <orgad.shaneh@audiocodes.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -35,7 +36,9 @@
 #ifndef WINCONFIG_H
 #define WINCONFIG_H
 
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 

@@ -2,7 +2,11 @@ import unittest
 from collections import OrderedDict, UserDict
 from types import MappingProxyType
 from test import support
-import _testcapi
+from test.support import import_helper
+
+
+_testcapi = import_helper.import_module("_testcapi")
+_testlimitedcapi = import_helper.import_module("_testlimitedcapi")
 
 
 NULL = None
@@ -25,7 +29,7 @@ def gen():
 class CAPITest(unittest.TestCase):
 
     def test_dict_check(self):
-        check = _testcapi.dict_check
+        check = _testlimitedcapi.dict_check
         self.assertTrue(check({1: 2}))
         self.assertTrue(check(OrderedDict({1: 2})))
         self.assertFalse(check(UserDict({1: 2})))
@@ -34,7 +38,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES check(NULL)
 
     def test_dict_checkexact(self):
-        check = _testcapi.dict_checkexact
+        check = _testlimitedcapi.dict_checkexact
         self.assertTrue(check({1: 2}))
         self.assertFalse(check(OrderedDict({1: 2})))
         self.assertFalse(check(UserDict({1: 2})))
@@ -43,7 +47,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES check(NULL)
 
     def test_dict_new(self):
-        dict_new = _testcapi.dict_new
+        dict_new = _testlimitedcapi.dict_new
         dct = dict_new()
         self.assertEqual(dct, {})
         self.assertIs(type(dct), dict)
@@ -51,7 +55,7 @@ class CAPITest(unittest.TestCase):
         self.assertIsNot(dct2, dct)
 
     def test_dictproxy_new(self):
-        dictproxy_new = _testcapi.dictproxy_new
+        dictproxy_new = _testlimitedcapi.dictproxy_new
         for dct in {1: 2}, OrderedDict({1: 2}), UserDict({1: 2}):
             proxy = dictproxy_new(dct)
             self.assertIs(type(proxy), MappingProxyType)
@@ -67,7 +71,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES dictproxy_new(NULL)
 
     def test_dict_copy(self):
-        copy = _testcapi.dict_copy
+        copy = _testlimitedcapi.dict_copy
         for dct in {1: 2}, OrderedDict({1: 2}):
             dct_copy = copy(dct)
             self.assertIs(type(dct_copy), dict)
@@ -79,7 +83,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, copy, NULL)
 
     def test_dict_clear(self):
-        clear = _testcapi.dict_clear
+        clear = _testlimitedcapi.dict_clear
         dct = {1: 2}
         clear(dct)
         self.assertEqual(dct, {})
@@ -98,7 +102,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES? clear(NULL)
 
     def test_dict_size(self):
-        size = _testcapi.dict_size
+        size = _testlimitedcapi.dict_size
         self.assertEqual(size({1: 2}), 1)
         self.assertEqual(size(OrderedDict({1: 2})), 1)
 
@@ -109,7 +113,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, size, NULL)
 
     def test_dict_getitem(self):
-        getitem = _testcapi.dict_getitem
+        getitem = _testlimitedcapi.dict_getitem
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertEqual(getitem(dct, 'a'), 1)
         self.assertIs(getitem(dct, 'b'), KeyError)
@@ -131,7 +135,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES getitem(NULL, 'a')
 
     def test_dict_getitemstring(self):
-        getitemstring = _testcapi.dict_getitemstring
+        getitemstring = _testlimitedcapi.dict_getitemstring
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertEqual(getitemstring(dct, b'a'), 1)
         self.assertIs(getitemstring(dct, b'b'), KeyError)
@@ -188,7 +192,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES getitemstring(NULL, b'a')
 
     def test_dict_getitemwitherror(self):
-        getitem = _testcapi.dict_getitemwitherror
+        getitem = _testlimitedcapi.dict_getitemwitherror
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertEqual(getitem(dct, 'a'), 1)
         self.assertIs(getitem(dct, 'b'), KeyError)
@@ -206,7 +210,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES getitem(NULL, 'a')
 
     def test_dict_contains(self):
-        contains = _testcapi.dict_contains
+        contains = _testlimitedcapi.dict_contains
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertTrue(contains(dct, 'a'))
         self.assertFalse(contains(dct, 'b'))
@@ -238,7 +242,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES contains(NULL, b'a')
 
     def test_dict_setitem(self):
-        setitem = _testcapi.dict_setitem
+        setitem = _testlimitedcapi.dict_setitem
         dct = {}
         setitem(dct, 'a', 5)
         self.assertEqual(dct, {'a': 5})
@@ -258,7 +262,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES setitem(NULL, 'a', 5)
 
     def test_dict_setitemstring(self):
-        setitemstring = _testcapi.dict_setitemstring
+        setitemstring = _testlimitedcapi.dict_setitemstring
         dct = {}
         setitemstring(dct, b'a', 5)
         self.assertEqual(dct, {'a': 5})
@@ -277,7 +281,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES setitemstring(NULL, b'a', 5)
 
     def test_dict_delitem(self):
-        delitem = _testcapi.dict_delitem
+        delitem = _testlimitedcapi.dict_delitem
         dct = {'a': 1, 'c': 2, '\U0001f40d': 3}
         delitem(dct, 'a')
         self.assertEqual(dct, {'c': 2, '\U0001f40d': 3})
@@ -298,7 +302,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES delitem(NULL, 'a')
 
     def test_dict_delitemstring(self):
-        delitemstring = _testcapi.dict_delitemstring
+        delitemstring = _testlimitedcapi.dict_delitemstring
         dct = {'a': 1, 'c': 2, '\U0001f40d': 3}
         delitemstring(dct, b'a')
         self.assertEqual(dct, {'c': 2, '\U0001f40d': 3})
@@ -339,6 +343,28 @@ class CAPITest(unittest.TestCase):
         # CRASHES setdefault({}, 'a', NULL)
         # CRASHES setdefault(NULL, 'a', 5)
 
+    def test_dict_setdefaultref(self):
+        setdefault = _testcapi.dict_setdefaultref
+        dct = {}
+        self.assertEqual(setdefault(dct, 'a', 5), 5)
+        self.assertEqual(dct, {'a': 5})
+        self.assertEqual(setdefault(dct, 'a', 8), 5)
+        self.assertEqual(dct, {'a': 5})
+
+        dct2 = DictSubclass()
+        self.assertEqual(setdefault(dct2, 'a', 5), 5)
+        self.assertEqual(dct2, {'a': 5})
+        self.assertEqual(setdefault(dct2, 'a', 8), 5)
+        self.assertEqual(dct2, {'a': 5})
+
+        self.assertRaises(TypeError, setdefault, {}, [], 5)  # unhashable
+        self.assertRaises(SystemError, setdefault, UserDict(), 'a', 5)
+        self.assertRaises(SystemError, setdefault, [1], 0, 5)
+        self.assertRaises(SystemError, setdefault, 42, 'a', 5)
+        # CRASHES setdefault({}, NULL, 5)
+        # CRASHES setdefault({}, 'a', NULL)
+        # CRASHES setdefault(NULL, 'a', 5)
+
     def test_mapping_keys_valuesitems(self):
         class BadMapping(dict):
             def keys(self):
@@ -349,21 +375,21 @@ class CAPITest(unittest.TestCase):
                 return None
         dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
         for mapping in [dict_obj, DictSubclass(dict_obj), BadMapping(dict_obj)]:
-            self.assertListEqual(_testcapi.dict_keys(mapping),
+            self.assertListEqual(_testlimitedcapi.dict_keys(mapping),
                                  list(dict_obj.keys()))
-            self.assertListEqual(_testcapi.dict_values(mapping),
+            self.assertListEqual(_testlimitedcapi.dict_values(mapping),
                                  list(dict_obj.values()))
-            self.assertListEqual(_testcapi.dict_items(mapping),
+            self.assertListEqual(_testlimitedcapi.dict_items(mapping),
                                  list(dict_obj.items()))
 
     def test_dict_keys_valuesitems_bad_arg(self):
         for mapping in UserDict(), [], object():
-            self.assertRaises(SystemError, _testcapi.dict_keys, mapping)
-            self.assertRaises(SystemError, _testcapi.dict_values, mapping)
-            self.assertRaises(SystemError, _testcapi.dict_items, mapping)
+            self.assertRaises(SystemError, _testlimitedcapi.dict_keys, mapping)
+            self.assertRaises(SystemError, _testlimitedcapi.dict_values, mapping)
+            self.assertRaises(SystemError, _testlimitedcapi.dict_items, mapping)
 
     def test_dict_next(self):
-        dict_next = _testcapi.dict_next
+        dict_next = _testlimitedcapi.dict_next
         self.assertIsNone(dict_next({}, 0))
         dct = {'a': 1, 'b': 2, 'c': 3}
         pos = 0
@@ -380,7 +406,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_next(NULL, 0)
 
     def test_dict_update(self):
-        update = _testcapi.dict_update
+        update = _testlimitedcapi.dict_update
         for cls1 in dict, DictSubclass:
             for cls2 in dict, DictSubclass, UserDict:
                 dct = cls1({'a': 1, 'b': 2})
@@ -395,7 +421,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, update, NULL, {})
 
     def test_dict_merge(self):
-        merge = _testcapi.dict_merge
+        merge = _testlimitedcapi.dict_merge
         for cls1 in dict, DictSubclass:
             for cls2 in dict, DictSubclass, UserDict:
                 dct = cls1({'a': 1, 'b': 2})
@@ -413,7 +439,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, merge, NULL, {}, 0)
 
     def test_dict_mergefromseq2(self):
-        mergefromseq2 = _testcapi.dict_mergefromseq2
+        mergefromseq2 = _testlimitedcapi.dict_mergefromseq2
         for cls1 in dict, DictSubclass:
             for cls2 in list, iter:
                 dct = cls1({'a': 1, 'b': 2})

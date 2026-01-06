@@ -314,9 +314,9 @@ class FTP:
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
         if self.af == socket.AF_INET:
-            resp = self.sendport(host, port)
+            self.sendport(host, port)
         else:
-            resp = self.sendeprt(host, port)
+            self.sendeprt(host, port)
         if self.timeout is not _GLOBAL_DEFAULT_TIMEOUT:
             sock.settimeout(self.timeout)
         return sock
@@ -343,7 +343,7 @@ class FTP:
         connection and the expected size of the transfer.  The
         expected size may be None if it could not be determined.
 
-        Optional `rest' argument can be a string that is sent as the
+        Optional 'rest' argument can be a string that is sent as the
         argument to a REST command.  This is essentially a server
         marker used to tell the server to skip over any data up to the
         given marker.
@@ -455,7 +455,7 @@ class FTP:
         """
         if callback is None:
             callback = print_line
-        resp = self.sendcmd('TYPE A')
+        self.sendcmd('TYPE A')
         with self.transfercmd(cmd) as conn, \
                  conn.makefile('r', encoding=self.encoding) as fp:
             while 1:
@@ -900,11 +900,17 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
 
 def test():
     '''Test program.
-    Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
+    Usage: ftplib [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
 
-    -d dir
-    -l list
-    -p password
+    Options:
+      -d        increase debugging level
+      -r[file]  set alternate ~/.netrc file
+
+    Commands:
+      -l[dir]   list directory
+      -d[dir]   change the current directory
+      -p        toggle passive and active mode
+      file      retrieve the file and write it to stdout
     '''
 
     if len(sys.argv) < 2:
@@ -930,15 +936,14 @@ def test():
         netrcobj = netrc.netrc(rcfile)
     except OSError:
         if rcfile is not None:
-            sys.stderr.write("Could not open account file"
-                             " -- using anonymous login.")
+            print("Could not open account file -- using anonymous login.",
+                  file=sys.stderr)
     else:
         try:
             userid, acct, passwd = netrcobj.authenticators(host)
-        except KeyError:
+        except (KeyError, TypeError):
             # no account for host
-            sys.stderr.write(
-                    "No account -- using anonymous login.")
+            print("No account -- using anonymous login.", file=sys.stderr)
     ftp.login(userid, passwd, acct)
     for file in sys.argv[2:]:
         if file[:2] == '-l':
@@ -946,12 +951,14 @@ def test():
         elif file[:2] == '-d':
             cmd = 'CWD'
             if file[2:]: cmd = cmd + ' ' + file[2:]
-            resp = ftp.sendcmd(cmd)
+            ftp.sendcmd(cmd)
         elif file == '-p':
             ftp.set_pasv(not ftp.passiveserver)
         else:
             ftp.retrbinary('RETR ' + file, \
-                           sys.stdout.write, 1024)
+                           sys.stdout.buffer.write, 1024)
+            sys.stdout.buffer.flush()
+        sys.stdout.flush()
     ftp.quit()
 
 

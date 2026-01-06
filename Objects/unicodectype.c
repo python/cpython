@@ -9,6 +9,7 @@
 */
 
 #include "Python.h"
+#include "pycore_unicodectype.h"   // export _PyUnicode_IsXidStart(), _PyUnicode_IsXidContinue()
 
 #define ALPHA_MASK 0x01
 #define DECIMAL_MASK 0x02
@@ -142,18 +143,10 @@ int _PyUnicode_IsNumeric(Py_UCS4 ch)
     return (ctype->flags & NUMERIC_MASK) != 0;
 }
 
-/* Returns 1 for Unicode characters to be hex-escaped when repr()ed,
-   0 otherwise.
-   All characters except those characters defined in the Unicode character
-   database as following categories are considered printable.
-      * Cc (Other, Control)
-      * Cf (Other, Format)
-      * Cs (Other, Surrogate)
-      * Co (Other, Private Use)
-      * Cn (Other, Not Assigned)
-      * Zl Separator, Line ('\u2028', LINE SEPARATOR)
-      * Zp Separator, Paragraph ('\u2029', PARAGRAPH SEPARATOR)
-      * Zs (Separator, Space) other than ASCII space('\x20').
+/* Returns 1 for Unicode characters that repr() may use in its output,
+   and 0 for characters to be hex-escaped.
+
+   See documentation of `str.isprintable` for details.
 */
 int _PyUnicode_IsPrintable(Py_UCS4 ch)
 {

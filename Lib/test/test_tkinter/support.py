@@ -14,7 +14,7 @@ class AbstractTkTest:
         # Some window managers can maximize new windows.
         cls.root.wm_state('normal')
         try:
-            cls.root.wm_attributes('-zoomed', False)
+            cls.root.wm_attributes(zoomed=False)
         except tkinter.TclError:
             pass
 
@@ -58,7 +58,7 @@ class AbstractDefaultRootTest:
         destroy_default_root()
         tkinter.NoDefaultRoot()
         self.assertRaises(RuntimeError, constructor)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
 
 
 def destroy_default_root():

@@ -1,7 +1,7 @@
-This is Python version 3.13.0 alpha 2
+This is Python version 3.15.0 alpha 3
 =====================================
 
-.. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
+.. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
 
@@ -14,7 +14,7 @@ This is Python version 3.13.0 alpha 2
    :target: https://discuss.python.org/
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -64,7 +64,7 @@ the executable is called ``python.exe``; elsewhere it's just ``python``.
 Building a complete Python installation requires the use of various
 additional third-party libraries, depending on your build platform and
 configure options.  Not all standard library modules are buildable or
-useable on all platforms.  Refer to the
+usable on all platforms.  Refer to the
 `Install dependencies <https://devguide.python.org/getting-started/setup-building.html#build-dependencies>`_
 section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
@@ -135,8 +135,8 @@ libraries for additional performance gains.
 What's New
 ----------
 
-We have a comprehensive overview of the changes in the `What's New in Python
-3.13 <https://docs.python.org/3.13/whatsnew/3.13.html>`_ document.  For a more
+We have a comprehensive overview of the changes in the `What's new in Python
+3.15 <https://docs.python.org/3.15/whatsnew/3.15.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -149,25 +149,16 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.13 <https://docs.python.org/3.13/>`_ is online,
+`Documentation for Python 3.15 <https://docs.python.org/3.15/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
-is downloadable in HTML, PDF, and reStructuredText formats; the latter version
+is downloadable in HTML, EPUB, and reStructuredText formats; the latter version
 is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
 <https://github.com/python/cpython/blob/main/Doc/README.rst>`_.
-
-
-Converting From Python 2.x to 3.x
----------------------------------
-
-Significant backward incompatible changes were made for the release of Python
-3.0, which may cause programs written for Python 2 to fail when run with Python
-3.  For more information about porting your code from Python 2 to Python 3, see
-the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
 
 
 Testing
@@ -206,25 +197,25 @@ directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
 ``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
-version (if any) is your "primary" version.  Install that version using ``make
-install``.  Install all other versions using ``make altinstall``.
+version (if any) is your "primary" version.  Install that version using
+``make install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.13 with 3.13 being the
-primary version, you would execute ``make install`` in your 3.13 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.15 with 3.15 being the
+primary version, you would execute ``make install`` in your 3.15 build directory
 and ``make altinstall`` in the others.
 
 
 Release Schedule
 ----------------
 
-See :pep:`719` for Python 3.13 release details.
+See `PEP 790 <https://peps.python.org/pep-0790/>`__ for Python 3.15 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 Copyright © 2000 BeOpen.com.  All rights reserved.
 

@@ -6,7 +6,7 @@ import sys
 import sysconfig
 import tempfile
 import tokenize
-from typing import IO, Any, Dict, List, Optional, Set, Tuple
+from typing import IO, Any
 
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
@@ -18,11 +18,11 @@ from pegen.tokenizer import Tokenizer
 
 MOD_DIR = pathlib.Path(__file__).resolve().parent
 
-TokenDefinitions = Tuple[Dict[int, str], Dict[str, int], Set[str]]
+TokenDefinitions = tuple[dict[int, str], dict[str, int], set[str]]
 Incomplete = Any  # TODO: install `types-setuptools` and remove this alias
 
 
-def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[str]:
+def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> list[str]:
     flags = sysconfig.get_config_var(compiler_flags)
     py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
     if flags is None or py_flags_nodist is None:
@@ -71,11 +71,11 @@ def fixup_build_ext(cmd: Incomplete) -> None:
 
 def compile_c_extension(
     generated_source_path: str,
-    build_dir: Optional[str] = None,
+    build_dir: str | None = None,
     verbose: bool = False,
     keep_asserts: bool = True,
     disable_optimization: bool = False,
-    library_dir: Optional[str] = None,
+    library_dir: str | None = None,
 ) -> pathlib.Path:
     """Compile the generated source for a parser generator into an extension module.
 
@@ -93,11 +93,10 @@ def compile_c_extension(
     """
     import setuptools.command.build_ext
     import setuptools.logging
-
-    from setuptools import Extension, Distribution
-    from setuptools._distutils.dep_util import newer_group
+    from setuptools import Distribution, Extension
     from setuptools._distutils.ccompiler import new_compiler
     from setuptools._distutils.sysconfig import customize_compiler
+    from setuptools.modified import newer_group
 
     if verbose:
         setuptools.logging.set_threshold(logging.DEBUG)
@@ -108,6 +107,8 @@ def compile_c_extension(
     extra_compile_args.append("-DPy_BUILD_CORE_MODULE")
     # Define _Py_TEST_PEGEN to not call PyAST_Validate() in Parser/pegen.c
     extra_compile_args.append("-D_Py_TEST_PEGEN")
+    if sys.platform == "win32" and sysconfig.get_config_var("Py_GIL_DISABLED"):
+        extra_compile_args.append("-DPy_GIL_DISABLED")
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
@@ -220,6 +221,9 @@ def compile_c_extension(
         )
     else:
         objects = compiler.object_filenames(extension.sources, output_dir=cmd.build_temp)
+    # The cmd.get_libraries() call needs a valid compiler attribute or we will
+    # get an incorrect library name on the free-threaded Windows build.
+    cmd.compiler = compiler
     # Now link the object files together into a "shared object"
     compiler.link_shared_object(
         objects,
@@ -236,7 +240,7 @@ def compile_c_extension(
 
 def build_parser(
     grammar_file: str, verbose_tokenizer: bool = False, verbose_parser: bool = False
-) -> Tuple[Grammar, Parser, Tokenizer]:
+) -> tuple[Grammar, Parser, Tokenizer]:
     with open(grammar_file) as file:
         tokenizer = Tokenizer(tokenize.generate_tokens(file.readline), verbose=verbose_tokenizer)
         parser = GrammarParser(tokenizer, verbose=verbose_parser)
@@ -287,7 +291,7 @@ def build_c_generator(
     keep_asserts_in_extension: bool = True,
     skip_actions: bool = False,
 ) -> ParserGenerator:
-    with open(tokens_file, "r") as tok_file:
+    with open(tokens_file) as tok_file:
         all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
     with open(output_file, "w") as file:
         gen: ParserGenerator = CParserGenerator(
@@ -328,7 +332,7 @@ def build_c_parser_and_generator(
     verbose_c_extension: bool = False,
     keep_asserts_in_extension: bool = True,
     skip_actions: bool = False,
-) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+) -> tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
     """Generate rules, C parser, tokenizer, parser generator for a given grammar
 
     Args:
@@ -368,7 +372,7 @@ def build_python_parser_and_generator(
     verbose_tokenizer: bool = False,
     verbose_parser: bool = False,
     skip_actions: bool = False,
-) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+) -> tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
     """Generate rules, python parser, tokenizer, parser generator for a given grammar
 
     Args:

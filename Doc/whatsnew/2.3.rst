@@ -66,7 +66,7 @@ Here's a simple example::
 The union and intersection of sets can be computed with the :meth:`~frozenset.union` and
 :meth:`~frozenset.intersection` methods; an alternative notation uses the bitwise operators
 ``&`` and ``|``. Mutable sets also have in-place versions of these methods,
-:meth:`!union_update` and :meth:`~frozenset.intersection_update`. ::
+:meth:`!union_update` and :meth:`~set.intersection_update`. ::
 
    >>> S1 = sets.Set([1,2,3])
    >>> S2 = sets.Set([4,5,6])
@@ -87,7 +87,7 @@ It's also possible to take the symmetric difference of two sets.  This is the
 set of all elements in the union that aren't in the intersection.  Another way
 of putting it is that the symmetric difference contains all elements that are in
 exactly one set.  Again, there's an alternative notation (``^``), and an
-in-place version with the ungainly name :meth:`~frozenset.symmetric_difference_update`. ::
+in-place version with the ungainly name :meth:`~set.symmetric_difference_update`. ::
 
    >>> S1 = sets.Set([1,2,3,4])
    >>> S2 = sets.Set([3,4,5,6])
@@ -353,7 +353,7 @@ convert them to Unicode using the ``mbcs`` encoding.
 Other systems also allow Unicode strings as file names but convert them to byte
 strings before passing them to the system, which can cause a :exc:`UnicodeError`
 to be raised. Applications can test whether arbitrary Unicode strings are
-supported as file names by checking :attr:`os.path.supports_unicode_filenames`,
+supported as file names by checking :const:`os.path.supports_unicode_filenames`,
 a Boolean value.
 
 Under MacOS, :func:`os.listdir` may now return Unicode filenames.
@@ -1084,7 +1084,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   C3 algorithm as described in the paper `"A Monotonic Superclass Linearization
   for Dylan" <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910>`_. To
   understand the motivation for this change,  read Michele Simionato's article
-  `"Python 2.3 Method Resolution Order" <http://www.phyast.pitt.edu/~micheles/mro.html>`_, or
+  :ref:`python_2.3_mro`, or
   read the thread on python-dev starting with the message at
   https://mail.python.org/pipermail/python-dev/2002-October/029035.html. Samuele
   Pedroni first pointed out the problem and also implemented the fix by coding the
@@ -1113,10 +1113,10 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
      <type '_socket.socket'>
 
 * One of the noted incompatibilities between old- and new-style classes has been
-  removed: you can now assign to the :attr:`~definition.__name__` and :attr:`~class.__bases__`
+  removed: you can now assign to the :attr:`~type.__name__` and :attr:`~type.__bases__`
   attributes of new-style classes.  There are some restrictions on what can be
-  assigned to :attr:`~class.__bases__` along the lines of those relating to assigning to
-  an instance's :attr:`~instance.__class__` attribute.
+  assigned to :attr:`!__bases__` along the lines of those relating to assigning to
+  an instance's :attr:`~object.__class__` attribute.
 
 .. ======================================================================
 
@@ -1196,7 +1196,7 @@ Optimizations
 
 * Multiplication of large long integers is now much faster thanks to an
   implementation of Karatsuba multiplication, an algorithm that scales better than
-  the O(n\*n) required for the grade-school multiplication algorithm.  (Original
+  the *O*\ (*n*\ :sup:`2`) required for the grade-school multiplication algorithm.  (Original
   patch by Christopher A. Craig, and significantly reworked by Tim Peters.)
 
 * The ``SET_LINENO`` opcode is now gone.  This may provide a small speed
@@ -1308,7 +1308,7 @@ complete list of changes, or look through the CVS logs for all the details.
   partially sorted order such that, for every index *k*, ``heap[k] <=
   heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]``.  This makes it quick to remove the
   smallest item, and inserting a new item while maintaining the heap property is
-  O(lg n).  (See https://xlinux.nist.gov/dads//HTML/priorityque.html for more
+  *O*\ (log *n*).  (See https://xlinux.nist.gov/dads//HTML/priorityque.html for more
   information about the priority queue data structure.)
 
   The :mod:`heapq` module provides :func:`~heapq.heappush` and :func:`~heapq.heappop` functions
@@ -1382,7 +1382,7 @@ complete list of changes, or look through the CVS logs for all the details.
   In Python 2.4, the default will change to always returning floats.
 
   Application developers should enable this feature only if all their libraries
-  work properly when confronted with floating point time stamps, or if they use
+  work properly when confronted with floating-point time stamps, or if they use
   the tuple API. If used, the feature should be activated on an application level
   instead of trying to enable it on a per-use basis.
 
@@ -1925,8 +1925,8 @@ Changes to Python's build process and to the C API include:
   dependence on a system version or local installation of Expat.
 
 * If you dynamically allocate type objects in your extension, you should be
-  aware of a change in the rules relating to the :attr:`!__module__` and
-  :attr:`~definition.__name__` attributes.  In summary, you will want to ensure the type's
+  aware of a change in the rules relating to the :attr:`~type.__module__` and
+  :attr:`~type.__name__` attributes.  In summary, you will want to ensure the type's
   dictionary contains a ``'__module__'`` key; making the module name the part of
   the type name leading up to the final period will no longer have the desired
   effect.  For more detail, read the API reference documentation or the  source.

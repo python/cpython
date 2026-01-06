@@ -257,16 +257,14 @@ InvalidContinuation3:
 /* UTF-8 encoder specialized for a Unicode kind to avoid the slow
    PyUnicode_READ() macro. Delete some parts of the code depending on the kind:
    UCS-1 strings don't need to handle surrogates for example. */
-Py_LOCAL_INLINE(char *)
-STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
-                        PyObject *unicode,
+Py_LOCAL_INLINE(PyBytesWriter*)
+STRINGLIB(utf8_encoder)(PyObject *unicode,
                         const STRINGLIB_CHAR *data,
                         Py_ssize_t size,
                         _Py_error_handler error_handler,
-                        const char *errors)
+                        const char *errors,
+                        char **end)
 {
-    Py_ssize_t i;                /* index into data of next input character */
-    char *p;                     /* next free byte in output buffer */
 #if STRINGLIB_SIZEOF_CHAR > 1
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
@@ -284,14 +282,19 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
     if (size > PY_SSIZE_T_MAX / max_char_size) {
         /* integer overflow */
         PyErr_NoMemory();
+        *end = NULL;
         return NULL;
     }
 
-    _PyBytesWriter_Init(writer);
-    p = _PyBytesWriter_Alloc(writer, size * max_char_size);
-    if (p == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size * max_char_size);
+    if (writer == NULL) {
+        *end = NULL;
         return NULL;
+    }
+    /* next free byte in output buffer */
+    char *p = PyBytesWriter_GetData(writer);
 
+    Py_ssize_t i;                /* index into data of next input character */
     for (i = 0; i < size;) {
         Py_UCS4 ch = data[i++];
 
@@ -331,7 +334,7 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
             case _Py_ERROR_REPLACE:
                 memset(p, '?', endpos - startpos);
                 p += (endpos - startpos);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case _Py_ERROR_IGNORE:
                 i += (endpos - startpos - 1);
                 break;
@@ -348,7 +351,7 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
 
             case _Py_ERROR_BACKSLASHREPLACE:
                 /* subtract preallocated bytes */
-                writer->min_size -= max_char_size * (endpos - startpos);
+                writer->size -= max_char_size * (endpos - startpos);
                 p = backslashreplace(writer, p,
                                      unicode, startpos, endpos);
                 if (p == NULL)
@@ -358,7 +361,7 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
 
             case _Py_ERROR_XMLCHARREFREPLACE:
                 /* subtract preallocated bytes */
-                writer->min_size -= max_char_size * (endpos - startpos);
+                writer->size -= max_char_size * (endpos - startpos);
                 p = xmlcharrefreplace(writer, p,
                                       unicode, startpos, endpos);
                 if (p == NULL)
@@ -379,7 +382,7 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                 }
                 startpos = k;
                 assert(startpos < endpos);
-                /* fall through */
+                _Py_FALLTHROUGH;
             default:
                 rep = unicode_encode_call_errorhandler(
                       errors, &error_handler_obj, "utf-8", "surrogates not allowed",
@@ -389,22 +392,25 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
 
                 if (newpos < startpos) {
                     writer->overallocate = 1;
-                    p = _PyBytesWriter_Prepare(writer, p,
-                                               max_char_size * (startpos - newpos));
-                    if (p == NULL)
+                    p = PyBytesWriter_GrowAndUpdatePointer(writer,
+                                               max_char_size * (startpos - newpos),
+                                               p);
+                    if (p == NULL) {
                         goto error;
+                    }
                 }
                 else {
                     /* subtract preallocated bytes */
-                    writer->min_size -= max_char_size * (newpos - startpos);
+                    writer->size -= max_char_size * (newpos - startpos);
                     /* Only overallocate the buffer if it's not the last write */
                     writer->overallocate = (newpos < size);
                 }
 
+                char *rep_str;
+                Py_ssize_t rep_len;
                 if (PyBytes_Check(rep)) {
-                    p = _PyBytesWriter_WriteBytes(writer, p,
-                                                  PyBytes_AS_STRING(rep),
-                                                  PyBytes_GET_SIZE(rep));
+                    rep_str = PyBytes_AS_STRING(rep);
+                    rep_len = PyBytes_GET_SIZE(rep);
                 }
                 else {
                     /* rep is unicode */
@@ -415,13 +421,16 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                         goto error;
                     }
 
-                    p = _PyBytesWriter_WriteBytes(writer, p,
-                                                  PyUnicode_DATA(rep),
-                                                  PyUnicode_GET_LENGTH(rep));
+                    rep_str = PyUnicode_DATA(rep);
+                    rep_len = PyUnicode_GET_LENGTH(rep);
                 }
 
-                if (p == NULL)
+                p = PyBytesWriter_GrowAndUpdatePointer(writer, rep_len, p);
+                if (p == NULL) {
                     goto error;
+                }
+                memcpy(p, rep_str, rep_len);
+                p += rep_len;
                 Py_CLEAR(rep);
 
                 i = newpos;
@@ -458,13 +467,16 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
 #endif
-    return p;
+    *end = p;
+    return writer;
 
 #if STRINGLIB_SIZEOF_CHAR > 1
  error:
+    PyBytesWriter_Discard(writer);
     Py_XDECREF(rep);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
+    *end = NULL;
     return NULL;
 #endif
 }

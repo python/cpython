@@ -8,7 +8,7 @@ sphinx:
    configuration: Doc/conf.py
 
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
     python: "3"
 
@@ -26,7 +26,9 @@ build:
         exit 183;
       fi
 
+    - asdf plugin add uv
+    - asdf install uv latest
+    - asdf global uv latest
     - make -C Doc venv html
     - mkdir _readthedocs
     - mv Doc/build/html _readthedocs/html
-

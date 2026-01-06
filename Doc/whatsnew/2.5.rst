@@ -1277,12 +1277,12 @@ complete list of changes, or look through the SVN logs for all the details.
   with the new ':keyword:`with`' statement.  See section :ref:`contextlibmod`
   for more about this module.
 
-* New module: The :mod:`cProfile` module is a C implementation of  the existing
-  :mod:`profile` module that has much lower overhead. The module's interface is
-  the same as :mod:`profile`: you run ``cProfile.run('main()')`` to profile a
+* New module: The :mod:`!cProfile` module is a C implementation of  the existing
+  :mod:`!profile` module that has much lower overhead. The module's interface is
+  the same as :mod:`!profile`: you run ``cProfile.run('main()')`` to profile a
   function, can save profile data to a file, etc.  It's not yet known if the
   Hotshot profiler, which is also written in C but doesn't match the
-  :mod:`profile` module's interface, will continue to be maintained in future
+  :mod:`!profile` module's interface, will continue to be maintained in future
   versions of Python.  (Contributed by Armin Rigo.)
 
   Also, the :mod:`pstats` module for analyzing the data measured by the profiler
@@ -1478,8 +1478,8 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch 790710
 
-* The :mod:`pickle` and :mod:`cPickle` modules no longer accept a return value
-  of ``None`` from the :meth:`__reduce__` method; the method must return a tuple
+* The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a return value
+  of ``None`` from the :meth:`~object.__reduce__` method; the method must return a tuple
   of arguments instead.  The ability to return ``None`` was deprecated in Python
   2.4, so this completes the removal of the feature.
 
@@ -1519,7 +1519,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #1472854
 
-* The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now have a
+* The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now have a
   :attr:`rpc_paths` attribute that constrains XML-RPC operations to a limited set
   of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.  Setting
   :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path checking.
@@ -1650,9 +1650,9 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #754022
 
-* The :mod:`xmlrpclib` module now supports returning  :class:`~datetime.datetime` objects
-  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`loads`
-  function or the :class:`Unmarshaller` class to enable this feature. (Contributed
+* The :mod:`xmlrpclib <xmlrpc.client>` module now supports returning  :class:`~datetime.datetime` objects
+  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`~xmlrpc.client.loads`
+  function or the :class:`!Unmarshaller` class to enable this feature. (Contributed
   by Skip Montanaro.)
 
   .. Patch 1120353
@@ -1680,7 +1680,7 @@ The ctypes package
 
 The :mod:`ctypes` package, written by Thomas Heller, has been added  to the
 standard library.  :mod:`ctypes` lets you call arbitrary functions  in shared
-libraries or DLLs.  Long-time users may remember the :mod:`dl` module, which
+libraries or DLLs.  Long-time users may remember the :mod:`!dl` module, which
 provides functions for loading shared libraries and calling functions in them.
 The :mod:`ctypes` package is much fancier.
 
@@ -1724,7 +1724,7 @@ attribute of the function object to  change this::
 :mod:`ctypes` also provides a wrapper for Python's C API  as the
 ``ctypes.pythonapi`` object.  This object does *not*  release the global
 interpreter lock before calling a function, because the lock must be held when
-calling into the interpreter's code.   There's a :class:`py_object()` type
+calling into the interpreter's code.   There's a :class:`~ctypes.py_object` type
 constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
 
    import ctypes
@@ -1734,7 +1734,7 @@ constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
              ctypes.py_object("abc"),  ctypes.py_object(1))
    # d is now {'abc', 1}.
 
-Don't forget to use :class:`py_object()`; if it's omitted you end  up with a
+Don't forget to use :func:`~ctypes.py_object`; if it's omitted you end  up with a
 segmentation fault.
 
 :mod:`ctypes` has been around for a while, but people still write  and
@@ -1877,12 +1877,12 @@ The hashlib package
 -------------------
 
 A new :mod:`hashlib` module, written by Gregory P. Smith,  has been added to
-replace the :mod:`md5` and :mod:`sha` modules.  :mod:`hashlib` adds support for
+replace the :mod:`!md5` and :mod:`!sha` modules.  :mod:`hashlib` adds support for
 additional secure hashes (SHA-224, SHA-256, SHA-384, and SHA-512). When
 available, the module uses OpenSSL for fast platform optimized implementations
 of algorithms.
 
-The old :mod:`md5` and :mod:`sha` modules still exist as wrappers around hashlib
+The old :mod:`!md5` and :mod:`!sha` modules still exist as wrappers around hashlib
 to preserve backwards compatibility.  The new module's interface is very close
 to that of the old modules, but not identical. The most significant difference
 is that the constructor functions for creating new hashing objects are named
@@ -2169,9 +2169,9 @@ Changes to Python's build process and to the C API include:
 
 * Two new macros can be used to indicate C functions that are local to the
   current file so that a faster calling convention can be used.
-  ``Py_LOCAL(type)`` declares the function as returning a value of the
+  :c:macro:`Py_LOCAL` declares the function as returning a value of the
   specified *type* and uses a fast-calling qualifier.
-  ``Py_LOCAL_INLINE(type)`` does the same thing and also requests the
+  :c:macro:`Py_LOCAL_INLINE` does the same thing and also requests the
   function be inlined.  If macro :c:macro:`!PY_LOCAL_AGGRESSIVE` is defined before
   :file:`python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these
@@ -2253,12 +2253,12 @@ code:
   appeared.  In Python 2.5, the argument must be exactly one %char specifier with
   no surrounding text.
 
-* Library: The :mod:`pickle` and :mod:`cPickle` modules no longer accept a
-  return value of ``None`` from the :meth:`__reduce__` method; the method must
+* Library: The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a
+  return value of ``None`` from the :meth:`~object.__reduce__` method; the method must
   return a tuple of arguments instead.  The modules also no longer accept the
   deprecated *bin* keyword parameter.
 
-* Library: The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now
+* Library: The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now
   have a :attr:`rpc_paths` attribute that constrains XML-RPC operations to a
   limited set of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.
   Setting  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path

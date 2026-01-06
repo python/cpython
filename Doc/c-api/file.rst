@@ -65,8 +65,14 @@ the :mod:`io` APIs instead.
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
    through the provided handler.
 
-   The handler is a function of type :c:expr:`PyObject *(\*)(PyObject *path,
-   void *userData)`, where *path* is guaranteed to be :c:type:`PyUnicodeObject`.
+   The *handler* is a function of type:
+
+   .. c:namespace:: NULL
+   .. c:type:: PyObject * (*Py_OpenCodeHookFunction)(PyObject *, void *)
+
+      Equivalent of :c:expr:`PyObject *(\*)(PyObject *path,
+      void *userData)`, where *path* is guaranteed to be
+      :c:type:`PyUnicodeObject`.
 
    The *userData* pointer is passed into the hook function. Since hook
    functions may be called from different runtimes, this pointer should not
@@ -87,10 +93,33 @@ the :mod:`io` APIs instead.
    .. versionadded:: 3.8
 
 
+.. c:function:: PyObject *PyFile_OpenCodeObject(PyObject *path)
+
+   Open *path* with the mode ``'rb'``. *path* must be a Python :class:`str`
+   object. The behavior of this function may be overridden by
+   :c:func:`PyFile_SetOpenCodeHook` to allow for some preprocessing of the
+   text.
+
+   This is analogous to :func:`io.open_code` in Python.
+
+   On success, this function returns a :term:`strong reference` to a Python
+   file object. On failure, this function returns ``NULL`` with an exception
+   set.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: PyObject *PyFile_OpenCode(const char *path)
+
+   Similar to :c:func:`PyFile_OpenCodeObject`, but *path* is a
+   UTF-8 encoded :c:expr:`const char*`.
+
+   .. versionadded:: 3.8
+
 
 .. c:function:: int PyFile_WriteObject(PyObject *obj, PyObject *p, int flags)
 
-   .. index:: single: Py_PRINT_RAW
+   .. index:: single: Py_PRINT_RAW (C macro)
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
    :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written

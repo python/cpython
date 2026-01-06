@@ -53,7 +53,7 @@ def _new_module(name):
 
 # For a list that can have a weakref to it.
 class _List(list):
-    pass
+    __slots__ = ("__weakref__",)
 
 
 # Copied from weakref.py with some simplifications and modifications unique to
@@ -382,6 +382,9 @@ class _ModuleLock:
                     self.waiters.pop()
                     self.wakeup.release()
 
+    def locked(self):
+        return bool(self.count)
+
     def __repr__(self):
         return f'_ModuleLock({self.name!r}) at {id(self)}'
 
@@ -518,24 +521,6 @@ def _requires_frozen(fxn):
     return _requires_frozen_wrapper
 
 
-# Typically used by loader classes as a method replacement.
-def _load_module_shim(self, fullname):
-    """Load the specified module into sys.modules and return it.
-
-    This method is deprecated.  Use loader.exec_module() instead.
-
-    """
-    msg = ("the load_module() method is deprecated and slated for removal in "
-          "Python 3.12; use exec_module() instead")
-    _warnings.warn(msg, DeprecationWarning)
-    spec = spec_from_loader(fullname, self)
-    if fullname in sys.modules:
-        module = sys.modules[fullname]
-        _exec(spec, module)
-        return sys.modules[fullname]
-    else:
-        return _load(spec)
-
 # Module specifications #######################################################
 
 def _module_repr(module):
@@ -580,8 +565,7 @@ class ModuleSpec:
     `has_location` indicates that a spec's "origin" reflects a location.
     When this is True, `__file__` attribute of the module is set.
 
-    `cached` is the location of the cached bytecode file, if any.  It
-    corresponds to the `__cached__` attribute.
+    `cached` is the location of the cached bytecode file, if any.
 
     `submodule_search_locations` is the sequence of path entries to
     search when importing submodules.  If set, is_package should be
@@ -715,17 +699,13 @@ def _spec_from_module(module, loader=None, origin=None):
         if not origin and location is not None:
             origin = location
     try:
-        cached = module.__cached__
-    except AttributeError:
-        cached = None
-    try:
         submodule_search_locations = list(module.__path__)
     except AttributeError:
         submodule_search_locations = None
 
     spec = ModuleSpec(name, loader, origin=origin)
     spec._set_fileattr = False if location is None else (origin == location)
-    spec.cached = cached
+    spec.cached = None
     spec.submodule_search_locations = submodule_search_locations
     return spec
 
@@ -760,8 +740,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 # should also be None for consistency.  While a bit of a hack,
                 # this is the best place to ensure this consistency.
                 #
-                # See # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module
-                # and bpo-32305
+                # See bpo-32305
                 module.__file__ = None
         try:
             module.__loader__ = loader
@@ -786,7 +765,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 module.__path__ = spec.submodule_search_locations
             except AttributeError:
                 pass
-    # __file__/__cached__
+    # __file__
     if spec.has_location:
         if override or getattr(module, '__file__', None) is None:
             try:
@@ -794,12 +773,6 @@ def _init_module_attrs(spec, module, *, override=False):
             except AttributeError:
                 pass
 
-        if override or getattr(module, '__cached__', None) is None:
-            if spec.cached is not None:
-                try:
-                    module.__cached__ = spec.cached
-                except AttributeError:
-                    pass
     return module
 
 
@@ -841,7 +814,7 @@ def _module_repr_from_spec(spec):
             return f'<module {spec.name!r} ({spec.origin})>'
 
 
-# Used by importlib.reload() and _load_module_shim().
+# Used by importlib.reload().
 def _exec(spec, module):
     """Execute the spec's specified module in an existing module's namespace."""
     name = spec.name
@@ -857,13 +830,7 @@ def _exec(spec, module):
                 _init_module_attrs(spec, module, override=True)
             else:
                 _init_module_attrs(spec, module, override=True)
-                if not hasattr(spec.loader, 'exec_module'):
-                    msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
-                           "falling back to load_module()")
-                    _warnings.warn(msg, ImportWarning)
-                    spec.loader.load_module(name)
-                else:
-                    spec.loader.exec_module(module)
+                spec.loader.exec_module(module)
         finally:
             # Update the order of insertion into sys.modules for module
             # clean-up at shutdown.
@@ -871,53 +838,8 @@ def _exec(spec, module):
             sys.modules[spec.name] = module
     return module
 
-
-def _load_backward_compatible(spec):
-    # It is assumed that all callers have been warned about using load_module()
-    # appropriately before calling this function.
-    try:
-        spec.loader.load_module(spec.name)
-    except:
-        if spec.name in sys.modules:
-            module = sys.modules.pop(spec.name)
-            sys.modules[spec.name] = module
-        raise
-    # The module must be in sys.modules at this point!
-    # Move it to the end of sys.modules.
-    module = sys.modules.pop(spec.name)
-    sys.modules[spec.name] = module
-    if getattr(module, '__loader__', None) is None:
-        try:
-            module.__loader__ = spec.loader
-        except AttributeError:
-            pass
-    if getattr(module, '__package__', None) is None:
-        try:
-            # Since module.__path__ may not line up with
-            # spec.submodule_search_paths, we can't necessarily rely
-            # on spec.parent here.
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = spec.name.rpartition('.')[0]
-        except AttributeError:
-            pass
-    if getattr(module, '__spec__', None) is None:
-        try:
-            module.__spec__ = spec
-        except AttributeError:
-            pass
-    return module
-
 def _load_unlocked(spec):
     # A helper for direct use by the import system.
-    if spec.loader is not None:
-        # Not a namespace package.
-        if not hasattr(spec.loader, 'exec_module'):
-            msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
-                    "falling back to load_module()")
-            _warnings.warn(msg, ImportWarning)
-            return _load_backward_compatible(spec)
-
     module = module_from_spec(spec)
 
     # This must be done before putting the module in sys.modules
@@ -951,8 +873,7 @@ def _load_unlocked(spec):
 
     return module
 
-# A method used during testing of _load_unlocked() and by
-# _load_module_shim().
+# A method used during testing of _load_unlocked().
 def _load(spec):
     """Return a new module object, loaded by the spec's loader.
 
@@ -1016,8 +937,6 @@ class BuiltinImporter:
     def is_package(cls, fullname):
         """Return False as built-in modules are never packages."""
         return False
-
-    load_module = classmethod(_load_module_shim)
 
 
 class FrozenImporter:
@@ -1134,7 +1053,7 @@ class FrozenImporter:
         # part of the importer), instead of here (the finder part).
         # The loader is the usual place to get the data that will
         # be loaded into the module.  (For example, see _LoaderBasics
-        # in _bootstra_external.py.)  Most importantly, this importer
+        # in _bootstrap_external.py.)  Most importantly, this importer
         # is simpler if we wait to get the data.
         # However, getting as much data in the finder as possible
         # to later load the module is okay, and sometimes important.
@@ -1174,25 +1093,6 @@ class FrozenImporter:
         name = spec.name
         code = _call_with_frames_removed(_imp.get_frozen_object, name)
         exec(code, module.__dict__)
-
-    @classmethod
-    def load_module(cls, fullname):
-        """Load a frozen module.
-
-        This method is deprecated.  Use exec_module() instead.
-
-        """
-        # Warning about deprecation implemented in _load_module_shim().
-        module = _load_module_shim(cls, fullname)
-        info = _imp.find_frozen(fullname)
-        assert info is not None
-        _, ispkg, origname = info
-        module.__origname__ = origname
-        vars(module).pop('__file__', None)
-        if ispkg:
-            module.__path__ = []
-        cls._fix_up_module(module)
-        return module
 
     @classmethod
     @_requires_frozen
@@ -1241,10 +1141,12 @@ def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
     if meta_path is None:
-        # PyImport_Cleanup() is running or has been called.
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
 
+    # gh-130094: Copy sys.meta_path so that we have a consistent view of the
+    # list while iterating over it.
+    meta_path = list(meta_path)
     if not meta_path:
         _warnings.warn('sys.meta_path is empty', ImportWarning)
 
@@ -1299,18 +1201,26 @@ def _sanity_check(name, package, level):
 
 
 _ERR_MSG_PREFIX = 'No module named '
-_ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 
 def _find_and_load_unlocked(name, import_):
     path = None
+    sys.audit(
+        "import",
+        name,
+        path,
+        getattr(sys, "path", None),
+        getattr(sys, "meta_path", None),
+        getattr(sys, "path_hooks", None)
+    )
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
         # Crazy side-effects!
-        if name in sys.modules:
-            return sys.modules[name]
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         parent_module = sys.modules[parent]
         try:
             path = parent_module.__path__
@@ -1318,6 +1228,12 @@ def _find_and_load_unlocked(name, import_):
             msg = f'{_ERR_MSG_PREFIX}{name!r}; {parent!r} is not a package'
             raise ModuleNotFoundError(msg, name=name) from None
         parent_spec = parent_module.__spec__
+        if getattr(parent_spec, '_initializing', False):
+            _call_with_frames_removed(import_, parent)
+        # Crazy side-effects (again)!
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:

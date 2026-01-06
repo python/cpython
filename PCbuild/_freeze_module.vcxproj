@@ -92,6 +92,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -fno-lto</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -105,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\atexitmodule.c" />
+    <ClCompile Include="..\Modules\_datetimemodule.c" />
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
@@ -142,7 +144,7 @@
     <ClCompile Include="..\Objects\funcobject.c" />
     <ClCompile Include="..\Objects\genericaliasobject.c" />
     <ClCompile Include="..\Objects\genobject.c" />
-    <ClCompile Include="..\Objects\interpreteridobject.c" />
+    <ClCompile Include="..\Objects\interpolationobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />
@@ -158,10 +160,14 @@
     <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sliceobject.c" />
     <ClCompile Include="..\Objects\structseq.c" />
+    <ClCompile Include="..\Objects\templateobject.c" />
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
+    <ClCompile Include="..\Objects\unicode_format.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
+    <ClCompile Include="..\Objects\unicode_formatter.c" />
+    <ClCompile Include="..\Objects\unicode_writer.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
@@ -188,12 +194,14 @@
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\assemble.c" />
     <ClCompile Include="..\Python\ast.c" />
-    <ClCompile Include="..\Python\ast_opt.c" />
+    <ClCompile Include="..\Python\ast_preprocess.c" />
     <ClCompile Include="..\Python\ast_unparse.c" />
     <ClCompile Include="..\Python\bltinmodule.c" />
+    <ClCompile Include="..\Python\brc.c" />
     <ClCompile Include="..\Python\bootstrap_hash.c" />
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
+    <ClCompile Include="..\Python\codegen.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
     <ClCompile Include="..\Python\critical_section.c" />
@@ -204,9 +212,11 @@
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />
-    <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\future.c" />
+    <ClCompile Include="..\Python\gc.c" />
+    <ClCompile Include="..\Python\gc_gil.c" />
+    <ClCompile Include="..\Python\gc_free_threading.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
@@ -218,20 +228,27 @@
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
+    <ClCompile Include="..\Python\index_pool.c" />
     <ClCompile Include="..\Python\initconfig.c" />
+    <ClCompile Include="..\Python\instruction_sequence.c" />
+    <ClCompile Include="..\Python\interpconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
+    <ClCompile Include="..\Python\jit.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\lock.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\object_stack.c" />
     <ClCompile Include="..\Python\optimizer.c" />
     <ClCompile Include="..\Python\optimizer_analysis.c" />
+    <ClCompile Include="..\Python\optimizer_symbols.c" />
     <ClCompile Include="..\Python\parking_lot.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
+    <ClCompile Include="..\Python\perf_jit_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
@@ -240,6 +257,7 @@
     <ClCompile Include="..\Python\pylifecycle.c" />
     <ClCompile Include="..\Python\pymath.c" />
     <ClCompile Include="..\Python\pystate.c" />
+    <ClCompile Include="..\Python\pystats.c" />
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />
@@ -247,6 +265,8 @@
     <ClCompile Include="..\Python\pythonrun.c" />
     <ClCompile Include="..\Python\Python-tokenize.c" />
     <ClCompile Include="..\Python\pytime.c" />
+    <ClCompile Include="..\Python\qsbr.c" />
+    <ClCompile Include="..\Python\remote_debugging.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
@@ -257,9 +277,10 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
+    <ClCompile Include="..\Python\uniqueid.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PC\pyconfig.h.in" />
+    <ClInclude Include="..\PC\pyconfig.h" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
@@ -419,31 +440,6 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 
-  <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
-       own build. All other extension modules will use the copy that pythoncore
-       generates. -->
-  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
-    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
-    <ItemGroup>
-      <PyConfigH Remove="@(PyConfigH)" />
-      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
-    </ItemGroup>
-    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
-    <PropertyGroup>
-      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
-      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
-      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(DisableGil) == 'true'">
-      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
-    </PropertyGroup>
-    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
-    <WriteLinesToFile File="$(IntDir)pyconfig.h"
-                      Lines="$(PyConfigHText)"
-                      Overwrite="true"
-                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
-  </Target>
-
   <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />
 
@@ -467,25 +463,6 @@
 
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
-  </Target>
-  <Target Name="_RebuildDeepFrozen"
-          AfterTargets="_RebuildFrozen"
-          DependsOnTargets="FindPythonForBuild"
-          Condition="$(Configuration) != 'PGUpdate'">
-    <PropertyGroup>
-      <FreezeMappingsFile>
-        <!-- BEGIN freeze mapping file -->
-$(IntDir)\deepfreeze_mappings.txt
-        <!-- END freeze mapping file -->
-      </FreezeMappingsFile>
-    </PropertyGroup>
-    <WriteLinesToFile
-      File="$(FreezeMappingsFile)"
-      Overwrite="true"
-      Lines="@(FrozenModule->'%(FullPath):%(FrozenId)')" />
-    <!-- BEGIN deepfreeze rule -->
-    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" -f "$(IntDir)\deepfreeze_mappings.txt" -o "$(GeneratedFrozenModulesDir)deepfreeze.c"' />
-    <!-- END deepfreeze rule -->
   </Target>
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>

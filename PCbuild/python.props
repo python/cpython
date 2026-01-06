@@ -6,22 +6,29 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <!--
     Use the latest available version of Visual Studio to build. To override
-    this and build with an earlier version, pass "/p:PlatformToolset=v100"
+    this and build with an earlier version, pass "/p:PlatformToolset=v141"
     (for example) when building.
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '18.0'">v143</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '17.0'">v143</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '16.0'">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath11)' != ''">v110</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath10)' != ''">v100</BasePlatformToolset>
 
     <PlatformToolset Condition="'$(PlatformToolset)' == ''">$(BasePlatformToolset)</PlatformToolset>
     <ICCBuild>false</ICCBuild>
     <ICCBuild Condition="$(PlatformToolset.StartsWith(`Intel C++ Compiler`))">true</ICCBuild>
+
+    <!--
+    This ensures, that in case of clang-cl bundled with VS
+    we find e.g. clang_rt.profile.lib in the correct bitness.
+    In case the user sets LLVMInstallDir and LLVMToolsVersion,
+    they are responsible to use the correct tool architecture.
+    For details please see GH-131473.
+    -->
+    <PreferredToolArchitecture Condition="$(LLVMInstallDir) == '' and $(PlatformToolset) == 'ClangCL' and $(Platform) == 'x64'">x64</PreferredToolArchitecture>
+    <PreferredToolArchitecture Condition="$(LLVMInstallDir) == '' and $(PlatformToolset) == 'ClangCL' and $(Platform) == 'Win32'">x86</PreferredToolArchitecture>
 
     <!--
     Convincing MSVC/MSBuild to prefer our platform names is too difficult,
@@ -31,11 +38,11 @@
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM'">arm32</ArchName>
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM64'">arm64</ArchName>
     <ArchName Condition="'$(ArchName)' == ''">win32</ArchName>
-    
+
     <!-- Root directory of the repository -->
     <PySourcePath Condition="'$(PySourcePath)' == ''">$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)\..\))</PySourcePath>
     <PySourcePath Condition="!HasTrailingSlash($(PySourcePath))">$(PySourcePath)\</PySourcePath>
-    
+
     <!-- Directory where build outputs are put -->
     <BuildPath32 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\win32\</BuildPath32>
     <BuildPath32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\win32\</BuildPath32>
@@ -52,7 +59,7 @@
     <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCbuild\$(ArchName)\</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
-    
+
     <!-- VPATH definition (escaped) -->
     <PyVPath Condition="$(Configuration) != 'PGInstrument'">..\\..</PyVPath>
     <PyVPath Condition="$(Configuration) == 'PGInstrument'">..\\..\\..</PyVPath>
@@ -68,38 +75,38 @@
   <Import Project="$(ExternalProps)" Condition="$(ExternalProps) != '' and Exists('$(ExternalProps)')" />
 
   <PropertyGroup>
-    <sqlite3Dir Condition="$(sqlite3Dir) == ''">$(ExternalsDir)sqlite-3.44.2.0\</sqlite3Dir>
+    <sqlite3Dir Condition="$(sqlite3Dir) == ''">$(ExternalsDir)sqlite-3.50.4.0\</sqlite3Dir>
     <bz2Dir Condition="$(bz2Dir) == ''">$(ExternalsDir)bzip2-1.0.8\</bz2Dir>
-    <lzmaDir Condition="$(lzmaDir) == ''">$(ExternalsDir)xz-5.2.5\</lzmaDir>
+    <lzmaDir Condition="$(lzmaDir) == ''">$(ExternalsDir)xz-5.8.1.1\</lzmaDir>
     <libffiDir Condition="$(libffiDir) == ''">$(ExternalsDir)libffi-3.4.4\</libffiDir>
     <libffiOutDir Condition="$(libffiOutDir) == ''">$(libffiDir)$(ArchName)\</libffiOutDir>
     <libffiIncludeDir Condition="$(libffiIncludeDir) == ''">$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.11\</opensslDir>
-    <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.11\$(ArchName)\</opensslOutDir>
+    <mpdecimalDir Condition="$(mpdecimalDir) == ''">$(ExternalsDir)\mpdecimal-4.0.0\</mpdecimalDir>
+    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.18\</opensslDir>
+    <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.18\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir Condition="$(opensslIncludeDir) == ''">$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir Condition="$(nasmDir) == ''">$(ExternalsDir)\nasm-2.11.06\</nasmDir>
-    <zlibDir Condition="$(zlibDir) == ''">$(ExternalsDir)\zlib-1.2.13\</zlibDir>
+    <zlibDir Condition="$(zlibDir) == ''">$(ExternalsDir)\zlib-1.3.1\</zlibDir>
+    <zlibNgDir Condition="$(zlibNgDir) == ''">$(ExternalsDir)\zlib-ng-2.2.4\</zlibNgDir>
+    <zstdDir Condition="$(zstdDir) == ''">$(ExternalsDir)\zstd-1.5.7\</zstdDir>
   </PropertyGroup>
 
   <PropertyGroup>
     <!-- Suffix for all binaries when building for debug -->
     <PyDebugExt Condition="'$(PyDebugExt)' == '' and $(Configuration) == 'Debug'">_d</PyDebugExt>
-    
+
     <!-- Suffix for versions/keys when building with test markers -->
     <PyTestExt Condition="$(UseTestMarker) == 'true'">-test</PyTestExt>
-    
+
     <!-- Suffix for versions/keys when building for particular platforms -->
     <PyArchExt Condition="'$(ArchName)' == 'win32'">-32</PyArchExt>
     <PyArchExt Condition="'$(ArchName)' == 'arm32'">-arm32</PyArchExt>
     <PyArchExt Condition="'$(ArchName)' == 'arm64'">-arm64</PyArchExt>
-    
-    <!-- Full path of the resulting python.exe binary -->
-    <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
 
     <!-- Include Tkinter by default -->
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(Platform)'=='ARM'" Label="ArmConfiguration">
     <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
   </PropertyGroup>
@@ -141,7 +148,7 @@
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">
     <!--
     Read version information from Include\patchlevel.h. The following properties are set:
-    
+
         MajorVersionNumber  -   the '3' in '3.5.2a1'
         MinorVersionNumber  -   the '5' in '3.5.2a1'
         MicroVersionNumber  -   the '2' in '3.5.2a1'
@@ -167,22 +174,22 @@
     <ReleaseLevelName Condition="$(_ReleaseLevel) == 'BETA'">b$(ReleaseSerial)</ReleaseLevelName>
     <ReleaseLevelName Condition="$(_ReleaseLevel) == 'GAMMA'">rc$(ReleaseSerial)</ReleaseLevelName>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(OverrideVersion)' != ''">
     <!--
     Override the version number when building by specifying OverrideVersion.
     For example:
-    
+
         PCbuild\build.bat "/p:OverrideVersion=3.5.2a1"
-    
+
     Use the -V option to check your version is valid:
-    
+
         PCbuild\build.bat -V "/p:OverrideVersion=3.5.2a1"
           PythonVersionNumber: 3.5.2
           PythonVersion:       3.5.2a1
           PythonVersionHex:    0x030502A1
           Field3Value:         2101
-    
+
     Note that this only affects the version numbers embedded in resources and
     installers, but not sys.version.
     -->
@@ -223,22 +230,55 @@
         ))
     ))</Field3Value>
     <Field3Value Condition="$(UseTestMarker) == 'true'">$([msbuild]::Add($(Field3Value), 9000))</Field3Value>
-    
+
+    <!-- Name and full path of the resulting python.exe binary -->
+    <PyExeName Condition="$(DisableGil) == 'true'">python$(MajorVersionNumber).$(MinorVersionNumber)t</PyExeName>
+    <PyExeName Condition="$(PyExeName) == ''">python</PyExeName>
+    <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)$(PyExeName)$(PyDebugExt).exe</PythonExe>
+    <PyWExeName Condition="$(DisableGil) == 'true'">pythonw$(MajorVersionNumber).$(MinorVersionNumber)t</PyWExeName>
+    <PyWExeName Condition="$(PyWExeName) == ''">pythonw</PyWExeName>
+
     <!-- The name of the resulting pythonXY.dll (without the extension) -->
-    <PyDllName>python$(MajorVersionNumber)$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
+    <PyDllName Condition="$(DisableGil) == 'true'">python$(MajorVersionNumber)$(MinorVersionNumber)t$(PyDebugExt)</PyDllName>
+    <PyDllName Condition="$(PyDllName) == ''">python$(MajorVersionNumber)$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
     <!-- The name of the resulting pythonX.dll (without the extension) -->
-    <Py3DllName>python3$(PyDebugExt)</Py3DllName>
+    <Py3DllName Condition="$(DisableGil) == 'true'">python3t</Py3DllName>
+    <Py3DllName Condition="$(Py3DllName) == ''">python3</Py3DllName>
 
     <!-- The version and platform tag to include in .pyd filenames -->
     <PydTag Condition="$(ArchName) == 'win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
     <PydTag Condition="$(ArchName) == 'arm32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_arm32</PydTag>
     <PydTag Condition="$(ArchName) == 'arm64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_arm64</PydTag>
     <PydTag Condition="$(ArchName) == 'amd64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_amd64</PydTag>
-    
+
     <!-- The version number for sys.winver -->
     <SysWinVer>$(MajorVersionNumber).$(MinorVersionNumber)$(PyArchExt)$(PyTestExt)</SysWinVer>
+
+    <!-- The version and platform tag to include in .pyd filenames for freethreaded builds -->
+    <FreethreadedPydTag Condition="$(ArchName) == 'win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)t-win32</FreethreadedPydTag>
+    <FreethreadedPydTag Condition="$(ArchName) == 'arm32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)t-win_arm32</FreethreadedPydTag>
+    <FreethreadedPydTag Condition="$(ArchName) == 'arm64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)t-win_arm64</FreethreadedPydTag>
+    <FreethreadedPydTag Condition="$(ArchName) == 'amd64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)t-win_amd64</FreethreadedPydTag>
+
+    <!-- The version number for sys.winver for freethreaded builds -->
+    <FreethreadedSysWinVer>$(MajorVersionNumber).$(MinorVersionNumber)t$(PyArchExt)$(PyTestExt)</FreethreadedSysWinVer>
   </PropertyGroup>
-  
+
+  <PropertyGroup Condition="$(DisableGil) != 'true'">
+    <!-- The extension to use for standard library PYDs -->
+    <PyStdlibPydExt>.pyd</PyStdlibPydExt>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(DisableGil) == 'true'">
+    <PydTag>$(FreethreadedPydTag)</PydTag>
+
+    <!-- The extension to use for standard library PYDs -->
+    <PyStdlibPydExt>$(PydTag).pyd</PyStdlibPydExt>
+
+    <!-- The version number for sys.winver -->
+    <SysWinVer>$(FreethreadedSysWinVer)</SysWinVer>
+  </PropertyGroup>
+
   <!-- Displays the calculated version info -->
   <Target Name="ShowVersionInfo">
     <Message Importance="high" Text="PythonVersionNumber: $(PythonVersionNumber)" />

@@ -276,8 +276,8 @@ definition looked like this::
 then ``MyClass.i`` and ``MyClass.f`` are valid attribute references, returning
 an integer and a function object, respectively. Class attributes can also be
 assigned to, so you can change the value of ``MyClass.i`` by assignment.
-:attr:`!__doc__` is also a valid attribute, returning the docstring belonging to
-the class: ``"A simple example class"``.
+:attr:`~type.__doc__` is also a valid attribute, returning the docstring
+belonging to the class: ``"A simple example class"``.
 
 Class *instantiation* uses function notation.  Just pretend that the class
 object is a parameterless function that returns a new instance of the class.
@@ -325,7 +325,7 @@ Now what can we do with instance objects?  The only operations understood by
 instance objects are attribute references.  There are two kinds of valid
 attribute names: data attributes and methods.
 
-*data attributes* correspond to "instance variables" in Smalltalk, and to "data
+*Data attributes* correspond to "instance variables" in Smalltalk, and to "data
 members" in C++.  Data attributes need not be declared; like local variables,
 they spring into existence when they are first assigned to.  For example, if
 ``x`` is the instance of :class:`!MyClass` created above, the following piece of
@@ -338,11 +338,7 @@ code will print the value ``16``, without leaving a trace::
    del x.counter
 
 The other kind of instance attribute reference is a *method*. A method is a
-function that "belongs to" an object.  (In Python, the term method is not unique
-to class instances: other object types can have methods as well.  For example,
-list objects have methods called append, insert, remove, sort, and so on.
-However, in the following discussion, we'll use the term method exclusively to
-mean methods of class instance objects, unless explicitly stated otherwise.)
+function that "belongs to" an object.
 
 .. index:: pair: object; method
 
@@ -363,7 +359,7 @@ Usually, a method is called right after it is bound::
 
    x.f()
 
-In the :class:`!MyClass` example, this will return the string ``'hello world'``.
+If ``x = MyClass()``, as above, this will return the string ``'hello world'``.
 However, it is not necessary to call a method right away: ``x.f`` is a method
 object, and can be stored away and called at a later time.  For example::
 
@@ -386,12 +382,11 @@ general, calling a method with a list of *n* arguments is equivalent to calling
 the corresponding function with an argument list that is created by inserting
 the method's instance object before the first argument.
 
-If you still don't understand how methods work, a look at the implementation can
-perhaps clarify matters.  When a non-data attribute of an instance is
-referenced, the instance's class is searched.  If the name denotes a valid class
-attribute that is a function object, a method object is created by packing
-(pointers to) the instance object and the function object just found together in
-an abstract object: this is the method object.  When the method object is called
+In general, methods work as follows.  When a non-data attribute
+of an instance is referenced, the instance's class is searched.
+If the name denotes a valid class attribute that is a function object,
+references to both the instance object and the function object
+are packed into a method object.  When the method object is called
 with an argument list, a new argument list is constructed from the instance
 object and the argument list, and the function object is called with this new
 argument list.
@@ -666,7 +661,10 @@ class, that calls each parent only once, and that is monotonic (meaning that a
 class can be subclassed without affecting the precedence order of its parents).
 Taken together, these properties make it possible to design reliable and
 extensible classes with multiple inheritance.  For more detail, see
-https://www.python.org/download/releases/2.3/mro/.
+:ref:`python_2.3_mro`.
+
+In some cases multiple inheritance is not allowed; see :ref:`multiple-inheritance`
+for details.
 
 
 .. _tut-private:
@@ -692,6 +690,11 @@ is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with leading underscore(s) stripped.  This mangling is done
 without regard to the syntactic position of the identifier, as long as it
 occurs within the definition of a class.
+
+.. seealso::
+
+   The :ref:`private name mangling specifications <private-name-mangling>`
+   for details and special cases.
 
 Name mangling is helpful for letting subclasses override methods without
 breaking intraclass method calls.  For example::
@@ -932,6 +935,6 @@ Examples::
 
 .. [#] Except for one thing.  Module objects have a secret read-only attribute called
    :attr:`~object.__dict__` which returns the dictionary used to implement the module's
-   namespace; the name :attr:`~object.__dict__` is an attribute but not a global name.
+   namespace; the name ``__dict__`` is an attribute but not a global name.
    Obviously, using this violates the abstraction of namespace implementation, and
    should be restricted to things like post-mortem debuggers.

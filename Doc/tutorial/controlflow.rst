@@ -61,7 +61,7 @@ they appear in the sequence.  For example (no pun intended):
 ::
 
    >>> # Measure some strings:
-   ... words = ['cat', 'window', 'defenestrate']
+   >>> words = ['cat', 'window', 'defenestrate']
    >>> for w in words:
    ...     print(w, len(w))
    ...
@@ -160,21 +160,60 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 
 .. _tut-break:
 
-:keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
-============================================================================================
+:keyword:`!break` and :keyword:`!continue` Statements
+=====================================================
 
 The :keyword:`break` statement breaks out of the innermost enclosing
-:keyword:`for` or :keyword:`while` loop.
+:keyword:`for` or :keyword:`while` loop::
 
-A :keyword:`!for` or :keyword:`!while` loop can include an :keyword:`!else` clause.
+    >>> for n in range(2, 10):
+    ...     for x in range(2, n):
+    ...         if n % x == 0:
+    ...             print(f"{n} equals {x} * {n//x}")
+    ...             break
+    ...
+    4 equals 2 * 2
+    6 equals 2 * 3
+    8 equals 2 * 4
+    9 equals 3 * 3
+
+The :keyword:`continue` statement continues with the next
+iteration of the loop::
+
+    >>> for num in range(2, 10):
+    ...     if num % 2 == 0:
+    ...         print(f"Found an even number {num}")
+    ...         continue
+    ...     print(f"Found an odd number {num}")
+    ...
+    Found an even number 2
+    Found an odd number 3
+    Found an even number 4
+    Found an odd number 5
+    Found an even number 6
+    Found an odd number 7
+    Found an even number 8
+    Found an odd number 9
+
+.. _tut-for-else:
+.. _break-and-continue-statements-and-else-clauses-on-loops:
+
+:keyword:`!else` Clauses on Loops
+=================================
+
+In a :keyword:`!for` or :keyword:`!while` loop the :keyword:`!break` statement
+may be paired with an :keyword:`!else` clause.  If the loop finishes without
+executing the :keyword:`!break`, the :keyword:`!else` clause executes.
 
 In a :keyword:`for` loop, the :keyword:`!else` clause is executed
-after the loop reaches its final iteration.
+after the loop finishes its final iteration, that is, if no break occurred.
 
 In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
 
-In either kind of loop, the :keyword:`!else` clause is **not** executed
-if the loop was terminated by a :keyword:`break`.
+In either kind of loop, the :keyword:`!else` clause is **not** executed if the
+loop was terminated by a :keyword:`break`.  Of course, other ways of ending the
+loop early, such as a :keyword:`return` or a raised exception, will also skip
+execution of the :keyword:`else` clause.
 
 This is exemplified in the following :keyword:`!for` loop,
 which searches for prime numbers::
@@ -198,33 +237,21 @@ which searches for prime numbers::
    9 equals 3 * 3
 
 (Yes, this is the correct code.  Look closely: the ``else`` clause belongs to
-the :keyword:`for` loop, **not** the :keyword:`if` statement.)
+the ``for`` loop, **not** the ``if`` statement.)
 
-When used with a loop, the ``else`` clause has more in common with the
-``else`` clause of a :keyword:`try` statement than it does with that of
-:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
-when no exception occurs, and a loop's ``else`` clause runs when no ``break``
-occurs. For more on the :keyword:`!try` statement and exceptions, see
-:ref:`tut-handling`.
+One way to think of the else clause is to imagine it paired with the ``if``
+inside the loop.  As the loop executes, it will run a sequence like
+if/if/if/else. The ``if`` is inside the loop, encountered a number of times. If
+the condition is ever true, a ``break`` will happen. If the condition is never
+true, the ``else`` clause outside the loop will execute.
 
-The :keyword:`continue` statement, also borrowed from C, continues with the next
-iteration of the loop::
+When used with a loop, the ``else`` clause has more in common with the ``else``
+clause of a :keyword:`try` statement than it does with that of ``if``
+statements: a ``try`` statement's ``else`` clause runs when no exception
+occurs, and a loop's ``else`` clause runs when no ``break`` occurs. For more on
+the ``try`` statement and exceptions, see :ref:`tut-handling`.
 
-    >>> for num in range(2, 10):
-    ...     if num % 2 == 0:
-    ...         print("Found an even number", num)
-    ...         continue
-    ...     print("Found an odd number", num)
-    ...
-    Found an even number 2
-    Found an odd number 3
-    Found an even number 4
-    Found an odd number 5
-    Found an even number 6
-    Found an odd number 7
-    Found an even number 8
-    Found an odd number 9
-
+.. index:: single: ...; ellipsis literal
 .. _tut-pass:
 
 :keyword:`!pass` Statements
@@ -251,6 +278,12 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
    ...     pass   # Remember to implement this!
    ...
 
+For this last case, many people use the ellipsis literal :code:`...` instead of
+:code:`pass`. This use has no special meaning to Python, and is not part of
+the language definition (you could use any constant expression here), but
+:code:`...` is used conventionally as a placeholder body as well.
+See :ref:`bltin-ellipsis-object`.
+
 
 .. _tut-match:
 
@@ -263,7 +296,8 @@ similar to a switch statement in C, Java or JavaScript (and many
 other languages), but it's more similar to pattern matching in
 languages like Rust or Haskell. Only the first pattern that matches
 gets executed and it can also extract components (sequence elements
-or object attributes) from the value into variables.
+or object attributes) from the value into variables. If no case matches,
+none of the branches is executed.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -279,7 +313,7 @@ The simplest form compares a subject value against one or more literals::
                 return "Something's wrong with the internet"
 
 Note the last block: the "variable name" ``_`` acts as a *wildcard* and
-never fails to match. If no case matches, none of the branches is executed.
+never fails to match.
 
 You can combine several literals in a single pattern using ``|`` ("or")::
 
@@ -436,8 +470,8 @@ Defining Functions
 We can create a function that writes the Fibonacci series to an arbitrary
 boundary::
 
-   >>> def fib(n):    # write Fibonacci series up to n
-   ...     """Print a Fibonacci series up to n."""
+   >>> def fib(n):    # write Fibonacci series less than n
+   ...     """Print a Fibonacci series less than n."""
    ...     a, b = 0, 1
    ...     while a < n:
    ...         print(a, end=' ')
@@ -445,7 +479,7 @@ boundary::
    ...     print()
    ...
    >>> # Now call the function we just defined:
-   ... fib(2000)
+   >>> fib(2000)
    0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
 
 .. index::
@@ -534,7 +568,7 @@ This example, as usual, demonstrates some new Python features:
   Different types define different methods.  Methods of different types may have
   the same name without causing ambiguity.  (It is possible to define your own
   object types and methods, using *classes*, see :ref:`tut-classes`)
-  The method :meth:`!append` shown in the example is defined for list objects; it
+  The method :meth:`~list.append` shown in the example is defined for list objects; it
   adds a new element at the end of the list.  In this example it is equivalent to
   ``result = result + [a]``, but more efficient.
 
@@ -807,7 +841,7 @@ parameters as there is a ``/`` in the function definition::
      File "<stdin>", line 1, in <module>
    TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
-The third function ``kwd_only_args`` only allows keyword arguments as indicated
+The third function ``kwd_only_arg`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
 
    >>> kwd_only_arg(3)
@@ -972,7 +1006,8 @@ scope::
    43
 
 The above example uses a lambda expression to return a function.  Another use
-is to pass a small function as an argument::
+is to pass a small function as an argument.  For instance, :meth:`list.sort`
+takes a sorting key function *key* which can be a lambda function::
 
    >>> pairs = [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')]
    >>> pairs.sort(key=lambda pair: pair[1])
@@ -1004,31 +1039,28 @@ blank, visually separating the summary from the rest of the description.  The
 following lines should be one or more paragraphs describing the object's calling
 conventions, its side effects, etc.
 
-The Python parser does not strip indentation from multi-line string literals in
-Python, so tools that process documentation have to strip indentation if
-desired.  This is done using the following convention. The first non-blank line
-*after* the first line of the string determines the amount of indentation for
-the entire documentation string.  (We can't use the first line since it is
-generally adjacent to the string's opening quotes so its indentation is not
-apparent in the string literal.)  Whitespace "equivalent" to this indentation is
-then stripped from the start of all lines of the string.  Lines that are
-indented less should not occur, but if they occur all their leading whitespace
-should be stripped.  Equivalence of whitespace should be tested after expansion
-of tabs (to 8 spaces, normally).
+The Python parser strips indentation from multi-line string literals when they
+serve as module, class, or function docstrings.
 
 Here is an example of a multi-line docstring::
 
    >>> def my_function():
    ...     """Do nothing, but document it.
    ...
-   ...     No, really, it doesn't do anything.
+   ...     No, really, it doesn't do anything:
+   ...
+   ...         >>> my_function()
+   ...         >>>
    ...     """
    ...     pass
    ...
    >>> print(my_function.__doc__)
    Do nothing, but document it.
 
-       No, really, it doesn't do anything.
+   No, really, it doesn't do anything:
+
+       >>> my_function()
+       >>>
 
 
 .. _tut-annotations:
@@ -1046,7 +1078,7 @@ Function Annotations
 information about the types used by user-defined functions (see :pep:`3107` and
 :pep:`484` for more information).
 
-:term:`Annotations <function annotation>` are stored in the :attr:`!__annotations__`
+:term:`Annotations <function annotation>` are stored in the :attr:`~object.__annotations__`
 attribute of the function as a dictionary and have no effect on any other part of the
 function.  Parameter annotations are defined by a colon after the parameter name, followed
 by an expression evaluating to the value of the annotation.  Return annotations are

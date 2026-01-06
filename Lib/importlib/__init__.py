@@ -97,13 +97,18 @@ def reload(module):
     The module must have been successfully imported before.
 
     """
+    # If a LazyModule has not yet been materialized, reload is a no-op.
+    if importlib_util := sys.modules.get('importlib.util'):
+        if lazy_module_type := getattr(importlib_util, '_LazyModule', None):
+            if isinstance(module, lazy_module_type):
+                return module
     try:
         name = module.__spec__.name
     except AttributeError:
         try:
             name = module.__name__
         except AttributeError:
-            raise TypeError("reload() argument must be a module")
+            raise TypeError("reload() argument must be a module") from None
 
     if sys.modules.get(name) is not module:
         raise ImportError(f"module {name} not in sys.modules", name=name)

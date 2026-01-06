@@ -1,5 +1,5 @@
-:mod:`collections` --- Container datatypes
-==========================================
+:mod:`!collections` --- Container datatypes
+===========================================
 
 .. module:: collections
     :synopsis: Container datatypes
@@ -99,7 +99,7 @@ The class can be used to simulate nested scopes and is useful in templating.
         :func:`super` function.  A reference to ``d.parents`` is equivalent to:
         ``ChainMap(*d.maps[1:])``.
 
-    Note, the iteration order of a :class:`ChainMap()` is determined by
+    Note, the iteration order of a :class:`ChainMap` is determined by
     scanning the mappings last to first::
 
         >>> baseline = {'music': 'bach', 'art': 'rembrandt'}
@@ -134,7 +134,7 @@ The class can be used to simulate nested scopes and is useful in templating.
      :attr:`~collections.ChainMap.parents` property.
 
    * The `Nested Contexts recipe
-     <https://code.activestate.com/recipes/577434/>`_ has options to control
+     <https://code.activestate.com/recipes/577434-nested-contexts-a-chain-of-mapping-objects/>`_ has options to control
      whether writes and other mutations apply only to the first mapping or to
      any mapping in the chain.
 
@@ -343,7 +343,7 @@ superset relationships: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``.
 All of those tests treat missing elements as having zero counts so that
 ``Counter(a=1) == Counter(a=1, b=0)`` returns true.
 
-.. versionadded:: 3.10
+.. versionchanged:: 3.10
    Rich comparison operations were added.
 
 .. versionchanged:: 3.10
@@ -367,9 +367,11 @@ Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
 Addition and subtraction combine counters by adding or subtracting the counts
 of corresponding elements.  Intersection and union return the minimum and
-maximum of corresponding counts.  Equality and inclusion compare
-corresponding counts.  Each operation can accept inputs with signed
-counts, but the output will exclude results with counts of zero or less.
+maximum of corresponding counts.  Symmetric difference returns the difference
+between the maximum and minimum of the corresponding counts. Equality and
+inclusion compare corresponding counts.  Each operation can accept inputs
+with signed counts, but the output will exclude results with counts of zero
+or below.
 
 .. doctest::
 
@@ -383,6 +385,8 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+    >>> c ^ d                       # max(c[x], d[x]) - min(c[x], d[x])
+    Counter({'a': 2, 'b': 1})
     >>> c == d                      # equality:  c[x] == d[x]
     False
     >>> c <= d                      # inclusion:  c[x] <= d[x]
@@ -399,6 +403,9 @@ or subtracting from an empty counter.
 
 .. versionadded:: 3.3
     Added support for unary plus, unary minus, and in-place multiset operations.
+
+.. versionadded:: 3.15
+    Added support for the symmetric difference multiset operation, ``c ^ d``.
 
 .. note::
 
@@ -458,10 +465,10 @@ or subtracting from an empty counter.
     Deques are a generalization of stacks and queues (the name is pronounced "deck"
     and is short for "double-ended queue").  Deques support thread-safe, memory
     efficient appends and pops from either side of the deque with approximately the
-    same O(1) performance in either direction.
+    same *O*\ (1) performance in either direction.
 
     Though :class:`list` objects support similar operations, they are optimized for
-    fast fixed-length operations and incur O(n) memory movement costs for
+    fast fixed-length operations and incur *O*\ (*n*) memory movement costs for
     ``pop(0)`` and ``insert(0, v)`` operations which change both the size and
     position of the underlying data representation.
 
@@ -585,7 +592,7 @@ or subtracting from an empty counter.
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
 the :keyword:`in` operator, and subscript references such as ``d[0]`` to access
-the first element.  Indexed access is O(1) at both ends but slows to O(n) in
+the first element.  Indexed access is *O*\ (1) at both ends but slows to *O*\ (*n*) in
 the middle.  For fast random access, use lists instead.
 
 Starting in version 3.5, deques support ``__add__()``, ``__mul__()``,
@@ -748,8 +755,8 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         returns or raises is then returned or raised by :meth:`~object.__getitem__`.
 
         Note that :meth:`__missing__` is *not* called for any operations besides
-        :meth:`~object.__getitem__`. This means that :meth:`get` will, like normal
-        dictionaries, return ``None`` as a default rather than using
+        :meth:`~object.__getitem__`. This means that :meth:`~dict.get` will, like
+        normal dictionaries, return ``None`` as a default rather than using
         :attr:`default_factory`.
 
 
@@ -758,9 +765,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 
     .. attribute:: default_factory
 
-        This attribute is used by the :meth:`__missing__` method; it is
-        initialized from the first argument to the constructor, if present, or to
-        ``None``, if absent.
+        This attribute is used by the :meth:`~defaultdict.__missing__` method;
+        it is initialized from the first argument to the constructor, if present,
+        or to ``None``, if absent.
 
     .. versionchanged:: 3.9
        Added merge (``|``) and update (``|=``) operators, specified in
@@ -849,8 +856,9 @@ they add the ability to access fields by name instead of position index.
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
     well as being indexable and iterable.  Instances of the subclass also have a
-    helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
-    method which lists the tuple contents in a ``name=value`` format.
+    helpful docstring (with *typename* and *field_names*) and a helpful
+    :meth:`~object.__repr__` method which lists the tuple contents in a ``name=value``
+    format.
 
     The *field_names* are a sequence of strings such as ``['x', 'y']``.
     Alternatively, *field_names* can be a single string with each fieldname
@@ -874,8 +882,8 @@ they add the ability to access fields by name instead of position index.
     ``(1, 2)``, then ``x`` will be a required argument, ``y`` will default to
     ``1``, and ``z`` will default to ``2``.
 
-    If *module* is defined, the ``__module__`` attribute of the named tuple is
-    set to that value.
+    If *module* is defined, the :attr:`~type.__module__` attribute of the
+    named tuple is set to that value.
 
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
@@ -894,10 +902,10 @@ they add the ability to access fields by name instead of position index.
        Added the *module* parameter.
 
     .. versionchanged:: 3.7
-       Removed the *verbose* parameter and the :attr:`_source` attribute.
+       Removed the *verbose* parameter and the :attr:`!_source` attribute.
 
     .. versionchanged:: 3.7
-       Added the *defaults* parameter and the :attr:`_field_defaults`
+       Added the *defaults* parameter and the :attr:`~somenamedtuple._field_defaults`
        attribute.
 
 .. doctest::
@@ -1109,7 +1117,7 @@ Some differences from :class:`dict` still remain:
   A regular :class:`dict` can emulate the order sensitive equality test with
   ``p == q and all(k1 == k2 for k1, k2 in zip(p, q))``.
 
-* The :meth:`popitem` method of :class:`OrderedDict` has a different
+* The :meth:`~OrderedDict.popitem` method of :class:`OrderedDict` has a different
   signature.  It accepts an optional argument to specify which item is popped.
 
   A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=True)``
@@ -1119,7 +1127,7 @@ Some differences from :class:`dict` still remain:
   with ``(k := next(iter(d)), d.pop(k))`` which will return and remove the
   leftmost (first) item if it exists.
 
-* :class:`OrderedDict` has a :meth:`move_to_end` method to efficiently
+* :class:`OrderedDict` has a :meth:`~OrderedDict.move_to_end` method to efficiently
   reposition an element to an endpoint.
 
   A regular :class:`dict` can emulate OrderedDict's ``od.move_to_end(k,
@@ -1130,7 +1138,7 @@ Some differences from :class:`dict` still remain:
   OrderedDict's ``od.move_to_end(k, last=False)`` which moves the key
   and its associated value to the leftmost (first) position.
 
-* Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
+* Until Python 3.8, :class:`dict` lacked a :meth:`~object.__reversed__` method.
 
 
 .. class:: OrderedDict([items])
@@ -1169,8 +1177,11 @@ Some differences from :class:`dict` still remain:
 In addition to the usual mapping methods, ordered dictionaries also support
 reverse iteration using :func:`reversed`.
 
+.. _collections_OrderedDict__eq__:
+
 Equality tests between :class:`OrderedDict` objects are order-sensitive
-and are implemented as ``list(od1.items())==list(od2.items())``.
+and are roughly equivalent to ``list(od1.items())==list(od2.items())``.
+
 Equality tests between :class:`OrderedDict` objects and other
 :class:`~collections.abc.Mapping` objects are order-insensitive like regular
 dictionaries.  This allows :class:`OrderedDict` objects to be substituted
@@ -1182,11 +1193,11 @@ anywhere a regular dictionary is used.
 
 .. versionchanged:: 3.6
    With the acceptance of :pep:`468`, order is retained for keyword arguments
-   passed to the :class:`OrderedDict` constructor and its :meth:`update`
+   passed to the :class:`OrderedDict` constructor and its :meth:`~dict.update`
    method.
 
 .. versionchanged:: 3.9
-    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+   Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
 
 
 :class:`OrderedDict` Examples and Recipes
@@ -1198,7 +1209,7 @@ If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
-        'Store items in the order the keys were last added'
+        'Store items in the order that the keys were last updated.'
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)

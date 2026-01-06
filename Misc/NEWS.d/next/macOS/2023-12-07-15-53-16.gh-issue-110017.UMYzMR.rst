@@ -1,2 +1,0 @@
-Disable a signal handling stress test on macOS due to a bug in macOS
-(FB13453490).

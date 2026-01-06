@@ -38,7 +38,7 @@ significant performance overhead when loading from ``.pyc`` files.
 .. section: Security
 
 Update the vendored copy of libexpat to 2.4.1 (from 2.2.8) to get the fix
-for the CVE-2013-0340 "Billion Laughs" vulnerability. This copy is most used
+for the :cve:`2013-0340` "Billion Laughs" vulnerability. This copy is most used
 on Windows and macOS.
 
 ..
@@ -613,7 +613,7 @@ Rename ``types.Union`` to ``types.UnionType``.
 .. section: Core and Builtins
 
 Expose specialization stats in python via
-:func:`_opcode.get_specialization_stats`.
+:func:`!_opcode.get_specialization_stats`.
 
 ..
 
@@ -660,7 +660,7 @@ Karabas.
 .. section: Core and Builtins
 
 Parameter substitution of the union type with wrong types now raises
-``TypeError`` instead of returning ``NotImplemented``.
+``TypeError`` instead of returning :data:`NotImplemented`.
 
 ..
 
@@ -972,7 +972,7 @@ manager` protocols correspondingly.
 .. section: Core and Builtins
 
 Make sure that the line number is set when entering a comprehension scope.
-Ensures that backtraces inclusing generator expressions show the correct
+This ensures that backtraces including generator expressions show the correct
 line number.
 
 ..
@@ -1701,7 +1701,7 @@ Remove many old deprecated :mod:`unittest` features:
 .. nonce: y1kEfP
 .. section: Library
 
-Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+Remove the deprecated ``split()`` method of :class:`!_tkinter.TkappType`.
 Patch by Erlend E. Aasland.
 
 ..
@@ -2000,7 +2000,7 @@ during file extraction.
 .. nonce: roUl0G
 .. section: Library
 
-:mod:`subprocess` on Solaris now also uses :func:`os.posix_spawn()` for
+:mod:`subprocess` on Solaris now also uses :func:`os.posix_spawn` for
 better performance.
 
 ..
@@ -2298,9 +2298,9 @@ Adopt *binacii.a2b_base64*'s strict mode in *base64.b64decode*.
 .. nonce: ThuDMI
 .. section: Library
 
-Fixed a bug in the :mod:`_ssl` module that was throwing :exc:`OverflowError`
-when using :meth:`_ssl._SSLSocket.write` and :meth:`_ssl._SSLSocket.read`
-for a big value of the ``len`` parameter. Patch by Pablo Galindo
+Fixed a bug in the :mod:`!_ssl` module that was throwing :exc:`OverflowError`
+when using :meth:`!_ssl._SSLSocket.write` and :meth:`!_ssl._SSLSocket.read`
+for a big value of the ``len`` parameter. Patch by Pablo Galindo.
 
 ..
 
@@ -2398,7 +2398,7 @@ class in the interactive session. Instead of :exc:`TypeError`, it should be
 .. nonce: R3IcM1
 .. section: Library
 
-Fix memory leak in :func:`_tkinter._flatten` if it is called with a sequence
+Fix memory leak in :func:`!_tkinter._flatten` if it is called with a sequence
 or set, but not list or tuple.
 
 ..
@@ -2722,7 +2722,7 @@ Importing typing.io or typing.re now prints a ``DeprecationWarning``.
 .. section: Library
 
 argparse actions store_const and append_const each receive a default value
-of None when the ``const`` kwarg is not provided. Previously, this raised a
+of ``None`` when the ``const`` kwarg is not provided. Previously, this raised a
 :exc:`TypeError`.
 
 ..
@@ -2741,7 +2741,7 @@ Fix deprecation of :data:`ssl.OP_NO_TLSv1_3`
 .. nonce: TMWh1i
 .. section: Library
 
-:meth:`pathlib.PureWindowsPath.is_reserved` now identifies a greater range
+:meth:`!pathlib.PureWindowsPath.is_reserved` now identifies a greater range
 of reserved filenames, including those with trailing spaces or colons.
 
 ..
@@ -2953,7 +2953,7 @@ support for Metadata 2.2.
 .. nonce: xTUyyX
 .. section: Library
 
-Remove the :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator`
+Remove the :deco:`asyncio.coroutine` :term:`decorator`
 enabling legacy generator-based coroutines to be compatible with async/await
 code; remove :class:`asyncio.coroutines.CoroWrapper` used for wrapping
 legacy coroutine objects in the debug mode. The decorator has been
@@ -3204,7 +3204,7 @@ deprecated, for removal in 3.14.
 .. section: Library
 
 When :class:`http.server.SimpleHTTPRequestHandler` sends a ``301 (Moved
-Permanently)`` for a directory path not ending with `/`, add a
+Permanently)`` for a directory path not ending with ``/``, add a
 ``Content-Length: 0`` header. This improves the behavior for certain
 clients.
 
@@ -3240,7 +3240,7 @@ Patch by Erlend E. Aasland.
 .. nonce: m72tlH
 .. section: Library
 
-AIX: `Lib/_aix_support.get_platform()` may fail in an AIX WPAR. The fileset
+AIX: ``Lib/_aix_support.get_platform()`` may fail in an AIX WPAR. The fileset
 bos.rte appears to have a builddate in both LPAR and WPAR so this fileset is
 queried rather than bos.mp64. To prevent a similar situation (no builddate
 in ODM) a value (9988) sufficient for completing a build is provided. Patch
@@ -3685,9 +3685,9 @@ equivalents are valid.
 .. nonce: aJuvQF
 .. section: Documentation
 
-Removed the othergui.rst file, any references to it, and the list of GUI
+Removed the ``othergui.rst`` file, any references to it, and the list of GUI
 frameworks in the FAQ. In their place I've added links to the Python Wiki
-`page on GUI frameworks <https://wiki.python.org/moin/GuiProgramming>`.
+`page on GUI frameworks <https://wiki.python.org/moin/GuiProgramming>`_.
 
 ..
 
@@ -3995,7 +3995,7 @@ operator expressions.
 .. section: Documentation
 
 Document that :class:`collections.defaultdict` parameter ``default_factory``
-defaults to None and is positional-only.
+defaults to ``None`` and is positional-only.
 
 ..
 
@@ -4187,7 +4187,7 @@ Add calls of :func:`gc.collect` in tests to support PyPy.
 .. nonce: mQZdXU
 .. section: Tests
 
-Made tests relying on the :mod:`_asyncio` C extension module optional to
+Made tests relying on the :mod:`!_asyncio` C extension module optional to
 allow running on alternative Python implementations. Patch by Serhiy
 Storchaka.
 
@@ -4238,7 +4238,7 @@ harmless "malloc can't allocate region" messages spewed by test_decimal.
 .. nonce: KKsNOV
 .. section: Tests
 
-Fixed floating point precision issue in turtle tests.
+Fixed floating-point precision issue in turtle tests.
 
 ..
 

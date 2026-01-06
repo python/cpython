@@ -1,8 +1,9 @@
 // C Extension module to test pycore_lock.h API
 
 #include "parts.h"
-
 #include "pycore_lock.h"
+#include "pycore_pythread.h"      // PyThread_get_thread_ident_ex()
+
 #include "clinic/test_lock.c.h"
 
 #ifdef MS_WINDOWS
@@ -35,9 +36,9 @@ test_lock_basic(PyObject *self, PyObject *obj)
 
     // uncontended lock and unlock
     PyMutex_Lock(&m);
-    assert(m.v == 1);
+    assert(m._bits == 1);
     PyMutex_Unlock(&m);
-    assert(m.v == 0);
+    assert(m._bits == 0);
 
     Py_RETURN_NONE;
 }
@@ -56,10 +57,13 @@ lock_thread(void *arg)
     _Py_atomic_store_int(&test_data->started, 1);
 
     PyMutex_Lock(m);
-    assert(m->v == 1);
+    // gh-135641: in rare cases the lock may still have `_Py_HAS_PARKED` set
+    // (m->_bits == 3) due to bucket collisions in the parking lot hash table
+    // between this mutex and the `test_data.done` event.
+    assert(m->_bits == 1 || m->_bits == 3);
 
     PyMutex_Unlock(m);
-    assert(m->v == 0);
+    assert(m->_bits == 0);
 
     _PyEvent_Notify(&test_data->done);
 }
@@ -72,7 +76,7 @@ test_lock_two_threads(PyObject *self, PyObject *obj)
     memset(&test_data, 0, sizeof(test_data));
 
     PyMutex_Lock(&test_data.m);
-    assert(test_data.m.v == 1);
+    assert(test_data.m._bits == 1);
 
     PyThread_start_new_thread(lock_thread, &test_data);
 
@@ -81,17 +85,18 @@ test_lock_two_threads(PyObject *self, PyObject *obj)
     uint8_t v;
     do {
         pysleep(10);  // allow some time for the other thread to try to lock
-        v = _Py_atomic_load_uint8_relaxed(&test_data.m.v);
+        v = _Py_atomic_load_uint8_relaxed(&test_data.m._bits);
         assert(v == 1 || v == 3);
         iters++;
     } while (v != 3 && iters < 200);
 
     // both the "locked" and the "has parked" bits should be set
-    assert(test_data.m.v == 3);
+    v = _Py_atomic_load_uint8_relaxed(&test_data.m._bits);
+    assert(v == 3);
 
     PyMutex_Unlock(&test_data.m);
     PyEvent_Wait(&test_data.done);
-    assert(test_data.m.v == 0);
+    assert(test_data.m._bits == 0);
 
     Py_RETURN_NONE;
 }
@@ -289,7 +294,10 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
         goto exit;
     }
 
-    _PyTime_t start = _PyTime_GetMonotonicClock();
+    PyTime_t start, end;
+    if (PyTime_PerfCounter(&start) < 0) {
+        goto exit;
+    }
 
     for (Py_ssize_t i = 0; i < num_threads; i++) {
         thread_data[i].bench_data = &bench_data;
@@ -306,7 +314,9 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
     }
 
     Py_ssize_t total_iters = bench_data.total_iters;
-    _PyTime_t end = _PyTime_GetMonotonicClock();
+    if (PyTime_PerfCounter(&end) < 0) {
+        goto exit;
+    }
 
     // Return the total number of acquisitions and the number of acquisitions
     // for each thread.
@@ -318,7 +328,8 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
         PyList_SET_ITEM(thread_iters, i, iter);
     }
 
-    double rate = total_iters * 1000000000.0 / (end - start);
+    assert(end != start);
+    double rate = total_iters * 1e9 / (end - start);
     res = Py_BuildValue("(dO)", rate, thread_iters);
 
 exit:
@@ -470,6 +481,29 @@ test_lock_rwlock(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_lock_recursive(PyObject *self, PyObject *obj)
+{
+    _PyRecursiveMutex m = (_PyRecursiveMutex){0};
+    assert(!_PyRecursiveMutex_IsLockedByCurrentThread(&m));
+
+    _PyRecursiveMutex_Lock(&m);
+    assert(m.thread == PyThread_get_thread_ident_ex());
+    assert(PyMutex_IsLocked(&m.mutex));
+    assert(m.level == 0);
+
+    _PyRecursiveMutex_Lock(&m);
+    assert(m.level == 1);
+    _PyRecursiveMutex_Unlock(&m);
+
+    _PyRecursiveMutex_Unlock(&m);
+    assert(m.thread == 0);
+    assert(!PyMutex_IsLocked(&m.mutex));
+    assert(m.level == 0);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"test_lock_basic", test_lock_basic, METH_NOARGS},
     {"test_lock_two_threads", test_lock_two_threads, METH_NOARGS},
@@ -479,6 +513,7 @@ static PyMethodDef test_methods[] = {
     {"test_lock_benchmark", test_lock_benchmark, METH_NOARGS},
     {"test_lock_once", test_lock_once, METH_NOARGS},
     {"test_lock_rwlock", test_lock_rwlock, METH_NOARGS},
+    {"test_lock_recursive", test_lock_recursive, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

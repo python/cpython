@@ -13,7 +13,7 @@ Fixes mishandling of pre-normalization characters in urlsplit().
 .. nonce: 51E-DA
 .. section: Security
 
-Address CVE-2019-9740 by disallowing URL paths with embedded whitespace or
+Address :cve:`2019-9740` by disallowing URL paths with embedded whitespace or
 control characters through into the underlying http client request.  Such
 potentially malicious header injection URLs now cause an
 http.client.InvalidURL exception to be raised.
@@ -168,7 +168,7 @@ decoder.
 Changing ``dict`` keys during iteration of the dict itself, ``keys()``,
 ``values()``, or ``items()`` will now be detected in certain corner cases
 where keys are deleted/added so that the number of keys isn't changed. A
-`RuntimeError` will be raised after ``len(dict)`` iterations. Contributed by
+``RuntimeError`` will be raised after ``len(dict)`` iterations. Contributed by
 Thomas Perl.
 
 ..
@@ -580,7 +580,7 @@ is a dictionary.
 .. section: Library
 
 Calling ``stop()`` on an unstarted or stopped :func:`unittest.mock.patch`
-object will now return `None` instead of raising :exc:`RuntimeError`, making
+object will now return ``None`` instead of raising :exc:`RuntimeError`, making
 the method idempotent. Patch by Karthikeyan Singaravelan.
 
 ..
@@ -600,7 +600,7 @@ exceptions.
 .. nonce: 9sjd38
 .. section: Library
 
-Add time module support and fix test_time faiures for VxWorks.
+Add time module support and fix test_time failures for VxWorks.
 
 ..
 
@@ -609,9 +609,9 @@ Add time module support and fix test_time faiures for VxWorks.
 .. nonce: i2Z1XR
 .. section: Library
 
-Added support for keyword arguments `default_namespace` and
-`xml_declaration` in functions ElementTree.tostring() and
-ElementTree.tostringlist().
+Added support for keyword arguments ``default_namespace`` and
+``xml_declaration`` in functions ``ElementTree.tostring()`` and
+``ElementTree.tostringlist()``.
 
 ..
 
@@ -663,8 +663,8 @@ followed imports. Patch by Brandt Bucher.
 .. nonce: QmfNmY
 .. section: Library
 
-Added :meth:`~socket.create_server()` and
-:meth:`~socket.has_dualstack_ipv6()` convenience functions to automate the
+Added :meth:`~socket.create_server` and
+:meth:`~socket.has_dualstack_ipv6` convenience functions to automate the
 necessary tasks usually involved when creating a server socket, including
 accepting both IPv4 and IPv6 connections on the same socket.  (Contributed
 by Giampaolo Rodola in :issue:`17561`.)
@@ -744,7 +744,7 @@ Remove stale unix datagram socket before binding
 .. nonce: _4Q_bi
 .. section: Library
 
-Implemented Happy Eyeballs in `asyncio.create_connection()`. Added two new
+Implemented Happy Eyeballs in ``asyncio.create_connection()``. Added two new
 arguments, *happy_eyeballs_delay* and *interleave*, to specify Happy
 Eyeballs behavior.
 
@@ -843,7 +843,7 @@ Using the code of the ``Tools/scripts/serve.py`` script as an example in the
 .. nonce: nF1pP1
 .. section: Documentation
 
-Added Documention for  PyInterpreterState_Main().
+Added documentation for PyInterpreterState_Main().
 
 ..
 
@@ -945,7 +945,7 @@ P. Hemsley.
 .. nonce: __FTq9
 .. section: Tests
 
-Add a new :mod:`_testinternalcapi` module to test the internal C API.
+Add a new :mod:`!_testinternalcapi` module to test the internal C API.
 
 ..
 
@@ -1383,7 +1383,7 @@ Since Python 3.7.0, calling :c:func:`Py_DecodeLocale` before
 coerced and/or if the UTF-8 Mode is enabled by the user configuration. The
 LC_CTYPE coercion and UTF-8 Mode are now disabled by default to fix the
 mojibake issue. They must now be enabled explicitly (opt-in) using the new
-:c:func:`_Py_PreInitialize` API with ``_PyPreConfig``.
+:c:func:`!_Py_PreInitialize` API with ``_PyPreConfig``.
 
 ..
 
@@ -1405,7 +1405,7 @@ only present in alpha releases of Python 3.8. Patch by Paul Ganssle.
 .. nonce: wpbWeb
 .. section: C API
 
-Modify ``PyObject_Init`` to correctly increase the refcount of heap-
-allocated Type objects. Also fix the refcounts of the heap-allocated types
+Modify ``PyObject_Init`` to correctly increase the refcount of heap-allocated
+Type objects. Also fix the refcounts of the heap-allocated types
 that were either doing this manually or not decreasing the type's refcount
 in tp_dealloc

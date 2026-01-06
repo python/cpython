@@ -10,12 +10,11 @@
 
   See the source code for LLVMFuzzerTestOneInput for details. */
 
-#ifndef Py_BUILD_CORE
-#  define Py_BUILD_CORE 1
+#ifndef Py_BUILD_CORE_MODULE
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include <Python.h>
-#include "pycore_pyhash.h"        // _Py_HashBytes()
 #include <stdlib.h>
 #include <inttypes.h>
 
@@ -45,7 +44,7 @@ static int fuzz_builtin_int(const char* data, size_t size) {
     /* Pick a random valid base. (When the fuzzed function takes extra
        parameters, it's somewhat normal to hash the input to generate those
        parameters. We want to exercise all code paths, so we do so here.) */
-    int base = _Py_HashBytes(data, size) % 37;
+    int base = Py_HashBuffer(data, size) % 37;
     if (base == 1) {
         // 1 is the only number between 0 and 36 that is not a valid base.
         base = 0;
@@ -502,7 +501,6 @@ static int fuzz_elementtree_parsewhole(const char* data, size_t size) {
 }
 
 #define MAX_PYCOMPILE_TEST_SIZE 16384
-static char pycompile_scratch[MAX_PYCOMPILE_TEST_SIZE];
 
 static const int start_vals[] = {Py_eval_input, Py_single_input, Py_file_input};
 const size_t NUM_START_VALS = sizeof(start_vals) / sizeof(start_vals[0]);
@@ -531,6 +529,8 @@ static int fuzz_pycompile(const char* data, size_t size) {
     unsigned char optimize_idx = (unsigned char) data[1];
     int optimize = optimize_vals[optimize_idx % NUM_OPTIMIZE_VALS];
 
+    char pycompile_scratch[MAX_PYCOMPILE_TEST_SIZE];
+
     // Create a NUL-terminated C string from the remaining input
     memcpy(pycompile_scratch, data + 2, size - 2);
     // Put a NUL terminator just after the copied data. (Space was reserved already.)
@@ -549,7 +549,13 @@ static int fuzz_pycompile(const char* data, size_t size) {
 
     PyObject *result = Py_CompileStringExFlags(pycompile_scratch, "<fuzz input>", start, flags, optimize);
     if (result == NULL) {
-        /* compilation failed, most likely from a syntax error */
+        /* Compilation failed, most likely from a syntax error. If it was a
+           SystemError we abort. There's no non-bug reason to raise a
+           SystemError. */
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_SystemError)) {
+            PyErr_Print();
+            abort();
+        }
         PyErr_Clear();
     } else {
         Py_DECREF(result);

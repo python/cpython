@@ -1,11 +1,11 @@
-:mod:`readline` --- GNU readline interface
-==========================================
+:mod:`!readline` --- GNU readline interface
+===========================================
 
 .. module:: readline
    :platform: Unix
    :synopsis: GNU readline support for Python.
 
-.. sectionauthor:: Skip Montanaro <skip@pobox.com>
+.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
@@ -23,6 +23,10 @@ Readline keybindings may be configured via an initialization file, typically
 in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.
+
+.. include:: ../includes/wasm-mobile-notavail.rst
+
+.. include:: ../includes/optional-module.rst
 
 .. note::
 
@@ -43,6 +47,10 @@ Readline library in general.
     python:bind -v
     python:bind ^I rl_complete
 
+  Also note that different libraries may use different history file formats.
+  When switching the underlying library, existing history files may become
+  unusable.
+
 .. data:: backend
 
    The name of the underlying Readline library being used, either
@@ -59,13 +67,19 @@ The following functions relate to the init file and user configuration:
 .. function:: parse_and_bind(string)
 
    Execute the init line provided in the *string* argument. This calls
-   :c:func:`rl_parse_and_bind` in the underlying library.
+   :c:func:`!rl_parse_and_bind` in the underlying library.
 
 
 .. function:: read_init_file([filename])
 
    Execute a readline initialization file. The default filename is the last filename
-   used. This calls :c:func:`rl_read_init_file` in the underlying library.
+   used. This calls :c:func:`!rl_read_init_file` in the underlying library.
+   It raises an :ref:`auditing event <auditing>` ``open`` with the file name
+   if given, and :code:`"<readline_init_file>"` otherwise, regardless of
+   which file the library resolves.
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 Line buffer
@@ -76,21 +90,21 @@ The following functions operate on the line buffer:
 
 .. function:: get_line_buffer()
 
-   Return the current contents of the line buffer (:c:data:`rl_line_buffer`
+   Return the current contents of the line buffer (:c:data:`!rl_line_buffer`
    in the underlying library).
 
 
 .. function:: insert_text(string)
 
    Insert text into the line buffer at the cursor position.  This calls
-   :c:func:`rl_insert_text` in the underlying library, but ignores
+   :c:func:`!rl_insert_text` in the underlying library, but ignores
    the return value.
 
 
 .. function:: redisplay()
 
    Change what's displayed on the screen to reflect the current contents of the
-   line buffer.  This calls :c:func:`rl_redisplay` in the underlying library.
+   line buffer.  This calls :c:func:`!rl_redisplay` in the underlying library.
 
 
 History file
@@ -103,25 +117,39 @@ The following functions operate on a history file:
 
    Load a readline history file, and append it to the history list.
    The default filename is :file:`~/.history`.  This calls
-   :c:func:`read_history` in the underlying library.
+   :c:func:`!read_history` in the underlying library
+   and raises an :ref:`auditing event <auditing>` ``open`` with the file
+   name if given and :code:`"~/.history"` otherwise.
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 .. function:: write_history_file([filename])
 
    Save the history list to a readline history file, overwriting any
    existing file.  The default filename is :file:`~/.history`.  This calls
-   :c:func:`write_history` in the underlying library.
+   :c:func:`!write_history` in the underlying library and raises an
+   :ref:`auditing event <auditing>` ``open`` with the file name if given and
+   :code:`"~/.history"` otherwise.
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 .. function:: append_history_file(nelements[, filename])
 
    Append the last *nelements* items of history to a file.  The default filename is
    :file:`~/.history`.  The file must already exist.  This calls
-   :c:func:`append_history` in the underlying library.  This function
+   :c:func:`!append_history` in the underlying library.  This function
    only exists if Python was compiled for a version of the library
-   that supports it.
+   that supports it. It raises an :ref:`auditing event <auditing>` ``open``
+   with the file name if given and :code:`"~/.history"` otherwise.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 .. function:: get_history_length()
@@ -129,7 +157,7 @@ The following functions operate on a history file:
 
    Set or return the desired number of lines to save in the history file.
    The :func:`write_history_file` function uses this value to truncate
-   the history file, by calling :c:func:`history_truncate_file` in
+   the history file, by calling :c:func:`!history_truncate_file` in
    the underlying library.  Negative values imply
    unlimited history file size.
 
@@ -142,7 +170,7 @@ The following functions operate on a global history list:
 
 .. function:: clear_history()
 
-   Clear the current history.  This calls :c:func:`clear_history` in the
+   Clear the current history.  This calls :c:func:`!clear_history` in the
    underlying library.  The Python function only exists if Python was
    compiled for a version of the library that supports it.
 
@@ -157,32 +185,32 @@ The following functions operate on a global history list:
 .. function:: get_history_item(index)
 
    Return the current contents of history item at *index*.  The item index
-   is one-based.  This calls :c:func:`history_get` in the underlying library.
+   is one-based.  This calls :c:func:`!history_get` in the underlying library.
 
 
 .. function:: remove_history_item(pos)
 
    Remove history item specified by its position from the history.
-   The position is zero-based.  This calls :c:func:`remove_history` in
+   The position is zero-based.  This calls :c:func:`!remove_history` in
    the underlying library.
 
 
 .. function:: replace_history_item(pos, line)
 
    Replace history item specified by its position with *line*.
-   The position is zero-based.  This calls :c:func:`replace_history_entry`
+   The position is zero-based.  This calls :c:func:`!replace_history_entry`
    in the underlying library.
 
 
 .. function:: add_history(line)
 
    Append *line* to the history buffer, as if it was the last line typed.
-   This calls :c:func:`add_history` in the underlying library.
+   This calls :c:func:`!add_history` in the underlying library.
 
 
 .. function:: set_auto_history(enabled)
 
-   Enable or disable automatic calls to :c:func:`add_history` when reading
+   Enable or disable automatic calls to :c:func:`!add_history` when reading
    input via readline.  The *enabled* argument should be a Boolean value
    that when true, enables auto history, and that when false, disables
    auto history.
@@ -200,7 +228,7 @@ Startup hooks
 
 .. function:: set_startup_hook([function])
 
-   Set or remove the function invoked by the :c:data:`rl_startup_hook`
+   Set or remove the function invoked by the :c:data:`!rl_startup_hook`
    callback of the underlying library.  If *function* is specified, it will
    be used as the new hook function; if omitted or ``None``, any function
    already installed is removed.  The hook is called with no
@@ -209,13 +237,22 @@ Startup hooks
 
 .. function:: set_pre_input_hook([function])
 
-   Set or remove the function invoked by the :c:data:`rl_pre_input_hook`
+   Set or remove the function invoked by the :c:data:`!rl_pre_input_hook`
    callback of the underlying library.  If *function* is specified, it will
    be used as the new hook function; if omitted or ``None``, any
    function already installed is removed.  The hook is called
    with no arguments after the first prompt has been printed and just before
    readline starts reading input characters.  This function only exists
    if Python was compiled for a version of the library that supports it.
+
+
+.. function:: get_pre_input_hook()
+
+   Get the current pre-input hook function, or ``None`` if no pre-input hook
+   function has been set.  This function only exists if Python was compiled
+   for a version of the library that supports it.
+
+   .. versionadded:: 3.15
 
 
 .. _readline-completion:
@@ -241,9 +278,9 @@ with a custom completer, a different set of word delimiters should be set.
    starting with *text*.
 
    The installed completer function is invoked by the *entry_func* callback
-   passed to :c:func:`rl_completion_matches` in the underlying library.
+   passed to :c:func:`!rl_completion_matches` in the underlying library.
    The *text* string comes from the first parameter to the
-   :c:data:`rl_attempted_completion_function` callback of the
+   :c:data:`!rl_attempted_completion_function` callback of the
    underlying library.
 
 
@@ -255,7 +292,7 @@ with a custom completer, a different set of word delimiters should be set.
 .. function:: get_completion_type()
 
    Get the type of completion being attempted.  This returns the
-   :c:data:`rl_completion_type` variable in the underlying library as
+   :c:data:`!rl_completion_type` variable in the underlying library as
    an integer.
 
 
@@ -264,7 +301,7 @@ with a custom completer, a different set of word delimiters should be set.
 
    Get the beginning or ending index of the completion scope.
    These indexes are the *start* and *end* arguments passed to the
-   :c:data:`rl_attempted_completion_function` callback of the
+   :c:data:`!rl_attempted_completion_function` callback of the
    underlying library.  The values may be different in the same
    input editing scenario based on the underlying C readline implementation.
    Ex: libedit is known to behave differently than libreadline.
@@ -275,7 +312,7 @@ with a custom completer, a different set of word delimiters should be set.
 
    Set or get the word delimiters for completion.  These determine the
    start of the word to be considered for completion (the completion scope).
-   These functions access the :c:data:`rl_completer_word_break_characters`
+   These functions access the :c:data:`!rl_completer_word_break_characters`
    variable in the underlying library.
 
 
@@ -285,7 +322,7 @@ with a custom completer, a different set of word delimiters should be set.
    specified, it will be used as the new completion display function;
    if omitted or ``None``, any completion display function already
    installed is removed.  This sets or clears the
-   :c:data:`rl_completion_display_matches_hook` callback in the
+   :c:data:`!rl_completion_display_matches_hook` callback in the
    underlying library.  The completion display function is called as
    ``function(substitution, [matches], longest_match_length)`` once
    each time matches need to be displayed.

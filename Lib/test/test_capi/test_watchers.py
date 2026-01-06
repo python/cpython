@@ -1,7 +1,10 @@
 import unittest
+import contextvars
 
 from contextlib import contextmanager, ExitStack
-from test.support import catch_unraisable_exception, import_helper
+from test.support import (
+    catch_unraisable_exception, import_helper,
+    gc_collect)
 
 
 # Skip this test if the _testcapi module isn't available.
@@ -94,6 +97,23 @@ class TestDictWatchers(unittest.TestCase):
             del d
             self.assert_events(["dealloc"])
 
+    def test_object_dict(self):
+        class MyObj: pass
+        o = MyObj()
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            o.foo = "bar"
+            o.foo = "baz"
+            del o.foo
+            self.assert_events(["new:foo:bar", "mod:foo:baz", "del:foo"])
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            for _ in range(100):
+                o.foo = "bar"
+            self.assert_events(["new:foo:bar"] + ["mod:foo:bar"] * 99)
+
     def test_unwatch(self):
         d = {}
         with self.watcher() as wid:
@@ -151,8 +171,8 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_watch_unassigned_watcher_id(self):
         d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.watch(1, d)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.watch(3, d)
 
     def test_unwatch_non_dict(self):
         with self.watcher() as wid:
@@ -168,8 +188,8 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_unwatch_unassigned_watcher_id(self):
         d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.unwatch(1, d)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.unwatch(3, d)
 
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
@@ -178,8 +198,8 @@ class TestDictWatchers(unittest.TestCase):
             self.clear_watcher(8)  # DICT_MAX_WATCHERS = 8
 
     def test_clear_unassigned_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.clear_watcher(1)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.clear_watcher(3)
 
 
 class TestTypeWatchers(unittest.TestCase):
@@ -280,8 +300,10 @@ class TestTypeWatchers(unittest.TestCase):
             self.watch(wid, C)
             with catch_unraisable_exception() as cm:
                 C.foo = "bar"
-                self.assertEqual(cm.unraisable.err_msg,
-                    f"Exception ignored in type watcher callback #0 for {C!r}")
+                self.assertEqual(
+                    cm.unraisable.err_msg,
+                    f"Exception ignored in type watcher callback #1 for {C!r}",
+                )
                 self.assertIs(cm.unraisable.object, None)
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
@@ -372,6 +394,7 @@ class TestCodeObjectWatchers(unittest.TestCase):
 
     def assert_event_counts(self, exp_created_0, exp_destroyed_0,
                             exp_created_1, exp_destroyed_1):
+        gc_collect()  # code objects are collected by GC in free-threaded build
         self.assertEqual(
             exp_created_0, _testcapi.get_code_watcher_num_created_events(0))
         self.assertEqual(
@@ -432,6 +455,7 @@ class TestCodeObjectWatchers(unittest.TestCase):
         with self.code_watcher(2):
             with catch_unraisable_exception() as cm:
                 del co
+                gc_collect()
 
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
@@ -489,6 +513,10 @@ class TestFuncWatchers(unittest.TestCase):
             new_kwdefaults = {"self": 456}
             _testcapi.set_func_kwdefaults_via_capi(myfunc, new_kwdefaults)
             self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
+
+            new_qualname = "foo.bar"
+            myfunc.__qualname__ = new_qualname
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_QUALNAME, myfunc, new_qualname), events)
 
             # Clear events reference to func
             events = []
@@ -562,6 +590,93 @@ class TestFuncWatchers(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"no more func watcher IDs"):
             _testcapi.allocate_too_many_func_watchers()
 
+
+class TestContextObjectWatchers(unittest.TestCase):
+    @contextmanager
+    def context_watcher(self, which_watcher):
+        wid = _testcapi.add_context_watcher(which_watcher)
+        try:
+            switches = _testcapi.get_context_switches(which_watcher)
+        except ValueError:
+            switches = None
+        try:
+            yield switches
+        finally:
+            _testcapi.clear_context_watcher(wid)
+
+    def assert_event_counts(self, want_0, want_1):
+        self.assertEqual(len(_testcapi.get_context_switches(0)), want_0)
+        self.assertEqual(len(_testcapi.get_context_switches(1)), want_1)
+
+    def test_context_object_events_dispatched(self):
+        # verify that all counts are zero before any watchers are registered
+        self.assert_event_counts(0, 0)
+
+        # verify that all counts remain zero when a context object is
+        # entered and exited with no watchers registered
+        ctx = contextvars.copy_context()
+        ctx.run(self.assert_event_counts, 0, 0)
+        self.assert_event_counts(0, 0)
+
+        # verify counts are as expected when first watcher is registered
+        with self.context_watcher(0):
+            self.assert_event_counts(0, 0)
+            ctx.run(self.assert_event_counts, 1, 0)
+            self.assert_event_counts(2, 0)
+
+            # again with second watcher registered
+            with self.context_watcher(1):
+                self.assert_event_counts(2, 0)
+                ctx.run(self.assert_event_counts, 3, 1)
+                self.assert_event_counts(4, 2)
+
+        # verify counts are reset and don't change after both watchers are cleared
+        ctx.run(self.assert_event_counts, 0, 0)
+        self.assert_event_counts(0, 0)
+
+    def test_callback_error(self):
+        ctx_outer = contextvars.copy_context()
+        ctx_inner = contextvars.copy_context()
+        unraisables = []
+
+        def _in_outer():
+            with self.context_watcher(2):
+                with catch_unraisable_exception() as cm:
+                    ctx_inner.run(lambda: unraisables.append(cm.unraisable))
+                    unraisables.append(cm.unraisable)
+
+        try:
+            ctx_outer.run(_in_outer)
+            self.assertEqual([x.err_msg for x in unraisables],
+                             ["Exception ignored in Py_CONTEXT_SWITCHED "
+                              f"watcher callback for {ctx!r}"
+                              for ctx in [ctx_inner, ctx_outer]])
+            self.assertEqual([str(x.exc_value) for x in unraisables],
+                             ["boom!", "boom!"])
+        finally:
+            # Break reference cycle
+            unraisables = None
+
+    def test_clear_out_of_range_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID -1"):
+            _testcapi.clear_context_watcher(-1)
+        with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID 8"):
+            _testcapi.clear_context_watcher(8)  # CONTEXT_MAX_WATCHERS = 8
+
+    def test_clear_unassigned_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"No context watcher set for ID 1"):
+            _testcapi.clear_context_watcher(1)
+
+    def test_allocate_too_many_watchers(self):
+        with self.assertRaisesRegex(RuntimeError, r"no more context watcher IDs available"):
+            _testcapi.allocate_too_many_context_watchers()
+
+    def test_exit_base_context(self):
+        ctx = contextvars.Context()
+        _testcapi.clear_context_stack()
+        with self.context_watcher(0) as switches:
+            ctx.run(lambda: None)
+        self.assertEqual(switches, [ctx, None])
 
 if __name__ == "__main__":
     unittest.main()

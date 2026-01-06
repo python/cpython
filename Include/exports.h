@@ -9,6 +9,7 @@
                     inside the Python core, they are private to the core.
                     If in an extension module, it may be declared with
                     external linkage depending on the platform.
+  PyMODEXPORT_FUNC: Like PyMODINIT_FUNC, but for a slots array
 
   As a number of platforms support/require "__declspec(dllimport/dllexport)",
   we support a HAVE_DECLSPEC_DLL macro to save duplication.
@@ -41,11 +42,8 @@
  * we may still need to support gcc >= 4, as some Ubuntu LTS and Centos versions
  * have 4 < gcc < 5.
  */
-    #ifndef __has_attribute
-      #define __has_attribute(x) 0  // Compatibility with non-clang compilers.
-    #endif
     #if (defined(__GNUC__) && (__GNUC__ >= 4)) ||\
-        (defined(__clang__) && __has_attribute(visibility))
+        (defined(__clang__) && _Py__has_attribute(visibility))
         #define Py_IMPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_EXPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_LOCAL_SYMBOL  __attribute__ ((visibility ("hidden")))
@@ -65,9 +63,9 @@
         /* module init functions inside the core need no external linkage */
         /* except for Cygwin to handle embedding */
 #                       if defined(__CYGWIN__)
-#                               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
+#                               define _PyINIT_FUNC_DECLSPEC Py_EXPORTED_SYMBOL
 #                       else /* __CYGWIN__ */
-#                               define PyMODINIT_FUNC PyObject*
+#                               define _PyINIT_FUNC_DECLSPEC
 #                       endif /* __CYGWIN__ */
 #               else /* Py_BUILD_CORE */
         /* Building an extension module, or an embedded situation */
@@ -81,9 +79,9 @@
 #                       define PyAPI_DATA(RTYPE) extern Py_IMPORTED_SYMBOL RTYPE
         /* module init functions outside the core must be exported */
 #                       if defined(__cplusplus)
-#                               define PyMODINIT_FUNC extern "C" Py_EXPORTED_SYMBOL PyObject*
+#                               define _PyINIT_FUNC_DECLSPEC extern "C" Py_EXPORTED_SYMBOL
 #                       else /* __cplusplus */
-#                               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
+#                               define _PyINIT_FUNC_DECLSPEC Py_EXPORTED_SYMBOL
 #                       endif /* __cplusplus */
 #               endif /* Py_BUILD_CORE */
 #       endif /* HAVE_DECLSPEC_DLL */
@@ -96,13 +94,15 @@
 #ifndef PyAPI_DATA
 #       define PyAPI_DATA(RTYPE) extern Py_EXPORTED_SYMBOL RTYPE
 #endif
-#ifndef PyMODINIT_FUNC
+#ifndef _PyINIT_FUNC_DECLSPEC
 #       if defined(__cplusplus)
-#               define PyMODINIT_FUNC extern "C" Py_EXPORTED_SYMBOL PyObject*
+#               define _PyINIT_FUNC_DECLSPEC extern "C" Py_EXPORTED_SYMBOL
 #       else /* __cplusplus */
-#               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
+#               define _PyINIT_FUNC_DECLSPEC Py_EXPORTED_SYMBOL
 #       endif /* __cplusplus */
 #endif
 
+#define PyMODINIT_FUNC _PyINIT_FUNC_DECLSPEC PyObject*
+#define PyMODEXPORT_FUNC _PyINIT_FUNC_DECLSPEC PyModuleDef_Slot*
 
 #endif /* Py_EXPORTS_H */
