@@ -6,6 +6,10 @@
 
 #include <Python.h>
 #include <stdbool.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getcwd()
+#endif
+
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -30,6 +34,11 @@ PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
 PyObject *PyExc_IOError = NULL;  // borrowed ref
 #ifdef MS_WINDOWS
 PyObject *PyExc_WindowsError = NULL;  // borrowed ref
+// TODO: find correct header file for this
+wchar_t *_wgetcwd(
+   wchar_t *buffer,
+   int maxlen
+);
 #endif
 
 
@@ -2118,6 +2127,90 @@ oserror_parse_args(PyObject **p_args,
     return 0;
 }
 
+// getcwd() wrapper
+// This returns a string with the working directory. Any errors are
+// suppressed and NULL is returned instead.
+static PyObject *
+getcwd_helper()
+{
+    PyObject * res = NULL;
+
+    size_t cwd_len = 100;
+
+#ifdef MS_WINDOWS
+    // Windows version using wchar_t (UTF-16) encoding
+
+    wchar_t* cwd = NULL;
+
+    while (true) {
+        wchar_t* tmp = realloc(cwd, cwd_len * sizeof *tmp);
+        if (!tmp) {
+            // out of memory
+            break;
+        }
+        cwd = tmp;
+
+        if (_wgetcwd(cwd, cwd_len)) {
+            /* Try to convert to a string. If this fails, it means that
+             * the working dir is just not encoded as UTF-8, which is
+             * unfortunate, but nothing we can change here. */
+            PyObject* py_cwd = PyUnicode_FromWideChar(cwd, -1);
+            if (py_cwd) {
+                res = py_cwd;
+            }
+            break;
+        }
+        // some error happened, check if wgetcwd() just needs more space
+        if (errno != ERANGE) {
+            break;
+        }
+
+        // increase allocation size and try again
+        cwd_len *= 2;
+    }
+    // release temporary storage
+    free(cwd);
+#else
+    // generic version for POSIX systems assuming UTF-8 encoding
+    // TODO: glibc allows calling getcwd() with null parameters,
+    // which then causes it to alloc the necessary amount itself.
+
+    char* cwd = NULL;
+
+    while (true) {
+        char* tmp = realloc(cwd, cwd_len);
+        if (!tmp) {
+            // out of memory
+            break;
+        }
+        cwd = tmp;
+
+        if (getcwd(cwd, cwd_len)) {
+            /* Try to convert to a string. If this fails, it means that
+                * the working dir is just not encoded as UTF-8, which is
+                * unfortunate, but nothing we can change here. */
+            PyObject* py_cwd = PyUnicode_FromString(cwd);
+            if (py_cwd) {
+                res = py_cwd;
+            }
+            break;
+        }
+        // some error happened, check if getcwd() just needs more space
+        if (errno != ERANGE) {
+            break;
+        }
+
+        // increase allocation size and try again
+        cwd_len *= 2;
+    }
+    // release temporary storage
+    free(cwd);
+#endif
+
+
+    return res;
+}
+
 static int
 oserror_init(PyOSErrorObject *self, PyObject **p_args,
              PyObject *myerrno, PyObject *strerror,
@@ -2162,9 +2255,18 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
     }
     self->myerrno = Py_XNewRef(myerrno);
     self->strerror = Py_XNewRef(strerror);
+    self->cwd = Py_None;
 #ifdef MS_WINDOWS
     self->winerror = Py_XNewRef(winerror);
 #endif
+
+    /* If the error contains a filename, capture the current working
+     * directory ("cwd"), too. This is needed for relative paths to
+     * form the full path, but it may change before the exception is
+     * logged or handled, so we include it as context here. */
+    if (self->filename != Py_None) {
+        self->cwd = getcwd_helper();
+    }
 
     /* Steals the reference to args */
     Py_XSETREF(self->args, args);
@@ -2313,6 +2415,7 @@ OSError_clear(PyObject *op)
     Py_CLEAR(self->strerror);
     Py_CLEAR(self->filename);
     Py_CLEAR(self->filename2);
+    Py_CLEAR(self->cwd);
 #ifdef MS_WINDOWS
     Py_CLEAR(self->winerror);
 #endif
@@ -2468,6 +2571,9 @@ static PyMemberDef OSError_members[] = {
         PyDoc_STR("exception filename")},
     {"filename2", _Py_T_OBJECT, offsetof(PyOSErrorObject, filename2), 0,
         PyDoc_STR("second exception filename")},
+    {"cwd", _Py_T_OBJECT, offsetof(PyOSErrorObject, cwd), 0,
+        PyDoc_STR("optional working directory")},
+
 #ifdef MS_WINDOWS
     {"winerror", _Py_T_OBJECT, offsetof(PyOSErrorObject, winerror), 0,
         PyDoc_STR("Win32 exception code")},

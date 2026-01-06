@@ -62,6 +62,7 @@ typedef struct {
     PyObject *strerror;
     PyObject *filename;
     PyObject *filename2;
+    PyObject *cwd;
 #ifdef MS_WINDOWS
     PyObject *winerror;
 #endif
