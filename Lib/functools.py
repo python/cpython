@@ -898,8 +898,8 @@ def _get_dispatch_param_name(func, *, skip_first_param=False):
     return next(iter(params[skip_first_param:pos_param_count]), None)
 
 def _get_dispatch_annotation(func, param):
-    import annotationlib
-    annotations = annotationlib.get_annotations(func, format=annotationlib.Format.FORWARDREF)
+    import annotationlib, typing
+    annotations = typing.get_type_hints(func, format=annotationlib.Format.FORWARDREF)
     try:
         fwdref_or_typeform = annotations[param]
     except KeyError:
@@ -908,18 +908,6 @@ def _get_dispatch_annotation(func, param):
             f"Add missing annotation to parameter {param!r} of {func.__qualname__!r} "
             f"or use `@register(some_class)`."
         ) from None
-    if isinstance(fwdref_or_typeform, str):
-        fwdref_or_typeform = annotationlib.ForwardRef(fwdref_or_typeform, owner=func)
-    if isinstance(fwdref_or_typeform, annotationlib.ForwardRef):
-        try:
-            fwdref_or_typeform = fwdref_or_typeform.evaluate(owner=func)
-        except Exception:
-            pass  # Forward reference is unresolved.
-    if fwdref_or_typeform is None:
-        fwdref_or_typeform = type(None)
-    if not isinstance(fwdref_or_typeform, annotationlib.ForwardRef):
-        import typing
-        fwdref_or_typeform = typing._strip_annotations(fwdref_or_typeform)
     return fwdref_or_typeform
 
 def _get_dispatch_param_and_annotation(func, *, skip_first_param=False):
