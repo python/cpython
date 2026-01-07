@@ -1,0 +1,2 @@
+:c:macro:`PyMODINIT_FUNC` (and the new :c:macro:`PyMODEXPORT_FUNC`) now adds
+a linkage declaration (``__declspec(dllexport)``) on Windows.
