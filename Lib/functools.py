@@ -996,7 +996,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            # 0 for functions, 1 for methods
+            # 0 for functions, 1 for methods where first argument should be skipped
             argpos = _func_is_method and not isinstance(func, staticmethod)
             argname, cls = _get_dispatch_arg_from_annotations(func, pos=argpos)
 
