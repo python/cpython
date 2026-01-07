@@ -903,7 +903,7 @@ def _get_positional_param(func, *, pos=0):
             return func_code.co_varnames[:func_code.co_argcount][pos]
         except IndexError:
             pass
-    # Fallback path for ambiguous objects with more sophisticated inspection.
+    # Fallback path for more nuanced inspection of ambiguous callable objects.
     import inspect
     for param in list(inspect.signature(func).parameters.values())[pos:]:
         if param.kind in (param.KEYWORD_ONLY, param.VAR_KEYWORD):
