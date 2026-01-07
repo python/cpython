@@ -19,7 +19,7 @@ from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import GenericAlias, MethodType, MappingProxyType, UnionType
+from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
 
 ################################################################################
@@ -888,20 +888,24 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_dispatch_param_name(func, *, skip_first_param=False):
-    if not hasattr(func, '__code__'):
-        skip_first_param = not isinstance(func, staticmethod)
+def _get_dispatch_param(func, *, pos=0):
+    if isinstance(func, (MethodType, classmethod, staticmethod)):
         func = func.__func__
-    func_code = func.__code__
-    pos_param_count = func_code.co_argcount
-    params = func_code.co_varnames
-    try:
-        return params[skip_first_param:pos_param_count][0]
-    except IndexError:
-        raise TypeError(
-            f"Invalid first argument to `register()`: function {func!r}"
-            f"does not accept positional arguments."
-        ) from None
+    if isinstance(func, FunctionType):
+        func_code = func.__code__
+        try:
+            return func_code.co_varnames[:func_code.co_argcount][pos]
+        except IndexError:
+            pass
+    import inspect
+    for insp_param in list(inspect.signature(func).parameters.values())[pos:]:
+        if insp_param.KEYWORD_ONLY or insp_param.VAR_KEYWORD:
+            break
+        return insp_param.name
+    raise TypeError(
+        f"Invalid first argument to `register()`: {func!r}"
+        f"does not accept positional arguments."
+    ) from None
 
 def _get_dispatch_annotation(func, param):
     import annotationlib, typing
@@ -916,8 +920,8 @@ def _get_dispatch_annotation(func, param):
         ) from None
     return fwdref_or_typeform
 
-def _get_dispatch_param_and_annotation(func, *, skip_first_param=False):
-    param = _get_dispatch_param_name(func, skip_first_param=skip_first_param)
+def _get_dispatch_arg_from_annotations(func, *, pos=0):
+    param = _get_dispatch_param(func, pos=pos)
     return param, _get_dispatch_annotation(func, param)
 
 def singledispatch(func):
@@ -992,8 +996,9 @@ def singledispatch(func):
                 )
             func = cls
 
-            argname, cls = _get_dispatch_param_and_annotation(
-                func, skip_first_param=_func_is_method)
+            # 0 for functions, 1 for methods
+            argpos = _func_is_method and not isinstance(func, staticmethod)
+            argname, cls = _get_dispatch_arg_from_annotations(func, pos=argpos)
 
             from annotationlib import ForwardRef
 
