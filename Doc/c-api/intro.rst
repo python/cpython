@@ -376,6 +376,39 @@ complete listing.
       sizeof(array) / sizeof((array)[0])
 
 
+.. c:macro:: Py_EXPORTED_SYMBOL
+
+   Macro used to declare a symbol (function or data) as exported from a shared library.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On other platforms with visibility support, it
+   expands to ``__attribute__((visibility("default")))``. 
+
+
+.. c:macro:: Py_IMPORTED_SYMBOL
+
+   Macro used to declare a symbol as imported from a shared library.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   On other platforms, it is usually empty or standard visibility.
+
+
+.. c:macro:: PyAPI_DATA(type)
+
+   Macro used to declare a public global variable.
+   It expands to ``extern Py_EXPORTED_SYMBOL type`` or ``extern Py_IMPORTED_SYMBOL type``
+   depending on whether the core is being built or used.
+
+   Example usage::
+
+      PyAPI_DATA(PyObject *) _Py_NoneStruct;  
+
+
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   It ensures the symbol is not exported.
+   On platforms with visibility support, it
+   expands to ``__attribute__((visibility("hidden")))``. 
+                
 .. _api-objects:
 
 Objects, Types and Reference Counts
