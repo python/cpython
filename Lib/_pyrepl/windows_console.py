@@ -183,8 +183,9 @@ class WindowsConsole(Console):
 
         while len(self.screen) < min(len(screen), self.height):
             self._hide_cursor()
-            self._move_relative(0, len(self.screen) - 1)
-            self.__write("\n")
+            if self.screen:
+                self._move_relative(0, len(self.screen) - 1)
+                self.__write("\n")
             self.posxy = 0, len(self.screen)
             self.screen.append("")
 
@@ -249,21 +250,9 @@ class WindowsConsole(Console):
     def __write_changed_line(
         self, y: int, oldline: str, newline: str, px_coord: int
     ) -> None:
-        # this is frustrating; there's no reason to test (say)
-        # self.dch1 inside the loop -- but alternative ways of
-        # structuring this function are equally painful (I'm trying to
-        # avoid writing code generators these days...)
         minlen = min(wlen(oldline), wlen(newline))
         x_pos = 0
         x_coord = 0
-
-        px_pos = 0
-        j = 0
-        for c in oldline:
-            if j >= px_coord:
-                break
-            j += wlen(c)
-            px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
@@ -358,7 +347,6 @@ class WindowsConsole(Console):
         self.height, self.width = self.getheightwidth()
 
         self.posxy = 0, 0
-        self.__gone_tall = 0
         self.__offset = 0
 
         if self.__vt_support:
@@ -514,7 +502,7 @@ class WindowsConsole(Console):
         """Wipe the screen"""
         self.__write(CLEAR)
         self.posxy = 0, 0
-        self.screen = [""]
+        self.screen = []
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
@@ -566,7 +554,7 @@ class WindowsConsole(Console):
                 e.data += ch
         return e
 
-    def wait(self, timeout: float | None) -> bool:
+    def wait_for_event(self, timeout: float | None) -> bool:
         """Wait for an event."""
         if timeout is None:
             timeout = INFINITE
@@ -578,6 +566,15 @@ class WindowsConsole(Console):
         elif ret == WAIT_TIMEOUT:
             return False
         return True
+
+    def wait(self, timeout: float | None) -> bool:
+        """
+        Wait for events on the console.
+        """
+        return (
+            not self.event_queue.empty()
+            or self.wait_for_event(timeout)
+        )
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")

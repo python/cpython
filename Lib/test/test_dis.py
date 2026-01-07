@@ -827,7 +827,29 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 
 %4d           RESUME                   0
 
-%4d           LOAD_GLOBAL              1 (list + NULL)
+%4d           LOAD_GLOBAL              0 (list)
+               COPY                     1
+               LOAD_COMMON_CONSTANT     5 (list)
+               IS_OP                    0 (is)
+               POP_JUMP_IF_FALSE       22 (to L3)
+               NOT_TAKEN
+               POP_TOP
+               BUILD_LIST               0
+               LOAD_FAST_BORROW         0 (x)
+               BUILD_TUPLE              1
+               LOAD_CONST               %d (<code object <genexpr> at 0x..., file "%s", line %d>)
+               MAKE_FUNCTION
+               SET_FUNCTION_ATTRIBUTE   8 (closure)
+               LOAD_DEREF               1 (y)
+               CALL                     0
+               PUSH_NULL
+       L1:     FOR_ITER                 3 (to L2)
+               LIST_APPEND              3
+               JUMP_BACKWARD            5 (to L1)
+       L2:     END_FOR
+               POP_ITER
+               RETURN_VALUE
+       L3:     PUSH_NULL
                LOAD_FAST_BORROW         0 (x)
                BUILD_TUPLE              1
                LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
@@ -841,6 +863,9 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
        __file__,
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 1,
+       _h.__code__.co_firstlineno + 3,
+       1 if __debug__ else 0,
+       __file__,
        _h.__code__.co_firstlineno + 3,
        __file__,
        _h.__code__.co_firstlineno + 3,
@@ -1468,7 +1493,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        \\d+
-Flags:             OPTIMIZED, NEWLOCALS, HAS_DOCSTRING
+Flags:             OPTIMIZED, NEWLOCALS(, HAS_DOCSTRING)?
 Constants:
    {code_info_consts}
 Names:

@@ -31,6 +31,7 @@ from operator import neg
 from test import support
 from test.support import cpython_only, swap_attr
 from test.support import async_yield, run_yielding_async_fn
+from test.support import warnings_helper
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
@@ -245,7 +246,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
 
-    def test_all_any_tuple_optimization(self):
+    def test_all_any_tuple_list_set_optimization(self):
         def f_all():
             return all(x-2 for x in [1,2,3])
 
@@ -255,7 +256,13 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         def f_tuple():
             return tuple(2*x for x in [1,2,3])
 
-        funcs = [f_all, f_any, f_tuple]
+        def f_list():
+            return list(2*x for x in [1,2,3])
+
+        def f_set():
+            return set(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple, f_list, f_set]
 
         for f in funcs:
             # check that generator code object is not duplicated
@@ -265,33 +272,35 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # check the overriding the builtins works
 
-        global all, any, tuple
-        saved = all, any, tuple
+        global all, any, tuple, list, set
+        saved = all, any, tuple, list, set
         try:
             all = lambda x : "all"
             any = lambda x : "any"
             tuple = lambda x : "tuple"
+            list = lambda x : "list"
+            set = lambda x : "set"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple = saved
+            all, any, tuple, list, set = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
-
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
         # Now repeat, overriding the builtins module as well
-        saved = all, any, tuple
+        saved = all, any, tuple, list, set
         try:
             builtins.all = all = lambda x : "all"
             builtins.any = any = lambda x : "any"
             builtins.tuple = tuple = lambda x : "tuple"
+            builtins.list = list = lambda x : "list"
+            builtins.set = set = lambda x : "set"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple = saved
-            builtins.all, builtins.any, builtins.tuple = saved
+            all, any, tuple, list, set = saved
+            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
-
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -1087,6 +1096,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__globals__,
             closure=my_closure)
 
+    def test_exec_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<string>\z')
+            exec(source, {})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package.module\z')
+            warnings.filterwarnings('error', module=r'<string>')
+            exec(source, {'__name__': 'package.module', '__file__': filename})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
 
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))
@@ -1182,6 +1214,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __hash__(self):
                 return self
         self.assertEqual(hash(Z(42)), hash(42))
+
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        with self.assertRaises(TypeError):
+            hash(A())
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
@@ -1373,6 +1415,22 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                           map(pack, (1, 2), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
                           map(pack, (1, 2), (1, 2), 'abc', strict=True))
+
+        # gh-140517: Testing refleaks with mortal objects.
+        t1 = (None, object())
+        t2 = (object(), object())
+        t3 = (object(),)
+
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, t3, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t1, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t2, t3, strict=True))
 
     def test_map_strict_iterators(self):
         x = iter(range(5))
@@ -2545,6 +2603,7 @@ class PtyTests(unittest.TestCase):
         finally:
             signal.signal(signal.SIGHUP, old_sighup)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:

@@ -339,6 +339,7 @@ Data Types
       Returns ``['__class__', '__doc__', '__module__', 'name', 'value']`` and
       any public methods defined on *self.__class__*::
 
+         >>> from enum import Enum
          >>> from datetime import date
          >>> class Weekday(Enum):
          ...     MONDAY = 1
@@ -374,7 +375,7 @@ Data Types
 
       This method may be overridden, e.g.::
 
-         >>> from enum import auto
+         >>> from enum import auto, Enum
          >>> class PowersOfThree(Enum):
          ...     @staticmethod
          ...     def _generate_next_value_(name, start, count, last_values):
@@ -410,7 +411,7 @@ Data Types
       A *classmethod* for looking up values not found in *cls*.  By default it
       does nothing, but can be overridden to implement custom search behavior::
 
-         >>> from enum import StrEnum
+         >>> from enum import auto, StrEnum
          >>> class Build(StrEnum):
          ...     DEBUG = auto()
          ...     OPTIMIZED = auto()
@@ -451,6 +452,7 @@ Data Types
       Returns the string used for *repr()* calls.  By default, returns the
       *Enum* name, member name, and value, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -467,6 +469,7 @@ Data Types
       Returns the string used for *str()* calls.  By default, returns the
       *Enum* name and member name, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -482,6 +485,7 @@ Data Types
       Returns the string used for *format()* and *f-string* calls.  By default,
       returns :meth:`__str__` return value, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -978,12 +982,13 @@ Utilities and Decorators
    the member's name.  Care must be taken if mixing *auto()* with manually
    specified values.
 
-   *auto* instances are only resolved when at the top level of an assignment:
+   *auto* instances are only resolved when at the top level of an assignment, either by
+   itself or as part of a tuple:
 
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
      used to create the ``SECOND`` enum member;
-   * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
+   * ``THREE = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
      create the ``THREE`` enum member)
 
    .. versionchanged:: 3.11.1

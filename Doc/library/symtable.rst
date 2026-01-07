@@ -21,11 +21,17 @@ tables.
 Generating Symbol Tables
 ------------------------
 
-.. function:: symtable(code, filename, compile_type)
+.. function:: symtable(code, filename, compile_type, *, module=None)
 
    Return the toplevel :class:`SymbolTable` for the Python source *code*.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
+   The optional argument *module* specifies the module name.
+   It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
+   by module name.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 Examining Symbol Tables
