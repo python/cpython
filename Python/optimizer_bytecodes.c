@@ -44,7 +44,8 @@ optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
     JitOptSymbol *value,
-    JitOptSymbol **result_ptr);
+    JitOptSymbol **result_ptr,
+    bool insert_mode);
 
 extern void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit);
@@ -377,21 +378,21 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- value)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &value);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &value, false);
         if (!already_bool) {
             sym_set_type(value, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_INT, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_truthiness(ctx, value, true);
@@ -399,14 +400,14 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_LIST, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
             sym_set_const(value, Py_None);
             res = sym_new_const(ctx, Py_False);
@@ -431,8 +432,9 @@ dummy_func(void) {
         sym_set_type(value, &PyUnicode_Type);
     }
 
-    op(_TO_BOOL_STR, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+    op(_TO_BOOL_STR, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+        v = value;
         if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
@@ -837,6 +839,17 @@ dummy_func(void) {
         new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
     }
 
+    op(_PY_FRAME_EX, (func_st, null, callargs_st, kwargs_st -- ex_frame)) {
+        assert((this_instr + 2)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+
+        ex_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+    }
+
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
         (void)type_version;
         (void)args;
@@ -939,15 +952,35 @@ dummy_func(void) {
     }
 
     op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame)) {
-        gen_frame = PyJitRef_NULL;
-        /* We are about to hit the end of the trace */
-        ctx->done = true;
+        assert((this_instr + 1)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 1));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+        if (new_frame == NULL) {
+            ctx->done = true;
+            break;
+        }
+        new_frame->stack[0] = sym_new_const(ctx, Py_None);
+        gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
     }
 
-    op(_SEND_GEN_FRAME, (unused, unused -- unused, gen_frame)) {
-        gen_frame = PyJitRef_NULL;
-        // We are about to hit the end of the trace:
-        ctx->done = true;
+    op(_SEND_GEN_FRAME, (unused, v -- unused, gen_frame)) {
+        assert((this_instr + 1)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 1));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+        if (new_frame == NULL) {
+            ctx->done = true;
+            break;
+        }
+        new_frame->stack[0] = PyJitRef_StripReferenceInfo(v);
+        gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
     }
 
     op(_CHECK_STACK_SPACE, (unused, unused, unused[oparg] -- unused, unused, unused[oparg])) {
@@ -980,8 +1013,7 @@ dummy_func(void) {
             ctx->frame->func = func;
         }
         // Fixed calls don't need IP guards.
-        if ((this_instr-1)->opcode == _SAVE_RETURN_OFFSET ||
-            (this_instr-1)->opcode == _CREATE_INIT_FRAME) {
+        if ((this_instr-1)->opcode == _CREATE_INIT_FRAME) {
             assert((this_instr+1)->opcode == _GUARD_IP__PUSH_FRAME);
             REPLACE_OP(this_instr+1, _NOP, 0, 0);
         }
@@ -1171,9 +1203,10 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_REPLACE_WITH_TRUE, (value -- res)) {
-        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+    op(_REPLACE_WITH_TRUE, (value -- res, v)) {
+        REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
         res = sym_new_const(ctx, Py_True);
+        v = value;
     }
 
     op(_BUILD_TUPLE, (values[oparg] -- tup)) {

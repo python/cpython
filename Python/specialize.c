@@ -141,6 +141,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_ATTR_METACLASS_OVERRIDDEN 34
 #define SPEC_FAIL_ATTR_SPLIT_DICT 35
 #define SPEC_FAIL_ATTR_DESCR_NOT_DEFERRED 36
+#define SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS 37
 
 /* Binary subscr and store subscr */
 
@@ -365,14 +366,8 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_STRING);
         return -1;
     }
-    Py_ssize_t index = _PyDict_LookupIndex(dict, &_Py_ID(__getattr__));
+    Py_ssize_t index = _PyDict_LookupIndex(dict, name);
     assert(index != DKIX_ERROR);
-    if (index != DKIX_EMPTY) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND);
-        return -1;
-    }
-    index = _PyDict_LookupIndex(dict, name);
-    assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(LOAD_ATTR,
                             index == DKIX_EMPTY ?
@@ -812,6 +807,10 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
                 return -1;
             }
+            if (dmem->flags & _Py_AFTER_ITEMS) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS);
+                return -1;
+            }
             if (dmem->flags & Py_AUDIT_READ) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_AUDITED_SLOT);
                 return -1;
@@ -1004,6 +1003,10 @@ _Py_Specialize_StoreAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *na
             Py_ssize_t offset = dmem->offset;
             if (!PyObject_TypeCheck(owner, member->d_common.d_type)) {
                 SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_EXPECTED_ERROR);
+                goto fail;
+            }
+            if (dmem->flags & _Py_AFTER_ITEMS) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SLOT_AFTER_ITEMS);
                 goto fail;
             }
             if (dmem->flags & Py_READONLY) {
@@ -2580,6 +2583,28 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
     }
     SPECIALIZATION_FAIL(SEND,
                         _PySpecialization_ClassifyIterator(receiver));
+failure:
+    unspecialize(instr);
+}
+
+Py_NO_INLINE void
+_Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr)
+{
+    PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+
+    assert(ENABLE_SPECIALIZATION_FT);
+    assert(_PyOpcode_Caches[CALL_FUNCTION_EX] == INLINE_CACHE_ENTRIES_CALL_FUNCTION_EX);
+
+    if (Py_TYPE(func) == &PyFunction_Type &&
+        ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+        if (_PyInterpreterState_GET()->eval_frame) {
+            goto failure;
+        }
+        specialize(instr, CALL_EX_PY);
+        return;
+    }
+    specialize(instr, CALL_EX_NON_PY_GENERAL);
+    return;
 failure:
     unspecialize(instr);
 }
