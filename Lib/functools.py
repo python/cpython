@@ -990,9 +990,9 @@ def singledispatch(func):
                 ) from None
 
             # only import typing if annotation parsing is necessary
-            import typing
+            from typing import get_type_hints
             from annotationlib import Format, ForwardRef
-            annotations = typing.get_type_hints(func, format=Format.FORWARDREF)
+            annotations = get_type_hints(func, format=Format.FORWARDREF)
 
             try:
                 cls = annotations[argname]
