@@ -1188,7 +1188,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_qp_ctext = old_api_only(
 
-        only = C(
+        value_ends_at_input_end = C(
             'foobar',
             ),
 
@@ -1238,10 +1238,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='(bar',
             ),
 
-        non_printables = C(
-            'foo\x00bar)',
-            defects=[nonprintable_defect('\x00')],
-            remainder=')',
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printables = C(
+                'foo{char}bar)',
+                defects=[(nonprintable_defect, '{char}')],
+                remainder=')',
+                ),
             ),
 
         close_paren_only = C(
@@ -1254,8 +1256,36 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='(',
             ),
 
-        no_end_char = C(
+        no_content = C(
             '',
+            ),
+
+        parens_are_content_if_quoted = C(
+            r'\(bar\)\)bird\(',
+            stringified='(bar))bird(',
+            ),
+
+        escapes_are_removed_in_str = C(
+            r'fairly\&\boring\W\@\!ks',
+            stringified='fairly&boringW@!ks',
+            ),
+
+        any_printable_may_be_escaped = C(
+            ''.join(rf'\{c}' for c in RFC_PRINTABLES),
+            RFC_PRINTABLES,
+            ),
+
+        unicode_content = C(
+            '⛔❌❗',
+            ),
+
+        mixed_unicode_and_ascii = C(
+            'ministry✌of⛔silly❌walks❗',
+            ),
+
+        unicode_can_be_quoted = C(
+            r'sillier\❌walks\❗',
+            stringified='sillier❌walks❗',
             ),
 
         )
