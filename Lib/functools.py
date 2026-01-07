@@ -895,7 +895,7 @@ def _get_dispatch_param(func, *, _dispatchmethod=False):
     Used by singledispatch for registration by type annotation of the parameter.
     """
     # Fast path for typical callables and descriptors.
-    # 0 from singledispatch(), 1 from singledispatchmethod()
+    # idx is 0 when singledispatch() and 1 when singledispatchmethod()
     idx = _dispatchmethod
     if isinstance(func, staticmethod):
         idx = 0
@@ -910,10 +910,9 @@ def _get_dispatch_param(func, *, _dispatchmethod=False):
             pass
     # Fallback path for more nuanced inspection of ambiguous callables.
     import inspect
-    for param in list(inspect.signature(func).parameters.values())[idx:]:
-        if param.kind in (param.KEYWORD_ONLY, param.VAR_KEYWORD):
-            break
-        return param.name
+    match list(inspect.signature(func).parameters.values())[idx:]:
+        case [param] if param.kind < 3:  # (*, param) or (**param)
+            return param.name
     return None
 
 def singledispatch(func):
