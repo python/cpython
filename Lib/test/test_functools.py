@@ -2993,18 +2993,33 @@ class TestSingleDispatch(unittest.TestCase):
                 return isinstance(arg, int)
             @t.register
             @staticmethod
-            def _(arg: str):
+            def _(arg: str, /):
                 return isinstance(arg, str)
             @t.register
             @wrapper_decorator
             @staticmethod
-            def _(arg: bytes):
+            def _(arg: bytes) -> bool:
                 return isinstance(arg, bytes)
+            @wrapper_decorator
+            @staticmethod
+            def outer1(arg: complex):
+                return isinstance(arg, complex)
+            @wrapper_decorator
+            @staticmethod
+            def outer2(arg: bool):
+                return isinstance(arg, bool)
+
+        A.t.register(staticmethod(A.outer1))
         a = A()
+        a.t.register(staticmethod(a.outer2))
 
         self.assertTrue(A.t(0))
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
+        self.assertTrue(A.t(0j))
+        self.assertTrue(a.t(42j))
+        self.assertTrue(A.t(True))
+        self.assertTrue(a.t(False))
 
     def test_classmethod_type_ann_register(self):
         def wrapper_decorator(func):
