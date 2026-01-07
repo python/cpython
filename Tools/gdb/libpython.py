@@ -2081,8 +2081,6 @@ def print_traceback_helper(full_info):
                 if full_info:
                     if info:
                         sys.stdout.write('#%i %s\n' % (frame_index, info))
-                    else:
-                        sys.stdout.write('#%i\n' % frame_index)
                 elif info:
                     sys.stdout.write('  %s\n' % info)
             frame = frame.older()
