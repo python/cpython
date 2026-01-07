@@ -1094,7 +1094,7 @@ The subscript may also be given as a single expression or slice followed
 by a comma, to specify a one-element tuple::
 
    >>> demo['spam',]
-   subscripted with ('spam',)
+   subscripted with: ('spam',)
 
 
 "Starred" subscriptions
