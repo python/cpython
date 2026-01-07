@@ -2006,9 +2006,9 @@ has the same effect as typing a particular string at the help> prompt.
                 request = self.getline('help> ')
             except (KeyboardInterrupt, EOFError):
                 break
-            if not request or request.isspace():
-                continue  # back to the prompt
             request = request.strip()
+            if not request:
+                continue  # back to the prompt
 
             # Make sure significant trailing quoting marks of literals don't
             # get deleted while cleaning input
