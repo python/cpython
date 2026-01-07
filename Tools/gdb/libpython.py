@@ -1275,8 +1275,9 @@ class PyFramePtr:
             if not interp_frame:
                 sys.stdout.write('  (unable to read python frame information)\n')
                 return None
-            elif interp_frame.is_shim():
+            if interp_frame.is_shim():
                 return interp_frame.previous()
+
             if frame_index is not None:
                 line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
                 sys.stdout.write('#%i %s\n' % (frame_index, line))
