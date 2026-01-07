@@ -1150,8 +1150,8 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     assert(version == 0 || (tp->tp_versions_used != _Py_ATTR_CACHE_UNUSED));
 #if _Py_TIER2
+    ASSERT_TYPE_LOCK_HELD();
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    BEGIN_TYPE_LOCK();
     // lookup the old version and set to null
     if (tp->tp_version_tag != 0) {
         PyTypeObject **slot =

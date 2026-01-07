@@ -381,7 +381,9 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
 PyFunctionObject *
 _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 {
-#if _Py_TIER2
+#ifndef _Py_TIER2
+    return NULL;
+#else
     // This function does not need locking/atomics as it can only be
     // called from the optimizer, which is currently disabled
     // when there are multiple threads.
@@ -401,8 +403,6 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
         assert(slot->func->func_code == slot->code);
         return slot->func;
     }
-    return NULL;
-#else
     return NULL;
 #endif
 }

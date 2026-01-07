@@ -4125,7 +4125,7 @@ _jit_is_enabled_impl(PyObject *module)
 /*[clinic end generated code: output=55865f8de993fe42 input=0524151e857f4f3a]*/
 {
     (void)module;
-    return _PyInterpreterState_GET()->jit;
+    return FT_ATOMIC_LOAD_UINT8_RELAXED(_PyInterpreterState_GET()->jit);
 }
 
 /*[clinic input]
