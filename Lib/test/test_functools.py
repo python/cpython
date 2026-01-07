@@ -2933,9 +2933,10 @@ class TestSingleDispatch(unittest.TestCase):
             def _(self, arg: int):
                 return "int"
             @t.register
-            def _(self, arg: str):
+            def _(self, /, arg: str):
                 return "str"
-            def _(self, arg: bytes):
+            # See GH-130827.
+            def _(self: typing.Self, arg: bytes):
                 return "bytes"
             @t.register
             @functools.wraps(_)
@@ -3622,21 +3623,6 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(a.u(2.5), ('general', 2.5))
         self.assertEqual(a.v(0), ('special', 0))
         self.assertEqual(a.v(2.5), ('general', 2.5))
-
-    def test_method_self_annotation(self):
-        """See GH-130827."""
-        class A:
-            @functools.singledispatchmethod
-            def u(self: typing.Self, arg: int | str) -> int | str:
-                return None
-
-            @u.register
-            def _(self: typing.Self, arg: int) -> int:
-                return arg
-
-        a = A()
-        self.assertEqual(a.u(42), 42)
-        self.assertEqual(a.u("hello"), None)
 
 
 class CachedCostItem:
