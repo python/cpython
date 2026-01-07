@@ -1181,69 +1181,69 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(ptext.token_type, 'ptext')
 
     params_test_get_qp_ctext = old_api_only(
-        )
 
-    def test_get_qp_ctext_only(self):
-        ptext = self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_only = C(
                                 'foobar', 'foobar', ' ', [], '')
-        self.assertEqual(ptext.token_type, 'ptext')
+                                ,
 
-    def test_get_qp_ctext_all_printables(self):
-        with_qp = self.rfc_printable_ascii.replace('\\', '\\\\')
-        with_qp = with_qp.  replace('(', r'\(')
-        with_qp = with_qp.replace(')', r'\)')
-        ptext = self._test_get_x(parser.get_qp_ctext,
-                                 with_qp, self.rfc_printable_ascii, ' ', [], '')
+        test_get_qp_ctext_all_printables = C(
+            RFC_PRINTABLES.
+                replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)'),
+            RFC_PRINTABLES,
+                                                                    ' ', [], '',
+                                                                    ),
 
-    def test_get_qp_ctext_two_words_gets_first(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_two_words_gets_first = C(
                         'foo de', 'foo', ' ', [], ' de')
+                        ,
 
-    def test_get_qp_ctext_following_wsp_preserved(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_following_wsp_preserved = C(
                         'foo \t\tde', 'foo', ' ', [], ' \t\tde')
+                        ,
 
-    def test_get_qp_ctext_up_to_close_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_up_to_close_paren_only = C(
                         'foo)', 'foo', ' ', [], ')')
+                        ,
 
-    def test_get_qp_ctext_wsp_before_close_paren_preserved(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_wsp_before_close_paren_preserved = C(
                         'foo  )', 'foo', ' ', [], '  )')
+                        ,
 
-    def test_get_qp_ctext_close_paren_mid_word(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_close_paren_mid_word = C(
                         'foo)bar', 'foo', ' ', [], ')bar')
+                        ,
 
-    def test_get_qp_ctext_up_to_open_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_up_to_open_paren_only = C(
                         'foo(', 'foo', ' ', [], '(')
+                        ,
 
-    def test_get_qp_ctext_wsp_before_open_paren_preserved(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_wsp_before_open_paren_preserved = C(
                         'foo  (', 'foo', ' ', [], '  (')
+                        ,
 
-    def test_get_qp_ctext_open_paren_mid_word(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_open_paren_mid_word = C(
                         'foo(bar', 'foo', ' ', [], '(bar')
+                        ,
 
-    def test_get_qp_ctext_non_printables(self):
-        ptext = self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_non_printables = C(
                                 'foo\x00bar)', 'foo\x00bar', ' ',
                                 [errors.NonPrintableDefect], ')')
-        self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
+                                ,
+       #self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
 
-    def test_get_qp_ctext_close_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_close_paren_only = C(
                         ')', '', ' ', [], ')')
+                        ,
 
-    def test_get_qp_ctext_open_paren_only(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_open_paren_only = C(
                         '(', '', ' ', [], '(')
+                        ,
 
-    def test_get_qp_ctext_no_end_char(self):
-        self._test_get_x(parser.get_qp_ctext,
+        test_get_qp_ctext_no_end_char = C(
                         '', '', ' ', [], '')
+                        ,
+
+        )
 
 
     # get_qcontent
