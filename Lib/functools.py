@@ -889,12 +889,13 @@ def _find_impl(cls, registry):
     return registry.get(match)
 
 def _get_positional_param(func, *, pos=0):
-    """Finds the first positional user-specified parameter of a callable at position *pos*.
+    """Finds the first positional user-specified parameter at position *pos*
+    of a callable or descriptor.
 
     Used by singledispatch for registration by type annotation.
     *pos* should either be 0 (for functions and staticmethods) or 1 (for methods).
     """
-    # Fast path for typical callable objects.
+    # Fast path for typical callables and descriptors.
     if isinstance(func, (MethodType, classmethod, staticmethod)):
         func = func.__func__
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
@@ -903,7 +904,7 @@ def _get_positional_param(func, *, pos=0):
             return func_code.co_varnames[:func_code.co_argcount][pos]
         except IndexError:
             pass
-    # Fallback path for more nuanced inspection of ambiguous callable objects.
+    # Fallback path for more nuanced inspection of ambiguous callables.
     import inspect
     for param in list(inspect.signature(func).parameters.values())[pos:]:
         if param.kind in (param.KEYWORD_ONLY, param.VAR_KEYWORD):
