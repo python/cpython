@@ -3284,7 +3284,7 @@ class TestSingleDispatch(unittest.TestCase):
             def _int(arg) -> int:...
 
         self.assertStartsWith(str(exc.exception), msg_prefix +
-            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+            "<function TestSingleDispatch.test_invalid_registrations.<locals>._int"
         )
         self.assertEndsWith(str(exc.exception),
             "Use either `@register(some_class)` or add a type annotation "
