@@ -3050,11 +3050,25 @@ class TestSingleDispatch(unittest.TestCase):
             @classmethod
             def _(cls, arg: bytes):
                 return cls("bytes")
+            @wrapper_decorator
+            @classmethod
+            def outer1(cls, arg: list):
+                return cls("list")
+            @wrapper_decorator
+            @classmethod
+            def outer2(cls, arg: complex):
+                return cls("complex")
+
+        A.t.register(A.outer1)
+        a = A(None)
+        a.t.register(a.outer2)
 
         self.assertEqual(A.t(0).arg, "int")
-        self.assertEqual(A.t('').arg, "str")
+        self.assertEqual(a.t('').arg, "str")
         self.assertEqual(A.t(0.0).arg, "base")
-        self.assertEqual(A.t(b'').arg, "bytes")
+        self.assertEqual(a.t(b'').arg, "bytes")
+        self.assertEqual(A.t([]).arg, "list")
+        self.assertEqual(a.t(0j).arg, "complex")
 
     def test_method_wrapping_attributes(self):
         class A:
