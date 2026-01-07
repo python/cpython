@@ -889,6 +889,11 @@ def _find_impl(cls, registry):
     return registry.get(match)
 
 def _get_positional_param(func, *, pos=0):
+    """Finds the first user-specified parameter of a callable at position *pos*.
+
+    Used by singledispatch for registration by type annotation.
+    *pos* should either be 0 (for functions and staticmethods) or 1 (for methods).
+    """
     # Fast path for typical callables.
     if isinstance(func, (MethodType, classmethod, staticmethod)):
         func = func.__func__
