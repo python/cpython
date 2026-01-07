@@ -1174,6 +1174,15 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_qp_ctext
 
+    @params
+    def test_get_qp_ctext(self, s, *args, **kw):
+        ptext = self._test_parse(parser.get_qp_ctext, C(s), *args, **kw)
+        self.assertIsInstance(ptext, parser.Terminal)
+        self.assertEqual(ptext.token_type, 'ptext')
+
+    params_test_get_qp_ctext = old_api_only(
+        )
+
     def test_get_qp_ctext_only(self):
         ptext = self._test_get_x(parser.get_qp_ctext,
                                 'foobar', 'foobar', ' ', [], '')
