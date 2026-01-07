@@ -2918,19 +2918,24 @@ class TestSingleDispatch(unittest.TestCase):
             return _(*args, **kwargs)
 
         class SomeClass:
-            def for_dict(self, arg: dict):
+            def for_dict(this, arg: dict):
+                self.assertIs(this, inst1)
                 return "dict"
 
-            def for_set(self, arg: set, arg2: None):
+            def for_set(this, arg: set, arg2: None):
+                self.assertIs(this, inst1)
                 return "set"
 
-            def for_complex(self: object, arg: complex, arg2: None):
+            def for_complex(this: object, arg: complex, arg2: None):
+                self.assertIs(this, inst2)
                 return "complex"
 
-        inst = SomeClass()
-        t.register(inst.for_dict)
-        t.register(inst.for_set)
-        t.register(inst.for_complex)
+        inst1 = SomeClass()
+        t.register(inst1.for_dict)
+        t.register(inst1.for_set)
+
+        inst2 = SomeClass()
+        t.register(inst2.for_complex)
 
         self.assertEqual(t(0), "int")
         self.assertEqual(t(''), "str")
