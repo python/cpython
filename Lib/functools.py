@@ -895,7 +895,13 @@ def _get_dispatch_param_name(func, *, skip_first_param=False):
     func_code = func.__code__
     pos_param_count = func_code.co_argcount
     params = func_code.co_varnames
-    return next(iter(params[skip_first_param:pos_param_count]), None)
+    try:
+        return params[skip_first_param:pos_param_count][0]
+    except IndexError:
+        raise TypeError(
+            f"Invalid first argument to `register()`: function {func!r}"
+            f"does not accept positional arguments."
+        )
 
 def _get_dispatch_annotation(func, param):
     import annotationlib, typing
@@ -905,7 +911,7 @@ def _get_dispatch_annotation(func, param):
     except KeyError:
         raise TypeError(
             f"Invalid first argument to `register()`: {param!r}. "
-            f"Add missing annotation to parameter {param!r} of {func.__qualname__!r} "
+            f"Add missing annotation to parameter {param!r} of {func!r} "
             f"or use `@register(some_class)`."
         ) from None
     return fwdref_or_typeform
