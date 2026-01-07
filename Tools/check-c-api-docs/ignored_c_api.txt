@@ -89,5 +89,4 @@ PyUnstable_EXECUTABLE_KIND_SKIP
 # cpython/pylifecycle.h
 Py_FrozenMain
 # cpython/unicodeobject.h
-PyUnicode_IS_COMPACT
-PyUnicode_IS_COMPACT_ASCII
+

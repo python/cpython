@@ -132,16 +132,16 @@ access to internal read-only data of Unicode objects:
 .. c:macro:: PyUnicode_IS_COMPACT(o)
 
    Return true if the Unicode object *o* is a compact string.
-   Compact strings use a single memory block for
-   the structure and the character data.
+   Compact strings use the :c:struct:`PyCompactUnicodeObject` structure.
+
    .. versionadded:: 3.3
 
 
 .. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
 
    Return true if the Unicode object *o* is a compact ASCII string.
-   A compact ASCII string uses a single memory block
-   and contains only ASCII characters.
+   Compact ASCII strings use the :c:struct:`PyASCIIObject` structure.
+
    .. versionadded:: 3.3
 
 
