@@ -962,7 +962,7 @@ square brackets.
 In the simplest case, the subscript is single expression.
 
 Depending on the type of the object being subscribed, the subscript is
-sometimes called a *key* (for mappings), *index* (for sequences),
+sometimes called a :term:`key` (for mappings), :term:`index` (for sequences),
 or *type argument* (for :term:`generic types <generic type>`).
 Syntactically, these are all equivalent::
 

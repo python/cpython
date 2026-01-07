@@ -3234,10 +3234,10 @@ through the object's keys; for sequences, it should iterate through the values.
    via :meth:`!__getitem__`:
 
    - **sequences**, where *subscript* (also called
-     *index*) should be an integer or a :class:`slice` object.
+     :term:`index`) should be an integer or a :class:`slice` object.
      See the :ref:`sequence documentation <datamodel-sequences>` for the expected
      behavior, including handling :class:`slice` objects and negative indices.
-   - **mappings**, where *subscript* is also called the *key*.
+   - **mappings**, where *subscript* is also called the :term:`key`.
      See :ref:`mapping documentation <datamodel-mappings>` for the expected
      behavior.
 
