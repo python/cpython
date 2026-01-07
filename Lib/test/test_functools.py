@@ -2904,6 +2904,9 @@ class TestSingleDispatch(unittest.TestCase):
         @t.register
         def _(arg: str):
             return "str"
+        @t.register
+        def _(arg: float, /):
+            return "float"
         def _(arg: bytes):
             return "bytes"
         @t.register
@@ -2912,7 +2915,8 @@ class TestSingleDispatch(unittest.TestCase):
             return _(*args, **kwargs)
         self.assertEqual(t(0), "int")
         self.assertEqual(t(''), "str")
-        self.assertEqual(t(0.0), "base")
+        self.assertEqual(t(0.0), "float")
+        self.assertEqual(t(NotImplemented), "base")
         self.assertEqual(t(b''), "bytes")
 
     def test_method_type_ann_register(self):
