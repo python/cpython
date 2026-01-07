@@ -1844,6 +1844,14 @@ expression support in the :mod:`re` module).
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.lower()
+      'straße'
+      >>> 'straße'.casefold()
+      'strasse'
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
@@ -2300,7 +2308,12 @@ expression support in the :mod:`re` module).
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase.
+   lowercase. For example:
+
+   .. doctest::
+
+      >>> 'Lower Method Example'.lower()
+      'lower method example'
 
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
