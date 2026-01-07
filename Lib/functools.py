@@ -889,6 +889,7 @@ def _find_impl(cls, registry):
     return registry.get(match)
 
 def _get_positional_param(func, *, pos=0):
+    # Fast path for typical callables.
     if isinstance(func, (MethodType, classmethod, staticmethod)):
         func = func.__func__
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
@@ -900,10 +901,10 @@ def _get_positional_param(func, *, pos=0):
     # Fallback path for ambiguous callables.
     # Follows __wrapped__, checks __signature__, __text_signature__, etc.
     import inspect
-    for insp_param in list(inspect.signature(func).parameters.values())[pos:]:
-        if insp_param.kind in (insp_param.KEYWORD_ONLY, insp_param.VAR_KEYWORD):
+    for param in list(inspect.signature(func).parameters.values())[pos:]:
+        if param.kind in (param.KEYWORD_ONLY, param.VAR_KEYWORD):
             break
-        return insp_param.name
+        return param.name
     return None
 
 def singledispatch(func):
@@ -988,8 +989,9 @@ def singledispatch(func):
                     f"does not accept positional arguments."
                 ) from None
 
-            from annotationlib import Format, ForwardRef
+            # only import typing if annotation parsing is necessary
             import typing
+            from annotationlib import Format, ForwardRef
             annotations = typing.get_type_hints(func, format=Format.FORWARDREF)
 
             try:
