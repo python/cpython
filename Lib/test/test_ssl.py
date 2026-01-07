@@ -13,6 +13,7 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
 import array
+import contextlib
 import re
 import socket
 import select
@@ -2998,44 +2999,38 @@ class ThreadedTests(unittest.TestCase):
     @unittest.skipUnless(support.Py_GIL_DISABLED, "test is only useful if the GIL is disabled")
     def test_ssl_in_multiple_threads(self):
         # See GH-124984: OpenSSL is not thread safe.
-        threads = []
-
+        self.enterContext(
+            support.swap_item(globals(), 'USE_SAME_TEST_CONTEXT', True))
+        self.enterContext(
+            support.swap_attr(self, 'subTest',
+                lambda *args, **kwargs: contextlib.nullcontext()))
         warnings_filters = sys.flags.context_aware_warnings
-        global USE_SAME_TEST_CONTEXT
-        USE_SAME_TEST_CONTEXT = True
-        try:
-            for func in (
-                self.test_echo,
-                self.test_alpn_protocols,
-                self.test_getpeercert,
-                self.test_crl_check,
-                functools.partial(
-                    self.test_check_hostname_idn,
-                    warnings_filters=warnings_filters,
-                ),
-                self.test_wrong_cert_tls12,
-                self.test_wrong_cert_tls13,
-            ):
-                # Be careful with the number of threads here.
-                # Too many can result in failing tests.
-                for num in range(5):
-                    with self.subTest(func=func, num=num):
-                        threads.append(Thread(target=func))
+        funcs = (
+            self.test_echo,
+            self.test_alpn_protocols,
+            self.test_getpeercert,
+            self.test_crl_check,
+            functools.partial(
+                self.test_check_hostname_idn,
+                warnings_filters=warnings_filters,
+            ),
+            self.test_wrong_cert_tls12,
+            self.test_wrong_cert_tls13,
+        )
+        # Be careful with the number of threads here.
+        # Too many can result in failing tests.
+        threads = []
+        for num in range(5):
+            for func in funcs:
+                threads.append(Thread(target=func))
 
-            with threading_helper.catch_threading_exception() as cm:
-                for thread in threads:
-                    with self.subTest(thread=thread):
-                        thread.start()
-
-                for thread in threads:
-                    with self.subTest(thread=thread):
-                        thread.join()
-                if cm.exc_value is not None:
-                    # Some threads can skip their test
-                    if not isinstance(cm.exc_value, unittest.SkipTest):
-                        raise cm.exc_value
-        finally:
-            USE_SAME_TEST_CONTEXT = False
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+            if cm.exc_value is not None:
+                # Some threads can skip their test
+                if not isinstance(cm.exc_value, unittest.SkipTest):
+                    raise cm.exc_value
 
     def test_getpeercert(self):
         if support.verbose:
