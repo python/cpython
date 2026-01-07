@@ -1268,7 +1268,7 @@ class PyFramePtr:
                      lineno,
                      self.co_name.proxyval(visited)))
 
-    def print_traceback_until_shim(self, frame_index = None):
+    def print_traceback_until_shim(self, frame_index=None):
         # Print traceback for _PyInterpreterFrame and return previous frame
         interp_frame = self
         while True:
