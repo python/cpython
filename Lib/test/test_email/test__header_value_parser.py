@@ -1175,8 +1175,14 @@ class TestParser(TestParserMixin, TestEmailBase):
     # get_qp_ctext
 
     @params
-    def test_get_qp_ctext(self, s, *args, **kw):
-        ptext = self._test_parse(parser.get_qp_ctext, C(s), *args, **kw)
+    def test_get_qp_ctext(self, s, *args, value=' ', **kw):
+        ptext = self._test_parse(
+            parser.get_qp_ctext,
+            C(s),
+            *args,
+            value=value,
+            **kw,
+            )
         self.assertIsInstance(ptext, parser.Terminal)
         self.assertEqual(ptext.token_type, 'ptext')
 
@@ -1184,115 +1190,71 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         only = C(
             'foobar',
-            'foobar',
-            ' ',
-            [],
-            '',
             ),
 
         all_printables = C(
             RFC_PRINTABLES.
                 replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)'),
-            RFC_PRINTABLES,
-            ' ',
-            [],
-            '',
+            stringified=RFC_PRINTABLES,
             ),
 
         two_words_gets_first = C(
             'foo de',
-            'foo',
-            ' ',
-            [],
-            ' de',
+            remainder=' de',
             ),
 
         following_wsp_preserved = C(
             'foo \t\tde',
-            'foo',
-            ' ',
-            [],
-            ' \t\tde',
+            remainder=' \t\tde',
             ),
 
         up_to_close_paren_only = C(
             'foo)',
-            'foo',
-            ' ',
-            [],
-            ')',
+            remainder=')',
             ),
 
         wsp_before_close_paren_preserved = C(
             'foo  )',
-            'foo',
-            ' ',
-            [],
-            '  )',
+            remainder='  )',
             ),
 
         close_paren_mid_word = C(
             'foo)bar',
-            'foo',
-            ' ',
-            [],
-            ')bar',
+            remainder=')bar',
             ),
 
         up_to_open_paren_only = C(
             'foo(',
-            'foo',
-            ' ',
-            [],
-            '(',
+            remainder='(',
             ),
 
         wsp_before_open_paren_preserved = C(
             'foo  (',
-            'foo',
-            ' ',
-            [],
-            '  (',
+            remainder='  (',
             ),
 
         open_paren_mid_word = C(
             'foo(bar',
-            'foo',
-            ' ',
-            [],
-            '(bar',
+            remainder='(bar',
             ),
 
         non_printables = C(
             'foo\x00bar)',
-            'foo\x00bar',
-            ' ',
-            [errors.NonPrintableDefect],
-            ')',
+            defects=[nonprintable_defect('\x00')],
+            remainder=')',
             ),
-            #self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
 
         close_paren_only = C(
             ')',
-            '',
-            ' ',
-            [],
-            ')',
+            remainder=')',
             ),
 
         open_paren_only = C(
             '(',
-            '',
-            ' ',
-            [],
-            '(',
+            remainder='(',
             ),
 
         no_end_char = C(
-            '',
-            '',
-            ' ',
-            [],
             '',
             ),
 
