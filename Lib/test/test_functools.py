@@ -3275,6 +3275,22 @@ class TestSingleDispatch(unittest.TestCase):
             f"to parameter 'arg' of your callable.")
 
         with self.assertRaises(TypeError) as exc:
+            # See GH-84644.
+
+            @functools.singledispatch
+            def func(arg):...
+
+            @func.register
+            def _int(arg) -> int:...
+
+        self.assertStartsWith(str(exc.exception), msg_prefix +
+            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+        )
+        self.assertEndsWith(str(exc.exception),
+            "Use either `@register(some_class)` or add a type annotation "
+            f"to parameter 'arg' of your callable.")
+
+        with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg: typing.Iterable[str]):
                 # At runtime, dispatching on generics is impossible.
