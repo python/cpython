@@ -3263,8 +3263,8 @@ class TestSingleDispatch(unittest.TestCase):
             "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
         )
         self.assertEndsWith(str(exc.exception),
-            "Add missing type annotation to parameter 'arg' "
-            "of this function or use `@register(some_class)`.")
+            "Use either `@register(some_class)` or add a type annotation "
+            f"to parameter 'arg' of your callable.")
 
         with self.assertRaises(TypeError) as exc:
             @i.register

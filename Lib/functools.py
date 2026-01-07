@@ -1003,8 +1003,8 @@ def singledispatch(func):
             except KeyError:
                 raise TypeError(
                     f"Invalid first argument to `register()`: {func!r}. "
-                    f"Add missing type annotation to parameter {argname!r} "
-                    "of this function or use `@register(some_class)`."
+                    "Use either `@register(some_class)` or add a type "
+                    f"annotation to parameter {argname!r} of your callable."
                 ) from None
 
             if not _is_valid_dispatch_type(cls):
