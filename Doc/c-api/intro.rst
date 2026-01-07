@@ -222,6 +222,13 @@ complete listing.
    Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
    be inlined.
 
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   It ensures the symbol is not exported.
+   On platforms with visibility support, it
+   expands to ``__attribute__((visibility("hidden")))``.
+
 .. c:macro:: Py_MAX(x, y)
 
    Return the maximum value between ``x`` and ``y``.
@@ -378,17 +385,27 @@ complete listing.
 
 .. c:macro:: Py_EXPORTED_SYMBOL
 
-   Macro used to declare a symbol (function or data) as exported from a shared library.
+   Macro used to declare a symbol (function or data) as exported.
    On Windows, this expands to ``__declspec(dllexport)``.
    On other platforms with visibility support, it
    expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
 
 
 .. c:macro:: Py_IMPORTED_SYMBOL
 
-   Macro used to declare a symbol as imported from a shared library.
+   Macro used to declare a symbol as imported.
    On Windows, this expands to ``__declspec(dllimport)``.
    On other platforms, it is usually empty or standard visibility.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modulesshould not use it for their own symbols.
 
 
 .. c:macro:: PyAPI_DATA(type)
@@ -400,14 +417,6 @@ complete listing.
    Example usage::
 
       PyAPI_DATA(PyObject *) _Py_NoneStruct;
-
-
-.. c:macro:: Py_LOCAL_SYMBOL
-
-   Macro used to declare a symbol as local to the shared library (hidden).
-   It ensures the symbol is not exported.
-   On platforms with visibility support, it
-   expands to ``__attribute__((visibility("hidden")))``.
 
 
 .. _api-objects:
