@@ -2895,6 +2895,28 @@ class TestSingleDispatch(unittest.TestCase):
             Abstract()
 
     def test_type_ann_register(self):
+        @functools.singledispatch
+        def t(arg):
+            return "base"
+        @t.register
+        def _(arg: int):
+            return "int"
+        @t.register
+        def _(arg: str):
+            return "str"
+        def _(arg: bytes):
+            return "bytes"
+        @t.register
+        @functools.wraps(_)
+        def wrapper(*args, **kwargs):
+            return _(*args, **kwargs)
+        self.assertEqual(t(0), "int")
+        self.assertEqual(t(''), "str")
+        self.assertEqual(t(0.0), "base")
+        self.assertEqual(t(b''), "bytes")
+
+    def test_method_type_ann_register(self):
+
         class A:
             @functools.singledispatchmethod
             def t(self, arg):
@@ -2905,13 +2927,28 @@ class TestSingleDispatch(unittest.TestCase):
             @t.register
             def _(self, arg: str):
                 return "str"
+            def _(self, arg: bytes):
+                return "bytes"
+            @t.register
+            @functools.wraps(_)
+            def wrapper(self, *args, **kwargs):
+                return self._(*args, **kwargs)
+
         a = A()
 
         self.assertEqual(a.t(0), "int")
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
+        self.assertEqual(a.t(b''), "bytes")
 
     def test_staticmethod_type_ann_register(self):
+        def wrapper_decorator(func):
+            wrapped = func.__func__
+            @staticmethod
+            @functools.wraps(wrapped)
+            def wrapper(*args, **kwargs):
+                return wrapped(*args, **kwargs)
+            return wrapper
         class A:
             @functools.singledispatchmethod
             @staticmethod
@@ -2925,6 +2962,11 @@ class TestSingleDispatch(unittest.TestCase):
             @staticmethod
             def _(arg: str):
                 return isinstance(arg, str)
+            @t.register
+            @wrapper_decorator
+            @staticmethod
+            def _(arg: bytes):
+                return isinstance(arg, bytes)
         a = A()
 
         self.assertTrue(A.t(0))
@@ -2932,6 +2974,13 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t(0.0), 0.0)
 
     def test_classmethod_type_ann_register(self):
+        def wrapper_decorator(func):
+            wrapped = func.__func__
+            @classmethod
+            @functools.wraps(wrapped)
+            def wrapper(*args, **kwargs):
+                return wrapped(*args, **kwargs)
+            return wrapper
         class A:
             def __init__(self, arg):
                 self.arg = arg
@@ -2948,10 +2997,16 @@ class TestSingleDispatch(unittest.TestCase):
             @classmethod
             def _(cls, arg: str):
                 return cls("str")
+            @t.register
+            @wrapper_decorator
+            @classmethod
+            def _(cls, arg: bytes):
+                return cls("bytes")
 
         self.assertEqual(A.t(0).arg, "int")
         self.assertEqual(A.t('').arg, "str")
         self.assertEqual(A.t(0.0).arg, "base")
+        self.assertEqual(A.t(b'').arg, "bytes")
 
     def test_method_wrapping_attributes(self):
         class A:
@@ -3171,11 +3226,26 @@ class TestSingleDispatch(unittest.TestCase):
         def i(arg):
             return "base"
         with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _() -> None:
+                return "My function doesn't take arguments"
+        self.assertStartsWith(str(exc.exception), msg_prefix)
+        self.assertEndsWith(str(exc.exception), "does not accept positional arguments.")
+
+        with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _(*, foo: str) -> None:
+                return "My function takes keyword-only arguments"
+        self.assertStartsWith(str(exc.exception), msg_prefix)
+        self.assertEndsWith(str(exc.exception), "does not accept positional arguments.")
+
+        with self.assertRaises(TypeError) as exc:
             @i.register(42)
             def _(arg):
                 return "I annotated with a non-type"
         self.assertStartsWith(str(exc.exception), msg_prefix + "42")
         self.assertEndsWith(str(exc.exception), msg_suffix)
+
         with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg):
@@ -3184,6 +3254,17 @@ class TestSingleDispatch(unittest.TestCase):
             "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
         )
         self.assertEndsWith(str(exc.exception), msg_suffix)
+
+        with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _(arg, extra: int):
+                return "I did not annotate the right param"
+        self.assertStartsWith(str(exc.exception), msg_prefix +
+            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+        )
+        self.assertEndsWith(str(exc.exception),
+            "Add missing type annotation to parameter 'arg' "
+            "of this function or use `@register(some_class)`.")
 
         with self.assertRaises(TypeError) as exc:
             @i.register
