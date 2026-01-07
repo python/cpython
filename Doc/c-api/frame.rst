@@ -250,6 +250,15 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
+.. c:enum:: PyUnstable_ExecutableKinds
+
+   An enumeration of the different kinds of executables (code objects) in a frame.
+   This can be one of the constants :c:macro:`PyUnstable_EXECUTABLE_KIND_SKIP`
+   or :c:macro:`PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`.
+
+   .. versionadded:: 3.13
+
+
 .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
 
    Index for the "skip" kind in ``PyUnstable_ExecutableKinds``.
