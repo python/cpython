@@ -5,9 +5,12 @@ import importlib.resources
 import json
 import linecache
 import os
+import sys
+import sysconfig
 
 from ._css_utils import get_combined_css
-from .collector import Collector
+from .collector import Collector, extract_lineno
+from .opcode_utils import get_opcode_mapping
 from .string_table import StringTable
 
 
@@ -16,21 +19,12 @@ class StackTraceCollector(Collector):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
 
-    def collect(self, stack_frames, skip_idle=False):
-        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
-            # Async-aware mode: process async task frames
-            for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
-                if not frames:
-                    continue
-                self.process_frames(frames, thread_id)
-        else:
-            # Sync-only mode
-            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
-                if not frames:
-                    continue
-                self.process_frames(frames, thread_id)
+    def collect(self, stack_frames, timestamps_us=None, skip_idle=False):
+        weight = len(timestamps_us) if timestamps_us else 1
+        for frames, thread_id in self._iter_stacks(stack_frames, skip_idle=skip_idle):
+            self.process_frames(frames, thread_id, weight=weight)
 
-    def process_frames(self, frames, thread_id):
+    def process_frames(self, frames, thread_id, weight=1):
         pass
 
 
@@ -39,9 +33,13 @@ class CollapsedStackCollector(StackTraceCollector):
         super().__init__(*args, **kwargs)
         self.stack_counter = collections.Counter()
 
-    def process_frames(self, frames, thread_id):
-        call_tree = tuple(reversed(frames))
-        self.stack_counter[(call_tree, thread_id)] += 1
+    def process_frames(self, frames, thread_id, weight=1):
+        # Extract only (filename, lineno, funcname) - opcode not needed for collapsed stacks
+        # frame is (filename, location, funcname, opcode)
+        call_tree = tuple(
+            (f[0], extract_lineno(f[1]), f[2]) for f in reversed(frames)
+        )
+        self.stack_counter[(call_tree, thread_id)] += weight
 
     def export(self, filename):
         lines = []
@@ -82,30 +80,34 @@ class FlamegraphCollector(StackTraceCollector):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,
         }
         self.samples_with_gc_frames = 0
 
         # Per-thread statistics
-        self.per_thread_stats = {}  # {thread_id: {has_gil, on_cpu, gil_requested, unknown, total, gc_samples}}
+        self.per_thread_stats = {}  # {thread_id: {has_gil, on_cpu, gil_requested, unknown, has_exception, total, gc_samples}}
 
-    def collect(self, stack_frames, skip_idle=False):
+    def collect(self, stack_frames, timestamps_us=None, skip_idle=False):
         """Override to track thread status statistics before processing frames."""
-        # Increment sample count once per sample
-        self._sample_count += 1
+        # Weight is number of timestamps (samples with identical stack)
+        weight = len(timestamps_us) if timestamps_us else 1
+
+        # Increment sample count by weight
+        self._sample_count += weight
 
         # Collect both aggregate and per-thread statistics using base method
         status_counts, has_gc_frame, per_thread_stats = self._collect_thread_status_stats(stack_frames)
 
-        # Merge aggregate status counts
+        # Merge aggregate status counts (multiply by weight)
         for key in status_counts:
-            self.thread_status_counts[key] += status_counts[key]
+            self.thread_status_counts[key] += status_counts[key] * weight
 
         # Update aggregate GC frame count
         if has_gc_frame:
-            self.samples_with_gc_frames += 1
+            self.samples_with_gc_frames += weight
 
-        # Merge per-thread statistics
+        # Merge per-thread statistics (multiply by weight)
         for thread_id, stats in per_thread_stats.items():
             if thread_id not in self.per_thread_stats:
                 self.per_thread_stats[thread_id] = {
@@ -113,14 +115,15 @@ class FlamegraphCollector(StackTraceCollector):
                     "on_cpu": 0,
                     "gil_requested": 0,
                     "unknown": 0,
+                    "has_exception": 0,
                     "total": 0,
                     "gc_samples": 0,
                 }
             for key, value in stats.items():
-                self.per_thread_stats[thread_id][key] += value
+                self.per_thread_stats[thread_id][key] += value * weight
 
         # Call parent collect to process frames
-        super().collect(stack_frames, skip_idle=skip_idle)
+        super().collect(stack_frames, timestamps_us, skip_idle=skip_idle)
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate,
                   error_rate=None, missed_samples=None, mode=None):
@@ -213,6 +216,11 @@ class FlamegraphCollector(StackTraceCollector):
                     source_indices = [self._string_table.intern(line) for line in source]
                     child_entry["source"] = source_indices
 
+                # Include opcode data if available
+                opcodes = node.get("opcodes", {})
+                if opcodes:
+                    child_entry["opcodes"] = dict(opcodes)
+
                 # Recurse
                 child_entry["children"] = convert_children(
                     node["children"], min_samples
@@ -237,12 +245,15 @@ class FlamegraphCollector(StackTraceCollector):
             }
 
         # Calculate thread status percentages for display
+        is_free_threaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
         total_threads = max(1, self.thread_status_counts["total"])
         thread_stats = {
             "has_gil_pct": (self.thread_status_counts["has_gil"] / total_threads) * 100,
             "on_cpu_pct": (self.thread_status_counts["on_cpu"] / total_threads) * 100,
             "gil_requested_pct": (self.thread_status_counts["gil_requested"] / total_threads) * 100,
+            "has_exception_pct": (self.thread_status_counts["has_exception"] / total_threads) * 100,
             "gc_pct": (self.samples_with_gc_frames / max(1, self._sample_count)) * 100,
+            "free_threaded": is_free_threaded,
             **self.thread_status_counts
         }
 
@@ -255,9 +266,13 @@ class FlamegraphCollector(StackTraceCollector):
                 "has_gil_pct": (stats["has_gil"] / total) * 100,
                 "on_cpu_pct": (stats["on_cpu"] / total) * 100,
                 "gil_requested_pct": (stats["gil_requested"] / total) * 100,
+                "has_exception_pct": (stats["has_exception"] / total) * 100,
                 "gc_pct": (stats["gc_samples"] / total_samples_denominator) * 100,
                 **stats
             }
+
+        # Build opcode mapping for JS
+        opcode_mapping = get_opcode_mapping()
 
         # If we only have one root child, make it the root to avoid redundant level
         if len(root_children) == 1:
@@ -273,6 +288,7 @@ class FlamegraphCollector(StackTraceCollector):
             }
             main_child["threads"] = sorted(list(self._all_threads))
             main_child["strings"] = self._string_table.get_strings()
+            main_child["opcode_mapping"] = opcode_mapping
             return main_child
 
         return {
@@ -285,27 +301,42 @@ class FlamegraphCollector(StackTraceCollector):
                 "per_thread_stats": per_thread_stats_with_pct
             },
             "threads": sorted(list(self._all_threads)),
-            "strings": self._string_table.get_strings()
+            "strings": self._string_table.get_strings(),
+            "opcode_mapping": opcode_mapping
         }
 
-    def process_frames(self, frames, thread_id):
-        # Reverse to root->leaf
-        call_tree = reversed(frames)
-        self._root["samples"] += 1
-        self._total_samples += 1
+    def process_frames(self, frames, thread_id, weight=1):
+        """Process stack frames into flamegraph tree structure.
+
+        Args:
+            frames: List of (filename, location, funcname, opcode) tuples in
+                    leaf-to-root order. location is (lineno, end_lineno, col_offset, end_col_offset).
+                    opcode is None if not gathered.
+            thread_id: Thread ID for this stack trace
+            weight: Number of samples this stack represents (for batched RLE)
+        """
+        # Reverse to root->leaf order for tree building
+        self._root["samples"] += weight
+        self._total_samples += weight
         self._root["threads"].add(thread_id)
         self._all_threads.add(thread_id)
 
         current = self._root
-        for func in call_tree:
+        for filename, location, funcname, opcode in reversed(frames):
+            lineno = extract_lineno(location)
+            func = (filename, lineno, funcname)
             func = self._func_intern.setdefault(func, func)
-            children = current["children"]
-            node = children.get(func)
+
+            node = current["children"].get(func)
             if node is None:
-                node = {"samples": 0, "children": {}, "threads": set()}
-                children[func] = node
-            node["samples"] += 1
+                node = {"samples": 0, "children": {}, "threads": set(), "opcodes": collections.Counter()}
+                current["children"][func] = node
+            node["samples"] += weight
             node["threads"].add(thread_id)
+
+            if opcode is not None:
+                node["opcodes"][opcode] += weight
+
             current = node
 
     def _get_source_lines(self, func):
@@ -352,12 +383,15 @@ class FlamegraphCollector(StackTraceCollector):
             "<!-- INLINE_JS -->", f"<script>\n{js_content}\n</script>"
         )
 
-        png_path = assets_dir / "python-logo-only.png"
+        png_path = assets_dir / "tachyon-logo.png"
         b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
 
         # Let CSS control size; keep markup simple
-        logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo"/>'
+        logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Tachyon logo"/>'
         html_template = html_template.replace("<!-- INLINE_LOGO -->", logo_html)
+        html_template = html_template.replace(
+            "<!-- PYTHON_VERSION -->", f"{sys.version_info.major}.{sys.version_info.minor}"
+        )
 
         d3_js = d3_path.read_text(encoding="utf-8")
         fg_css = fg_css_path.read_text(encoding="utf-8")

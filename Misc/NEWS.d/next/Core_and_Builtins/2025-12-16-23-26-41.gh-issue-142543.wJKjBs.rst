@@ -1,0 +1,1 @@
+Fix a stack overflow on Clang JIT build configurations with full LTO.

@@ -645,6 +645,27 @@ are set.
 
 .. versionadded:: 3.14
 
+To highlight inline code in your description or epilog text, you can use
+backticks::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     epilog='''Examples:
+   ...   `python -m myapp --verbose`
+   ...   `python -m myapp --config settings.json`
+   ... ''')
+
+When colors are enabled, the text inside backticks will be displayed in a
+distinct color to help examples stand out. When colors are disabled, backticks
+are preserved as-is, which is readable in plain text.
+
+.. note::
+
+   Backtick markup only applies to description and epilog text. It does not
+   apply to individual argument ``help`` strings.
+
+.. versionadded:: 3.15
+
 
 The add_argument() method
 -------------------------
@@ -732,7 +753,7 @@ upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
-   >>> parser.parse_args(['--foo-bar', 'FOO-BAR']
+   >>> parser.parse_args(['--foo-bar', 'FOO-BAR'])
    Namespace(foo_bar='FOO-BAR')
    >>> parser.print_help()
    usage:  [-h] [--foo-bar FOO-BAR]
@@ -1349,7 +1370,7 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Single-dash long option now takes precedence over short options.
 
 
@@ -1452,7 +1473,7 @@ this API may be passed as the ``action`` parameter to
 
    .. versionadded:: 3.9
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support for single-dash options.
 
       Added support for alternate prefix_chars_.
@@ -1679,7 +1700,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Sub-commands
+Subcommands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1708,7 +1729,7 @@ Sub-commands
    * *description* - description for the sub-parser group in help output, by
      default ``None``
 
-   * *prog* - usage information that will be displayed with sub-command help,
+   * *prog* - usage information that will be displayed with subcommand help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
@@ -1718,7 +1739,7 @@ Sub-commands
    * action_ - the basic type of action to be taken when this argument is
      encountered at the command line
 
-   * dest_ - name of the attribute under which sub-command name will be
+   * dest_ - name of the attribute under which subcommand name will be
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
