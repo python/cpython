@@ -888,7 +888,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_positional_param(func, *, pos=0):
+def _get_dispatch_param(func, *, pos=0):
     """Finds the first positional user-specified parameter at position *pos*
     of a callable or descriptor.
 
@@ -987,7 +987,7 @@ def singledispatch(func):
             # 0 for functions, 1 for methods where first argument should be skipped
             argpos = _func_is_method and not isinstance(func, staticmethod)
 
-            argname = _get_positional_param(func, pos=argpos)
+            argname = _get_dispatch_param(func, pos=argpos)
             if argname is None:
                 raise TypeError(
                     f"Invalid first argument to `register()`: {func!r} "
