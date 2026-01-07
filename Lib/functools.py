@@ -888,25 +888,29 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_dispatch_param(func, *, pos=0):
-    """Finds the positional user-specified parameter at position *pos*
-    of a callable or descriptor.
+def _get_dispatch_param(func, *, _dispatchmethod=False):
+    """Finds the first positional and user-specified parameter in a callable
+    or descriptor.
 
     Used by singledispatch for registration by type annotation of the parameter.
-    *pos* should either be 0 (for functions and staticmethods) or 1 (for methods).
     """
     # Fast path for typical callables and descriptors.
-    if isinstance(func, (classmethod, staticmethod)):
+    # 0 from singledispatch(), 1 from singledispatchmethod()
+    idx = _dispatchmethod
+    if isinstance(func, staticmethod):
+        idx = 0
+        func = func.__func__
+    elif isinstance(func, classmethod):
         func = func.__func__
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         func_code = func.__code__
         try:
-            return func_code.co_varnames[:func_code.co_argcount][pos]
+            return func_code.co_varnames[:func_code.co_argcount][idx]
         except IndexError:
             pass
     # Fallback path for more nuanced inspection of ambiguous callables.
     import inspect
-    for param in list(inspect.signature(func).parameters.values())[pos:]:
+    for param in list(inspect.signature(func).parameters.values())[idx:]:
         if param.kind in (param.KEYWORD_ONLY, param.VAR_KEYWORD):
             break
         return param.name
@@ -959,7 +963,7 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
-    def register(cls, func=None, _func_is_method=False):
+    def register(cls, func=None, _dispatchmethod=False):
         """generic_func.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_func*.
@@ -984,10 +988,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            # 0 for functions, 1 for methods where first argument should be skipped
-            argpos = _func_is_method and not isinstance(func, staticmethod)
-
-            argname = _get_dispatch_param(func, pos=argpos)
+            argname = _get_dispatch_param(func, _dispatchmethod=_dispatchmethod)
             if argname is None:
                 raise TypeError(
                     f"Invalid first argument to `register()`: {func!r} "
@@ -1071,7 +1072,7 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        return self.dispatcher.register(cls, func=method, _func_is_method=True)
+        return self.dispatcher.register(cls, func=method, _dispatchmethod=True)
 
     def __get__(self, obj, cls=None):
         return _singledispatchmethod_get(self, obj, cls)
