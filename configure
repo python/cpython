@@ -842,8 +842,9 @@ LIBREADLINE_CFLAGS
 WHEEL_PKG_DIR
 LIBPL
 PY_ENABLE_SHARED
-PLATLIBDIR
 BINLIBDEST
+LIBDEST
+PLATLIBDIR
 LIBPYTHON
 MODULE_DEPS_SHARED
 EXT_SUFFIX
@@ -857,6 +858,8 @@ HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
 LIBOBJS
+REMOTE_DEBUGGING_LIBS
+REMOTE_DEBUGGING_CFLAGS
 LIBZSTD_LIBS
 LIBZSTD_CFLAGS
 LIBLZMA_LIBS
@@ -1824,7 +1827,8 @@ Optional Features:
                           no)
   --enable-wasm-dynamic-linking
                           Enable dynamic linking support for WebAssembly
-                          (default is no)
+                          (default is no); WASI requires an external dynamic
+                          loader to handle imports
   --enable-wasm-pthreads  Enable pthread emulation for WebAssembly (default is
                           no)
   --enable-shared         enable building a shared Python library (default is
@@ -7415,7 +7419,7 @@ then :
   Emscripten) :
      ;; #(
   WASI) :
-    as_fn_error $? "WASI dynamic linking is not implemented yet." "$LINENO" 5 ;; #(
+     ;; #(
   *) :
     as_fn_error $? "--enable-wasm-dynamic-linking only applies to Emscripten and WASI" "$LINENO" 5
    ;;
@@ -7807,10 +7811,6 @@ else # shared is disabled
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 printf "%s\n" "$LDLIBRARY" >&6; }
-
-if test "$cross_compiling" = yes; then
-  RUNSHARED=
-fi
 
 # HOSTRUNNER - Program to run CPython for the host platform
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
@@ -18190,6 +18190,7 @@ else case e in #(
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }
 _ACEOF
@@ -23025,6 +23026,22 @@ printf "%s\n" "yes" >&6; }
         have_libzstd=yes
 fi
 
+if test "x$have_libzstd" = xyes
+then :
+
+  REMOTE_DEBUGGING_CFLAGS="-DHAVE_ZSTD $LIBZSTD_CFLAGS"
+  REMOTE_DEBUGGING_LIBS="$LIBZSTD_LIBS"
+
+else case e in #(
+  e)
+  REMOTE_DEBUGGING_CFLAGS=""
+  REMOTE_DEBUGGING_LIBS=""
+ ;;
+esac
+fi
+
+
+
 
 
 
@@ -23946,6 +23963,25 @@ if test $ac_have_decl = 1
 then :
 
 printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
+
+fi
+
+
+ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+               #include <sys/prctl.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_PR_SET_VMA_ANON_NAME $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 
 fi
 
@@ -26123,8 +26159,8 @@ main (void)
 {
 
   unsigned int fpcr;
-  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
-  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=dm" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "dm" (fpcr));
 
   ;
   return 0;
@@ -26926,15 +26962,10 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 
-PLATLIBDIR="lib"
+PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
 printf %s "checking for --with-platlibdir... " >&6; }
 
@@ -26951,7 +26982,6 @@ then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -26965,10 +26995,14 @@ fi
 
 
 
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+
+
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 
@@ -31629,8 +31663,8 @@ fi
   if test "x$py_cv_module__remote_debugging" = xyes
 then :
 
-
-
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_CFLAGS=$REMOTE_DEBUGGING_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_LDFLAGS=$REMOTE_DEBUGGING_LIBS$as_nl"
 
 fi
 
