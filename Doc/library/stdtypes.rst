@@ -1853,7 +1853,6 @@ expression support in the :mod:`re` module).
       >>> 'straße'.casefold()
       'strasse'
 
-
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G53253>`__.
