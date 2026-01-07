@@ -901,7 +901,7 @@ def _get_dispatch_param_name(func, *, skip_first_param=False):
         raise TypeError(
             f"Invalid first argument to `register()`: function {func!r}"
             f"does not accept positional arguments."
-        )
+        ) from None
 
 def _get_dispatch_annotation(func, param):
     import annotationlib, typing
