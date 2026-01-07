@@ -11456,12 +11456,6 @@ then :
   printf "%s\n" "#define HAVE_SPAWN_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "stropts.h" "ac_cv_header_stropts_h" "$ac_includes_default"
-if test "x$ac_cv_header_stropts_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_STROPTS_H 1" >>confdefs.h
-
-fi
 ac_fn_c_check_header_compile "$LINENO" "sys/audioio.h" "ac_cv_header_sys_audioio_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_audioio_h" = xyes
 then :
@@ -11944,6 +11938,45 @@ fi
 
 fi
 
+
+# On Linux, stropts.h may be empty
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stropts.h" >&5
+printf %s "checking for stropts.h... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#include <sys/types.h>
+#include <stropts.h>
+
+int
+main (void)
+{
+
+#if !defined(I_PUSH)
+#error I_PUSH
+#endif
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_STROPTS_H 1" >>confdefs.h
+
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294

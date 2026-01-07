@@ -3010,7 +3010,7 @@ AC_CHECK_HEADERS([ \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
-  sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
@@ -3020,6 +3020,24 @@ AC_CHECK_HEADERS([ \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
+
+# On Linux, stropts.h may be empty
+AC_MSG_CHECKING([for stropts.h])
+AC_COMPILE_IFELSE([
+AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <stropts.h>
+]], [[
+#if !defined(I_PUSH)
+#error I_PUSH
+#endif
+]]
+)],
+[
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_STROPTS_H], [1], [Define to 1 if you have the <stropts.h> header file.])
+],
+[AC_MSG_RESULT([no])])
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
