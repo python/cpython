@@ -983,6 +983,17 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
         self.assertRaisesRegex(ValueError, "test", bufio.flush)
         self.assertRaisesRegex(ValueError, "test", bufio.close)
 
+    def test_gh_143375(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.close()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "seek of closed file"):
+            bufio.seek(EvilIndex())
+
 
 class PyBufferedWriterTest(BufferedWriterTest, PyTestCase):
     tp = pyio.BufferedWriter

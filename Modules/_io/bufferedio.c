@@ -1393,6 +1393,10 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
     if (target == -1 && PyErr_Occurred())
         return NULL;
 
+    // PyNumber_AsOff_t calls user code via __index__, which
+    // could have closed the file.
+    CHECK_CLOSED(self, "seek of closed file")
+
     /* SEEK_SET and SEEK_CUR are special because we could seek inside the
        buffer. Other whence values must be managed without this optimization.
        Some Operating Systems can provide additional values, like
