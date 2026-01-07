@@ -894,7 +894,7 @@ def _get_positional_param(func, *, pos=0):
     Used by singledispatch for registration by type annotation.
     *pos* should either be 0 (for functions and staticmethods) or 1 (for methods).
     """
-    # Fast path for typical callables.
+    # Fast path for typical callable objects.
     if isinstance(func, (MethodType, classmethod, staticmethod)):
         func = func.__func__
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
@@ -903,7 +903,7 @@ def _get_positional_param(func, *, pos=0):
             return func_code.co_varnames[:func_code.co_argcount][pos]
         except IndexError:
             pass
-    # Fallback path for ambiguous callables.
+    # Fallback path for ambiguous objects.
     # Follows __wrapped__, checks __signature__, __text_signature__, etc.
     import inspect
     for param in list(inspect.signature(func).parameters.values())[pos:]:
