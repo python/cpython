@@ -143,7 +143,7 @@ from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect, Py_GIL_DISABLED,
                           suppress_immortalization,
-                          skip_if_suppress_immortalization)
+                          skip_if_suppress_immortalization, late_deletion)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
@@ -844,6 +844,11 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
     FREE_FUNC = freefunc(myfree)
     FREE_INDEX = RequestCodeExtraIndex(FREE_FUNC)
+    # Make sure myfree sticks around at least as long as the interpreter,
+    # since we (currently) can't unregister the function and leaving a
+    # dangling pointer will cause a crash on deallocation of code objects if
+    # something else uses co_extras, like test_capi.test_misc.
+    late_deletion(myfree)
 
     class CoExtra(unittest.TestCase):
         def get_func(self):
