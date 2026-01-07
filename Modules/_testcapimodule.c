@@ -3359,6 +3359,12 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+#if (defined(__mips__) && !defined(__mips_nan2008)) || defined(__hppa__)
+    PyModule_Add(m, "nan_encoding", PyUnicode_FromString("parisc"));
+#else
+    PyModule_Add(m, "nan_encoding", PyUnicode_FromString("regular"));
+#endif
+
     if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
         return -1;
     }

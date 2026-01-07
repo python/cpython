@@ -23,6 +23,8 @@ byteorders = '', '@', '=', '<', '>', '!'
 INF = float('inf')
 NAN = float('nan')
 
+_testcapi = import_helper.import_module('_testcapi')
+
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
         for byteorder in byteorders:
@@ -935,21 +937,17 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Check that packing produces a bit pattern representing a quiet NaN:
         # all exponent bits and the msb of the fraction should all be 1.
-        if platform.machine().startswith('parisc'):
-            # HP PA RISC uses 0 for quiet, see:
+        if _testcapi.nan_encoding == 'parisc':
+            # HP PA RISC and some MIPS CPUs use 0 for quiet, see:
             # https://en.wikipedia.org/wiki/NaN#Encoding
             expected = 0x7c
         else:
             expected = 0x7e
 
-        # Skip NaN encoding checks for MIPS because `math.nan` changes its value
-        # depending on toolchain settings. See:
-        # https://gcc.gnu.org/onlinedocs/gcc/MIPS-Options.html#index-mnan_003d2008
-        if not platform.machine().startswith('mips'):
-            packed = struct.pack('<e', math.nan)
-            self.assertEqual(packed[1] & 0x7e, expected)
-            packed = struct.pack('<e', -math.nan)
-            self.assertEqual(packed[1] & 0x7e, expected)
+        packed = struct.pack('<e', math.nan)
+        self.assertEqual(packed[1] & 0x7e, expected)
+        packed = struct.pack('<e', -math.nan)
+        self.assertEqual(packed[1] & 0x7e, expected)
 
         # Checks for round-to-even behavior
         format_bits_float__rounding_list = [
