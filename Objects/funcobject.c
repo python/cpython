@@ -11,7 +11,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
-#include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency
+#include "pycore_optimizer.h"     // _PyJit_Tracer_InvalidateDependency
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -1166,6 +1166,7 @@ func_dealloc(PyObject *self)
     }
 #if _Py_TIER2
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), self, 1);
+    _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), self);
 #endif
     _PyObject_GC_UNTRACK(op);
     FT_CLEAR_WEAKREFS(self, op->func_weakreflist);

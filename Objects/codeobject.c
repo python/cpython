@@ -2432,6 +2432,7 @@ code_dealloc(PyObject *self)
         PyMem_Free(co_extra);
     }
 #ifdef _Py_TIER2
+    _PyJit_Tracer_InvalidateDependency(tstate, self);
     _Py_Executors_InvalidateDependency(tstate->interp, self, 1);
     if (co->co_executors != NULL) {
         clear_executors(co);

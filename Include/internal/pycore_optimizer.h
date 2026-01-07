@@ -358,6 +358,8 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
 
 void _PyJit_FinalizeTracing(PyThreadState *tstate);
 
+void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
+
 #ifdef __cplusplus
 }
 #endif

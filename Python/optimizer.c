@@ -1786,8 +1786,6 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
     _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
-static void  jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj);
-
 /* Invalidate all executors that depend on `obj`
  * May cause other executors to be invalidated as well
  */
@@ -1798,7 +1796,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     // It doesn't matter if we don't invalidate all threads.
     // If more threads are spawned, we force the jit not to compile anyways
     // so the trace gets abandoned.
-    jit_tracer_invalidate_dependency(_PyThreadState_GET(), obj);
+    _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), obj);
 
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
@@ -1838,7 +1836,7 @@ error:
 }
 
 static void
-jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj)
+_PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);

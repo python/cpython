@@ -1177,7 +1177,6 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
             + (version % TYPE_VERSION_CACHE_SIZE);
         *slot = tp;
     }
-    END_TYPE_LOCK();
 #endif
 }
 
