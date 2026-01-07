@@ -1,3 +1,5 @@
 :func:`functools.singledispatch` and :func:`functools.singledispatchmethod`
-no longer mistakenly honor a misplaced annotation (e.g. the return type)
-as a type of the argument dispatched. Contributed by Bartosz Sławecki.
+now require callables to be correctly annotated if registering without a type explicitly
+specified in the decorator. The first user-specified positional parameter of a callable
+must always be annotated. Before, a callable could be registered based on its return type
+annotation or based on an irrelevant parameter type annotation. Contributed by Bartosz Sławecki.
