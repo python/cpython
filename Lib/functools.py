@@ -892,7 +892,7 @@ def _get_dispatch_param(func, *, pos=0):
     """Finds the first positional user-specified parameter at position *pos*
     of a callable or descriptor.
 
-    Used by singledispatch for registration by type annotation.
+    Used by singledispatch for registration by type annotation of the parameter.
     *pos* should either be 0 (for functions and staticmethods) or 1 (for methods).
     """
     # Fast path for typical callables and descriptors.
