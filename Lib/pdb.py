@@ -364,7 +364,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
-        if stdin:
+        if stdin is not None and stdin is not sys.stdin:
             self.use_rawinput = False
         self.prompt = '(Pdb) '
         self.aliases = {}
@@ -391,16 +391,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
         if readrc:
+            home_rcfile = os.path.expanduser("~/.pdbrc")
+            local_rcfile = os.path.abspath(".pdbrc")
+
             try:
-                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
+                with open(home_rcfile, encoding='utf-8') as rcfile:
+                    self.rcLines.extend(rcfile)
             except OSError:
                 pass
-            try:
-                with open(".pdbrc", encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
-            except OSError:
-                pass
+
+            if local_rcfile != home_rcfile:
+                try:
+                    with open(local_rcfile, encoding='utf-8') as rcfile:
+                        self.rcLines.extend(rcfile)
+                except OSError:
+                    pass
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_defining = False # True while in the process of defining
@@ -1315,7 +1320,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         reached.
         """
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+            for bp in reversed(bdb.Breakpoint.bpbynumber):
+                if bp is None:
+                    continue
+                bnum = bp.number
+                break
+            else:
+                self.error('cannot set commands: no existing breakpoint')
+                return
         else:
             try:
                 bnum = int(arg)
