@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_brc.h"             // struct _brc_thread_state
 #include "pycore_freelist_state.h"  // struct _Py_freelists
+#include "pycore_interpframe_structs.h"  // _PyInterpreterFrame
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
 #include "pycore_uop.h"             // struct _PyUOpInstruction
@@ -36,7 +37,6 @@ typedef struct _PyJitTracerInitialState {
 
 typedef struct _PyJitTracerPreviousState {
     bool dependencies_still_valid;
-    bool instr_is_super;
     int code_max_size;
     int code_curr_size;
     int instr_oparg;
@@ -47,12 +47,33 @@ typedef struct _PyJitTracerPreviousState {
     _PyBloomFilter dependencies;
 } _PyJitTracerPreviousState;
 
+typedef struct _PyJitTracerTranslatorState {
+    int jump_backward_seen;
+} _PyJitTracerTranslatorState;
+
 typedef struct _PyJitTracerState {
     _PyUOpInstruction *code_buffer;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
+    _PyJitTracerTranslatorState translator_state;
 } _PyJitTracerState;
+
 #endif
+
+typedef struct _PyJitPolicy {
+    uint16_t side_exit_initial_value;
+    uint16_t side_exit_initial_backoff;
+} _PyJitPolicy;
+
+typedef struct _PyInterpreterPolicy {
+    uint16_t jump_backward_initial_value;
+    uint16_t jump_backward_initial_backoff;
+} _PyInterpreterPolicy;
+
+typedef struct _PyPolicy {
+    _PyJitPolicy jit;
+    _PyInterpreterPolicy interp;
+} _PyPolicy;
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
@@ -60,6 +81,10 @@ typedef struct _PyJitTracerState {
 typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
+
+    // Embedded base frame - sentinel at the bottom of the frame stack.
+    // Used by profiling/sampling to detect incomplete stack traces.
+    _PyInterpreterFrame base_frame;
 
     // The reference count field is used to synchronize deallocation of the
     // thread state during runtime finalization.
@@ -76,6 +101,13 @@ typedef struct _PyThreadStateImpl {
 
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
+
+    // Distinguishes between yield and return from PyEval_EvalFrame().
+    // See gen_send_ex2() in Objects/genobject.c
+    enum {
+        GENERATOR_RETURN = 0,
+        GENERATOR_YIELD = 1,
+    } generator_return_kind;
 
     /* Head of circular linked-list of all tasks which are instances of `asyncio.Task`
        or subclasses of it used in `asyncio.all_tasks`.
@@ -121,6 +153,7 @@ typedef struct _PyThreadStateImpl {
 #if _Py_TIER2
     _PyJitTracerState jit_tracer_state;
 #endif
+    _PyPolicy policy;
 } _PyThreadStateImpl;
 
 #ifdef __cplusplus

@@ -424,7 +424,7 @@ def generate_abstract_interpreter(
     for abstract_uop_name in abstract.uops:
         if abstract_uop_name not in base_uop_names:
             raise ValueError(f"All abstract uops should override base uops, "
-                                 "but {abstract_uop_name} is not.")
+                                 f"but {abstract_uop_name} is not.")
 
     for uop in base.uops.values():
         override: Uop | None = None
@@ -445,7 +445,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack()
+        stack = Stack(check_stack_bounds=True)
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")

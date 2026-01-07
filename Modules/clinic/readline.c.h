@@ -349,6 +349,28 @@ exit:
 
 #endif /* defined(HAVE_RL_PRE_INPUT_HOOK) */
 
+#if defined(HAVE_RL_PRE_INPUT_HOOK)
+
+PyDoc_STRVAR(readline_get_pre_input_hook__doc__,
+"get_pre_input_hook($module, /)\n"
+"--\n"
+"\n"
+"Get the current pre-input hook function.");
+
+#define READLINE_GET_PRE_INPUT_HOOK_METHODDEF    \
+    {"get_pre_input_hook", (PyCFunction)readline_get_pre_input_hook, METH_NOARGS, readline_get_pre_input_hook__doc__},
+
+static PyObject *
+readline_get_pre_input_hook_impl(PyObject *module);
+
+static PyObject *
+readline_get_pre_input_hook(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return readline_get_pre_input_hook_impl(module);
+}
+
+#endif /* defined(HAVE_RL_PRE_INPUT_HOOK) */
+
 PyDoc_STRVAR(readline_get_completion_type__doc__,
 "get_completion_type($module, /)\n"
 "--\n"
@@ -794,7 +816,11 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define READLINE_SET_PRE_INPUT_HOOK_METHODDEF
 #endif /* !defined(READLINE_SET_PRE_INPUT_HOOK_METHODDEF) */
 
+#ifndef READLINE_GET_PRE_INPUT_HOOK_METHODDEF
+    #define READLINE_GET_PRE_INPUT_HOOK_METHODDEF
+#endif /* !defined(READLINE_GET_PRE_INPUT_HOOK_METHODDEF) */
+
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=88d9812b6caa2102 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4bd95070973cd0e2 input=a9049054013a1b77]*/

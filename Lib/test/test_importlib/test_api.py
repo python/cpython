@@ -235,7 +235,6 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': '',
                                 '__file__': path,
-                                '__cached__': cached,
                                 '__doc__': None,
                                 }
                     os_helper.create_empty_file(path)
@@ -256,7 +255,6 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__file__': init_path,
-                                '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
                                 }
@@ -316,7 +314,6 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__file__': init_path,
-                                '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
                                 'eggs': None,
