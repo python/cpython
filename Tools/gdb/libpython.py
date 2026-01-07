@@ -1043,17 +1043,18 @@ class PyFramePtr:
 
     def __init__(self, gdbval):
         self._gdbval = gdbval
+        if self.is_optimized_out():
+            return
+        self.co = self._f_code()
+        if self.is_shim():
+            return
+        self.co_name = self.co.pyop_field('co_name')
+        self.co_filename = self.co.pyop_field('co_filename')
 
-        if not self.is_optimized_out():
-            self.co = self._f_code()
-            if not self.is_shim():
-                self.co_name = self.co.pyop_field('co_name')
-                self.co_filename = self.co.pyop_field('co_filename')
-
-                self.f_lasti = self._f_lasti()
-                self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
-                pnames = self.co.field('co_localsplusnames')
-                self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+        self.f_lasti = self._f_lasti()
+        self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
+        pnames = self.co.field('co_localsplusnames')
+        self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
 
     @staticmethod
     def get_thread_state():
