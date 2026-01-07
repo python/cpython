@@ -2997,7 +2997,8 @@ class ThreadedTests(unittest.TestCase):
                 str(e.exception))
 
     @unittest.skipUnless(support.Py_GIL_DISABLED, "test is only useful if the GIL is disabled")
-    def test_ssl_in_multiple_threads(self):
+    @support.bigmemtest(size=12 * 2**30, memuse=1, dry_run=False)
+    def test_ssl_in_multiple_threads(self, size):
         # See GH-124984: OpenSSL is not thread safe.
         self.enterContext(
             support.swap_item(globals(), 'USE_SAME_TEST_CONTEXT', True))
