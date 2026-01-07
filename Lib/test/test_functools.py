@@ -2927,9 +2927,10 @@ class TestSingleDispatch(unittest.TestCase):
             def for_complex(self: object, arg: complex, arg2: None):
                 return "complex"
 
-        t.register(SomeClass().for_dict)
-        t.register(SomeClass().for_set)
-        t.register(SomeClass().for_complex)
+        inst = SomeClass()
+        t.register(inst.for_dict)
+        t.register(inst.for_set)
+        t.register(inst.for_complex)
 
         self.assertEqual(t(0), "int")
         self.assertEqual(t(''), "str")
