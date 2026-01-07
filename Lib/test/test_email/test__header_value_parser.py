@@ -1182,66 +1182,119 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_qp_ctext = old_api_only(
 
-        test_get_qp_ctext_only = C(
-                                'foobar', 'foobar', ' ', [], '')
-                                ,
+        only = C(
+            'foobar',
+            'foobar',
+            ' ',
+            [],
+            '',
+            ),
 
-        test_get_qp_ctext_all_printables = C(
+        all_printables = C(
             RFC_PRINTABLES.
                 replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)'),
             RFC_PRINTABLES,
-                                                                    ' ', [], '',
-                                                                    ),
+            ' ',
+            [],
+            '',
+            ),
 
-        test_get_qp_ctext_two_words_gets_first = C(
-                        'foo de', 'foo', ' ', [], ' de')
-                        ,
+        two_words_gets_first = C(
+            'foo de',
+            'foo',
+            ' ',
+            [],
+            ' de',
+            ),
 
-        test_get_qp_ctext_following_wsp_preserved = C(
-                        'foo \t\tde', 'foo', ' ', [], ' \t\tde')
-                        ,
+        following_wsp_preserved = C(
+            'foo \t\tde',
+            'foo',
+            ' ',
+            [],
+            ' \t\tde',
+            ),
 
-        test_get_qp_ctext_up_to_close_paren_only = C(
-                        'foo)', 'foo', ' ', [], ')')
-                        ,
+        up_to_close_paren_only = C(
+            'foo)',
+            'foo',
+            ' ',
+            [],
+            ')',
+            ),
 
-        test_get_qp_ctext_wsp_before_close_paren_preserved = C(
-                        'foo  )', 'foo', ' ', [], '  )')
-                        ,
+        wsp_before_close_paren_preserved = C(
+            'foo  )',
+            'foo',
+            ' ',
+            [],
+            '  )',
+            ),
 
-        test_get_qp_ctext_close_paren_mid_word = C(
-                        'foo)bar', 'foo', ' ', [], ')bar')
-                        ,
+        close_paren_mid_word = C(
+            'foo)bar',
+            'foo',
+            ' ',
+            [],
+            ')bar',
+            ),
 
-        test_get_qp_ctext_up_to_open_paren_only = C(
-                        'foo(', 'foo', ' ', [], '(')
-                        ,
+        up_to_open_paren_only = C(
+            'foo(',
+            'foo',
+            ' ',
+            [],
+            '(',
+            ),
 
-        test_get_qp_ctext_wsp_before_open_paren_preserved = C(
-                        'foo  (', 'foo', ' ', [], '  (')
-                        ,
+        wsp_before_open_paren_preserved = C(
+            'foo  (',
+            'foo',
+            ' ',
+            [],
+            '  (',
+            ),
 
-        test_get_qp_ctext_open_paren_mid_word = C(
-                        'foo(bar', 'foo', ' ', [], '(bar')
-                        ,
+        open_paren_mid_word = C(
+            'foo(bar',
+            'foo',
+            ' ',
+            [],
+            '(bar',
+            ),
 
-        test_get_qp_ctext_non_printables = C(
-                                'foo\x00bar)', 'foo\x00bar', ' ',
-                                [errors.NonPrintableDefect], ')')
-                                ,
-       #self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
+        non_printables = C(
+            'foo\x00bar)',
+            'foo\x00bar',
+            ' ',
+            [errors.NonPrintableDefect],
+            ')',
+            ),
+            #self.assertEqual(ptext.defects[0].non_printables[0], '\x00')
 
-        test_get_qp_ctext_close_paren_only = C(
-                        ')', '', ' ', [], ')')
-                        ,
+        close_paren_only = C(
+            ')',
+            '',
+            ' ',
+            [],
+            ')',
+            ),
 
-        test_get_qp_ctext_open_paren_only = C(
-                        '(', '', ' ', [], '(')
-                        ,
+        open_paren_only = C(
+            '(',
+            '',
+            ' ',
+            [],
+            '(',
+            ),
 
-        test_get_qp_ctext_no_end_char = C(
-                        '', '', ' ', [], '')
-                        ,
+        no_end_char = C(
+            '',
+            '',
+            ' ',
+            [],
+            '',
+            ),
 
         )
 
