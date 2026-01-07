@@ -1065,6 +1065,7 @@ Any missing expression evaluates to :const:`None`.
 This :class:`!slice` object is then passed to the :meth:`~object.__getitem__`
 or :meth:`~object.__class_getitem__` method, as above. ::
 
+   # continuing with the SubscriptionDemo instance defined above:
    >>> demo[2:3]
    subscripted with: slice(2, 3, None)
    >>> demo[::'spam']
@@ -1106,6 +1107,7 @@ The subscript can also contain a starred expression.
 In this case, the interpreter unpacks the result into a tuple, and passes
 this tuple to :meth:`~object.__getitem__` or :meth:`~object.__class_getitem__`::
 
+   # continuing with the SubscriptionDemo instance defined above:
    >>> demo[*range(10)]
    subscripted with: (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
