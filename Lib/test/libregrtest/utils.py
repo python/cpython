@@ -41,7 +41,7 @@ ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
 #   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle')
 
 
 # Types for types hints
@@ -293,6 +293,25 @@ def clear_caches():
         pass
     else:
         importlib_metadata.FastPath.__new__.cache_clear()
+
+    try:
+        encodings = sys.modules['encodings']
+    except KeyError:
+        pass
+    else:
+        encodings._cache.clear()
+
+    try:
+        codecs = sys.modules['codecs']
+    except KeyError:
+        pass
+    else:
+        # There's no direct API to clear the codecs search cache, but
+        # `unregister` clears it implicitly.
+        def noop_search_function(name):
+            return None
+        codecs.register(noop_search_function)
+        codecs.unregister(noop_search_function)
 
 
 def get_build_info():

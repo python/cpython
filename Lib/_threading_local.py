@@ -57,7 +57,7 @@ class _localimpl:
             # as soon as the OS-level thread ends instead.
             local = wrlocal()
             if local is not None:
-                dct = local.dicts.pop(idt)
+                local.dicts.pop(idt)
         wrlocal = ref(self, local_deleted)
         wrthread = ref(thread, thread_deleted)
         thread.__dict__[key] = wrlocal

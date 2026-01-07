@@ -139,7 +139,6 @@ __all__ = [
     'Never',
     'NewType',
     'no_type_check',
-    'no_type_check_decorator',
     'NoDefault',
     'NoExtraItems',
     'NoReturn',
@@ -1113,7 +1112,7 @@ def _paramspec_prepare_subst(self, alias, args):
     params = alias.__parameters__
     i = params.index(self)
     if i == len(args) and self.has_default():
-        args = [*args, self.__default__]
+        args = (*args, self.__default__)
     if i >= len(args):
         raise TypeError(f"Too few arguments for {alias}")
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
@@ -1563,9 +1562,9 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         self._nparams = nparams
         self._defaults = defaults
         if origin.__module__ == 'builtins':
-            self.__doc__ = f'A generic version of {origin.__qualname__}.'
+            self.__doc__ = f'Deprecated alias to {origin.__qualname__}.'
         else:
-            self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}.'
+            self.__doc__ = f'Deprecated alias to {origin.__module__}.{origin.__qualname__}.'
 
     @_tp_cache
     def __getitem__(self, params):
@@ -2621,23 +2620,6 @@ def no_type_check(arg):
     except TypeError:  # built-in classes
         pass
     return arg
-
-
-def no_type_check_decorator(decorator):
-    """Decorator to give another decorator the @no_type_check effect.
-
-    This wraps the decorator with something that wraps the decorated
-    function in @no_type_check.
-    """
-    import warnings
-    warnings._deprecated("typing.no_type_check_decorator", remove=(3, 15))
-    @functools.wraps(decorator)
-    def wrapped_decorator(*args, **kwds):
-        func = decorator(*args, **kwds)
-        func = no_type_check(func)
-        return func
-
-    return wrapped_decorator
 
 
 def _overload_dummy(*args, **kwds):

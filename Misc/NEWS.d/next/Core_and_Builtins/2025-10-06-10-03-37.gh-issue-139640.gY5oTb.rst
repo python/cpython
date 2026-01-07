@@ -1,2 +1,0 @@
-Fix swallowing some syntax warnings in different modules if they
-accidentally have the same message and are emitted from the same line.

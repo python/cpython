@@ -139,12 +139,13 @@ Node classes
     The :meth:`~object.__repr__` output of :class:`~ast.AST` nodes includes
     the values of the node fields.
 
-.. deprecated:: 3.8
+.. deprecated-removed:: 3.8 3.14
 
-   Old classes :class:`!ast.Num`, :class:`!ast.Str`, :class:`!ast.Bytes`,
-   :class:`!ast.NameConstant` and :class:`!ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.  In the meantime,
-   instantiating them will return an instance of a different class.
+   Previous versions of Python provided the AST classes :class:`!ast.Num`,
+   :class:`!ast.Str`, :class:`!ast.Bytes`, :class:`!ast.NameConstant` and
+   :class:`!ast.Ellipsis`, which were deprecated in Python 3.8. These classes
+   were removed in Python 3.14, and their functionality has been replaced with
+   :class:`ast.Constant`.
 
 .. deprecated:: 3.9
 
@@ -363,6 +364,11 @@ Literals
      function call).
      This has the same meaning as ``FormattedValue.value``.
    * ``str`` is a constant containing the text of the interpolation expression.
+
+     If ``str`` is set to ``None``, then ``value`` is used to generate code
+     when calling :func:`ast.unparse`. This no longer guarantees that the
+     generated code is identical to the original and is intended for code
+     generation.
    * ``conversion`` is an integer:
 
      * -1: no conversion
@@ -2200,10 +2206,10 @@ Async and await
 Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1)
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1, module=None)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
-   filename, mode, flags=FLAGS_VALUE, optimize=optimize)``,
+   filename, mode, flags=FLAGS_VALUE, optimize=optimize, module=module)``,
    where ``FLAGS_VALUE`` is ``ast.PyCF_ONLY_AST`` if ``optimize <= 0``
    and ``ast.PyCF_OPTIMIZED_AST`` otherwise.
 
@@ -2255,6 +2261,9 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 .. function:: unparse(ast_obj)
@@ -2411,12 +2420,12 @@ and classes for traversing abstract syntax trees:
    during traversal.  For this a special visitor exists
    (:class:`NodeTransformer`) that allows modifications.
 
-   .. deprecated:: 3.8
+   .. deprecated-removed:: 3.8 3.14
 
       Methods :meth:`!visit_Num`, :meth:`!visit_Str`, :meth:`!visit_Bytes`,
-      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` are deprecated
-      now and will not be called in future Python versions.  Add the
-      :meth:`visit_Constant` method to handle all constant nodes.
+      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` will not be called
+      in Python 3.14+.  Add the :meth:`visit_Constant` method instead to handle
+      all constant nodes.
 
 
 .. class:: NodeTransformer()

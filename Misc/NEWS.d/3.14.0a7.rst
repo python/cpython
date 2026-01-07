@@ -880,7 +880,7 @@ Fix an issue with thread identifiers being sign-extended on some platforms.
 .. date: 2025-02-15-14-36-32
 .. gh-issue: 99108
 .. nonce: u6CfmK
-.. section: Core and Builtins
+.. section: Library
 
 Add support for built-in implementation of HMAC (:rfc:`2104`) based on
 HACL*. Patch by Bénédikt Tran.

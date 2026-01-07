@@ -26,6 +26,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
@@ -34,6 +35,9 @@
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_warnings.h"      // _PyWarnings_InitState()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#ifdef _Py_JIT
+#include "pycore_jit.h"           // _PyJIT_Fini()
+#endif
 
 #include "opcode.h"
 
@@ -506,6 +510,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
     _Py_InitVersion();
+    _Py_DumpTraceback_Init();
 
     status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -654,6 +659,14 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
@@ -819,6 +832,8 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
     interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
     interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
+    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject*)&PyList_Type;
+    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject*)&PySet_Type;
 
     for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
@@ -1931,7 +1946,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
-        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
@@ -2257,6 +2271,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Print debug stats if any */
     _PyEval_Fini();
 
+
     /* Flush sys.stdout and sys.stderr (again, in case more was printed) */
     if (flush_std_files() < 0) {
         status = -1;
@@ -2336,6 +2351,10 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     finalize_interp_clear(tstate);
 
+#ifdef _Py_JIT
+    /* Free JIT shim memory */
+    _PyJIT_Fini();
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2468,6 +2487,14 @@ new_interpreter(PyThreadState **tstate_p,
         return status;
     }
 
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
+
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
@@ -2553,7 +2580,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->current_frame != NULL) {
+    if (tstate->current_frame != tstate->base_frame) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2625,7 +2652,7 @@ finalize_subinterpreters(void)
     (void)PyErr_WarnEx(
             PyExc_RuntimeWarning,
             "remaining subinterpreters; "
-            "destroy them with _interpreters.destroy()",
+            "close them with Interpreter.close()",
             0);
 
     /* Swap out the current tstate, which we know must belong
