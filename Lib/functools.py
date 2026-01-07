@@ -888,41 +888,23 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_dispatch_param(func, *, pos=0):
+def _get_positional_param(func, *, pos=0):
     if isinstance(func, (MethodType, classmethod, staticmethod)):
         func = func.__func__
-    if isinstance(func, FunctionType):
+    if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         func_code = func.__code__
         try:
             return func_code.co_varnames[:func_code.co_argcount][pos]
         except IndexError:
             pass
+    # Fallback path for ambiguous callables.
+    # Follows __wrapped__, checks __signature__, __text_signature__, etc.
     import inspect
     for insp_param in list(inspect.signature(func).parameters.values())[pos:]:
-        if insp_param.KEYWORD_ONLY or insp_param.VAR_KEYWORD:
+        if insp_param.kind in (insp_param.KEYWORD_ONLY, insp_param.VAR_KEYWORD):
             break
         return insp_param.name
-    raise TypeError(
-        f"Invalid first argument to `register()`: {func!r}"
-        f"does not accept positional arguments."
-    ) from None
-
-def _get_dispatch_annotation(func, param):
-    import annotationlib, typing
-    annotations = typing.get_type_hints(func, format=annotationlib.Format.FORWARDREF)
-    try:
-        fwdref_or_typeform = annotations[param]
-    except KeyError:
-        raise TypeError(
-            f"Invalid first argument to `register()`: {param!r}. "
-            f"Add missing annotation to parameter {param!r} of {func!r} "
-            f"or use `@register(some_class)`."
-        ) from None
-    return fwdref_or_typeform
-
-def _get_dispatch_arg_from_annotations(func, *, pos=0):
-    param = _get_dispatch_param(func, pos=pos)
-    return param, _get_dispatch_annotation(func, param)
+    return None
 
 def singledispatch(func):
     """Single-dispatch generic function decorator.
@@ -998,9 +980,26 @@ def singledispatch(func):
 
             # 0 for functions, 1 for methods where first argument should be skipped
             argpos = _func_is_method and not isinstance(func, staticmethod)
-            argname, cls = _get_dispatch_arg_from_annotations(func, pos=argpos)
 
-            from annotationlib import ForwardRef
+            argname = _get_positional_param(func, pos=argpos)
+            if argname is None:
+                raise TypeError(
+                    f"Invalid first argument to `register()`: {func!r} "
+                    f"does not accept positional arguments."
+                ) from None
+
+            from annotationlib import Format, ForwardRef
+            import typing
+            annotations = typing.get_type_hints(func, format=Format.FORWARDREF)
+
+            try:
+                cls = annotations[argname]
+            except KeyError:
+                raise TypeError(
+                    f"Invalid first argument to `register()`: {func!r}. "
+                    f"Add missing type annotation to parameter {argname!r} "
+                    "of this function or use `@register(some_class)`."
+                ) from None
 
             if not _is_valid_dispatch_type(cls):
                 if isinstance(cls, UnionType):
