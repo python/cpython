@@ -2916,12 +2916,20 @@ class TestSingleDispatch(unittest.TestCase):
         @functools.wraps(_)
         def wrapper(*args, **kwargs):
             return _(*args, **kwargs)
+
+        class SomeClass:
+            def method(self, arg: dict):
+                return "dict"
+
+        t.register(SomeClass().method)
+
         self.assertEqual(t(0), "int")
         self.assertEqual(t(''), "str")
         self.assertEqual(t(0.0), "float")
         self.assertEqual(t([], None, None, a4=None), "list")
         self.assertEqual(t(NotImplemented), "base")
         self.assertEqual(t(b''), "bytes")
+        self.assertEqual(t({}), "dict")
 
     def test_method_type_ann_register(self):
 
