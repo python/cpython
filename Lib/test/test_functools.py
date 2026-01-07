@@ -2907,6 +2907,9 @@ class TestSingleDispatch(unittest.TestCase):
         @t.register
         def _(arg: float, /):
             return "float"
+        @t.register
+        def _(a1: list, a2: None, /, a3: None, *, a4: None):
+            return "list"
         def _(arg: bytes):
             return "bytes"
         @t.register
@@ -2916,6 +2919,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(t(0), "int")
         self.assertEqual(t(''), "str")
         self.assertEqual(t(0.0), "float")
+        self.assertEqual(t([], None, None, a4=None), "list")
         self.assertEqual(t(NotImplemented), "base")
         self.assertEqual(t(b''), "bytes")
 
