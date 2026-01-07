@@ -3479,13 +3479,13 @@ class TestSingleDispatch(unittest.TestCase):
                 return str(item)
 
         self.assertEqual(str(Signature.from_callable(A.func)),
-                         '(self, item, arg: int) -> str')
+                         '(self, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A().func)),
-                         '(self, item, arg: int) -> str')
+                         '(self, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A.cls_func)),
-                         '(cls, item, arg: int) -> str')
+                         '(cls, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A.static_func)),
-                         '(item, arg: int) -> str')
+                         '(item: int, arg) -> str')
 
     def test_method_non_descriptor(self):
         class Callable:
