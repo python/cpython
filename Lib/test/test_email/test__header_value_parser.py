@@ -1278,6 +1278,43 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
 
 
+    # content_getter
+
+    @params
+    def test_content_getter(
+            self,
+            s,
+            *args,
+            start=0,
+            tl_class=parser.TokenList,
+            text_type='ttext',
+            end_chars='',
+            qp=False,
+            ew_err=None,
+            **kw,
+            ):
+        result = self._test_parse(
+            parser.content_getter(
+                tl_class,
+                text_type,
+                end_chars=end_chars,
+                qp=qp,
+                ew_err=ew_err,
+                ),
+            C(s, start),
+            *args,
+            test_start=False,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(result, tl_class)
+        self.verify_terminal_types(result, text_type, 'fws')
+
+    params_test_content_getter = Params(
+        )
+
+
     # parse_unstructured
 
     @params

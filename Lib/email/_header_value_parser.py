@@ -1345,6 +1345,43 @@ def get_encoded_word(value, start, terminal_type):
     return ew, ew_match.end()
 
 pre_ew_re = re.compile(rf'[^{_WSP + '='}]*')
+def content_getter(value):
+    tl = UnstructuredTokenList()
+    start, vlen = 0, len(value)
+    while start < vlen:
+        if value[start] in WSP:
+            token, start = get_fws(value, start)
+            tl.append(token)
+            continue
+        ew = None
+        m = pre_ew_re.match(value, start)
+        end = m.end()
+        if end < vlen:
+            if value[end] == '=':
+                res = get_encoded_word(value, end, 'utext')
+                if res:
+                    ew, end = res
+                else:
+                    m = _non_wsp_re.match(value, start)
+                    ew, end = None, m.end()
+        text = m.group()
+        # At this point we have text, an ew, or both; we can't have neither.
+        if tl and tl[-1].token_type == 'encoded-word':
+            tl.defects.append(_MissingWhitespaceAfterEWDefect)
+        if text:
+            tl.append(_make_xtext(text, ValueTerminal, 'utext'))
+        if ew:
+            if tl:
+                if tl[-1].token_type == 'fws':
+                    if len(tl) > 1 and tl[-2].token_type == 'encoded-word':
+                        tl[-1] = EWWhiteSpaceTerminal(tl[-1], 'fws')
+                else:
+                    tl.defects.append(_MissingWhitespaceBeforeEWDefect)
+            tl.append(ew)
+        start = end
+    return tl
+
+pre_ew_re = re.compile(rf'[^{_WSP + '='}]*')
 def parse_unstructured(value):
     """unstructured = (*([FWS] vchar) *WSP) / obs-unstruct
        obs-unstruct = *((*LF *CR *(obs-utext) *LF *CR)) / FWS)
