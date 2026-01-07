@@ -896,7 +896,7 @@ def _get_dispatch_param(func, *, pos=0):
     *pos* should either be 0 (for functions and staticmethods) or 1 (for methods).
     """
     # Fast path for typical callables and descriptors.
-    if isinstance(func, (MethodType, classmethod, staticmethod)):
+    if isinstance(func, (classmethod, staticmethod)):
         func = func.__func__
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         func_code = func.__code__
