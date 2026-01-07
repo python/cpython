@@ -992,7 +992,7 @@ def singledispatch(func):
                 raise TypeError(
                     f"Invalid first argument to `register()`: {func!r} "
                     f"does not accept positional arguments."
-                ) from None
+                )
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
