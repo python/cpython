@@ -100,7 +100,7 @@ static PyTypeObject testBufType = {
 
 /* Get the pointer from a buffer-supporting object as a PyLong.
  *
- * Used to test alignment properties.*/
+ * Used to test alignment properties. */
 static PyObject *
 buffer_pointer_as_int(PyObject *Py_UNUSED(module), PyObject *obj)
 {

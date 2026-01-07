@@ -1,2 +1,2 @@
-:func:`bytearray` and :func:`array.array` buffers now have the same alignment
+:class:`bytearray` buffers now have the same alignment
 when empty as when allocated. Unaligned buffers can still be created by slicing.

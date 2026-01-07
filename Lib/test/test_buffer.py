@@ -4449,7 +4449,6 @@ class TestBufferProtocol(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
-    @unittest.skipIf(struct is None, "requires struct")
     def test_bytearray_alignment(self):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should be at least to `size_t`.
@@ -4465,7 +4464,6 @@ class TestBufferProtocol(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
-    @unittest.skipIf(struct is None, "requires struct")
     def test_array_alignment(self):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should be at least to `size_t`.
