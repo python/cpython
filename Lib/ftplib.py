@@ -681,9 +681,6 @@ else:
         Connect as usual to port 21 implicitly securing the FTP control
         connection before authenticating.
 
-        Securing the data connection requires user to explicitly ask
-        for it by calling prot_p() method.
-
         Usage example:
         >>> from ftplib import FTP_TLS
         >>> ftps = FTP_TLS('ftp.python.org')
@@ -733,6 +730,7 @@ else:
                 resp = self.voidcmd('AUTH SSL')
             self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
             self.file = self.sock.makefile(mode='r', encoding=self.encoding)
+            self.prot_p()
             return resp
 
         def ccc(self):

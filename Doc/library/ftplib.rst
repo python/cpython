@@ -84,6 +84,14 @@ FTP objects
 .. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
 
+   .. warning::
+
+      Use of this class may create a vulnerability to
+      `man-in-the-middle attack <https://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_,
+      please consider using the :class:`FTP_TLS` class, and reflect
+      on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before using an unprotected FTP connection.
+
    Return a new instance of the :class:`FTP` class.
 
    :param str host:
@@ -454,10 +462,6 @@ FTP_TLS objects
    Connect to port 21 implicitly securing the FTP control connection
    before authenticating.
 
-   .. note::
-      The user must explicitly secure the data connection
-      by calling the :meth:`prot_p` method.
-
    :param str host:
       The hostname to connect to.
       If given, :code:`connect(host)` is implicitly called by the constructor.
@@ -516,8 +520,6 @@ FTP_TLS objects
       >>> ftps = FTP_TLS('ftp.pureftpd.org')
       >>> ftps.login()
       '230 Anonymous user logged in'
-      >>> ftps.prot_p()
-      '200 Data protection level set to "private"'
       >>> ftps.nlst()
       ['6jack', 'OpenBSD', 'antilink', 'blogbench', 'bsdcam', 'clockspeed', 'djbdns-jedi', 'docs', 'eaccelerator-jedi', 'favicon.ico', 'francotone', 'fugu', 'ignore', 'libpuzzle', 'metalog', 'minidentd', 'misc', 'mysql-udf-global-user-variables', 'php-jenkins-hash', 'php-skein-hash', 'php-webdav', 'phpaudit', 'phpbench', 'pincaster', 'ping', 'posto', 'pub', 'public', 'public_keys', 'pure-ftpd', 'qscan', 'qtc', 'sharedance', 'skycache', 'sound', 'tmp', 'ucarp']
 
@@ -548,11 +550,18 @@ FTP_TLS objects
 
    .. method:: FTP_TLS.prot_p()
 
-      Set up secure data connection.
+      Set up secure data connection (with TLS).
 
    .. method:: FTP_TLS.prot_c()
 
-      Set up clear text data connection.
+      Set up clear text data connection (without TLS).
+
+      .. warning::
+
+         Calling this method may create a vulnerability to
+         `man-in-the-middle attack <https://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_.
+         Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+         before requesting clear text data connection without TLS.
 
 
 Module variables

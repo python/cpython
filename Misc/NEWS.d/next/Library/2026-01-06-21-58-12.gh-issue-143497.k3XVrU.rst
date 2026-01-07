@@ -1,0 +1,5 @@
+Fix defaults of :class:`ftplib.FTP_TLS` to not leave the data connection
+without TLS and vulnerable to `man-in-the-middle attack
+<https://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_. Also extend the
+documenation of :class:`ftplib.FTP_TLS` and :meth:`ftplib.FTP_TLS.prot_c`
+to warn about the security implications. +Patch by Sebastian Pipping.
