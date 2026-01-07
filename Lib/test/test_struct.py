@@ -5,7 +5,6 @@ import gc
 import math
 import operator
 import unittest
-import platform
 import struct
 import sys
 import weakref
