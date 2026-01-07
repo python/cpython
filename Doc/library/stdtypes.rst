@@ -2045,7 +2045,18 @@ expression support in the :mod:`re` module).
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
-   not found.
+   not found. For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.index('eggs')
+      Traceback (most recent call last):
+        File "<python-input-0>", line 1, in <module>
+          'spam, spam, spam'.index('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`rindex`.
 
 
 .. method:: str.isalnum()
@@ -2189,6 +2200,15 @@ expression support in the :mod:`re` module).
    Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
    Nonprintable characters are those in group Separator or Other (Z or C),
    except the ASCII space.
+
+   For example:
+
+   .. doctest::
+
+      >>> ''.isprintable(), ' '.isprintable()
+      (True, True)
+      >>> '\t'.isprintable(), '\n'.isprintable()
+      (False, False)
 
 
 .. method:: str.isspace()

@@ -12863,6 +12863,7 @@ The flags argument contains a bitwise OR of zero or more of the following flags:
 - RWF_SYNC
 - RWF_APPEND
 - RWF_DONTCACHE
+- RWF_ATOMIC
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -12870,7 +12871,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=664a67626d485665]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=7de72245873f56bf]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -18119,6 +18120,9 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_DONTCACHE
     if (PyModule_AddIntConstant(m, "RWF_DONTCACHE", RWF_DONTCACHE)) return -1;
+#endif
+#ifdef RWF_ATOMIC
+    if (PyModule_AddIntConstant(m, "RWF_ATOMIC", RWF_ATOMIC)) return -1;
 #endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
