@@ -910,9 +910,12 @@ def _get_dispatch_param(func, *, _dispatchmethod=False):
             pass
     # Fallback path for more nuanced inspection of ambiguous callables.
     import inspect
-    match list(inspect.signature(func).parameters.values())[idx:]:
-        case [param] if param.kind < 3:  # (*, param) or (**param)
+    try:
+        param = list(inspect.signature(func).parameters.values())[idx]
+        if param.kind < 3:  # (*, param) or (**param)
             return param.name
+    except IndexError:
+        pass
     return None
 
 def singledispatch(func):
