@@ -2832,7 +2832,7 @@ int
 PyGILState_Check(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    if (!runtime->gilstate.check_enabled) {
+    if (!_Py_atomic_load_int_relaxed(&runtime->gilstate.check_enabled)) {
         return 1;
     }
 
