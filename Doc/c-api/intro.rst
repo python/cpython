@@ -381,7 +381,7 @@ complete listing.
    Macro used to declare a symbol (function or data) as exported from a shared library.
    On Windows, this expands to ``__declspec(dllexport)``.
    On other platforms with visibility support, it
-   expands to ``__attribute__((visibility("default")))``. 
+   expands to ``__attribute__((visibility("default")))``.
 
 
 .. c:macro:: Py_IMPORTED_SYMBOL
@@ -399,7 +399,7 @@ complete listing.
 
    Example usage::
 
-      PyAPI_DATA(PyObject *) _Py_NoneStruct;  
+      PyAPI_DATA(PyObject *) _Py_NoneStruct;
 
 
 .. c:macro:: Py_LOCAL_SYMBOL
@@ -407,8 +407,9 @@ complete listing.
    Macro used to declare a symbol as local to the shared library (hidden).
    It ensures the symbol is not exported.
    On platforms with visibility support, it
-   expands to ``__attribute__((visibility("hidden")))``. 
-                
+   expands to ``__attribute__((visibility("hidden")))``.
+
+
 .. _api-objects:
 
 Objects, Types and Reference Counts
