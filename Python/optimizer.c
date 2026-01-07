@@ -1835,7 +1835,7 @@ error:
     _Py_Executors_InvalidateAll(interp, is_invalidation);
 }
 
-static void
+void
 _PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
 {
     _PyBloomFilter obj_filter;
