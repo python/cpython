@@ -14,6 +14,7 @@ from test.support import (
     import_helper,
     Py_GIL_DISABLED,
     requires_jit_enabled,
+    threading_helper,
     reset_code
 )
 
@@ -460,6 +461,35 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
+
+
+@requires_jit_enabled
+@threading_helper.requires_working_threading()
+@unittest.skipIf(not Py_GIL_DISABLED, "Requires FT and JIT")
+class TestJitFreeThreading(unittest.TestCase):
+    def tests_reenabled_with_multiple_threads(self):
+        import threading
+        def testfunc(x, expected_value):
+            for i in range(x):
+                pass
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
+        # JIT
+        testfunc(TIER2_THRESHOLD+1, True)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        # Spawn threads (turn off the JIT).
+        t = threading.Thread(target=lambda:None, args=())
+        t.start()
+        t.join()
+        # JIT is invalidated after spawning threads.
+        ex = get_first_executor(testfunc)
+        self.assertIsNone(ex)
+        # JIT.
+        testfunc(TIER2_THRESHOLD+1, True)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
 
 
 @requires_jit_enabled
