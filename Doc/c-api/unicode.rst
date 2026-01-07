@@ -65,6 +65,22 @@ Python:
    .. versionadded:: 3.3
 
 
+.. c:macro:: PyUnicode_IS_COMPACT(o)
+
+   Return true if the Unicode object *o* is a compact string.
+   Compact strings use the :c:struct:`PyCompactUnicodeObject` structure.
+
+   .. versionadded:: 3.3
+
+
+.. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
+
+   Return true if the Unicode object *o* is a compact ASCII string.
+   Compact ASCII strings use the :c:struct:`PyASCIIObject` structure.
+
+   .. versionadded:: 3.3
+
+
 The following APIs are C macros and static inlined functions for fast checks and
 access to internal read-only data of Unicode objects:
 
@@ -125,22 +141,6 @@ access to internal read-only data of Unicode objects:
 
    Return a void pointer to the raw Unicode buffer.  *unicode* has to be a Unicode
    object in the "canonical" representation (not checked).
-
-   .. versionadded:: 3.3
-
-
-.. c:macro:: PyUnicode_IS_COMPACT(o)
-
-   Return true if the Unicode object *o* is a compact string.
-   Compact strings use the :c:struct:`PyCompactUnicodeObject` structure.
-
-   .. versionadded:: 3.3
-
-
-.. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
-
-   Return true if the Unicode object *o* is a compact ASCII string.
-   Compact ASCII strings use the :c:struct:`PyASCIIObject` structure.
 
    .. versionadded:: 3.3
 
