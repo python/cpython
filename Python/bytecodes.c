@@ -1349,7 +1349,7 @@ dummy_func(
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
             PyObject *retval_o;
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            if ((tstate->interp->eval_frame == NULL) &&
+            if (!IS_PEP523_HOOKED(tstate) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                 gen_try_set_executing((PyGenObject *)receiver_o))
             {
@@ -2596,7 +2596,7 @@ dummy_func(
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             assert((oparg & 1) == 0);
-            DEOPT_IF(tstate->interp->eval_frame);
+            DEOPT_IF(IS_PEP523_HOOKED(tstate));
             PyTypeObject *cls = Py_TYPE(owner_o);
             assert(type_version != 0);
             DEOPT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(cls->tp_version_tag) != type_version);
@@ -3746,7 +3746,7 @@ dummy_func(
             }
             // Check if the call can be inlined or not
             if (Py_TYPE(callable_o) == &PyFunction_Type &&
-                tstate->interp->eval_frame == NULL &&
+                !IS_PEP523_HOOKED(tstate) &&
                 ((PyFunctionObject *)callable_o)->vectorcall == _PyFunction_Vectorcall)
             {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
@@ -3938,7 +3938,7 @@ dummy_func(
         }
 
         op(_CHECK_PEP_523, (--)) {
-            DEOPT_IF(tstate->interp->eval_frame);
+            DEOPT_IF(IS_PEP523_HOOKED(tstate));
         }
 
         op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -3974,7 +3974,7 @@ dummy_func(
         }
 
         op(_PUSH_FRAME, (new_frame -- )) {
-            assert(tstate->interp->eval_frame == NULL);
+            assert(!IS_PEP523_HOOKED(tstate));
             _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
             DEAD(new_frame);
             SYNC_SP();
@@ -4607,7 +4607,7 @@ dummy_func(
             int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames_o);
             // Check if the call can be inlined or not
             if (Py_TYPE(callable_o) == &PyFunction_Type &&
-                tstate->interp->eval_frame == NULL &&
+                !IS_PEP523_HOOKED(tstate) &&
                 ((PyFunctionObject *)callable_o)->vectorcall == _PyFunction_Vectorcall)
             {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
@@ -4851,7 +4851,7 @@ dummy_func(
             }
             else {
                 if (Py_TYPE(func) == &PyFunction_Type &&
-                    tstate->interp->eval_frame == NULL &&
+                    !IS_PEP523_HOOKED(tstate) &&
                     ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
                     PyObject *callargs = PyStackRef_AsPyObjectSteal(callargs_st);
                     assert(PyTuple_CheckExact(callargs));
