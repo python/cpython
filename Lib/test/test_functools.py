@@ -2918,10 +2918,18 @@ class TestSingleDispatch(unittest.TestCase):
             return _(*args, **kwargs)
 
         class SomeClass:
-            def method(self, arg: dict):
+            def for_dict(self, arg: dict):
                 return "dict"
 
-        t.register(SomeClass().method)
+            def for_set(self, arg: set, arg2: None):
+                return "set"
+
+            def for_complex(self: object, arg: complex, arg2: None):
+                return "complex"
+
+        t.register(SomeClass().for_dict)
+        t.register(SomeClass().for_set)
+        t.register(SomeClass().for_complex)
 
         self.assertEqual(t(0), "int")
         self.assertEqual(t(''), "str")
@@ -2930,6 +2938,8 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(t(NotImplemented), "base")
         self.assertEqual(t(b''), "bytes")
         self.assertEqual(t({}), "dict")
+        self.assertEqual(t(set(), None), "set")
+        self.assertEqual(t(0j, None), "complex")
 
     def test_method_type_ann_register(self):
 
