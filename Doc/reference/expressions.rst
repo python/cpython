@@ -1051,6 +1051,11 @@ colon::
    ['zero', 'one', 'two', 'three', 'four', 'five']
    >>> number_names[::2]
    ['zero', 'two', 'four']
+   >>> number_names[:-3]
+   ['zero', 'one', 'two']
+   >>> del number_names[4:]
+   >>> number_names
+   ['zero', 'one', 'two', 'three']
 
 When a slice is evaluated, the interpreter constructs a :class:`slice` object
 whose :attr:`~slice.start`, :attr:`~slice.stop` and
@@ -1072,10 +1077,11 @@ Comma-separated subscripts
 The subscript can also be given as two or more comma-separated expressions
 or slices::
 
+   # continuing with the SubscriptionDemo instance defined above:
    >>> demo[1, 2, 3]
-   subscripted with (1, 2, 3)
+   subscripted with: (1, 2, 3)
    >>> demo[1:2, 3]
-   subscripted with (slice(1, 2, None), 3)
+   subscripted with: (slice(1, 2, None), 3)
 
 This form is commonly used with numerical libraries for slicing
 multi-dimensional data.
