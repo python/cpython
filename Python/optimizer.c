@@ -1792,12 +1792,6 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
-
-    // It doesn't matter if we don't invalidate all threads.
-    // If more threads are spawned, we force the jit not to compile anyways
-    // so the trace gets abandoned.
-    _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), obj);
-
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
