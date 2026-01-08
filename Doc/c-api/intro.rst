@@ -388,7 +388,7 @@ complete listing.
 
    Macro used to declare a symbol (function or data) as exported.
    On Windows, this expands to ``__declspec(dllexport)``.
-   On other platforms with visibility support, it
+   On compatible versions of GCC/Clang, it
    expands to ``__attribute__((visibility("default")))``.
    This macro is for defining the C API itself; extension modules should not use it.
 
