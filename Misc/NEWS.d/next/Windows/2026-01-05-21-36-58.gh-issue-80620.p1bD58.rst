@@ -1,1 +1,1 @@
-Support negative timestamps in various :mod:`datetime` functions.
+Support negative timestamps in :func:`time.gmtime`, :func:`time.localtime`, and various :mod:`datetime` functions.
