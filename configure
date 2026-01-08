@@ -12033,9 +12033,7 @@ ac_fn_check_decl "$LINENO" "I_PUSH" "ac_cv_have_decl_I_PUSH" "
 if test "x$ac_cv_have_decl_I_PUSH" = xyes
 then :
 
-
 printf "%s\n" "#define HAVE_STROPTS_H 1" >>confdefs.h
-
 
 fi
 
