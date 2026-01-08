@@ -71,6 +71,10 @@ def for_each_character(chars, skip=''):
 # Base test class
 class TestEmailBase(ParamsMixin, unittest.TestCase):
 
+    # XXX XXX Delete this at end of refactor.  We will be putting in temporary
+    # empty parameter lists during the refactoring process.
+    paramsRequired = False
+
     # XXX XXX temporary usability hack, edit this out before publishing PR.
     def __str__(self):
         from unittest.util import strclass

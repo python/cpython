@@ -5,7 +5,7 @@ from email import _header_value_parser as parser
 from email import errors
 from email import policy
 from test.test_email import TestEmailBase, parameterize
-from test.test_email.params import C, params
+from test.test_email.params import C, params, Params
 
 
 # ---> Defect Expectations
@@ -202,12 +202,19 @@ class TestParserMixin:
 
 class TestParser(TestParserMixin, TestEmailBase):
 
-    # _wsp_splitter
-
     rfc_printable_ascii = bytes(range(33, 127)).decode('ascii')
     rfc_atext_chars = (string.ascii_letters + string.digits +
                         "!#$%&\'*+-/=?^_`{}|~")
     rfc_dtext_chars = rfc_printable_ascii.translate(str.maketrans('','',r'\[]'))
+
+    # _wsp_splitter
+
+    @params
+    def test__wsp_splitter(self, s, res):
+        self.assertEqual(parser._wsp_splitter(s, 1), res)
+
+    params_test__wsp_splitter = Params(
+        )
 
     def test__wsp_splitter_one_word(self):
         self.assertEqual(parser._wsp_splitter('foo', 1), ['foo'])
