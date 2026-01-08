@@ -1692,6 +1692,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         }
     }
 
+    PyObject *hook = NULL;
     PyObject *hook_args = make_unraisable_hook_args(
         tstate, exc_type, exc_value, exc_tb, err_msg, obj);
     if (hook_args == NULL) {
@@ -1700,7 +1701,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         goto error;
     }
 
-    PyObject *hook;
     if (PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
         Py_DECREF(hook_args);
         err_msg_str = NULL;
@@ -1727,7 +1727,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
-    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);
@@ -1757,6 +1756,7 @@ done:
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
     Py_XDECREF(err_msg);
+    Py_XDECREF(hook);
     _PyErr_Clear(tstate); /* Just in case */
 }
 
