@@ -41,8 +41,7 @@ try:
 except ImportError:
     LiveStatsCollector = None
 
-# FIX: Use bool() to correctly detect 0 as False on Windows non-free-threaded builds
-_FREE_THREADED_BUILD = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+_FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
 # Minimum number of samples required before showing the TUI
 # If fewer samples are collected, we skip the TUI and just print a message
@@ -66,27 +65,23 @@ class SampleProfiler:
         self.realtime_stats = False
 
     def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
-        if _FREE_THREADED_BUILD:
-            unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=self.collect_stats
-            )
+        kwargs = {}
+        if _FREE_THREADED_BUILD or self.all_threads:
+            kwargs['all_threads'] = self.all_threads
         else:
-            # FIX: Properly handle all_threads vs only_active_thread parameters
-            if self.all_threads:
-                unwinder = _remote_debugging.RemoteUnwinder(
-                    self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
-                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                    cache_frames=True, stats=self.collect_stats
-                )
-            else:
-                unwinder = _remote_debugging.RemoteUnwinder(
-                    self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
-                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                    cache_frames=True, stats=self.collect_stats
-                )
-        return unwinder
+            kwargs['only_active_thread'] = bool(self.all_threads)
+
+        return _remote_debugging.RemoteUnwinder(
+            self.pid,
+            mode=self.mode,
+            native=native,
+            gc=gc,
+            opcodes=opcodes,
+            skip_non_matching_threads=skip_non_matching_threads,
+            cache_frames=True,
+            stats=self.collect_stats,
+            **kwargs
+        )
 
     def sample(self, collector, duration_sec=None, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
