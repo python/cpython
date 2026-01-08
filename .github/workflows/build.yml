@@ -142,9 +142,24 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
-      - name: Check for undocumented C APIs
-        run: make check-c-api-docs
 
+  check-c-api-docs:
+    name: 'Check if all C APIs are documented'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-context
+    if: >-
+      needs.build-context.outputs.run-tests == 'true'
+      || needs.build-context.outputs.run-docs == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check for undocumented C APIs
+        run: python Tools/check-c-api-docs/main.py
 
   build-windows:
     name: >-
@@ -685,6 +700,7 @@ jobs:
     - check-docs
     - check-autoconf-regen
     - check-generated-files
+    - check-c-api-docs
     - build-windows
     - build-windows-msi
     - build-macos
@@ -719,6 +735,12 @@ jobs:
             check-autoconf-regen,
             check-generated-files,
             '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-tests)
+            && !fromJSON(needs.build-context.outputs.run-docs)
+            && 'check-c-api-docs,'
             || ''
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
