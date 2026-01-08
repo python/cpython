@@ -242,7 +242,7 @@ of function pointers (rather than switching on the oparg).
 .. bpo: 42540
 .. date: 2021-11-15-12-08-27
 .. nonce: V2w107
-.. section: Library
+.. section: Core and Builtins
 
 Fix crash when :func:`os.fork` is called with an active non-default memory
 allocator.

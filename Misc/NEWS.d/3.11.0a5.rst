@@ -214,7 +214,7 @@ a crash on wasm32-emscripten platform.
 .. bpo: 46361
 .. date: 2022-01-12-17-15-17
 .. nonce: mgI_j_
-.. section: Library
+.. section: Core and Builtins
 
 Ensure that "small" integers created by :meth:`int.from_bytes` and
 :class:`decimal.Decimal` are properly cached.
@@ -264,7 +264,7 @@ Add CAN Socket support for NetBSD.
 .. bpo: 46045
 .. date: 2021-12-11-11-36-48
 .. nonce: sfThay
-.. section: Library
+.. section: Build
 
 Do not use POSIX semaphores on NetBSD
 
@@ -273,7 +273,7 @@ Do not use POSIX semaphores on NetBSD
 .. bpo: 44024
 .. date: 2021-05-04-21-55-49
 .. nonce: M9m8Qd
-.. section: Library
+.. section: Core and Builtins
 
 Improve the :exc:`TypeError` message for non-string second arguments passed
 to the built-in functions :func:`getattr` and :func:`hasattr`. Patch by Géry

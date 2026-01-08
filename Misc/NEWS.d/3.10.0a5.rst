@@ -146,7 +146,7 @@ the :mod:`collections` module.
 .. bpo: 41994
 .. date: 2020-10-10-14-16-03
 .. nonce: Xop8sV
-.. section: Library
+.. section: Core and Builtins
 
 Fixed possible leak in ``import`` when ``sys.modules`` is not a ``dict``.
 

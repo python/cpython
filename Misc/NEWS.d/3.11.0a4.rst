@@ -334,7 +334,7 @@ Deepfreeze :mod:`runpy`, patch by Kumar Aditya.
 .. bpo: 46025
 .. date: 2021-12-09-11-41-35
 .. nonce: pkEvW9
-.. section: Library
+.. section: Core and Builtins
 
 Fix a crash in the :mod:`atexit` module involving functions that unregister
 themselves before raising exceptions. Patch by Pablo Galindo.

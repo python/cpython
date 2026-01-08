@@ -50,7 +50,7 @@ Update CPython bytecode magic number.
 .. bpo: 43672
 .. date: 2021-03-31-09-12-54
 .. nonce: jTT5uG
-.. section: Library
+.. section: Core and Builtins
 
 Raise ImportWarning when calling find_loader().
 
@@ -91,7 +91,7 @@ Galindo.
 .. bpo: 42134
 .. date: 2021-03-26-17-30-19
 .. nonce: G4Sjxg
-.. section: Library
+.. section: Core and Builtins
 
 Calls to find_module() by the import system now raise ImportWarning.
 
