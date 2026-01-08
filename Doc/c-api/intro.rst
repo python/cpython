@@ -397,7 +397,6 @@ complete listing.
 
    Macro used to declare a symbol as imported.
    On Windows, this expands to ``__declspec(dllimport)``.
-   On other platforms, it is usually empty or standard visibility.
    This macro is for defining the C API itself; extension modules should not use it.
 
 
