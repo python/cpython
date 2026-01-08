@@ -17,10 +17,10 @@ class CookieTests(unittest.TestCase):
              'repr': "<SimpleCookie: chips='ahoy' vienna='finger'>",
              'output': 'Set-Cookie: chips=ahoy\nSet-Cookie: vienna=finger'},
 
-            {'data': 'keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;"',
-             'dict': {'keebler' : 'E=mc2; L="Loves"; fudge=\012;'},
-             'repr': '''<SimpleCookie: keebler='E=mc2; L="Loves"; fudge=\\n;'>''',
-             'output': 'Set-Cookie: keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;"'},
+            {'data': 'keebler="E=mc2; L=\\"Loves\\"; fudge=;"',
+             'dict': {'keebler' : 'E=mc2; L="Loves"; fudge=;'},
+             'repr': '''<SimpleCookie: keebler='E=mc2; L="Loves"; fudge=;'>''',
+             'output': 'Set-Cookie: keebler="E=mc2; L=\\"Loves\\"; fudge=;"'},
 
             # Check illegal cookies that have an '=' char in an unquoted value
             {'data': 'keebler=E=mc2',
@@ -593,6 +593,51 @@ class MorselTests(unittest.TestCase):
         self.assertRegex(str(morsel),
                 r'Set-Cookie: key=coded_val; '
                 r'expires=\w+, \d+ \w+ \d+ \d+:\d+:\d+ \w+')
+
+    def test_control_characters(self):
+        for c0 in support.control_characters_c0():
+            morsel = cookies.Morsel()
+
+            # .__setitem__()
+            with self.assertRaises(cookies.CookieError):
+                morsel[c0] = "val"
+            with self.assertRaises(cookies.CookieError):
+                morsel["path"] = c0
+
+            # .setdefault()
+            with self.assertRaises(cookies.CookieError):
+                morsel.setdefault("path", c0)
+            with self.assertRaises(cookies.CookieError):
+                morsel.setdefault(c0, "val")
+
+            # .set()
+            with self.assertRaises(cookies.CookieError):
+                morsel.set(c0, "val", "coded-value")
+            with self.assertRaises(cookies.CookieError):
+                morsel.set("path", c0, "coded-value")
+            with self.assertRaises(cookies.CookieError):
+                morsel.set("path", "val", c0)
+
+    def test_control_characters_output(self):
+        # Tests that even if the internals of Morsel are modified
+        # that a call to .output() has control character safeguards.
+        for c0 in support.control_characters_c0():
+            morsel = cookies.Morsel()
+            morsel.set("key", "value", "coded-value")
+            morsel._key = c0  # Override private variable.
+            cookie = cookies.SimpleCookie()
+            cookie["cookie"] = morsel
+            with self.assertRaises(cookies.CookieError):
+                cookie.output()
+
+            morsel = cookies.Morsel()
+            morsel.set("key", "value", "coded-value")
+            morsel._coded_value = c0  # Override private variable.
+            cookie = cookies.SimpleCookie()
+            cookie["cookie"] = morsel
+            with self.assertRaises(cookies.CookieError):
+                cookie.output()
+
 
 
 def load_tests(loader, tests, pattern):
