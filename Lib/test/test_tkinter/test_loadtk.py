@@ -3,6 +3,7 @@ import sys
 import unittest
 import test.support as test_support
 from test.support import os_helper
+from test.test_tkinter.support import setUpModule
 from tkinter import Tcl, TclError
 
 test_support.requires('gui')
