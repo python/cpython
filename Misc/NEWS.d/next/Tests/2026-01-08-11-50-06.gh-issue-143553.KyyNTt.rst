@@ -1,1 +1,1 @@
-Add support for parametrized resources.
+Add support for parametrized resources, such as ``-u xpickle=2.7``.
