@@ -117,6 +117,7 @@ _PySSLContext_set_msg_callback(PyObject *op, PyObject *arg,
     return 0;
 }
 
+#ifdef PY_HAS_KEYLOG
 static void
 _PySSL_keylog_callback(const SSL *ssl, const char *line)
 {
@@ -178,12 +179,6 @@ _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
     PySSLContext *self = PySSLContext_CAST(op);
     FILE *fp;
 
-#if defined(MS_WINDOWS) && defined(Py_DEBUG)
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "set_keylog_filename: unavailable on Windows debug build");
-    return -1;
-#endif
-
     /* Reset variables and callback first */
     SSL_CTX_set_keylog_callback(self->ctx, NULL);
     Py_CLEAR(self->keylog_filename);
@@ -225,3 +220,4 @@ _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
     SSL_CTX_set_keylog_callback(self->ctx, _PySSL_keylog_callback);
     return 0;
 }
+#endif

@@ -316,6 +316,10 @@ enum py_proto_version {
 #define PySSL_CB_MAXLEN 128
 
 
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !(defined(MS_WINDOWS) && defined(Py_DEBUG))
+#  define PY_HAS_KEYLOG 1
+#endif
+
 typedef struct {
     PyObject_HEAD
     SSL_CTX *ctx;
@@ -328,8 +332,10 @@ typedef struct {
     int post_handshake_auth;
 #endif
     PyObject *msg_cb;
+#ifdef PY_HAS_KEYLOG
     PyObject *keylog_filename;
     BIO *keylog_bio;
+#endif
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
 #ifndef OPENSSL_NO_PSK
@@ -355,7 +361,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *Socket; /* weakref to socket on which we're layered */
     SSL *ssl;
-    PySSLContext *ctx; /* weakref to SSL context */
+    PySSLContext *ctx; /* SSL context */
     char shutdown_seen_zero;
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
@@ -2343,7 +2349,8 @@ static int
 _ssl__SSLSocket_context_set_impl(PySSLSocket *self, PyObject *value)
 /*[clinic end generated code: output=6b0a6cc5cf33d9fe input=f7fc1674b660df96]*/
 {
-    if (PyObject_TypeCheck(value, self->ctx->state->PySSLContext_Type)) {
+    _sslmodulestate *state = get_state_obj(self);
+    if (PyObject_TypeCheck(value, state->PySSLContext_Type)) {
         Py_SETREF(self->ctx, (PySSLContext *)Py_NewRef(value));
         SSL_set_SSL_CTX(self->ssl, self->ctx->ctx);
         /* Set SSL* internal msg_callback to state of new context's state */
@@ -3487,8 +3494,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->ctx = ctx;
     self->protocol = proto_version;
     self->msg_cb = NULL;
+#ifdef PY_HAS_KEYLOG
     self->keylog_filename = NULL;
     self->keylog_bio = NULL;
+#endif
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
@@ -3599,7 +3608,9 @@ context_traverse(PyObject *op, visitproc visit, void *arg)
     PySSLContext *self = PySSLContext_CAST(op);
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
+#ifdef PY_HAS_KEYLOG
     Py_VISIT(self->keylog_filename);
+#endif
 #ifndef OPENSSL_NO_PSK
     Py_VISIT(self->psk_client_callback);
     Py_VISIT(self->psk_server_callback);
@@ -3614,11 +3625,14 @@ context_clear(PyObject *op)
     PySSLContext *self = PySSLContext_CAST(op);
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
+#ifdef PY_HAS_KEYLOG
     Py_CLEAR(self->keylog_filename);
+#endif
 #ifndef OPENSSL_NO_PSK
     Py_CLEAR(self->psk_client_callback);
     Py_CLEAR(self->psk_server_callback);
 #endif
+#ifdef PY_HAS_KEYLOG
     if (self->keylog_bio != NULL) {
         Py_BEGIN_ALLOW_THREADS
         BIO_free_all(self->keylog_bio);
@@ -3626,6 +3640,7 @@ context_clear(PyObject *op)
         _PySSL_FIX_ERRNO;
         self->keylog_bio = NULL;
     }
+#endif
     return 0;
 }
 
@@ -5680,8 +5695,10 @@ static PyGetSetDef context_getsetlist[] = {
     _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
     _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
     _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF
+#ifdef PY_HAS_KEYLOG
     {"keylog_filename", _PySSLContext_get_keylog_filename,
                         _PySSLContext_set_keylog_filename, NULL},
+#endif
     {"_msg_callback", _PySSLContext_get_msg_callback,
                       _PySSLContext_set_msg_callback, NULL},
     _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
@@ -6009,8 +6026,23 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
         return NULL;
     }
 
+    PySSLSession *left_sess = PySSLSession_CAST(left);
+    PySSLSession *right_sess = PySSLSession_CAST(right);
+
+    if (left_sess->ctx == NULL || right_sess->ctx == NULL) {
+        if (op == Py_EQ) {
+            if (left == right) Py_RETURN_TRUE;
+            Py_RETURN_FALSE;
+        }
+        if (op == Py_NE) {
+            if (left != right) Py_RETURN_TRUE;
+            Py_RETURN_FALSE;
+        }
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
     int result;
-    PyTypeObject *sesstype = PySSLSession_CAST(left)->ctx->state->PySSLSession_Type;
+    PyTypeObject *sesstype = left_sess->ctx->state->PySSLSession_Type;
 
     if (!Py_IS_TYPE(left, sesstype) || !Py_IS_TYPE(right, sesstype)) {
         Py_RETURN_NOTIMPLEMENTED;

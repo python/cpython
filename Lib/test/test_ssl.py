@@ -44,6 +44,9 @@ import _ssl
 from ssl import Purpose, TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
 
 Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
+HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
+requires_keylog = unittest.skipUnless(
+    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
@@ -1567,6 +1570,7 @@ class ContextTests(unittest.TestCase):
         gc.collect()
         self.assertIs(wr(), None)
 
+    @requires_keylog
     def test_keylog_filename_refcycle(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.keylog_filename = os_helper.TESTFN
@@ -5282,9 +5286,6 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 self.assertEqual(res, b'\x02\n')
 
 
-HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
-requires_keylog = unittest.skipUnless(
-    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
 
 class TestSSLDebug(unittest.TestCase):
 
@@ -5294,17 +5295,13 @@ class TestSSLDebug(unittest.TestCase):
 
     @requires_keylog
     def test_keylog_defaults(self):
+        os_helper.unlink(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ctx.keylog_filename, None)
 
         self.assertFalse(os.path.isfile(os_helper.TESTFN))
-        try:
-            ctx.keylog_filename = os_helper.TESTFN
-        except RuntimeError:
-            if Py_DEBUG_WIN32:
-                self.skipTest("not supported on Win32 debug build")
-            raise
+        ctx.keylog_filename = os_helper.TESTFN
         self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
         self.assertTrue(os.path.isfile(os_helper.TESTFN))
         self.assertEqual(self.keylog_lines(), 1)
@@ -5325,12 +5322,7 @@ class TestSSLDebug(unittest.TestCase):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
 
-        try:
-            client_context.keylog_filename = os_helper.TESTFN
-        except RuntimeError:
-            if Py_DEBUG_WIN32:
-                self.skipTest("not supported on Win32 debug build")
-            raise
+        client_context.keylog_filename = os_helper.TESTFN
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
@@ -5373,12 +5365,7 @@ class TestSSLDebug(unittest.TestCase):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             self.assertEqual(ctx.keylog_filename, None)
 
-            try:
-                ctx = ssl.create_default_context()
-            except RuntimeError:
-                if Py_DEBUG_WIN32:
-                    self.skipTest("not supported on Win32 debug build")
-                raise
+            ctx = ssl.create_default_context()
             self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
 
             ctx = ssl._create_stdlib_context()
