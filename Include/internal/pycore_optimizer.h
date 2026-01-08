@@ -84,7 +84,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 #define JIT_CLEANUP_THRESHOLD 1000
 
 int _Py_uop_analyze_and_optimize(
-    struct _PyThreadStateImpl *tstate,
+    _PyThreadStateImpl *tstate,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
