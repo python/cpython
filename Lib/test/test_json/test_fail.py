@@ -235,7 +235,7 @@ class TestFail:
             self.assertEqual(str(err),
                              'Expecting value: line %s column %d (char %d)' %
                              (line, col, idx))
-        
+
     def test_reentrant_jsondecodeerror_does_not_crash(self):
         import json
 
@@ -261,7 +261,7 @@ class TestFail:
             # only verifies that we do not crash or trigger a SystemError.
             with self.assertRaises(Exception):
                 self.loads('"\\uZZZZ"')
-        
+
         finally:
             json.JSONDecodeError = orig_json_error
             json.decoder.JSONDecodeError = orig_decoder_error
