@@ -903,8 +903,8 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
         idx = 1
         func = func.__func__
     # If it is a regular function:
-    # Pick the first parameter if registering from singledispatch.
-    # Pick the second parameter if registering from singledispatchmethod.
+    # Pick the first parameter if registering via singledispatch.
+    # Pick the second parameter if registering via singledispatchmethod.
     else:
         idx = _inside_dispatchmethod
 
@@ -917,11 +917,14 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
         except IndexError:
             pass
 
-    # Otherwise delegate wrapped or ambiguous callables to inspect.signature (slower).
+    # Fall back to inspect.signature (slower, but complete).
     import inspect
     try:
         param = list(inspect.signature(func).parameters.values())[idx]
-        if param.kind < 3:  # False for (*, arg) and (**args) parameters.
+        # True for positional "(arg)" and positional-only "(arg, /)" parameters.
+        # True for variadic positional "(*args)" parameters for backward compatibility.
+        # False for keyword-only "(*, arg)" and keyword variadic "(**args)" parameters.
+        if param.kind < 3:
             return param.name
     except IndexError:
         pass
