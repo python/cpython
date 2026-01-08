@@ -898,17 +898,17 @@ def _get_dispatch_param(func, *, _inside_dispatchmethod=False):
     if isinstance(func, staticmethod):
         idx = 0
         func = func.__func__
-    # Pick the second parameter if function had @classmethod or is any bound method.
+    # Pick the second parameter if function had @classmethod or is a bound method.
     elif isinstance(func, (classmethod, MethodType)):
         idx = 1
         func = func.__func__
-    # If it is likely a regular function:
-    # Pick the first parameter if calling from singledispatch().
-    # Pick the second parameter if calling from singledispatchmethod.
+    # If it is a regular function:
+    # Pick the first parameter if registering from singledispatch.
+    # Pick the second parameter if registering from singledispatchmethod.
     else:
         idx = _inside_dispatchmethod
 
-    # If it is a simple function, try to fast read from the code object.
+    # If it is a simple function, try to read from the code object fast.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         # Emulate inspect._signature_from_function to get the desired parameter.
         func_code = func.__code__
