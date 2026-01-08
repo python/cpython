@@ -888,7 +888,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_dispatch_param(func, *, _inside_dispatchmethod=False):
+def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
     """Finds the first positional and user-specified parameter in a callable
     or descriptor.
 
@@ -999,7 +999,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            argname = _get_dispatch_param(
+            argname = _get_singledispatch_annotated_param(
                 func, _inside_dispatchmethod=_inside_dispatchmethod)
             if argname is None:
                 raise TypeError(
