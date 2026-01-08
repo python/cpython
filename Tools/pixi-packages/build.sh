@@ -31,6 +31,7 @@ else
         --oldincludedir="${BUILD_PREFIX}/${HOST}/sysroot/usr/include" \
         --enable-shared \
         --srcdir="${SRC_DIR}" \
+        --with-system-expat \
         ${CONFIGURE_EXTRA}
 fi
 

@@ -1,7 +1,7 @@
 context:
   # Keep up to date
   version: "3.15"
-  variant: "free-threading"
+  variant: "default"
   freethreading_tag: ${{ "t" if "free-threading" in variant else "" }}
   abi_tag: cp${{ version | split(".") | join("") }}${{ freethreading_tag }}
 
@@ -16,16 +16,16 @@ outputs:
     name: python_abi
     version: ${{ version }}
   build:
-    string: "0_cp35t"
+    string: "0_${{ abi_tag }}"
   requirements:
     run_constraints:
-      - python ${{ version }}.* *_cp35t
+      - python ${{ version }}.* *_${{ abi_tag }}
 
 - package:
     name: python
     version: ${{ version }}
   build:
-    string: "0_cp35t"
+    string: "0_${{ abi_tag }}"
     files:
       exclude:
         - "*.o"
