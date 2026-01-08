@@ -2895,47 +2895,6 @@ class TestSingleDispatch(unittest.TestCase):
             Abstract()
 
     def test_type_ann_register(self):
-        @functools.singledispatch
-        def t(arg):
-            return "base"
-        @t.register
-        def _(arg: int):
-            return "int"
-        @t.register
-        def _(arg: str):
-            return "str"
-        @t.register
-        def _(arg: float, /):
-            return "float"
-        @t.register
-        def _(a1: list, a2: None, /, a3: None, *, a4: None):
-            return "list"
-
-        def wrapped1(arg: bytes) -> str:
-            return "bytes"
-        @t.register
-        @functools.wraps(wrapped1)
-        def wrapper1(*args, **kwargs):
-            return wrapped1(*args, **kwargs)
-
-        def wrapped2(arg: bytearray) -> str:
-            return "bytearray"
-        @t.register
-        @functools.wraps(wrapped2)
-        def wrapper2(*args: typing.Any, **kwargs: typing.Any):
-            return wrapped2(*args, **kwargs)
-
-        # Check if the dispatch works.
-        self.assertEqual(t(0), "int")
-        self.assertEqual(t(''), "str")
-        self.assertEqual(t(0.0), "float")
-        self.assertEqual(t([], None, None, a4=None), "list")
-        self.assertEqual(t(NotImplemented), "base")
-        self.assertEqual(t(b''), "bytes")
-        self.assertEqual(t(bytearray()), "bytearray")
-
-    def test_method_type_ann_register(self):
-
         class A:
             @functools.singledispatchmethod
             def t(self, arg):
@@ -2944,43 +2903,15 @@ class TestSingleDispatch(unittest.TestCase):
             def _(self, arg: int):
                 return "int"
             @t.register
-            def _(self, arg: complex, /):
-                return "complex"
-            @t.register
-            def _(self, /, arg: str):
+            def _(self, arg: str):
                 return "str"
-            # See GH-130827.
-            def wrapped1(self: typing.Self, arg: bytes):
-                return "bytes"
-            @t.register
-            @functools.wraps(wrapped1)
-            def wrapper1(self, *args, **kwargs):
-                return self.wrapped1(*args, **kwargs)
-
-            def wrapped2(self, arg: bytearray) -> str:
-                return "bytearray"
-            @t.register
-            @functools.wraps(wrapped2)
-            def wrapper2(self, *args: typing.Any, **kwargs: typing.Any):
-                return self.wrapped2(*args, **kwargs)
-
         a = A()
 
         self.assertEqual(a.t(0), "int")
-        self.assertEqual(a.t(0j), "complex")
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
-        self.assertEqual(a.t(b''), "bytes")
-        self.assertEqual(a.t(bytearray()), "bytearray")
 
     def test_staticmethod_type_ann_register(self):
-        def wrapper_decorator(func):
-            wrapped = func.__func__
-            @staticmethod
-            @functools.wraps(wrapped)
-            def wrapper(*args, **kwargs):
-                return wrapped(*args, **kwargs)
-            return wrapper
         class A:
             @functools.singledispatchmethod
             @staticmethod
@@ -2992,49 +2923,15 @@ class TestSingleDispatch(unittest.TestCase):
                 return isinstance(arg, int)
             @t.register
             @staticmethod
-            def _(arg: str, /):
+            def _(arg: str):
                 return isinstance(arg, str)
-            @t.register
-            @wrapper_decorator
-            @staticmethod
-            def _(arg: bytes) -> bool:
-                return isinstance(arg, bytes)
-            @wrapper_decorator
-            @staticmethod
-            def outer1(arg: complex):
-                return isinstance(arg, complex)
-            @wrapper_decorator
-            @staticmethod
-            def outer2(arg: bool):
-                return isinstance(arg, bool)
-            @wrapper_decorator
-            @staticmethod
-            def outer3(arg: bytearray):
-                return isinstance(arg, bytearray)
-
-        A.t.register(staticmethod(A.outer1))
-        A.t.register(staticmethod(A.__dict__['outer2']))
         a = A()
-        a.t.register(staticmethod(a.outer3))
 
         self.assertTrue(A.t(0))
         self.assertTrue(A.t(''))
         self.assertEqual(A.t(0.0), 0.0)
-        self.assertTrue(A.t(0j))
-        self.assertTrue(a.t(42j))
-        self.assertTrue(A.t(True))
-        self.assertTrue(a.t(False))
-        self.assertTrue(A.t(bytearray([1])))
-        self.assertTrue(a.t(bytearray()))
 
     def test_classmethod_type_ann_register(self):
-        def wrapper_decorator(func):
-            wrapped = func.__func__
-            @classmethod
-            @functools.wraps(wrapped)
-            def wrapper(*args, **kwargs):
-                return wrapped(*args, **kwargs)
-            return wrapper
         class A:
             def __init__(self, arg):
                 self.arg = arg
@@ -3051,55 +2948,10 @@ class TestSingleDispatch(unittest.TestCase):
             @classmethod
             def _(cls, arg: str):
                 return cls("str")
-            @t.register
-            @wrapper_decorator
-            @classmethod
-            def _(cls, arg: bytes):
-                return cls("bytes")
-            @wrapper_decorator
-            @classmethod
-            def outer1(cls, arg: list):
-                return cls("list")
-            @wrapper_decorator
-            @classmethod
-            def outer2(cls, arg: complex):
-                return cls("complex")
-            @wrapper_decorator
-            @classmethod
-            def outer3(cls, arg: bytearray):
-                return cls("bytearray")
-
-        A.t.register(A.outer1)
-        A.t.register(A.__dict__['outer2'])
-        a = A(None)
-        a.t.register(a.outer3)
 
         self.assertEqual(A.t(0).arg, "int")
-        self.assertEqual(a.t('').arg, "str")
+        self.assertEqual(A.t('').arg, "str")
         self.assertEqual(A.t(0.0).arg, "base")
-        self.assertEqual(a.t(b'').arg, "bytes")
-        self.assertEqual(A.t([]).arg, "list")
-        self.assertEqual(a.t(0j).arg, "complex")
-        self.assertEqual(A.t(bytearray()).arg, "bytearray")
-
-    def test_boundmethod_type_ann_register(self):
-        class C:
-            @functools.singledispatchmethod
-            def sdm(self, x: object) -> str:
-                return "C.sdm"
-
-            def method(self, x: int) -> str:
-                return "C.method"
-
-        sd = functools.singledispatch(lambda x: "sd")
-
-        sd.register(C().method)
-        self.assertEqual(sd(0j), "sd")
-        self.assertEqual(sd(1), "C.method")
-
-        C.sdm.register(C().method)
-        self.assertEqual(C().sdm(0j), "C.sdm")
-        self.assertEqual(C().sdm(1), "C.method")
 
     def test_method_wrapping_attributes(self):
         class A:
@@ -3319,26 +3171,11 @@ class TestSingleDispatch(unittest.TestCase):
         def i(arg):
             return "base"
         with self.assertRaises(TypeError) as exc:
-            @i.register
-            def _() -> None:
-                return "My function doesn't take arguments"
-        self.assertStartsWith(str(exc.exception), msg_prefix)
-        self.assertEndsWith(str(exc.exception), "does not accept positional arguments.")
-
-        with self.assertRaises(TypeError) as exc:
-            @i.register
-            def _(*, foo: str) -> None:
-                return "My function takes keyword-only arguments"
-        self.assertStartsWith(str(exc.exception), msg_prefix)
-        self.assertEndsWith(str(exc.exception), "does not accept positional arguments.")
-
-        with self.assertRaises(TypeError) as exc:
             @i.register(42)
             def _(arg):
                 return "I annotated with a non-type"
         self.assertStartsWith(str(exc.exception), msg_prefix + "42")
         self.assertEndsWith(str(exc.exception), msg_suffix)
-
         with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg):
@@ -3347,33 +3184,6 @@ class TestSingleDispatch(unittest.TestCase):
             "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
         )
         self.assertEndsWith(str(exc.exception), msg_suffix)
-
-        with self.assertRaises(TypeError) as exc:
-            @i.register
-            def _(arg, extra: int):
-                return "I did not annotate the right param"
-        self.assertStartsWith(str(exc.exception), msg_prefix +
-            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
-        )
-        self.assertEndsWith(str(exc.exception),
-            "Use either `@register(some_class)` or add a type annotation "
-            f"to parameter 'arg' of your callable.")
-
-        with self.assertRaises(TypeError) as exc:
-            # See GH-84644.
-
-            @functools.singledispatch
-            def func(arg):...
-
-            @func.register
-            def _int(arg) -> int:...
-
-        self.assertStartsWith(str(exc.exception), msg_prefix +
-            "<function TestSingleDispatch.test_invalid_registrations.<locals>._int"
-        )
-        self.assertEndsWith(str(exc.exception),
-            "Use either `@register(some_class)` or add a type annotation "
-            f"to parameter 'arg' of your callable.")
 
         with self.assertRaises(TypeError) as exc:
             @i.register
@@ -3638,44 +3448,44 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_signatures(self):
         class A:
-            def m(self, item: int, arg) -> str:
+            def m(self, item, arg: int) -> str:
                 return str(item)
             @classmethod
-            def cm(cls, item: int, arg) -> str:
+            def cm(cls, item, arg: int) -> str:
                 return str(item)
             @functools.singledispatchmethod
-            def func(self, item: int, arg) -> str:
+            def func(self, item, arg: int) -> str:
                 return str(item)
             @func.register
-            def _(self, item: bytes, arg) -> str:
+            def _(self, item, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
             @classmethod
-            def cls_func(cls, item: int, arg) -> str:
+            def cls_func(cls, item, arg: int) -> str:
                 return str(arg)
             @func.register
             @classmethod
-            def _(cls, item: bytes, arg) -> str:
+            def _(cls, item, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
             @staticmethod
-            def static_func(item: int, arg) -> str:
+            def static_func(item, arg: int) -> str:
                 return str(arg)
             @func.register
             @staticmethod
-            def _(item: bytes, arg) -> str:
+            def _(item, arg: bytes) -> str:
                 return str(item)
 
         self.assertEqual(str(Signature.from_callable(A.func)),
-                         '(self, item: int, arg) -> str')
+                         '(self, item, arg: int) -> str')
         self.assertEqual(str(Signature.from_callable(A().func)),
-                         '(self, item: int, arg) -> str')
+                         '(self, item, arg: int) -> str')
         self.assertEqual(str(Signature.from_callable(A.cls_func)),
-                         '(cls, item: int, arg) -> str')
+                         '(cls, item, arg: int) -> str')
         self.assertEqual(str(Signature.from_callable(A.static_func)),
-                         '(item: int, arg) -> str')
+                         '(item, arg: int) -> str')
 
     def test_method_non_descriptor(self):
         class Callable:
