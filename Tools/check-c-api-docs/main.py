@@ -93,14 +93,14 @@ def scan_file_for_docs(
 
     for function in SIMPLE_FUNCTION_REGEX.finditer(text):
         name = function.group(2)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         check_for_name(name)
 
     for macro in SIMPLE_MACRO_REGEX.finditer(text):
         name = macro.group(1)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         if "(" in name:
@@ -110,14 +110,14 @@ def scan_file_for_docs(
 
     for inline in SIMPLE_INLINE_REGEX.finditer(text):
         name = inline.group(2)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         check_for_name(name)
 
     for data in SIMPLE_DATA_REGEX.finditer(text):
         name = data.group(1)
-        if not name.startswith("Py"):
+        if not API_NAME_REGEX.fullmatch(name):
             continue
 
         check_for_name(name)
