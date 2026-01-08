@@ -1,0 +1,1 @@
+Add symtable.is_cell() and get_cells() methods for cell variable analysis.
