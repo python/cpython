@@ -2369,7 +2369,9 @@ expression support in the :mod:`re` module).
 
    If the string starts with the *prefix* string, return
    ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
+   string:
+
+   .. doctest::
 
       >>> 'TestHook'.removeprefix('Test')
       'Hook'
@@ -2377,6 +2379,8 @@ expression support in the :mod:`re` module).
       'BaseTestCase'
 
    .. versionadded:: 3.9
+
+   See also :meth:`removesuffix` and :meth:`startswith`.
 
 
 .. method:: str.removesuffix(suffix, /)
