@@ -921,10 +921,8 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
     import inspect
     try:
         param = list(inspect.signature(func).parameters.values())[idx]
-        # True for positional "(arg)" and positional-only "(arg, /)" parameters.
-        # True for variadic positional "(*args)" parameters for backward compatibility.
-        # False for keyword-only "(*, arg)" and keyword variadic "(**args)" parameters.
-        if param.kind < 3:
+        # Allow variadic positional "(*args)" parameters for backward compatibility.
+        if param.kind not in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
             return param.name
     except IndexError:
         pass
