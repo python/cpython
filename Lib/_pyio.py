@@ -949,8 +949,6 @@ class BytesIO(BufferedIOBase):
         return self.read(size)
 
     def write(self, b):
-        if self.closed:
-            raise ValueError("write to closed file")
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
         with memoryview(b) as view:
