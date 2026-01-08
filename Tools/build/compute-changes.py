@@ -22,6 +22,10 @@ GITHUB_DEFAULT_BRANCH = os.environ["GITHUB_DEFAULT_BRANCH"]
 GITHUB_CODEOWNERS_PATH = Path(".github/CODEOWNERS")
 GITHUB_WORKFLOWS_PATH = Path(".github/workflows")
 
+RUN_TESTS_IGNORE = frozenset({
+    Path("Tools/check-c-api-docs/ignored_c_api.txt"),
+})
+
 CONFIGURATION_FILE_NAMES = frozenset({
     ".pre-commit-config.yaml",
     ".ruff.toml",
@@ -176,6 +180,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             doc_file
             or file == GITHUB_CODEOWNERS_PATH
             or file.name in CONFIGURATION_FILE_NAMES
+            or file in RUN_TESTS_IGNORE
         ):
             run_tests = True
 
