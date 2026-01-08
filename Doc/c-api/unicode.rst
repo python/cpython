@@ -65,22 +65,27 @@ Python:
    .. versionadded:: 3.3
 
 
-.. c:macro:: PyUnicode_IS_COMPACT(o)
+   The structure of a particular object can be determined using the following
+   macros.
+   The macros cannot fail; their behavior is undefined if their argument
+   is not a Python Unicode object.
 
-   Return true if the Unicode object *o* is a compact string.
-   Compact strings use the :c:struct:`PyCompactUnicodeObject` structure.
+   .. c:namespace:: NULL
 
-   .. versionadded:: 3.3
+   .. c:macro:: PyUnicode_IS_COMPACT(o)
 
+      True if *o* uses the :c:struct:`PyCompactUnicodeObject` structure.
 
-.. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
-
-   Return true if the Unicode object *o* is a compact ASCII string.
-   Compact ASCII strings use the :c:struct:`PyASCIIObject` structure.
-
-   .. versionadded:: 3.3
+      .. versionadded:: 3.3
 
 
+   .. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
+
+      True if *o* uses the :c:struct:`PyASCIIObject` structure.
+
+      .. versionadded:: 3.3
+
+      
 The following APIs are C macros and static inlined functions for fast checks and
 access to internal read-only data of Unicode objects:
 
