@@ -2016,6 +2016,21 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
 
+   The temporary script file is created with restrictive permissions (typically
+   ``0o600``). The target process must be able to read this file.
+
+   Callers should adjust permissions before calling, e.g.::
+
+      import os
+      import tempfile
+      import sys
+
+      with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+          f.write("print('Hello from remote!')")
+          f.flush()
+          os.chmod(f.name, 0o644)  # Readable by group/other
+          sys.remote_exec(pid, f.name)
+      os.unlink(f.name)  # Cleanup
 
 .. function:: _enablelegacywindowsfsencoding()
 
