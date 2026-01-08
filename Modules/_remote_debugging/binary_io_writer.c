@@ -11,6 +11,7 @@
 
 #include "binary_io.h"
 #include "_remote_debugging.h"
+#include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include <string.h>
 
 #ifdef HAVE_ZSTD
@@ -31,6 +32,16 @@
 
 /* File structure sizes */
 #define FILE_FOOTER_SIZE 32
+
+/* Helper macro: convert PyLong to int32, using default_val if conversion fails */
+#define PYLONG_TO_INT32_OR_DEFAULT(obj, var, default_val) \
+    do { \
+        (var) = (int32_t)PyLong_AsLong(obj); \
+        if (UNLIKELY(PyErr_Occurred() != NULL)) { \
+            PyErr_Clear(); \
+            (var) = (default_val); \
+        } \
+    } while (0)
 
 /* ============================================================================
  * WRITER-SPECIFIC UTILITY HELPERS
@@ -311,13 +322,21 @@ static Py_uhash_t
 frame_key_hash_func(const void *key)
 {
     const FrameKey *fk = (const FrameKey *)key;
-    /* FNV-1a style hash combining all three values */
+    /* FNV-1a style hash combining all fields */
     Py_uhash_t hash = 2166136261u;
     hash ^= fk->filename_idx;
     hash *= 16777619u;
     hash ^= fk->funcname_idx;
     hash *= 16777619u;
     hash ^= (uint32_t)fk->lineno;
+    hash *= 16777619u;
+    hash ^= (uint32_t)fk->end_lineno;
+    hash *= 16777619u;
+    hash ^= (uint32_t)fk->column;
+    hash *= 16777619u;
+    hash ^= (uint32_t)fk->end_column;
+    hash *= 16777619u;
+    hash ^= fk->opcode;
     hash *= 16777619u;
     return hash;
 }
@@ -329,7 +348,11 @@ frame_key_compare_func(const void *key1, const void *key2)
     const FrameKey *fk2 = (const FrameKey *)key2;
     return (fk1->filename_idx == fk2->filename_idx &&
             fk1->funcname_idx == fk2->funcname_idx &&
-            fk1->lineno == fk2->lineno);
+            fk1->lineno == fk2->lineno &&
+            fk1->end_lineno == fk2->end_lineno &&
+            fk1->column == fk2->column &&
+            fk1->end_column == fk2->end_column &&
+            fk1->opcode == fk2->opcode);
 }
 
 static void
@@ -388,10 +411,14 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
 }
 
 static inline int
-writer_intern_frame(BinaryWriter *writer, uint32_t filename_idx, uint32_t funcname_idx,
-                    int32_t lineno, uint32_t *index)
+writer_intern_frame(BinaryWriter *writer, const FrameEntry *entry, uint32_t *index)
 {
-    FrameKey lookup_key = {filename_idx, funcname_idx, lineno};
+    FrameKey lookup_key = {
+        entry->filename_idx, entry->funcname_idx,
+        entry->lineno, entry->end_lineno,
+        entry->column, entry->end_column,
+        entry->opcode
+    };
 
     void *existing = _Py_hashtable_get(writer->frame_hash, &lookup_key);
     if (existing != NULL) {
@@ -412,10 +439,7 @@ writer_intern_frame(BinaryWriter *writer, uint32_t filename_idx, uint32_t funcna
     *key = lookup_key;
 
     *index = (uint32_t)writer->frame_count;
-    FrameEntry *fe = &writer->frame_entries[writer->frame_count];
-    fe->filename_idx = filename_idx;
-    fe->funcname_idx = funcname_idx;
-    fe->lineno = lineno;
+    writer->frame_entries[writer->frame_count] = *entry;
 
     if (_Py_hashtable_set(writer->frame_hash, key, (void *)(uintptr_t)(*index + 1)) < 0) {
         PyMem_Free(key);
@@ -717,6 +741,7 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
 
     writer->write_buffer = PyMem_Malloc(WRITE_BUFFER_SIZE);
     if (!writer->write_buffer) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->buffer_size = WRITE_BUFFER_SIZE;
@@ -729,14 +754,17 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         NULL                 /* Use default allocator */
     );
     if (!writer->string_hash) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->strings = PyMem_Malloc(INITIAL_STRING_CAPACITY * sizeof(char *));
     if (!writer->strings) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->string_lengths = PyMem_Malloc(INITIAL_STRING_CAPACITY * sizeof(size_t));
     if (!writer->string_lengths) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->string_capacity = INITIAL_STRING_CAPACITY;
@@ -749,16 +777,19 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         NULL                 /* Use default allocator */
     );
     if (!writer->frame_hash) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->frame_entries = PyMem_Malloc(INITIAL_FRAME_CAPACITY * sizeof(FrameEntry));
     if (!writer->frame_entries) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->frame_capacity = INITIAL_FRAME_CAPACITY;
 
     writer->thread_entries = PyMem_Malloc(INITIAL_THREAD_CAPACITY * sizeof(ThreadEntry));
     if (!writer->thread_entries) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->thread_capacity = INITIAL_THREAD_CAPACITY;
@@ -810,22 +841,49 @@ build_frame_stack(BinaryWriter *writer, PyObject *frame_list,
         /* Use unchecked accessors since we control the data structures */
         PyObject *frame_info = PyList_GET_ITEM(frame_list, k);
 
-        /* Get filename, location, funcname from FrameInfo using unchecked access */
+        /* Get filename, location, funcname, opcode from FrameInfo using unchecked access */
         PyObject *filename = PyStructSequence_GET_ITEM(frame_info, 0);
         PyObject *location = PyStructSequence_GET_ITEM(frame_info, 1);
         PyObject *funcname = PyStructSequence_GET_ITEM(frame_info, 2);
+        PyObject *opcode_obj = PyStructSequence_GET_ITEM(frame_info, 3);
 
-        /* Extract lineno from location (can be None for synthetic frames) */
-        int32_t lineno = 0;
+        /* Extract location fields (can be None for synthetic frames) */
+        int32_t lineno = LOCATION_NOT_AVAILABLE;
+        int32_t end_lineno = LOCATION_NOT_AVAILABLE;
+        int32_t column = LOCATION_NOT_AVAILABLE;
+        int32_t end_column = LOCATION_NOT_AVAILABLE;
+
         if (location != Py_None) {
-            /* Use unchecked access - first element is lineno */
+            /* LocationInfo is a struct sequence or tuple with:
+             * (lineno, end_lineno, column, end_column) */
             PyObject *lineno_obj = PyTuple_Check(location) ?
                 PyTuple_GET_ITEM(location, 0) :
                 PyStructSequence_GET_ITEM(location, 0);
-            lineno = (int32_t)PyLong_AsLong(lineno_obj);
+            PyObject *end_lineno_obj = PyTuple_Check(location) ?
+                PyTuple_GET_ITEM(location, 1) :
+                PyStructSequence_GET_ITEM(location, 1);
+            PyObject *column_obj = PyTuple_Check(location) ?
+                PyTuple_GET_ITEM(location, 2) :
+                PyStructSequence_GET_ITEM(location, 2);
+            PyObject *end_column_obj = PyTuple_Check(location) ?
+                PyTuple_GET_ITEM(location, 3) :
+                PyStructSequence_GET_ITEM(location, 3);
+
+            PYLONG_TO_INT32_OR_DEFAULT(lineno_obj, lineno, LOCATION_NOT_AVAILABLE);
+            PYLONG_TO_INT32_OR_DEFAULT(end_lineno_obj, end_lineno, LOCATION_NOT_AVAILABLE);
+            PYLONG_TO_INT32_OR_DEFAULT(column_obj, column, LOCATION_NOT_AVAILABLE);
+            PYLONG_TO_INT32_OR_DEFAULT(end_column_obj, end_column, LOCATION_NOT_AVAILABLE);
+        }
+
+        /* Extract opcode (can be None) */
+        uint8_t opcode = OPCODE_NONE;
+        if (opcode_obj != Py_None) {
+            long opcode_long = PyLong_AsLong(opcode_obj);
             if (UNLIKELY(PyErr_Occurred() != NULL)) {
                 PyErr_Clear();
-                lineno = 0;
+                opcode = OPCODE_NONE;
+            } else if (opcode_long >= 0 && opcode_long <= MAX_REAL_OPCODE) {
+                opcode = (uint8_t)opcode_long;
             }
         }
 
@@ -841,9 +899,18 @@ build_frame_stack(BinaryWriter *writer, PyObject *frame_list,
             return -1;
         }
 
-        /* Intern frame */
+        /* Intern frame with full location info */
+        FrameEntry frame_entry = {
+            .filename_idx = filename_idx,
+            .funcname_idx = funcname_idx,
+            .lineno = lineno,
+            .end_lineno = end_lineno,
+            .column = column,
+            .end_column = end_column,
+            .opcode = opcode
+        };
         uint32_t frame_idx;
-        if (writer_intern_frame(writer, filename_idx, funcname_idx, lineno, &frame_idx) < 0) {
+        if (writer_intern_frame(writer, &frame_entry, &frame_idx) < 0) {
             return -1;
         }
 
@@ -1038,10 +1105,33 @@ binary_writer_finalize(BinaryWriter *writer)
 
     for (size_t i = 0; i < writer->frame_count; i++) {
         FrameEntry *entry = &writer->frame_entries[i];
-        uint8_t buf[30];
+        uint8_t buf[64];  /* Increased buffer for additional fields */
         size_t pos = encode_varint_u32(buf, entry->filename_idx);
         pos += encode_varint_u32(buf + pos, entry->funcname_idx);
         pos += encode_varint_i32(buf + pos, entry->lineno);
+
+        /* Delta encode end_lineno: store (end_lineno - lineno) as zigzag.
+         * When lineno is -1, store delta as 0 (result will be -1). */
+        int32_t end_lineno_delta = 0;
+        if (entry->lineno != LOCATION_NOT_AVAILABLE &&
+            entry->end_lineno != LOCATION_NOT_AVAILABLE) {
+            end_lineno_delta = entry->end_lineno - entry->lineno;
+        }
+        pos += encode_varint_i32(buf + pos, end_lineno_delta);
+
+        pos += encode_varint_i32(buf + pos, entry->column);
+
+        /* Delta encode end_column: store (end_column - column) as zigzag.
+         * When column is -1, store delta as 0 (result will be -1). */
+        int32_t end_column_delta = 0;
+        if (entry->column != LOCATION_NOT_AVAILABLE &&
+            entry->end_column != LOCATION_NOT_AVAILABLE) {
+            end_column_delta = entry->end_column - entry->column;
+        }
+        pos += encode_varint_i32(buf + pos, end_column_delta);
+
+        buf[pos++] = entry->opcode;
+
         if (fwrite_checked_allow_threads(buf, pos, writer->fp) < 0) {
             return -1;
         }
@@ -1156,3 +1246,4 @@ binary_writer_destroy(BinaryWriter *writer)
     PyMem_Free(writer);
 }
 
+#undef PYLONG_TO_INT32_OR_DEFAULT

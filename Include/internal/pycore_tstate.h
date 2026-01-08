@@ -37,7 +37,6 @@ typedef struct _PyJitTracerInitialState {
 
 typedef struct _PyJitTracerPreviousState {
     bool dependencies_still_valid;
-    bool instr_is_super;
     int code_max_size;
     int code_curr_size;
     int instr_oparg;
@@ -48,12 +47,33 @@ typedef struct _PyJitTracerPreviousState {
     _PyBloomFilter dependencies;
 } _PyJitTracerPreviousState;
 
+typedef struct _PyJitTracerTranslatorState {
+    int jump_backward_seen;
+} _PyJitTracerTranslatorState;
+
 typedef struct _PyJitTracerState {
     _PyUOpInstruction *code_buffer;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
+    _PyJitTracerTranslatorState translator_state;
 } _PyJitTracerState;
+
 #endif
+
+typedef struct _PyJitPolicy {
+    uint16_t side_exit_initial_value;
+    uint16_t side_exit_initial_backoff;
+} _PyJitPolicy;
+
+typedef struct _PyInterpreterPolicy {
+    uint16_t jump_backward_initial_value;
+    uint16_t jump_backward_initial_backoff;
+} _PyInterpreterPolicy;
+
+typedef struct _PyPolicy {
+    _PyJitPolicy jit;
+    _PyInterpreterPolicy interp;
+} _PyPolicy;
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
@@ -133,6 +153,7 @@ typedef struct _PyThreadStateImpl {
 #if _Py_TIER2
     _PyJitTracerState jit_tracer_state;
 #endif
+    _PyPolicy policy;
 } _PyThreadStateImpl;
 
 #ifdef __cplusplus
