@@ -413,33 +413,22 @@ write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
+    /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
     _Py_DECLARE_STR(json_decoder, "json.decoder");
 
-    PyObject *json_error =
+    PyObject *JSONDecodeError =
         PyImport_ImportModuleAttr(&_Py_STR(json_decoder), &_Py_ID(JSONDecodeError));
-    if (json_error == NULL) {
+    if (JSONDecodeError == NULL) {
         return;
     }
 
-    /* Hold a strong reference across user code execution */
-    PyObject *error_type = Py_NewRef(json_error);
-
-    PyObject *exc = PyObject_CallFunction(error_type, "zOn", msg, s, end);
-
+    PyObject *exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
     if (exc != NULL) {
-        /* Only use it if it's a valid exception type */
-        if (PyExceptionClass_Check(error_type)) {
-            PyErr_SetObject(error_type, exc);
-        }
-        else {
-            /* Fallback: always safe */
-            PyErr_SetString(PyExc_ValueError, msg);
-        }
+        PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
     }
 
-    Py_DECREF(error_type);
-    Py_DECREF(json_error);
+    Py_DECREF(JSONDecodeError);
 }
 
 static void
