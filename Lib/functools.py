@@ -895,7 +895,7 @@ def _get_dispatch_param(func, *, _insideclass=False):
     Used by singledispatch for registration by type annotation of the parameter.
     """
     # Fast path for typical callables and descriptors.
-    # idx is 0 when singledispatch() and 1 when singledispatchmethod()
+    # idx is 0 when singledispatch() and 1 when singledispatchmethod().
     idx = _insideclass
     if isinstance(func, staticmethod):
         idx = 0
@@ -904,6 +904,7 @@ def _get_dispatch_param(func, *, _insideclass=False):
         func = func.__func__
         idx = 1
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
+        # Method from inspect._signature_from_function.
         func_code = func.__code__
         try:
             return func_code.co_varnames[:func_code.co_argcount][idx]
@@ -1150,6 +1151,7 @@ class _singledispatchmethod_get:
 
     @property
     def register(self):
+        # This is called from outside of the class with singledispatchmethod.
         return partial(self._unbound.register, _insideclass=False)
 
 
