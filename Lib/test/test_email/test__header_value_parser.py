@@ -586,17 +586,17 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(fws.token_type, 'fws')
 
     params_test_get_fws = old_api_only(
+
+        test_get_fws_only = C(
+                                               ' \t  ', ' \t  ', ' ', [], ''),
+
+        test_get_fws_space = C(
+                                         ' foo', ' ', ' ', [], 'foo'),
+
+        test_get_fws_ws_run = C(
+                                         ' \t foo ', ' \t ', ' ', [], 'foo '),
+
         )
-
-    def test_get_fws_only(self):
-        fws = self._test_get_x(parser.get_fws, ' \t  ', ' \t  ', ' ', [], '')
-        self.assertEqual(fws.token_type, 'fws')
-
-    def test_get_fws_space(self):
-        self._test_get_x(parser.get_fws, ' foo', ' ', ' ', [], 'foo')
-
-    def test_get_fws_ws_run(self):
-        self._test_get_x(parser.get_fws, ' \t foo ', ' \t ', ' ', [], 'foo ')
 
 
     # get_encoded_word
