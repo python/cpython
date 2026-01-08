@@ -51,6 +51,7 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     cflags: str = ""
+    frame_pointers: bool = False
     llvm_version: str = _llvm._LLVM_VERSION
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
@@ -158,7 +159,6 @@ class _Target(typing.Generic[_S, _R]):
             # code than -O3). As a nice benefit, it uses less memory too:
             "-Os",
             "-S",
-            "-Xclang", f"-mframe-pointer={'all' if opname == 'shim' else 'reserved'}",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
@@ -175,10 +175,13 @@ class _Target(typing.Generic[_S, _R]):
             "-o",
             f"{s}",
             f"{c}",
-            *self.args,
-            # Allow user-provided CFLAGS to override any defaults
-            *shlex.split(self.cflags),
         ]
+        if self.frame_pointers:
+            frame_pointer = "all" if opname == "shim" else "reserved"
+            args_s += ["-Xclang", f"-mframe-pointer={frame_pointer}"]
+        args_s += self.args
+        # Allow user-provided CFLAGS to override any defaults
+        args_s += shlex.split(self.cflags)
         await _llvm.run(
             "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
         )
@@ -614,7 +617,9 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         condition = "defined(__x86_64__) && defined(__linux__)"
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         optimizer = _optimizers.OptimizerX86
-        target = _ELF(host, condition, args=args, optimizer=optimizer)
+        target = _ELF(
+            host, condition, args=args, optimizer=optimizer, frame_pointers=True
+        )
     else:
         raise ValueError(host)
     return target
