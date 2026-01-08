@@ -921,7 +921,7 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
     import inspect
     try:
         param = list(inspect.signature(func).parameters.values())[idx]
-        if param.kind < 3:  # Discard (*, arg) and (**args)
+        if param.kind < 3:  # False for (*, arg) and (**args) parameters.
             return param.name
     except IndexError:
         pass
