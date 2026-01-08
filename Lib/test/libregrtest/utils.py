@@ -13,7 +13,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 
 from test import support
 from test.support import os_helper
@@ -632,21 +632,30 @@ def is_cross_compiled() -> bool:
     return ('_PYTHON_HOST_PLATFORM' in os.environ)
 
 
-def format_resources(use_resources: Iterable[str]) -> str:
-    use_resources = set(use_resources)
+def format_resources(use_resources: dict[str, str | None]) -> str:
     all_resources = set(ALL_RESOURCES)
+
+    values = []
+    for name in sorted(use_resources):
+        if use_resources[name] is not None:
+            values.append(f'{name}={use_resources[name]}')
 
     # Express resources relative to "all"
     relative_all = ['all']
-    for name in sorted(all_resources - use_resources):
+    for name in sorted(all_resources - set(use_resources)):
         relative_all.append(f'-{name}')
-    for name in sorted(use_resources - all_resources):
-        relative_all.append(f'{name}')
-    all_text = ','.join(relative_all)
+    for name in sorted(set(use_resources) - all_resources):
+        if use_resources[name] is None:
+            relative_all.append(name)
+    all_text = ','.join(relative_all + values)
     all_text = f"resources: {all_text}"
 
     # List of enabled resources
-    text = ','.join(sorted(use_resources))
+    resources = []
+    for name in sorted(use_resources):
+        if use_resources[name] is None:
+            resources.append(name)
+    text = ','.join(resources + values)
     text = f"resources ({len(use_resources)}): {text}"
 
     # Pick the shortest string (prefer relative to all if lengths are equal)
@@ -656,7 +665,7 @@ def format_resources(use_resources: Iterable[str]) -> str:
         return text
 
 
-def display_header(use_resources: tuple[str, ...],
+def display_header(use_resources: dict[str, str | None],
                    python_cmd: tuple[str, ...] | None) -> None:
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())

@@ -468,6 +468,12 @@ The :mod:`test.support` module defines the following functions:
    tests.
 
 
+.. function:: get_resource_value(resource)
+
+   Return the value specified for *resource* (as :samp:`-u {resource}={value}`).
+   Return ``None`` if *resource* is disabled or no value is specified.
+
+
 .. function:: python_is_optimized()
 
    Return ``True`` if Python was not built with ``-O0`` or ``-Og``.
