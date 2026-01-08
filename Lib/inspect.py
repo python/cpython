@@ -2683,11 +2683,12 @@ class Parameter:
         The annotation for the parameter if specified.  If the
         parameter has no annotation, this attribute is set to
         `Parameter.empty`.
-    * kind : int
+    * kind : int (enum)
         Describes how argument values are bound to the parameter.
         Possible values: `Parameter.POSITIONAL_ONLY`,
         `Parameter.POSITIONAL_OR_KEYWORD`, `Parameter.VAR_POSITIONAL`,
         `Parameter.KEYWORD_ONLY`, `Parameter.VAR_KEYWORD`.
+        Every value has a `description` attribute describing meaning.
     """
 
     __slots__ = ('_name', '_kind', '_default', '_annotation')
