@@ -906,7 +906,7 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
     # Pick the first parameter if registering via singledispatch.
     # Pick the second parameter if registering via singledispatchmethod.
     else:
-        idx = _inside_dispatchmethod
+        idx = int(_inside_dispatchmethod)
 
     # If it is a simple function, try to read from the code object fast.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
