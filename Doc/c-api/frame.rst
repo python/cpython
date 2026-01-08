@@ -250,18 +250,32 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
-.. c:enum:: PyUnstable_ExecutableKinds
+.. c:var:: PyUnstable_ExecutableKinds
 
-   An enumeration of the different kinds of executables (code objects) in a frame.
-   This can be one of the constants :c:macro:`PyUnstable_EXECUTABLE_KIND_SKIP`
-   or :c:macro:`PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`.
+   An array of executable kinds (executor types) for frames, used for internal
+   debugging and tracing.
+
+   Tools like debuggers and profilers can use this to identify the type of execution
+   context associated with a frame (e.g. to filter out internal frames).
+   The entries are indexed by the following constants:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: auto
+
+      * - Constant
+        - Description
+      * - :c:macro:`PyUnstable_EXECUTABLE_KIND_SKIP`
+        - The frame is internal (e.g. inlined) and should be skipped by tools.
+      * - :c:macro:`PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`
+        - The frame corresponds to a standard Python function.
 
    .. versionadded:: 3.13
 
 
 .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
 
-   Index for the "skip" kind in ``PyUnstable_ExecutableKinds``.
+   Index for the "skip" kind in :c:data:`PyUnstable_ExecutableKinds`.
    Indicates that the frame's code object should be skipped.
 
    .. versionadded:: 3.13
@@ -293,6 +307,3 @@ Unless using :pep:`523`, you will not need this.
    The number of entries in ``PyUnstable_ExecutableKinds``.
 
    .. versionadded:: 3.13
-
-
-
