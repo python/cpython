@@ -9213,7 +9213,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                assert(DK_IS_UNICODE(keys));
+                assert(keys->dk_kind == DICT_KEYS_UNICODE);
             }
             // _LOAD_GLOBAL_BUILTINS
             {
@@ -9231,7 +9231,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                assert(DK_IS_UNICODE(keys));
+                assert(keys->dk_kind == DICT_KEYS_UNICODE);
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 if (res_o == NULL) {
@@ -9297,7 +9297,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                assert(DK_IS_UNICODE(keys));
+                assert(keys->dk_kind == DICT_KEYS_UNICODE);
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
                 assert(index < DK_SIZE(keys));
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
@@ -10989,7 +10989,7 @@
                 assert(PyDict_CheckExact((PyObject *)dict));
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 if (hint >= (size_t)dict->ma_keys->dk_nentries ||
-                    !DK_IS_UNICODE(dict->ma_keys)) {
+                    dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                     UNLOCK_OBJECT(dict);
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
