@@ -16,16 +16,16 @@ outputs:
     name: python_abi
     version: ${{ version }}
   build:
-    string: "0_cp35t"
+    string: "0_cp315t"
   requirements:
     run_constraints:
-      - python ${{ version }}.* *_cp35t
+      - python ${{ version }}.* *_cp315t
 
 - package:
     name: python
     version: ${{ version }}
   build:
-    string: "0_cp35t"
+    string: "0_cp315t"
     files:
       exclude:
         - "*.o"
