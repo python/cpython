@@ -1,0 +1,1 @@
+Fix use-after-free in :mod:`cProfile` when external timer's ``__index__`` method clears the profiler during callback.
