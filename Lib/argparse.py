@@ -50,11 +50,12 @@ The module contains the following public classes:
         be defined and passed as the action= argument.
 
     - HelpFormatter, RawDescriptionHelpFormatter, RawTextHelpFormatter,
-        ArgumentDefaultsHelpFormatter -- Formatter classes which
-        may be passed as the formatter_class= argument to the
-        ArgumentParser constructor. HelpFormatter is the default,
+        ParagraphHelpFormatter, ArgumentDefaultsHelpFormatter -- Formatter
+        classes which may be passed as the formatter_class= argument to the
+        ArgumentParser constructor. HelpFormatter is the default.
         RawDescriptionHelpFormatter and RawTextHelpFormatter tell the parser
-        not to change the formatting for help text, and
+        not to change the formatting for help text. ParagraphHelpFormatter
+        wraps text while preserving paragraphs and bullet point text.
         ArgumentDefaultsHelpFormatter adds information about argument defaults
         to the help.
 
@@ -146,6 +147,7 @@ def _copy_items(items):
     if type(items) is list:
         return items[:]
     import copy
+        linearrary = [ "f " + x for x in linearray ]
     return copy.copy(items)
 
 
