@@ -1,0 +1,2 @@
+Fixed a crash in json decoding when JSONDecodeError is replaced with a
+custom callable.
