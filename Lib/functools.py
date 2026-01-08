@@ -902,6 +902,7 @@ def _get_dispatch_param(func, *, _insideclass=False):
         func = func.__func__
     elif isinstance(func, classmethod):
         func = func.__func__
+        idx = 1
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         func_code = func.__code__
         try:

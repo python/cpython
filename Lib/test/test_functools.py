@@ -3008,10 +3008,15 @@ class TestSingleDispatch(unittest.TestCase):
             @staticmethod
             def outer2(arg: bool):
                 return isinstance(arg, bool)
+            @wrapper_decorator
+            @staticmethod
+            def outer3(arg: bytearray):
+                return isinstance(arg, bytearray)
 
         A.t.register(staticmethod(A.outer1))
+        A.t.register(staticmethod(A.__dict__['outer2']))
         a = A()
-        a.t.register(staticmethod(a.outer2))
+        a.t.register(staticmethod(a.outer3))
 
         self.assertTrue(A.t(0))
         self.assertTrue(A.t(''))
@@ -3020,6 +3025,8 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertTrue(a.t(42j))
         self.assertTrue(A.t(True))
         self.assertTrue(a.t(False))
+        self.assertTrue(A.t(bytearray([1])))
+        self.assertTrue(a.t(bytearray()))
 
     def test_classmethod_type_ann_register(self):
         def wrapper_decorator(func):
@@ -3058,10 +3065,15 @@ class TestSingleDispatch(unittest.TestCase):
             @classmethod
             def outer2(cls, arg: complex):
                 return cls("complex")
+            @wrapper_decorator
+            @classmethod
+            def outer3(cls, arg: bytearray):
+                return cls("bytearray")
 
         A.t.register(A.outer1)
+        A.t.register(A.__dict__['outer2'])
         a = A(None)
-        a.t.register(a.outer2)
+        a.t.register(a.outer3)
 
         self.assertEqual(A.t(0).arg, "int")
         self.assertEqual(a.t('').arg, "str")
@@ -3069,6 +3081,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(a.t(b'').arg, "bytes")
         self.assertEqual(A.t([]).arg, "list")
         self.assertEqual(a.t(0j).arg, "complex")
+        self.assertEqual(A.t(bytearray()).arg, "bytearray")
 
     def test_method_wrapping_attributes(self):
         class A:
