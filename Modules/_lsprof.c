@@ -46,6 +46,7 @@ typedef struct _ProfilerContext {
     ProfilerEntry *ctxEntry;
 } ProfilerContext;
 
+
 typedef struct {
     PyObject_HEAD
     rotating_node_t *profilerEntries;
@@ -56,6 +57,7 @@ typedef struct {
     double externalTimerUnit;
     int tool_id;
     PyObject* missing;
+    int inCallback;
 } ProfilerObject;
 
 #define ProfilerObject_CAST(op) ((ProfilerObject *)(op))
@@ -289,6 +291,9 @@ static int freeEntry(rotating_node_t *header, void *arg)
 
 static void clearEntries(ProfilerObject *pObj)
 {
+    if (pObj->inCallback) {
+        return;
+    }
     RotatingTree_Enum(pObj->profilerEntries, freeEntry, NULL);
     pObj->profilerEntries = EMPTY_ROTATING_TREE;
     /* release the memory hold by the ProfilerContexts */
@@ -321,13 +326,17 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
         if (subentry)
             ++subentry->recursionLevel;
     }
-    self->t0 = call_timer(pObj);
+     pObj->inCallback = 1;   
+ self->t0 = call_timer(pObj);
+pObj->inCallback = 0;
 }
 
 static void
 Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
+    pObj->inCallback = 1;
     PyTime_t tt = call_timer(pObj) - self->t0;
+    pObj->inCallback = 0;
     PyTime_t it = tt - self->subt;
     if (self->previous)
         self->previous->subt += tt;
