@@ -302,6 +302,34 @@ get_co_name(JitOptContext *ctx, int index)
     return PyTuple_GET_ITEM(get_current_code_object(ctx)->co_names, index);
 }
 
+static int
+get_test_bit_for_bools(void) {
+#ifdef Py_STACKREF_DEBUG
+    uintptr_t false_bits = _Py_STACKREF_FALSE_INDEX;
+    uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+#else
+    uintptr_t false_bits = (uintptr_t)&_Py_FalseStruct;
+    uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+#endif
+    for (int i = 4; i < 8; i++) {
+        if ((true_bits ^ false_bits) & (1 << i)) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+static int
+test_bit_set_in_true(int bit) {
+#ifdef Py_STACKREF_DEBUG
+    uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+#else
+    uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+#endif
+    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (1 << bit));
+    return true_bits & (1 << bit);
+}
+
 #ifdef Py_DEBUG
 void
 _Py_opt_assert_within_stack_bounds(
