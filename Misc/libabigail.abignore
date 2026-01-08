@@ -19,3 +19,7 @@
 [suppress_type]
   name = PyThreadState
   accessed_through = pointer
+
+[suppress_variable]
+  name = _PyRuntime
+  type_name = _PyRuntimeState
