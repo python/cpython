@@ -41,7 +41,7 @@ try:
 except ImportError:
     LiveStatsCollector = None
 
-_FREE_THREADED_BUILD = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+_FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 # Minimum number of samples required before showing the TUI
 # If fewer samples are collected, we skip the TUI and just print a message
 MIN_SAMPLES_FOR_TUI = 200
