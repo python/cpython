@@ -3022,9 +3022,7 @@ AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
 # On Linux, stropts.h may be empty
-AC_CHECK_DECL([I_PUSH], [
-AC_DEFINE([HAVE_STROPTS_H], [1], [Define to 1 if you have the <stropts.h> header file.])
-], [], [
+AC_CHECK_DECL([I_PUSH], [AC_DEFINE([HAVE_STROPTS_H], [1], [Define to 1 if you have the <stropts.h> header file.])], [], [
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
