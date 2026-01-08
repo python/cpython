@@ -1,0 +1,1 @@
+:mod:`queue`: Fix :meth:`!SimpleQueue.__sizeof__` computation.
