@@ -158,7 +158,7 @@ class _Target(typing.Generic[_S, _R]):
             # code than -O3). As a nice benefit, it uses less memory too:
             "-Os",
             "-S",
-            "-Xclang", f"-mframe-pointer={'all' if opname == 'trampoline' else 'reserved'}",
+            "-Xclang", f"-mframe-pointer={'all' if opname == 'shim' else 'reserved'}",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
