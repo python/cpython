@@ -2903,13 +2903,34 @@ class TestSingleDispatch(unittest.TestCase):
             def _(self, arg: int):
                 return "int"
             @t.register
-            def _(self, arg: str):
+            def _(self, arg: complex, /):
+                return "complex"
+            @t.register
+            def _(self, /, arg: str):
                 return "str"
+            # See GH-130827.
+            def wrapped1(self: typing.Self, arg: bytes):
+                return "bytes"
+            @t.register
+            @functools.wraps(wrapped1)
+            def wrapper1(self, *args, **kwargs):
+                return self.wrapped1(*args, **kwargs)
+
+            def wrapped2(self, arg: bytearray) -> str:
+                return "bytearray"
+            @t.register
+            @functools.wraps(wrapped2)
+            def wrapper2(self, *args: typing.Any, **kwargs: typing.Any):
+                return self.wrapped2(*args, **kwargs)
+
         a = A()
 
         self.assertEqual(a.t(0), "int")
+        self.assertEqual(a.t(0j), "complex")
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
+        self.assertEqual(a.t(b''), "bytes")
+        self.assertEqual(a.t(bytearray()), "bytearray")
 
     def test_staticmethod_type_ann_register(self):
         class A:
@@ -3171,11 +3192,26 @@ class TestSingleDispatch(unittest.TestCase):
         def i(arg):
             return "base"
         with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _() -> None:
+                return "My function doesn't take arguments"
+        self.assertStartsWith(str(exc.exception), msg_prefix)
+        self.assertEndsWith(str(exc.exception), "does not accept positional arguments.")
+
+        with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _(*, foo: str) -> None:
+                return "My function takes keyword-only arguments"
+        self.assertStartsWith(str(exc.exception), msg_prefix)
+        self.assertEndsWith(str(exc.exception), "does not accept positional arguments.")
+
+        with self.assertRaises(TypeError) as exc:
             @i.register(42)
             def _(arg):
                 return "I annotated with a non-type"
         self.assertStartsWith(str(exc.exception), msg_prefix + "42")
         self.assertEndsWith(str(exc.exception), msg_suffix)
+
         with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg):
@@ -3184,6 +3220,33 @@ class TestSingleDispatch(unittest.TestCase):
             "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
         )
         self.assertEndsWith(str(exc.exception), msg_suffix)
+
+        with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _(arg, extra: int):
+                return "I did not annotate the right param"
+        self.assertStartsWith(str(exc.exception), msg_prefix +
+            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+        )
+        self.assertEndsWith(str(exc.exception),
+            "Use either `@register(some_class)` or add a type annotation "
+            f"to parameter 'arg' of your callable.")
+
+        with self.assertRaises(TypeError) as exc:
+            # See GH-84644.
+
+            @functools.singledispatch
+            def func(arg):...
+
+            @func.register
+            def _int(arg) -> int:...
+
+        self.assertStartsWith(str(exc.exception), msg_prefix +
+            "<function TestSingleDispatch.test_invalid_registrations.<locals>._int"
+        )
+        self.assertEndsWith(str(exc.exception),
+            "Use either `@register(some_class)` or add a type annotation "
+            f"to parameter 'arg' of your callable.")
 
         with self.assertRaises(TypeError) as exc:
             @i.register
@@ -3448,44 +3511,44 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_signatures(self):
         class A:
-            def m(self, item, arg: int) -> str:
+            def m(self, item: int, arg) -> str:
                 return str(item)
             @classmethod
-            def cm(cls, item, arg: int) -> str:
+            def cm(cls, item: int, arg) -> str:
                 return str(item)
             @functools.singledispatchmethod
-            def func(self, item, arg: int) -> str:
+            def func(self, item: int, arg) -> str:
                 return str(item)
             @func.register
-            def _(self, item, arg: bytes) -> str:
+            def _(self, item: bytes, arg) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
             @classmethod
-            def cls_func(cls, item, arg: int) -> str:
+            def cls_func(cls, item: int, arg) -> str:
                 return str(arg)
             @func.register
             @classmethod
-            def _(cls, item, arg: bytes) -> str:
+            def _(cls, item: bytes, arg) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
             @staticmethod
-            def static_func(item, arg: int) -> str:
+            def static_func(item: int, arg) -> str:
                 return str(arg)
             @func.register
             @staticmethod
-            def _(item, arg: bytes) -> str:
+            def _(item: bytes, arg) -> str:
                 return str(item)
 
         self.assertEqual(str(Signature.from_callable(A.func)),
-                         '(self, item, arg: int) -> str')
+                         '(self, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A().func)),
-                         '(self, item, arg: int) -> str')
+                         '(self, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A.cls_func)),
-                         '(cls, item, arg: int) -> str')
+                         '(cls, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A.static_func)),
-                         '(item, arg: int) -> str')
+                         '(item: int, arg) -> str')
 
     def test_method_non_descriptor(self):
         class Callable:
