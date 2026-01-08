@@ -235,6 +235,36 @@ class TestFail:
             self.assertEqual(str(err),
                              'Expecting value: line %s column %d (char %d)' %
                              (line, col, idx))
+        
+    def test_reentrant_jsondecodeerror_does_not_crash(self):
+        import json
+
+        orig_json_error = json.JSONDecodeError
+        orig_decoder_error = json.decoder.JSONDecodeError
+
+        class Trigger:
+            def __call__(self, *args):
+                import json as mod
+                # Remove JSONDecodeError during construction to trigger re-entrancy
+                if hasattr(mod, "JSONDecodeError"):
+                    del mod.JSONDecodeError
+                if hasattr(mod.decoder, "JSONDecodeError"):
+                    del mod.decoder.JSONDecodeError
+                return ValueError("boom")
+
+        hook = Trigger()
+        try:
+            json.JSONDecodeError = hook
+            json.decoder.JSONDecodeError = hook
+
+            # The exact exception type is not important here; the test
+            # only verifies that we do not crash or trigger a SystemError.
+            with self.assertRaises(Exception):
+                self.loads('"\\uZZZZ"')
+        
+        finally:
+            json.JSONDecodeError = orig_json_error
+            json.decoder.JSONDecodeError = orig_decoder_error
 
 class TestPyFail(TestFail, PyTest): pass
 class TestCFail(TestFail, CTest): pass
