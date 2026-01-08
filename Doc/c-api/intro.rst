@@ -416,7 +416,7 @@ complete listing.
 
    Example usage::
 
-      PyAPI_DATA(PyObject *) _Py_NoneStruct;
+      PyAPI_DATA(const unsigned long) Py_Version;
 
 
 .. _api-objects:
