@@ -278,6 +278,28 @@ _PyTime_AsCLong(PyTime_t t, long *t2)
 #define SECS_BETWEEN_EPOCHS 11644473600LL /* Seconds between 1601-01-01 and 1970-01-01 */
 #define HUNDRED_NS_PER_SEC 10000000LL
 
+// Calculate day of year (0-365) from SYSTEMTIME
+static int
+_PyTime_calc_yday(const SYSTEMTIME *st)
+{
+    // Cumulative days before each month (non-leap year)
+    static const int days_before_month[] = {
+        0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+    };
+    int yday = days_before_month[st->wMonth - 1] + st->wDay - 1;
+    // Account for leap day if we're past February in a leap year.
+    if (st->wMonth > 2) {
+        // Leap year rules (Gregorian calendar):
+        // - Years divisible by 4 are leap years
+        // - EXCEPT years divisible by 100 are NOT leap years
+        // - EXCEPT years divisible by 400 ARE leap years
+        int year = st->wYear;
+        int is_leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+        yday += is_leap;
+    }
+    return yday;
+}
+
 // Convert time_t to struct tm using Windows FILETIME API.
 // If is_local is true, convert to local time. */
 // Fallback for negative timestamps that localtime_s/gmtime_s cannot handle.
@@ -325,28 +347,9 @@ _PyTime_windows_filetime(time_t timer, struct tm *tm, int is_local)
     tm->tm_sec = st_result.wSecond;
     tm->tm_wday = st_result.wDayOfWeek; /* 0=Sunday */
 
-    /* Calculate day of year using Windows FILETIME difference */
-    // SYSTEMTIME st_jan1 = {st_result.wYear, 1, 0, 1, 0, 0, 0, 0};
-    // FILETIME ft_jan1, ft_date;
-    // if (!SystemTimeToFileTime(&st_jan1, &ft_jan1) ||
-    //     !SystemTimeToFileTime(&st_result, &ft_date)) {
-    //     PyErr_SetFromWindowsErr(0);
-    //     return -1;
-    // }
-    // ULARGE_INTEGER jan1, date;
-    // jan1.LowPart = ft_jan1.dwLowDateTime;
-    // jan1.HighPart = ft_jan1.dwHighDateTime;
-    // date.LowPart = ft_date.dwLowDateTime;
-    // date.HighPart = ft_date.dwHighDateTime;
-    // /* Convert 100-nanosecond intervals to days */
-    // LONGLONG days_diff = (date.QuadPart - jan1.QuadPart) / (24LL * 60 * 60 * HUNDRED_NS_PER_SEC);
-
-    // tm->tm_yday = (int)days_diff;
-
-    // datetime doesn't rely on tm_yday, so set invalid value and skip calculation
-    // time.gmtime / time.localtime will return struct_time with out of range tm_yday
-    // time.mktime doesn't support pre-epoch struct_time on windows anyway
-    tm->tm_yday = -1;
+    // `time.gmtime` and `time.localtime` will return `struct_time` containing this
+    // not currently used by `datetime` module
+    tm->tm_yday = _PyTime_calc_yday(&st_result);
 
     /* DST flag: -1 (unknown) for local time on historical dates, 0 for UTC */
     tm->tm_isdst = is_local ? -1 : 0;
