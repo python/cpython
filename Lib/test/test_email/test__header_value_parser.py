@@ -579,7 +579,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     @params
     def test_get_fws(self, s, *args, **kw):
-        fws = self._test_parse(parser.get_fws, C(s), *args, **kw)
+        fws = self._test_parse(parser.get_fws, C(s), *args, value=' ', **kw)
         if 'exception' in kw:
             return
         self.assertIsInstance(fws, parser.WhiteSpaceTerminal)
@@ -587,11 +587,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_fws = old_api_only(
 
-        ws_only = C(' \t  ', ' \t  ', ' ', [], ''),
+        ws_only = C(' \t  '),
 
-        space = C(' foo', ' ', ' ', [], 'foo'),
+        space = C(' foo', remainder='foo'),
 
-        ws_run = C(' \t foo ', ' \t ', ' ', [], 'foo '),
+        ws_run = C(' \t foo ', remainder='foo '),
 
         )
 
