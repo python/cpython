@@ -885,6 +885,9 @@ class TestGetAnnotations(unittest.TestCase):
         def f(*args: "*tuple[int, ...]"): ...
         self.assertEqual(get_annotations(f, eval_str=True),
                          {'args': (*tuple[int, ...],)[0]})
+        def f(*args: " *tuple[int, ...]"): ...
+        self.assertEqual(get_annotations(f, eval_str=True),
+                         {'args': (*tuple[int, ...],)[0]})
 
 
     def test_stringized_annotations_on_wrapper(self):

@@ -1096,7 +1096,7 @@ def _rewrite_star_unpack(arg):
     """If the given argument annotation expression is a star unpack e.g. `'*Ts'`
        rewrite it to a valid expression.
        """
-    if arg.startswith("*"):
+    if arg.lstrip().startswith("*"):
         return f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
     else:
         return arg
