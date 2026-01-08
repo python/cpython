@@ -250,7 +250,7 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
-.. c:var:: PyUnstable_ExecutableKinds
+.. c:type:: PyUnstable_ExecutableKinds
 
    An array of executable kinds (executor types) for frames, used for internal
    debugging and tracing.
