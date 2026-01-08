@@ -53,6 +53,7 @@ typedef struct _PyJitTracerTranslatorState {
 
 typedef struct _PyJitTracerState {
     _PyUOpInstruction *code_buffer;
+    struct _JitOptContext *opt_context;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
     _PyJitTracerTranslatorState translator_state;

@@ -18,6 +18,7 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_uop_metadata.h"
 #include "pycore_long.h"
 #include "pycore_interpframe.h"  // _PyFrame_GetCode
@@ -334,6 +335,7 @@ _Py_opt_assert_within_stack_bounds(
 /* >0 (length) for success, 0 for not ready, clears all possible errors. */
 static int
 optimize_uops(
+    _PyThreadStateImpl *tstate,
     PyFunctionObject *func,
     _PyUOpInstruction *trace,
     int trace_len,
@@ -343,8 +345,15 @@ optimize_uops(
 {
     assert(!PyErr_Occurred());
 
-    JitOptContext context;
-    JitOptContext *ctx = &context;
+    // Use thread-local JitOptContext to avoid stack overflow
+    JitOptContext *ctx = tstate->jit_tracer_state.opt_context;
+    if (ctx == NULL) {
+        ctx = (JitOptContext *)PyMem_RawMalloc(sizeof(JitOptContext));
+        if (ctx == NULL) {
+            return 0;
+        }
+        tstate->jit_tracer_state.opt_context = ctx;
+    }
     uint32_t opcode = UINT16_MAX;
 
     // Make sure that watchers are set up
@@ -574,6 +583,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 //  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
+    _PyThreadStateImpl *tstate,
     PyFunctionObject *func,
     _PyUOpInstruction *buffer,
     int length,
@@ -584,7 +594,7 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         func, buffer,
+         tstate, func, buffer,
          length, curr_stacklen, dependencies);
 
     if (length == 0) {
