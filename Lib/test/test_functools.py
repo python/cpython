@@ -2910,42 +2910,29 @@ class TestSingleDispatch(unittest.TestCase):
         @t.register
         def _(a1: list, a2: None, /, a3: None, *, a4: None):
             return "list"
-        def _(arg: bytes):
+
+        def wrapped1(arg: bytes) -> str:
             return "bytes"
         @t.register
-        @functools.wraps(_)
-        def wrapper(*args, **kwargs):
-            return _(*args, **kwargs)
+        @functools.wraps(wrapped1)
+        def wrapper1(*args, **kwargs):
+            return wrapped1(*args, **kwargs)
 
-        class SomeClass:
-            def for_dict(this, arg: dict):
-                self.assertIs(this, inst1)
-                return "dict"
+        def wrapped2(arg: bytearray) -> str:
+            return "bytearray"
+        @t.register
+        @functools.wraps(wrapped2)
+        def wrapper2(*args: typing.Any, **kwargs: typing.Any):
+            return wrapped2(*args, **kwargs)
 
-            def for_set(this, arg: set, arg2: None):
-                self.assertIs(this, inst1)
-                return "set"
-
-            def for_complex(this: object, arg: complex, arg2: None):
-                self.assertIs(this, inst2)
-                return "complex"
-
-        inst1 = SomeClass()
-        t.register(inst1.for_dict)
-        t.register(inst1.for_set)
-
-        inst2 = SomeClass()
-        t.register(inst2.for_complex)
-
+        # Check if the dispatch works.
         self.assertEqual(t(0), "int")
         self.assertEqual(t(''), "str")
         self.assertEqual(t(0.0), "float")
         self.assertEqual(t([], None, None, a4=None), "list")
         self.assertEqual(t(NotImplemented), "base")
         self.assertEqual(t(b''), "bytes")
-        self.assertEqual(t({}), "dict")
-        self.assertEqual(t(set(), None), "set")
-        self.assertEqual(t(0j, None), "complex")
+        self.assertEqual(t(bytearray()), "bytearray")
 
     def test_method_type_ann_register(self):
 
@@ -2957,22 +2944,34 @@ class TestSingleDispatch(unittest.TestCase):
             def _(self, arg: int):
                 return "int"
             @t.register
+            def _(self, arg: complex, /):
+                return "complex"
+            @t.register
             def _(self, /, arg: str):
                 return "str"
             # See GH-130827.
-            def _(self: typing.Self, arg: bytes):
+            def wrapped1(self: typing.Self, arg: bytes):
                 return "bytes"
             @t.register
-            @functools.wraps(_)
-            def wrapper(self, *args, **kwargs):
-                return self._(*args, **kwargs)
+            @functools.wraps(wrapped1)
+            def wrapper1(self, *args, **kwargs):
+                return self.wrapped1(*args, **kwargs)
+
+            def wrapped2(self, arg: bytearray) -> str:
+                return "bytearray"
+            @t.register
+            @functools.wraps(wrapped2)
+            def wrapper2(self, *args: typing.Any, **kwargs: typing.Any):
+                return self.wrapped2(*args, **kwargs)
 
         a = A()
 
         self.assertEqual(a.t(0), "int")
+        self.assertEqual(a.t(0j), "complex")
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
         self.assertEqual(a.t(b''), "bytes")
+        self.assertEqual(a.t(bytearray()), "bytearray")
 
     def test_staticmethod_type_ann_register(self):
         def wrapper_decorator(func):
@@ -3082,6 +3081,25 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t([]).arg, "list")
         self.assertEqual(a.t(0j).arg, "complex")
         self.assertEqual(A.t(bytearray()).arg, "bytearray")
+
+    def test_boundmethod_type_ann_register(self):
+        class C:
+            @functools.singledispatchmethod
+            def sdm(self, x: object) -> str:
+                return "C.sdm"
+
+            def method(self, x: int) -> str:
+                return "C.method"
+
+        sd = functools.singledispatch(lambda x: "sd")
+
+        sd.register(C().method)
+        self.assertEqual(sd(0j), "sd")
+        self.assertEqual(sd(1), "C.method")
+
+        C.sdm.register(C().method)
+        self.assertEqual(C().sdm(0j), "C.sdm")
+        self.assertEqual(C().sdm(1), "C.method")
 
     def test_method_wrapping_attributes(self):
         class A:
