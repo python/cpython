@@ -611,6 +611,22 @@ class SymtableTest(unittest.TestCase):
             self.assertEqual(wm.filename, filename)
             self.assertIs(wm.category, SyntaxWarning)
 
+    def test_cells(self):
+        #test for addition of is_cell() and get_cells()
+        #see https://github.com/python/cpython/issues/143504
+        code="""def outer():
+                    x=1
+                    def inner():
+                        return x"""
+
+        top=symtable.symtable(code,"?","exec")
+        outer=top.get_children()[0]
+
+        self.assertIn("x",outer.get_cells())
+
+        self.assertTrue(outer.lookup("x").is_cell())
+        self.assertFalse(outer.lookup("inner").is_cell())
+
 
 class ComprehensionTests(unittest.TestCase):
     def get_identifiers_recursive(self, st, res):

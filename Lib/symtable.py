@@ -184,6 +184,7 @@ class Function(SymbolTable):
     __frees = None
     __globals = None
     __nonlocals = None
+    __cells = None
 
     def __idents_matching(self, test_func):
         return tuple(ident for ident in self.get_identifiers()
@@ -228,6 +229,14 @@ class Function(SymbolTable):
             is_free = lambda x: _get_scope(x) == FREE
             self.__frees = self.__idents_matching(is_free)
         return self.__frees
+
+    def get_cells(self):
+        """Return a tuple of cells in the function."""
+        if self.__cells is None:
+            is_cell = lambda x: _get_scope(x) == CELL
+            self.__cells = self.__idents_matching(is_cell)
+        return self.__cells
+
 
 
 class Class(SymbolTable):
@@ -341,6 +350,10 @@ class Symbol:
         not assigned to.
         """
         return bool(self.__scope == FREE)
+
+    def is_cell(self):
+        """Return *True* if the symbol is a cell variable."""
+        return bool(self.__scope == CELL)
 
     def is_free_class(self):
         """Return *True* if a class-scoped symbol is free from
