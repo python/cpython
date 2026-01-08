@@ -1,0 +1,2 @@
+Fix a crash in :meth:`~io.BufferedWriter.seek` when passing an object with a
+specially crafted :meth:`~object.__index__`.
