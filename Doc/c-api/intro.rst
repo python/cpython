@@ -405,7 +405,7 @@ complete listing.
    Macro used by CPython to declare a function as part of the C API.
    Its expansion depends on the platform and build configuration.
    This macro is intended for defining CPython's C API itself;
-   extension modulesshould not use it for their own symbols.
+   extension modules should not use it for their own symbols.
 
 
 .. c:macro:: PyAPI_DATA(type)
