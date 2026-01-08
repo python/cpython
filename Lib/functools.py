@@ -919,13 +919,15 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
 
     # Fall back to inspect.signature (slower, but complete).
     import inspect
+    params = list(inspect.signature(func).parameters.values())
     try:
-        param = list(inspect.signature(func).parameters.values())[idx]
+        param = params[idx]
+    except IndexError:
+        pass
+    else:
         # Allow variadic positional "(*args)" parameters for backward compatibility.
         if param.kind not in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
             return param.name
-    except IndexError:
-        pass
     return None
 
 def singledispatch(func):
