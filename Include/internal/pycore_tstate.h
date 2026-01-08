@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_freelist_state.h"  // struct _Py_freelists
 #include "pycore_interpframe_structs.h"  // _PyInterpreterFrame
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
+#include "pycore_optimizer_types.h" // JitOptContext
 #include "pycore_qsbr.h"            // struct qsbr
 #include "pycore_uop.h"             // struct _PyUOpInstruction
 #include "pycore_structs.h"
@@ -51,16 +52,12 @@ typedef struct _PyJitTracerTranslatorState {
     int jump_backward_seen;
 } _PyJitTracerTranslatorState;
 
-typedef struct _PyJitOptState {
-    struct _JitOptContext *opt_context;
-} _PyJitOptState;
-
 typedef struct _PyJitTracerState {
-    _PyUOpInstruction *code_buffer;
-    _PyJitOptState opt_state;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
     _PyJitTracerTranslatorState translator_state;
+    JitOptContext opt_context;
+    _PyUOpInstruction code_buffer[UOP_MAX_TRACE_LENGTH];
 } _PyJitTracerState;
 
 #endif
