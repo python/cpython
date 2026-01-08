@@ -68,10 +68,6 @@ PyStdPrinter_Type
 Py_UniversalNewlineFgets
 # cpython/setobject.h
 PySet_MINSIZE
-# cpython/ceval.h
-PyUnstable_CopyPerfMapFile
-PyUnstable_PerfTrampoline_CompileCode
-PyUnstable_PerfTrampoline_SetPersistAfterFork
 # cpython/genobject.h
 PyAsyncGenASend_CheckExact
 # cpython/longintrepr.h

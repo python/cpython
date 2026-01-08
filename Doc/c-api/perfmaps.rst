@@ -50,6 +50,11 @@ Note that holding an :term:`attached thread state` is not required for these API
    general, there shouldn't be a reason to explicitly call this, except to
    handle specific scenarios such as forking.
 
+These unstable functions let you access and set perf map information
+about the current frame from C code.
+
+Note: Appends the content of the parent frame to the current one in perf maps.
+Just like in frameobject.h.
 
 .. c:function:: int PyUnstable_CopyPerfMapFile(const char *parent_filename)
 
@@ -66,6 +71,11 @@ Note that holding an :term:`attached thread state` is not required for these API
 
    Compile the given code object using the current perf trampoline.
 
+   The "current" trampoline is the one set by the runtime or the most recent
+   :c:func:`PyUnstable_PerfTrampoline_SetPersistAfterFork` call.
+
+   If no trampoline is set, falls back to normal compilation (no perf map entry).
+
    :param code: The code object to compile.
    :return: 0 on success, -1 on failure.
 
@@ -75,6 +85,13 @@ Note that holding an :term:`attached thread state` is not required for these API
 .. c:function:: int PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable)
 
    Set whether the perf trampoline should persist after a fork.
+
+   * If ``enable`` is true (non-zero): perf map file remains open/valid post-fork.
+     Child process inherits all existing perf map entries.
+   * If ``enable`` is false (zero): perf map closes post-fork.
+     Child process gets empty perf map.
+
+   Default: false (clears on fork).
 
    :param enable: 1 to enable, 0 to disable.
    :return: 0 on success, -1 on failure.
