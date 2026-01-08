@@ -85,7 +85,7 @@ Python:
 
       .. versionadded:: 3.3
 
-      
+
 The following APIs are C macros and static inlined functions for fast checks and
 access to internal read-only data of Unicode objects:
 

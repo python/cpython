@@ -88,5 +88,3 @@ PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
 PyUnstable_EXECUTABLE_KIND_SKIP
 # cpython/pylifecycle.h
 Py_FrozenMain
-# cpython/unicodeobject.h
-
