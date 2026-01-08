@@ -1485,8 +1485,7 @@ uop_optimize(
     if (!is_noopt) {
         length = _Py_uop_analyze_and_optimize(
             _tstate,
-            _tstate->jit_tracer_state.initial_state.func,
-            buffer,length,
+            buffer, length,
             curr_stackentries, dependencies);
         if (length <= 0) {
             return length;

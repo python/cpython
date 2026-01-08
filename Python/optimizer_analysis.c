@@ -336,7 +336,6 @@ _Py_opt_assert_within_stack_bounds(
 static int
 optimize_uops(
     _PyThreadStateImpl *tstate,
-    PyFunctionObject *func,
     _PyUOpInstruction *trace,
     int trace_len,
     int curr_stacklen,
@@ -344,6 +343,7 @@ optimize_uops(
 )
 {
     assert(!PyErr_Occurred());
+    PyFunctionObject *func = tstate->jit_tracer_state.initial_state.func;
 
     // Use thread-local JitOptContext to avoid stack overflow
     JitOptContext *ctx = tstate->jit_tracer_state.opt_context;
@@ -584,7 +584,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 int
 _Py_uop_analyze_and_optimize(
     _PyThreadStateImpl *tstate,
-    PyFunctionObject *func,
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
@@ -594,7 +593,7 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         tstate, func, buffer,
+         tstate, buffer,
          length, curr_stacklen, dependencies);
 
     if (length == 0) {
