@@ -900,12 +900,13 @@ def _get_dispatch_param(func, *, _dispatchmethod=False):
         idx = 0
         func = func.__func__
     elif isinstance(func, classmethod):
-        func = func.__func__
         idx = 1
-    elif _dispatchmethod and isinstance(func, MethodType):
-        idx = 0
+        func = func.__func__
+    elif _dispatchmethod and not isinstance(func, MethodType):
+        idx = 1
     else:
-        idx = _dispatchmethod
+        idx = 0
+
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         # Method from inspect._signature_from_function.
         func_code = func.__code__
