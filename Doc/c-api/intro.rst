@@ -225,8 +225,9 @@ complete listing.
 .. c:macro:: Py_LOCAL_SYMBOL
 
    Macro used to declare a symbol as local to the shared library (hidden).
-   It ensures the symbol is not exported.
-   On platforms with visibility support, it
+   On supported platforms, it ensures the symbol is not exported.
+
+   On compatible versions of GCC/Clang, it
    expands to ``__attribute__((visibility("hidden")))``.
 
 .. c:macro:: Py_MAX(x, y)
