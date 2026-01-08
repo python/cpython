@@ -238,7 +238,6 @@ class Function(SymbolTable):
         return self.__cells
 
 
-
 class Class(SymbolTable):
 
     __methods = None
