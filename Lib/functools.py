@@ -912,7 +912,7 @@ def _get_dispatch_param(func, *, _insideclass=False):
     import inspect
     try:
         param = list(inspect.signature(func).parameters.values())[idx]
-        if param.kind < 3:  # (*, arg) or (**args)
+        if param.kind < 3:  # Discard (*, arg) and (**args)
             return param.name
     except IndexError:
         pass
