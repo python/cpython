@@ -326,7 +326,7 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
         if (subentry)
             ++subentry->recursionLevel;
     }
-     pObj->inCallback = 1;   
+     pObj->inCallback = 1;
  self->t0 = call_timer(pObj);
 pObj->inCallback = 0;
 }
