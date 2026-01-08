@@ -237,6 +237,7 @@ class TestFail:
                              (line, col, idx))
 
     def test_reentrant_jsondecodeerror_does_not_crash(self):
+        # gh-143544
         import json
 
         orig_json_error = json.JSONDecodeError
@@ -244,12 +245,9 @@ class TestFail:
 
         class Trigger:
             def __call__(self, *args):
-                import json as mod
                 # Remove JSONDecodeError during construction to trigger re-entrancy
-                if hasattr(mod, "JSONDecodeError"):
-                    del mod.JSONDecodeError
-                if hasattr(mod.decoder, "JSONDecodeError"):
-                    del mod.decoder.JSONDecodeError
+                del json.JSONDecodeError
+                del json.decoder.JSONDecodeError
                 return ValueError("boom")
 
         hook = Trigger()
@@ -257,10 +255,10 @@ class TestFail:
             json.JSONDecodeError = hook
             json.decoder.JSONDecodeError = hook
 
-            # The exact exception type is not important here; the test
-            # only verifies that we do not crash or trigger a SystemError.
+            # The exact exception type is not important here;
+            # this test only ensures we don't crash.
             with self.assertRaises(Exception):
-                self.loads('"\\uZZZZ"')
+                json.loads('"\\uZZZZ"')
 
         finally:
             json.JSONDecodeError = orig_json_error
