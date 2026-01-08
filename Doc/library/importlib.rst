@@ -210,12 +210,6 @@ Functions
        :exc:`ModuleNotFoundError` is raised when the module being reloaded lacks
        a :class:`~importlib.machinery.ModuleSpec`.
 
-   .. versionchanged:: 3.15
-       If *module* is a lazy module that has not yet been materialized (i.e.,
-       loaded via :class:`importlib.util.LazyLoader` and not yet accessed),
-       calling :func:`reload` is a no-op and returns the module unchanged.
-       This prevents the reload from unintentionally triggering the lazy load.
-
    .. warning::
       This function is not thread-safe. Calling it from multiple threads can result
       in unexpected behavior. It's recommended to use the :class:`threading.Lock`
