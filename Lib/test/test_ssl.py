@@ -576,6 +576,53 @@ class BasicSocketTests(unittest.TestCase):
             del ss
         self.assertEqual(wr(), None)
 
+    @support.cpython_only
+    def test_sslsocket_ctx_refcycle(self):
+        # SSLSocket doesn't leak when it has a reference cycle with its context
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname = False
+        s = socket.socket(socket.AF_INET)
+        ss = ctx.wrap_socket(s)
+        # Create a cycle: ctx -> callback -> ss -> ctx
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            pass
+        msg_cb.ss = ss
+        ctx._msg_callback = msg_cb
+
+        ctx_wr = weakref.ref(ctx)
+        ss_wr = weakref.ref(ss)
+        ss.close()
+        del ctx, s, ss, msg_cb
+        gc.collect()
+        self.assertIs(ctx_wr(), None)
+        self.assertIs(ss_wr(), None)
+
+    @support.cpython_only
+    def test_sslsocket_owner_refcycle(self):
+        # SSLSocket doesn't leak when it has a reference cycle with its owner
+        class Owner:
+            pass
+        owner = Owner()
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname = False
+        s = socket.socket(socket.AF_INET)
+        # owner is only available in SSLObject.wrap_bio or _ssl._SSLSocket directly
+        # but SSLSocket doesn't expose owner in wrap_socket.
+        # We can use _sslobj.owner if we want to test the C-level leak.
+        ss = ctx.wrap_socket(s)
+        # SSLSocket._sslobj is None if wrap_socket failed or was not called correctly
+        # but here it should be a _ssl._SSLSocket
+        ss.owner = owner
+        owner.ss = ss
+
+        owner_wr = weakref.ref(owner)
+        ss_wr = weakref.ref(ss)
+        ss.close()
+        del owner, ctx, s, ss
+        gc.collect()
+        self.assertIs(owner_wr(), None)
+        self.assertIs(ss_wr(), None)
+
     def test_wrapped_unconnected(self):
         # Methods on an unconnected SSLSocket propagate the original
         # OSError raise by the underlying socket object.
@@ -1487,6 +1534,48 @@ class ContextTests(unittest.TestCase):
         del ctx, dummycallback
         gc.collect()
         self.assertIs(wr(), None)
+
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
+    def test_psk_client_callback_refcycle(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        def psk_cb(hint, cycle=ctx):
+            return (None, b"psk")
+        ctx.set_psk_client_callback(psk_cb)
+        wr = weakref.ref(ctx)
+        del ctx, psk_cb
+        gc.collect()
+        self.assertIs(wr(), None)
+
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
+    def test_psk_server_callback_refcycle(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        def psk_cb(identity, cycle=ctx):
+            return b"psk"
+        ctx.set_psk_server_callback(psk_cb)
+        wr = weakref.ref(ctx)
+        del ctx, psk_cb
+        gc.collect()
+        self.assertIs(wr(), None)
+
+    def test_msg_callback_refcycle(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        def msg_cb(conn, direction, version, content_type, msg_type, data, cycle=ctx):
+            pass
+        ctx._msg_callback = msg_cb
+        wr = weakref.ref(ctx)
+        del ctx, msg_cb
+        gc.collect()
+        self.assertIs(wr(), None)
+
+    def test_keylog_filename_refcycle(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.keylog_filename = os_helper.TESTFN
+        # keylog_filename is a string, so it can't create a cycle itself,
+        # but we check that SSLContext still clears it.
+        ctx_wr = weakref.ref(ctx)
+        del ctx
+        gc.collect()
+        self.assertIs(ctx_wr(), None)
 
     def test_cert_store_stats(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -4708,6 +4797,36 @@ class ThreadedTests(unittest.TestCase):
                     s.connect((HOST, server.port))
                 self.assertEqual(str(e.exception),
                                  'Session refers to a different SSLContext.')
+
+    @support.cpython_only
+    def test_session_refcycle(self):
+        # SSLSession doesn't leak when it has a reference cycle with its context
+        client_context, server_context, hostname = testing_context()
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                session = s.session
+
+        # Create a cycle: session -> ctx -> callback -> session
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            pass
+        msg_cb.session = session
+        client_context._msg_callback = msg_cb
+
+        # _ssl.SSLSession doesn't support weakrefs, so we use gc.get_referrers
+        # to check if it's still alive.
+        import gc
+        del session, client_context, server_context, s, msg_cb
+        gc.collect()
+        # If SSLSession is still alive, it should be in gc.get_objects()
+        # but that's a bit unreliable. Better check that there are no
+        # SSLSession objects left.
+        sessions = [obj for obj in gc.get_objects()
+                    if type(obj).__name__ == 'SSLSession']
+        self.assertEqual(sessions, [])
 
     @requires_tls_version('TLSv1_2')
     @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')

@@ -2435,6 +2435,10 @@ static int
 PySSL_traverse(PyObject *op, visitproc visit, void *arg)
 {
     PySSLSocket *self = PySSLSocket_CAST(op);
+    Py_VISIT(self->Socket);
+    Py_VISIT(self->ctx);
+    Py_VISIT(self->server_hostname);
+    Py_VISIT(self->owner);
     Py_VISIT(self->exc);
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -2444,6 +2448,10 @@ static int
 PySSL_clear(PyObject *op)
 {
     PySSLSocket *self = PySSLSocket_CAST(op);
+    Py_CLEAR(self->Socket);
+    Py_CLEAR(self->ctx);
+    Py_CLEAR(self->server_hostname);
+    Py_CLEAR(self->owner);
     Py_CLEAR(self->exc);
     return 0;
 }
@@ -2468,10 +2476,7 @@ PySSL_dealloc(PyObject *op)
         SSL_set_shutdown(self->ssl, SSL_SENT_SHUTDOWN | SSL_get_shutdown(self->ssl));
         SSL_free(self->ssl);
     }
-    Py_XDECREF(self->Socket);
-    Py_XDECREF(self->ctx);
-    Py_XDECREF(self->server_hostname);
-    Py_XDECREF(self->owner);
+    (void)PySSL_clear(op);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -3594,6 +3599,11 @@ context_traverse(PyObject *op, visitproc visit, void *arg)
     PySSLContext *self = PySSLContext_CAST(op);
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
+    Py_VISIT(self->keylog_filename);
+#ifndef OPENSSL_NO_PSK
+    Py_VISIT(self->psk_client_callback);
+    Py_VISIT(self->psk_server_callback);
+#endif
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
@@ -5959,6 +5969,23 @@ static PyType_Spec PySSLMemoryBIO_spec = {
  * SSL Session object
  */
 
+static int
+PySSLSession_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    PySSLSession *self = PySSLSession_CAST(op);
+    Py_VISIT(self->ctx);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static int
+PySSLSession_clear(PyObject *op)
+{
+    PySSLSession *self = PySSLSession_CAST(op);
+    Py_CLEAR(self->ctx);
+    return 0;
+}
+
 static void
 PySSLSession_dealloc(PyObject *op)
 {
@@ -5966,10 +5993,10 @@ PySSLSession_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    Py_XDECREF(self->ctx);
     if (self->session != NULL) {
         SSL_SESSION_free(self->session);
     }
+    (void)PySSLSession_clear(op);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -6031,24 +6058,6 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
         return NULL;
     }
 }
-
-static int
-PySSLSession_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    PySSLSession *self = PySSLSession_CAST(op);
-    Py_VISIT(self->ctx);
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
-static int
-PySSLSession_clear(PyObject *op)
-{
-    PySSLSession *self = PySSLSession_CAST(op);
-    Py_CLEAR(self->ctx);
-    return 0;
-}
-
 
 /*[clinic input]
 @critical_section
