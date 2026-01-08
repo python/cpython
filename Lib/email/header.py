@@ -89,18 +89,24 @@ def decode_header(header):
     words = []
     for line in header.splitlines():
         parts = ecre.split(line)
+        i = 0
+        parts_len = len(parts)
         first = True
-        while parts:
-            unencoded = parts.pop(0)
+        while i < parts_len:
+            unencoded = parts[i]
+            i += 1
             if first:
                 unencoded = unencoded.lstrip()
                 first = False
             if unencoded:
                 words.append((unencoded, None, None))
-            if parts:
-                charset = parts.pop(0).lower()
-                encoding = parts.pop(0).lower()
-                encoded = parts.pop(0)
+            if i < parts_len:
+                charset = parts[i].lower()
+                i += 1
+                encoding = parts[i].lower()
+                i += 1
+                encoded = parts[i]
+                i += 1
                 words.append((encoded, encoding, charset))
     # Now loop over words and remove words that consist of whitespace
     # between two encoded strings.

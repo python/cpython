@@ -1,0 +1,1 @@
+Speed up :func:`email.header.decode_header` by 1.02x.
