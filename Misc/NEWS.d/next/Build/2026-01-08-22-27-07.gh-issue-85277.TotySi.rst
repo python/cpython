@@ -1,0 +1,1 @@
+Fix building without `stropts.h` or empty `stropts.h`
