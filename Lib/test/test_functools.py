@@ -3448,44 +3448,44 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_signatures(self):
         class A:
-            def m(self, item, arg: int) -> str:
+            def m(self, item: int, arg) -> str:
                 return str(item)
             @classmethod
-            def cm(cls, item, arg: int) -> str:
+            def cm(cls, item: int, arg) -> str:
                 return str(item)
             @functools.singledispatchmethod
-            def func(self, item, arg: int) -> str:
+            def func(self, item: int, arg) -> str:
                 return str(item)
             @func.register
-            def _(self, item, arg: bytes) -> str:
+            def _(self, item: bytes, arg) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
             @classmethod
-            def cls_func(cls, item, arg: int) -> str:
+            def cls_func(cls, item: int, arg) -> str:
                 return str(arg)
             @func.register
             @classmethod
-            def _(cls, item, arg: bytes) -> str:
+            def _(cls, item: bytes, arg) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
             @staticmethod
-            def static_func(item, arg: int) -> str:
+            def static_func(item: int, arg) -> str:
                 return str(arg)
             @func.register
             @staticmethod
-            def _(item, arg: bytes) -> str:
+            def _(item: bytes, arg) -> str:
                 return str(item)
 
         self.assertEqual(str(Signature.from_callable(A.func)),
-                         '(self, item, arg: int) -> str')
+                         '(self, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A().func)),
-                         '(self, item, arg: int) -> str')
+                         '(self, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A.cls_func)),
-                         '(cls, item, arg: int) -> str')
+                         '(cls, item: int, arg) -> str')
         self.assertEqual(str(Signature.from_callable(A.static_func)),
-                         '(item, arg: int) -> str')
+                         '(item: int, arg) -> str')
 
     def test_method_non_descriptor(self):
         class Callable:
