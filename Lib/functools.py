@@ -911,12 +911,13 @@ def _get_dispatch_param(func, *, _inside_dispatchmethod=False):
         idx = _inside_dispatchmethod
 
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
-        # Method from inspect._signature_from_function.
+        # Emulate inspect._signature_from_function to get the desired parameter.
         func_code = func.__code__
         try:
             return func_code.co_varnames[:func_code.co_argcount][idx]
         except IndexError:
             pass
+
     # Fallback path for more nuanced inspection of ambiguous callables.
     import inspect
     try:
