@@ -894,22 +894,21 @@ def _get_dispatch_param(func, *, _inside_dispatchmethod=False):
 
     Used by singledispatch for registration by type annotation of the parameter.
     """
-    # Fast path for typical callables and descriptors.
-
-    # For staticmethods always pick the first parameter.
+    # Pick the first parameter if function had @staticmethod.
     if isinstance(func, staticmethod):
         idx = 0
         func = func.__func__
-    # For classmethods and bound methods always pick the second parameter.
+    # Pick the second parameter if function had @classmethod or is any bound method.
     elif isinstance(func, (classmethod, MethodType)):
         idx = 1
         func = func.__func__
-    # For unbound methods and functions, pick:
-    # - the first parameter if calling from singledispatch()
-    # - the second parameter if calling from singledispatchmethod()
+    # If it is likely a regular function:
+    # Pick the first parameter if calling from singledispatch().
+    # Pick the second parameter if calling from singledispatchmethod.
     else:
         idx = _inside_dispatchmethod
 
+    # If it is a simple function, try to fast read from the code object.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         # Emulate inspect._signature_from_function to get the desired parameter.
         func_code = func.__code__
@@ -918,7 +917,7 @@ def _get_dispatch_param(func, *, _inside_dispatchmethod=False):
         except IndexError:
             pass
 
-    # Fallback path for more nuanced inspection of ambiguous callables.
+    # Otherwise delegate wrapped or ambiguous callables to inspect.signature (slower).
     import inspect
     try:
         param = list(inspect.signature(func).parameters.values())[idx]
