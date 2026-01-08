@@ -1554,7 +1554,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     _tstate->jit_tracer_state.code_buffer = NULL;
-    _tstate->jit_tracer_state.opt_context = NULL;
+    _tstate->jit_tracer_state.opt_state.opt_context = NULL;
 #endif
     tstate->delete_later = NULL;
 
@@ -1875,11 +1875,9 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
         _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
         _tstate->jit_tracer_state.code_buffer = NULL;
     }
-    if (_tstate->jit_tracer_state.opt_context != NULL) {
-        // Ensure any resources in opt_context are cleaned up
-        _Py_uop_abstractcontext_fini(_tstate->jit_tracer_state.opt_context);
-        PyMem_RawFree(_tstate->jit_tracer_state.opt_context);
-        _tstate->jit_tracer_state.opt_context = NULL;
+    if (_tstate->jit_tracer_state.opt_state.opt_context != NULL) {
+        PyMem_RawFree(_tstate->jit_tracer_state.opt_state.opt_context);
+        _tstate->jit_tracer_state.opt_state.opt_context = NULL;
     }
 #endif
 

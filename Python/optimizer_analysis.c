@@ -345,14 +345,13 @@ optimize_uops(
     assert(!PyErr_Occurred());
     PyFunctionObject *func = tstate->jit_tracer_state.initial_state.func;
 
-    // Use thread-local JitOptContext to avoid stack overflow
-    JitOptContext *ctx = tstate->jit_tracer_state.opt_context;
+    JitOptContext *ctx = tstate->jit_tracer_state.opt_state.opt_context;
     if (ctx == NULL) {
         ctx = (JitOptContext *)PyMem_RawMalloc(sizeof(JitOptContext));
         if (ctx == NULL) {
             return 0;
         }
-        tstate->jit_tracer_state.opt_context = ctx;
+        tstate->jit_tracer_state.opt_state.opt_context = ctx;
     }
     uint32_t opcode = UINT16_MAX;
 

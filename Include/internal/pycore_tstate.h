@@ -51,9 +51,13 @@ typedef struct _PyJitTracerTranslatorState {
     int jump_backward_seen;
 } _PyJitTracerTranslatorState;
 
+typedef struct _PyJitOptState {
+    struct _JitOptContext *opt_context;
+} _PyJitOptState;
+
 typedef struct _PyJitTracerState {
     _PyUOpInstruction *code_buffer;
-    struct _JitOptContext *opt_context;
+    _PyJitOptState opt_state;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
     _PyJitTracerTranslatorState translator_state;
