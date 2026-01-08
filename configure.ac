@@ -3022,22 +3022,14 @@ AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
 # On Linux, stropts.h may be empty
-AC_MSG_CHECKING([for stropts.h])
-AC_COMPILE_IFELSE([
-AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <stropts.h>
-]], [[
-#if !defined(I_PUSH)
-#error I_PUSH
-#endif
-]]
-)],
-[
-AC_MSG_RESULT([yes])
+AC_CHECK_DECL([I_PUSH], [
 AC_DEFINE([HAVE_STROPTS_H], [1], [Define to 1 if you have the <stropts.h> header file.])
-],
-[AC_MSG_RESULT([no])])
+], [], [
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <stropts.h>
+])
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
