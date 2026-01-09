@@ -587,6 +587,48 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.ioclass(initial_bytes=buf)
         self.assertRaises(TypeError, self.ioclass, buf, foo=None)
 
+    def test_write_concurrent_close(self):
+        class B:
+            def __buffer__(self, flags):
+                memio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(ValueError, memio.write, B())
+
+    # Prevent crashes when memio.write() or memio.writelines()
+    # concurrently mutates (e.g., closes or exports) 'memio'.
+    # See: https://github.com/python/cpython/issues/143378.
+
+    def test_writelines_concurrent_close(self):
+        class B:
+            def __buffer__(self, flags):
+                memio.close()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(ValueError, memio.writelines, [B()])
+
+    def test_write_concurrent_export(self):
+        class B:
+            buf = None
+            def __buffer__(self, flags):
+                self.buf = memio.getbuffer()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.write, B())
+
+    def test_writelines_concurrent_export(self):
+        class B:
+            buf = None
+            def __buffer__(self, flags):
+                self.buf = memio.getbuffer()
+                return memoryview(b"A")
+
+        memio = self.ioclass()
+        self.assertRaises(BufferError, memio.writelines, [B()])
+
 
 class TextIOTestMixin:
 
