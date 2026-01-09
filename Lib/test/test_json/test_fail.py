@@ -246,7 +246,7 @@ class TestFail:
         orig_decoder_error = json.decoder.JSONDecodeError
 
         class Trigger:
-            def __call__(self, *args):
+            def __call__(self, *args, **kwargs):
                 # Remove JSONDecodeError during construction to trigger re-entrancy
                 del json.JSONDecodeError
                 del json.decoder.JSONDecodeError
