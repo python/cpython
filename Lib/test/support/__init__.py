@@ -1787,8 +1787,8 @@ def skip_if_unlimited_stack_size(test):
         return test
 
     import resource
-    stack_size = resource.getrlimit(resource.RLIMIT_STACK)
-    unlimited_stack_size_cond = stack_size == (-1, -1) or stack_size == (0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF)
+    curlim, maxlim = resource.getrlimit(resource.RLIMIT_STACK)
+    unlimited_stack_size_cond = curlim == maxlim and curlim in (-1, 0xFFFFFFFFFFFFFFFF)
     reason = "Not run due to unlimited stack size"
     return unittest.skipIf(unlimited_stack_size_cond, reason)(test)
 
