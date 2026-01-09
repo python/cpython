@@ -1,5 +1,4 @@
 from test.test_json import PyTest, CTest
-from test import support
 import json
 
 # 2007-10-05
@@ -250,15 +249,20 @@ class TestFail:
                 return ValueError("boom")
 
         hook = Trigger()
-        with (
-            support.swap_attr(json, "JSONDecodeError", hook),
-            support.swap_attr(json.decoder, "JSONDecodeError", hook)
-        ):
-            # The exact exception type is not important here;
-            # this test only ensures we don't crash.
-            with self.assertRaises(json.JSONDecodeError):
-                json.loads('"\\uZZZZ"')
 
+        orig_json_error = json.JSONDecodeError
+        orig_decoder_error = json.decoder.JSONDecodeError
+
+        try:
+            json.JSONDecodeError = hook
+            json.decoder.JSONDecodeError = hook
+            del hook
+
+            with self.assertRaises(ValueError):
+                json.loads('"\\uZZZZ"')
+        finally:
+            json.JSONDecodeError = orig_json_error
+            json.decoder.JSONDecodeError = orig_decoder_error
 
 class TestPyFail(TestFail, PyTest): pass
 class TestCFail(TestFail, CTest): pass
