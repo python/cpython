@@ -1844,6 +1844,14 @@ expression support in the :mod:`re` module).
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.lower()
+      'straße'
+      >>> 'straße'.casefold()
+      'strasse'
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
@@ -2045,7 +2053,18 @@ expression support in the :mod:`re` module).
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
-   not found.
+   not found. For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.index('eggs')
+      Traceback (most recent call last):
+        File "<python-input-0>", line 1, in <module>
+          'spam, spam, spam'.index('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`rindex`.
 
 
 .. method:: str.isalnum()
@@ -2190,6 +2209,15 @@ expression support in the :mod:`re` module).
    Nonprintable characters are those in group Separator or Other (Z or C),
    except the ASCII space.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isprintable(), ' '.isprintable()
+      (True, True)
+      >>> '\t'.isprintable(), '\n'.isprintable()
+      (False, False)
+
 
 .. method:: str.isspace()
 
@@ -2280,7 +2308,12 @@ expression support in the :mod:`re` module).
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase.
+   lowercase. For example:
+
+   .. doctest::
+
+      >>> 'Lower Method Example'.lower()
+      'lower method example'
 
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
@@ -2365,6 +2398,14 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all occurrences of substring *old* replaced by
    *new*.  If *count* is given, only the first *count* occurrences are replaced.
    If *count* is not specified or ``-1``, then all occurrences are replaced.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.replace('spam', 'eggs')
+      'eggs, eggs, eggs'
+      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+      'eggs, spam, spam'
 
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.

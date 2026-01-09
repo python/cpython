@@ -387,6 +387,20 @@ class AbstractMemoryTests:
         m = self._view(b)
         self.assertRaises(ValueError, hash, m)
 
+    def test_hash_use_after_free(self):
+        # Prevent crash in memoryview(v).__hash__ with re-entrant v.__hash__.
+        # Regression test for https://github.com/python/cpython/issues/142664.
+        class E(array.array):
+            def __hash__(self):
+                mv.release()
+                self.clear()
+                return 123
+
+        v = E('B', b'A' * 4096)
+        mv = memoryview(v).toreadonly()   # must be read-only for hash()
+        self.assertRaises(BufferError, hash, mv)
+        self.assertRaises(BufferError, mv.__hash__)
+
     def test_weakref(self):
         # Check memoryviews are weakrefable
         for tp in self._types:
@@ -441,6 +455,20 @@ class AbstractMemoryTests:
         self.assertEqual(d[0], 256)
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
+
+    def test_hex_use_after_free(self):
+        # Prevent UAF in memoryview.hex(sep) with re-entrant sep.__len__.
+        # Regression test for https://github.com/python/cpython/issues/143195.
+        ba = bytearray(b'A' * 1024)
+        mv = memoryview(ba)
+
+        class S(bytes):
+            def __len__(self):
+                mv.release()
+                ba.clear()
+                return 1
+
+        self.assertRaises(BufferError, mv.hex, S(b':'))
 
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
