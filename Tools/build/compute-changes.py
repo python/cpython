@@ -174,10 +174,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             if file.name == "reusable-wasi.yml":
                 platforms_changed.add("wasi")
 
-        if not (
-            doc_file
-            or file in RUN_TESTS_IGNORE
-        ):
+        if not (doc_file or file in RUN_TESTS_IGNORE):
             run_tests = True
 
             platform = get_file_platform(file)
