@@ -1773,17 +1773,15 @@ def skip_if_pgo_task(test):
 
 
 def skip_if_unlimited_stack_size(test):
-    """
-    Skip decorator for tests not run when an unlimited stack size is configured.
+    """Skip decorator for tests not run when an unlimited stack size is configured.
 
-    Tests using support.infinite_recursion([...]) may otherwise run into an infinite loop,
-    running until the memory on the system is filled and crashing due to OOM.
+    Tests using support.infinite_recursion([...]) may otherwise run into
+    an infinite loop, running until the memory on the system is filled and
+    crashing due to OOM.
 
-    See gh-143460: Python 3.14/3.15a build aborting due to OOM during test_functools / test_json
+    See https://github.com/python/cpython/issues/143460.
     """
-    if is_wasi:
-        return test
-    if sys.platform.startswith('win'):
+    if is_wasi or os.name == "nt":
         return test
 
     import resource
