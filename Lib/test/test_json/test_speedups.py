@@ -80,3 +80,38 @@ class TestEncode(CTest):
     def test_unsortable_keys(self):
         with self.assertRaises(TypeError):
             self.json.encoder.JSONEncoder(sort_keys=True).encode({'a': 1, 1: 'a'})
+
+    def test_current_indent_level(self):
+        enc = self.json.encoder.c_make_encoder(
+            markers=None,
+            default=str,
+            encoder=self.json.encoder.c_encode_basestring,
+            indent='\t',
+            key_separator=': ',
+            item_separator=', ',
+            sort_keys=False,
+            skipkeys=False,
+            allow_nan=False)
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 0)[0],
+                         '[\n'
+                         '\t"spam", \n'
+                         '\t{\n'
+                         '\t\t"ham": "eggs"\n'
+                         '\t}\n'
+                         ']')
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 3)[0],
+                         '[\n'
+                         '\t\t\t\t"spam", \n'
+                         '\t\t\t\t{\n'
+                         '\t\t\t\t\t"ham": "eggs"\n'
+                         '\t\t\t\t}\n'
+                         '\t\t\t]')
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], -3)[0],
+                         '[\n'
+                         '\t"spam", \n'
+                         '\t{\n'
+                         '\t\t"ham": "eggs"\n'
+                         '\t}\n'
+                         ']')
+        self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}], 3.0)
+        self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])
