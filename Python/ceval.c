@@ -1462,15 +1462,17 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     }
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // Deal with backoffs
-    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
+    _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+    assert(tracer != NULL);
+    _PyExitData *exit = tracer->initial_state.exit;
     if (exit == NULL) {
         // We hold a strong reference to the code object, so the instruction won't be freed.
         if (err <= 0) {
-            _Py_BackoffCounter counter = _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter;
-            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
+            _Py_BackoffCounter counter = tracer->initial_state.jump_backward_instr[1].counter;
+            tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
+            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
         }
     }
     else {
