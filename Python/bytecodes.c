@@ -5395,6 +5395,13 @@ dummy_func(
             INPUTS_DEAD();
         }
 
+        tier2 op(_INSERT_2_LOAD_CONST_INLINE_BORROW, (ptr/4, left, right -- res, l, r)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
