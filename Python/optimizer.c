@@ -1888,6 +1888,24 @@ error:
     _Py_Executors_InvalidateAll(interp, 0);
 }
 
+static int
+escape_angles(const char *input, Py_ssize_t size, char *buffer) {
+    int written = 0;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        char c = input[i];
+        if (c == '<' || c == '>') {
+            buffer[written++] = '&';
+            buffer[written++] = c == '>' ? 'g' : 'l';
+            buffer[written++] = 't';
+            buffer[written++] = ';';
+        }
+        else {
+            buffer[written++] = c;
+        }
+    }
+    return written;
+}
+
 static void
 write_str(PyObject *str, FILE *out)
 {
@@ -1899,7 +1917,17 @@ write_str(PyObject *str, FILE *out)
     }
     const char *encoded_str = PyBytes_AsString(encoded_obj);
     Py_ssize_t encoded_size = PyBytes_Size(encoded_obj);
-    fwrite(encoded_str, 1, encoded_size, out);
+    char buffer[120];
+    bool truncated = false;
+    if (encoded_size > 24) {
+        encoded_size = 24;
+        truncated = true;
+    }
+    int size = escape_angles(encoded_str, encoded_size, buffer);
+    fwrite(buffer, 1, size, out);
+    if (truncated) {
+        fwrite("...", 1, 3, out);
+    }
     Py_DECREF(encoded_obj);
 }
 
@@ -1920,6 +1948,85 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
     }
     return -1;
 }
+
+#define RED "#ff0000"
+#define WHITE "#ffffff"
+#define BLUE "#0000ff"
+#define BLACK "#000000"
+#define LOOP "#00c000"
+
+const char *COLORS[10] = {
+    "9",
+    "8",
+    "7",
+    "6",
+    "5",
+    "4",
+    "3",
+    "2",
+    "1",
+    WHITE,
+};
+
+#ifdef Py_STATS
+const char *
+get_background_color(_PyUOpInstruction const *inst, uint64_t max_hotness)
+{
+    uint64_t hotness = inst->execution_count;
+    int index = (hotness * 10)/max_hotness;
+    if (index > 9) {
+        index = 9;
+    }
+    if (index < 0) {
+        index = 0;
+    }
+    return COLORS[index];
+}
+
+const char *
+get_foreground_color(_PyUOpInstruction const *inst, uint64_t max_hotness)
+{
+    if(_PyUop_Uncached[inst->opcode] == _DEOPT) {
+        return RED;
+    }
+    uint64_t hotness = inst->execution_count;
+    int index = (hotness * 10)/max_hotness;
+    if (index > 3) {
+        return BLACK;
+    }
+    return WHITE;
+}
+#endif
+
+static void
+write_row_for_uop(_PyExecutorObject *executor, uint32_t i, FILE *out)
+{
+    /* Write row for uop.
+        * The `port` is a marker so that outgoing edges can
+        * be placed correctly. If a row is marked `port=17`,
+        * then the outgoing edge is `{EXEC_NAME}:17 -> {TARGET}`
+        * https://graphviz.readthedocs.io/en/stable/manual.html#node-ports-compass
+        */
+    _PyUOpInstruction const *inst = &executor->trace[i];
+    const char *opname = _PyOpcode_uop_name[inst->opcode];
+#ifdef Py_STATS
+    const char *bg_color = get_background_color(inst, executor->trace[0].execution_count);
+    const char *color = get_foreground_color(inst, executor->trace[0].execution_count);
+    fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" color=\"%s\" bgcolor=\"%s\" ><font color=\"%s\"> %s &nbsp;--&nbsp; %" PRIu64 "</font></td></tr>\n",
+        i, color, bg_color, color, opname, inst->execution_count);
+#else
+    const char *color = (_PyUop_Uncached[inst->opcode] == _DEOPT) ? RED : BLACK;
+    fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" color=\"%s\" >%s op0=%" PRIu64 "</td></tr>\n", i, color, opname, inst->operand0);
+#endif
+}
+
+static bool
+is_stop(_PyUOpInstruction const *inst)
+{
+    uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
+    return (base_opcode == _EXIT_TRACE || base_opcode == _DEOPT || base_opcode == _JUMP_TO_TOP);
+}
+
 
 /* Writes the node and outgoing edges for a single tracelet in graphviz format.
  * Each tracelet is presented as a table of the uops it contains.
@@ -1948,21 +2055,8 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
         fprintf(out, ": %d</td></tr>\n", line);
     }
     for (uint32_t i = 0; i < executor->code_size; i++) {
-        /* Write row for uop.
-         * The `port` is a marker so that outgoing edges can
-         * be placed correctly. If a row is marked `port=17`,
-         * then the outgoing edge is `{EXEC_NAME}:17 -> {TARGET}`
-         * https://graphviz.readthedocs.io/en/stable/manual.html#node-ports-compass
-         */
-        _PyUOpInstruction const *inst = &executor->trace[i];
-        uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
-        const char *opname = _PyOpcode_uop_name[base_opcode];
-#ifdef Py_STATS
-        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s -- %" PRIu64 "</td></tr>\n", i, opname, inst->execution_count);
-#else
-        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s op0=%" PRIu64 "</td></tr>\n", i, opname, inst->operand0);
-#endif
-        if (base_opcode == _EXIT_TRACE || base_opcode == _JUMP_TO_TOP) {
+        write_row_for_uop(executor, i, out);
+        if (is_stop(&executor->trace[i])) {
             break;
         }
     }
@@ -1977,6 +2071,10 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
         uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
         uint16_t flags = _PyUop_Flags[base_opcode];
         _PyExitData *exit = NULL;
+        if (base_opcode == _JUMP_TO_TOP) {
+            fprintf(out, "executor_%p:i%d -> executor_%p:i%d [color = \"" LOOP "\"]\n", executor, i, executor, inst->jump_target);
+            break;
+        }
         if (base_opcode == _EXIT_TRACE) {
             exit = (_PyExitData *)inst->operand0;
         }
@@ -1987,10 +2085,22 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
             assert(base_exit_opcode == _EXIT_TRACE || base_exit_opcode == _DYNAMIC_EXIT);
             exit = (_PyExitData *)exit_inst->operand0;
         }
-        if (exit != NULL && exit->executor != cold && exit->executor != cold_dynamic) {
-            fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
+        if (exit != NULL) {
+            if (exit->executor == cold || exit->executor == cold_dynamic) {
+#ifdef Py_STATS
+                /* Only mark as have cold exit if it has actually exited */
+                uint64_t diff = inst->execution_count - executor->trace[i+1].execution_count;
+                if (diff) {
+                    fprintf(out, "cold_%p%d [ label = \"%"  PRIu64  "\" shape = ellipse color=\"" BLUE "\" ]\n", executor, i, diff);
+                    fprintf(out, "executor_%p:i%d -> cold_%p%d\n", executor, i, executor, i);
+                }
+#endif
+            }
+            else {
+                fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
+            }
         }
-        if (base_opcode == _EXIT_TRACE || base_opcode == _JUMP_TO_TOP) {
+        if (is_stop(inst)) {
             break;
         }
     }
@@ -2002,6 +2112,7 @@ _PyDumpExecutors(FILE *out)
 {
     fprintf(out, "digraph ideal {\n\n");
     fprintf(out, "    rankdir = \"LR\"\n\n");
+    fprintf(out, "    node [colorscheme=greys9]\n");
     PyInterpreterState *interp = PyInterpreterState_Get();
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         executor_to_gv(exec, out);
