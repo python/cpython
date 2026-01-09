@@ -410,9 +410,8 @@ complete listing.
 
 .. c:macro:: PyAPI_DATA(type)
 
-   Macro used to declare a public global variable.
-   It expands to ``extern Py_EXPORTED_SYMBOL type`` or ``extern Py_IMPORTED_SYMBOL type``
-   depending on whether the core is being built or used.
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
    This macro is intended for defining CPython's C API itself;
    extension modules should not use it for their own symbols.
 
