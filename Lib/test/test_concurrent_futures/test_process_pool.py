@@ -115,7 +115,11 @@ class ProcessPoolExecutorTest(ExecutorTest):
             with self.assertRaises(BrokenProcessPool) as bpe:
                 future.result()
 
-        cause = bpe.exception.__cause__
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                cause = bpe.exception.__cause__
+                if isinstance(cause, futures.process._RemoteTraceback):
+                    break
+
         self.assertIsInstance(cause, futures.process._RemoteTraceback)
         self.assertIn(
             f"terminated abruptly with exit code {exit_code}", cause.tb
