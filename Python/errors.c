@@ -1713,7 +1713,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1721,7 +1720,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (hook == Py_None) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
