@@ -187,6 +187,24 @@ class TimeTestCase(unittest.TestCase):
         # Only test the date and time, ignore other gmtime() members
         self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
 
+    def test_gmtime(self):
+        # expected format:
+        # (tm_year, tm_mon, tm_mday,
+        #  tm_hour, tm_min, tm_sec,
+        #  tm_wday, tm_yday)
+        for t, expected in (
+            (-13262400, (1969, 7, 31, 12, 0, 0, 3, 212)),
+            (-6177600, (1969, 10, 21, 12, 0, 0, 1, 294)),
+            # non-leap years (pre epoch)
+            (-2203891200, (1900, 3, 1, 0, 0, 0, 3, 60)),
+            (-5359564800, (1800, 3, 1, 0, 0, 0, 3, 60)),
+            # leap years (pre epoch)
+            (-2077660800, (1904, 3, 1, 0, 0, 0, 3, 61)),
+        ):
+            with self.subTest(t=t, expected=expected):
+                res = time.gmtime(t)
+                self.assertEqual(tuple(res)[:8], expected, res)
+
     def test_strftime(self):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
