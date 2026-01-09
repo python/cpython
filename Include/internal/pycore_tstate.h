@@ -56,8 +56,8 @@ typedef struct _PyJitTracerState {
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
     _PyJitTracerTranslatorState translator_state;
-    JitOptContext *opt_context;
-    _PyUOpInstruction *code_buffer;
+    JitOptContext opt_context;
+    _PyUOpInstruction code_buffer[UOP_MAX_TRACE_LENGTH];
 } _PyJitTracerState;
 
 #endif
@@ -153,7 +153,7 @@ typedef struct _PyThreadStateImpl {
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
 #if _Py_TIER2
-    _PyJitTracerState jit_tracer_state;
+    _PyJitTracerState *jit_tracer_state;
 #endif
     _PyPolicy policy;
 } _PyThreadStateImpl;
