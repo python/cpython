@@ -1024,6 +1024,7 @@ _PyJit_TryInitializeTracing(
             // Don't error, just go to next instruction.
             return 0;
         }
+        _tstate->jit_tracer_state->is_tracing = false;
     }
     _PyJitTracerState *tracer = _tstate->jit_tracer_state;
     // A recursive trace.
@@ -1083,7 +1084,7 @@ _PyJit_TryInitializeTracing(
 }
 
 Py_NO_INLINE void
-_PyJit_ResetTracing(PyThreadState *tstate)
+_PyJit_FinalizeTracing(PyThreadState *tstate)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     _PyJitTracerState *tracer = _tstate->jit_tracer_state;

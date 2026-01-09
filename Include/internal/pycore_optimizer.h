@@ -233,7 +233,7 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
     int oparg);
 
-void _PyJit_ResetTracing(PyThreadState *tstate);
+void _PyJit_FinalizeTracing(PyThreadState *tstate);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
 void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);

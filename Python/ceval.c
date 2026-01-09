@@ -1485,7 +1485,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
             exit->temperature = initial_temperature_backoff_counter(&_tstate->policy);
         }
     }
-    _PyJit_ResetTracing(tstate);
+    _PyJit_FinalizeTracing(tstate);
     return err;
 }
 #endif

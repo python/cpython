@@ -1554,7 +1554,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     _tstate->jit_tracer_state = NULL;
-    _PyJit_ResetTracing(tstate);    
 #endif
     tstate->delete_later = NULL;
 
