@@ -1020,7 +1020,6 @@ _pysqlite_query_execute(pysqlite_Cursor *self, int multiple, PyObject *operation
         Py_BEGIN_ALLOW_THREADS
         numcols = sqlite3_column_count(self->statement->st);
         Py_END_ALLOW_THREADS
-
         if (self->description == Py_None && numcols > 0) {
             Py_SETREF(self->description, PyTuple_New(numcols));
             if (!self->description) {
