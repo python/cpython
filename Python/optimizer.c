@@ -1094,6 +1094,14 @@ _PyJit_FinalizeTracing(PyThreadState *tstate)
     tracer->prev_state.code_max_size = UOP_MAX_TRACE_LENGTH/2 - 1;
 }
 
+void
+_PyJit_TracerFree(_PyThreadStateImpl *_tstate)
+{
+    if (_tstate->jit_tracer_state != NULL) {
+        _PyObject_VirtualFree(_tstate->jit_tracer_state, sizeof(_PyJitTracerState));
+        _tstate->jit_tracer_state = NULL;
+    }
+}
 
 #undef RESERVE
 #undef RESERVE_RAW

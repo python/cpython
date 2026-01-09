@@ -1869,11 +1869,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 #endif
 
 #if _Py_TIER2
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (_tstate->jit_tracer_state != NULL) {
-        _PyObject_VirtualFree(_tstate->jit_tracer_state, sizeof(_PyJitTracerState));
-        _tstate->jit_tracer_state = NULL;
-    }
+    _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
 #endif
 
     HEAD_UNLOCK(runtime);
