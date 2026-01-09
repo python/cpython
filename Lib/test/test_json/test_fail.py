@@ -254,6 +254,10 @@ class TestFail:
         orig_decoder_error = json.decoder.JSONDecodeError
 
         try:
+            # NOTE: Do not use swap_attr() here.
+            # swap_attr() keeps the replacement object alive for the duration of
+            # the context manager, which prevents the crash this test is meant
+            # to reproduce
             json.JSONDecodeError = hook
             json.decoder.JSONDecodeError = hook
             del hook
