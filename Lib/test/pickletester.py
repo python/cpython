@@ -2438,6 +2438,7 @@ class AbstractPicklingErrorTests:
         with self.assertRaises(TypeError):
             self.dumps(c)
 
+    @support.skip_if_unlimited_stack_size
     @no_tracing
     def test_bad_getattr(self):
         # Issue #3514: crash when there is an infinite loop in __getattr__
