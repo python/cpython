@@ -1070,7 +1070,7 @@ Ensures the program name is known for help text during interpreter startup.
 .. date: 2022-07-16-08-14-17
 .. gh-issue: 94869
 .. nonce: eRwMsX
-.. section: Library
+.. section: Core and Builtins
 
 Fix the column offsets for some expressions in multi-line f-strings
 :mod:`ast` nodes. Patch by Pablo Galindo.
@@ -1469,7 +1469,7 @@ lookup of the :attr:`~types.CodeType.co_code` attribute.
 .. date: 2022-05-30-19-00-38
 .. gh-issue: 93359
 .. nonce: zXV3A0
-.. section: Library
+.. section: Core and Builtins
 
 Ensure that custom :mod:`ast` nodes without explicit end positions can be
 compiled. Patch by Pablo Galindo.
@@ -1642,7 +1642,7 @@ not finalized at exit. Patch by Kumar Aditya.
 .. date: 2022-05-18-18-34-45
 .. gh-issue: 92930
 .. nonce: kpYPOb
-.. section: Library
+.. section: Core and Builtins
 
 Fixed a crash in ``_pickle.c`` from mutating collections during
 ``__reduce__`` or ``persistent_id``.
@@ -1709,7 +1709,7 @@ Jin.
 .. date: 2022-05-13-00-57-18
 .. gh-issue: 92658
 .. nonce: YdhFE2
-.. section: Library
+.. section: Core and Builtins
 
 Add support for connecting and binding to Hyper-V sockets on Windows Hyper-V
 hosts and guests.

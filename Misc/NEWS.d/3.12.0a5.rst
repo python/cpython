@@ -45,7 +45,7 @@ Fix wrong lineno in exception message on :keyword:`continue` or
 .. date: 2023-01-28-20-31-42
 .. gh-issue: 101372
 .. nonce: 8BcpCC
-.. section: Library
+.. section: Core and Builtins
 
 Fix :func:`~unicodedata.is_normalized` to properly handle the UCD 3.2.0
 cases. Patch by Donghee Na.
@@ -138,7 +138,7 @@ embed the mask into the oparg.
 .. date: 2023-01-10-14-11-17
 .. gh-issue: 100892
 .. nonce: qfBVYI
-.. section: Library
+.. section: Core and Builtins
 
 Fix race while iterating over thread states in clearing
 :class:`threading.local`. Patch by Kumar Aditya.

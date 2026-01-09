@@ -146,7 +146,7 @@ handle unicode named literals incorrectly. Patch by Pablo Galindo
 .. date: 2024-01-28-02-46-12
 .. gh-issue: 112433
 .. nonce: FUX-nT
-.. section: Library
+.. section: Core and Builtins
 
 Add ability to force alignment of :mod:`ctypes.Structure` by way of the new
 ``_align_`` attribute on the class.

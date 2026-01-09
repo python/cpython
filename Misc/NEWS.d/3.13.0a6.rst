@@ -92,7 +92,7 @@ classes are now expected to set the ``_field_types`` attribute.
 .. date: 2024-03-25-17-04-54
 .. gh-issue: 99108
 .. nonce: 8bjdO6
-.. section: Library
+.. section: Core and Builtins
 
 Updated the :mod:`hashlib` built-in `HACL\* project`_ C code from upstream
 that we use for many implementations when they are not present via OpenSSL
@@ -139,7 +139,7 @@ event.
 .. date: 2024-03-12-20-31-57
 .. gh-issue: 113964
 .. nonce: bJppzg
-.. section: Library
+.. section: Core and Builtins
 
 Starting new threads and process creation through :func:`os.fork` are now
 only prevented once all non-daemon threads exit.

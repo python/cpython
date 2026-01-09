@@ -108,7 +108,7 @@ back to alternative names ("python<MAJOR>", "python<MAJOR>.<MINOR>").
 .. date: 2022-11-06-22-59-02
 .. gh-issue: 96055
 .. nonce: TmQuJn
-.. section: Library
+.. section: Core and Builtins
 
 Update :mod:`faulthandler` to emit an error message with the proper
 unexpected signal number. Patch by Donghee Na.
@@ -353,7 +353,7 @@ aggressively.
 .. date: 2022-10-15-23-15-14
 .. gh-issue: 92119
 .. nonce: PMSwwG
-.. section: Library
+.. section: Core and Builtins
 
 Print exception class name instead of its string representation when raising
 errors from :mod:`ctypes` calls.
@@ -395,7 +395,7 @@ longobject.c to speed up some operations.
 .. date: 2022-07-30-14-10-27
 .. gh-issue: 95389
 .. nonce: nSGEkG
-.. section: Library
+.. section: Core and Builtins
 
 Expose :const:`~socket.ETH_P_ALL` and some of the :ref:`ETHERTYPE_* constants
 <socket-ethernet-types>` in :mod:`socket`. Patch by Noam Cohen.

@@ -154,7 +154,7 @@ Fix possible segfault in ``BUILD_SET`` opcode, when new set created.
 .. date: 2023-02-13-22-21-58
 .. gh-issue: 74895
 .. nonce: esMNtq
-.. section: Library
+.. section: Core and Builtins
 
 :mod:`socket.getaddrinfo` no longer raises :class:`OverflowError` for
 :class:`int` **port** values outside of the C long range. Out of range
@@ -217,7 +217,7 @@ access of ``builtins.__dict__`` keys mutates the iter object.
 .. date: 2023-02-10-01-15-57
 .. gh-issue: 101430
 .. nonce: T3Gegb
-.. section: Library
+.. section: Core and Builtins
 
 Update :mod:`tracemalloc` to handle presize of object properly. Patch by
 Donghee Na.

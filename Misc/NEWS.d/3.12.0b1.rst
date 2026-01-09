@@ -461,7 +461,7 @@ unpickled.
 .. date: 2023-04-08-17-13-07
 .. gh-issue: 103242
 .. nonce: ysI1b3
-.. section: Library
+.. section: Core and Builtins
 
 Migrate :meth:`~ssl.SSLContext.set_ecdh_curve` method not to use deprecated
 OpenSSL APIs. Patch by Donghee Na.
@@ -542,7 +542,7 @@ and reduce bytecode size.
 .. date: 2022-11-08-12-36-25
 .. gh-issue: 99184
 .. nonce: KIaqzz
-.. section: Library
+.. section: Core and Builtins
 
 Bypass instance attribute access of ``__name__`` in ``repr`` of
 :class:`weakref.ref`.
