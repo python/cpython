@@ -2478,6 +2478,36 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                         i -= jump_thread(bb, inst, target, inst->i_opcode);
                 }
                 break;
+            case JUMP_IF_NONE:
+                switch (target->i_opcode) {
+                    case JUMP:
+                    case JUMP_IF_NONE:
+                        i -= jump_thread(bb, inst, target, JUMP_IF_NONE);
+                        break;
+                    case JUMP_IF_NOT_NONE:
+                        // No need to check for loops here, a block's b_next
+                        // cannot point to itself.
+                        assert(inst->i_target != inst->i_target->b_next);
+                        inst->i_target = inst->i_target->b_next;
+                        i--;
+                        break;
+                }
+                break;
+            case JUMP_IF_NOT_NONE:
+                switch (target->i_opcode) {
+                    case JUMP:
+                    case JUMP_IF_NOT_NONE:
+                        i -= jump_thread(bb, inst, target, JUMP_IF_NOT_NONE);
+                        break;
+                    case JUMP_IF_NONE:
+                        // No need to check for loops here, a block's b_next
+                        // cannot point to itself.
+                        assert(inst->i_target != inst->i_target->b_next);
+                        inst->i_target = inst->i_target->b_next;
+                        i--;
+                        break;
+                }
+                break;
             case POP_JUMP_IF_FALSE:
                 switch (target->i_opcode) {
                     case JUMP:
@@ -3646,6 +3676,21 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                             .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
+            }
+            if (instr->i_opcode == JUMP_IF_NONE || instr->i_opcode == JUMP_IF_NOT_NONE) {
+                assert(i == b->b_iused - 1);
+                instr->i_opcode = instr->i_opcode == JUMP_IF_NONE ?
+                                          POP_JUMP_IF_NONE : POP_JUMP_IF_NOT_NONE;
+                location loc = instr->i_loc;
+                basicblock *except = instr->i_except;
+                cfg_instr copy = {
+                            .i_opcode = COPY,
+                            .i_oparg = 1,
+                            .i_loc = loc,
+                            .i_target = NULL,
+                            .i_except = except,
+                };
+                RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
             }
         }
     }
