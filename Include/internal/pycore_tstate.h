@@ -48,6 +48,7 @@ typedef struct _PyJitTracerPreviousState {
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerState {
+    bool is_tracing;
     _PyUOpInstruction *code_buffer;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;

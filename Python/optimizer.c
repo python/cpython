@@ -1014,9 +1014,7 @@ _PyJit_TryInitializeTracing(
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // A recursive trace.
-    // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
-    if (_tstate->jit_tracer_state.prev_state.code_curr_size > CODE_SIZE_EMPTY ||
-        _tstate->jit_tracer_state.initial_state.func != NULL) {
+    if (_tstate->jit_tracer_state.is_tracing) {
         return 0;
     }
     if (oparg > 0xFFFF) {
@@ -1075,6 +1073,8 @@ _PyJit_TryInitializeTracing(
         close_loop_instr[1].counter = trigger_backoff_counter();
     }
     _Py_BloomFilter_Init(&_tstate->jit_tracer_state.prev_state.dependencies);
+
+    _tstate->jit_tracer_state.is_tracing = true;
     return 1;
 }
 
@@ -1087,6 +1087,7 @@ _PyJit_ResetTracing(PyThreadState *tstate)
     Py_CLEAR(_tstate->jit_tracer_state.prev_state.instr_code);
     _tstate->jit_tracer_state.prev_state.code_curr_size = CODE_SIZE_EMPTY;
     _tstate->jit_tracer_state.prev_state.code_max_size = UOP_MAX_TRACE_LENGTH/2 - 1;
+    _tstate->jit_tracer_state.is_tracing = false;
 }
 
 
