@@ -1,3 +1,5 @@
+from typing import Any
+
 from pegen import grammar
 from pegen.grammar import Alt, GrammarVisitor, Rhs, Rule
 
@@ -61,10 +63,10 @@ class CutValidator(GrammarValidator):
     See gh-143054.
     """
 
-    def visit(self, node: Any, parents: tuple[Any] = ()) -> None:
+    def visit(self, node: Any, parents: tuple[Any, ...] = ()) -> None:
         super().visit(node, parents=(*parents, node))
 
-    def visit_Cut(self, node: Alt, parents: tuple[Any] = ()) -> None:
+    def visit_Cut(self, node: Alt, parents: tuple[Any, ...] = ()) -> None:
         parent_types = [type(p).__name__ for p in parents]
         if parent_types != ['Rule', 'Rhs', 'Alt', 'NamedItem', 'Cut']:
             raise ValidationError(
