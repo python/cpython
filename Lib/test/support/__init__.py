@@ -30,7 +30,8 @@ __all__ = [
     "record_original_stdout", "get_original_stdout", "captured_stdout",
     "captured_stdin", "captured_stderr", "captured_output",
     # unittest
-    "is_resource_enabled", "requires", "requires_freebsd_version",
+    "is_resource_enabled", "get_resource_value", "requires", "requires_resource",
+    "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
@@ -39,10 +40,12 @@ __all__ = [
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
     "has_socket_support", "requires_working_socket",
+    "has_remote_subprocess_debugging", "requires_remote_subprocess_debugging",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
+    "skip_if_unlimited_stack_size",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -68,7 +71,7 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code",
+    "reset_code", "on_github_actions"
     ]
 
 
@@ -184,7 +187,7 @@ def get_attribute(obj, name):
         return attribute
 
 verbose = 1              # Flag set to 0 by regrtest.py
-use_resources = None     # Flag set to [] by regrtest.py
+use_resources = None     # Flag set to {} by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
@@ -299,6 +302,16 @@ def is_resource_enabled(resource):
     """
     return use_resources is None or resource in use_resources
 
+def get_resource_value(resource):
+    """Test whether a resource is enabled.
+
+    Known resources are set by regrtest.py.  If not running under regrtest.py,
+    all resources are assumed enabled unless use_resources has been set.
+    """
+    if use_resources is None:
+        return None
+    return use_resources.get(resource)
+
 def requires(resource, msg=None):
     """Raise ResourceDenied if the specified resource is not available."""
     if not is_resource_enabled(resource):
@@ -309,6 +322,16 @@ def requires(resource, msg=None):
         raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
+
+def _get_kernel_version(sysname="Linux"):
+    import platform
+    if platform.system() != sysname:
+        return None
+    version_txt = platform.release().split('-', 1)[0]
+    try:
+        return tuple(map(int, version_txt.split('.')))
+    except ValueError:
+        return None
 
 def _requires_unix_version(sysname, min_version):
     """Decorator raising SkipTest if the OS is `sysname` and the version is less
@@ -541,7 +564,6 @@ def has_no_debug_ranges():
     except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
     return not _testcapi.config_get('code_debug_ranges')
-    return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     try:
@@ -633,6 +655,93 @@ def requires_working_socket(*, module=False):
             raise unittest.SkipTest(msg)
     else:
         return unittest.skipUnless(has_socket_support, msg)
+
+
+@functools.cache
+def has_remote_subprocess_debugging():
+    """Check if we have permissions to debug subprocesses remotely.
+
+    Returns True if we have permissions, False if we don't.
+    Checks for:
+    - Platform support (Linux, macOS, Windows only)
+    - On Linux: process_vm_readv support
+    - _remote_debugging module availability
+    - Actual subprocess debugging permissions (e.g., macOS entitlements)
+    Result is cached.
+    """
+    # Check platform support
+    if sys.platform not in ("linux", "darwin", "win32"):
+        return False
+
+    try:
+        import _remote_debugging
+    except ImportError:
+        return False
+
+    # On Linux, check for process_vm_readv support
+    if sys.platform == "linux":
+        if not getattr(_remote_debugging, "PROCESS_VM_READV_SUPPORTED", False):
+            return False
+
+    # First check if we can read our own process
+    if not _remote_debugging.is_python_process(os.getpid()):
+        return False
+
+    # Check subprocess access - debugging child processes may require
+    # additional permissions depending on platform security settings
+    import socket
+    import subprocess
+
+    # Create a socket for child to signal readiness
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    port = server.getsockname()[1]
+
+    # Child connects to signal it's ready, then waits for parent to close
+    child_code = f"""
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(("127.0.0.1", {port}))
+s.recv(1)  # Wait for parent to signal done
+"""
+    proc = subprocess.Popen(
+        [sys.executable, "-c", child_code],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        server.settimeout(5.0)
+        conn, _ = server.accept()
+        # Child is ready, test if we can probe it
+        result = _remote_debugging.is_python_process(proc.pid)
+        # Check if subprocess is still alive after probing
+        if proc.poll() is not None:
+            return False
+        conn.close()  # Signal child to exit
+        return result
+    except (socket.timeout, OSError):
+        return False
+    finally:
+        server.close()
+        proc.kill()
+        proc.wait()
+
+
+def requires_remote_subprocess_debugging():
+    """Skip tests that require remote subprocess debugging permissions.
+
+    This also implies subprocess support, so no need to use both
+    @requires_subprocess() and @requires_remote_subprocess_debugging().
+    """
+    if not has_subprocess_support:
+        return unittest.skip("requires subprocess support")
+    return unittest.skipUnless(
+        has_remote_subprocess_debugging(),
+        "requires remote subprocess debugging permissions"
+    )
+
 
 # Does strftime() support glibc extension like '%4Y'?
 has_strftime_extensions = False
@@ -1360,6 +1469,7 @@ def reset_code(f: types.FunctionType) -> types.FunctionType:
     f.__code__ = f.__code__.replace()
     return f
 
+on_github_actions = "GITHUB_ACTIONS" in os.environ
 
 #=======================================================================
 # Check for the presence of docstrings.
@@ -1662,6 +1772,25 @@ def skip_if_pgo_task(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+def skip_if_unlimited_stack_size(test):
+    """Skip decorator for tests not run when an unlimited stack size is configured.
+
+    Tests using support.infinite_recursion([...]) may otherwise run into
+    an infinite loop, running until the memory on the system is filled and
+    crashing due to OOM.
+
+    See https://github.com/python/cpython/issues/143460.
+    """
+    if is_wasi or os.name == "nt":
+        return test
+
+    import resource
+    curlim, maxlim = resource.getrlimit(resource.RLIMIT_STACK)
+    unlimited_stack_size_cond = curlim == maxlim and curlim in (-1, 0xFFFF_FFFF_FFFF_FFFF)
+    reason = "Not run due to unlimited stack size"
+    return unittest.skipIf(unlimited_stack_size_cond, reason)(test)
+
+
 def detect_api_mismatch(ref_api, other_api, *, ignore=()):
     """Returns the set of items in ref_api not in other_api, except for a
     defined list of items to be ignored in this check.
@@ -1686,7 +1815,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     'module'.
 
     The 'name_of_module' argument can specify (as a string or tuple thereof)
-    what module(s) an API could be defined in in order to be detected as a
+    what module(s) an API could be defined in order to be detected as a
     public API. One case for this is when 'module' imports part of its public
     API from other modules, possibly a C backend (like 'csv' and its '_csv').
 
@@ -2899,7 +3028,7 @@ def force_color(color: bool):
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda file=None: color),
+        swap_attr(_colorize, "can_colorize", lambda *, file=None: color),
         EnvironmentVarGuard() as env,
     ):
         env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")

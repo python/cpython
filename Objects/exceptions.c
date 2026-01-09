@@ -13,7 +13,6 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "osdefs.h"               // SEP
 #include "clinic/exceptions.c.h"
@@ -24,14 +23,6 @@ class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
 class BaseExceptionGroup "PyBaseExceptionGroupObject *" "&PyExc_BaseExceptionGroup"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b7c45e78cff8edc3]*/
-
-
-/* Compatibility aliases */
-PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
-PyObject *PyExc_IOError = NULL;  // borrowed ref
-#ifdef MS_WINDOWS
-PyObject *PyExc_WindowsError = NULL;  // borrowed ref
-#endif
 
 
 static struct _Py_exc_state*
@@ -119,7 +110,7 @@ BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
     self->context = NULL;
     self->suppress_context = 0;
 
-    self->args = _PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
+    self->args = PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
     if (!self->args) {
         Py_DECREF(self);
         return NULL;
@@ -695,12 +686,12 @@ PyTypeObject _PyExc_ ## EXCNAME = { \
 
 #define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
-                                EXCSTR, EXCDOC) \
+                                EXCSTR, EXCREPR, EXCDOC) \
 static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), 0, \
-    EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+    EXCSTORE ## _dealloc, 0, 0, 0, 0, EXCREPR, 0, 0, 0, 0, 0, \
     EXCSTR, 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
     PyDoc_STR(EXCDOC), EXCSTORE ## _traverse, \
@@ -793,7 +784,7 @@ StopIteration_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 ComplexExtendsException(PyExc_Exception, StopIteration, StopIteration,
-                        0, 0, StopIteration_members, 0, 0,
+                        0, 0, StopIteration_members, 0, 0, 0,
                         "Signal the end from iterator.__next__().");
 
 
@@ -866,7 +857,7 @@ static PyMemberDef SystemExit_members[] = {
 };
 
 ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
-                        0, 0, SystemExit_members, 0, 0,
+                        0, 0, SystemExit_members, 0, 0, 0,
                         "Request to exit from the interpreter.");
 
 /*
@@ -891,6 +882,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
+    PyObject *exceptions_str = NULL;
 
     if (!PyArg_ParseTuple(args,
                           "UO:BaseExceptionGroup.__new__",
@@ -904,6 +896,18 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyExc_TypeError,
             "second argument (exceptions) must be a sequence");
         return NULL;
+    }
+
+    /* Save initial exceptions sequence as a string in case sequence is mutated */
+    if (!PyList_Check(exceptions) && !PyTuple_Check(exceptions)) {
+        exceptions_str = PyObject_Repr(exceptions);
+        if (exceptions_str == NULL) {
+            /* We don't hold a reference to exceptions, so clear it before
+             * attempting a decref in the cleanup.
+             */
+            exceptions = NULL;
+            goto error;
+        }
     }
 
     exceptions = PySequence_Tuple(exceptions);
@@ -989,9 +993,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;
+    self->excs_str = exceptions_str;
     return (PyObject*)self;
 error:
-    Py_DECREF(exceptions);
+    Py_XDECREF(exceptions);
+    Py_XDECREF(exceptions_str);
     return NULL;
 }
 
@@ -1030,6 +1036,7 @@ BaseExceptionGroup_clear(PyObject *op)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->excs);
+    Py_CLEAR(self->excs_str);
     return BaseException_clear(op);
 }
 
@@ -1047,6 +1054,7 @@ BaseExceptionGroup_traverse(PyObject *op, visitproc visit, void *arg)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->excs);
+    Py_VISIT(self->excs_str);
     return BaseException_traverse(op, visit, arg);
 }
 
@@ -1062,6 +1070,54 @@ BaseExceptionGroup_str(PyObject *op)
     return PyUnicode_FromFormat(
         "%S (%zd sub-exception%s)",
         self->msg, num_excs, num_excs > 1 ? "s" : "");
+}
+
+static PyObject *
+BaseExceptionGroup_repr(PyObject *op)
+{
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
+    assert(self->msg);
+
+    PyObject *exceptions_str = NULL;
+
+    /* Use the saved exceptions string for custom sequences. */
+    if (self->excs_str) {
+        exceptions_str = Py_NewRef(self->excs_str);
+    }
+    else {
+        assert(self->excs);
+
+        /* Older versions delegated to BaseException, inserting the current
+         * value of self.args[1]; but this can be mutable and go out-of-sync
+         * with self.exceptions. Instead, use self.exceptions for accuracy,
+         * making it look like self.args[1] for backwards compatibility. */
+        if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
+            PyObject *exceptions_list = PySequence_List(self->excs);
+            if (!exceptions_list) {
+                return NULL;
+            }
+
+            exceptions_str = PyObject_Repr(exceptions_list);
+            Py_DECREF(exceptions_list);
+        }
+        else {
+            exceptions_str = PyObject_Repr(self->excs);
+        }
+
+        if (!exceptions_str) {
+            return NULL;
+        }
+    }
+
+    assert(exceptions_str != NULL);
+
+    const char *name = _PyType_Name(Py_TYPE(self));
+    PyObject *repr = PyUnicode_FromFormat(
+        "%s(%R, %U)", name,
+        self->msg, exceptions_str);
+
+    Py_DECREF(exceptions_str);
+    return repr;
 }
 
 /*[clinic input]
@@ -1698,7 +1754,7 @@ static PyMethodDef BaseExceptionGroup_methods[] = {
 ComplexExtendsException(PyExc_BaseException, BaseExceptionGroup,
     BaseExceptionGroup, BaseExceptionGroup_new /* new */,
     BaseExceptionGroup_methods, BaseExceptionGroup_members,
-    0 /* getset */, BaseExceptionGroup_str,
+    0 /* getset */, BaseExceptionGroup_str, BaseExceptionGroup_repr,
     "A combination of multiple unrelated exceptions.");
 
 /*
@@ -1864,6 +1920,62 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     return res;
 }
 
+static PyObject *
+ImportError_repr(PyObject *self)
+{
+    int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
+    PyImportErrorObject *exc = PyImportErrorObject_CAST(self);
+    if (exc->name == NULL && exc->path == NULL) {
+        return BaseException_repr(self);
+    }
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    PyObject *r = BaseException_repr(self);
+    if (r == NULL) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteSubstring(
+        writer, r, 0, PyUnicode_GET_LENGTH(r) - 1) < 0)
+    {
+        Py_DECREF(r);
+        goto error;
+    }
+    Py_DECREF(r);
+    if (exc->name) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        if (PyUnicodeWriter_Format(writer, "name=%R", exc->name) < 0) {
+            goto error;
+        }
+        hasargs = 1;
+    }
+    if (exc->path) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        if (PyUnicodeWriter_Format(writer, "path=%R", exc->path) < 0) {
+            goto error;
+        }
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+        goto error;
+    }
+
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
 static PyMemberDef ImportError_members[] = {
     {"msg", _Py_T_OBJECT, offsetof(PyImportErrorObject, msg), 0,
         PyDoc_STR("exception message")},
@@ -1881,12 +1993,26 @@ static PyMethodDef ImportError_methods[] = {
     {NULL}
 };
 
-ComplexExtendsException(PyExc_Exception, ImportError,
-                        ImportError, 0 /* new */,
-                        ImportError_methods, ImportError_members,
-                        0 /* getset */, ImportError_str,
-                        "Import can't find module, or can't find name in "
-                        "module.");
+static PyTypeObject _PyExc_ImportError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "ImportError",
+    .tp_basicsize = sizeof(PyImportErrorObject),
+    .tp_dealloc = ImportError_dealloc,
+    .tp_repr = ImportError_repr,
+    .tp_str = ImportError_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = PyDoc_STR(
+        "Import can't find module, "
+        "or can't find name in module."),
+    .tp_traverse = ImportError_traverse,
+    .tp_clear = ImportError_clear,
+    .tp_methods = ImportError_methods,
+    .tp_members = ImportError_members,
+    .tp_base = &_PyExc_Exception,
+    .tp_dictoffset = offsetof(PyImportErrorObject, dict),
+    .tp_init = ImportError_init,
+};
+PyObject *PyExc_ImportError = (PyObject *)&_PyExc_ImportError;
 
 /*
  *    ModuleNotFoundError extends ImportError
@@ -2356,7 +2482,7 @@ static PyGetSetDef OSError_getset[] = {
 ComplexExtendsException(PyExc_Exception, OSError,
                         OSError, OSError_new,
                         OSError_methods, OSError_members, OSError_getset,
-                        OSError_str,
+                        OSError_str, 0,
                         "Base class for I/O related errors.");
 
 
@@ -2393,6 +2519,13 @@ MiddlingExtendsException(PyExc_OSError, ProcessLookupError, OSError,
                          "Process not found.");
 MiddlingExtendsException(PyExc_OSError, TimeoutError, OSError,
                          "Timeout expired.");
+
+/* Compatibility aliases */
+PyObject *PyExc_EnvironmentError = (PyObject *)&_PyExc_OSError;  // borrowed ref
+PyObject *PyExc_IOError = (PyObject *)&_PyExc_OSError;  // borrowed ref
+#ifdef MS_WINDOWS
+PyObject *PyExc_WindowsError = (PyObject *)&_PyExc_OSError;  // borrowed ref
+#endif
 
 /*
  *    EOFError extends Exception
@@ -2497,7 +2630,7 @@ static PyMethodDef NameError_methods[] = {
 ComplexExtendsException(PyExc_Exception, NameError,
                         NameError, 0,
                         NameError_methods, NameError_members,
-                        0, BaseException_str, "Name not found globally.");
+                        0, BaseException_str, 0, "Name not found globally.");
 
 /*
  *    UnboundLocalError extends NameError
@@ -2631,7 +2764,7 @@ static PyMethodDef AttributeError_methods[] = {
 ComplexExtendsException(PyExc_Exception, AttributeError,
                         AttributeError, 0,
                         AttributeError_methods, AttributeError_members,
-                        0, BaseException_str, "Attribute not found.");
+                        0, BaseException_str, 0, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception
@@ -2830,7 +2963,7 @@ static PyMemberDef SyntaxError_members[] = {
 
 ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
                         0, 0, SyntaxError_members, 0,
-                        SyntaxError_str, "Invalid syntax.");
+                        SyntaxError_str, 0, "Invalid syntax.");
 
 
 /*
@@ -2890,7 +3023,7 @@ KeyError_str(PyObject *op)
 }
 
 ComplexExtendsException(PyExc_LookupError, KeyError, BaseException,
-                        0, 0, 0, 0, KeyError_str, "Mapping key not found.");
+                        0, 0, 0, 0, KeyError_str, 0, "Mapping key not found.");
 
 
 /*
@@ -4465,23 +4598,17 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     if (PyDict_SetItemString(mod_dict, "ExceptionGroup", PyExc_ExceptionGroup)) {
         return -1;
     }
-
-#define INIT_ALIAS(NAME, TYPE) \
-    do { \
-        PyExc_ ## NAME = PyExc_ ## TYPE; \
-        if (PyDict_SetItemString(mod_dict, # NAME, PyExc_ ## TYPE)) { \
-            return -1; \
-        } \
-    } while (0)
-
-    INIT_ALIAS(EnvironmentError, OSError);
-    INIT_ALIAS(IOError, OSError);
+    if (PyDict_SetItemString(mod_dict, "EnvironmentError", PyExc_OSError)) {
+        return -1;
+    }
+    if (PyDict_SetItemString(mod_dict, "IOError", PyExc_OSError)) {
+        return -1;
+    }
 #ifdef MS_WINDOWS
-    INIT_ALIAS(WindowsError, OSError);
+    if (PyDict_SetItemString(mod_dict, "WindowsError", PyExc_OSError)) {
+        return -1;
+    }
 #endif
-
-#undef INIT_ALIAS
-
     return 0;
 }
 

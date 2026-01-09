@@ -799,6 +799,23 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
 
+    @unittest.skipIf(
+        support.is_android or support.is_apple_mobile,
+        "Subinterpreters are not supported on Android and iOS"
+    )
+    def test_endian_table_init_subinterpreters(self):
+        # Verify that the _struct extension module can be initialized
+        # concurrently in subinterpreters (gh-140260).
+        try:
+            from concurrent.futures import InterpreterPoolExecutor
+        except ImportError:
+            raise unittest.SkipTest("InterpreterPoolExecutor not available")
+
+        code = "import struct"
+        with InterpreterPoolExecutor(max_workers=5) as executor:
+            results = executor.map(exec, [code] * 5)
+            self.assertListEqual(list(results), [None] * 5)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
@@ -873,6 +890,7 @@ class UnpackIteratorTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, it)
 
     def test_half_float(self):
+        _testcapi = import_helper.import_module('_testcapi')
         # Little-endian examples from:
         # http://en.wikipedia.org/wiki/Half_precision_floating-point_format
         format_bits_float__cleanRoundtrip_list = [
@@ -917,10 +935,17 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Check that packing produces a bit pattern representing a quiet NaN:
         # all exponent bits and the msb of the fraction should all be 1.
+        if _testcapi.nan_msb_is_signaling:
+            # HP PA RISC and some MIPS CPUs use 0 for quiet, see:
+            # https://en.wikipedia.org/wiki/NaN#Encoding
+            expected = 0x7c
+        else:
+            expected = 0x7e
+
         packed = struct.pack('<e', math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
         packed = struct.pack('<e', -math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
 
         # Checks for round-to-even behavior
         format_bits_float__rounding_list = [

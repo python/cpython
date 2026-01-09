@@ -1539,6 +1539,9 @@ class PdbAttachTestCase(unittest.TestCase):
             redirect_stdout(client_stdout),
             redirect_stderr(client_stderr),
             unittest.mock.patch("sys.argv", ["pdb", "-p", str(process.pid)]),
+            unittest.mock.patch(
+                "pdb.exit_with_permission_help_text", side_effect=PermissionError
+            ),
         ):
             try:
                 pdb.main()
@@ -1586,6 +1589,18 @@ class PdbAttachTestCase(unittest.TestCase):
         self.assertIn("\x1b", output["client"]["stdout"])
         self.assertNotIn("while x == 1", output["client"]["stdout"])
         self.assertIn("while x == 1", re.sub("\x1b[^m]*m", "", output["client"]["stdout"]))
+
+    def test_attach_to_non_existent_process(self):
+        with force_color(False):
+            result = subprocess.run([sys.executable, "-m", "pdb", "-p", "999999"], text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        if sys.platform == "darwin":
+            # On MacOS, attaching to a non-existent process gives PermissionError
+            error = "The specified process cannot be attached to due to insufficient permissions"
+        else:
+            error = "Cannot attach to pid 999999, please make sure that the process exists"
+        self.assertIn(error, result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

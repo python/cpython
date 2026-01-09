@@ -1,0 +1,1 @@
+Fix :func:`urllib.request.urlretrieve` to pass the actual number of bytes read to the *reporthook* callback, instead of always passing the block size.

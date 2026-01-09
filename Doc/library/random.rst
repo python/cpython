@@ -78,7 +78,7 @@ Bookkeeping functions
    instead of the system time (see the :func:`os.urandom` function for details
    on availability).
 
-   If *a* is an int, it is used directly.
+   If *a* is an int, its absolute value is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
    object gets converted to an :class:`int` and all of its bits are used.
@@ -630,7 +630,8 @@ Recipes
 -------
 
 These recipes show how to efficiently make random selections
-from the combinatoric iterators in the :mod:`itertools` module:
+from the combinatoric iterators in the :mod:`itertools` module
+or the :pypi:`more-itertools` project:
 
 .. testcode::
    import random
@@ -660,6 +661,17 @@ from the combinatoric iterators in the :mod:`itertools` module:
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
+
+   def random_derangement(iterable):
+       "Choose a permutation where no element is in its original position."
+       seq = tuple(iterable)
+       if len(seq) < 2:
+           raise ValueError('derangements require at least two values')
+       perm = list(seq)
+       while True:
+           random.shuffle(perm)
+           if all(p != q for p, q in zip(seq, perm)):
+               return tuple(perm)
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly

@@ -75,18 +75,6 @@ jobs:
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
-    - name: 'Build EPUB documentation'
-      continue-on-error: true
-      run: |
-        set -Eeuo pipefail
-        make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet" epub
-        pip install epubcheck
-        epubcheck Doc/build/epub/Python.epub &> Doc/epubcheck.txt
-    - name: 'Check for fatal errors in EPUB'
-      if: github.event_name == 'pull_request'
-      continue-on-error: true  # until gh-136155 is fixed
-      run: |
-        python Doc/tools/check-epub.py
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
@@ -114,3 +102,30 @@ jobs:
     # Use "xvfb-run" since some doctest tests open GUI windows
     - name: 'Run documentation doctest'
       run: xvfb-run make -C Doc/ PYTHON=../python SPHINXERRORHANDLING="--fail-on-warning" doctest
+
+  check-epub:
+    name: 'Check EPUB'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: 'Set up Python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3'
+        cache: 'pip'
+        cache-dependency-path: 'Doc/requirements.txt'
+    - name: 'Install build dependencies'
+      run: |
+        make -C Doc/ venv
+        python -m pip install epubcheck
+    - name: 'Build EPUB documentation'
+      run: make -C Doc/ PYTHON=../python epub
+    - name: 'Run epubcheck'
+      continue-on-error: true
+      run: epubcheck Doc/build/epub/Python.epub &> Doc/epubcheck.txt
+    - run: cat Doc/epubcheck.txt
+    - name: 'Check for fatal errors in EPUB'
+      run: python Doc/tools/check-epub.py

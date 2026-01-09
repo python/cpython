@@ -2953,7 +2953,7 @@ support for Metadata 2.2.
 .. nonce: xTUyyX
 .. section: Library
 
-Remove the :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator`
+Remove the :deco:`asyncio.coroutine` :term:`decorator`
 enabling legacy generator-based coroutines to be compatible with async/await
 code; remove :class:`asyncio.coroutines.CoroWrapper` used for wrapping
 legacy coroutine objects in the debug mode. The decorator has been

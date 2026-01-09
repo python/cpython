@@ -406,6 +406,7 @@ class TestPartial:
 
     def test_setstate_errors(self):
         f = self.partial(signature)
+
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}))
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, {}, None))
         self.assertRaises(TypeError, f.__setstate__, [capture, (), {}, None])
@@ -413,6 +414,8 @@ class TestPartial:
         self.assertRaises(TypeError, f.__setstate__, (capture, None, {}, None))
         self.assertRaises(TypeError, f.__setstate__, (capture, [], {}, None))
         self.assertRaises(TypeError, f.__setstate__, (capture, (), [], None))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, ()))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, 'test'))
 
     def test_setstate_subclasses(self):
         f = self.partial(signature)
@@ -435,6 +438,7 @@ class TestPartial:
         self.assertIs(type(r[0]), tuple)
 
     @support.skip_if_sanitizer("thread sanitizer crashes in __tsan::FuncEntry", thread=True)
+    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
@@ -2136,6 +2140,7 @@ class TestLRU:
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
     @support.skip_if_sanitizer("requires deep stack", ub=True, thread=True)
+    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 
@@ -2782,7 +2787,7 @@ class TestSingleDispatch(unittest.TestCase):
             @functools.singledispatchmethod
             @classmethod
             def go(cls, item, arg):
-                pass
+                return item - arg
 
             @go.register
             @classmethod
@@ -2791,7 +2796,9 @@ class TestSingleDispatch(unittest.TestCase):
 
         s = Slot()
         self.assertEqual(s.go(1, 1), 2)
+        self.assertEqual(s.go(1.5, 1), 0.5)
         self.assertEqual(Slot.go(1, 1), 2)
+        self.assertEqual(Slot.go(1.5, 1), 0.5)
 
     def test_staticmethod_slotted_class(self):
         class A:
@@ -3481,6 +3488,37 @@ class TestSingleDispatch(unittest.TestCase):
                          '(cls, item, arg: int) -> str')
         self.assertEqual(str(Signature.from_callable(A.static_func)),
                          '(item, arg: int) -> str')
+
+    def test_method_non_descriptor(self):
+        class Callable:
+            def __init__(self, value):
+                self.value = value
+            def __call__(self, arg):
+                return self.value, arg
+
+        class A:
+            t = functools.singledispatchmethod(Callable('general'))
+            t.register(int, Callable('special'))
+
+            @functools.singledispatchmethod
+            def u(self, arg):
+                return 'general', arg
+            u.register(int, Callable('special'))
+
+            v = functools.singledispatchmethod(Callable('general'))
+            @v.register(int)
+            def _(self, arg):
+                return 'special', arg
+
+        a = A()
+        self.assertEqual(a.t(0), ('special', 0))
+        self.assertEqual(a.t(2.5), ('general', 2.5))
+        self.assertEqual(A.t(0), ('special', 0))
+        self.assertEqual(A.t(2.5), ('general', 2.5))
+        self.assertEqual(a.u(0), ('special', 0))
+        self.assertEqual(a.u(2.5), ('general', 2.5))
+        self.assertEqual(a.v(0), ('special', 0))
+        self.assertEqual(a.v(2.5), ('general', 2.5))
 
 
 class CachedCostItem:
