@@ -3457,6 +3457,24 @@ class TestUopsOptimization(unittest.TestCase):
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
+    def test_strength_reduce_constant_load_fast_borrow(self):
+        # If we detect a _LOAD_FAST_BORROW is actually loading a constant,
+        # reduce that to a _LOAD_CONST_INLINE_BORROW which saves
+        # the read from locals.
+        def testfunc(n):
+            class A: pass
+            a = A()
+            for _ in range(n):
+                x = 0
+                a.x = x
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_LOAD_FAST_BORROW_4", uops)
+
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
 

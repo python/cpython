@@ -92,6 +92,16 @@ dummy_func(void) {
 
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = PyJitRef_Borrow(GETLOCAL(oparg));
+        PyObject *const_val = sym_get_const(ctx, value);
+        if (const_val != NULL) {
+            // If we know we're loading a constant, convert
+            // to a _LOAD_CONST_INLINE_BORROW to save a memory load.
+            // It's safe to always borrow here, because
+            // JIT constants only come from _LOAD_CONST
+            // (which holds a strong reference), or from
+            // constant-folded _JIT values, which are immortal.
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
+        }
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
