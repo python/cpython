@@ -2416,6 +2416,16 @@ expression support in the :mod:`re` module).
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rfind('sp')
+      12
+      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+      6
+
+   See also :meth:`find` and :meth:`rindex`.
 
 
 .. method:: str.rindex(sub[, start[, end]])
