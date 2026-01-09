@@ -262,5 +262,6 @@ class TestFail:
             with self.assertRaises(Exception):
                 json.loads('"\\uZZZZ"')
 
+
 class TestPyFail(TestFail, PyTest): pass
 class TestCFail(TestFail, CTest): pass
