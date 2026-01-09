@@ -2878,7 +2878,7 @@ class TestGetCoroutineState(unittest.TestCase):
 
     def test_created(self):
         self.assertEqual(self._coroutinestate(), inspect.CORO_CREATED)
-    
+
     def test_generator_based_coroutine_introspection(self):
         from inspect import getcoroutinestate
         from types import coroutine
