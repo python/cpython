@@ -5738,15 +5738,17 @@ dummy_func(
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
             // JIT should have disabled super instructions, as we can
             // do these optimizations ourselves in the JIT.
-            _tstate->jit_tracer_state.prev_state.instr = next_instr;
+            _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+            assert(tracer != NULL);
+            tracer->prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
-            if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
-                Py_SETREF(_tstate->jit_tracer_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
+            if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
+                Py_SETREF(tracer->prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
             }
 
-            _tstate->jit_tracer_state.prev_state.instr_frame = frame;
-            _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
-            _tstate->jit_tracer_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tracer->prev_state.instr_frame = frame;
+            tracer->prev_state.instr_oparg = oparg;
+            tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }

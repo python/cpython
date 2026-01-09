@@ -34,6 +34,23 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
    This can be ``0xA`` for alpha, ``0xB`` for beta, ``0xC`` for release
    candidate or ``0xF`` for final.
 
+
+   .. c:namespace:: NULL
+   .. c:macro:: PY_RELEASE_LEVEL_ALPHA
+      :no-typesetting:
+   .. c:macro:: PY_RELEASE_LEVEL_BETA
+      :no-typesetting:
+   .. c:macro:: PY_RELEASE_LEVEL_GAMMA
+      :no-typesetting:
+   .. c:macro:: PY_RELEASE_LEVEL_FINAL
+      :no-typesetting:
+
+   For completeness, the values are available as macros:
+   :c:macro:`!PY_RELEASE_LEVEL_ALPHA` (``0xA``),
+   :c:macro:`!PY_RELEASE_LEVEL_BETA` (``0xB``),
+   :c:macro:`!PY_RELEASE_LEVEL_GAMMA` (``0xC``), and
+   :c:macro:`!PY_RELEASE_LEVEL_FINAL` (``0xF``).
+
 .. c:macro:: PY_RELEASE_SERIAL
 
    The ``2`` in ``3.4.1a2``. Zero for final releases.
@@ -45,6 +62,10 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
 
    Use this for numeric comparisons, for example,
    ``#if PY_VERSION_HEX >= ...``.
+
+.. c:macro:: PY_VERSION
+
+   The Python version as a string, for example, ``"3.4.1a2"``.
 
 
 Run-time version
