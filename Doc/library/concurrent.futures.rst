@@ -21,6 +21,11 @@ or separate processes, using :class:`ProcessPoolExecutor`.
 Each implements the same interface, which is defined
 by the abstract :class:`Executor` class.
 
+:class:`concurrent.futures.Future` must not be confused with
+:class:`asyncio.Future`, which is designed for use with :mod:`asyncio`
+tasks and coroutines. See the :doc:`asyncio's Future <asyncio-future>`
+documentation for a detailed comparison of the two.
+
 .. include:: ../includes/wasm-notavail.rst
 
 Executor Objects
@@ -308,7 +313,7 @@ the bytes over a shared :mod:`socket <socket>` or
 
    .. note::
       The executor may replace uncaught exceptions from *initializer*
-      with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
+      with :class:`~concurrent.interpreters.ExecutionFailed`.
 
    Other caveats from parent :class:`ThreadPoolExecutor` apply here.
 
@@ -320,11 +325,11 @@ likewise serializes the return value when sending it back.
 When a worker's current task raises an uncaught exception, the worker
 always tries to preserve the exception as-is.  If that is successful
 then it also sets the ``__cause__`` to a corresponding
-:class:`~concurrent.futures.interpreter.ExecutionFailed`
+:class:`~concurrent.interpreters.ExecutionFailed`
 instance, which contains a summary of the original exception.
 In the uncommon case that the worker is not able to preserve the
 original as-is then it directly preserves the corresponding
-:class:`~concurrent.futures.interpreter.ExecutionFailed`
+:class:`~concurrent.interpreters.ExecutionFailed`
 instance instead.
 
 
@@ -717,15 +722,6 @@ Exception classes
    this exception class is raised when one of the workers
    of a :class:`~concurrent.futures.InterpreterPoolExecutor`
    has failed initializing.
-
-   .. versionadded:: 3.14
-
-.. exception:: ExecutionFailed
-
-   Raised from :class:`~concurrent.futures.InterpreterPoolExecutor` when
-   the given initializer fails or from
-   :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
-   exception from the submitted task.
 
    .. versionadded:: 3.14
 

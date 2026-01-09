@@ -489,6 +489,8 @@ do {                                                   \
 #define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
 #endif
 
+#define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL)
+
 static inline int
 check_periodics(PyThreadState *tstate) {
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
