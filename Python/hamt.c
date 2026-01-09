@@ -2368,6 +2368,10 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
         return 0;
     }
 
+    Py_INCREF(v);
+    Py_INCREF(w);
+
+    int res = 1;
     PyHamtIteratorState iter;
     hamt_iter_t iter_res;
     hamt_find_t find_res;
@@ -2383,25 +2387,38 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
             find_res = hamt_find(w, v_key, &w_val);
             switch (find_res) {
                 case F_ERROR:
-                    return -1;
+                    res = -1;
+                    goto done;
 
                 case F_NOT_FOUND:
-                    return 0;
+                    res = 0;
+                    goto done;
 
                 case F_FOUND: {
+                    Py_INCREF(v_key);
+                    Py_INCREF(v_val);
+                    Py_INCREF(w_val);
                     int cmp = PyObject_RichCompareBool(v_val, w_val, Py_EQ);
+                    Py_DECREF(v_key);
+                    Py_DECREF(v_val);
+                    Py_DECREF(w_val);
                     if (cmp < 0) {
-                        return -1;
+                        res = -1;
+                        goto done;
                     }
                     if (cmp == 0) {
-                        return 0;
+                        res = 0;
+                        goto done;
                     }
                 }
             }
         }
     } while (iter_res != I_END);
 
-    return 1;
+done:
+    Py_DECREF(v);
+    Py_DECREF(w);
+    return res;
 }
 
 Py_ssize_t
