@@ -415,10 +415,6 @@ complete listing.
    This macro is intended for defining CPython's C API itself;
    extension modules should not use it for their own symbols.
 
-   Example usage::
-
-      PyAPI_DATA(const unsigned long) Py_Version;
-
 
 .. _api-objects:
 
