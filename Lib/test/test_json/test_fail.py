@@ -256,7 +256,7 @@ class TestFail:
         ):
             # The exact exception type is not important here;
             # this test only ensures we don't crash.
-            with self.assertRaises(self.JSONDecodeError):
+            with self.assertRaises(json.JSONDecodeError):
                 json.loads('"\\uZZZZ"')
 
 
