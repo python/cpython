@@ -3,6 +3,11 @@ channels = ["https://prefix.dev/conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
+[workspace.build-variants]
+variant = ["default"]
+abi_tag = ["cp315"]
+version = ["3.15"]
+
 [package.build.backend]
 name = "pixi-build-rattler-build"
 version = "*"

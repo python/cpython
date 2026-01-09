@@ -20,14 +20,14 @@ Each package definition is contained in a subdirectory, but they share the build
 `build.sh` in this directory. Currently defined package variants:
 
 - `default`
-- `free-threading`
+- `freethreading`
 - `asan`: ASan-instrumented build
-- `tsan-free-threading`: TSan-instrumented free-threading build
+- `tsan_freethreading`: TSan-instrumented free-threading build
 
 ## Maintenance
 
-- Keep the `version` fields in each `recipe.yaml` up to date with the Python version
-- Keep the dependency requirements up to date in each `recipe.yaml`
+- Keep the `abi_tag` and `version` fields in each `pixi.toml` up to date with the Python version
+- If you update one `recipe.yaml` file, update all
 - Update `build.sh` for any breaking changes in the `configure` and `make` workflow
 
 ## Opportunities for future improvement

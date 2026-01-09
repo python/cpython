@@ -1,9 +1,9 @@
 context:
   # Keep up to date
   version: "3.15"
-  variant: "asan"
-  freethreading_tag: ${{ "t" if "free-threading" in variant else "" }}
-  abi_tag: cp${{ version | split(".") | join("") }}${{ freethreading_tag }}
+  variant: ${{ variant }}
+  freethreading_tag: ${{ "t" if "freethreading" in variant else "" }}
+  abi_tag: ${{ abi_tag }}
 
 recipe:
   name: python
@@ -16,16 +16,16 @@ outputs:
     name: python_abi
     version: ${{ version }}
   build:
-    string: "0_cp315"
+    string: "0_${{ variant }}_${{ abi_tag }}"
   requirements:
     run_constraints:
-      - python ${{ version }}.* *_cp315
+      - python ${{ version }}.* *_${{ variant }}_${{ abi_tag }}
 
 - package:
     name: python
     version: ${{ version }}
   build:
-    string: "0_cp315"
+    string: "0_${{ variant }}_${{ abi_tag }}"
     files:
       exclude:
         - "*.o"
@@ -80,7 +80,7 @@ outputs:
       noarch:
         - python
       weak:
-        - python_abi ${{ version }}.* *_cp${{ version | split(".") | join("") }}${{ freethreading_tag }}
+        - python_abi ${{ version }}.* *_${{ variant }}_${{ abi_tag }}
 
 about:
   homepage: https://www.python.org/
