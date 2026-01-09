@@ -429,7 +429,6 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
         Py_DECREF(exc);
     }
 
-    /* Move DECREF after PyErr_SetObject */
     Py_DECREF(JSONDecodeError);
 }
 
