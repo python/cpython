@@ -1438,9 +1438,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 3)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        # TODO (gh-142764): Re-enable after we get back automatic constant propagation.
-        # self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-        # self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
@@ -1658,8 +1657,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP", uops)
         self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
-    @unittest.skip("TODO (gh-142764): Re-enable after we get back automatic constant propagation.")
-    def test_compare_op_int_pop_two_load_const_inline_borrow(self):
+    def test_compare_op_int_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -1674,10 +1672,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
 
-    @unittest.skip("TODO (gh-142764): Re-enable after we get back automatic constant propagation.")
-    def test_compare_op_str_pop_two_load_const_inline_borrow(self):
+    def test_compare_op_str_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -1692,10 +1689,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_STR", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
 
-    @unittest.skip("TODO (gh-142764): Re-enable after we get back automatic constant propagation.")
-    def test_compare_op_float_pop_two_load_const_inline_borrow(self):
+    def test_compare_op_float_insert_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -1710,7 +1706,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_FLOAT", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_contains_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -2171,9 +2167,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_TUPLE_1", uops)
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
-        # TODO (gh-142764): Re-enable after we get back automatic constant propagation.
-        # self.assertNotIn("_COMPARE_OP_INT", uops)
-        # self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn("_COMPARE_OP_INT", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_call_len(self):
         def testfunc(n):
@@ -2238,9 +2233,8 @@ class TestUopsOptimization(unittest.TestCase):
         # length allows us to optimize more code, such as conditionals
         # in this case
         self.assertIn("_CALL_LEN", uops)
-        # TODO (gh-142764): Re-enable after we get back automatic constant propagation.
-        # self.assertNotIn("_COMPARE_OP_INT", uops)
-        # self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn("_COMPARE_OP_INT", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_call_builtin_o(self):
         def testfunc(n):
@@ -2333,9 +2327,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
-        # TODO (gh-142764): Re-enable after we get back automatic constant propagation.
-        # self.assertNotIn("_COMPARE_OP_INT", uops)
-        # self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn("_COMPARE_OP_INT", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_call_isinstance_guards_removed(self):
         def testfunc(n):
