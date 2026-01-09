@@ -692,11 +692,6 @@ The :mod:`functools` module defines the following functions:
         @neg.register
         def _(self, arg: bool):
             return not arg
-   .. note::
-       ``singledispatchmethod`` dispatches the first argument during call
-         time irrespective of whether the method is bound or unbound, as a result,
-        ``x.f(a) != C.f(x, a)``.The behavior is intentional and required to support correct dispatch for
-        ``staticmethod`` and ``classmethod``.
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
    :deco:`classmethod`. Note that to allow for
@@ -722,6 +717,12 @@ The :mod:`functools` module defines the following functions:
 
    The same pattern can be used for other similar decorators:
    :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
+
+    ``singledispatchmethod`` always dispatches on the first argument passed at call
+    time, irrespective of whether the method is bound or unbound. As a result,
+    calling the method through an instance or through the class may result in
+    different dispatch behavior. This behavior is required to support correct
+    dispatch when used with ``staticmethod`` and ``classmethod``.
 
    .. versionadded:: 3.8
 
