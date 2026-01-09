@@ -417,8 +417,7 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
     _Py_DECLARE_STR(json_decoder, "json.decoder");
 
     PyObject *JSONDecodeError =
-        PyImport_ImportModuleAttr(&_Py_STR(json_decoder),
-                                  &_Py_ID(JSONDecodeError));
+         PyImport_ImportModuleAttr(&_Py_STR(json_decoder), &_Py_ID(JSONDecodeError));
     if (JSONDecodeError == NULL) {
         return;
     }
