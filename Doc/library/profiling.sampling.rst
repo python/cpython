@@ -878,9 +878,9 @@ interesting functions that highlights:
 
 Use :option:`--no-summary` to suppress both the legend and summary sections.
 
-To save pstats output to a file instead of stdout::
+To save pstats output to a binary file instead of stdout::
 
-   python -m profiling.sampling run -o profile.txt script.py
+   python -m profiling.sampling run -o profile.pstats script.py
 
 The pstats format supports several options for controlling the display.
 The :option:`--sort` option determines the column used for ordering results::
@@ -1455,7 +1455,9 @@ Output options
 
 .. option:: --pstats
 
-   Generate text statistics output. This is the default.
+   Generate pstats statistics. This is the default.
+   When written to stdout, the output is a text table; with :option:`-o`,
+   it is a binary pstats file.
 
 .. option:: --collapsed
 
@@ -1486,9 +1488,17 @@ Output options
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   :option:`--pstats` writes to stdout, while other formats generate a file
-   named ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
+   :option:`--pstats` prints a text table to stdout, while ``-o`` writes a
+   binary pstats file. Other formats generate a file named
+   ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
    :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
+
+.. option:: --browser
+
+   Automatically open HTML output (:option:`--flamegraph` and
+   :option:`--heatmap`) in your default web browser after generation.
+   When profiling with :option:`--subprocesses`, only the main process
+   opens the browser; subprocess outputs are never auto-opened.
 
 
 pstats display options
