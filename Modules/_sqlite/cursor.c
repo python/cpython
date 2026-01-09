@@ -874,9 +874,9 @@ bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
  */
 int
 _pysqlite_query_execute(pysqlite_Cursor *self, int multiple, PyObject *operation, PyObject *second_argument) {
-    PyObject *parameters_list = NULL;
-    PyObject *parameters_iter = NULL;
-    PyObject *parameters = NULL;
+    PyObject* parameters_list = NULL;
+    PyObject* parameters_iter = NULL;
+    PyObject* parameters = NULL;
     int i;
     int rc, bind_rc;
     int numcols;
