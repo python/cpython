@@ -235,7 +235,7 @@ class Queue:
             unboundop, = _serialize_unbound(unbounditems)
         _queues.put(self._id, obj, unboundop, False)
 
-    def get(self, block=True, timeout=None, *):
+    def get(self, block=True, timeout=None):
         """Return the next object from the queue.
 
         If "block" is true, this blocks while the queue is empty.
