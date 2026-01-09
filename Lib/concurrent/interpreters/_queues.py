@@ -233,7 +233,7 @@ class Queue:
             unboundop = -1
         else:
             unboundop, = _serialize_unbound(unbounditems)
-        _queues.put(self._id, obj, unboundop)
+        _queues.put(self._id, obj, unboundop, False)
 
     def get(self, block=True, timeout=None, *):
         """Return the next object from the queue.
@@ -271,7 +271,7 @@ class Queue:
         is the same as get().
         """
         try:
-            obj, unboundop = _queues.get(self._id)
+            obj, unboundop = _queues.get(self._id, False)
         except QueueEmpty:
             raise  # re-raise
         if unboundop is not None:

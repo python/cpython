@@ -1132,7 +1132,7 @@ queue_destroy(_queues *queues, int64_t qid)
 // Push an object onto the queue.
 static int
 queue_put(_queues *queues, int64_t qid, PyObject *obj, unboundop_t unboundop,
-          xidata_fallback_t fallback)
+          xidata_fallback_t fallback, int block)
 {
     PyThreadState *tstate = PyThreadState_Get();
 
@@ -1145,7 +1145,9 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, unboundop_t unboundop,
     assert(queue != NULL);
 
     // Wait for the queue to have space
-    PyEvent_Wait(&queue->space_available);
+    if (block == 1) {
+        PyEvent_Wait(&queue->space_available);
+    }
 
     // Convert the object to cross-interpreter data.
     _PyXIData_t *xidata = _PyXIData_New();
@@ -1179,7 +1181,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, unboundop_t unboundop,
 // XXX Support a "wait" mutex?
 static int
 queue_get(_queues *queues, int64_t qid,
-          PyObject **res, int *p_unboundop)
+          PyObject **res, int *p_unboundop, int block)
 {
     int err;
     *res = NULL;
@@ -1194,7 +1196,9 @@ queue_get(_queues *queues, int64_t qid,
     assert(queue != NULL);
 
     // Wait for the queue to have some value
-    PyEvent_Wait(&queue->has_item);
+    if (block == 1) {
+        PyEvent_Wait(&queue->has_item);
+    }
 
     // Pop off the next item from the queue.
     _PyXIData_t *data = NULL;
@@ -1627,13 +1631,14 @@ _interpqueues.put
     obj: object
     unboundop as unboundarg: int = -1
     fallback as fallbackarg: int = -1
+    block: bool = True
 
 Add the object's data to the queue.
 [clinic start generated code]*/
 
 static PyObject *
 _interpqueues_put_impl(PyObject *module, int64_t qid, PyObject *obj,
-                       int unboundarg, int fallbackarg)
+                       int unboundarg, int fallbackarg, int block)
 /*[clinic end generated code: output=2e0b31c6eaec29c9 input=4906550ab5c73be3]*/
 {
     struct _queuedefaults defaults = {-1, -1};
@@ -1653,7 +1658,7 @@ _interpqueues_put_impl(PyObject *module, int64_t qid, PyObject *obj,
     }
 
     /* Queue up the object. */
-    int err = queue_put(&_globals.queues, qid, obj, unboundop, fallback);
+    int err = queue_put(&_globals.queues, qid, obj, unboundop, fallback, block);
     // This is the only place that raises QueueFull.
     if (handle_queue_error(err, module, qid)) {
         return NULL;
@@ -1665,6 +1670,7 @@ _interpqueues_put_impl(PyObject *module, int64_t qid, PyObject *obj,
 /*[clinic input]
 _interpqueues.get
     qid: qidarg
+    block: bool = True
 
 Return the (object, unbound op) from the front of the queue.
 
@@ -1672,12 +1678,12 @@ If there is nothing to receive then raise QueueEmpty.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_get_impl(PyObject *module, int64_t qid)
+_interpqueues_get_impl(PyObject *module, int64_t qid, int block)
 /*[clinic end generated code: output=b0988a0e29194f05 input=c5bccbc409ad0190]*/
 {
     PyObject *obj = NULL;
     int unboundop = 0;
-    int err = queue_get(&_globals.queues, qid, &obj, &unboundop);
+    int err = queue_get(&_globals.queues, qid, &obj, &unboundop, block);
     // This is the only place that raises QueueEmpty.
     if (handle_queue_error(err, module, qid)) {
         return NULL;
