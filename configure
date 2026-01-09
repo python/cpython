@@ -12024,14 +12024,15 @@ See 'config.log' for more details" "$LINENO" 5; } ;; #(
 esac
 
 ac_fn_check_decl "$LINENO" "I_PUSH" "ac_cv_have_decl_I_PUSH" "
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#include <stropts.h>
+    #ifdef HAVE_SYS_TYPES_H
+    #  include <sys/types.h>
+    #endif
+    #include <stropts.h>
 
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_I_PUSH" = xyes
 then :
+
 
 printf "%s\n" "#define HAVE_STROPTS_H 1" >>confdefs.h
 
