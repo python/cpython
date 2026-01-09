@@ -679,11 +679,7 @@ The :mod:`functools` module defines the following functions:
    decorator. When defining a method using ``@singledispatchmethod``, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
-   .. note::
-   ``singledispatchmethod`` dispatches the first argument during call
-   time irrespective of whether the method is bound or unbound, as a result,
-   ``x.f(a) != C.f(x, a)``.The behavior is intentional and required to support correct dispatch for
-   ``staticmethod`` and ``classmethod``.
+
     class Negator:
         @singledispatchmethod
         def neg(self, arg):
@@ -696,6 +692,11 @@ The :mod:`functools` module defines the following functions:
         @neg.register
         def _(self, arg: bool):
             return not arg
+   .. note::
+       ``singledispatchmethod`` dispatches the first argument during call
+         time irrespective of whether the method is bound or unbound, as a result,
+        ``x.f(a) != C.f(x, a)``.The behavior is intentional and required to support correct dispatch for
+        ``staticmethod`` and ``classmethod``.
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
    :deco:`classmethod`. Note that to allow for
