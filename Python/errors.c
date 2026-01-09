@@ -1632,6 +1632,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     _Py_EnsureTstateNotNULL(tstate);
 
     PyObject *err_msg = NULL;
+    PyObject *hook = NULL;
     PyObject *exc_type, *exc_value, *exc_tb;
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
@@ -1676,7 +1677,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         goto error;
     }
 
-    PyObject *hook;
     if (_PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
         Py_DECREF(hook_args);
         err_msg_str = NULL;
@@ -1689,7 +1689,6 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1697,13 +1696,11 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (hook == Py_None) {
-        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
-    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);
@@ -1733,6 +1730,7 @@ done:
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
     Py_XDECREF(err_msg);
+    Py_XDECREF(hook);
     _PyErr_Clear(tstate); /* Just in case */
 }
 
