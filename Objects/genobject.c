@@ -938,25 +938,25 @@ gen_getcode(PyObject *self, void *Py_UNUSED(ignored))
 static PyObject *
 gen_get_cr_frame(PyObject *self, void *closure)
 {
-    return gen_getframe((PyGenObject *)self, closure);
+    return gen_getframe((PyObject *)self, closure);
 }
 
 static PyObject *
 gen_get_cr_code(PyObject *self, void *closure)
 {
-    return gen_getcode((PyGenObject *)self, closure);
+    return gen_getcode((PyObject *)self, closure);
 }
 
 static PyObject *
 gen_get_cr_running(PyObject *self, void *closure)
 {
-    return gen_getrunning((PyGenObject *)self, closure);
+    return gen_getrunning((PyObject *)self, closure);
 }
 
 static PyObject *
 gen_get_cr_suspended(PyObject *self, void *closure)
 {
-    return gen_getsuspended((PyGenObject *)self, closure);
+    return gen_getsuspended((PyObject *)self, closure);
 }
 
 static PyObject *
