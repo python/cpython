@@ -1,3 +1,3 @@
 Fix crash when the internal encoder object returned by undocumented function
-:func:`json.encoder.c_make_encoder` was called with non-zero second
+:func:`!json.encoder.c_make_encoder` was called with non-zero second
 (*_current_indent_level*) argument.
