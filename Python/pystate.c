@@ -1553,7 +1553,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     init_policy(&_tstate->policy.jit.side_exit_initial_backoff,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
-    _tstate->jit_tracer_state.code_buffer = NULL;
+    _tstate->jit_tracer_state = NULL;
 #endif
     tstate->delete_later = NULL;
 
@@ -1875,18 +1875,14 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 #endif
 
 #if _Py_TIER2
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (_tstate->jit_tracer_state.code_buffer != NULL) {
-        _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
-        _tstate->jit_tracer_state.code_buffer = NULL;
-    }
-#ifdef Py_GIL_DISABLED
+    _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
+#   ifdef Py_GIL_DISABLED
     // There's only one thread. Re-enable JIT.
     PyThreadState *curr = interp->threads.head;
     if (curr != NULL && curr->prev == NULL && curr->next == NULL) {
        FT_ATOMIC_STORE_UINT8(interp->jit, 1);
     }
-#endif
+#   endif    
 #endif
 
     HEAD_UNLOCK(runtime);
@@ -2845,7 +2841,7 @@ int
 PyGILState_Check(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    if (!runtime->gilstate.check_enabled) {
+    if (!_Py_atomic_load_int_relaxed(&runtime->gilstate.check_enabled)) {
         return 1;
     }
 
