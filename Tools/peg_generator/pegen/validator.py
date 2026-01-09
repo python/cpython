@@ -1,5 +1,5 @@
 from pegen import grammar
-from pegen.grammar import Alt, GrammarVisitor, Rhs, Rule
+from pegen.grammar import Alt, GrammarVisitor, Rhs, Rule, Cut, Repeat, Opt, NamedItem
 
 
 class ValidationError(Exception):
@@ -43,6 +43,37 @@ class RaiseRuleValidator(GrammarValidator):
                 f"RAISE_SYNTAX_ERROR; this is only allowed in invalid_ rules"
             )
 
+
+class CutValidator(GrammarValidator):
+    """Fail if Cut is not directly in a rule.
+
+    For simplicity, we currently document that a Cut affects alternatives
+    of the *rule* it is in.
+    However, the implementation makes cuts local to enclosing Rhs
+    (e.g. parenthesized list of choices).
+    Additionally, in academic papers about PEG, repeats and optional items
+    are "desugared" to choices with an empty alternative, and thus contain
+    a Cut's effect.
+
+    Please update documentation and tests when adding this cut,
+    then get rid of this validator.
+
+    See gh-143054.
+    """
+
+    def visit(self, node: Any, parents: tuple[Any] = ()) -> None:
+        super().visit(node, parents=(*parents, node))
+
+    def visit_Cut(self, node: Alt, parents: tuple[Any] = ()) -> None:
+        parent_types = [type(p).__name__ for p in parents]
+        if parent_types != ['Rule', 'Rhs', 'Alt', 'NamedItem', 'Cut']:
+            raise ValidationError(
+                f"Rule {self.rulename!r} contains cut that's not on the "
+                "top level. "
+                "The intended semantics of such cases need "
+                "to be clarified; see the CutValidator docstring."
+                f"\nThe cut is inside: {parent_types}"
+            )
 
 def validate_grammar(the_grammar: grammar.Grammar) -> None:
     for validator_cls in GrammarValidator.__subclasses__():
