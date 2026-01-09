@@ -27,7 +27,6 @@ Each package definition is contained in a subdirectory, but they share the build
 ## Maintenance
 
 - Keep the `abi_tag` and `version` fields in each `pixi.toml` up to date with the Python version
-- If you update one `recipe.yaml` file, update all
 - Update `build.sh` for any breaking changes in the `configure` and `make` workflow
 
 ## Opportunities for future improvement
