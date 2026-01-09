@@ -68,6 +68,7 @@ class TestRecursion:
             self.fail("didn't raise ValueError on default recursion")
 
 
+    @support.skip_if_unlimited_stack_size()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_highly_nested_objects_decoding(self):
@@ -84,6 +85,7 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.loads('[' * very_deep + '1' + ']' * very_deep)
 
+    @support.skip_if_unlimited_stack_size()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
@@ -99,6 +101,7 @@ class TestRecursion:
             with support.infinite_recursion(5000):
                 self.dumps(d)
 
+    @support.skip_if_unlimited_stack_size()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_endless_recursion(self):

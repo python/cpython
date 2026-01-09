@@ -45,6 +45,7 @@ __all__ = [
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
+    "skip_if_unlimited_stack_size",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -1769,6 +1770,22 @@ def skip_if_pgo_task(test):
     ok = not PGO or PGO_EXTENDED
     msg = "Not run for (non-extended) PGO task"
     return test if ok else unittest.skip(msg)(test)
+
+
+def skip_if_unlimited_stack_size():
+    """
+    Skip decorator for tests not run when an unlimited stack size is configured.
+
+    Tests using support.infinite_recursion([...]) may otherwise run into an infinite loop,
+    running until the memory on the system is filled and crashing due to OOM.
+
+    See gh-143460: Python 3.14/3.15a build aborting due to OOM during test_functools / test_json
+    """
+    import resource
+    stack_size = resource.getrlimit(resource.RLIMIT_STACK)
+    reason = "Not run due to unlimited stack size"
+    unlimited_stack_size_cond = stack_size == (-1, -1) or stack_size == (0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF)
+    return unittest.skipIf(unlimited_stack_size_cond, reason)
 
 
 def detect_api_mismatch(ref_api, other_api, *, ignore=()):

@@ -93,6 +93,7 @@ class TestMiscellaneous(unittest.TestCase):
         }
         self.assertEqual(obj_copy, expected_obj)
 
+    @support.skip_if_unlimited_stack_size()
     def test_inline_array_recursion_limit(self):
         with support.infinite_recursion(max_depth=100):
             available = support.get_recursion_available()
@@ -104,6 +105,7 @@ class TestMiscellaneous(unittest.TestCase):
                 recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
                 tomllib.loads(recursive_array_toml)
 
+    @support.skip_if_unlimited_stack_size()
     def test_inline_table_recursion_limit(self):
         with support.infinite_recursion(max_depth=100):
             available = support.get_recursion_available()
