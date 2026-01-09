@@ -242,7 +242,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
                 tfp.write(block)
                 blocknum += 1
                 if reporthook:
-                    reporthook(blocknum, bs, size)
+                    reporthook(blocknum, len(block), size)
 
     if size >= 0 and read < size:
         raise ContentTooShortError(
@@ -415,6 +415,8 @@ class OpenerDirector:
                 continue
 
             i = meth.find("_")
+            if i < 1:
+                continue
             protocol = meth[:i]
             condition = meth[i+1:]
 

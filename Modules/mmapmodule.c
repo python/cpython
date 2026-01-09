@@ -963,7 +963,6 @@ mmap_mmap_resize_impl(mmap_object *self, Py_ssize_t new_size)
 
         if (error) {
             return PyErr_SetFromWindowsErr(error);
-            return NULL;
         }
         /* It's possible for a resize to fail, typically because another mapping
         is still held against the same underlying file. Even if nothing has
@@ -1035,12 +1034,15 @@ mmap.mmap.flush
     offset: Py_ssize_t = 0
     size: Py_ssize_t = -1
     /
+    *
+    flags: int = 0
 
 [clinic start generated code]*/
 
 static PyObject *
-mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
-/*[clinic end generated code: output=956ced67466149cf input=c50b893bc69520ec]*/
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size,
+                     int flags)
+/*[clinic end generated code: output=4225f4174dc75a53 input=42ba5fb716b6c294]*/
 {
     CHECK_VALID(NULL);
     if (size == -1) {
@@ -1061,8 +1063,10 @@ mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
     }
     Py_RETURN_NONE;
 #elif defined(UNIX)
-    /* XXX flags for msync? */
-    if (-1 == msync(self->data + offset, size, MS_SYNC)) {
+    if (flags == 0) {
+        flags = MS_SYNC;
+    }
+    if (-1 == msync(self->data + offset, size, flags)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -1115,6 +1119,47 @@ mmap_mmap_seek_impl(mmap_object *self, Py_ssize_t dist, int how)
   onoutofrange:
     PyErr_SetString(PyExc_ValueError, "seek out of range");
     return NULL;
+}
+
+/*[clinic input]
+mmap.mmap.set_name
+
+    name: str
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+mmap_mmap_set_name_impl(mmap_object *self, const char *name)
+/*[clinic end generated code: output=1edaf4fd51277760 input=6c7dd91cad205f07]*/
+{
+#if defined(MAP_ANONYMOUS) && defined(__linux__)
+    const char *prefix = "cpython:mmap:";
+    if (strlen(name) + strlen(prefix) > 79) {
+        PyErr_SetString(PyExc_ValueError, "name is too long");
+        return NULL;
+    }
+    if (self->flags & MAP_ANONYMOUS) {
+        char buf[80];
+        sprintf(buf, "%s%s", prefix, name);
+        if (_PyAnnotateMemoryMap(self->data, self->size, buf) < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    }
+    else {
+        /* cannot name non-anonymous mappings */
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set annotation on non-anonymous mappings");
+        return NULL;
+    }
+#else
+    /* naming not supported on this platform */
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Annotation of mmap is not supported on this platform");
+    return NULL;
+#endif
 }
 
 /*[clinic input]
@@ -1397,6 +1442,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     MMAP_MMAP_RESIZE_METHODDEF
     MMAP_MMAP_SEEK_METHODDEF
     MMAP_MMAP_SEEKABLE_METHODDEF
+    MMAP_MMAP_SET_NAME_METHODDEF
     MMAP_MMAP_SIZE_METHODDEF
     MMAP_MMAP_TELL_METHODDEF
     MMAP_MMAP_WRITE_METHODDEF
@@ -1952,7 +1998,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+#ifdef MAP_ANONYMOUS
+    if (m_obj->flags & MAP_ANONYMOUS) {
+        (void)_PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+    }
+#endif
     m_obj->access = (access_mode)access;
     return (PyObject *)m_obj;
 }
@@ -2285,6 +2335,16 @@ mmap_exec(PyObject *module)
     ADD_INT_MACRO(module, ACCESS_READ);
     ADD_INT_MACRO(module, ACCESS_WRITE);
     ADD_INT_MACRO(module, ACCESS_COPY);
+
+#ifdef MS_INVALIDATE
+    ADD_INT_MACRO(module, MS_INVALIDATE);
+#endif
+#ifdef MS_ASYNC
+    ADD_INT_MACRO(module, MS_ASYNC);
+#endif
+#ifdef MS_SYNC
+    ADD_INT_MACRO(module, MS_SYNC);
+#endif
 
 #ifdef HAVE_MADVISE
     // Conventional advice values
