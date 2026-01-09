@@ -1,4 +1,5 @@
 from test.test_json import PyTest, CTest
+import json
 
 # 2007-10-05
 JSONDOCS = [
@@ -238,7 +239,6 @@ class TestFail:
 
     def test_reentrant_jsondecodeerror_does_not_crash(self):
         # gh-143544
-        import json
 
         orig_json_error = json.JSONDecodeError
         orig_decoder_error = json.decoder.JSONDecodeError
