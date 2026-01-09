@@ -822,7 +822,7 @@ struct:
 .. c:macro:: PYTHON_API_VERSION
              PYTHON_API_STRING
 
-   The C API version, as an integer (``1013``) and string (``"1013"``).
+   The C API version, as an integer (``1013``) and string (``"1013"``), respectively.
    Defined for backwards compatibility.
 
    Currently, this constant is not updated in new Python versions, and is not
