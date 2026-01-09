@@ -415,14 +415,14 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
     _Py_DECLARE_STR(json_decoder, "json.decoder");
-
     PyObject *JSONDecodeError =
          PyImport_ImportModuleAttr(&_Py_STR(json_decoder), &_Py_ID(JSONDecodeError));
     if (JSONDecodeError == NULL) {
         return;
     }
 
-    PyObject *exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
+    PyObject *exc;
+    exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
@@ -430,7 +430,6 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 
     Py_DECREF(JSONDecodeError);
 }
-
 
 static void
 raise_stop_iteration(Py_ssize_t idx)
