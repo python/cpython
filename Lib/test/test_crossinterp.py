@@ -7,7 +7,7 @@ import unittest
 import warnings
 
 from test import support
-from test.support import import_helper, swap_attr
+from test.support import import_helper
 
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
 _interpreters = import_helper.import_module('_interpreters')
@@ -1499,7 +1499,7 @@ class CaptureExceptionTests(unittest.TestCase):
     # Regression test for https://github.com/python/cpython/issues/143377.
 
     def capture_with_formatter(self, exc, formatter):
-        with swap_attr(traceback.TracebackException, "format", formatter):
+        with support.swap_attr(traceback.TracebackException, "format", formatter):
             return _interpreters.capture_exception(exc)
 
     def test_capture_exception(self):
