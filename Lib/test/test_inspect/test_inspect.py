@@ -2878,6 +2878,17 @@ class TestGetCoroutineState(unittest.TestCase):
 
     def test_created(self):
         self.assertEqual(self._coroutinestate(), inspect.CORO_CREATED)
+    
+    def test_generator_based_coroutine_introspection(self):
+        from inspect import getcoroutinestate
+        from types import coroutine
+
+        @coroutine
+        def gen_coro():
+            yield
+
+        # Must not raise AttributeError
+        getcoroutinestate(gen_coro())
 
     def test_suspended(self):
         self.coroutine.send(None)
@@ -2925,6 +2936,7 @@ class TestGetCoroutineState(unittest.TestCase):
         coro.send(None)
         self.assertEqual(inspect.getcoroutinelocals(coro),
                          {'a': None, 'gencoro': gencoro, 'b': 'spam'})
+
 
 
 @support.requires_working_socket()

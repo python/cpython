@@ -935,6 +935,36 @@ gen_getcode(PyObject *self, void *Py_UNUSED(ignored))
     return _gen_getcode(gen, "gi_code");
 }
 
+static PyObject *
+gen_get_cr_frame(PyObject *self, void *closure)
+{
+    return gen_getframe((PyGenObject *)self, closure);
+}
+
+static PyObject *
+gen_get_cr_code(PyObject *self, void *closure)
+{
+    return gen_getcode((PyGenObject *)self, closure);
+}
+
+static PyObject *
+gen_get_cr_running(PyObject *self, void *closure)
+{
+    return gen_getrunning((PyGenObject *)self, closure);
+}
+
+static PyObject *
+gen_get_cr_suspended(PyObject *self, void *closure)
+{
+    return gen_getsuspended((PyGenObject *)self, closure);
+}
+
+static PyObject *
+gen_get_cr_origin(PyObject *self, void *closure)
+{
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef gen_getsetlist[] = {
     {"__name__", gen_get_name, gen_set_name,
      PyDoc_STR("name of the generator")},
@@ -946,6 +976,11 @@ static PyGetSetDef gen_getsetlist[] = {
     {"gi_frame", gen_getframe,  NULL, NULL},
     {"gi_suspended", gen_getsuspended,  NULL, NULL},
     {"gi_code", gen_getcode,  NULL, NULL},
+    {"cr_running", gen_get_cr_running, NULL, NULL},
+    {"cr_frame", gen_get_cr_frame, NULL, NULL},
+    {"cr_code", gen_get_cr_code, NULL, NULL},
+    {"cr_suspended", gen_get_cr_suspended, NULL, NULL},
+    {"cr_origin", gen_get_cr_origin, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
