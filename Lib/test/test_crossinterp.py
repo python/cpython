@@ -1528,6 +1528,10 @@ class CaptureExceptionTests(unittest.TestCase):
         self.assertEqual(captured.formatted, "ValueError: ")
         self.assertEqual(captured.errdisplay, "".join(exc_lines))
 
+    @support.skipUnless(
+        support.Py_DEBUG,
+        "printing subinterpreter unraisable exceptions requires DEBUG mode",
+    )
     def test_capture_exception_unraisable_exception(self):
         formatter = lambda self: 1
         with support.catch_unraisable_exception() as cm:
