@@ -251,18 +251,14 @@ class TestFail:
                 return ValueError("boom")
 
         hook = Trigger()
-        try:
-            json.JSONDecodeError = hook
-            json.decoder.JSONDecodeError = hook
-
+        with (
+            support.swap_attr(json, "JSONDecodeError", hook),
+            support.swap_attr(json.decoder, "JSONDecodeError", hook)
+        ):
             # The exact exception type is not important here;
             # this test only ensures we don't crash.
             with self.assertRaises(Exception):
                 json.loads('"\\uZZZZ"')
-
-        finally:
-            json.JSONDecodeError = orig_json_error
-            json.decoder.JSONDecodeError = orig_decoder_error
 
 class TestPyFail(TestFail, PyTest): pass
 class TestCFail(TestFail, CTest): pass
