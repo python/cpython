@@ -5,7 +5,6 @@ import gc
 import math
 import operator
 import unittest
-import platform
 import struct
 import sys
 import weakref
@@ -891,6 +890,7 @@ class UnpackIteratorTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, it)
 
     def test_half_float(self):
+        _testcapi = import_helper.import_module('_testcapi')
         # Little-endian examples from:
         # http://en.wikipedia.org/wiki/Half_precision_floating-point_format
         format_bits_float__cleanRoundtrip_list = [
@@ -935,8 +935,8 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Check that packing produces a bit pattern representing a quiet NaN:
         # all exponent bits and the msb of the fraction should all be 1.
-        if platform.machine().startswith('parisc'):
-            # HP PA RISC uses 0 for quiet, see:
+        if _testcapi.nan_msb_is_signaling:
+            # HP PA RISC and some MIPS CPUs use 0 for quiet, see:
             # https://en.wikipedia.org/wiki/NaN#Encoding
             expected = 0x7c
         else:
