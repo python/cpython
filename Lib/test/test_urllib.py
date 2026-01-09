@@ -814,7 +814,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.assertEqual(report[0][2], 8193)
         self.assertEqual(report[0][1], 8192)
         self.assertEqual(report[1][1], 8192)
-        self.assertEqual(report[2][1], 8192)
+        self.assertEqual(report[2][1], 1)  # last block only reads 1 byte
 
 
 class urlretrieve_HttpTests(unittest.TestCase, FakeHTTPMixin):
