@@ -1528,7 +1528,7 @@ class CaptureExceptionTests(unittest.TestCase):
         self.assertEqual(captured.formatted, "ValueError: ")
         self.assertEqual(captured.errdisplay, "".join(exc_lines))
 
-    @support.skipUnless(
+    @unittest.skipUnless(
         support.Py_DEBUG,
         "printing subinterpreter unraisable exceptions requires DEBUG build",
     )
