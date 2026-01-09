@@ -917,7 +917,7 @@ Add ``__parameters__`` attribute and ``__getitem__`` operator to
 .. bpo: 44523
 .. date: 2021-06-29-11-49-29
 .. nonce: 67-ZIP
-.. section: Library
+.. section: Core and Builtins
 
 Remove the pass-through for :func:`hash` of :class:`weakref.proxy` objects
 to prevent unintended consequences when the original referred object dies

@@ -643,7 +643,7 @@ Convert :mod:`!_bz2` to use :c:func:`PyType_FromSpec`.
 .. bpo: 41006
 .. date: 2020-06-18-00-07-09
 .. nonce: H-wN-d
-.. section: Library
+.. section: Core and Builtins
 
 The ``encodings.latin_1`` module is no longer imported at startup. Now it is
 only imported when it is the filesystem encoding or the stdio encoding.

@@ -434,7 +434,7 @@ cache when applicable.
 .. bpo: 46962
 .. date: 2022-03-08-21-59-57
 .. nonce: UomDfz
-.. section: Library
+.. section: Core and Builtins
 
 Classes and functions that unconditionally declared their docstrings
 ignoring the ``--without-doc-strings`` compilation flag no longer do so.
@@ -519,7 +519,7 @@ less or equal than the starting position of non-encodable characters.
 .. bpo: 34093
 .. date: 2018-07-14-16-58-00
 .. nonce: WaVD-f
-.. section: Library
+.. section: Core and Builtins
 
 ``marshal.dumps()`` uses ``FLAG_REF`` for all interned strings.  This makes
 output more deterministic and helps reproducible build.
