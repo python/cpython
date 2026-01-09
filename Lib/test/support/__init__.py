@@ -1772,7 +1772,7 @@ def skip_if_pgo_task(test):
     return test if ok else unittest.skip(msg)(test)
 
 
-def skip_if_unlimited_stack_size():
+def skip_if_unlimited_stack_size(test):
     """
     Skip decorator for tests not run when an unlimited stack size is configured.
 
@@ -1781,11 +1781,16 @@ def skip_if_unlimited_stack_size():
 
     See gh-143460: Python 3.14/3.15a build aborting due to OOM during test_functools / test_json
     """
+    if is_wasi:
+        return test
+    if sys.platform.startswith('win'):
+        return test
+
     import resource
     stack_size = resource.getrlimit(resource.RLIMIT_STACK)
-    reason = "Not run due to unlimited stack size"
     unlimited_stack_size_cond = stack_size == (-1, -1) or stack_size == (0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF)
-    return unittest.skipIf(unlimited_stack_size_cond, reason)
+    reason = "Not run due to unlimited stack size"
+    return unittest.skipIf(unlimited_stack_size_cond, reason)(test)
 
 
 def detect_api_mismatch(ref_api, other_api, *, ignore=()):
