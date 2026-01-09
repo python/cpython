@@ -1,2 +1,2 @@
-Fix a inconsistency issue in :meth:~io.BytesIO.write that leads to
+Fix a inconsistency issue in :meth:`~io.BytesIO.write` that leads to
 unexpected buffer overwrite by deduplicating the buffer exports.
