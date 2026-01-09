@@ -195,16 +195,20 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
+#ifdef Py_GIL_DISABLED
+    int already_entered = _Py_atomic_exchange_int(&ctx->ctx_entered, 1);
+#else
+    int already_entered = ctx->ctx_entered;
+    ctx->ctx_entered = 1;
+#endif
 
-    if (ctx->ctx_entered) {
+    if (already_entered) {
         _PyErr_Format(ts, PyExc_RuntimeError,
                       "cannot enter context: %R is already entered", ctx);
         return -1;
     }
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
-    ctx->ctx_entered = 1;
-
     ts->context = Py_NewRef(ctx);
     context_switched(ts);
     return 0;
@@ -225,8 +229,9 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
+    int already_entered = FT_ATOMIC_LOAD_INT_RELAXED(ctx->ctx_entered);
 
-    if (!ctx->ctx_entered) {
+    if (!already_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot exit context: %R has not been entered", ctx);
         return -1;
@@ -243,7 +248,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
 
     ctx->ctx_prev = NULL;
-    ctx->ctx_entered = 0;
+    FT_ATOMIC_STORE_INT(ctx->ctx_entered, 0);
     context_switched(ts);
     return 0;
 }
