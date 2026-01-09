@@ -678,7 +678,7 @@ set_clear_internal(PyObject *self)
      * assert that the refcount on table is 1 now, i.e. that this function
      * has unique access to it, so decref side-effects can't alter it.
      */
-    for (entry = table; used > 0; entry++) {
+    for (entry = table; used > 0 && entry < table + oldsize; entry++) {
         if (entry->key && entry->key != dummy) {
             used--;
             Py_DECREF(entry->key);

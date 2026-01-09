@@ -676,6 +676,42 @@ class TestSet(TestJointOps, unittest.TestCase):
             myset.discard(elem2)
 
 
+
+    def test_reentrant_clear_in_iand(self):
+        # Issue 143546: Heap buffer overflow in set_clear_internal
+        # via re-entrant __eq__ during set_iand
+        import random
+        aux = {object()}
+        targets = []
+
+        class Victim:
+            def __hash__(self): return 0
+            def __eq__(self, other): return NotImplemented
+
+        class Trigger:
+            def __hash__(self): return 0
+            def __eq__(self, other):
+                if not targets: return False
+                for s in targets:
+                    op = random.randrange(7)
+                    if op == 0: s.clear()
+                    elif op == 1: s.add(Victim())
+                    elif op == 2: s.discard(Victim())
+                    else: s ^= aux
+                return False
+
+        random.seed(0)
+        for _ in range(50):
+            left = {Victim() for _ in range(6)}
+            right = {Victim() for _ in range(6)}
+            for _ in range(3):
+                right.add(Trigger())
+            targets[:] = [left, right]
+            try:
+                left &= right
+            except (RuntimeError, IndexError):
+                pass
+
 class SetSubclass(set):
     pass
 
