@@ -1,4 +1,6 @@
 from test.test_json import PyTest, CTest
+from test import support
+import json
 
 # 2007-10-05
 JSONDOCS = [
@@ -235,6 +237,7 @@ class TestFail:
             self.assertEqual(str(err),
                              'Expecting value: line %s column %d (char %d)' %
                              (line, col, idx))
+
 
     def test_reentrant_jsondecodeerror_does_not_crash(self):
         # gh-143544
