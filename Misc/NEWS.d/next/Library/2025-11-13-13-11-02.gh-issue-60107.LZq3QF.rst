@@ -1,2 +1,0 @@
-Remove a copy from :meth:`io.RawIOBase.read`. If the underlying I/O class
-keeps a reference to the mutable memory, raise a :exc:`BufferError`.

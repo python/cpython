@@ -2617,7 +2617,7 @@ Notes on using *__slots__*:
 * :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
   *__weakref__* are defined for a class derived from a
   :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
-  :class:`int`, :class:`bytes`, and :class:`tuple`.
+  :class:`int`, :class:`bytes`, and :class:`type`, except :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
@@ -2640,8 +2640,9 @@ Notes on using *__slots__*:
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+   Allowed defining any *__slots__* for a class derived from :class:`tuple`.
 
 
 .. _class-customization:

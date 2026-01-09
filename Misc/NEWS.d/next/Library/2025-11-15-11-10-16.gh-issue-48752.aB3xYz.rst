@@ -1,3 +1,0 @@
-Add :func:`readline.get_pre_input_hook` function to retrieve the current
-pre-input hook. This allows applications to save and restore the hook
-without overwriting user settings. Patch by Sanyam Khurana.

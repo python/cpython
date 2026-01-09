@@ -73,6 +73,7 @@ Summary -- Release highlights
   <whatsnew315-utf8-default>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
+* :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
 
@@ -397,6 +398,10 @@ Other language changes
   for any class.
   (Contributed by Serhiy Storchaka in :gh:`41779`.)
 
+* Allowed defining any :ref:`__slots__ <slots>` for a class derived from
+  :class:`tuple` (including classes created by :func:`collections.namedtuple`).
+  (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
 
 New modules
 ===========
@@ -426,6 +431,13 @@ argparse
 * Added backtick markup support in description and epilog text to highlight
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
+
+base64 & binascii
+-----------------
+
+* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
+  faster thanks to simple CPU pipelining optimizations.
+  (Contributed by Gregory P. Smith & Serhiy Storchaka in :gh:`143262`.)
 
 calendar
 --------
@@ -561,6 +573,9 @@ locale
   but included in the language code.
   (Contributed by Serhiy Storchaka in :gh:`137729`.)
 
+* Undeprecate the :func:`locale.getdefaultlocale` function.
+  (Contributed by Victor Stinner in :gh:`130796`.)
+
 
 math
 ----
@@ -590,6 +605,11 @@ mmap
   if it is ``False``, the file handle corresponding to *fileno* will
   not be duplicated.
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+* Added the :meth:`mmap.mmap.set_name` method
+  to annotate an anonymous memory mapping
+  if Linux kernel supports :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  (Contributed by Donghee Na in :gh:`142419`.)
 
 
 os
@@ -843,11 +863,112 @@ zlib
 Optimizations
 =============
 
+* Builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to the MSVC team including Hulon Jenkins.)
+
 csv
 ---
 
 * :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
+
+
+.. _whatsnew315-jit:
+
+Upgraded JIT compiler
+=====================
+
+Results from the `pyperformance <https://github.com/python/pyperformance>`__
+benchmark suite report
+`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`__
+geometric mean performance improvement for the JIT over the standard CPython
+interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
+macOS, the JIT has a
+`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260103-3.15.0a3%2B-9609574-JIT/bm-20260103-macm4pro-arm64-python-9609574e7fd36edfaa8b-3.15.0a3%2B-9609574-vs-base.svg>`__
+speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
+with all optimizations enabled. The speedups for JIT
+builds versus no JIT builds range from roughly 20% slowdown to over
+100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
+x86-64 Linux and AArch64 macOS systems.
+
+.. attention::
+    These results are not yet final.
+
+The major upgrades to the JIT are:
+
+* LLVM 21 build-time dependency
+* New tracing frontend
+* Basic register allocation in the JIT
+* More JIT optimizations
+* Better machine code generation
+
+.. rubric:: LLVM 21 build-time dependency
+
+The JIT compiler now uses LLVM 21 for build-time stencil generation. As
+always, LLVM is only needed when building CPython with the JIT enabled;
+end users running Python do not need LLVM installed. Instructions for
+installing LLVM can be found in the `JIT compiler documentation
+<https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
+for all supported platforms.
+
+(Contributed by Savannah Ostrowski in :gh:`140973`.)
+
+.. rubric:: A new tracing frontend
+
+The JIT compiler now supports significantly more bytecode operations and
+control flow than in Python 3.14, enabling speedups on a wider variety of
+code. For example, simple Python object creation is now understood by the
+3.15 JIT compiler. Overloaded operations and generators are also partially
+supported. This was made possible by an overhauled JIT tracing frontend
+that records actual execution paths through code, rather than estimating
+them as the previous implementation did.
+
+(Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
+Mark Shannon in :gh:`141703`.)
+
+.. rubric:: Basic register allocation in the JIT
+
+A basic form of register allocation has been added to the JIT compiler's
+optimizer. This allows the JIT compiler to avoid certain stack operations
+altogether and instead operate on registers. This allows the JIT to produce
+more efficient traces by avoiding reads and writes to memory.
+
+(Contributed by Mark Shannon in :gh:`135379`.)
+
+.. rubric:: More JIT optimizations
+
+More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
+is now performed. This means when the JIT compiler detects that certain user
+code results in constants, the code can be simplified by the JIT.
+
+(Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
+
+The JIT avoids :term:`reference count`\ s where possible. This generally
+reduces the cost of most operations in Python.
+
+(Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
+Noam Cohen, Tomas Roun, and PuQing in :gh:`134584`.)
+
+.. rubric:: Better machine code generation
+
+The JIT compiler's machine code generator now produces better machine code
+for x86-64 and AArch64 macOS and Linux targets. In general, users should
+experience lower memory usage for generated machine code and more efficient
+machine code versus the old JIT.
+
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
+Additional optimizations for AArch64 contributed by Mark Shannon and
+Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
 Removed
@@ -1018,14 +1139,16 @@ New deprecations
 
 * ``__version__``
 
-  * The ``__version__`` attribute has been deprecated in these standard library
-    modules and will be removed in Python 3.20.
-    Use :py:data:`sys.version_info` instead.
+  * The ``__version__``, ``version`` and ``VERSION`` attributes have been
+    deprecated in these standard library modules and will be removed in
+    Python 3.20. Use :py:data:`sys.version_info` instead.
 
     - :mod:`argparse`
     - :mod:`csv`
+    - :mod:`ctypes`
     - :mod:`!ctypes.macholib`
     - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+    - :mod:`http.server`
     - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
@@ -1038,6 +1161,10 @@ New deprecations
     - :mod:`tabnanny`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
+    - :mod:`wsgiref.simple_server`
+    - :mod:`xml.etree.ElementTree`
+    - :mod:`!xml.sax.expatreader`
+    - :mod:`xml.sax.handler`
     - :mod:`zlib`
 
     (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
@@ -1047,6 +1174,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
@@ -1216,7 +1345,7 @@ Deprecated C APIs
 
 * :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
   :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
-  3.20. Instead, use :c:func:`PyUnicode_FromString()` and cache the result in
+  3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
   the module state, then call :c:func:`PyObject_CallMethod` or
   :c:func:`PyObject_GetAttr`.
   (Contributed by Victor Stinner in :gh:`141049`.)
@@ -1293,7 +1422,7 @@ that may require changes to your code.
   :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`137044`.)
 
-* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
+* :meth:`mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
 
 * A resource warning is now emitted for an unclosed
