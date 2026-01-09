@@ -1,0 +1,1 @@
+Fixed a heap buffer overflow in :func:`set_clear_internal` logic when a set is mutated re-entrantly during an operation.
