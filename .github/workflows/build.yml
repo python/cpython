@@ -144,22 +144,12 @@ jobs:
         run: make check-c-globals
 
   check-c-api-docs:
-    name: 'Check if all C APIs are documented'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    name: C API Docs
     needs: build-context
     if: >-
       needs.build-context.outputs.run-tests == 'true'
       || needs.build-context.outputs.run-docs == 'true'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Check for undocumented C APIs
-        run: python Tools/check-c-api-docs/main.py
+    uses: ./.github/workflows/reusable-check-c-api-docs.yml
 
   build-windows:
     name: >-
