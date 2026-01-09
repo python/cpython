@@ -1530,7 +1530,7 @@ class CaptureExceptionTests(unittest.TestCase):
 
     @support.skipUnless(
         support.Py_DEBUG,
-        "printing subinterpreter unraisable exceptions requires DEBUG mode",
+        "printing subinterpreter unraisable exceptions requires DEBUG build",
     )
     def test_capture_exception_unraisable_exception(self):
         formatter = lambda self: 1
