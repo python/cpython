@@ -234,6 +234,7 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     int oparg);
 
 void _PyJit_FinalizeTracing(PyThreadState *tstate);
+void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
 void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
 
