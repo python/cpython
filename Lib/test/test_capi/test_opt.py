@@ -400,6 +400,24 @@ class TestUops(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
+    def test_call_py_ex(self):
+        def testfunc(n):
+            def ex_py(*args, **kwargs):
+                return 1
+
+            for _ in range(n):
+                args = (1, 2, 3)
+                kwargs = {}
+                ex_py(*args, **kwargs)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_PY_FRAME_EX", uops)
+
     def test_branch_taken(self):
         def testfunc(n):
             for i in range(n):
@@ -2917,6 +2935,23 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_STORE_SUBSCR_DICT", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 1)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_to_bool_str(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                empty = "X"[:false]
+                if empty:
+                    return 1
+            return 0
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_STR", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_to_bool_always_true(self):

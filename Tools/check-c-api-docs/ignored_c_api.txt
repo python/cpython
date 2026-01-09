@@ -45,6 +45,19 @@ Py_LL
 Py_SAFE_DOWNCAST
 Py_ULL
 Py_VA_COPY
+PYLONG_BITS_IN_DIGIT
+PY_DWORD_MAX
+PY_FORMAT_SIZE_T
+PY_INT32_T
+PY_INT64_T
+PY_LITTLE_ENDIAN
+PY_LLONG_MAX
+PY_LLONG_MIN
+PY_LONG_LONG
+PY_SIZE_MAX
+PY_UINT32_T
+PY_UINT64_T
+PY_ULLONG_MAX
 # unicodeobject.h
 Py_UNICODE_SIZE
 # cpython/methodobject.h
@@ -88,3 +101,42 @@ PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
 PyUnstable_EXECUTABLE_KIND_SKIP
 # cpython/pylifecycle.h
 Py_FrozenMain
+# cpython/unicodeobject.h
+PyUnicode_IS_COMPACT
+PyUnicode_IS_COMPACT_ASCII
+# pythonrun.h
+PyErr_Display
+# cpython/objimpl.h
+PyObject_GET_WEAKREFS_LISTPTR
+# cpython/pythonrun.h
+PyOS_Readline
+# cpython/warnings.h
+PyErr_Warn
+# fileobject.h
+PY_STDIOTEXTMODE
+# structmember.h
+PY_WRITE_RESTRICTED
+# pythread.h
+PY_TIMEOUT_T
+PY_TIMEOUT_MAX
+# cpython/pyctype.h
+PY_CTF_ALNUM
+PY_CTF_ALPHA
+PY_CTF_DIGIT
+PY_CTF_LOWER
+PY_CTF_SPACE
+PY_CTF_UPPER
+PY_CTF_XDIGIT
+# cpython/code.h
+PY_DEF_EVENT
+PY_FOREACH_CODE_EVENT
+# cpython/funcobject.h
+PY_DEF_EVENT
+PY_FOREACH_FUNC_EVENT
+# cpython/monitoring.h
+PY_MONITORING_EVENT_BRANCH
+# cpython/dictobject.h
+PY_DEF_EVENT
+PY_FOREACH_DICT_EVENT
+# cpython/pystats.h
+PYSTATS_MAX_UOP_ID

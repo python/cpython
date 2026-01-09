@@ -1,0 +1,3 @@
+Fix :func:`sys.unraisablehook` when the hook raises an exception and changes
+:func:`sys.unraisablehook`: hold a strong reference to the old hook. Patch
+by Victor Stinner.

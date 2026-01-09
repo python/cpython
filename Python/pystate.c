@@ -1554,6 +1554,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     _tstate->jit_tracer_state.code_buffer = NULL;
+    _tstate->jit_tracer_state.opt_context = NULL;
 #endif
     tstate->delete_later = NULL;
 
@@ -1873,6 +1874,10 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     if (_tstate->jit_tracer_state.code_buffer != NULL) {
         _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
         _tstate->jit_tracer_state.code_buffer = NULL;
+    }
+    if (_tstate->jit_tracer_state.opt_context != NULL) {
+        _PyObject_VirtualFree(_tstate->jit_tracer_state.opt_context, sizeof(JitOptContext));
+        _tstate->jit_tracer_state.opt_context = NULL;
     }
 #endif
 
@@ -2832,7 +2837,7 @@ int
 PyGILState_Check(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    if (!runtime->gilstate.check_enabled) {
+    if (!_Py_atomic_load_int_relaxed(&runtime->gilstate.check_enabled)) {
         return 1;
     }
 

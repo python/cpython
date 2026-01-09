@@ -97,7 +97,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_NOS_COMPACT_ASCII] = HAS_EXIT_FLAG,
     [_GUARD_NOS_UNICODE] = HAS_EXIT_FLAG,
     [_GUARD_TOS_UNICODE] = HAS_EXIT_FLAG,
-    [_TO_BOOL_STR] = HAS_ESCAPES_FLAG,
+    [_TO_BOOL_STR] = 0,
     [_REPLACE_WITH_TRUE] = 0,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_INT] = HAS_EXIT_FLAG,
@@ -302,6 +302,10 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_IS_NOT_PY_CALLABLE_KW] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_KW_NON_PY] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_CALLARGS_A_TUPLE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_CHECK_IS_PY_CALLABLE_EX] = HAS_EXIT_FLAG,
+    [_PY_FRAME_EX] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG,
+    [_CHECK_IS_NOT_PY_CALLABLE_EX] = HAS_EXIT_FLAG,
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG,
     [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
@@ -930,11 +934,11 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         },
     },
     [_TO_BOOL_STR] = {
-        .best = { 1, 1, 1, 1 },
+        .best = { 0, 1, 2, 2 },
         .entries = {
-            { -1, -1, -1 },
-            { 1, 1, _TO_BOOL_STR_r11 },
-            { -1, -1, -1 },
+            { 2, 0, _TO_BOOL_STR_r02 },
+            { 2, 1, _TO_BOOL_STR_r12 },
+            { 3, 2, _TO_BOOL_STR_r23 },
             { -1, -1, -1 },
         },
     },
@@ -2774,6 +2778,42 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 3, 3, _MAKE_CALLARGS_A_TUPLE_r33 },
         },
     },
+    [_CHECK_IS_PY_CALLABLE_EX] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _CHECK_IS_PY_CALLABLE_EX_r03 },
+            { 3, 1, _CHECK_IS_PY_CALLABLE_EX_r13 },
+            { 3, 2, _CHECK_IS_PY_CALLABLE_EX_r23 },
+            { 3, 3, _CHECK_IS_PY_CALLABLE_EX_r33 },
+        },
+    },
+    [_PY_FRAME_EX] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 1, _PY_FRAME_EX_r31 },
+        },
+    },
+    [_CHECK_IS_NOT_PY_CALLABLE_EX] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _CHECK_IS_NOT_PY_CALLABLE_EX_r03 },
+            { 3, 1, _CHECK_IS_NOT_PY_CALLABLE_EX_r13 },
+            { 3, 2, _CHECK_IS_NOT_PY_CALLABLE_EX_r23 },
+            { 3, 3, _CHECK_IS_NOT_PY_CALLABLE_EX_r33 },
+        },
+    },
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 3, _CALL_FUNCTION_EX_NON_PY_GENERAL_r31 },
+        },
+    },
     [_MAKE_FUNCTION] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -3460,7 +3500,9 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_UNICODE_r11] = _GUARD_TOS_UNICODE,
     [_GUARD_TOS_UNICODE_r22] = _GUARD_TOS_UNICODE,
     [_GUARD_TOS_UNICODE_r33] = _GUARD_TOS_UNICODE,
-    [_TO_BOOL_STR_r11] = _TO_BOOL_STR,
+    [_TO_BOOL_STR_r02] = _TO_BOOL_STR,
+    [_TO_BOOL_STR_r12] = _TO_BOOL_STR,
+    [_TO_BOOL_STR_r23] = _TO_BOOL_STR,
     [_REPLACE_WITH_TRUE_r02] = _REPLACE_WITH_TRUE,
     [_REPLACE_WITH_TRUE_r12] = _REPLACE_WITH_TRUE,
     [_REPLACE_WITH_TRUE_r23] = _REPLACE_WITH_TRUE,
@@ -3842,6 +3884,16 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_CHECK_IS_NOT_PY_CALLABLE_KW_r11] = _CHECK_IS_NOT_PY_CALLABLE_KW,
     [_CALL_KW_NON_PY_r11] = _CALL_KW_NON_PY,
     [_MAKE_CALLARGS_A_TUPLE_r33] = _MAKE_CALLARGS_A_TUPLE,
+    [_CHECK_IS_PY_CALLABLE_EX_r03] = _CHECK_IS_PY_CALLABLE_EX,
+    [_CHECK_IS_PY_CALLABLE_EX_r13] = _CHECK_IS_PY_CALLABLE_EX,
+    [_CHECK_IS_PY_CALLABLE_EX_r23] = _CHECK_IS_PY_CALLABLE_EX,
+    [_CHECK_IS_PY_CALLABLE_EX_r33] = _CHECK_IS_PY_CALLABLE_EX,
+    [_PY_FRAME_EX_r31] = _PY_FRAME_EX,
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r03] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r13] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r23] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r33] = _CHECK_IS_NOT_PY_CALLABLE_EX,
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL_r31] = _CALL_FUNCTION_EX_NON_PY_GENERAL,
     [_MAKE_FUNCTION_r11] = _MAKE_FUNCTION,
     [_SET_FUNCTION_ATTRIBUTE_r01] = _SET_FUNCTION_ATTRIBUTE,
     [_SET_FUNCTION_ATTRIBUTE_r11] = _SET_FUNCTION_ATTRIBUTE,
@@ -4094,6 +4146,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01",
     [_CALL_BUILTIN_O] = "_CALL_BUILTIN_O",
     [_CALL_BUILTIN_O_r03] = "_CALL_BUILTIN_O_r03",
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL] = "_CALL_FUNCTION_EX_NON_PY_GENERAL",
+    [_CALL_FUNCTION_EX_NON_PY_GENERAL_r31] = "_CALL_FUNCTION_EX_NON_PY_GENERAL_r31",
     [_CALL_INTRINSIC_1] = "_CALL_INTRINSIC_1",
     [_CALL_INTRINSIC_1_r11] = "_CALL_INTRINSIC_1_r11",
     [_CALL_INTRINSIC_2] = "_CALL_INTRINSIC_2",
@@ -4159,8 +4213,18 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CHECK_FUNCTION_VERSION_KW_r11] = "_CHECK_FUNCTION_VERSION_KW_r11",
     [_CHECK_IS_NOT_PY_CALLABLE] = "_CHECK_IS_NOT_PY_CALLABLE",
     [_CHECK_IS_NOT_PY_CALLABLE_r00] = "_CHECK_IS_NOT_PY_CALLABLE_r00",
+    [_CHECK_IS_NOT_PY_CALLABLE_EX] = "_CHECK_IS_NOT_PY_CALLABLE_EX",
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r03] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r03",
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r13] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r13",
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r23] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r23",
+    [_CHECK_IS_NOT_PY_CALLABLE_EX_r33] = "_CHECK_IS_NOT_PY_CALLABLE_EX_r33",
     [_CHECK_IS_NOT_PY_CALLABLE_KW] = "_CHECK_IS_NOT_PY_CALLABLE_KW",
     [_CHECK_IS_NOT_PY_CALLABLE_KW_r11] = "_CHECK_IS_NOT_PY_CALLABLE_KW_r11",
+    [_CHECK_IS_PY_CALLABLE_EX] = "_CHECK_IS_PY_CALLABLE_EX",
+    [_CHECK_IS_PY_CALLABLE_EX_r03] = "_CHECK_IS_PY_CALLABLE_EX_r03",
+    [_CHECK_IS_PY_CALLABLE_EX_r13] = "_CHECK_IS_PY_CALLABLE_EX_r13",
+    [_CHECK_IS_PY_CALLABLE_EX_r23] = "_CHECK_IS_PY_CALLABLE_EX_r23",
+    [_CHECK_IS_PY_CALLABLE_EX_r33] = "_CHECK_IS_PY_CALLABLE_EX_r33",
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r01] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r01",
     [_CHECK_MANAGED_OBJECT_HAS_VALUES_r11] = "_CHECK_MANAGED_OBJECT_HAS_VALUES_r11",
@@ -4869,6 +4933,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_PUSH_NULL_r23] = "_PUSH_NULL_r23",
     [_PUSH_NULL_CONDITIONAL] = "_PUSH_NULL_CONDITIONAL",
     [_PUSH_NULL_CONDITIONAL_r00] = "_PUSH_NULL_CONDITIONAL_r00",
+    [_PY_FRAME_EX] = "_PY_FRAME_EX",
+    [_PY_FRAME_EX_r31] = "_PY_FRAME_EX_r31",
     [_PY_FRAME_GENERAL] = "_PY_FRAME_GENERAL",
     [_PY_FRAME_GENERAL_r01] = "_PY_FRAME_GENERAL_r01",
     [_PY_FRAME_KW] = "_PY_FRAME_KW",
@@ -5035,7 +5101,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_TO_BOOL_NONE_r22] = "_TO_BOOL_NONE_r22",
     [_TO_BOOL_NONE_r33] = "_TO_BOOL_NONE_r33",
     [_TO_BOOL_STR] = "_TO_BOOL_STR",
-    [_TO_BOOL_STR_r11] = "_TO_BOOL_STR_r11",
+    [_TO_BOOL_STR_r02] = "_TO_BOOL_STR_r02",
+    [_TO_BOOL_STR_r12] = "_TO_BOOL_STR_r12",
+    [_TO_BOOL_STR_r23] = "_TO_BOOL_STR_r23",
     [_UNARY_INVERT] = "_UNARY_INVERT",
     [_UNARY_INVERT_r11] = "_UNARY_INVERT_r11",
     [_UNARY_NEGATIVE] = "_UNARY_NEGATIVE",
@@ -5597,6 +5665,14 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 3 + oparg;
         case _MAKE_CALLARGS_A_TUPLE:
             return 0;
+        case _CHECK_IS_PY_CALLABLE_EX:
+            return 0;
+        case _PY_FRAME_EX:
+            return 4;
+        case _CHECK_IS_NOT_PY_CALLABLE_EX:
+            return 0;
+        case _CALL_FUNCTION_EX_NON_PY_GENERAL:
+            return 4;
         case _MAKE_FUNCTION:
             return 1;
         case _SET_FUNCTION_ATTRIBUTE:
