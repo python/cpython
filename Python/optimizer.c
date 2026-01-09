@@ -1025,6 +1025,13 @@ _PyJit_TryInitializeTracing(
     if (oparg > 0xFFFF) {
         return 0;
     }
+    if (_tstate->jit_tracer_state.code_buffer == NULL) {
+        _tstate->jit_tracer_state.code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
+        if (_tstate->jit_tracer_state.code_buffer == NULL) {
+            // Don't error, just go to next instruction.
+            return 0;
+        }
+    }
     PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
     if (func == NULL) {
         return 0;

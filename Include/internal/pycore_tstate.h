@@ -56,8 +56,8 @@ typedef struct _PyJitTracerState {
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
     _PyJitTracerTranslatorState translator_state;
-    JitOptContext opt_context;
-    _PyUOpInstruction code_buffer[UOP_MAX_TRACE_LENGTH];
+    JitOptContext *opt_context;
+    _PyUOpInstruction *code_buffer;
 } _PyJitTracerState;
 
 #endif

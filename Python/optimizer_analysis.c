@@ -345,7 +345,15 @@ optimize_uops(
     assert(!PyErr_Occurred());
     PyFunctionObject *func = tstate->jit_tracer_state.initial_state.func;
 
-    JitOptContext *ctx = &tstate->jit_tracer_state.opt_context;
+    JitOptContext *ctx = tstate->jit_tracer_state.opt_context;
+    if (ctx == NULL) {
+        ctx = (JitOptContext *)_PyObject_VirtualAlloc(sizeof(JitOptContext));
+        if (ctx == NULL) {
+            // Don't error, just bail.
+            return 0;
+        }
+        tstate->jit_tracer_state.opt_context = ctx;
+    }
     uint32_t opcode = UINT16_MAX;
 
     // Make sure that watchers are set up
