@@ -2019,7 +2019,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    The temporary script file is created with restrictive permissions (typically
    ``0o600``). The target process must be able to read this file.
 
-   Callers should adjust permissions before calling, e.g.::
+   Callers should adjust permissions before calling, for example::
 
       import os
       import tempfile
