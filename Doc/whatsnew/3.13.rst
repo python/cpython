@@ -2339,7 +2339,7 @@ Limited C API Changes
   * :c:func:`PySys_AuditTuple`
   * :c:func:`PyType_GetModuleByDef`
 
-  (Contributed by Victor Stinner in :gh:`85283`, :gh:`85283`, and :gh:`116936`.)
+  (Contributed by Victor Stinner in :gh:`85283` and :gh:`116936`.)
 
 * Python built with :option:`--with-trace-refs` (tracing references)
   now supports the :ref:`Limited API <limited-c-api>`.
