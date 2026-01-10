@@ -822,20 +822,6 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             results = executor.map(exec, [code] * 5)
             self.assertListEqual(list(results), [None] * 5)
 
-    def test_Struct_object_mutation_via_dunders(self):
-        S = struct.Struct('?I')
-        buf = array.array('b', b' '*100)
-
-        class Evil():
-            def __bool__(self):
-                # This rebuilds format codes during S.pack().
-                S.__init__('I')
-                return True
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(RuntimeError, S.pack, Evil(), 1)
-            self.assertRaises(RuntimeError, S.pack_into, buf, 0, Evil(), 1)
-
     def test_operations_on_half_initialized_Struct(self):
         with self.assertWarns(DeprecationWarning):
             S = struct.Struct.__new__(struct.Struct)

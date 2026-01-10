@@ -70,7 +70,6 @@ typedef struct {
     formatcode *s_codes;
     PyObject *s_format;
     PyObject *weakreflist; /* List of weak references */
-    PyMutex mutex; /* to prevent mutation during packing */
     bool ready;
 } PyStructObject;
 
@@ -1781,7 +1780,6 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;
-        s->mutex = (PyMutex){0};
         s->ready = false;
     }
     return self;
@@ -1831,11 +1829,6 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 
     Py_SETREF(self->s_format, format);
 
-    if (PyMutex_IsLocked(&self->mutex)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Call Struct.__init__() in struct.pack()");
-        return -1;
-    }
     if (prepare_s(self)) {
         return -1;
     }
@@ -2174,7 +2167,7 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
  * argument for where to start processing the arguments for packing, and a
  * character buffer for writing the packed string.  The caller must insure
  * that the buffer may contain the required length for packing the arguments.
- * 0 is returned on success, -1 is returned if there is an error.
+ * 0 is returned on success, 1 is returned if there is an error.
  *
  */
 static int
@@ -2298,13 +2291,10 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
-    PyMutex_Lock(&soself->mutex);
     if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
-        PyMutex_Unlock(&soself->mutex);
         PyBytesWriter_Discard(writer);
         return NULL;
     }
-    PyMutex_Unlock(&soself->mutex);
 
     return PyBytesWriter_FinishWithSize(writer, soself->s_size);
 }
@@ -2406,13 +2396,11 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     /* Call the guts */
-    PyMutex_Lock(&soself->mutex);
     if (s_pack_internal(soself, args, 2, (char*)buffer.buf + offset, state) != 0) {
-        PyMutex_Unlock(&soself->mutex);
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    PyMutex_Unlock(&soself->mutex);
+
     PyBuffer_Release(&buffer);
     Py_RETURN_NONE;
 }
