@@ -70,6 +70,7 @@ typedef struct {
     formatcode *s_codes;
     PyObject *s_format;
     PyObject *weakreflist; /* List of weak references */
+    PyMutex mutex; /* to prevent mutation during packing */
 } PyStructObject;
 
 #define PyStructObject_CAST(op)     ((PyStructObject *)(op))
@@ -1773,6 +1774,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;
+        s->mutex = (PyMutex){0};
     }
     return self;
 }
@@ -1816,6 +1818,11 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 
     Py_SETREF(self->s_format, format);
 
+    if (PyMutex_IsLocked(&self->mutex)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Call Struct.__init__() in struct.pack()");
+        return -1;
+    }
     ret = prepare_s(self);
     return ret;
 }
@@ -2146,24 +2153,14 @@ static int
 s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 char* buf, _structmodulestate *state)
 {
-    formatcode *code, *frozen_codes;
+    formatcode *code;
     /* XXX(nnorwitz): why does i need to be a local?  can we use
        the offset parameter or do we need the wider width? */
-    Py_ssize_t i, frozen_size = 1;
+    Py_ssize_t i;
 
-    /* Take copy of soself->s_codes, as dunder methods of arguments (e.g.
-     __bool__ of __float__) could modify the struct object during packing. */
-    for (code = soself->s_codes; code->fmtdef != NULL; code++) {
-        frozen_size++;
-    }
-    frozen_codes = PyMem_Malloc(frozen_size * sizeof(formatcode));
-    if (!frozen_codes) {
-        goto err;
-    }
-    memcpy(frozen_codes, soself->s_codes, frozen_size * sizeof(formatcode));
     memset(buf, '\0', soself->s_size);
     i = offset;
-    for (code = frozen_codes; code->fmtdef != NULL; code++) {
+    for (code = soself->s_codes; code->fmtdef != NULL; code++) {
         const formatdef *e = code->fmtdef;
         char *res = buf + code->offset;
         Py_ssize_t j = code->repeat;
@@ -2177,7 +2174,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(state->StructError,
                                     "argument for 's' must be a bytes object");
-                    goto err;
+                    return -1;
                 }
                 if (isstring) {
                     n = PyBytes_GET_SIZE(v);
@@ -2199,7 +2196,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(state->StructError,
                                     "argument for 'p' must be a bytes object");
-                    goto err;
+                    return -1;
                 }
                 if (isstring) {
                     n = PyBytes_GET_SIZE(v);
@@ -2225,7 +2222,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
                         PyErr_SetString(state->StructError,
                                         "int too large to convert");
-                    goto err;
+                    return -1;
                 }
             }
             res += code->size;
@@ -2233,12 +2230,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
     }
 
     /* Success */
-    PyMem_Free(frozen_codes);
     return 0;
-err:
-    /* Failure */
-    PyMem_Free(frozen_codes);
-    return -1;
 }
 
 
@@ -2272,17 +2264,22 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
     char *buf = PyBytesWriter_GetData(writer);
-    /* Take copy of soself->s_size, as dunder methods of arguments (e.g.
-     __bool__ of __float__) could modify the struct object during packing. */
-    Py_ssize_t frozen_size = soself->s_size;
 
     /* Call the guts */
-    if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
+    if (PyMutex_IsLocked(&soself->mutex)) {
+        PyErr_SetString(PyExc_RuntimeError, "XXX");
         PyBytesWriter_Discard(writer);
         return NULL;
     }
+    PyMutex_Lock(&soself->mutex);
+    if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
+        PyMutex_Unlock(&soself->mutex);
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+    PyMutex_Unlock(&soself->mutex);
 
-    return PyBytesWriter_FinishWithSize(writer, frozen_size);
+    return PyBytesWriter_FinishWithSize(writer, soself->s_size);
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,
@@ -2378,11 +2375,13 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     /* Call the guts */
+    PyMutex_Lock(&soself->mutex);
     if (s_pack_internal(soself, args, 2, (char*)buffer.buf + offset, state) != 0) {
+        PyMutex_Unlock(&soself->mutex);
         PyBuffer_Release(&buffer);
         return NULL;
     }
-
+    PyMutex_Unlock(&soself->mutex);
     PyBuffer_Release(&buffer);
     Py_RETURN_NONE;
 }

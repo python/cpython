@@ -1,4 +1,4 @@
 Fix use-after-free in :meth:`struct.Struct.pack` when the
 :class:`struct.Struct` object is mutated by dunder methods (like
-:meth:`object.__bool__`) during packing of arguments.  Patch by Sergey B
-Kirpichev.
+:meth:`object.__bool__`) during packing of arguments.  Now this trigger
+:exc:`RuntimeError`.  Patch by Sergey B Kirpichev.

@@ -579,7 +579,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
-        totalsize = support.calcobjsize('2n3P')
+        totalsize = support.calcobjsize('2n3PB')
         # The size taken up by the 'formatcode' dynamic array
         totalsize += struct.calcsize('P3n0P') * (number_of_codes + 1)
         support.check_sizeof(self, struct.Struct(format_str), totalsize)
@@ -818,6 +818,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_Struct_object_mutation_via_dunders(self):
         S = struct.Struct('?I')
+        buf = array.array('b', b' '*100)
 
         class Evil():
             def __bool__(self):
@@ -825,7 +826,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 S.__init__('I')
                 return True
 
-        self.assertEqual(S.pack(Evil(), 1), struct.Struct('?I').pack(True, 1))
+        self.assertRaises(RuntimeError, S.pack, Evil(), 1)
+        self.assertRaises(RuntimeError, S.pack_into, buf, 0, Evil(), 1)
 
 
 class UnpackIteratorTest(unittest.TestCase):
