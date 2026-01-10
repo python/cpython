@@ -1475,7 +1475,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
             tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
         }
     }
-    else {
+    else if (tracer->initial_state.executor->vm_data.valid) {
         // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
         // to be valid to access.
         if (err <= 0) {

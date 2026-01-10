@@ -139,6 +139,19 @@ class TestExecutorInvalidation(unittest.TestCase):
         exe = get_first_executor(f)
         self.assertIsNone(exe)
 
+    def test_prev_executor_freed_while_tracing(self):
+        def f(start, end, way):
+            for x in range(start, end):
+                # For the first trace, create a bad branch on purpose to trace into.
+                # A side exit will form from here on the second trace.
+                y = way + way
+                if x >= TIER2_THRESHOLD:
+                    # Invalidate the first trace while tracing the second.
+                    _testinternalcapi.invalidate_executors(f.__code__)
+                    _testinternalcapi.clear_executor_deletion_list()
+        f(0, TIER2_THRESHOLD, 1)
+        f(1, TIER2_THRESHOLD + 1, 1.0)
+
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")

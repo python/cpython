@@ -1,0 +1,2 @@
+Fix a reference counting issue in the JIT tracer where the current executor
+could be prematurely freed during tracing.
