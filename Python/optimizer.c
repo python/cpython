@@ -1980,7 +1980,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
     fprintf(out, "]\n\n");
 
     /* Write all the outgoing edges */
-    
+
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
