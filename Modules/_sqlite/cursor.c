@@ -579,18 +579,18 @@ stmt_step(sqlite3_stmt *statement)
  *
  * The argument must be already be an adapted value.
  *
+ * The caller is responsible for calling pysqlite_check_connection()
+ * to ensure that the connection is still valid after the call.
+ *
  * Return an sqlite3 error code.
  */
 static int
-bind_param(pysqlite_state *state, pysqlite_Connection *conn,
-           pysqlite_Statement *self, int pos, PyObject *parameter)
+bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos, PyObject *parameter)
 {
     int rc = SQLITE_OK;
     const char *string;
     Py_ssize_t buflen;
     parameter_type paramtype;
-    // Indicate whether 'conn' is safe against conversion's side effects.
-    bool safe = false;
 
     if (parameter == Py_None) {
         rc = sqlite3_bind_null(self->st, pos);
@@ -599,13 +599,10 @@ bind_param(pysqlite_state *state, pysqlite_Connection *conn,
 
     if (PyLong_CheckExact(parameter)) {
         paramtype = TYPE_LONG;
-        safe = true;
     } else if (PyFloat_CheckExact(parameter)) {
         paramtype = TYPE_FLOAT;
-        safe = true;
     } else if (PyUnicode_CheckExact(parameter)) {
         paramtype = TYPE_UNICODE;
-        safe = true;
     } else if (PyLong_Check(parameter)) {
         paramtype = TYPE_LONG;
     } else if (PyFloat_Check(parameter)) {
@@ -616,7 +613,6 @@ bind_param(pysqlite_state *state, pysqlite_Connection *conn,
         paramtype = TYPE_BUFFER;
     } else {
         paramtype = TYPE_UNKNOWN;
-        safe = true;  // there is no conversion
     }
 
     switch (paramtype) {
@@ -669,7 +665,7 @@ bind_param(pysqlite_state *state, pysqlite_Connection *conn,
     }
 
 final:
-    return (safe || pysqlite_check_connection(conn)) ? rc : SQLITE_ERROR;
+    return rc;
 }
 
 /* returns 0 if the object is one of Python's internal ones that don't need to be adapted */
@@ -781,7 +777,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
                 }
             }
 
-            rc = bind_param(state, conn, self, i + 1, adapted);
+            rc = bind_param(state, self, i + 1, adapted);
             Py_DECREF(adapted);
             if (!pysqlite_check_connection(conn)) {
                 return -1;
@@ -844,7 +840,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
                 }
             }
 
-            rc = bind_param(state, conn, self, i, adapted);
+            rc = bind_param(state, self, i, adapted);
             Py_DECREF(adapted);
             if (!pysqlite_check_connection(conn)) {
                 return -1;
