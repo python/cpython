@@ -138,6 +138,12 @@ _PyOptimizer_Optimize(
         // return immediately without optimization.
         return 0;
     }
+    _PyExecutorObject *prev_executor = _tstate->jit_tracer_state->initial_state.executor;
+    if (prev_executor != NULL && !prev_executor->vm_data.valid) {
+        // gh-143604: If we are a side exit executor and the original executor is no
+        // longer valid, don't compile to prevent a reference leak.
+        return 0;
+    }
     assert(!interp->compiling);
     assert(_tstate->jit_tracer_state->initial_state.stack_depth >= 0);
 #ifndef Py_GIL_DISABLED
@@ -1390,7 +1396,7 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
         lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
     }
     if (lltrace >= 2) {
-        printf("Optimized trace (length %d):\n", length);
+        printf("Optimized trace (length %d) %d:\n", length, Py_SIZE((PyObject *)executor));
         for (int i = 0; i < length; i++) {
             printf("%4d OPTIMIZED: ", i);
             _PyUOpPrint(&executor->trace[i]);
