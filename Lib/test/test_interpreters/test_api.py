@@ -1711,7 +1711,7 @@ class CaptureExceptionTests(unittest.TestCase):
         formatter = lambda self: 1
         with support.catch_unraisable_exception() as cm:
             captured = self.capture_with_formatter(ValueError(), formatter)
-            self.assertNotHasAttr(captured, "errdisplay")
+            self.assertFalse(hasattr(captured, "errdisplay"))
             self.assertEqual(cm.unraisable.exc_type, TypeError)
             self.assertEqual(str(cm.unraisable.exc_value),
                              "can only join an iterable")
