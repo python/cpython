@@ -890,7 +890,8 @@ class Lookup:
         return itertools.chain(infos, eggs)
 
 
-# Translation table for Prepared.normalize: lowercase and replace - . with _
+# Translation table for Prepared.normalize: lowercase and 
+# replace "-" (hyphen) and "." (dot) with "_" (underscore).
 _normalize_table = str.maketrans(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ-.",
     "abcdefghijklmnopqrstuvwxyz__",
