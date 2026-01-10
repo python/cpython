@@ -1396,7 +1396,7 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
         lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
     }
     if (lltrace >= 2) {
-        printf("Optimized trace (length %d) %d:\n", length, Py_SIZE((PyObject *)executor));
+        printf("Optimized trace (length %d):\n", length);
         for (int i = 0; i < length; i++) {
             printf("%4d OPTIMIZED: ", i);
             _PyUOpPrint(&executor->trace[i]);
