@@ -2013,11 +2013,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This event is raised in the remote process, not the one
       that called :func:`sys.remote_exec`.
 
-   .. availability:: Unix, Windows.
-   .. versionadded:: 3.14
-
    The temporary script file is created with restrictive permissions (typically
    ``0o600``). The target process must be able to read this file.
+
+   .. availability:: Unix, Windows.
+   .. versionadded:: 3.14
 
    Callers should adjust permissions before calling, for example::
 
