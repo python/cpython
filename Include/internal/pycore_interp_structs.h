@@ -398,6 +398,21 @@ typedef struct _rare_events {
     uint8_t func_modification;
 } _rare_events;
 
+// Optimization configuration for the interpreter.
+// This groups all thresholds and optimization flags for both JIT and interpreter.
+typedef struct _PyOptimizationConfig {
+    // Interpreter optimization thresholds
+    uint16_t jump_backward_initial_value;
+    uint16_t jump_backward_initial_backoff;
+
+    // JIT optimization thresholds
+    uint16_t side_exit_initial_value;
+    uint16_t side_exit_initial_backoff;
+
+    // Optimization flags
+    bool specialization_enabled;
+} _PyOptimizationConfig;
+
 struct
 Bigint {
     struct Bigint *next;

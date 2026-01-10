@@ -62,21 +62,6 @@ typedef struct _PyJitTracerState {
 
 #endif
 
-// Optimization configuration for the interpreter.
-// This groups all thresholds and optimization flags for both JIT and interpreter.
-typedef struct _PyOptimizationConfig {
-    // Interpreter optimization thresholds
-    uint16_t jump_backward_initial_value;
-    uint16_t jump_backward_initial_backoff;
-
-    // JIT optimization thresholds
-    uint16_t side_exit_initial_value;
-    uint16_t side_exit_initial_backoff;
-
-    // Optimization flags
-    bool specialization_enabled;
-} _PyOptimizationConfig;
-
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
 // are intended to be private. The _PyThreadStateImpl fields not exposed.

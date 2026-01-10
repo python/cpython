@@ -12,7 +12,7 @@ extern "C" {
 #include <assert.h>
 #include <stdbool.h>
 #include "pycore_structs.h"       // _Py_BackoffCounter
-#include "pycore_tstate.h"        // _PyOptimizationConfig
+#include "pycore_interp_structs.h" // _PyOptimizationConfig
 
 /* 16-bit countdown counters using exponential backoff.
 
