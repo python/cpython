@@ -70,7 +70,6 @@ typedef struct {
     formatcode *s_codes;
     PyObject *s_format;
     PyObject *weakreflist; /* List of weak references */
-    bool ready;
 } PyStructObject;
 
 #define PyStructObject_CAST(op)     ((PyStructObject *)(op))
@@ -1699,8 +1698,6 @@ prepare_s(PyStructObject *self)
         return -1;
     }
 
-    self->s_size = size;
-    self->s_len = len;
     codes = PyMem_Malloc((ncodes + 1) * sizeof(formatcode));
     if (codes == NULL) {
         PyErr_NoMemory();
@@ -1710,6 +1707,8 @@ prepare_s(PyStructObject *self)
     if (self->s_codes != NULL)
         PyMem_Free(self->s_codes);
     self->s_codes = codes;
+    self->s_size = size;
+    self->s_len = len;
 
     s = fmt;
     size = 0;
@@ -1774,7 +1773,6 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;
-        s->ready = false;
     }
     return self;
 }
@@ -1819,7 +1817,6 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
     if (prepare_s(self)) {
         return -1;
     }
-    self->ready = true;
     return 0;
 }
 
@@ -1900,6 +1897,14 @@ fail:
     return NULL;
 }
 
+#define ENSURE_STRUCT_IS_READY(self)                             \
+    do {                                                         \
+        if (!(self)->s_codes) {                                  \
+            PyErr_SetString(PyExc_RuntimeError,                  \
+                            "Struct object is not initialized"); \
+            return NULL;                                         \
+        }                                                        \
+    } while (0);
 
 /*[clinic input]
 Struct.unpack
@@ -1920,10 +1925,7 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    if (!self->ready) {
-        PyErr_SetString(PyExc_RuntimeError, "Call unpack on non-initialized Struct()");
-        return NULL;
-    }
+    ENSURE_STRUCT_IS_READY(self);
     assert(self->s_codes != NULL);
     if (buffer->len != self->s_size) {
         PyErr_Format(state->StructError,
@@ -1956,10 +1958,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
 /*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    if (!self->ready) {
-        PyErr_SetString(PyExc_RuntimeError, "Call unpack_from on non-initialized Struct()");
-        return NULL;
-    }
+    ENSURE_STRUCT_IS_READY(self);
     assert(self->s_codes != NULL);
 
     if (offset < 0) {
@@ -2112,10 +2111,7 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     unpackiterobject *iter;
-    if (!self->ready) {
-        PyErr_SetString(PyExc_RuntimeError, "Call iter_unpack on non-initialized Struct()");
-        return NULL;
-    }
+    ENSURE_STRUCT_IS_READY(self);
 
     assert(self->s_codes != NULL);
 
@@ -2257,10 +2253,7 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments. */
     soself = PyStructObject_CAST(self);
-    if (!soself->ready) {
-        PyErr_SetString(PyExc_RuntimeError, "Call pack on non-initialized Struct()");
-        return NULL;
-    }
+    ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
@@ -2304,10 +2297,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = PyStructObject_CAST(self);
-    if (!soself->ready) {
-        PyErr_SetString(PyExc_RuntimeError, "Call pack_into on non-initialized Struct()");
-        return NULL;
-    }
+    ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))
