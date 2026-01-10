@@ -628,7 +628,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         }
     }
     if (u->u_ste->ste_has_conditional_annotations) {
-        /* Cook up an implicit __conditional__annotations__ cell */
+        /* Cook up an implicit __conditional_annotations__ cell */
         Py_ssize_t res;
         assert(u->u_scope_type == COMPILE_SCOPE_CLASS || u->u_scope_type == COMPILE_SCOPE_MODULE);
         res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__conditional_annotations__));
