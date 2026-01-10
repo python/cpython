@@ -1093,12 +1093,14 @@ Notes:
    still ``0``.
 
 (4)
-   The slice of *s* from *i* to *j* is defined as the sequence of items with index
-   *k* such that ``i <= k < j``.  If *i* or *j* is greater than ``len(s)``, use
-   ``len(s)``.  If *i* or *j* is less than ``-len(s)``, use ``0``.
-   If *i* is omitted or ``None``, use ``0``.  If *j* is omitted or
-   ``None``, use ``len(s)``.  If *i* is greater than or equal to *j*, the slice is
-   empty.
+   The slice of *s* from *i* to *j* is defined as the sequence of items with
+   index *k* such that ``i <= k < j``.
+
+   * If *i* is omitted or ``None``, use ``0``.
+   * If *j* is omitted or ``None``, use ``len(s)``.
+   * If *i* or *j* is less than ``-len(s)``, use ``0``.
+   * If *i* or *j* is greater than ``len(s)``, use ``len(s)``.
+   * If *i* is greater than or equal to *j*, the slice is empty.
 
 (5)
    The slice of *s* from *i* to *j* with step *k* is defined as the sequence of
