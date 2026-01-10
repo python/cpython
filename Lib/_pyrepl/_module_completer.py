@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import os
 import pkgutil
+import re
 import sys
 import token
 import tokenize
@@ -32,9 +33,11 @@ HARDCODED_SUBMODULES = {
 AUTO_IMPORT_BLACKLIST = {
     # Standard library modules/submodules that have import side effects
     # and must not be automatically imported to complete attributes
-    "antigravity",
-    "this",
-    "idlelib.idle",
+    re.compile(r"antigravity"),
+    re.compile(r"this"),
+    re.compile(r"idlelib\..+"),
+    re.compile(r"test\..+"),
+    re.compile(r".+\.__main__"),
 }
 
 
@@ -259,7 +262,7 @@ class ModuleCompleter:
         return self._global_cache
 
     def _maybe_import_module(self, fqname: str) -> ModuleType | None:
-        if fqname in AUTO_IMPORT_BLACKLIST or fqname.endswith(".__main__"):
+        if any(pattern.fullmatch(fqname) for pattern in AUTO_IMPORT_BLACKLIST):
             # Special-cased modules with known import side-effects
             return None
         root = fqname.split(".")[0]
