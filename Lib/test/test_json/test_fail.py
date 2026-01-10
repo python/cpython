@@ -243,14 +243,14 @@ class TestFail:
     def test_reentrant_jsondecodeerror_does_not_crash(self):
         # gh-143544
 
-        class Trigger:
+        class Trigger(ValueError):
             def __call__(self, *args, **kwargs):
                 # Remove JSONDecodeError during construction to trigger re-entrancy
                 del json.JSONDecodeError
                 del json.decoder.JSONDecodeError
-                return ValueError("boom")
+                raise self
 
-        hook = Trigger()
+        hook = Trigger("boom")
 
         orig_json_error = json.JSONDecodeError
         orig_decoder_error = json.decoder.JSONDecodeError
@@ -269,8 +269,8 @@ class TestFail:
             del hook
 
             support.gc_collect()
-            
-            with self.assertRaises(TypeError):
+
+            with self.assertRaises(ValueError):
                 json.loads('"\\uZZZZ"')
         finally:
             json.JSONDecodeError = orig_json_error
