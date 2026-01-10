@@ -874,7 +874,7 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             self.cu.execute("select name from test where name=?", L())
 
-    def test_execute_use_after_close_with_bind_parameters(self):
+    def test_execute_and_concurrent_close_in___getitem__(self):
         # Prevent SIGSEGV when closing the connection while binding parameters.
         #
         # Internally, the connection's state is checked after bind_parameters().
@@ -1071,7 +1071,7 @@ class CursorTests(unittest.TestCase):
             self.cu.executemany("insert into test(income) values (?)", 42)
 
     @subTests("params_factory", (ParamsCxCloseInIterMany, ParamsCxCloseInNext))
-    def test_executemany_use_after_close(self, params_factory):
+    def test_executemany_and_concurrent_close_in___iter__(self, params_factory):
         # Prevent SIGSEGV with iterable of parameters closing the connection.
         # Regression test for https://github.com/python/cpython/issues/143198.
         cx = sqlite.connect(":memory:")
@@ -1088,7 +1088,7 @@ class CursorTests(unittest.TestCase):
     # with 'iterable_wrapper' to exercise internals.
     @subTests(("j", "n"), ([0, 1], [0, 3], [1, 3], [2, 3]))
     @subTests("iterable_wrapper", (list, lambda x: x, lambda x: iter(x)))
-    def test_executemany_use_after_close_with_bind_parameters(
+    def test_executemany_and_concurrent_close_in___getitem__(
         self, j, n, iterable_wrapper
     ):
         # Prevent SIGSEGV when closing the connection while binding parameters.
@@ -1801,8 +1801,8 @@ class ExtensionTests(unittest.TestCase):
         result = self.con.execute("select 5").fetchone()[0]
         self.assertEqual(result, 5, "Basic test of Connection.execute")
 
-    def test_connection_execute_use_after_close_with_bind_parameters(self):
-        # See CursorTests.test_execute_use_after_close_with_bind_parameters().
+    def test_connection_execute_close_in___getitem__(self):
+        # See CursorTests.test_execute_and_concurrent_close_in___getitem__().
 
         cx = sqlite.connect(":memory:")
         cx.execute("create table tmp(a number)")
@@ -1828,7 +1828,7 @@ class ExtensionTests(unittest.TestCase):
         self.assertEqual(result[1][0], 4, "Basic test of Connection.executemany")
 
     @subTests("params_factory", (ParamsCxCloseInIterMany, ParamsCxCloseInNext))
-    def test_connection_executemany_use_after_close(self, params_factory):
+    def test_connection_executemany_close_in___iter__(self, params_factory):
         # Prevent SIGSEGV with iterable of parameters closing the connection.
         # Regression test for https://github.com/python/cpython/issues/143198.
         cx = sqlite.connect(":memory:")
@@ -1840,10 +1840,10 @@ class ExtensionTests(unittest.TestCase):
 
     @subTests(("j", "n"), ([0, 1], [0, 3], [1, 3], [2, 3]))
     @subTests("iterable_wrapper", (list, lambda x: x))
-    def test_connection_executemany_use_after_close_with_bind_parameters(
+    def test_connection_executemany_close_in___getitem__(
         self, j, n, iterable_wrapper,
     ):
-        # See CursorTests.test_executemany_use_after_close_with_bind_parameters().
+        # See CursorTests.test_executemany_and_concurrent_close_in___getitem__().
 
         cx = sqlite.connect(":memory:")
         cx.execute("create table tmp(a number)")
