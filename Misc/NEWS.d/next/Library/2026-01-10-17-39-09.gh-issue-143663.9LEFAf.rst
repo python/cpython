@@ -1,1 +1,1 @@
-Add path normalization to `TarFile.extractall()`.
+:mod:`tarfile`: Add path normalization to :meth:`TarFile.extractall`.
