@@ -945,6 +945,9 @@ struct _is {
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
+
+    // Optimization configuration (thresholds and flags for JIT and interpreter)
+    _PyOptimizationConfig opt_config;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;

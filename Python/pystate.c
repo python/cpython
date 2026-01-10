@@ -514,6 +514,21 @@ _Py_LazyJitShim(
    main interpreter.  We fix those fields here, in addition
    to the other dynamically initialized fields.
   */
+
+static inline void
+init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
+                long min_value, long max_value)
+{
+    *target = default_value;
+    char *env = Py_GETENV(env_name);
+    if (env && *env != '\0') {
+        long value = atol(env);
+        if (value >= min_value && value <= max_value) {
+            *target = (uint16_t)value;
+        }
+    }
+}
+
 static PyStatus
 init_interpreter(PyInterpreterState *interp,
                  _PyRuntimeState *runtime, int64_t id,
@@ -572,6 +587,31 @@ init_interpreter(PyInterpreterState *interp,
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
+
+    // Initialize optimization configuration from environment variables
+    init_policy(&interp->opt_config.jump_backward_initial_value,
+                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
+                JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
+    init_policy(&interp->opt_config.jump_backward_initial_backoff,
+                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
+                JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+#ifdef _Py_TIER2
+    init_policy(&interp->opt_config.side_exit_initial_value,
+                "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
+                SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
+    init_policy(&interp->opt_config.side_exit_initial_backoff,
+                "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
+                SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+#endif
+
+    // Check if specialization should be disabled
+    // If PYTHON_SPECIALIZATION_OFF is set to any non-empty value, disable specialization
+    char *spec_off_env = Py_GETENV("PYTHON_SPECIALIZATION_OFF");
+    if (spec_off_env && *spec_off_env != '\0' && *spec_off_env != '0') {
+        interp->opt_config.specialization_enabled = false;
+    } else {
+        interp->opt_config.specialization_enabled = true;
+    }
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -1439,20 +1479,6 @@ decref_threadstate(_PyThreadStateImpl *tstate)
     }
 }
 
-static inline void
-init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
-                long min_value, long max_value)
-{
-    *target = default_value;
-    char *env = Py_GETENV(env_name);
-    if (env && *env != '\0') {
-        long value = atol(env);
-        if (value >= min_value && value <= max_value) {
-            *target = (uint16_t)value;
-        }
-    }
-}
-
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -1538,21 +1564,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
-    // Initialize interpreter policy from environment variables
-    init_policy(&_tstate->policy.interp.jump_backward_initial_value,
-                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
-                JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
-    init_policy(&_tstate->policy.interp.jump_backward_initial_backoff,
-                "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
-                JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
+
 #ifdef _Py_TIER2
-    // Initialize JIT policy from environment variables
-    init_policy(&_tstate->policy.jit.side_exit_initial_value,
-                "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
-                SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
-    init_policy(&_tstate->policy.jit.side_exit_initial_backoff,
-                "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
-                SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
     _tstate->jit_tracer_state = NULL;
 #endif
     tstate->delete_later = NULL;
