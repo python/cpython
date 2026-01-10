@@ -353,7 +353,7 @@ typedef struct {
     Py_ssize_t di_pos;
     PyObject* di_result; /* reusable result tuple for iteritems */
     Py_ssize_t len;
-} _PyDictIterItemObject;
+} _PyDictIterObject;
 
 // See `_Py_INCREF_TYPE()` in pycore_object.h
 #ifndef Py_GIL_DISABLED

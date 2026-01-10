@@ -5826,7 +5826,7 @@
                 assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
                 #endif
                 STAT_INC(FOR_ITER, hit);
-                if (((_PyDictIterItemObject *)iter_o)->di_dict == NULL) {
+                if (((_PyDictIterObject *)iter_o)->di_dict == NULL) {
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }

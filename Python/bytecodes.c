@@ -3495,7 +3495,7 @@ dummy_func(
             assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
 #endif
             STAT_INC(FOR_ITER, hit);
-            if (((_PyDictIterItemObject *)iter_o)->di_dict == NULL) {
+            if (((_PyDictIterObject *)iter_o)->di_dict == NULL) {
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
                 DISPATCH();
@@ -3503,8 +3503,8 @@ dummy_func(
         }
 
         tier2 op(_GUARD_NOT_EXHAUSTED_DICT_ITEMS, (iter, null_or_index -- iter, null_or_index)) {
-            _PyDictIterItemObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(((_PyDictIterItemObject *)iter_o)->di_dict == NULL);
+            _PyDictIterObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            EXIT_IF(((_PyDictIterObject *)iter_o)->di_dict == NULL);
         }
 
         op(_ITER_NEXT_DICT_ITEMS, (iter, null_or_index -- iter, null_or_index, next)) {

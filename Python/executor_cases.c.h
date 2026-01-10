@@ -12122,8 +12122,8 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef iter;
             iter = stack_pointer[-2];
-            _PyDictIterItemObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (((_PyDictIterItemObject *)iter_o)->di_dict == NULL) {
+            _PyDictIterObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (((_PyDictIterObject *)iter_o)->di_dict == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -12143,8 +12143,8 @@
             _PyStackRef iter;
             _PyStackRef _stack_item_0 = _tos_cache0;
             iter = stack_pointer[-1];
-            _PyDictIterItemObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (((_PyDictIterItemObject *)iter_o)->di_dict == NULL) {
+            _PyDictIterObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (((_PyDictIterObject *)iter_o)->di_dict == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -12166,8 +12166,8 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             iter = _stack_item_0;
-            _PyDictIterItemObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (((_PyDictIterItemObject *)iter_o)->di_dict == NULL) {
+            _PyDictIterObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (((_PyDictIterObject *)iter_o)->di_dict == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
                 _tos_cache0 = iter;
@@ -12189,8 +12189,8 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             iter = _stack_item_1;
-            _PyDictIterItemObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            if (((_PyDictIterItemObject *)iter_o)->di_dict == NULL) {
+            _PyDictIterObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (((_PyDictIterObject *)iter_o)->di_dict == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = iter;
