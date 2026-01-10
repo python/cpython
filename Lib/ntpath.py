@@ -121,8 +121,7 @@ def join(path, *paths):
         colon = ':'
     try:
         if not paths:
-            # bpo-23780: Ensure compatible data type even if paths is empty.
-            path[:0] + sep
+            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         result_drive, result_root, result_path = splitroot(path)
         for p in map(os.fspath, paths):
             p_drive, p_root, p_path = splitroot(p)
