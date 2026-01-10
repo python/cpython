@@ -33,11 +33,12 @@ HARDCODED_SUBMODULES = {
 AUTO_IMPORT_BLACKLIST = {
     # Standard library modules/submodules that have import side effects
     # and must not be automatically imported to complete attributes
-    re.compile(r"antigravity"),
-    re.compile(r"this"),
-    re.compile(r"idlelib\..+"),
-    re.compile(r"test\..+"),
-    re.compile(r".+\.__main__"),
+    re.compile(r"antigravity"),  # Calls webbrowser.open
+    re.compile(r"idlelib\..+"),  # May open IDLE GUI
+    re.compile(r"test\..+"),  # Various side-effects
+    re.compile(r"this"),  # Prints to stdout
+    re.compile(r"_ios_support"),  # Spawns a subprocess
+    re.compile(r".+\.__main__"),  # Should not be imported
 }
 
 
