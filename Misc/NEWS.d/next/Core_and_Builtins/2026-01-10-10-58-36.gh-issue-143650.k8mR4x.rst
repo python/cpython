@@ -1,0 +1,2 @@
+Fix race condition in :mod:`importlib` where a thread could receive a stale
+module reference when another thread's import fails.

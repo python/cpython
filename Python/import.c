@@ -301,6 +301,18 @@ PyImport_GetModule(PyObject *name)
             remove_importlib_frames(tstate);
             return NULL;
         }
+        /* Verify the module is still in sys.modules. Another thread may have
+           removed it (due to import failure) between our import_get_module()
+           call and the _initializing check in import_ensure_initialized().
+           Unlike the import path, we return NULL here since this function
+           only retrieves existing modules and doesn't trigger new imports. */
+        PyObject *mod_check = import_get_module(tstate, name);
+        if (mod_check != mod) {
+            Py_XDECREF(mod_check);
+            Py_DECREF(mod);
+            return NULL;
+        }
+        Py_DECREF(mod_check);
     }
     return mod;
 }
@@ -3881,6 +3893,24 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     if (mod != NULL && mod != Py_None) {
         if (import_ensure_initialized(tstate->interp, mod, abs_name) < 0) {
             goto error;
+        }
+        /* Verify the module is still in sys.modules. Another thread may have
+           removed it (due to import failure) between our import_get_module()
+           call and the _initializing check in import_ensure_initialized().
+           If removed, we retry the import to preserve normal semantics: the
+           caller gets the exception from the actual import failure rather
+           than a synthetic error. */
+        PyObject *mod_check = import_get_module(tstate, abs_name);
+        if (mod_check != mod) {
+            Py_XDECREF(mod_check);
+            Py_DECREF(mod);
+            mod = import_find_and_load(tstate, abs_name);
+            if (mod == NULL) {
+                goto error;
+            }
+        }
+        else {
+            Py_DECREF(mod_check);
         }
     }
     else {
