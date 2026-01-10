@@ -6439,7 +6439,6 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
 {
     int little_endian;
     PyObject *long_obj, *bytes;
-    Py_buffer view;
 
     if (byteorder == NULL)
         little_endian = 0;
@@ -6461,6 +6460,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     }
     /* Use buffer protocol to avoid copies. */
     else if (PyObject_CheckBuffer(bytes_obj)) {
+        Py_buffer view;
         if (PyObject_GetBuffer(bytes_obj, &view, PyBUF_SIMPLE) != 0) {
             return NULL;
         }
