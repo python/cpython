@@ -1,0 +1,2 @@
+:mod:`importlib.metadata`: Use ``translate`` to improve performance of
+``canonicalize_name``. Patch by Hugo van Kemenade and Henry Schreiner.
