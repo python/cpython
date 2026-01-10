@@ -1,0 +1,1 @@
+Specialize :opcode:`!FOR_ITER` for dictionary item iteration. In the JIT, this is optimized even further when code is unpacking the result to a pair.
