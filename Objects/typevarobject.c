@@ -270,13 +270,14 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
     if (p == Py_Ellipsis) {
         // The Ellipsis object
         r = PyUnicode_FromString("...");
-        goto exit;
+        goto cleanup;
     }
 
     if (p == (PyObject *)&_PyNone_Type) {
         return PyUnicodeWriter_WriteASCII(writer, "None", 4);
     }
 
+    Py_INCREF(p);  // gh-143635
     if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
         (rc = PyObject_HasAttrWithError(p, &_Py_ID(__args__))) > 0)
     {
@@ -316,6 +317,8 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
 use_repr:
     r = PyObject_Repr(p);
 exit:
+    Py_DECREF(p);  // gh-143635
+cleanup:
     Py_XDECREF(qualname);
     Py_XDECREF(module);
     if (r == NULL) {

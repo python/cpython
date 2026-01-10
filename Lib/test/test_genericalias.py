@@ -244,6 +244,43 @@ class BaseTest(unittest.TestCase):
         self.assertEndsWith(repr(MyGeneric[[]]), 'MyGeneric[[]]')
         self.assertEndsWith(repr(MyGeneric[[int, str]]), 'MyGeneric[[int, str]]')
 
+    def test_evil_repr1(self):
+        # gh-143635
+        class Zap:
+            def __init__(self, container):
+                self.container = container
+            def __getattr__(self, name):
+                if name == "__origin__":
+                    self.container.clear()
+                    return None
+                if name == "__args__":
+                    return ()
+                raise AttributeError
+
+        params = []
+        params.append(Zap(params))
+        alias = type(list[int])(list, (params,))
+        repr_str = repr(alias)
+        self.assertTrue(repr_str.startswith("list[["), repr_str)
+
+    def test_evil_repr2(self):
+        class Zap:
+            def __init__(self, container):
+                self.container = container
+            def __getattr__(self, name):
+                if name == "__qualname__":
+                    self.container.clear()
+                    return "abcd"
+                if name == "__module__":
+                    return None
+                raise AttributeError
+
+        params = []
+        params.append(Zap(params))
+        alias = type(list[int])(list, (params,))
+        repr_str = repr(alias)
+        self.assertTrue(repr_str.startswith("list[["), repr_str)
+
     def test_exposed_type(self):
         import types
         a = types.GenericAlias(list, int)
