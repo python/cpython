@@ -1,1 +1,0 @@
-Add a docstring for :func:`os.path.join` on Windows.
