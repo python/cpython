@@ -2042,6 +2042,24 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
 
+    @support.requires_zlib()
+    def test_make_archive_accepts_pathlike(self):
+        tmpdir = self.mkdtemp()
+        with os_helper.change_cwd(tmpdir), no_chdir:
+            # Test path-like base_name without root_dir and base_dir
+            base_name = FakePath(os.path.join(tmpdir, 'archive'))
+            res = make_archive(base_name, 'zip')
+            self.assertEqual(res, os.path.join(tmpdir, 'archive.zip'))
+            self.assertTrue(os.path.isfile(res))
+
+            # Test with path-like base_name, root_dir, and base_dir
+            root_dir, base_dir = self._create_files()
+            base_name = FakePath(os.path.join(tmpdir, 'archive2'))
+            res = make_archive(
+                base_name, 'zip', FakePath(root_dir), FakePath(base_dir))
+            self.assertEqual(res, os.path.join(tmpdir, 'archive2.zip'))
+            self.assertTrue(os.path.isfile(res))
+
     def test_register_archive_format(self):
 
         self.assertRaises(TypeError, register_archive_format, 'xxx', 1)

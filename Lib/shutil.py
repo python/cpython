@@ -1212,6 +1212,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     for arg, val in format_info[1]:
         kwargs[arg] = val
 
+    base_name = os.fspath(base_name)
+
     if base_dir is None:
         base_dir = os.curdir
 
@@ -1223,8 +1225,6 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
             raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', root_dir)
 
         if supports_root_dir:
-            # Support path-like base_name here for backwards-compatibility.
-            base_name = os.fspath(base_name)
             kwargs['root_dir'] = root_dir
         else:
             save_cwd = os.getcwd()
