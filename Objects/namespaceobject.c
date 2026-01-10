@@ -13,6 +13,7 @@ typedef struct {
 } _PyNamespaceObject;
 
 #define _PyNamespace_CAST(op) _Py_CAST(_PyNamespaceObject*, (op))
+#define _PyNamespace_Check(op) PyObject_TypeCheck((op), &_PyNamespace_Type)
 
 
 static PyMemberDef namespace_members[] = {
@@ -234,6 +235,14 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!result) {
         return NULL;
     }
+    if (!_PyNamespace_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expecting a %s object, got %T",
+                     _PyNamespace_Type.tp_name, result);
+        Py_DECREF(result);
+        return NULL;
+    }
+
     if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
                       ((_PyNamespaceObject*)self)->ns_dict) < 0)
     {

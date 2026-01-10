@@ -1,0 +1,2 @@
+Fix a crash when calling :class:`SimpleNamespace.__replace__()
+<types.SimpleNamespace>` on non-namespace instances. Patch by Bénédikt Tran.
