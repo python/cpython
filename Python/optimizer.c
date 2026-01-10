@@ -1938,9 +1938,13 @@ static void
 executor_to_gv(_PyExecutorObject *executor, FILE *out)
 {
     PyCodeObject *code = executor->vm_data.code;
+    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
+    _PyExecutorObject *cold_dynamic = _PyExecutor_GetColdDynamicExecutor();
     fprintf(out, "executor_%p [\n", executor);
     fprintf(out, "    shape = none\n");
-
+    if (executor == cold || executor == cold_dynamic) {
+        fprintf(out, "    color = gray\n");
+    }
     /* Write the HTML table for the uops */
     fprintf(out, "    label = <<table border=\"0\" cellspacing=\"0\">\n");
     fprintf(out, "        <tr><td port=\"start\" border=\"1\" ><b>Executor</b></td></tr>\n");
@@ -1976,8 +1980,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
     fprintf(out, "]\n\n");
 
     /* Write all the outgoing edges */
-    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
-    _PyExecutorObject *cold_dynamic = _PyExecutor_GetColdDynamicExecutor();
+    
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
