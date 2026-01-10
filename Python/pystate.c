@@ -1880,9 +1880,9 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     // There's only one thread. Re-enable JIT.
     PyThreadState *curr = interp->threads.head;
     if (curr != NULL && curr->prev == NULL && curr->next == NULL) {
-       FT_ATOMIC_STORE_UINT8(interp->jit, 1);
+        _PyInterpreter_SetJitWithEnvVar(_PyInterpreterState_GetConfig(interp), interp);
     }
-#   endif    
+#   endif
 #endif
 
     HEAD_UNLOCK(runtime);
