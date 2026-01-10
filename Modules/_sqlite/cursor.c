@@ -713,7 +713,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
             num_params = PyList_GET_SIZE(parameters);
         } else {
             num_params = PySequence_Size(parameters);
-            if (num_params == -1 && PyErr_Occurred()) {
+            if (num_params == -1) {
                 return -1;
             }
             else if (!pysqlite_check_connection(conn)) {
