@@ -303,9 +303,7 @@ PyImport_GetModule(PyObject *name)
         }
         /* Verify the module is still in sys.modules. Another thread may have
            removed it (due to import failure) between our import_get_module()
-           call and the _initializing check in import_ensure_initialized().
-           Unlike the import path, we return NULL here since this function
-           only retrieves existing modules and doesn't trigger new imports. */
+           call and the _initializing check in import_ensure_initialized(). */
         PyObject *mod_check = import_get_module(tstate, name);
         if (mod_check != mod) {
             Py_XDECREF(mod_check);
