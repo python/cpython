@@ -2437,6 +2437,7 @@ class TarFile(object):
                                                  'excluded by filter')
                     continue
                 dirpath = os.path.join(path, tarinfo.name)
+                dirpath = os.path.normpath(dirpath)
                 try:
                     lstat = os.lstat(dirpath)
                 except FileNotFoundError:

@@ -1,0 +1,1 @@
+Add path normalization to `TarFile.extractall()`.
