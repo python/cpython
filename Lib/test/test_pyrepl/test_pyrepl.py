@@ -53,6 +53,10 @@ try:
     import pty
 except ImportError:
     pty = None
+try:
+    import tkinter
+except ImportError:
+    tkinter = None
 
 
 class ReplTestCase(TestCase):
@@ -1551,7 +1555,8 @@ class TestModuleCompleterAutomaticImports(TestCase):
                 with (captured_stdout() as out,
                       captured_stderr() as err,
                       self._capture_audit_events() as audit_events,
-                      patch("tkinter._tkinter.create") as tk_mock,
+                      (patch("tkinter._tkinter.create") if tkinter
+                       else contextlib.nullcontext()) as tk_mock,
                       warnings.catch_warnings(action="ignore"),
                       patch.dict(sys.modules)):
                     completer._maybe_import_module(modname)
@@ -1562,7 +1567,8 @@ class TestModuleCompleterAutomaticImports(TestCase):
                 # 2. spawn any subprocess (eg. webbrowser.open)
                 self.assertNotIn("subprocess.Popen", audit_events)
                 # 3. launch a Tk window
-                tk_mock.assert_not_called()
+                if tk_mock is not None:
+                    tk_mock.assert_not_called()
 
 
 class TestHardcodedSubmodules(TestCase):
