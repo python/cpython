@@ -147,7 +147,6 @@ def _copy_items(items):
     if type(items) is list:
         return items[:]
     import copy
-        linearrary = [ "f " + x for x in linearray ]
     return copy.copy(items)
 
 
