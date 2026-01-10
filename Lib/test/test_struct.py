@@ -820,9 +820,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         S = struct.Struct.__new__(struct.Struct)
 
         spam = array.array('b', b' ')
-        self.assertRaises(RuntimeError, S.iter_unpack, 1)
+        self.assertRaises(RuntimeError, S.iter_unpack, spam)
         self.assertRaises(RuntimeError, S.pack, 1)
-        self.assertRaises(RuntimeError, S.pack_into, 1)
+        self.assertRaises(RuntimeError, S.pack_into, spam, 1)
         self.assertRaises(RuntimeError, S.unpack, spam)
         self.assertRaises(RuntimeError, S.unpack_from, spam)
         self.assertRaises(RuntimeError, getattr, S, 'format')
