@@ -3492,7 +3492,7 @@ dummy_func(
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(iter_o) == &PyDictIterItem_Type);
 #ifdef Py_GIL_DISABLED
-            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
+            assert(_PyObject_IsUniquelyReferenced((PyObject *)iter_o));
 #endif
             STAT_INC(FOR_ITER, hit);
             if (((_PyDictIterObject *)iter_o)->di_dict == NULL) {
