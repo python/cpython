@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+import contextlib
 import importlib
 import io
 import itertools
@@ -13,7 +15,14 @@ import tempfile
 from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env, Py_DEBUG
+import warnings
+from test.support import (
+    captured_stdout,
+    captured_stderr,
+    force_not_colorized,
+    make_clean_env,
+    Py_DEBUG,
+)
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
@@ -1511,6 +1520,50 @@ class TestPyReplModuleCompleter(TestCase):
 
                         new_imports = sys.modules.keys() - _imported
                         self.assertSetEqual(new_imports, expected_imports)
+
+class TestModuleCompleterAutomaticImports(TestCase):
+    """Out of TestPyReplModuleCompleter case because it blocks module import."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls._audit_events: set[str] | None = None
+        def _hook(name: str, _args: tuple):
+            if cls._audit_events is not None:
+                cls._audit_events.add(name)
+        sys.addaudithook(_hook)
+
+    @classmethod
+    @contextlib.contextmanager
+    def _capture_audit_events(cls) -> Iterator[set[str]]:
+        cls._audit_events = set()
+        try:
+            yield cls._audit_events
+        finally:
+            cls._audit_events = None
+
+    def test_no_side_effects(self):
+        from test.test___all__ import AllTest  # TODO: extract to a helper?
+
+        completer = ModuleCompleter()
+        for _, modname in AllTest().walk_modules(completer._stdlib_path, ""):
+            with self.subTest(modname=modname):
+                with (captured_stdout() as out,
+                      captured_stderr() as err,
+                      self._capture_audit_events() as audit_events,
+                      patch("tkinter._tkinter.create") as tk_mock,
+                      warnings.catch_warnings(action="ignore"),
+                      patch.dict(sys.modules)):
+                    completer._maybe_import_module(modname)
+                # Test no module is imported that
+                # 1. prints any text
+                self.assertEqual(out.getvalue(), "")
+                self.assertEqual(err.getvalue(), "")
+                # 2. spawn any subprocess (eg. webbrowser.open)
+                self.assertNotIn("subprocess.Popen", audit_events)
+                # 3. launch a Tk window
+                tk_mock.assert_not_called()
+
 
 class TestHardcodedSubmodules(TestCase):
     @patch.dict(sys.modules)
