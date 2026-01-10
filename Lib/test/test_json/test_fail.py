@@ -1,5 +1,6 @@
 from test.test_json import PyTest, CTest
 import json
+import sys
 
 # 2007-10-05
 JSONDOCS = [
@@ -260,6 +261,10 @@ class TestFail:
             # to reproduce
             json.JSONDecodeError = hook
             json.decoder.JSONDecodeError = hook
+
+            # The hook must be kept alive by these references.
+            # Deleting it triggers the re-entrant path this test is exercising.
+            self.assertEqual(sys.getrefcount(hook), 3)
             del hook
 
             with self.assertRaises(TypeError):
