@@ -338,6 +338,7 @@ class PreparedTests(unittest.TestCase):
             ("sample_.-pkg", "sample_pkg"),
             # Complex
             ("Sample__Pkg-name.foo", "sample_pkg_name_foo"),
+            ("Sample__Pkg.name__foo", "sample_pkg_name_foo"),
             # Uppercase with separators
             ("SAMPLE-PKG", "sample_pkg"),
             ("Sample.Pkg", "sample_pkg"),
