@@ -1,4 +1,5 @@
 from test.test_json import PyTest, CTest
+from test import support
 import json
 import sys
 
@@ -267,6 +268,8 @@ class TestFail:
             self.assertEqual(sys.getrefcount(hook), 3)
             del hook
 
+            support.gc_collect()
+            
             with self.assertRaises(TypeError):
                 json.loads('"\\uZZZZ"')
         finally:
