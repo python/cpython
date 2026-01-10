@@ -297,9 +297,7 @@ PyImport_GetModule(PyObject *name)
     mod = import_get_module(tstate, name);
     if (mod != NULL && mod != Py_None) {
         if (import_ensure_initialized(tstate->interp, mod, name) < 0) {
-            Py_DECREF(mod);
-            remove_importlib_frames(tstate);
-            return NULL;
+            goto error;
         }
         /* Verify the module is still in sys.modules. Another thread may have
            removed it (due to import failure) between our import_get_module()
@@ -307,12 +305,24 @@ PyImport_GetModule(PyObject *name)
         PyObject *mod_check = import_get_module(tstate, name);
         if (mod_check != mod) {
             Py_XDECREF(mod_check);
+            if (_PyErr_Occurred(tstate)) {
+                goto error;
+            }
+            /* The module was removed or replaced. Return NULL to report
+               "not found" rather than trying to keep up with racing
+               modifications to sys.modules; returning the new value would
+               require looping to redo the ensure_initialized check. */
             Py_DECREF(mod);
             return NULL;
         }
         Py_DECREF(mod_check);
     }
     return mod;
+
+error:
+    Py_DECREF(mod);
+    remove_importlib_frames(tstate);
+    return NULL;
 }
 
 /* Get the module object corresponding to a module name.
@@ -3901,6 +3911,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         PyObject *mod_check = import_get_module(tstate, abs_name);
         if (mod_check != mod) {
             Py_XDECREF(mod_check);
+            if (_PyErr_Occurred(tstate)) {
+                Py_DECREF(mod);
+                goto error;
+            }
             Py_DECREF(mod);
             mod = import_find_and_load(tstate, abs_name);
             if (mod == NULL) {
