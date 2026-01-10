@@ -641,6 +641,7 @@ typedef struct PicklerObject {
     int fast_nesting;
     int fix_imports;            /* Indicate whether Pickler should fix
                                    the name of globals for Python 2.x. */
+    int running;                /* True when a method of Pickler is executing. */
     PyObject *fast_memo;
     PyObject *buffer_callback;  /* Callback for out-of-band buffers, or NULL */
 } PicklerObject;
@@ -685,6 +686,8 @@ typedef struct UnpicklerObject {
     int proto;                  /* Protocol of the pickle loaded. */
     int fix_imports;            /* Indicate whether Unpickler should fix
                                    the name of globals pickled by Python 2.x. */
+    int running;                /* True when a method of Unpickler is executing. */
+
 } UnpicklerObject;
 
 typedef struct {
@@ -701,6 +704,32 @@ typedef struct {
 #define UnpicklerObject_CAST(op)            ((UnpicklerObject *)(op))
 #define PicklerMemoProxyObject_CAST(op)     ((PicklerMemoProxyObject *)(op))
 #define UnpicklerMemoProxyObject_CAST(op)   ((UnpicklerMemoProxyObject *)(op))
+
+#define BEGIN_USING_PICKLER(SELF, RET) do {                                 \
+        if ((SELF)->running) {                                              \
+            PyErr_SetString(PyExc_RuntimeError,                             \
+                            "Pickler object is already used");              \
+            return (RET);                                                   \
+        }                                                                   \
+        (SELF)->running = 1;                                                \
+    } while (0)
+
+#define END_USING_PICKLER(SELF) do {                                        \
+        (SELF)->running = 0;                                                \
+    } while (0)
+
+#define BEGIN_USING_UNPICKLER(SELF, RET) do {                               \
+        if ((SELF)->running) {                                              \
+            PyErr_SetString(PyExc_RuntimeError,                             \
+                            "Unpickler object is already used");            \
+            return (RET);                                                   \
+        }                                                                   \
+        (SELF)->running = 1;                                                \
+    } while (0)
+
+#define END_USING_UNPICKLER(SELF) do {                                      \
+        (SELF)->running = 0;                                                \
+    } while (0)
 
 /* Forward declarations */
 static int save(PickleState *state, PicklerObject *, PyObject *, int);
@@ -1131,6 +1160,7 @@ _Pickler_New(PickleState *st)
     self->fast = 0;
     self->fast_nesting = 0;
     self->fix_imports = 0;
+    self->running = 0;
     self->fast_memo = NULL;
     self->buffer_callback = NULL;
 
@@ -1708,6 +1738,7 @@ _Unpickler_New(PyObject *module)
     self->marks_size = 0;
     self->proto = 0;
     self->fix_imports = 0;
+    self->running = 0;
 
     PyObject_GC_Track(self);
     return self;
@@ -4732,9 +4763,11 @@ static PyObject *
 _pickle_Pickler_clear_memo_impl(PicklerObject *self)
 /*[clinic end generated code: output=8665c8658aaa094b input=01bdad52f3d93e56]*/
 {
+    BEGIN_USING_PICKLER(self, NULL);
     if (self->memo)
         PyMemoTable_Clear(self->memo);
 
+    END_USING_PICKLER(self);
     Py_RETURN_NONE;
 }
 
@@ -4764,17 +4797,23 @@ _pickle_Pickler_dump_impl(PicklerObject *self, PyTypeObject *cls,
                      Py_TYPE(self)->tp_name);
         return NULL;
     }
+    BEGIN_USING_PICKLER(self, NULL);
 
-    if (_Pickler_ClearBuffer(self) < 0)
-        return NULL;
-
-    if (dump(st, self, obj) < 0)
-        return NULL;
-
-    if (_Pickler_FlushToFile(self) < 0)
-        return NULL;
-
+    if (_Pickler_ClearBuffer(self) < 0) {
+        goto error;
+    }
+    if (dump(st, self, obj) < 0) {
+        goto error;
+    }
+    if (_Pickler_FlushToFile(self) < 0) {
+        goto error;
+    }
+    END_USING_PICKLER(self);
     Py_RETURN_NONE;
+
+error:
+    END_USING_PICKLER(self);
+    return NULL;
 }
 
 /*[clinic input]
@@ -4915,47 +4954,54 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *buffer_callback)
 /*[clinic end generated code: output=0abedc50590d259b input=cddc50f66b770002]*/
 {
+    BEGIN_USING_PICKLER(self, -1);
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
         (void)Pickler_clear((PyObject *)self);
 
-    if (_Pickler_SetProtocol(self, protocol, fix_imports) < 0)
-        return -1;
-
-    if (_Pickler_SetOutputStream(self, file) < 0)
-        return -1;
-
-    if (_Pickler_SetBufferCallback(self, buffer_callback) < 0)
-        return -1;
-
+    if (_Pickler_SetProtocol(self, protocol, fix_imports) < 0) {
+        goto error;
+    }
+    if (_Pickler_SetOutputStream(self, file) < 0) {
+        goto error;
+    }
+    if (_Pickler_SetBufferCallback(self, buffer_callback) < 0) {
+        goto error;
+    }
     /* memo and output_buffer may have already been created in _Pickler_New */
     if (self->memo == NULL) {
         self->memo = PyMemoTable_New();
-        if (self->memo == NULL)
-            return -1;
+        if (self->memo == NULL) {
+            goto error;
+        }
     }
     self->output_len = 0;
     if (self->output_buffer == NULL) {
         self->max_output_len = WRITE_BUF_SIZE;
         self->output_buffer = PyBytes_FromStringAndSize(NULL,
                                                         self->max_output_len);
-        if (self->output_buffer == NULL)
-            return -1;
+        if (self->output_buffer == NULL) {
+            goto error;
+        }
     }
 
     self->fast = 0;
     self->fast_nesting = 0;
     self->fast_memo = NULL;
 
-    if (self->dispatch_table != NULL) {
-        return 0;
-    }
-    if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(dispatch_table),
-                             &self->dispatch_table) < 0) {
-        return -1;
+    if (self->dispatch_table == NULL) {
+        if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(dispatch_table),
+                                &self->dispatch_table) < 0) {
+            goto error;
+        }
     }
 
+    END_USING_PICKLER(self);
     return 0;
+
+error:
+    END_USING_PICKLER(self);
+    return -1;
 }
 
 
@@ -4979,8 +5025,10 @@ static PyObject *
 _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=5fb9370d48ae8b05 input=ccc186dacd0f1405]*/
 {
+    BEGIN_USING_PICKLER(self->pickler, NULL);
     if (self->pickler->memo)
         PyMemoTable_Clear(self->pickler->memo);
+    END_USING_PICKLER(self->pickler);
     Py_RETURN_NONE;
 }
 
@@ -4994,12 +5042,13 @@ static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
 /*[clinic end generated code: output=bb83a919d29225ef input=b73043485ac30b36]*/
 {
-    PyMemoTable *memo;
-    PyObject *new_memo = PyDict_New();
-    if (new_memo == NULL)
-        return NULL;
-
-    memo = self->pickler->memo;
+    PyObject *new_memo = NULL;
+    BEGIN_USING_PICKLER(self->pickler, NULL);
+    new_memo = PyDict_New();
+    if (new_memo == NULL) {
+        goto error;
+    }
+    PyMemoTable *memo = self->pickler->memo;
     for (size_t i = 0; i < memo->mt_allocated; ++i) {
         PyMemoEntry entry = memo->mt_table[i];
         if (entry.me_key != NULL) {
@@ -5022,10 +5071,12 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
                 goto error;
         }
     }
+    END_USING_PICKLER(self->pickler);
     return new_memo;
 
   error:
     Py_XDECREF(new_memo);
+    END_USING_PICKLER(self->pickler);
     return NULL;
 }
 
@@ -5144,8 +5195,9 @@ Pickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
     if (obj == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "attribute deletion is not supported");
-        return -1;
+        goto error;
     }
+    BEGIN_USING_PICKLER(self, -1);
 
     PickleState *st = _Pickle_FindStateByType(Py_TYPE(self));
     if (Py_IS_TYPE(obj, st->PicklerMemoProxyType)) {
@@ -5153,16 +5205,18 @@ Pickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
             ((PicklerMemoProxyObject *)obj)->pickler;
 
         new_memo = PyMemoTable_Copy(pickler->memo);
-        if (new_memo == NULL)
-            return -1;
+        if (new_memo == NULL) {
+            goto error;
+        }
     }
     else if (PyDict_Check(obj)) {
         Py_ssize_t i = 0;
         PyObject *key, *value;
 
         new_memo = PyMemoTable_New();
-        if (new_memo == NULL)
-            return -1;
+        if (new_memo == NULL) {
+            goto error;
+        }
 
         while (PyDict_Next(obj, &i, &key, &value)) {
             Py_ssize_t memo_id;
@@ -5185,17 +5239,19 @@ Pickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         PyErr_Format(PyExc_TypeError,
                      "'memo' attribute must be a PicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
-        return -1;
+        goto error;
     }
 
     PyMemoTable_Del(self->memo);
     self->memo = new_memo;
 
+    END_USING_PICKLER(self);
     return 0;
 
   error:
     if (new_memo)
         PyMemoTable_Del(new_memo);
+    END_USING_PICKLER(self);
     return -1;
 }
 
@@ -7157,22 +7213,22 @@ static PyObject *
 _pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=cc88168f608e3007 input=f5d2f87e61d5f07f]*/
 {
-    UnpicklerObject *unpickler = (UnpicklerObject*)self;
-
     PickleState *st = _Pickle_GetStateByClass(cls);
 
     /* Check whether the Unpickler was initialized correctly. This prevents
        segfaulting if a subclass overridden __init__ with a function that does
        not call Unpickler.__init__(). Here, we simply ensure that self->read
        is not NULL. */
-    if (unpickler->read == NULL) {
+    if (self->read == NULL) {
         PyErr_Format(st->UnpicklingError,
                      "Unpickler.__init__() was not called by %s.__init__()",
-                     Py_TYPE(unpickler)->tp_name);
+                     Py_TYPE(self)->tp_name);
         return NULL;
     }
-
-    return load(st, unpickler);
+    BEGIN_USING_UNPICKLER(self, NULL);
+    PyObject *res = load(st, self);
+    END_USING_UNPICKLER(self);
+    return res;
 }
 
 /* The name of find_class() is misleading. In newer pickle protocols, this
@@ -7436,35 +7492,41 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
                                 const char *errors, PyObject *buffers)
 /*[clinic end generated code: output=09f0192649ea3f85 input=ca4c1faea9553121]*/
 {
+    BEGIN_USING_UNPICKLER(self, -1);
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->read != NULL)
         (void)Unpickler_clear((PyObject *)self);
 
-    if (_Unpickler_SetInputStream(self, file) < 0)
-        return -1;
-
-    if (_Unpickler_SetInputEncoding(self, encoding, errors) < 0)
-        return -1;
-
-    if (_Unpickler_SetBuffers(self, buffers) < 0)
-        return -1;
-
+    if (_Unpickler_SetInputStream(self, file) < 0) {
+        goto error;
+    }
+    if (_Unpickler_SetInputEncoding(self, encoding, errors) < 0) {
+        goto error;
+    }
+    if (_Unpickler_SetBuffers(self, buffers) < 0) {
+        goto error;
+    }
     self->fix_imports = fix_imports;
 
     PyTypeObject *tp = Py_TYPE(self);
     PickleState *state = _Pickle_FindStateByType(tp);
     self->stack = (Pdata *)Pdata_New(state);
-    if (self->stack == NULL)
-        return -1;
-
+    if (self->stack == NULL) {
+        goto error;
+    }
     self->memo_size = 32;
     self->memo = _Unpickler_NewMemo(self->memo_size);
-    if (self->memo == NULL)
-        return -1;
-
+    if (self->memo == NULL) {
+        goto error;
+    }
     self->proto = 0;
 
+    END_USING_UNPICKLER(self);
     return 0;
+
+error:
+    END_USING_UNPICKLER(self);
+    return -1;
 }
 
 
@@ -7648,7 +7710,7 @@ Unpickler_get_memo(PyObject *op, void *Py_UNUSED(closure))
 static int
 Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
 {
-    PyObject **new_memo;
+    PyObject **new_memo = NULL;
     UnpicklerObject *self = UnpicklerObject_CAST(op);
     size_t new_memo_size = 0;
 
@@ -7657,6 +7719,7 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
                         "attribute deletion is not supported");
         return -1;
     }
+    BEGIN_USING_UNPICKLER(self, -1);
 
     PickleState *state = _Pickle_FindStateByType(Py_TYPE(self));
     if (Py_IS_TYPE(obj, state->UnpicklerMemoProxyType)) {
@@ -7665,9 +7728,9 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
 
         new_memo_size = unpickler->memo_size;
         new_memo = _Unpickler_NewMemo(new_memo_size);
-        if (new_memo == NULL)
-            return -1;
-
+        if (new_memo == NULL) {
+            goto error;
+        }
         for (size_t i = 0; i < new_memo_size; i++) {
             new_memo[i] = Py_XNewRef(unpickler->memo[i]);
         }
@@ -7678,9 +7741,9 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
 
         new_memo_size = PyDict_GET_SIZE(obj);
         new_memo = _Unpickler_NewMemo(new_memo_size);
-        if (new_memo == NULL)
-            return -1;
-
+        if (new_memo == NULL) {
+            goto error;
+        }
         while (PyDict_Next(obj, &i, &key, &value)) {
             Py_ssize_t idx;
             if (!PyLong_Check(key)) {
@@ -7704,22 +7767,24 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         PyErr_Format(PyExc_TypeError,
                      "'memo' attribute must be an UnpicklerMemoProxy object "
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
-        return -1;
+        goto error;
     }
 
     _Unpickler_MemoCleanup(self);
     self->memo_size = new_memo_size;
     self->memo = new_memo;
 
+    END_USING_UNPICKLER(self);
     return 0;
 
   error:
-    if (new_memo_size) {
+    if (new_memo) {
         for (size_t i = new_memo_size - 1; i != SIZE_MAX; i--) {
             Py_XDECREF(new_memo[i]);
         }
         PyMem_Free(new_memo);
     }
+    END_USING_UNPICKLER(self);
     return -1;
 }
 
