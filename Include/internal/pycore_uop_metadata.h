@@ -238,6 +238,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_ITER_CHECK_DICT_ITEMS] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_DICT_ITEMS] = HAS_EXIT_FLAG,
     [_ITER_NEXT_DICT_ITEMS] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_ITER_NEXT_DICT_ITEMS_UNPACK] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_INSERT_NULL] = 0,
     [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -2206,6 +2207,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_ITER_NEXT_DICT_ITEMS_UNPACK] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _ITER_NEXT_DICT_ITEMS_UNPACK_r23 },
+            { -1, -1, -1 },
+        },
+    },
     [_INSERT_NULL] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -3807,6 +3817,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOT_EXHAUSTED_DICT_ITEMS_r22] = _GUARD_NOT_EXHAUSTED_DICT_ITEMS,
     [_GUARD_NOT_EXHAUSTED_DICT_ITEMS_r33] = _GUARD_NOT_EXHAUSTED_DICT_ITEMS,
     [_ITER_NEXT_DICT_ITEMS_r23] = _ITER_NEXT_DICT_ITEMS,
+    [_ITER_NEXT_DICT_ITEMS_UNPACK_r23] = _ITER_NEXT_DICT_ITEMS_UNPACK,
     [_INSERT_NULL_r10] = _INSERT_NULL,
     [_LOAD_SPECIAL_r00] = _LOAD_SPECIAL,
     [_WITH_EXCEPT_START_r33] = _WITH_EXCEPT_START,
@@ -4711,6 +4722,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_ITER_CHECK_TUPLE_r33] = "_ITER_CHECK_TUPLE_r33",
     [_ITER_NEXT_DICT_ITEMS] = "_ITER_NEXT_DICT_ITEMS",
     [_ITER_NEXT_DICT_ITEMS_r23] = "_ITER_NEXT_DICT_ITEMS_r23",
+    [_ITER_NEXT_DICT_ITEMS_UNPACK] = "_ITER_NEXT_DICT_ITEMS_UNPACK",
+    [_ITER_NEXT_DICT_ITEMS_UNPACK_r23] = "_ITER_NEXT_DICT_ITEMS_UNPACK_r23",
     [_ITER_NEXT_LIST_TIER_TWO] = "_ITER_NEXT_LIST_TIER_TWO",
     [_ITER_NEXT_LIST_TIER_TWO_r23] = "_ITER_NEXT_LIST_TIER_TWO_r23",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
@@ -5604,6 +5617,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_NOT_EXHAUSTED_DICT_ITEMS:
             return 0;
         case _ITER_NEXT_DICT_ITEMS:
+            return 0;
+        case _ITER_NEXT_DICT_ITEMS_UNPACK:
             return 0;
         case _INSERT_NULL:
             return 1;

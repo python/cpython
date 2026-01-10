@@ -771,7 +771,7 @@ class TestRacesDoNotCrash(TestBase):
     @requires_specialization
     def test_for_iter_dict_items(self):
         def get_items():
-            return dict.fromkeys(zip(range(self.ITEMS), range(self.ITEMS)))
+            return dict(zip(range(self.ITEMS), range(self.ITEMS)))
 
         def read(items):
             for k, v in items.items():
@@ -1934,7 +1934,7 @@ class TestSpecializer(TestBase):
 
         def for_iter_dict():
             n = _testinternalcapi.SPECIALIZATION_THRESHOLD
-            dct = dict.fromkeys(zip(range(n), range(n)))
+            dct = dict(zip(range(n), range(n)))
             for k, v in dct.items():
                 pass
 

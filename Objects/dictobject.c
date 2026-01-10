@@ -5444,6 +5444,23 @@ fail:
     return -1;
 }
 
+int
+_PyDictIter_IterNextItemPair(PyObject *self, PyObject **key, PyObject **value)
+{
+    _PyDictIterObject *di = (_PyDictIterObject *)self;
+    PyDictObject *d = di->di_dict;
+
+    if (d == NULL) {
+        return -1;
+    }
+
+#if Py_GIL_DISABLED
+    return dictiter_iternext_threadsafe(d, self, key, value);
+#else
+    return dictiter_iternextitem_lock_held(d, self, key, value);
+#endif
+}
+
 #ifdef Py_GIL_DISABLED
 
 // Grabs the key and/or value from the provided locations and if successful

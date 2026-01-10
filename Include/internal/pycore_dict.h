@@ -346,6 +346,8 @@ PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyDictIter_IterNextItem(PyObject *self);
 
+PyAPI_FUNC(int) _PyDictIter_IterNextItemPair(PyObject *self, PyObject **key, PyObject **value);
+
 typedef struct {
     PyObject_HEAD
     PyDictObject *di_dict; /* Set to NULL when iterator is exhausted */

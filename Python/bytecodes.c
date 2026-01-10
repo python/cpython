@@ -3520,6 +3520,24 @@ dummy_func(
             next = PyStackRef_FromPyObjectSteal(item);
         }
 
+        tier2 op(_ITER_NEXT_DICT_ITEMS_UNPACK, (iter, null_or_index -- iter, null_or_index, value, key)) {
+            PyObject *value_o;
+            PyObject *key_o;
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(iter_o) == &PyDictIterItem_Type);
+            int err = _PyDictIter_IterNextItemPair(iter_o, &key_o, &value_o);
+            if (err) {
+                if (_PyErr_Occurred(tstate)) {
+                    ERROR_NO_POP();
+                }
+                /* iterator ended normally */
+                /* The translator sets the deopt target just past the matching END_FOR */
+                EXIT_IF(true);
+            }
+            value = PyStackRef_FromPyObjectSteal(value_o);
+            key = PyStackRef_FromPyObjectSteal(key_o);
+        }
+
         macro(FOR_ITER_DICT_ITEMS) =
             unused/1 +
             _ITER_CHECK_DICT_ITEMS +

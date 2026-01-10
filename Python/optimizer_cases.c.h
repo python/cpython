@@ -2576,10 +2576,34 @@
 
         case _ITER_NEXT_DICT_ITEMS: {
             JitOptRef next;
+            if (i + 4 < trace_len &&
+                (this_instr + 3)->opcode == _GUARD_TOS_TUPLE &&
+                (this_instr + 4)->opcode == _UNPACK_SEQUENCE_TWO_TUPLE) {
+                REPLACE_OP(this_instr, _ITER_NEXT_DICT_ITEMS_UNPACK, 0, 0);
+                assert((this_instr + 1)->opcode == _CHECK_VALIDITY);
+                assert((this_instr + 2)->opcode == _SET_IP);
+                REPLACE_OP((this_instr + 1), _NOP, 0, 0);
+                REPLACE_OP((this_instr + 2), _NOP, 0, 0);
+                REPLACE_OP((this_instr + 3), _NOP, 0, 0);
+                REPLACE_OP((this_instr + 4), _NOP, 0, 0);
+            }
             next = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = next;
             stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _ITER_NEXT_DICT_ITEMS_UNPACK: {
+            JitOptRef value;
+            JitOptRef key;
+            value = sym_new_not_null(ctx);
+            key = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[0] = value;
+            stack_pointer[1] = key;
+            stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

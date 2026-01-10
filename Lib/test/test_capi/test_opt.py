@@ -477,7 +477,7 @@ class TestUops(unittest.TestCase):
     def test_for_iter_dict_items(self):
 
         def testfunc(n):
-            dct = dict.fromkeys(zip(range(n), range(n))).items()
+            dct = dict(zip(range(n), range(n, -1, - 1))).items()
             for k, v in dct:
                 pass
 
@@ -3460,6 +3460,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_FOR_ITER_GEN_FRAME", uops)
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+
+    def test_for_iter_dict_items(self):
+
+        def testfunc(n):
+            dct = dict(zip(range(n), range(n))).items()
+            for k, v in dct:
+                pass
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD*2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_GUARD_NOT_EXHAUSTED_DICT_ITEMS", uops)
+        self.assertIn("_ITER_NEXT_DICT_ITEMS_UNPACK", uops)
 
     def test_send_gen_frame(self):
 
