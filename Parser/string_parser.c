@@ -1,23 +1,44 @@
-#include <stdbool.h>
-
 #include <Python.h>
+#include "pycore_bytesobject.h"   // _PyBytes_DecodeEscape()
+#include "pycore_unicodeobject.h" // _PyUnicode_DecodeUnicodeEscapeInternal()
 
-#include "tokenizer.h"
+#include "lexer/state.h"
 #include "pegen.h"
 #include "string_parser.h"
+
+#include <stdbool.h>
 
 //// STRING HANDLING FUNCTIONS ////
 
 static int
-warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
+warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_invalid_escape, Token *t)
 {
-    unsigned char c = *first_invalid_escape;
+    if (p->call_invalid_rules) {
+        // Do not report warnings if we are in the second pass of the parser
+        // to avoid showing the warning twice.
+        return 0;
+    }
+    unsigned char c = (unsigned char)*first_invalid_escape;
+    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END || t->type == TSTRING_MIDDLE || t->type == TSTRING_END)
+            && (c == '{' || c == '}')) {
+        // in this case the tokenizer has already emitted a warning,
+        // see Parser/tokenizer/helpers.c:warn_invalid_escape_sequence
+        return 0;
+    }
+
     int octal = ('4' <= c && c <= '7');
     PyObject *msg =
         octal
-        ? PyUnicode_FromFormat("invalid octal escape sequence '\\%.3s'",
-                               first_invalid_escape)
-        : PyUnicode_FromFormat("invalid escape sequence '\\%c'", c);
+        ? PyUnicode_FromFormat(
+              "\"\\%.3s\" is an invalid octal escape sequence. "
+              "Such sequences will not work in the future. "
+              "Did you mean \"\\\\%.3s\"? A raw string is also an option.",
+              first_invalid_escape, first_invalid_escape)
+        : PyUnicode_FromFormat(
+              "\"\\%c\" is an invalid escape sequence. "
+              "Such sequences will not work in the future. "
+              "Did you mean \"\\\\%c\"? A raw string is also an option.",
+              c, c);
     if (msg == NULL) {
         return -1;
     }
@@ -28,10 +49,48 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
     else {
         category = PyExc_DeprecationWarning;
     }
+
+    // Calculate the lineno and the col_offset of the invalid escape sequence
+    const char *start = buffer;
+    const char *end = first_invalid_escape;
+    int lineno = t->lineno;
+    int col_offset = t->col_offset;
+    while (start < end) {
+        if (*start == '\n') {
+            lineno++;
+            col_offset = 0;
+        }
+        else {
+            col_offset++;
+        }
+        start++;
+    }
+
+    // Count the number of quotes in the token
+    char first_quote = 0;
+    if (lineno == t->lineno) {
+        int quote_count = 0;
+        char* tok = PyBytes_AsString(t->bytes);
+        for (int i = 0; i < PyBytes_Size(t->bytes); i++) {
+            if (tok[i] == '\'' || tok[i] == '\"') {
+                if (quote_count == 0) {
+                    first_quote = tok[i];
+                }
+                if (tok[i] == first_quote) {
+                    quote_count++;
+                }
+            } else {
+                break;
+            }
+        }
+
+        col_offset += quote_count;
+    }
+
     if (PyErr_WarnExplicitObject(category, msg, p->tok->filename,
-                                 t->lineno, NULL, NULL) < 0) {
+                                 lineno, p->tok->module, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
-            /* Replace the DeprecationWarning exception with a SyntaxError
+            /* Replace the Syntax/DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
 
@@ -40,11 +99,16 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
             if (octal) {
-                RAISE_SYNTAX_ERROR("invalid octal escape sequence '\\%.3s'",
-                                   first_invalid_escape);
+                RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, lineno, col_offset-1, lineno, col_offset+1,
+                    "\"\\%.3s\" is an invalid octal escape sequence. "
+                    "Did you mean \"\\\\%.3s\"? A raw string is also an option.",
+                    first_invalid_escape, first_invalid_escape);
             }
             else {
-                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", c);
+                RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, lineno, col_offset-1, lineno, col_offset+1,
+                    "\"\\%c\" is an invalid escape sequence. "
+                    "Did you mean \"\\\\%c\"? A raw string is also an option.",
+                    c, c);
             }
         }
         Py_DECREF(msg);
@@ -77,12 +141,12 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     const char *end;
 
     /* check for integer overflow */
-    if (len > SIZE_MAX / 6) {
+    if (len > (size_t)PY_SSIZE_T_MAX / 6) {
         return NULL;
     }
     /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
        "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */
-    u = PyBytes_FromStringAndSize((char *)NULL, len * 6);
+    u = PyBytes_FromStringAndSize((char *)NULL, (Py_ssize_t)len * 6);
     if (u == NULL) {
         return NULL;
     }
@@ -129,18 +193,21 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             *p++ = *s++;
         }
     }
-    len = p - buf;
+    len = (size_t)(p - buf);
     s = buf;
 
-    const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    v = _PyUnicode_DecodeUnicodeEscapeInternal2(s, (Py_ssize_t)len, NULL, NULL,
+                                                &first_invalid_escape_char,
+                                                &first_invalid_escape_ptr);
 
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.
-    if (v != NULL && first_invalid_escape != NULL && t != NULL) {
-        if (warn_invalid_escape_sequence(parser, first_invalid_escape, t) < 0) {
-            /* We have not decref u before because first_invalid_escape points
-               inside u. */
+    if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL) {
+        if (warn_invalid_escape_sequence(parser, s, first_invalid_escape_ptr, t) < 0) {
+            /* We have not decref u before because first_invalid_escape_ptr
+               points inside u. */
             Py_XDECREF(u);
             Py_DECREF(v);
             return NULL;
@@ -153,14 +220,17 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 static PyObject *
 decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
 {
-    const char *first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL, &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    PyObject *result = _PyBytes_DecodeEscape2(s, len, NULL,
+                                              &first_invalid_escape_char,
+                                              &first_invalid_escape_ptr);
     if (result == NULL) {
         return NULL;
     }
 
-    if (first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(p, first_invalid_escape, t) < 0) {
+    if (first_invalid_escape_ptr != NULL) {
+        if (warn_invalid_escape_sequence(p, s, first_invalid_escape_ptr, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -172,7 +242,7 @@ PyObject *
 _PyPegen_decode_string(Parser *p, int raw, const char *s, size_t len, Token *t)
 {
     if (raw) {
-        return PyUnicode_DecodeUTF8Stateful(s, len, NULL, NULL);
+        return PyUnicode_DecodeUTF8Stateful(s, (Py_ssize_t)len, NULL, NULL);
     }
     return decode_unicode_with_escapes(p, s, len, t);
 }
@@ -216,9 +286,14 @@ _PyPegen_parse_string(Parser *p, Token *t)
         PyErr_BadInternalCall();
         return NULL;
     }
+
     /* Skip the leading quote char. */
     s++;
     len = strlen(s);
+    // gh-120155: 's' contains at least the trailing quote,
+    // so the code '--len' below is safe.
+    assert(len >= 1);
+
     if (len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
         return NULL;
@@ -256,9 +331,9 @@ _PyPegen_parse_string(Parser *p, Token *t)
             }
         }
         if (rawmode) {
-            return PyBytes_FromStringAndSize(s, len);
+            return PyBytes_FromStringAndSize(s, (Py_ssize_t)len);
         }
-        return decode_bytes_with_escapes(p, s, len, t);
+        return decode_bytes_with_escapes(p, s, (Py_ssize_t)len, t);
     }
     return _PyPegen_decode_string(p, rawmode, s, len, t);
 }

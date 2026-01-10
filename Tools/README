@@ -10,13 +10,13 @@ c-analyzer      Tools to check no new global variables have been added.
 
 cases_generator Tooling to generate interpreters.
 
-ccbench         A Python threads-based concurrency benchmark. (*)
-
 clinic          A preprocessor for CPython C files in order to automate
                 the boilerplate involved with writing argument parsing
                 code for "builtins".
 
 freeze          Create a stand-alone executable from a Python program.
+
+ftscalingbench  Benchmarks for free-threading and finding bottlenecks.
 
 gdb             Python code to be run inside gdb, to make it easier to
                 debug Python itself (by David Malcolm).
@@ -28,7 +28,11 @@ i18n            Tools for internationalization. pygettext.py
 
 importbench     A set of micro-benchmarks for various import scenarios.
 
-iobench         Benchmark for the new Python I/O system. (*)
+inspection      Tooling for PEP-678 "Safe external debugger interface for CPython".
+
+jit             Tooling for building the JIT.
+
+lockbench       Benchmarks for PyMutex and critical sections.
 
 msi             Support for packaging Python as an MSI package on Windows.
 
@@ -39,18 +43,15 @@ patchcheck      Tools for checking and applying patches to the Python source cod
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
-scripts         A number of useful single-file programs, e.g. tabnanny.py
-                by Tim Peters, which checks for inconsistent mixing of
-                tabs and spaces, and 2to3, which converts Python 2 code
-                to Python 3 code.
+pixi-packages   Pixi package definitions for downstream from-source builds.
+
+scripts         A number of useful single-file programs, e.g. run_tests.py
+                which runs the Python test suite.
 
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
                 tests against multiple installations of OpenSSL and LibreSSL.
 
-stringbench     A suite of micro-benchmarks for various operations on
-                strings (both 8-bit and unicode). (*)
-
-tz              A script to dump timezone from /usr/share/zoneinfo.
+tsan            Utilities for building CPython with thread-sanitizer.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
@@ -61,7 +62,5 @@ unittestgui     A Tkinter based GUI test runner for unittest, with test
 
 wasm            Config and helpers to facilitate cross compilation of CPython
                 to WebAssembly (WASM).
-
-(*) A generic benchmark suite is maintained separately at https://github.com/python/performance
 
 Note: The pynche color editor has moved to https://gitlab.com/warsaw/pynche

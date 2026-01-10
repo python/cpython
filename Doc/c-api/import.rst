@@ -13,30 +13,8 @@ Importing Modules
       single: __all__ (package variable)
       single: modules (in module sys)
 
-   This is a simplified interface to :c:func:`PyImport_ImportModuleEx` below,
-   leaving the *globals* and *locals* arguments set to ``NULL`` and *level* set
-   to 0.  When the *name*
-   argument contains a dot (when it specifies a submodule of a package), the
-   *fromlist* argument is set to the list ``['*']`` so that the return value is the
-   named module rather than the top-level package containing it as would otherwise
-   be the case.  (Unfortunately, this has an additional side effect when *name* in
-   fact specifies a subpackage instead of a submodule: the submodules specified in
-   the package's ``__all__`` variable are  loaded.)  Return a new reference to the
-   imported module, or ``NULL`` with an exception set on failure.  A failing
-   import of a module doesn't leave the module in :data:`sys.modules`.
-
-   This function always uses absolute imports.
-
-
-.. c:function:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
-
-   This function is a deprecated alias of :c:func:`PyImport_ImportModule`.
-
-   .. versionchanged:: 3.3
-      This function used to fail immediately when the import lock was held
-      by another thread.  In Python 3.3 though, the locking scheme switched
-      to per-module locks for most purposes, so this function's special
-      behaviour isn't needed anymore.
+   This is a wrapper around :c:func:`PyImport_Import()` which takes a
+   :c:expr:`const char *` as an argument instead of a :c:expr:`PyObject *`.
 
 
 .. c:function:: PyObject* PyImport_ImportModuleEx(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
@@ -95,27 +73,40 @@ Importing Modules
    an exception set on failure (the module still exists in this case).
 
 
+.. c:function:: PyObject* PyImport_AddModuleRef(const char *name)
+
+   Return the module object corresponding to a module name.
+
+   The *name* argument may be of the form ``package.module``. First check the
+   modules dictionary if there's one there, and if not, create a new one and
+   insert it in the modules dictionary.
+
+   Return a :term:`strong reference` to the module on success. Return ``NULL``
+   with an exception set on failure.
+
+   The module name *name* is decoded from UTF-8.
+
+   This function does not load or import the module; if the module wasn't
+   already loaded, you will get an empty module object. Use
+   :c:func:`PyImport_ImportModule` or one of its variants to import a module.
+   Package structures implied by a dotted name for *name* are not created if
+   not already present.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: PyObject* PyImport_AddModuleObject(PyObject *name)
 
-   Return the module object corresponding to a module name.  The *name* argument
-   may be of the form ``package.module``. First check the modules dictionary if
-   there's one there, and if not, create a new one and insert it in the modules
-   dictionary. Return ``NULL`` with an exception set on failure.
-
-   .. note::
-
-      This function does not load or import the module; if the module wasn't already
-      loaded, you will get an empty module object. Use :c:func:`PyImport_ImportModule`
-      or one of its variants to import a module.  Package structures implied by a
-      dotted name for *name* are not created if not already present.
+   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
+   reference` and *name* is a Python :class:`str` object.
 
    .. versionadded:: 3.3
 
 
 .. c:function:: PyObject* PyImport_AddModule(const char *name)
 
-   Similar to :c:func:`PyImport_AddModuleObject`, but the name is a UTF-8
-   encoded string instead of a Unicode object.
+   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
+   reference`.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModule(const char *name, PyObject *co)
@@ -126,20 +117,19 @@ Importing Modules
    read from a Python bytecode file or obtained from the built-in function
    :func:`compile`, load the module.  Return a new reference to the module object,
    or ``NULL`` with an exception set if an error occurred.  *name*
-   is removed from :attr:`sys.modules` in error cases, even if *name* was already
-   in :attr:`sys.modules` on entry to :c:func:`PyImport_ExecCodeModule`.  Leaving
-   incompletely initialized modules in :attr:`sys.modules` is dangerous, as imports of
+   is removed from :data:`sys.modules` in error cases, even if *name* was already
+   in :data:`sys.modules` on entry to :c:func:`PyImport_ExecCodeModule`.  Leaving
+   incompletely initialized modules in :data:`sys.modules` is dangerous, as imports of
    such modules have no way to know that the module object is an unknown (and
    probably damaged with respect to the module author's intents) state.
 
-   The module's :attr:`__spec__` and :attr:`__loader__` will be set, if
-   not set already, with the appropriate values.  The spec's loader will
-   be set to the module's ``__loader__`` (if set) and to an instance of
-   :class:`SourceFileLoader` otherwise.
+   The module's :attr:`~module.__spec__` and :attr:`~module.__loader__` will be
+   set, if not set already, with the appropriate values.  The spec's loader
+   will be set to the module's :attr:`!__loader__` (if set) and to an instance
+   of :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
-   The module's :attr:`__file__` attribute will be set to the code object's
-   :c:member:`co_filename`.  If applicable, :attr:`__cached__` will also
-   be set.
+   The module's :attr:`~module.__file__` attribute will be set to the code
+   object's :attr:`~codeobject.co_filename`.
 
    This function will reload the module if it was already imported.  See
    :c:func:`PyImport_ReloadModule` for the intended way to reload a module.
@@ -151,30 +141,36 @@ Importing Modules
    :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
    .. versionchanged:: 3.12
-      The setting of :attr:`__cached__` and :attr:`__loader__` is
-      deprecated. See :class:`~importlib.machinery.ModuleSpec` for
+      The setting of ``__cached__`` and :attr:`~module.__loader__`
+      is deprecated. See :class:`~importlib.machinery.ModuleSpec` for
       alternatives.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` is no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
 
-   Like :c:func:`PyImport_ExecCodeModule`, but the :attr:`__file__` attribute of
-   the module object is set to *pathname* if it is non-``NULL``.
+   Like :c:func:`PyImport_ExecCodeModule`, but the :attr:`~module.__file__`
+   attribute of the module object is set to *pathname* if it is non-``NULL``.
 
    See also :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname, PyObject *cpathname)
 
-   Like :c:func:`PyImport_ExecCodeModuleEx`, but the :attr:`__cached__`
-   attribute of the module object is set to *cpathname* if it is
-   non-``NULL``.  Of the three functions, this is the preferred one to use.
+   Like :c:func:`PyImport_ExecCodeModuleEx`, but the path to any compiled file
+   via *cpathname* is used appropriately when non-``NULL``.  Of the three
+   functions, this is the preferred one to use.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.12
-      Setting :attr:`__cached__` is deprecated. See
+      Setting ``__cached__`` is deprecated. See
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
@@ -186,7 +182,7 @@ Importing Modules
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.3
-      Uses :func:`!imp.source_from_cache()` in calculating the source path if
+      Uses :func:`!imp.source_from_cache` in calculating the source path if
       only the bytecode path is provided.
    .. versionchanged:: 3.12
       No longer uses the removed :mod:`!imp` module.
@@ -225,7 +221,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 
-   Return a finder object for a :data:`sys.path`/:attr:`pkg.__path__` item
+   Return a finder object for a :data:`sys.path`/:attr:`!pkg.__path__` item
    *path*, possibly by fetching it from the :data:`sys.path_importer_cache`
    dict.  If it wasn't yet cached, traverse :data:`sys.path_hooks` until a hook
    is found that can handle the path item.  Return ``None`` if no hook could;
@@ -294,23 +290,25 @@ Importing Modules
 
 .. c:struct:: _inittab
 
-   Structure describing a single entry in the list of built-in modules.  Each of
-   these structures gives the name and initialization function for a module built
-   into the interpreter.  The name is an ASCII encoded string.  Programs which
+   Structure describing a single entry in the list of built-in modules.
+   Programs which
    embed Python may use an array of these structures in conjunction with
    :c:func:`PyImport_ExtendInittab` to provide additional built-in modules.
-   The structure is defined in :file:`Include/import.h` as::
+   The structure consists of two members:
 
-      struct _inittab {
-          const char *name;           /* ASCII encoded string */
-          PyObject* (*initfunc)(void);
-      };
+   .. c:member:: const char *name
+
+      The module name, as an ASCII encoded string.
+
+   .. c:member:: PyObject* (*initfunc)(void)
+
+      Initialization function for a module built into the interpreter.
 
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
    Add a collection of modules to the table of built-in modules.  The *newtab*
-   array must end with a sentinel entry which contains ``NULL`` for the :attr:`name`
+   array must end with a sentinel entry which contains ``NULL`` for the :c:member:`~_inittab.name`
    field; failure to provide the sentinel value can result in a memory fault.
    Returns ``0`` on success or ``-1`` if insufficient memory could be allocated to
    extend the internal table.  In the event of failure, no modules are added to the
@@ -319,3 +317,52 @@ Importing Modules
    If Python is initialized multiple times, :c:func:`PyImport_AppendInittab` or
    :c:func:`PyImport_ExtendInittab` must be called before each Python
    initialization.
+
+
+.. c:var:: struct _inittab *PyImport_Inittab
+
+   The table of built-in modules used by Python initialization. Do not use this directly;
+   use :c:func:`PyImport_AppendInittab` and :c:func:`PyImport_ExtendInittab`
+   instead.
+
+
+.. c:function:: PyObject* PyImport_ImportModuleAttr(PyObject *mod_name, PyObject *attr_name)
+
+   Import the module *mod_name* and get its attribute *attr_name*.
+
+   Names must be Python :class:`str` objects.
+
+   Helper function combining :c:func:`PyImport_Import` and
+   :c:func:`PyObject_GetAttr`. For example, it can raise :exc:`ImportError` if
+   the module is not found, and :exc:`AttributeError` if the attribute doesn't
+   exist.
+
+   .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_ImportModuleAttrString(const char *mod_name, const char *attr_name)
+
+   Similar to :c:func:`PyImport_ImportModuleAttr`, but names are UTF-8 encoded
+   strings instead of Python :class:`str` objects.
+
+   .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))
+
+   This function is a building block that enables embedders to implement
+   the :py:meth:`~importlib.abc.Loader.create_module` step of custom
+   static extension importers (e.g. of statically-linked extensions).
+
+   *spec* must be a :class:`~importlib.machinery.ModuleSpec` object.
+
+   *initfunc* must be an :ref:`initialization function <extension-export-hook>`,
+   the same as for :c:func:`PyImport_AppendInittab`.
+
+   On success, create and return a module object.
+   This module will not be initialized; call :c:func:`PyModule_Exec`
+   to initialize it.
+   (Custom importers should do this in their
+   :py:meth:`~importlib.abc.Loader.exec_module` method.)
+
+   On error, return NULL with an exception set.
+
+   .. versionadded:: 3.15

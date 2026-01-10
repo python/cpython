@@ -1,0 +1,15 @@
+%(option)s option requires %(number)d argument
+%prog [options]
+%s option does not take a value
+Options
+Usage
+Usage: %s\n
+ambiguous option: %s (%s?)
+complex
+floating-point
+integer
+no such option: %s
+option %s: invalid %s value: %r
+option %s: invalid choice: %r (choose from %s)
+show program's version number and exit
+show this help message and exit

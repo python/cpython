@@ -8,17 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_opcode.h"        // _PyOpcode_Jump
-
-
 #define MAX_REAL_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
         (((opcode) >= 0 && (opcode) <= MAX_REAL_OPCODE) || \
-         IS_PSEUDO_OPCODE(opcode))
-
-#define IS_JUMP_OPCODE(opcode) \
-         is_bit_set_in_table(_PyOpcode_Jump, opcode)
+         IS_PSEUDO_INSTR(opcode))
 
 #define IS_BLOCK_PUSH_OPCODE(opcode) \
         ((opcode) == SETUP_FINALLY || \
@@ -26,11 +20,11 @@ extern "C" {
          (opcode) == SETUP_CLEANUP)
 
 #define HAS_TARGET(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
 
 /* opcodes that must be last in the basicblock */
 #define IS_TERMINATOR_OPCODE(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
 
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
@@ -49,42 +43,48 @@ extern "C" {
          (opcode) == JUMP_BACKWARD || \
          (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
+#define IS_CONDITIONAL_JUMP_OPCODE(opcode) \
+        ((opcode) == POP_JUMP_IF_FALSE || \
+         (opcode) == POP_JUMP_IF_TRUE || \
+         (opcode) == POP_JUMP_IF_NONE || \
+         (opcode) == POP_JUMP_IF_NOT_NONE)
+
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
-         (opcode) == RETURN_CONST || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
-#define IS_SUPERINSTRUCTION_OPCODE(opcode) \
-        ((opcode) == LOAD_FAST__LOAD_FAST || \
-         (opcode) == LOAD_FAST__LOAD_CONST || \
-         (opcode) == LOAD_CONST__LOAD_FAST || \
-         (opcode) == STORE_FAST__LOAD_FAST || \
-         (opcode) == STORE_FAST__STORE_FAST)
+#define IS_RETURN_OPCODE(opcode) \
+        (opcode == RETURN_VALUE)
+#define IS_RAISE_OPCODE(opcode) \
+        (opcode == RAISE_VARARGS || opcode == RERAISE)
 
 
-#define LOG_BITS_PER_INT 5
-#define MASK_LOW_LOG_BITS 31
+/* Flags used in the oparg for MAKE_FUNCTION */
+#define MAKE_FUNCTION_DEFAULTS    0x01
+#define MAKE_FUNCTION_KWDEFAULTS  0x02
+#define MAKE_FUNCTION_ANNOTATIONS 0x04
+#define MAKE_FUNCTION_CLOSURE     0x08
+#define MAKE_FUNCTION_ANNOTATE    0x10
 
-static inline int
-is_bit_set_in_table(const uint32_t *table, int bitindex) {
-    /* Is the relevant bit set in the relevant word? */
-    /* 512 bits fit into 9 32-bits words.
-     * Word is indexed by (bitindex>>ln(size of int in bits)).
-     * Bit within word is the low bits of bitindex.
-     */
-    if (bitindex >= 0 && bitindex < 512) {
-        uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
-        return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
-    }
-    else {
-        return 0;
-    }
-}
+/* Values used as the oparg for LOAD_COMMON_CONSTANT */
+#define CONSTANT_ASSERTIONERROR 0
+#define CONSTANT_NOTIMPLEMENTEDERROR 1
+#define CONSTANT_BUILTIN_TUPLE 2
+#define CONSTANT_BUILTIN_ALL 3
+#define CONSTANT_BUILTIN_ANY 4
+#define CONSTANT_BUILTIN_LIST 5
+#define CONSTANT_BUILTIN_SET 6
+#define NUM_COMMON_CONSTANTS 7
 
-#undef LOG_BITS_PER_INT
-#undef MASK_LOW_LOG_BITS
+/* Values used in the oparg for RESUME */
+#define RESUME_AT_FUNC_START 0
+#define RESUME_AFTER_YIELD 1
+#define RESUME_AFTER_YIELD_FROM 2
+#define RESUME_AFTER_AWAIT 3
 
+#define RESUME_OPARG_LOCATION_MASK 0x3
+#define RESUME_OPARG_DEPTH1_MASK 0x4
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,0 @@
-Deprecation warnings are now emitted for :class:`!ast.Num`,
-:class:`!ast.Bytes`, :class:`!ast.Str`, :class:`!ast.NameConstant` and
-:class:`!ast.Ellipsis`. These have been documented as deprecated since Python
-3.8, and will be removed in Python 3.14.

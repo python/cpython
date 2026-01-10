@@ -13,7 +13,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
    Return ``1`` if the object provides the mapping protocol or supports slicing,
    and ``0`` otherwise.  Note that it returns ``1`` for Python classes with
-   a :meth:`__getitem__` method, since in general it is impossible to
+   a :meth:`~object.__getitem__` method, since in general it is impossible to
    determine what type of keys the class supports. This function always succeeds.
 
 
@@ -28,30 +28,70 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: PyObject* PyMapping_GetItemString(PyObject *o, const char *key)
 
-   Return element of *o* corresponding to the string *key* or ``NULL`` on failure.
-   This is the equivalent of the Python expression ``o[key]``.
-   See also :c:func:`PyObject_GetItem`.
+   This is the same as :c:func:`PyObject_GetItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
+.. c:function:: int PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
+
+   Variant of :c:func:`PyObject_GetItem` which doesn't raise
+   :exc:`KeyError` if the key is not found.
+
+   If the key is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the corresponding value.
+   If the key is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`KeyError` is silenced.
+   If an error other than :exc:`KeyError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
+
+   This is the same as :c:func:`PyMapping_GetOptionalItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyMapping_SetItemString(PyObject *o, const char *key, PyObject *v)
 
-   Map the string *key* to the value *v* in object *o*.  Returns ``-1`` on
-   failure.  This is the equivalent of the Python statement ``o[key] = v``.
-   See also :c:func:`PyObject_SetItem`.  This function *does not* steal a
-   reference to *v*.
+   This is the same as :c:func:`PyObject_SetItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: int PyMapping_DelItem(PyObject *o, PyObject *key)
 
-   Remove the mapping for the object *key* from the object *o*.  Return ``-1``
-   on failure.  This is equivalent to the Python statement ``del o[key]``.
    This is an alias of :c:func:`PyObject_DelItem`.
 
 
 .. c:function:: int PyMapping_DelItemString(PyObject *o, const char *key)
 
-   Remove the mapping for the string *key* from the object *o*.  Return ``-1``
-   on failure.  This is equivalent to the Python statement ``del o[key]``.
+   This is the same as :c:func:`PyObject_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
+.. c:function:: int PyMapping_HasKeyWithError(PyObject *o, PyObject *key)
+
+   Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.
+   This is equivalent to the Python expression ``key in o``.
+   On failure, return ``-1``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyMapping_HasKeyStringWithError(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyMapping_HasKeyWithError`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyMapping_HasKey(PyObject *o, PyObject *key)
@@ -60,20 +100,28 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    This is equivalent to the Python expression ``key in o``.
    This function always succeeds.
 
-   Note that exceptions which occur while calling the :meth:`__getitem__`
-   method will get suppressed.
-   To get error reporting use :c:func:`PyObject_GetItem()` instead.
+   .. note::
+
+      Exceptions which occur when this calls the :meth:`~object.__getitem__`
+      method are silently ignored.
+      For proper error handling, use :c:func:`PyMapping_HasKeyWithError`,
+      :c:func:`PyMapping_GetOptionalItem` or :c:func:`PyObject_GetItem()` instead.
 
 
 .. c:function:: int PyMapping_HasKeyString(PyObject *o, const char *key)
 
-   Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.
-   This is equivalent to the Python expression ``key in o``.
-   This function always succeeds.
+   This is the same as :c:func:`PyMapping_HasKey`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
-   Note that exceptions which occur while calling the :meth:`__getitem__`
-   method and creating a temporary string object will get suppressed.
-   To get error reporting use :c:func:`PyMapping_GetItemString()` instead.
+   .. note::
+
+      Exceptions that occur when this calls the :meth:`~object.__getitem__`
+      method or while creating the temporary :class:`str`
+      object are silently ignored.
+      For proper error handling, use :c:func:`PyMapping_HasKeyStringWithError`,
+      :c:func:`PyMapping_GetOptionalItemString` or
+      :c:func:`PyMapping_GetItemString` instead.
 
 
 .. c:function:: PyObject* PyMapping_Keys(PyObject *o)

@@ -1,5 +1,5 @@
-:mod:`random` --- Generate pseudo-random numbers
-================================================
+:mod:`!random` --- Generate pseudo-random numbers
+=================================================
 
 .. module:: random
    :synopsis: Generate pseudo-random numbers with various common distributions.
@@ -34,10 +34,8 @@ instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`~Random.random`,
-:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
-Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
-allows :meth:`randrange` to produce selections over an arbitrarily large range.
+basic generator of your own devising: see the documentation on that class for
+more details.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
@@ -57,9 +55,15 @@ from sources provided by the operating system.
 
 
    `Complementary-Multiply-with-Carry recipe
-   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
+   <https://code.activestate.com/recipes/576707-long-period-random-number-generator/>`_ for a compatible alternative
    random number generator with a long period and comparatively simple update
    operations.
+
+.. note::
+   The global random number generator and instances of :class:`Random` are thread-safe.
+   However, in the free-threaded build, concurrent calls to the global generator or
+   to the same instance of :class:`Random` may encounter contention and poor performance.
+   Consider using separate instances of :class:`Random` per thread instead.
 
 
 Bookkeeping functions
@@ -74,7 +78,7 @@ Bookkeeping functions
    instead of the system time (see the :func:`os.urandom` function for details
    on availability).
 
-   If *a* is an int, it is used directly.
+   If *a* is an int, its absolute value is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
    object gets converted to an :class:`int` and all of its bits are used.
@@ -88,7 +92,7 @@ Bookkeeping functions
 
    .. versionchanged:: 3.11
       The *seed* must be one of the following types:
-      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
 .. function:: getstate()
@@ -196,8 +200,8 @@ Functions for sequences
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
-   :func:`choice`.  The algorithm used by :func:`choices` uses floating
-   point arithmetic for internal consistency and speed.  The algorithm used
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating-point
+   arithmetic for internal consistency and speed.  The algorithm used
    by :func:`choice` defaults to integer arithmetic with repeated selections
    to avoid small biases from round-off error.
 
@@ -220,8 +224,8 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
-   .. deprecated-removed:: 3.9 3.11
-      The optional parameter *random*.
+   .. versionchanged:: 3.11
+      Removed the optional parameter *random*.
 
 
 .. function:: sample(population, k, *, counts=None)
@@ -294,21 +298,22 @@ be found in any statistics text.
 
 .. function:: random()
 
-   Return the next random floating point number in the range ``0.0 <= X < 1.0``
+   Return the next random floating-point number in the range ``0.0 <= X < 1.0``
 
 
 .. function:: uniform(a, b)
 
-   Return a random floating point number *N* such that ``a <= N <= b`` for
+   Return a random floating-point number *N* such that ``a <= N <= b`` for
    ``a <= b`` and ``b <= N <= a`` for ``b < a``.
 
    The end-point value ``b`` may or may not be included in the range
-   depending on floating-point rounding in the equation ``a + (b-a) * random()``.
+   depending on floating-point rounding in the expression
+   ``a + (b-a) * random()``.
 
 
 .. function:: triangular(low, high, mode)
 
-   Return a random floating point number *N* such that ``low <= N <= high`` and
+   Return a random floating-point number *N* such that ``low <= N <= high`` and
    with the specified *mode* between those bounds.  The *low* and *high* bounds
    default to zero and one.  The *mode* argument defaults to the midpoint
    between the bounds, giving a symmetric distribution.
@@ -407,10 +412,46 @@ Alternative Generator
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. versionchanged:: 3.11
       Formerly the *seed* could be any hashable object.  Now it is limited to:
-      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
+
+   Subclasses of :class:`!Random` should override the following methods if they
+   wish to make use of a different basic generator:
+
+   .. method:: Random.seed(a=None, version=2)
+
+      Override this method in subclasses to customise the :meth:`~random.seed`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.getstate()
+
+      Override this method in subclasses to customise the :meth:`~random.getstate`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.setstate(state)
+
+      Override this method in subclasses to customise the :meth:`~random.setstate`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.random()
+
+      Override this method in subclasses to customise the :meth:`~random.random`
+      behaviour of :class:`!Random` instances.
+
+   Optionally, a custom generator subclass can also supply the following method:
+
+   .. method:: Random.getrandbits(k)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
+
+   .. method:: Random.randbytes(n)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.randbytes` behaviour of :class:`!Random` instances.
+
 
 .. class:: SystemRandom([seed])
 
@@ -445,30 +486,30 @@ Examples
 
 Basic examples::
 
-   >>> random()                             # Random float:  0.0 <= x < 1.0
+   >>> random()                          # Random float:  0.0 <= x < 1.0
    0.37444887175646646
 
-   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x <= 10.0
+   >>> uniform(2.5, 10.0)                # Random float:  2.5 <= x <= 10.0
    3.1800146073117523
 
-   >>> expovariate(1 / 5)                   # Interval between arrivals averaging 5 seconds
+   >>> expovariate(1 / 5)                # Interval between arrivals averaging 5 seconds
    5.148957571865031
 
-   >>> randrange(10)                        # Integer from 0 to 9 inclusive
+   >>> randrange(10)                     # Integer from 0 to 9 inclusive
    7
 
-   >>> randrange(0, 101, 2)                 # Even integer from 0 to 100 inclusive
+   >>> randrange(0, 101, 2)              # Even integer from 0 to 100 inclusive
    26
 
-   >>> choice(['win', 'lose', 'draw'])      # Single random element from a sequence
+   >>> choice(['win', 'lose', 'draw'])   # Single random element from a sequence
    'draw'
 
    >>> deck = 'ace two three four'.split()
-   >>> shuffle(deck)                        # Shuffle a list
+   >>> shuffle(deck)                     # Shuffle a list
    >>> deck
    ['four', 'two', 'ace', 'three']
 
-   >>> sample([10, 20, 30, 40, 50], k=4)    # Four samples without replacement
+   >>> sample([10, 20, 30, 40, 50], k=4) # Four samples without replacement
    [40, 10, 50, 30]
 
 Simulations::
@@ -572,14 +613,14 @@ Simulation of arrival times and service deliveries for a multiserver queue::
    including simulation, sampling, shuffling, and cross-validation.
 
    `Economics Simulation
-   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
+   <https://nbviewer.org/url/norvig.com/ipython/Economics.ipynb>`_
    a simulation of a marketplace by
    `Peter Norvig <https://norvig.com/bio.html>`_ that shows effective
    use of many of the tools and distributions provided by this module
    (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
 
    `A Concrete Introduction to Probability (using Python)
-   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
+   <https://nbviewer.org/url/norvig.com/ipython/Probability.ipynb>`_
    a tutorial by `Peter Norvig <https://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
    how to perform data analysis using Python.
@@ -589,7 +630,8 @@ Recipes
 -------
 
 These recipes show how to efficiently make random selections
-from the combinatoric iterators in the :mod:`itertools` module:
+from the combinatoric iterators in the :mod:`itertools` module
+or the :pypi:`more-itertools` project:
 
 .. testcode::
    import random
@@ -619,6 +661,17 @@ from the combinatoric iterators in the :mod:`itertools` module:
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
+
+   def random_derangement(iterable):
+       "Choose a permutation where no element is in its original position."
+       seq = tuple(iterable)
+       if len(seq) < 2:
+           raise ValueError('derangements require at least two values')
+       perm = list(seq)
+       while True:
+           random.shuffle(perm)
+           if all(p != q for p, q in zip(seq, perm)):
+               return tuple(perm)
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
@@ -670,3 +723,83 @@ positive unnormalized float and is equal to ``math.ulp(0.0)``.)
    <https://allendowney.com/research/rand/downey07randfloat.pdf>`_ a
    paper by Allen B. Downey describing ways to generate more
    fine-grained floats than normally generated by :func:`.random`.
+
+.. _random-cli:
+
+Command-line usage
+------------------
+
+.. versionadded:: 3.13
+
+The :mod:`!random` module can be executed from the command line.
+
+.. code-block:: sh
+
+   python -m random [-h] [-c CHOICE [CHOICE ...] | -i N | -f N] [input ...]
+
+The following options are accepted:
+
+.. program:: random
+
+.. option:: -h, --help
+
+   Show the help message and exit.
+
+.. option:: -c CHOICE [CHOICE ...]
+            --choice CHOICE [CHOICE ...]
+
+   Print a random choice, using :meth:`choice`.
+
+.. option:: -i <N>
+            --integer <N>
+
+   Print a random integer between 1 and N inclusive, using :meth:`randint`.
+
+.. option:: -f <N>
+            --float <N>
+
+   Print a random floating-point number between 0 and N inclusive,
+   using :meth:`uniform`.
+
+If no options are given, the output depends on the input:
+
+* String or multiple: same as :option:`--choice`.
+* Integer: same as :option:`--integer`.
+* Float: same as :option:`--float`.
+
+.. _random-cli-example:
+
+Command-line example
+--------------------
+
+Here are some examples of the :mod:`!random` command-line interface:
+
+.. code-block:: console
+
+   $ # Choose one at random
+   $ python -m random egg bacon sausage spam "Lobster Thermidor aux crevettes with a Mornay sauce"
+   Lobster Thermidor aux crevettes with a Mornay sauce
+
+   $ # Random integer
+   $ python -m random 6
+   6
+
+   $ # Random floating-point number
+   $ python -m random 1.8
+   1.7080016272295635
+
+   $ # With explicit arguments
+   $ python  -m random --choice egg bacon sausage spam "Lobster Thermidor aux crevettes with a Mornay sauce"
+   egg
+
+   $ python -m random --integer 6
+   3
+
+   $ python -m random --float 1.8
+   1.5666339105010318
+
+   $ python -m random --integer 6
+   5
+
+   $ python -m random --float 6
+   3.1942323316565915

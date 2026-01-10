@@ -1,10 +1,11 @@
-"""Tests for the unparse.py script in the Tools/parser directory."""
+"""Tests for ast.unparse."""
 
 import unittest
 import test.support
 import pathlib
 import random
 import tokenize
+import warnings
 import ast
 from test.support.ast_helper import ASTTestMixin
 
@@ -141,13 +142,13 @@ class ASTTestCase(ASTTestMixin, unittest.TestCase):
         with self.subTest(node=node):
             self.assertRaises(raises, ast.unparse, node)
 
-    def get_source(self, code1, code2=None):
+    def get_source(self, code1, code2=None, **kwargs):
         code2 = code2 or code1
-        code1 = ast.unparse(ast.parse(code1))
+        code1 = ast.unparse(ast.parse(code1, **kwargs))
         return code1, code2
 
-    def check_src_roundtrip(self, code1, code2=None):
-        code1, code2 = self.get_source(code1, code2)
+    def check_src_roundtrip(self, code1, code2=None, **kwargs):
+        code1, code2 = self.get_source(code1, code2, **kwargs)
         with self.subTest(code1=code1, code2=code2):
             self.assertEqual(code2, code1)
 
@@ -196,6 +197,106 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('f"""{g(\'\'\'\n\'\'\')}"""')
         self.check_ast_roundtrip('''f"a\\r\\nb"''')
         self.check_ast_roundtrip('''f"\\u2028{'x'}"''')
+
+    def test_fstrings_pep701(self):
+        self.check_ast_roundtrip('f" something { my_dict["key"] } something else "')
+        self.check_ast_roundtrip('f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"')
+
+    def test_tstrings(self):
+        self.check_ast_roundtrip("t'foo'")
+        self.check_ast_roundtrip("t'foo {bar}'")
+        self.check_ast_roundtrip("t'foo {bar!s:.2f}'")
+        self.check_ast_roundtrip("t'{a +    b}'")
+        self.check_ast_roundtrip("t'{a +    b:x}'")
+        self.check_ast_roundtrip("t'{a +    b!s}'")
+        self.check_ast_roundtrip("t'{ {a}}'")
+        self.check_ast_roundtrip("t'{ {a}=}'")
+        self.check_ast_roundtrip("t'{{a}}'")
+        self.check_ast_roundtrip("t''")
+        self.check_ast_roundtrip('t""')
+        self.check_ast_roundtrip("t'{(lambda x: x)}'")
+        self.check_ast_roundtrip("t'{t'{x}'}'")
+
+    def test_tstring_with_nonsensical_str_field(self):
+        # `value` suggests that the original code is `t'{test1}`, but `str` suggests otherwise
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.Name(id="test1", ctx=ast.Load()), str="test2", conversion=-1
+                        )
+                    ]
+                )
+            ),
+            "t'{test2}'",
+        )
+
+    def test_tstring_with_none_str_field(self):
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    [ast.Interpolation(value=ast.Name(id="test1"), str=None, conversion=-1)]
+                )
+            ),
+            "t'{test1}'",
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    [
+                        ast.Interpolation(
+                            value=ast.Lambda(
+                                args=ast.arguments(args=[ast.arg(arg="x")]),
+                                body=ast.Name(id="x"),
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            "t'{(lambda x: x)}'",
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.TemplateStr(
+                                # `str` field kept here
+                                [ast.Interpolation(value=ast.Name(id="x"), str="y", conversion=-1)]
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            '''t"{t'{y}'}"''',
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.TemplateStr(
+                                [ast.Interpolation(value=ast.Name(id="x"), str=None, conversion=-1)]
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            '''t"{t'{x}'}"''',
+        )
+        self.assertEqual(
+            ast.unparse(ast.TemplateStr(
+                [ast.Interpolation(value=ast.Constant(value="foo"), str=None, conversion=114)]
+            )),
+            '''t"{'foo'!r}"''',
+        )
 
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
@@ -366,20 +467,27 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("a[i:j, k]")
 
     def test_invalid_raise(self):
-        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
+        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X", ctx=ast.Load())))
 
     def test_invalid_fstring_value(self):
         self.check_invalid(
             ast.JoinedStr(
                 values=[
-                    ast.Name(id="test"),
+                    ast.Name(id="test", ctx=ast.Load()),
                     ast.Constant(value="test")
                 ]
             )
         )
 
-    def test_invalid_fstring_backslash(self):
-        self.check_invalid(ast.FormattedValue(value=ast.Constant(value="\\\\")))
+    def test_fstring_backslash(self):
+        # valid since Python 3.12
+        self.assertEqual(ast.unparse(
+                            ast.FormattedValue(
+                                value=ast.Constant(value="\\\\"),
+                                conversion=-1,
+                                format_spec=None,
+                            )
+                        ), "{'\\\\\\\\'}")
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
@@ -411,9 +519,11 @@ class UnparseTestCase(ASTTestCase):
             self.check_ast_roundtrip(f"'''{docstring}'''")
 
     def test_constant_tuples(self):
-        self.check_src_roundtrip(ast.Constant(value=(1,), kind=None), "(1,)")
+        locs = ast.fix_missing_locations
         self.check_src_roundtrip(
-            ast.Constant(value=(1, 2, 3), kind=None), "(1, 2, 3)"
+            locs(ast.Module([ast.Expr(ast.Constant(value=(1,)))])), "(1,)")
+        self.check_src_roundtrip(
+            locs(ast.Module([ast.Expr(ast.Constant(value=(1, 2, 3)))])), "(1, 2, 3)"
         )
 
     def test_function_type(self):
@@ -454,6 +564,120 @@ class UnparseTestCase(ASTTestCase):
             "async with x(): # type: ignore\n\tpass"
         ):
             self.check_ast_roundtrip(statement, type_comments=True)
+
+    def test_unparse_interactive_semicolons(self):
+        # gh-129598: Fix ast.unparse() when ast.Interactive contains multiple statements
+        self.check_src_roundtrip("i = 1; 'expr'; raise Exception", mode='single')
+        self.check_src_roundtrip("i: int = 1; j: float = 0; k += l", mode='single')
+        combinable = (
+            "'expr'",
+            "(i := 1)",
+            "import foo",
+            "from foo import bar",
+            "i = 1",
+            "i += 1",
+            "i: int = 1",
+            "return i",
+            "pass",
+            "break",
+            "continue",
+            "del i",
+            "assert i",
+            "global i",
+            "nonlocal j",
+            "await i",
+            "yield i",
+            "yield from i",
+            "raise i",
+            "type t[T] = ...",
+            "i",
+        )
+        for a in combinable:
+            for b in combinable:
+                self.check_src_roundtrip(f"{a}; {b}", mode='single')
+
+    def test_unparse_interactive_integrity_1(self):
+        # rest of unparse_interactive_integrity tests just make sure mode='single' parse and unparse didn't break
+        self.check_src_roundtrip(
+            "if i:\n 'expr'\nelse:\n raise Exception",
+            "if i:\n    'expr'\nelse:\n    raise Exception",
+            mode='single'
+        )
+        self.check_src_roundtrip(
+            "@decorator1\n@decorator2\ndef func():\n 'docstring'\n i = 1; 'expr'; raise Exception",
+            '''@decorator1\n@decorator2\ndef func():\n    """docstring"""\n    i = 1\n    'expr'\n    raise Exception''',
+            mode='single'
+        )
+        self.check_src_roundtrip(
+            "@decorator1\n@decorator2\nclass cls:\n 'docstring'\n i = 1; 'expr'; raise Exception",
+            '''@decorator1\n@decorator2\nclass cls:\n    """docstring"""\n    i = 1\n    'expr'\n    raise Exception''',
+            mode='single'
+        )
+
+    def test_unparse_interactive_integrity_2(self):
+        for statement in (
+            "def x():\n    pass",
+            "def x(y):\n    pass",
+            "async def x():\n    pass",
+            "async def x(y):\n    pass",
+            "for x in y:\n    pass",
+            "async for x in y:\n    pass",
+            "with x():\n    pass",
+            "async with x():\n    pass",
+            "def f():\n    pass",
+            "def f(a):\n    pass",
+            "def f(b=2):\n    pass",
+            "def f(a, b):\n    pass",
+            "def f(a, b=2):\n    pass",
+            "def f(a=5, b=2):\n    pass",
+            "def f(*, a=1, b=2):\n    pass",
+            "def f(*, a=1, b):\n    pass",
+            "def f(*, a, b=2):\n    pass",
+            "def f(a, b=None, *, c, **kwds):\n    pass",
+            "def f(a=2, *args, c=5, d, **kwds):\n    pass",
+            "def f(*args, **kwargs):\n    pass",
+            "class cls:\n\n    def f(self):\n        pass",
+            "class cls:\n\n    def f(self, a):\n        pass",
+            "class cls:\n\n    def f(self, b=2):\n        pass",
+            "class cls:\n\n    def f(self, a, b):\n        pass",
+            "class cls:\n\n    def f(self, a, b=2):\n        pass",
+            "class cls:\n\n    def f(self, a=5, b=2):\n        pass",
+            "class cls:\n\n    def f(self, *, a=1, b=2):\n        pass",
+            "class cls:\n\n    def f(self, *, a=1, b):\n        pass",
+            "class cls:\n\n    def f(self, *, a, b=2):\n        pass",
+            "class cls:\n\n    def f(self, a, b=None, *, c, **kwds):\n        pass",
+            "class cls:\n\n    def f(self, a=2, *args, c=5, d, **kwds):\n        pass",
+            "class cls:\n\n    def f(self, *args, **kwargs):\n        pass",
+        ):
+            self.check_src_roundtrip(statement, mode='single')
+
+    def test_unparse_interactive_integrity_3(self):
+        for statement in (
+            "def x():",
+            "def x(y):",
+            "async def x():",
+            "async def x(y):",
+            "for x in y:",
+            "async for x in y:",
+            "with x():",
+            "async with x():",
+            "def f():",
+            "def f(a):",
+            "def f(b=2):",
+            "def f(a, b):",
+            "def f(a, b=2):",
+            "def f(a=5, b=2):",
+            "def f(*, a=1, b=2):",
+            "def f(*, a=1, b):",
+            "def f(*, a, b=2):",
+            "def f(a, b=None, *, c, **kwds):",
+            "def f(a=2, *args, c=5, d, **kwds):",
+            "def f(*args, **kwargs):",
+        ):
+            src = statement + '\n i=1;j=2'
+            out = statement + '\n    i = 1\n    j = 2'
+
+            self.check_src_roundtrip(src, out, mode='single')
 
 
 class CosmeticTestCase(ASTTestCase):
@@ -503,10 +727,12 @@ class CosmeticTestCase(ASTTestCase):
 
     def test_fstrings(self):
         self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_src_roundtrip('''f\'-{f\'\'\'*{f"""+{f".{f'{x}'}."}+"""}*\'\'\'}-\'''')
+        self.check_src_roundtrip('''f\'-{f\'*{f\'\'\'+{f""".{f"{f'{x}'}"}."""}+\'\'\'}*\'}-\'''')
         self.check_src_roundtrip('''f"\\u2028{'x'}"''')
         self.check_src_roundtrip(r"f'{x}\n'")
-        self.check_src_roundtrip('''f''\'{"""\n"""}\\n''\'''')
-        self.check_src_roundtrip('''f''\'{f"""{x}\n"""}\\n''\'''')
+        self.check_src_roundtrip('''f"{'\\n'}\\n"''')
+        self.check_src_roundtrip('''f"{f'{x}\\n'}\\n"''')
 
     def test_docstrings(self):
         docstrings = (
@@ -624,6 +850,160 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
         self.check_src_roundtrip("a, b = [c, d] = e, f = g")
 
+    def test_multiquote_joined_string(self):
+        self.check_ast_roundtrip("f\"'''{1}\\\"\\\"\\\"\" ")
+        self.check_ast_roundtrip("""f"'''{1}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{1}''' """)
+        self.check_ast_roundtrip("""f'""\"{1}""\\"' """)
+
+        self.check_ast_roundtrip("""f"'''{"\\n"}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}""\\"' """)
+
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n\\"'"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{""\"\\n\\"'''""\" '''\\n'''}''' """)
+
+    def test_backslash_in_format_spec(self):
+        import re
+        msg = re.escape('"\\ " is an invalid escape sequence. '
+                        'Such sequences will not work in the future. '
+                        'Did you mean "\\\\ "? A raw string is also an option.')
+        with self.assertWarnsRegex(SyntaxWarning, msg):
+            self.check_ast_roundtrip("""f"{x:\\ }" """)
+        self.check_ast_roundtrip("""f"{x:\\n}" """)
+
+        self.check_ast_roundtrip("""f"{x:\\\\ }" """)
+
+        with self.assertWarnsRegex(SyntaxWarning, msg):
+            self.check_ast_roundtrip("""f"{x:\\\\\\ }" """)
+        self.check_ast_roundtrip("""f"{x:\\\\\\n}" """)
+
+        self.check_ast_roundtrip("""f"{x:\\\\\\\\ }" """)
+
+    def test_quote_in_format_spec(self):
+        self.check_ast_roundtrip("""f"{x:'}" """)
+        self.check_ast_roundtrip("""f"{x:\\'}" """)
+        self.check_ast_roundtrip("""f"{x:\\\\'}" """)
+
+        self.check_ast_roundtrip("""f'\\'{x:"}' """)
+        self.check_ast_roundtrip("""f'\\'{x:\\"}' """)
+        self.check_ast_roundtrip("""f'\\'{x:\\\\"}' """)
+
+    def test_type_params(self):
+        self.check_ast_roundtrip("type A = int")
+        self.check_ast_roundtrip("type A[T] = int")
+        self.check_ast_roundtrip("type A[T: int] = int")
+        self.check_ast_roundtrip("type A[T = int] = int")
+        self.check_ast_roundtrip("type A[T: int = int] = int")
+        self.check_ast_roundtrip("type A[**P] = int")
+        self.check_ast_roundtrip("type A[**P = int] = int")
+        self.check_ast_roundtrip("type A[*Ts] = int")
+        self.check_ast_roundtrip("type A[*Ts = int] = int")
+        self.check_ast_roundtrip("type A[*Ts = *int] = int")
+        self.check_ast_roundtrip("def f[T: int = int, **P = int, *Ts = *int]():\n    pass")
+        self.check_ast_roundtrip("class C[T: int = int, **P = int, *Ts = *int]():\n    pass")
+
+
+class ManualASTCreationTestCase(unittest.TestCase):
+    """Test that AST nodes created without a type_params field unparse correctly."""
+
+    def test_class(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X:\n    pass")
+
+    def test_class_with_type_params(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[],
+                             type_params=[ast.TypeVar("T")])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X[T]:\n    pass")
+
+    def test_function(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f():\n    pass")
+
+    def test_function_with_type_params(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T]():\n    pass")
+
+    def test_function_with_type_params_and_bound(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T", bound=ast.Name("int", ctx=ast.Load()))],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T: int]():\n    pass")
+
+    def test_function_with_type_params_and_default(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Starred(value=ast.Constant(value=1), ctx=ast.Load())),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T = 1, *Ts = *1, **P = 1]():\n    pass")
+
+    def test_async_function(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f():\n    pass")
+
+    def test_async_function_with_type_params(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T]():\n    pass")
+
+    def test_async_function_with_type_params_and_default(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Starred(value=ast.Constant(value=1), ctx=ast.Load())),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T = 1, *Ts = *1, **P = 1]():\n    pass")
 
 
 class DirectoryTestCase(ASTTestCase):
@@ -633,7 +1013,8 @@ class DirectoryTestCase(ASTTestCase):
     test_directories = (lib_dir, lib_dir / "test")
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
                         "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
-                        "test_patma.py"}
+                        "test_patma.py", "test_type_alias.py", "test_type_params.py",
+                        "test_tokenize.py", "test_tstring.py"}
 
     _files_to_test = None
 
@@ -669,13 +1050,16 @@ class DirectoryTestCase(ASTTestCase):
         return items
 
     def test_files(self):
-        for item in self.files_to_test():
-            if test.support.verbose:
-                print(f"Testing {item.absolute()}")
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
 
-            with self.subTest(filename=item):
-                source = read_pyfile(item)
-                self.check_ast_roundtrip(source)
+            for item in self.files_to_test():
+                if test.support.verbose:
+                    print(f"Testing {item.absolute()}")
+
+                with self.subTest(filename=item):
+                    source = read_pyfile(item)
+                    self.check_ast_roundtrip(source)
 
 
 if __name__ == "__main__":

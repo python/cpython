@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|Win32">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|x64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|Win32">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|x64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FB91C8B2-6FBC-3A01-B644-1637111F902D}</ProjectGuid>
+    <RootNamespace>zlib-ng</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="python.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="pyproject.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /w34242</AdditionalOptions>
+      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate' and $(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -fno-profile-instr-use</AdditionalOptions>
+      <DisableSpecificWarnings>4206;4054;4324</DisableSpecificWarnings>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <AdditionalIncludeDirectories>$(zlibNgDir);$(PySourceDir)PC;$(GeneratedZlibNgDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);ZLIB_COMPAT;WITH_GZFILEOP;NO_FSEEKO;HAVE_BUILTIN_ASSUME_ALIGNED;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">%(PreprocessorDefinitions);X86_FEATURES;X86_HAVE_XSAVE_INTRIN;X86_SSE2;X86_SSSE3;X86_SSE42;X86_PCLMULQDQ_CRC;X86_AVX2;X86_AVX512;X86_AVX512VNNI;X86_VPCLMULQDQ_CRC</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration) == 'Debug'">%(PreprocessorDefinitions);ZLIB_DEBUG</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(PlatformToolset) == 'ClangCL'">%(PreprocessorDefinitions);HAVE_BUILTIN_CTZ</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="$(zlibNgDir)\arch\generic\adler32_c.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\generic\adler32_fold_c.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\generic\chunkset_c.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\generic\compare256_c.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\generic\crc32_braid_c.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\generic\crc32_fold_c.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\generic\slide_hash_c.c" />
+    <ClCompile Include="$(zlibNgDir)\adler32.c" />
+    <ClCompile Include="$(zlibNgDir)\compress.c" />
+    <ClCompile Include="$(zlibNgDir)\crc32.c" />
+    <ClCompile Include="$(zlibNgDir)\crc32_braid_comb.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate_fast.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate_huff.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate_medium.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate_quick.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate_rle.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate_slow.c" />
+    <ClCompile Include="$(zlibNgDir)\deflate_stored.c" />
+    <ClCompile Include="$(zlibNgDir)\functable.c" />
+    <ClCompile Include="$(zlibNgDir)\infback.c" />
+    <ClCompile Include="$(zlibNgDir)\inflate.c" />
+    <ClCompile Include="$(zlibNgDir)\inftrees.c" />
+    <ClCompile Include="$(zlibNgDir)\insert_string.c" />
+    <ClCompile Include="$(zlibNgDir)\insert_string_roll.c" />
+    <ClCompile Include="$(zlibNgDir)\trees.c" />
+    <ClCompile Include="$(zlibNgDir)\uncompr.c" />
+    <ClCompile Include="$(zlibNgDir)\zutil.c" />
+    <ClCompile Include="$(zlibNgDir)\cpu_features.c" />
+    <ClInclude Include="$(zlibNgDir)\arch\generic\generic_functions.h" />
+    <ClInclude Include="$(zlibNgDir)\fallback_builtins.h" />
+  </ItemGroup>
+  <ItemGroup Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">
+    <ClInclude Include="$(zlibNgDir)\arch\x86\x86_functions.h" />
+    <ClInclude Include="$(zlibNgDir)\arch\x86\x86_features.h" />
+    <ClInclude Include="$(zlibNgDir)\arch\x86\adler32_avx512_p.h" />
+    <ClCompile Include="$(zlibNgDir)\arch\x86\x86_features.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_sse2.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\x86\compare256_sse2.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\x86\slide_hash_sse2.c" />
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_ssse3.c">
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mssse3</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_ssse3.c">
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mssse3</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_sse42.c">
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -msse4.2</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\crc32_pclmulqdq.c">
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mssse3 -mpclmul</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\slide_hash_avx2.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_avx2.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\compare256_avx2.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx2.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx512.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_avx512.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx512_vnni.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx512vnni</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="$(zlibNgDir)\arch\x86\crc32_vpclmulqdq.c">
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mvpclmulqdq</AdditionalOptions>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PC\zconf.h" />
+    <ClInclude Include="..\PC\zlib.h" />
+    <ClInclude Include="$(zlibNgDir)\arch\generic\chunk_permute_table.h" />
+    <ClInclude Include="$(zlibNgDir)\arch\generic\compare256_p.h" />
+    <ClInclude Include="$(zlibNgDir)\adler32_p.h" />
+    <ClInclude Include="$(zlibNgDir)\chunkset_tpl.h" />
+    <ClInclude Include="$(zlibNgDir)\compare256_rle.h" />
+    <ClInclude Include="$(zlibNgDir)\arch_functions.h" />
+    <ClInclude Include="$(zlibNgDir)\crc32_braid_p.h" />
+    <ClInclude Include="$(zlibNgDir)\crc32_braid_comb_p.h" />
+    <ClInclude Include="$(zlibNgDir)\crc32_braid_tbl.h" />
+    <ClInclude Include="$(zlibNgDir)\deflate.h" />
+    <ClInclude Include="$(zlibNgDir)\deflate_p.h" />
+    <ClInclude Include="$(zlibNgDir)\functable.h" />
+    <ClInclude Include="$(zlibNgDir)\inffast_tpl.h" />
+    <ClInclude Include="$(zlibNgDir)\inffixed_tbl.h" />
+    <ClInclude Include="$(zlibNgDir)\inflate.h" />
+    <ClInclude Include="$(zlibNgDir)\inflate_p.h" />
+    <ClInclude Include="$(zlibNgDir)\inftrees.h" />
+    <ClInclude Include="$(zlibNgDir)\insert_string_tpl.h" />
+    <ClInclude Include="$(zlibNgDir)\match_tpl.h" />
+    <ClInclude Include="$(zlibNgDir)\trees.h" />
+    <ClInclude Include="$(zlibNgDir)\trees_emit.h" />
+    <ClInclude Include="$(zlibNgDir)\trees_tbl.h" />
+    <ClInclude Include="$(zlibNgDir)\zbuild.h" />
+    <ClInclude Include="$(zlibNgDir)\zendian.h" />
+    <ClInclude Include="$(zlibNgDir)\zutil.h" />
+    <ClInclude Include="$(zlibNgDir)\cpu_features.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+
+  <Target Name="_EnsureZlibH" Inputs="$(zlibNgDir)\zlib.h.in" Outputs="$(IntDir)zlib.h">
+    <PropertyGroup>
+      <Text>$([System.IO.File]::ReadAllText('$(zlibNgDir)\zlib.h.in').Replace('@ZLIB_SYMBOL_PREFIX@', ''))</Text>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(IntDir)zlib.h" Lines="$(Text)" />
+  </Target>
+  <Target Name="_EnsureZlibNgH" Inputs="$(zlibNgDir)\zlib-ng.h.in" Outputs="$(IntDir)zlib-ng.h">
+    <PropertyGroup>
+      <Text>$([System.IO.File]::ReadAllText('$(zlibNgDir)\zlib-ng.h.in').Replace('@ZLIB_SYMBOL_PREFIX@', ''))</Text>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(IntDir)zlib-ng.h" Lines="$(Text)" />
+  </Target>
+
+  <Target Name="_EnsureZlibNgHeaders" BeforeTargets="PrepareForBuild"
+          DependsOnTargets="_EnsureZlibH;_EnsureZlibNgH" />
+</Project>

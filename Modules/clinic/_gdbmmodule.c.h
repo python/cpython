@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
-
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
@@ -21,7 +21,7 @@ static PyObject *
 _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value);
 
 static PyObject *
-_gdbm_gdbm_get(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
+_gdbm_gdbm_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -36,7 +36,7 @@ _gdbm_gdbm_get(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
-    return_value = _gdbm_gdbm_get_impl(self, key, default_value);
+    return_value = _gdbm_gdbm_get_impl((gdbmobject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -56,7 +56,7 @@ _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
                            PyObject *default_value);
 
 static PyObject *
-_gdbm_gdbm_setdefault(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
+_gdbm_gdbm_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -71,7 +71,9 @@ _gdbm_gdbm_setdefault(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
-    return_value = _gdbm_gdbm_setdefault_impl(self, key, default_value);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_setdefault_impl((gdbmobject *)self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -90,9 +92,15 @@ static PyObject *
 _gdbm_gdbm_close_impl(gdbmobject *self);
 
 static PyObject *
-_gdbm_gdbm_close(gdbmobject *self, PyObject *Py_UNUSED(ignored))
+_gdbm_gdbm_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _gdbm_gdbm_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_close_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_keys__doc__,
@@ -108,13 +116,20 @@ static PyObject *
 _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_keys(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_keys_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_keys_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
@@ -134,13 +149,20 @@ static PyObject *
 _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_firstkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_firstkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_firstkey_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_firstkey_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
@@ -165,7 +187,7 @@ _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
                         Py_ssize_t key_length);
 
 static PyObject *
-_gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -188,7 +210,9 @@ _gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, P
         &key, &key_length)) {
         goto exit;
     }
-    return_value = _gdbm_gdbm_nextkey_impl(self, cls, key, key_length);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_nextkey_impl((gdbmobject *)self, cls, key, key_length);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -213,13 +237,20 @@ static PyObject *
 _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_reorganize(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_reorganize(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_reorganize_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_reorganize_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_sync__doc__,
@@ -238,13 +269,49 @@ static PyObject *
 _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_sync(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_sync_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_sync_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_gdbm_gdbm_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the database.");
+
+#define _GDBM_GDBM_CLEAR_METHODDEF    \
+    {"clear", _PyCFunction_CAST(_gdbm_gdbm_clear), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_clear__doc__},
+
+static PyObject *
+_gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
+
+static PyObject *
+_gdbm_gdbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _gdbm_gdbm_clear_impl((gdbmobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -312,7 +379,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -322,4 +389,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6e721d82335adb3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8bca34ce9d4493dd input=a9049054013a1b77]*/

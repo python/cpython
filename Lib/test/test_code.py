@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-consts: ('None', '<code object g>')
+consts: ('<code object g>',)
 
 >>> dump(f(4).__code__)
 name: g
@@ -86,7 +86,7 @@ varnames: ()
 cellvars: ()
 freevars: ()
 nlocals: 0
-flags: 3
+flags: 67108867
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -123,8 +123,78 @@ nlocals: 3
 flags: 3
 consts: ('None',)
 
+>>> def has_docstring(x: str):
+...     'This is a one-line doc string'
+...     x += x
+...     x += "hello world"
+...     # co_flags should be 0x4000003 = 67108867
+...     return x
+
+>>> dump(has_docstring.__code__)
+name: has_docstring
+argcount: 1
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ()
+varnames: ('x',)
+cellvars: ()
+freevars: ()
+nlocals: 1
+flags: 67108867
+consts: ("'This is a one-line doc string'", "'hello world'")
+
+>>> async def async_func_docstring(x: str, y: str):
+...     "This is a docstring from async function"
+...     import asyncio
+...     await asyncio.sleep(1)
+...     # co_flags should be 0x4000083 = 67108995
+...     return x + y
+
+>>> dump(async_func_docstring.__code__)
+name: async_func_docstring
+argcount: 2
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ('asyncio', 'sleep')
+varnames: ('x', 'y', 'asyncio')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 67108995
+consts: ("'This is a docstring from async function'", 'None')
+
+>>> def no_docstring(x, y, z):
+...     return x + "hello" + y + z + "world"
+
+>>> dump(no_docstring.__code__)
+name: no_docstring
+argcount: 3
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ()
+varnames: ('x', 'y', 'z')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 3
+consts: ("'hello'", "'world'")
+
+>>> class class_with_docstring:
+...     '''This is a docstring for class'''
+...     '''This line is not docstring'''
+...     pass
+
+>>> print(class_with_docstring.__doc__)
+This is a docstring for class
+
+>>> class class_without_docstring:
+...     pass
+
+>>> print(class_without_docstring.__doc__)
+None
 """
 
+import copy
 import inspect
 import sys
 import threading
@@ -140,10 +210,18 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect)
+                          gc_collect, Py_GIL_DISABLED, late_deletion)
 from test.support.script_helper import assert_python_ok
-from test.support import threading_helper
+from test.support import threading_helper, import_helper
+from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
+from _testcapi import code_offset_to_line
+try:
+    import _testinternalcapi
+except ModuleNotFoundError:
+    _testinternalcapi = None
+import test._code_definitions as defs
+
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
@@ -169,11 +247,12 @@ def dump(co):
 def external_getitem(self, i):
     return f"Foreign getitem: {super().__getitem__(i)}"
 
+
 class CodeTest(unittest.TestCase):
 
     @cpython_only
     def test_newempty(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         co = _testcapi.code_newempty("filename", "funcname", 15)
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
@@ -252,10 +331,11 @@ class CodeTest(unittest.TestCase):
             return x
         code = func.__code__
 
-        # different co_name, co_varnames, co_consts
+        # Different co_name, co_varnames, co_consts.
+        # Must have the same number of constants and
+        # variables or we get crashes.
         def func2():
             y = 2
-            z = 3
             return y
         code2 = func2.__code__
 
@@ -264,7 +344,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 1),
-            ("co_stacksize", 0),
+            ("co_stacksize", 1),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
@@ -280,8 +360,14 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+                new_code = copy.replace(code, **{attr: value})
+                self.assertEqual(getattr(new_code, attr), value)
 
         new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+        new_code = copy.replace(code, co_varnames=code2.co_varnames,
                                 co_nlocals=code2.co_nlocals)
         self.assertEqual(new_code.co_varnames, code2.co_varnames)
         self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
@@ -345,18 +431,73 @@ class CodeTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             func.__code__.co_lnotab
 
+    @unittest.skipIf(_testinternalcapi is None, '_testinternalcapi is missing')
+    def test_returns_only_none(self):
+        value = True
+
+        def spam1():
+            pass
+        def spam2():
+            return
+        def spam3():
+            return None
+        def spam4():
+            if not value:
+                return
+            ...
+        def spam5():
+            if not value:
+                return None
+            ...
+        lambda1 = (lambda: None)
+        for func in [
+            spam1,
+            spam2,
+            spam3,
+            spam4,
+            spam5,
+            lambda1,
+        ]:
+            with self.subTest(func):
+                res = _testinternalcapi.code_returns_only_none(func.__code__)
+                self.assertTrue(res)
+
+        def spam6():
+            return True
+        def spam7():
+            return value
+        def spam8():
+            if value:
+                return None
+            return True
+        def spam9():
+            if value:
+                return True
+            return None
+        lambda2 = (lambda: True)
+        for func in [
+            spam6,
+            spam7,
+            spam8,
+            spam9,
+            lambda2,
+        ]:
+            with self.subTest(func):
+                res = _testinternalcapi.code_returns_only_none(func.__code__)
+                self.assertFalse(res)
+
     def test_invalid_bytecode(self):
         def foo():
             pass
 
-        # assert that opcode 229 is invalid
-        self.assertEqual(opname[229], '<229>')
+        # assert that opcode 127 is invalid
+        self.assertEqual(opname[127], '<127>')
 
-        # change first opcode to 0xeb (=229)
+        # change first opcode to 0x7f (=127)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\xe5' + foo.__code__.co_code[1:])
+            co_code=b'\x7f' + foo.__code__.co_code[1:])
 
-        msg = "unknown opcode 229"
+        msg = "unknown opcode 127"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
@@ -377,10 +518,8 @@ class CodeTest(unittest.TestCase):
         code = traceback.tb_frame.f_code
 
         artificial_instructions = []
-        for instr, positions in zip(
-            dis.get_instructions(code, show_caches=True),
-            code.co_positions(),
-            strict=True
+        for instr, positions in instructions_with_positions(
+            dis.get_instructions(code), code.co_positions()
         ):
             # If any of the positions is None, then all have to
             # be None as well for the case above. There are still
@@ -498,6 +637,533 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(c, c1)
         self.assertNotEqual(hash(c), hash(c1))
 
+    @cpython_only
+    def test_code_equal_with_instrumentation(self):
+        """ GH-109052
+
+        Make sure the instrumentation doesn't affect the code equality
+        The validity of this test relies on the fact that "x is x" and
+        "x in x" have only one different instruction and the instructions
+        have the same argument.
+
+        """
+        code1 = compile("x is x", "example.py", "eval")
+        code2 = compile("x in x", "example.py", "eval")
+        sys._getframe().f_trace_opcodes = True
+        sys.settrace(lambda *args: None)
+        exec(code1, {'x': []})
+        exec(code2, {'x': []})
+        self.assertNotEqual(code1, code2)
+        sys.settrace(None)
+
+    @unittest.skipIf(_testinternalcapi is None, "missing _testinternalcapi")
+    def test_local_kinds(self):
+        CO_FAST_ARG_POS = 0x02
+        CO_FAST_ARG_KW = 0x04
+        CO_FAST_ARG_VAR = 0x08
+        CO_FAST_HIDDEN = 0x10
+        CO_FAST_LOCAL = 0x20
+        CO_FAST_CELL = 0x40
+        CO_FAST_FREE = 0x80
+
+        POSONLY = CO_FAST_LOCAL | CO_FAST_ARG_POS
+        POSORKW = CO_FAST_LOCAL | CO_FAST_ARG_POS | CO_FAST_ARG_KW
+        KWONLY = CO_FAST_LOCAL | CO_FAST_ARG_KW
+        VARARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_POS
+        VARKWARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_KW
+
+        funcs = {
+            defs.simple_script: {},
+            defs.complex_script: {
+                'obj': CO_FAST_LOCAL,
+                'pickle': CO_FAST_LOCAL,
+                'spam_minimal': CO_FAST_LOCAL,
+                'data': CO_FAST_LOCAL,
+                'res': CO_FAST_LOCAL,
+            },
+            defs.script_with_globals: {
+                'obj1': CO_FAST_LOCAL,
+                'obj2': CO_FAST_LOCAL,
+            },
+            defs.script_with_explicit_empty_return: {},
+            defs.script_with_return: {},
+            defs.spam_minimal: {},
+            defs.spam_with_builtins: {
+                'x': CO_FAST_LOCAL,
+                'values': CO_FAST_LOCAL,
+                'checks': CO_FAST_LOCAL,
+                'res': CO_FAST_LOCAL,
+            },
+            defs.spam_with_globals_and_builtins: {
+                'func1': CO_FAST_LOCAL,
+                'func2': CO_FAST_LOCAL,
+                'funcs': CO_FAST_LOCAL,
+                'checks': CO_FAST_LOCAL,
+                'res': CO_FAST_LOCAL,
+            },
+            defs.spam_with_global_and_attr_same_name: {},
+            defs.spam_full_args: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
+            defs.spam_full_args_with_defaults: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
+            defs.spam_args_attrs_and_builtins: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
+            defs.spam_returns_arg: {
+                'x': POSORKW,
+            },
+            defs.spam_raises: {},
+            defs.spam_with_inner_not_closure: {
+                'eggs': CO_FAST_LOCAL,
+            },
+            defs.spam_with_inner_closure: {
+                'x': CO_FAST_CELL,
+                'eggs': CO_FAST_LOCAL,
+            },
+            defs.spam_annotated: {
+                'a': POSORKW,
+                'b': POSORKW,
+                'c': POSORKW,
+            },
+            defs.spam_full: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+                'x': CO_FAST_LOCAL,
+                'y': CO_FAST_LOCAL,
+                'z': CO_FAST_LOCAL,
+                'extras': CO_FAST_LOCAL,
+            },
+            defs.spam: {
+                'x': POSORKW,
+            },
+            defs.spam_N: {
+                'x': POSORKW,
+                'eggs_nested': CO_FAST_LOCAL,
+            },
+            defs.spam_C: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_closure': CO_FAST_LOCAL,
+            },
+            defs.spam_NN: {
+                'x': POSORKW,
+                'eggs_nested_N': CO_FAST_LOCAL,
+            },
+            defs.spam_NC: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_nested_C': CO_FAST_LOCAL,
+            },
+            defs.spam_CN: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_closure_N': CO_FAST_LOCAL,
+            },
+            defs.spam_CC: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_closure_C': CO_FAST_LOCAL,
+            },
+            defs.eggs_nested: {
+                'y': POSORKW,
+            },
+            defs.eggs_closure: {
+                'y': POSORKW,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+            },
+            defs.eggs_nested_N: {
+                'y': POSORKW,
+                'ham_nested': CO_FAST_LOCAL,
+            },
+            defs.eggs_nested_C: {
+                'y': POSORKW | CO_FAST_CELL,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+                'ham_closure': CO_FAST_LOCAL,
+            },
+            defs.eggs_closure_N: {
+                'y': POSORKW,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+                'ham_C_nested': CO_FAST_LOCAL,
+            },
+            defs.eggs_closure_C: {
+                'y': POSORKW | CO_FAST_CELL,
+                'b': CO_FAST_CELL,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+                'ham_C_closure': CO_FAST_LOCAL,
+            },
+            defs.ham_nested: {
+                'z': POSORKW,
+            },
+            defs.ham_closure: {
+                'z': POSORKW,
+                'y': CO_FAST_FREE,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+            },
+            defs.ham_C_nested: {
+                'z': POSORKW,
+            },
+            defs.ham_C_closure: {
+                'z': POSORKW,
+                'y': CO_FAST_FREE,
+                'b': CO_FAST_FREE,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+            },
+        }
+        assert len(funcs) == len(defs.FUNCTIONS)
+        for func in defs.FUNCTIONS:
+            with self.subTest(func):
+                expected = funcs[func]
+                kinds = _testinternalcapi.get_co_localskinds(func.__code__)
+                self.assertEqual(kinds, expected)
+
+    @unittest.skipIf(_testinternalcapi is None, "missing _testinternalcapi")
+    def test_var_counts(self):
+        self.maxDiff = None
+        def new_var_counts(*,
+                           posonly=0,
+                           posorkw=0,
+                           kwonly=0,
+                           varargs=0,
+                           varkwargs=0,
+                           purelocals=0,
+                           argcells=0,
+                           othercells=0,
+                           freevars=0,
+                           globalvars=0,
+                           attrs=0,
+                           unknown=0,
+                           ):
+            nargvars = posonly + posorkw + kwonly + varargs + varkwargs
+            nlocals = nargvars + purelocals + othercells
+            if isinstance(globalvars, int):
+                globalvars = {
+                    'total': globalvars,
+                    'numglobal': 0,
+                    'numbuiltin': 0,
+                    'numunknown': globalvars,
+                }
+            else:
+                g_numunknown = 0
+                if isinstance(globalvars, dict):
+                    numglobal = globalvars['numglobal']
+                    numbuiltin = globalvars['numbuiltin']
+                    size = 2
+                    if 'numunknown' in globalvars:
+                        g_numunknown = globalvars['numunknown']
+                        size += 1
+                    assert len(globalvars) == size, globalvars
+                else:
+                    assert not isinstance(globalvars, str), repr(globalvars)
+                    try:
+                        numglobal, numbuiltin = globalvars
+                    except ValueError:
+                        numglobal, numbuiltin, g_numunknown = globalvars
+                globalvars = {
+                    'total': numglobal + numbuiltin + g_numunknown,
+                    'numglobal': numglobal,
+                    'numbuiltin': numbuiltin,
+                    'numunknown': g_numunknown,
+                }
+            unbound = globalvars['total'] + attrs + unknown
+            return {
+                'total': nlocals + freevars + unbound,
+                'locals': {
+                    'total': nlocals,
+                    'args': {
+                        'total': nargvars,
+                        'numposonly': posonly,
+                        'numposorkw': posorkw,
+                        'numkwonly': kwonly,
+                        'varargs': varargs,
+                        'varkwargs': varkwargs,
+                    },
+                    'numpure': purelocals,
+                    'cells': {
+                        'total': argcells + othercells,
+                        'numargs': argcells,
+                        'numothers': othercells,
+                    },
+                    'hidden': {
+                        'total': 0,
+                        'numpure': 0,
+                        'numcells': 0,
+                    },
+                },
+                'numfree': freevars,
+                'unbound': {
+                    'total': unbound,
+                    'globals': globalvars,
+                    'numattrs': attrs,
+                    'numunknown': unknown,
+                },
+            }
+
+        funcs = {
+            defs.simple_script: new_var_counts(),
+            defs.complex_script: new_var_counts(
+                purelocals=5,
+                globalvars=1,
+                attrs=2,
+            ),
+            defs.script_with_globals: new_var_counts(
+                purelocals=2,
+                globalvars=1,
+            ),
+            defs.script_with_explicit_empty_return: new_var_counts(),
+            defs.script_with_return: new_var_counts(),
+            defs.spam_minimal: new_var_counts(),
+            defs.spam_minimal: new_var_counts(),
+            defs.spam_with_builtins: new_var_counts(
+                purelocals=4,
+                globalvars=4,
+            ),
+            defs.spam_with_globals_and_builtins: new_var_counts(
+                purelocals=5,
+                globalvars=6,
+            ),
+            defs.spam_with_global_and_attr_same_name: new_var_counts(
+                globalvars=2,
+                attrs=1,
+            ),
+            defs.spam_full_args: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+            ),
+            defs.spam_full_args_with_defaults: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+            ),
+            defs.spam_args_attrs_and_builtins: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+                attrs=1,
+            ),
+            defs.spam_returns_arg: new_var_counts(
+                posorkw=1,
+            ),
+            defs.spam_raises: new_var_counts(
+                globalvars=1,
+            ),
+            defs.spam_with_inner_not_closure: new_var_counts(
+                purelocals=1,
+            ),
+            defs.spam_with_inner_closure: new_var_counts(
+                othercells=1,
+                purelocals=1,
+            ),
+            defs.spam_annotated: new_var_counts(
+                posorkw=3,
+            ),
+            defs.spam_full: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+                purelocals=4,
+                globalvars=3,
+                attrs=1,
+            ),
+            defs.spam: new_var_counts(
+                posorkw=1,
+            ),
+            defs.spam_N: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+            ),
+            defs.spam_C: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.spam_NN: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+            ),
+            defs.spam_NC: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.spam_CN: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.spam_CC: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.eggs_nested: new_var_counts(
+                posorkw=1,
+            ),
+            defs.eggs_closure: new_var_counts(
+                posorkw=1,
+                freevars=2,
+            ),
+            defs.eggs_nested_N: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+            ),
+            defs.eggs_nested_C: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                freevars=2,
+            ),
+            defs.eggs_closure_N: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                freevars=2,
+            ),
+            defs.eggs_closure_C: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+                freevars=2,
+            ),
+            defs.ham_nested: new_var_counts(
+                posorkw=1,
+            ),
+            defs.ham_closure: new_var_counts(
+                posorkw=1,
+                freevars=3,
+            ),
+            defs.ham_C_nested: new_var_counts(
+                posorkw=1,
+            ),
+            defs.ham_C_closure: new_var_counts(
+                posorkw=1,
+                freevars=4,
+            ),
+        }
+        assert len(funcs) == len(defs.FUNCTIONS), (len(funcs), len(defs.FUNCTIONS))
+        for func in defs.FUNCTIONS:
+            with self.subTest(func):
+                expected = funcs[func]
+                counts = _testinternalcapi.get_code_var_counts(func.__code__)
+                self.assertEqual(counts, expected)
+
+        func = defs.spam_with_globals_and_builtins
+        with self.subTest(f'{func} code'):
+            expected = new_var_counts(
+                purelocals=5,
+                globalvars=6,
+            )
+            counts = _testinternalcapi.get_code_var_counts(func.__code__)
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} with own globals and builtins'):
+            expected = new_var_counts(
+                purelocals=5,
+                globalvars=(2, 4),
+            )
+            counts = _testinternalcapi.get_code_var_counts(func)
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} without globals'):
+            expected = new_var_counts(
+                purelocals=5,
+                globalvars=(0, 4, 2),
+            )
+            counts = _testinternalcapi.get_code_var_counts(func, globalsns={})
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} without both'):
+            expected = new_var_counts(
+                purelocals=5,
+                globalvars=6,
+            )
+            counts = _testinternalcapi.get_code_var_counts(func, globalsns={},
+                  builtinsns={})
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} without builtins'):
+            expected = new_var_counts(
+                purelocals=5,
+                globalvars=(2, 0, 4),
+            )
+            counts = _testinternalcapi.get_code_var_counts(func, builtinsns={})
+            self.assertEqual(counts, expected)
+
+    @unittest.skipIf(_testinternalcapi is None, "missing _testinternalcapi")
+    def test_stateless(self):
+        self.maxDiff = None
+
+        STATELESS_FUNCTIONS = [
+            *defs.STATELESS_FUNCTIONS,
+            # stateless with defaults
+            defs.spam_full_args_with_defaults,
+        ]
+
+        for func in defs.STATELESS_CODE:
+            with self.subTest((func, '(code)')):
+                _testinternalcapi.verify_stateless_code(func.__code__)
+        for func in STATELESS_FUNCTIONS:
+            with self.subTest((func, '(func)')):
+                _testinternalcapi.verify_stateless_code(func)
+
+        for func in defs.FUNCTIONS:
+            if func not in defs.STATELESS_CODE:
+                with self.subTest((func, '(code)')):
+                    with self.assertRaises(Exception):
+                        _testinternalcapi.verify_stateless_code(func.__code__)
+
+            if func not in STATELESS_FUNCTIONS:
+                with self.subTest((func, '(func)')):
+                    with self.assertRaises(Exception):
+                        _testinternalcapi.verify_stateless_code(func)
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
@@ -544,10 +1210,46 @@ class CodeConstsTest(unittest.TestCase):
         self.assertIsInterned(f())
 
     @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test_interned_string_with_null(self):
         co = compile(r'res = "str\0value!"', '?', 'exec')
         v = self.find_const(co.co_consts, 'str\0value!')
         self.assertIsNotInterned(v)
+
+    @cpython_only
+    @unittest.skipUnless(Py_GIL_DISABLED, "does not intern all constants")
+    def test_interned_constants(self):
+        # compile separately to avoid compile time de-duping
+
+        globals = {}
+        exec(textwrap.dedent("""
+            def func1():
+                return (0.0, (1, 2, "hello"))
+        """), globals)
+
+        exec(textwrap.dedent("""
+            def func2():
+                return (0.0, (1, 2, "hello"))
+        """), globals)
+
+        self.assertTrue(globals["func1"]() is globals["func2"]())
+
+    @cpython_only
+    def test_unusual_constants(self):
+        # gh-130851: Code objects constructed with constants that are not
+        # types generated by the bytecode compiler should not crash the
+        # interpreter.
+        class Unhashable:
+            def __hash__(self):
+                raise TypeError("unhashable type")
+
+        class MyInt(int):
+            pass
+
+        code = compile("a = 1", "<string>", "exec")
+        code = code.replace(co_consts=(1, Unhashable(), MyInt(1), MyInt(1)))
+        self.assertIsInstance(code.co_consts[1], Unhashable)
+        self.assertEqual(code.co_consts[2], code.co_consts[3])
 
 
 class CodeWeakRefTest(unittest.TestCase):
@@ -735,7 +1437,7 @@ class CodeLocationTest(unittest.TestCase):
             co_code=bytes(
                 [
                     dis.opmap["RESUME"], 0,
-                    dis.opmap["LOAD_ASSERTION_ERROR"], 0,
+                    dis.opmap["LOAD_COMMON_CONSTANT"], 0,
                     dis.opmap["RAISE_VARARGS"], 1,
                 ]
             ),
@@ -754,6 +1456,80 @@ class CodeLocationTest(unittest.TestCase):
             3 * [(42, 42, None, None)],
         )
 
+    @cpython_only
+    def test_docstring_under_o2(self):
+        code = textwrap.dedent('''
+            def has_docstring(x, y):
+                """This is a first-line doc string"""
+                """This is a second-line doc string"""
+                a = x + y
+                b = x - y
+                return a, b
+
+
+            def no_docstring(x):
+                def g(y):
+                    return x + y
+                return g
+
+
+            async def async_func():
+                """asynf function doc string"""
+                pass
+
+
+            for func in [has_docstring, no_docstring(4), async_func]:
+                assert(func.__doc__ is None)
+            ''')
+
+        rc, out, err = assert_python_ok('-OO', '-c', code)
+
+    def test_co_branches(self):
+
+        def get_line_branches(func):
+            code = func.__code__
+            base = code.co_firstlineno
+            return [
+                (
+                    code_offset_to_line(code, src) - base,
+                    code_offset_to_line(code, left) - base,
+                    code_offset_to_line(code, right) - base
+                ) for (src, left, right) in
+                code.co_branches()
+            ]
+
+        def simple(x):
+            if x:
+                A
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(simple),
+            [(1,2,4)])
+
+        def with_extended_args(x):
+            if x:
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(with_extended_args),
+            [(1,2,8)])
+
+        async def afunc():
+            async for letter in async_iter1:
+                2
+            3
+
+        self.assertEqual(
+            get_line_branches(afunc),
+            [(1,1,3)])
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
@@ -779,6 +1555,11 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
     FREE_FUNC = freefunc(myfree)
     FREE_INDEX = RequestCodeExtraIndex(FREE_FUNC)
+    # Make sure myfree sticks around at least as long as the interpreter,
+    # since we (currently) can't unregister the function and leaving a
+    # dangling pointer will cause a crash on deallocation of code objects if
+    # something else uses co_extras, like test_capi.test_misc.
+    late_deletion(myfree)
 
     class CoExtra(unittest.TestCase):
         def get_func(self):
@@ -809,6 +1590,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(100))
             del f
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 100)
 
         def test_get_set(self):
@@ -839,13 +1621,19 @@ if check_impl_detail(cpython=True) and ctypes is not None:
                     self.test = test
                 def run(self):
                     del self.f
-                    self.test.assertEqual(LAST_FREED, 500)
+                    gc_collect()
+                    # gh-117683: In the free-threaded build, the code object's
+                    # destructor may still be running concurrently in the main
+                    # thread.
+                    if not Py_GIL_DISABLED:
+                        self.test.assertEqual(LAST_FREED, 500)
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
             tt = ThreadTest(f, self)
             del f
             tt.start()
             tt.join()
+            gc_collect()  # For free-threaded build
             self.assertEqual(LAST_FREED, 500)
 
 

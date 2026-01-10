@@ -6,13 +6,6 @@
 
 :Author: `Michael Foord <https://agileabstractions.com/>`_
 
-.. note::
-
-    There is a French translation of an earlier revision of this
-    HOWTO, available at `urllib2 - Le Manuel manquant
-    <https://web.archive.org/web/20200910051922/http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
-
-
 
 Introduction
 ============
@@ -22,7 +15,7 @@ Introduction
     You may also find useful the following article on fetching web resources
     with Python:
 
-    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
+    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`__
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
@@ -201,11 +194,11 @@ which comes after we have a look at what happens when things go wrong.
 Handling Exceptions
 ===================
 
-*urlopen* raises :exc:`URLError` when it cannot handle a response (though as
+*urlopen* raises :exc:`~urllib.error.URLError` when it cannot handle a response (though as
 usual with Python APIs, built-in exceptions such as :exc:`ValueError`,
 :exc:`TypeError` etc. may also be raised).
 
-:exc:`HTTPError` is the subclass of :exc:`URLError` raised in the specific case of
+:exc:`~urllib.error.HTTPError` is the subclass of :exc:`~urllib.error.URLError` raised in the specific case of
 HTTP URLs.
 
 The exception classes are exported from the :mod:`urllib.error` module.
@@ -236,12 +229,12 @@ the status code indicates that the server is unable to fulfil the request. The
 default handlers will handle some of these responses for you (for example, if
 the response is a "redirection" that requests the client fetch the document from
 a different URL, urllib will handle that for you). For those it can't handle,
-urlopen will raise an :exc:`HTTPError`. Typical errors include '404' (page not
+urlopen will raise an :exc:`~urllib.error.HTTPError`. Typical errors include '404' (page not
 found), '403' (request forbidden), and '401' (authentication required).
 
 See section 10 of :rfc:`2616` for a reference on all the HTTP error codes.
 
-The :exc:`HTTPError` instance raised will have an integer 'code' attribute, which
+The :exc:`~urllib.error.HTTPError` instance raised will have an integer 'code' attribute, which
 corresponds to the error sent by the server.
 
 Error Codes
@@ -252,79 +245,31 @@ codes in the 100--299 range indicate success, you will usually only see error
 codes in the 400--599 range.
 
 :attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
-response codes in that shows all the response codes used by :rfc:`2616`. The
-dictionary is reproduced here for convenience ::
+response codes that shows all the response codes used by :rfc:`2616`.
+An excerpt from the dictionary is shown below ::
 
-    # Table mapping response codes to messages; entries have the
-    # form {code: (shortmessage, longmessage)}.
     responses = {
-        100: ('Continue', 'Request received, please continue'),
-        101: ('Switching Protocols',
-              'Switching to new protocol; obey Upgrade header'),
-
-        200: ('OK', 'Request fulfilled, document follows'),
-        201: ('Created', 'Document created, URL follows'),
-        202: ('Accepted',
-              'Request accepted, processing continues off-line'),
-        203: ('Non-Authoritative Information', 'Request fulfilled from cache'),
-        204: ('No Content', 'Request fulfilled, nothing follows'),
-        205: ('Reset Content', 'Clear input form for further input.'),
-        206: ('Partial Content', 'Partial content follows.'),
-
-        300: ('Multiple Choices',
-              'Object has several resources -- see URI list'),
-        301: ('Moved Permanently', 'Object moved permanently -- see URI list'),
-        302: ('Found', 'Object moved temporarily -- see URI list'),
-        303: ('See Other', 'Object moved -- see Method and URL list'),
-        304: ('Not Modified',
-              'Document has not changed since given time'),
-        305: ('Use Proxy',
-              'You must use proxy specified in Location to access this '
-              'resource.'),
-        307: ('Temporary Redirect',
-              'Object moved temporarily -- see URI list'),
-
-        400: ('Bad Request',
-              'Bad request syntax or unsupported method'),
-        401: ('Unauthorized',
-              'No permission -- see authorization schemes'),
-        402: ('Payment Required',
-              'No payment -- see charging schemes'),
-        403: ('Forbidden',
-              'Request forbidden -- authorization will not help'),
-        404: ('Not Found', 'Nothing matches the given URI'),
-        405: ('Method Not Allowed',
-              'Specified method is invalid for this server.'),
-        406: ('Not Acceptable', 'URI not available in preferred format.'),
-        407: ('Proxy Authentication Required', 'You must authenticate with '
-              'this proxy before proceeding.'),
-        408: ('Request Timeout', 'Request timed out; try again later.'),
-        409: ('Conflict', 'Request conflict.'),
-        410: ('Gone',
-              'URI no longer exists and has been permanently removed.'),
-        411: ('Length Required', 'Client must specify Content-Length.'),
-        412: ('Precondition Failed', 'Precondition in headers is false.'),
-        413: ('Request Entity Too Large', 'Entity is too large.'),
-        414: ('Request-URI Too Long', 'URI is too long.'),
-        415: ('Unsupported Media Type', 'Entity body in unsupported format.'),
-        416: ('Requested Range Not Satisfiable',
-              'Cannot satisfy request range.'),
-        417: ('Expectation Failed',
-              'Expect condition could not be satisfied.'),
-
-        500: ('Internal Server Error', 'Server got itself in trouble'),
-        501: ('Not Implemented',
-              'Server does not support this operation'),
-        502: ('Bad Gateway', 'Invalid responses from another server/proxy.'),
-        503: ('Service Unavailable',
-              'The server cannot process the request due to a high load'),
-        504: ('Gateway Timeout',
-              'The gateway server did not receive a timely response'),
-        505: ('HTTP Version Not Supported', 'Cannot fulfill request.'),
+        ...
+        <HTTPStatus.OK: 200>: ('OK', 'Request fulfilled, document follows'),
+        ...
+        <HTTPStatus.FORBIDDEN: 403>: ('Forbidden',
+                                      'Request forbidden -- authorization will '
+                                      'not help'),
+        <HTTPStatus.NOT_FOUND: 404>: ('Not Found',
+                                      'Nothing matches the given URI'),
+        ...
+        <HTTPStatus.IM_A_TEAPOT: 418>: ("I'm a Teapot",
+                                        'Server refuses to brew coffee because '
+                                        'it is a teapot'),
+        ...
+        <HTTPStatus.SERVICE_UNAVAILABLE: 503>: ('Service Unavailable',
+                                                'The server cannot process the '
+                                                'request due to a high load'),
+        ...
         }
 
 When an error is raised the server responds by returning an HTTP error code
-*and* an error page. You can use the :exc:`HTTPError` instance as a response on the
+*and* an error page. You can use the :exc:`~urllib.error.HTTPError` instance as a response on the
 page returned. This means that as well as the code attribute, it also has read,
 geturl, and info, methods as returned by the ``urllib.response`` module::
 
@@ -345,7 +290,7 @@ geturl, and info, methods as returned by the ``urllib.response`` module::
 Wrapping it Up
 --------------
 
-So if you want to be prepared for :exc:`HTTPError` *or* :exc:`URLError` there are two
+So if you want to be prepared for :exc:`~urllib.error.HTTPError` *or* :exc:`~urllib.error.URLError` there are two
 basic approaches. I prefer the second approach.
 
 Number 1
@@ -372,7 +317,7 @@ Number 1
 .. note::
 
     The ``except HTTPError`` *must* come first, otherwise ``except URLError``
-    will *also* catch an :exc:`HTTPError`.
+    will *also* catch an :exc:`~urllib.error.HTTPError`.
 
 Number 2
 ~~~~~~~~
@@ -398,17 +343,17 @@ Number 2
 info and geturl
 ===============
 
-The response returned by urlopen (or the :exc:`HTTPError` instance) has two
-useful methods :meth:`info` and :meth:`geturl` and is defined in the module
-:mod:`urllib.response`..
+The response returned by urlopen (or the :exc:`~urllib.error.HTTPError` instance) has two
+useful methods :meth:`!info` and :meth:`!geturl` and is defined in the module
+:mod:`urllib.response`.
 
-**geturl** - this returns the real URL of the page fetched. This is useful
-because ``urlopen`` (or the opener object used) may have followed a
-redirect. The URL of the page fetched may not be the same as the URL requested.
+* **geturl** - this returns the real URL of the page fetched. This is useful
+  because ``urlopen`` (or the opener object used) may have followed a
+  redirect. The URL of the page fetched may not be the same as the URL requested.
 
-**info** - this returns a dictionary-like object that describes the page
-fetched, particularly the headers sent by the server. It is currently an
-:class:`http.client.HTTPMessage` instance.
+* **info** - this returns a dictionary-like object that describes the page
+  fetched, particularly the headers sent by the server. It is currently an
+  :class:`http.client.HTTPMessage` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
 `Quick Reference to HTTP Headers <https://jkorpela.fi/http.html>`_
@@ -514,7 +459,7 @@ than the URL you pass to .add_password() will also match. ::
 
     In the above example we only supplied our ``HTTPBasicAuthHandler`` to
     ``build_opener``. By default openers have the handlers for normal situations
-    -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`http_proxy`
+    -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`!http_proxy`
     environment variable is set), ``UnknownHandler``, ``HTTPHandler``,
     ``HTTPDefaultErrorHandler``, ``HTTPRedirectHandler``, ``FTPHandler``,
     ``FileHandler``, ``DataHandler``, ``HTTPErrorProcessor``.
@@ -601,5 +546,5 @@ This document was reviewed and revised by John Lee.
        scripts with a localhost server, I have to prevent urllib from using
        the proxy.
 .. [#] urllib opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe
-       <https://code.activestate.com/recipes/456195/>`_.
+       <https://code.activestate.com/recipes/456195-urrlib2-opener-for-ssl-proxy-connect-method/>`_.
 

@@ -26,6 +26,12 @@ Unpack implied tuple
     >>> a == [7, 8, 9]
     True
 
+Unpack nested implied tuple
+
+    >>> [*[*a]] = [[7,8,9]]
+    >>> a == [[7,8,9]]
+    True
+
 Unpack string... fun!
 
     >>> a, *b = 'one'

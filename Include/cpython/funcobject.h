@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 
-#define COMMON_FIELDS(PREFIX) \
+#define _Py_COMMON_FIELDS(PREFIX) \
     PyObject *PREFIX ## globals; \
     PyObject *PREFIX ## builtins; \
     PyObject *PREFIX ## name; \
@@ -19,7 +19,7 @@ extern "C" {
     PyObject *PREFIX ## closure;     /* NULL or a tuple of cell objects */
 
 typedef struct {
-    COMMON_FIELDS(fc_)
+    _Py_COMMON_FIELDS(fc_)
 } PyFrameConstructor;
 
 /* Function objects and code objects should not be confused with each other:
@@ -35,12 +35,14 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    COMMON_FIELDS(func_)
+    _Py_COMMON_FIELDS(func_)
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
+    PyObject *func_annotate;    /* Callable to fill the annotations dictionary */
+    PyObject *func_typeparams;  /* Tuple of active type variables or NULL */
     vectorcallfunc vectorcall;
     /* Version number for use by specializer.
      * Can set to non-zero when we want to specialize.
@@ -58,6 +60,8 @@ typedef struct {
      *     (func_closure may be NULL if PyCode_GetNumFree(func_code) == 0).
      */
 } PyFunctionObject;
+
+#undef _Py_COMMON_FIELDS
 
 PyAPI_DATA(PyTypeObject) PyFunction_Type;
 
@@ -77,12 +81,6 @@ PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
-
-PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
-    PyObject *func,
-    PyObject *const *stack,
-    size_t nargsf,
-    PyObject *kwnames);
 
 #define _PyFunction_CAST(func) \
     (assert(PyFunction_Check(func)), _Py_CAST(PyFunctionObject*, func))
@@ -136,7 +134,8 @@ PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
     V(DESTROY)                   \
     V(MODIFY_CODE)               \
     V(MODIFY_DEFAULTS)           \
-    V(MODIFY_KWDEFAULTS)
+    V(MODIFY_KWDEFAULTS)         \
+    V(MODIFY_QUALNAME)
 
 typedef enum {
     #define PY_DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,

@@ -1,2 +1,0 @@
-Mention the new way of typing ``**kwargs`` with ``Unpack`` and ``TypedDict``
-introduced in :pep:`692`.

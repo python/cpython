@@ -1,5 +1,5 @@
-:mod:`email.message`: Representing an email message
----------------------------------------------------
+:mod:`!email.message`: Representing an email message
+----------------------------------------------------
 
 .. module:: email.message
    :synopsis: The base class representing email messages.
@@ -40,9 +40,9 @@ over the object tree.
 The :class:`EmailMessage` dictionary-like interface is indexed by the header
 names, which must be ASCII values.  The values of the dictionary are strings
 with some extra methods.  Headers are stored and returned in case-preserving
-form, but field names are matched case-insensitively.  Unlike a real dict,
-there is an ordering to the keys, and there can be duplicate keys.  Additional
-methods are provided for working with headers that have duplicate keys.
+form, but field names are matched case-insensitively.  The keys are ordered,
+but unlike a real dict, there can be duplicates.  Additional methods are
+provided for working with headers that have duplicate keys.
 
 The *payload* is either a string or bytes object, in the case of simple message
 objects, or a list of :class:`EmailMessage` objects, for MIME container
@@ -57,7 +57,7 @@ message objects.
    :class:`~email.policy.default` policy, which follows the rules of the email
    RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
    the Python standard ``\n`` line endings).  For more information see the
-   :mod:`~email.policy` documentation.
+   :mod:`~email.policy` documentation. [2]_
 
    .. method:: as_string(unixfrom=False, maxheaderlen=None, policy=None)
 
@@ -67,7 +67,7 @@ message objects.
       with the base :class:`~email.message.Message` class *maxheaderlen* is
       accepted, but defaults to ``None``, which means that by default the line
       length is controlled by the
-      :attr:`~email.policy.EmailPolicy.max_line_length` of the policy.  The
+      :attr:`~email.policy.Policy.max_line_length` of the policy.  The
       *policy* argument may be used to override the default policy obtained
       from the message instance.  This can be used to control some of the
       formatting produced by the method, since the specified *policy* will be
@@ -124,7 +124,7 @@ message objects.
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the serialized message.
 
 
@@ -213,7 +213,7 @@ message objects.
          del msg['subject']
          msg['subject'] = 'Python roolz!'
 
-      If the :mod:`policy` defines certain headers to be unique (as the standard
+      If the :mod:`policy <email.policy>` defines certain headers to be unique (as the standard
       policies do), this method may raise a :exc:`ValueError` when an attempt
       is made to assign a value to such a header when one already exists.  This
       behavior is intentional for consistency's sake, but do not depend on it
@@ -247,7 +247,7 @@ message objects.
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (*failobj* defaults to ``None``).
 
 
@@ -378,7 +378,7 @@ message objects.
       deprecated.
 
       Note that existing parameter values of headers may be accessed through
-      the :attr:`~email.headerregistry.BaseHeader.params` attribute of the
+      the :attr:`~email.headerregistry.ParameterizedMIMEHeader.params` attribute of the
       header value (for example, ``msg['Content-Type'].params['charset']``).
 
       .. versionchanged:: 3.4 ``replace`` keyword was added.
@@ -691,7 +691,7 @@ message objects.
 
    .. method:: clear_content()
 
-      Remove the payload and all of the :exc:`Content-` headers, leaving
+      Remove the payload and all of the :mailheader:`!Content-` headers, leaving
       all other headers intact and in their original order.
 
 
@@ -749,3 +749,9 @@ message objects.
 .. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`.  Docs for legacy message class moved to
        :ref:`compat32_message`.
+
+.. [2] The :class:`EmailMessage` class requires a policy that provides a
+       ``content_manager`` attribute for content management methods like
+       ``set_content()`` and ``get_content()`` to work. The legacy
+       :const:`~email.policy.compat32` policy does not support these methods
+       and should not be used with :class:`EmailMessage`.

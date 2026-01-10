@@ -8,59 +8,6 @@
 extern "C" {
 #endif
 
-
-/* Count of all "real" monitoring events (not derived from other events) */
-#define PY_MONITORING_UNGROUPED_EVENTS 14
-/* Count of all  monitoring events */
-#define PY_MONITORING_EVENTS 16
-
-/* Table of which tools are active for each monitored event. */
-typedef struct _Py_Monitors {
-    uint8_t tools[PY_MONITORING_UNGROUPED_EVENTS];
-} _Py_Monitors;
-
-/* Each instruction in a code object is a fixed-width value,
- * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
- * opcode allows for larger values but the current limit is 3 uses
- * of EXTENDED_ARG (see Python/compile.c), for a maximum
- * 32-bit value.  This aligns with the note in Python/compile.c
- * (compiler_addop_i_line) indicating that the max oparg value is
- * 2**32 - 1, rather than INT_MAX.
- */
-
-typedef union {
-    uint16_t cache;
-    struct {
-        uint8_t code;
-        uint8_t arg;
-    } op;
-} _Py_CODEUNIT;
-
-
-/* These macros only remain defined for compatibility. */
-#define _Py_OPCODE(word) ((word).op.code)
-#define _Py_OPARG(word) ((word).op.arg)
-
-static inline _Py_CODEUNIT
-_py_make_codeunit(uint8_t opcode, uint8_t oparg)
-{
-    // No designated initialisers because of C++ compat
-    _Py_CODEUNIT word;
-    word.op.code = opcode;
-    word.op.arg = oparg;
-    return word;
-}
-
-static inline void
-_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
-{
-    word->op.code = opcode;
-}
-
-#define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
-#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
-
-
 typedef struct {
     PyObject *_co_code;
     PyObject *_co_varnames;
@@ -68,34 +15,30 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-/* Ancilliary data structure used for instrumentation.
-   Line instrumentation creates an array of
-   these. One entry per code unit.*/
 typedef struct {
-    uint8_t original_opcode;
-    int8_t line_delta;
-} _PyCoLineInstrumentationData;
+    int size;
+    int capacity;
+    struct _PyExecutorObject *executors[1];
+} _PyExecutorArray;
 
-/* Main data structure used for instrumentation.
- * This is allocated when needed for instrumentation
+
+#ifdef Py_GIL_DISABLED
+
+/* Each thread specializes a thread-local copy of the bytecode in free-threaded
+ * builds. These copies are stored on the code object in a `_PyCodeArray`. The
+ * first entry in the array always points to the "main" copy of the bytecode
+ * that is stored at the end of the code object.
  */
 typedef struct {
-    /* Monitoring specific to this code object */
-    _Py_Monitors local_monitors;
-    /* Monitoring that is active on this code object */
-    _Py_Monitors active_monitors;
-    /* The tools that are to be notified for events for the matching code unit */
-    uint8_t *tools;
-    /* Information to support line events */
-    _PyCoLineInstrumentationData *lines;
-    /* The tools that are to be notified for line events for the matching code unit */
-    uint8_t *line_tools;
-    /* Information to support instruction events */
-    /* The underlying instructions, which can themselves be instrumented */
-    uint8_t *per_instruction_opcodes;
-    /* The tools that are to be notified for instruction events for the matching code unit */
-    uint8_t *per_instruction_tools;
-} _PyCoMonitoringData;
+    Py_ssize_t size;
+    char *entries[1];
+} _PyCodeArray;
+
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \
+    _PyCodeArray *co_tlbc;
+#else
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE()
+#endif
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
@@ -138,7 +81,8 @@ typedef struct {
                                                                                \
     /* redundant values (derived from co_localsplusnames and                   \
        co_localspluskinds) */                                                  \
-    int co_nlocalsplus;           /* number of local + cell + free variables */ \
+    int co_nlocalsplus;           /* number of spaces for holding local, cell, \
+                                     and free variables */                     \
     int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
     int co_ncellvars;             /* total number of cell variables */         \
@@ -153,14 +97,17 @@ typedef struct {
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
+    _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
-    uint64_t _co_instrumentation_version; /* current instrumentation version */  \
-    _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
+    uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
+    struct _PyCoMonitoringData *_co_monitoring; /* Monitoring data */          \
+    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
     void *co_extra;                                                            \
+    _PyCode_DEF_THREAD_LOCAL_BYTECODE()                                        \
     char co_code_adaptive[(SIZE)];                                             \
 }
 
@@ -195,12 +142,22 @@ struct PyCodeObject _PyCode_DEF(1);
 #define CO_FUTURE_GENERATOR_STOP  0x800000
 #define CO_FUTURE_ANNOTATIONS    0x1000000
 
+#define CO_NO_MONITORING_EVENTS 0x2000000
+
+/* Whether the code object has a docstring,
+   If so, it will be the first item in co_consts
+*/
+#define CO_HAS_DOCSTRING 0x4000000
+
+/* A function defined in class scope */
+#define CO_METHOD  0x8000000
+
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
 
-#define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
+#define CO_MAXBLOCKS 21 /* Max static block nesting within a function */
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
@@ -211,13 +168,14 @@ static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
     return op->co_nfreevars;
 }
 
-static inline int PyCode_GetFirstFree(PyCodeObject *op) {
+static inline int PyUnstable_Code_GetFirstFree(PyCodeObject *op) {
     assert(PyCode_Check(op));
     return op->co_nlocalsplus - op->co_nfreevars;
 }
 
-#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
-#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
+Py_DEPRECATED(3.13) static inline int PyCode_GetFirstFree(PyCodeObject *op) {
+    return PyUnstable_Code_GetFirstFree(op);
+}
 
 /* Unstable public interface */
 PyAPI_FUNC(PyCodeObject *) PyUnstable_Code_New(
@@ -323,15 +281,6 @@ typedef struct _line_offsets {
    same line as lasti.  Return the number of that line.
 */
 PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
-
-/* Create a comparable key used to compare constants taking in account the
- * object type. It is used to make sure types are not coerced (e.g., float and
- * complex) _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms
- *
- * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
- * depending on the type and the value. The type is the first item to not
- * compare bytes and str which can raise a BytesWarning exception. */
-PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);

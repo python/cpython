@@ -87,8 +87,8 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(base.spam, 10)
         self.assertEqual(base._spam, 10)
         delattr(base, "spam")
-        self.assertTrue(not hasattr(base, "spam"))
-        self.assertTrue(not hasattr(base, "_spam"))
+        self.assertNotHasAttr(base, "spam")
+        self.assertNotHasAttr(base, "_spam")
         base.spam = 20
         self.assertEqual(base.spam, 20)
         self.assertEqual(base._spam, 20)
@@ -183,26 +183,76 @@ class PropertyTests(unittest.TestCase):
             fake_prop.__init__('fget', 'fset', 'fdel', 'doc')
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def test_class_property(self):
-        class A:
-            @classmethod
-            @property
-            def __doc__(cls):
-                return 'A doc for %r' % cls.__name__
-        self.assertEqual(A.__doc__, "A doc for 'A'")
+    @support.refcount_test
+    def test_gh_115618(self):
+        # Py_XDECREF() was improperly called for None argument
+        # in property methods.
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        prop = property()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            prop = prop.getter(None)
+        self.assertIsNone(prop.fget)
+        for i in range(100):
+            prop = prop.setter(None)
+        self.assertIsNone(prop.fset)
+        for i in range(100):
+            prop = prop.deleter(None)
+        self.assertIsNone(prop.fdel)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def test_class_property_override(self):
+    def test_property_name(self):
+        def getter(self):
+            return 42
+
+        def setter(self, value):
+            pass
+
         class A:
-            """First"""
-            @classmethod
             @property
-            def __doc__(cls):
-                return 'Second'
-        self.assertEqual(A.__doc__, 'Second')
+            def foo(self):
+                return 1
+
+            @foo.setter
+            def oof(self, value):
+                pass
+
+            bar = property(getter)
+            baz = property(None, setter)
+
+        self.assertEqual(A.foo.__name__, 'foo')
+        self.assertEqual(A.oof.__name__, 'oof')
+        self.assertEqual(A.bar.__name__, 'bar')
+        self.assertEqual(A.baz.__name__, 'baz')
+
+        A.quux = property(getter)
+        self.assertEqual(A.quux.__name__, 'getter')
+        A.quux.__name__ = 'myquux'
+        self.assertEqual(A.quux.__name__, 'myquux')
+        self.assertEqual(A.bar.__name__, 'bar')  # not affected
+        A.quux.__name__ = None
+        self.assertIsNone(A.quux.__name__)
+
+        with self.assertRaisesRegex(
+            AttributeError, "'property' object has no attribute '__name__'"
+        ):
+            property(None, setter).__name__
+
+        with self.assertRaisesRegex(
+            AttributeError, "'property' object has no attribute '__name__'"
+        ):
+            property(1).__name__
+
+        class Err:
+            def __getattr__(self, attr):
+                raise RuntimeError('fail')
+
+        p = property(Err())
+        with self.assertRaisesRegex(RuntimeError, 'fail'):
+            p.__name__
+
+        p.__name__ = 'not_fail'
+        self.assertEqual(p.__name__, 'not_fail')
 
     def test_property_set_name_incorrect_args(self):
         p = property()
@@ -245,17 +295,69 @@ class PropertySubSlots(property):
 
 class PropertySubclassTests(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_slots_docstring_copy_exception(self):
-        try:
+        # A special case error that we preserve despite the GH-98963 behavior
+        # that would otherwise silently ignore this error.
+        # This came from commit b18500d39d791c879e9904ebac293402b4a7cd34
+        # as part of https://bugs.python.org/issue5890 which allowed docs to
+        # be set via property subclasses in the first place.
+        with self.assertRaises(AttributeError):
             class Foo(object):
                 @PropertySubSlots
                 def spam(self):
                     """Trying to copy this docstring will raise an exception"""
                     return 1
-        except AttributeError:
-            pass
-        else:
-            raise Exception("AttributeError not raised")
+
+    def test_property_with_slots_no_docstring(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo",)
+
+        p = slotted_prop()  # no AttributeError
+        self.assertIsNone(getattr(p, "__doc__", None))
+
+        def undocumented_getter():
+            return 4
+
+        p = slotted_prop(undocumented_getter)  # New in 3.12: no AttributeError
+        self.assertIsNone(getattr(p, "__doc__", None))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_with_slots_docstring_silently_dropped(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo",)
+
+        p = slotted_prop(doc="what's up")  # no AttributeError
+        self.assertIsNone(p.__doc__)
+
+        def documented_getter():
+            """getter doc."""
+            return 4
+
+        # Historical behavior: A docstring from a getter always raises.
+        # (matches test_slots_docstring_copy_exception above).
+        with self.assertRaises(AttributeError):
+            p = slotted_prop(documented_getter)
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_with_slots_and_doc_slot_docstring_present(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo", "__doc__")
+
+        p = slotted_prop(doc="what's up")
+        self.assertEqual("what's up", p.__doc__)  # new in 3.12: This gets set.
+
+        def documented_getter():
+            """what's up getter doc?"""
+            return 4
+
+        p = slotted_prop(documented_getter)
+        self.assertEqual("what's up getter doc?", p.__doc__)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -336,7 +438,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p2.__doc__, "doc-A")
 
         # Case-3: with no user-provided doc new getter doc
-        #         takes precendence
+        #         takes precedence
         p = property(getter2, None, None, None)
 
         p2 = p.getter(getter3)
@@ -360,6 +462,40 @@ class PropertySubclassTests(unittest.TestCase):
         p2 = p.getter(getter2)
         self.assertEqual(p.__doc__, "user")
         self.assertEqual(p2.__doc__, "user")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_prefer_explicit_doc(self):
+        # Issue 25757: subclasses of property lose docstring
+        self.assertEqual(property(doc="explicit doc").__doc__, "explicit doc")
+        self.assertEqual(PropertySub(doc="explicit doc").__doc__, "explicit doc")
+
+        class Foo:
+            spam = PropertySub(doc="spam explicit doc")
+
+            @spam.getter
+            def spam(self):
+                """ignored as doc already set"""
+                return 1
+
+            def _stuff_getter(self):
+                """ignored as doc set directly"""
+            stuff = PropertySub(doc="stuff doc argument", fget=_stuff_getter)
+
+        #self.assertEqual(Foo.spam.__doc__, "spam explicit doc")
+        self.assertEqual(Foo.stuff.__doc__, "stuff doc argument")
+
+    def test_property_no_doc_on_getter(self):
+        # If a property's getter has no __doc__ then the property's doc should
+        # be None; test that this is consistent with subclasses as well; see
+        # GH-2487
+        class NoDoc:
+            @property
+            def __doc__(self):
+                raise AttributeError
+
+        self.assertEqual(property(NoDoc()).__doc__, None)
+        self.assertEqual(PropertySub(NoDoc()).__doc__, None)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")

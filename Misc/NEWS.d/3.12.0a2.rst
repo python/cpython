@@ -8,7 +8,7 @@ The IDNA codec decoder used on DNS hostnames by :mod:`socket` or
 :mod:`asyncio` related name resolution functions no longer involves a
 quadratic algorithm. This prevents a potential CPU denial of service if an
 out-of-spec excessive length hostname involving bidirectional characters
-were decoded. Some protocols such as :mod:`urllib` http ``3xx`` redirects
+were decoded. Some protocols such as :mod:`urllib` http :samp:`3{xx}` redirects
 potentially allow for an attacker to supply such a name.
 
 Individual labels within an IDNA encoded DNS name will now raise an error
@@ -35,11 +35,11 @@ Update bundled libexpat to 2.5.0
 .. nonce: ik4iOv
 .. section: Core and Builtins
 
-The docs clearly say that ``PyImport_Inittab``,
+The docs clearly say that :c:data:`PyImport_Inittab`,
 :c:func:`PyImport_AppendInittab`, and :c:func:`PyImport_ExtendInittab`
 should not be used after :c:func:`Py_Initialize` has been called. We now
 enforce this for the two functions.  Additionally, the runtime now uses an
-internal copy of ``PyImport_Inittab``, to guard against modification.
+internal copy of :c:data:`PyImport_Inittab`, to guard against modification.
 
 ..
 
@@ -111,7 +111,7 @@ back to alternative names ("python<MAJOR>", "python<MAJOR>.<MINOR>").
 .. section: Core and Builtins
 
 Update :mod:`faulthandler` to emit an error message with the proper
-unexpected signal number. Patch by Dong-hee Na.
+unexpected signal number. Patch by Donghee Na.
 
 ..
 
@@ -279,7 +279,7 @@ Fix source locations of :keyword:`match` sub-patterns.
 
 Added the methods :c:func:`PyObject_Vectorcall` and
 :c:func:`PyObject_VectorcallMethod` to the :ref:`Limited API <stable>` along
-with the auxiliary macro constant :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`.
+with the auxiliary macro constant :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET`.
 
 The availability of these functions enables more efficient :PEP:`590` vector
 calls from binary extension modules that avoid argument boxing/unboxing
@@ -397,7 +397,7 @@ longobject.c to speed up some operations.
 .. nonce: nSGEkG
 .. section: Core and Builtins
 
-Expose :data:`~socket.ETH_P_ALL` and some of the :ref:`ETHERTYPE_* constants
+Expose :const:`~socket.ETH_P_ALL` and some of the :ref:`ETHERTYPE_* constants
 <socket-ethernet-types>` in :mod:`socket`. Patch by Noam Cohen.
 
 ..
@@ -527,7 +527,7 @@ Stinner.
 .. nonce: Ai2KDh
 .. section: Library
 
-Now :mod:`_pyio` is consistent with :mod:`_io` in raising ``ValueError``
+Now :mod:`!_pyio` is consistent with :mod:`!_io` in raising ``ValueError``
 when executing methods over closed buffers.
 
 ..
@@ -537,7 +537,7 @@ when executing methods over closed buffers.
 .. nonce: 0v8iyw
 .. section: Library
 
-Clean up refleak on failed module initialisation in :mod:`_zoneinfo`
+Clean up refleak on failed module initialisation in :mod:`!_zoneinfo`
 
 ..
 
@@ -546,7 +546,7 @@ Clean up refleak on failed module initialisation in :mod:`_zoneinfo`
 .. nonce: qc_KHr
 .. section: Library
 
-Clean up refleaks on failed module initialisation in :mod:`_pickle`
+Clean up refleaks on failed module initialisation in :mod:`!_pickle`
 
 ..
 
@@ -555,7 +555,7 @@ Clean up refleaks on failed module initialisation in :mod:`_pickle`
 .. nonce: LBl79O
 .. section: Library
 
-Clean up refleak on failed module initialisation in :mod:`_io`.
+Clean up refleak on failed module initialisation in :mod:`!_io`.
 
 ..
 
@@ -584,8 +584,8 @@ Use the frame bound builtins when offering a name suggestion in
 .. nonce: qtm-9T
 .. section: Library
 
-In :mod:`importlib._bootstrap`, enhance namespace package repr to `<module
-'x' (namespace) from ['path']>`.
+In :mod:`importlib._bootstrap`, enhance namespace package repr to ``<module
+'x' (namespace) from ['path']>``.
 
 ..
 
@@ -695,7 +695,7 @@ Make sure ``patch.dict()`` can be applied on async functions.
 .. nonce: jUpzF3
 .. section: Library
 
-Remove modules :mod:`asyncore` and :mod:`asynchat`, which were deprecated by
+Remove modules :mod:`!asyncore` and :mod:`!asynchat`, which were deprecated by
 :pep:`594`.
 
 ..
@@ -706,7 +706,7 @@ Remove modules :mod:`asyncore` and :mod:`asynchat`, which were deprecated by
 .. section: Library
 
 Fix handling of ``bytes`` :term:`path-like objects <path-like object>` in
-:func:`os.ismount()`.
+:func:`os.ismount`.
 
 ..
 
@@ -822,7 +822,7 @@ and to indicate when it became late-bound.
 .. nonce: 7KinCV
 .. section: Tests
 
-The Python test suite now fails wit exit code 4 if no tests ran. It should
+The Python test suite now fails with exit code 4 if no tests ran. It should
 help detecting typos in test names and test methods.
 
 ..
@@ -968,7 +968,7 @@ if :option:`--with-system-expat` is passed to :program:`configure`.
 .. nonce: 0f6e_N
 .. section: Windows
 
-Update Windows builds to zlib v1.2.13.  v1.2.12 has CVE-2022-37434, but the
+Update Windows builds to zlib v1.2.13.  v1.2.12 has :cve:`2022-37434`, but the
 vulnerable ``inflateGetHeader`` API is not used by Python.
 
 ..

@@ -9,7 +9,7 @@ Sequence Protocol
 .. c:function:: int PySequence_Check(PyObject *o)
 
    Return ``1`` if the object provides the sequence protocol, and ``0`` otherwise.
-   Note that it returns ``1`` for Python classes with a :meth:`__getitem__`
+   Note that it returns ``1`` for Python classes with a :meth:`~object.__getitem__`
    method, unless they are :class:`dict` subclasses, since in general it
    is impossible to determine what type of keys the class supports.  This
    function always succeeds.
@@ -103,6 +103,15 @@ Sequence Protocol
    Determine if *o* contains *value*.  If an item in *o* is equal to *value*,
    return ``1``, otherwise return ``0``. On error, return ``-1``.  This is
    equivalent to the Python expression ``value in o``.
+
+
+.. c:function:: int PySequence_In(PyObject *o, PyObject *value)
+
+   Alias for :c:func:`PySequence_Contains`.
+
+   .. deprecated:: 3.14
+      The function is :term:`soft deprecated` and should no longer be used to
+      write new code.
 
 
 .. c:function:: Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)

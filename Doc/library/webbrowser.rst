@@ -1,5 +1,5 @@
-:mod:`webbrowser` --- Convenient web-browser controller
-=======================================================
+:mod:`!webbrowser` --- Convenient web-browser controller
+========================================================
 
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for web browsers.
@@ -24,8 +24,17 @@ If the environment variable :envvar:`BROWSER` exists, it is interpreted as the
 :data:`os.pathsep`-separated list of browsers to try ahead of the platform
 defaults.  When the value of a list part contains the string ``%s``, then it is
 interpreted as a literal browser command line to be used with the argument URL
-substituted for ``%s``; if the part does not contain ``%s``, it is simply
-interpreted as the name of the browser to launch. [1]_
+substituted for ``%s``; if the value is a single word that refers to one of the
+already registered browsers this browser is added to the front of the search list;
+if the part does not contain ``%s``, it is simply interpreted as the name of the
+browser to launch. [1]_
+
+.. versionchanged:: 3.14
+
+   The :envvar:`BROWSER` variable can now also be used to reorder the list of
+   platform defaults. This is particularly useful on macOS where the platform
+   defaults do not refer to command-line tools on :envvar:`PATH`.
+
 
 For non-Unix platforms, or when a remote browser is available on Unix, the
 controlling process will not wait for the user to finish with the browser, but
@@ -33,15 +42,39 @@ allow the remote browser to maintain its own windows on the display.  If remote
 browsers are not available on Unix, the controlling process will launch a new
 browser and wait.
 
+On iOS, the :envvar:`BROWSER` environment variable, as well as any arguments
+controlling autoraise, browser preference, and new tab/window creation will be
+ignored. Web pages will *always* be opened in the user's preferred browser, in
+a new tab, with the browser being brought to the foreground. The use of the
+:mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
+:mod:`ctypes` isn't available, calls to :func:`.open` will fail.
+
+.. _webbrowser-cli:
+
+Command-line interface
+----------------------
+
+.. program:: webbrowser
+
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
-parameters: ``-n`` opens the URL in a new browser window, if possible;
-``-t`` opens the URL in a new browser page ("tab"). The options are,
-naturally, mutually exclusive.  Usage example::
+parameters:
+
+.. option:: -n, --new-window
+
+   Opens the URL in a new browser window, if possible.
+
+.. option:: -t, --new-tab
+
+   Opens the URL in a new browser tab.
+
+The options are, naturally, mutually exclusive.  Usage example:
+
+.. code-block:: bash
 
    python -m webbrowser -t "https://www.python.org"
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: not WASI, not Android.
 
 The following exception is defined:
 
@@ -62,6 +95,8 @@ The following functions are defined:
    (note that under many window managers this will occur regardless of the
    setting of this variable).
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
    Note that on some platforms, trying to open a filename using this function,
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
@@ -74,10 +109,15 @@ The following functions are defined:
    Open *url* in a new window of the default browser, if possible, otherwise, open
    *url* in the only browser window.
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
+
 .. function:: open_new_tab(url)
 
    Open *url* in a new page ("tab") of the default browser, if possible, otherwise
    equivalent to :func:`open_new`.
+
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
 
 
 .. function:: get(using=None)
@@ -111,41 +151,43 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | Type Name              | Class Name                              | Notes |
 +========================+=========================================+=======+
-| ``'mozilla'``          | :class:`Mozilla('mozilla')`             |       |
+| ``'mozilla'``          | ``Mozilla('mozilla')``                  |       |
 +------------------------+-----------------------------------------+-------+
-| ``'firefox'``          | :class:`Mozilla('mozilla')`             |       |
+| ``'firefox'``          | ``Mozilla('mozilla')``                  |       |
 +------------------------+-----------------------------------------+-------+
-| ``'epiphany'``         | :class:`Epiphany('epiphany')`           |       |
+| ``'epiphany'``         | ``Epiphany('epiphany')``                |       |
 +------------------------+-----------------------------------------+-------+
-| ``'kfmclient'``        | :class:`Konqueror()`                    | \(1)  |
+| ``'kfmclient'``        | ``Konqueror()``                         | \(1)  |
 +------------------------+-----------------------------------------+-------+
-| ``'konqueror'``        | :class:`Konqueror()`                    | \(1)  |
+| ``'konqueror'``        | ``Konqueror()``                         | \(1)  |
 +------------------------+-----------------------------------------+-------+
-| ``'kfm'``              | :class:`Konqueror()`                    | \(1)  |
+| ``'kfm'``              | ``Konqueror()``                         | \(1)  |
 +------------------------+-----------------------------------------+-------+
-| ``'opera'``            | :class:`Opera()`                        |       |
+| ``'opera'``            | ``Opera()``                             |       |
 +------------------------+-----------------------------------------+-------+
-| ``'links'``            | :class:`GenericBrowser('links')`        |       |
+| ``'links'``            | ``GenericBrowser('links')``             |       |
 +------------------------+-----------------------------------------+-------+
-| ``'elinks'``           | :class:`Elinks('elinks')`               |       |
+| ``'elinks'``           | ``Elinks('elinks')``                    |       |
 +------------------------+-----------------------------------------+-------+
-| ``'lynx'``             | :class:`GenericBrowser('lynx')`         |       |
+| ``'lynx'``             | ``GenericBrowser('lynx')``              |       |
 +------------------------+-----------------------------------------+-------+
-| ``'w3m'``              | :class:`GenericBrowser('w3m')`          |       |
+| ``'w3m'``              | ``GenericBrowser('w3m')``               |       |
 +------------------------+-----------------------------------------+-------+
-| ``'windows-default'``  | :class:`WindowsDefault`                 | \(2)  |
+| ``'windows-default'``  | ``WindowsDefault``                      | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'macosx'``           | :class:`MacOSXOSAScript('default')`     | \(3)  |
+| ``'macosx'``           | ``MacOSXOSAScript('default')``          | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'safari'``           | :class:`MacOSXOSAScript('safari')`      | \(3)  |
+| ``'safari'``           | ``MacOSXOSAScript('safari')``           | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'google-chrome'``    | :class:`Chrome('google-chrome')`        |       |
+| ``'google-chrome'``    | ``Chrome('google-chrome')``             |       |
 +------------------------+-----------------------------------------+-------+
-| ``'chrome'``           | :class:`Chrome('chrome')`               |       |
+| ``'chrome'``           | ``Chrome('chrome')``                    |       |
 +------------------------+-----------------------------------------+-------+
-| ``'chromium'``         | :class:`Chromium('chromium')`           |       |
+| ``'chromium'``         | ``Chromium('chromium')``                |       |
 +------------------------+-----------------------------------------+-------+
-| ``'chromium-browser'`` | :class:`Chromium('chromium-browser')`   |       |
+| ``'chromium-browser'`` | ``Chromium('chromium-browser')``        |       |
++------------------------+-----------------------------------------+-------+
+| ``'iosbrowser'``       | ``IOSBrowser``                          | \(4)  |
 +------------------------+-----------------------------------------+-------+
 
 Notes:
@@ -153,7 +195,7 @@ Notes:
 (1)
    "Konqueror" is the file manager for the KDE desktop environment for Unix, and
    only makes sense to use if KDE is running.  Some way of reliably detecting KDE
-   would be nice; the :envvar:`KDEDIR` variable is not sufficient.  Note also that
+   would be nice; the :envvar:`!KDEDIR` variable is not sufficient.  Note also that
    the name "kfm" is used even when using the :program:`konqueror` command with KDE
    2 --- the implementation selects the best strategy for running Konqueror.
 
@@ -161,7 +203,15 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on macOS platform.
+   Only on macOS.
+
+(4)
+   Only on iOS.
+
+.. versionadded:: 3.2
+   A new :class:`!MacOSXOSAScript` class has been added
+   and is used on Mac instead of the previous :class:`!MacOSX` class.
+   This adds support for opening browsers not currently set as the OS default.
 
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
@@ -171,8 +221,8 @@ Notes:
    Removed browsers include Grail, Mosaic, Netscape, Galeon,
    Skipstone, Iceape, and Firefox versions 35 and below.
 
-.. deprecated-removed:: 3.11 3.13
-   :class:`MacOSX` is deprecated, use :class:`MacOSXOSAScript` instead.
+.. versionchanged:: 3.13
+   Support for iOS has been added.
 
 Here are some simple examples::
 
@@ -187,14 +237,14 @@ Here are some simple examples::
 
 .. _browser-controllers:
 
-Browser Controller Objects
+Browser controller objects
 --------------------------
 
-Browser controllers provide these methods which parallel three of the
-module-level convenience functions:
+Browser controllers provide the :attr:`~controller.name` attribute,
+and the following three methods which parallel module-level convenience functions:
 
 
-.. attribute:: name
+.. attribute:: controller.name
 
    System-dependent name for the browser.
 

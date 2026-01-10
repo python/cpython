@@ -1,5 +1,4 @@
 import os.path
-import re
 
 from c_common.clsutil import classonly
 from c_parser.info import (
@@ -68,6 +67,7 @@ _OTHER_SUPPORTED_TYPES = {
     'PyMethodDef',
     'PyMethodDef[]',
     'PyMemberDef[]',
+    'PyGetSetDef',
     'PyGetSetDef[]',
     'PyNumberMethods',
     'PySequenceMethods',
@@ -76,6 +76,7 @@ _OTHER_SUPPORTED_TYPES = {
     'PyBufferProcs',
     'PyStructSequence_Field[]',
     'PyStructSequence_Desc',
+    'PyABIInfo',
 }
 
 # XXX We should normalize all cases to a single name,
@@ -281,12 +282,26 @@ def _is_kwlist(decl):
     vartype = ''.join(str(decl.vartype).split())
     return vartype == 'char*[]'
 
+def _is_local_static_mutex(decl):
+    if not hasattr(decl, "vartype"):
+        return False
+
+    if not hasattr(decl, "parent") or decl.parent is None:
+        # We only want to allow local variables
+        return False
+
+    vartype = decl.vartype
+    return (vartype.typespec == 'PyMutex') and (decl.storage == 'static')
 
 def _has_other_supported_type(decl):
     if hasattr(decl, 'file') and decl.file.filename.endswith('.c.h'):
         assert 'clinic' in decl.file.filename, (decl,)
         if decl.name == '_kwtuple':
             return True
+    if _is_local_static_mutex(decl):
+        # GH-127081: Local static mutexes are used to
+        # wrap libc functions that aren't thread safe
+        return True
     vartype = str(decl.vartype).split()
     if vartype[0] == 'struct':
         vartype = vartype[1:]

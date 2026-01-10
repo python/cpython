@@ -29,24 +29,11 @@ from idlelib import search
 from idlelib.tree import wheel_event
 from idlelib.util import py_extensions
 from idlelib import window
+from idlelib.help import _get_dochome
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
-_py_version = ' (%s)' % platform.python_version()
 darwin = sys.platform == 'darwin'
-
-def _sphinx_version():
-    "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
-    major, minor, micro, level, serial = sys.version_info
-    # TODO remove unneeded function since .chm no longer installed
-    release = f'{major}{minor}'
-    release += f'{micro}'
-    if level == 'candidate':
-        release += f'rc{serial}'
-    elif level != 'final':
-        release += f'{level[0]}{serial}'
-    return release
-
 
 class EditorWindow:
     from idlelib.percolator import Percolator
@@ -76,44 +63,7 @@ class EditorWindow:
         from idlelib.runscript import ScriptBinding
 
         if EditorWindow.help_url is None:
-            dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
-            if sys.platform.count('linux'):
-                # look for html docs in a couple of standard places
-                pyver = 'python-docs-' + '%s.%s.%s' % sys.version_info[:3]
-                if os.path.isdir('/var/www/html/python/'):  # "python2" rpm
-                    dochome = '/var/www/html/python/index.html'
-                else:
-                    basepath = '/usr/share/doc/'  # standard location
-                    dochome = os.path.join(basepath, pyver,
-                                           'Doc', 'index.html')
-            elif sys.platform[:3] == 'win':
-                import winreg  # Windows only, block only executed once.
-                docfile = ''
-                KEY = (rf"Software\Python\PythonCore\{sys.winver}"
-                        r"\Help\Main Python Documentation")
-                try:
-                    docfile = winreg.QueryValue(winreg.HKEY_CURRENT_USER, KEY)
-                except FileNotFoundError:
-                    try:
-                        docfile = winreg.QueryValue(winreg.HKEY_LOCAL_MACHINE,
-                                                    KEY)
-                    except FileNotFoundError:
-                        pass
-                if os.path.isfile(docfile):
-                    dochome = docfile
-            elif sys.platform == 'darwin':
-                # documentation may be stored inside a python framework
-                dochome = os.path.join(sys.base_prefix,
-                        'Resources/English.lproj/Documentation/index.html')
-            dochome = os.path.normpath(dochome)
-            if os.path.isfile(dochome):
-                EditorWindow.help_url = dochome
-                if sys.platform == 'darwin':
-                    # Safari requires real file:-URLs
-                    EditorWindow.help_url = 'file://' + EditorWindow.help_url
-            else:
-                EditorWindow.help_url = ("https://docs.python.org/%d.%d/"
-                                         % sys.version_info[:2])
+            EditorWindow.help_url = _get_dochome()
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -166,8 +116,9 @@ class EditorWindow:
             text.bind("<3>",self.right_menu_event)
 
         text.bind('<MouseWheel>', wheel_event)
-        text.bind('<Button-4>', wheel_event)
-        text.bind('<Button-5>', wheel_event)
+        if text._windowingsystem == 'x11':
+            text.bind('<Button-4>', wheel_event)
+            text.bind('<Button-5>', wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
@@ -913,7 +864,7 @@ class EditorWindow:
     def ApplyKeybindings(self):
         """Apply the virtual, configurable keybindings.
 
-        Alse update hotkeys to current keyset.
+        Also update hotkeys to current keyset.
         """
         # Called from configdialog.activate_config_changes.
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
@@ -1043,10 +994,16 @@ class EditorWindow:
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
-        if short and long:
+        _py_version = ' (%s)' % platform.python_version()
+        if short and long and not macosx.isCocoaTk():
+            # Don't use both values on macOS because
+            # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
-            title = short
+            if short == "IDLE Shell":
+                title = short + " " +  platform.python_version()
+            else:
+                title = short + _py_version
         elif long:
             title = long
         else:
@@ -1057,6 +1014,13 @@ class EditorWindow:
             icon = "*%s" % icon
         self.top.wm_title(title)
         self.top.wm_iconname(icon)
+
+        if macosx.isCocoaTk():
+            # Add a proxy icon to the window title
+            self.top.wm_attributes("-titlepath", long)
+
+            # Maintain the modification status for the window
+            self.top.wm_attributes("-modified", not self.get_saved())
 
     def get_saved(self):
         return self.undo.get_saved()
@@ -1571,7 +1535,7 @@ class EditorWindow:
     # blocks are found).
 
     def guess_indent(self):
-        opener, indented = IndentSearcher(self.text, self.tabwidth).run()
+        opener, indented = IndentSearcher(self.text).run()
         if opener and indented:
             raw, indentsmall = get_line_indent(opener, self.tabwidth)
             raw, indentlarge = get_line_indent(indented, self.tabwidth)
@@ -1609,15 +1573,10 @@ def get_line_indent(line, tabwidth):
 
 
 class IndentSearcher:
+    "Manage initial indent guess, returned by run method."
 
-    # .run() chews over the Text widget, looking for a block opener
-    # and the stmt following it.  Returns a pair,
-    #     (line containing block opener, line containing stmt)
-    # Either or both may be None.
-
-    def __init__(self, text, tabwidth):
+    def __init__(self, text):
         self.text = text
-        self.tabwidth = tabwidth
         self.i = self.finished = 0
         self.blkopenline = self.indentedline = None
 
@@ -1633,7 +1592,8 @@ class IndentSearcher:
     def tokeneater(self, type, token, start, end, line,
                    INDENT=tokenize.INDENT,
                    NAME=tokenize.NAME,
-                   OPENERS=('class', 'def', 'for', 'if', 'try', 'while')):
+                   OPENERS=('class', 'def', 'for', 'if', 'match', 'try',
+                            'while', 'with')):
         if self.finished:
             pass
         elif type == NAME and token in OPENERS:
@@ -1643,22 +1603,21 @@ class IndentSearcher:
             self.finished = 1
 
     def run(self):
-        save_tabsize = tokenize.tabsize
-        tokenize.tabsize = self.tabwidth
+        """Return 2 lines containing block opener and indent.
+
+        Either the indent line or both may be None.
+        """
         try:
-            try:
-                tokens = tokenize.generate_tokens(self.readline)
-                for token in tokens:
-                    self.tokeneater(*token)
-            except (tokenize.TokenError, SyntaxError):
-                # since we cut off the tokenizer early, we can trigger
-                # spurious errors
-                pass
-        finally:
-            tokenize.tabsize = save_tabsize
+            tokens = tokenize.generate_tokens(self.readline)
+            for token in tokens:
+                self.tokeneater(*token)
+        except (tokenize.TokenError, SyntaxError):
+            # Stopping the tokenizer early can trigger spurious errors.
+            pass
         return self.blkopenline, self.indentedline
 
 ### end autoindent code ###
+
 
 def prepstr(s):
     """Extract the underscore from a string.
@@ -1752,6 +1711,7 @@ def _editor_window(parent):  # htest #
     # text.bind("<<close-all-windows>>", edit.close_event)
     # Does not stop error, neither does following
     # edit.text.bind("<<close-window>>", edit.close_event)
+
 
 if __name__ == '__main__':
     from unittest import main

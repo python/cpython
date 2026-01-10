@@ -1,21 +1,29 @@
 """Interface to the compiler's internal symbol tables"""
 
 import _symtable
-from _symtable import (USE, DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL, DEF_PARAM,
-     DEF_IMPORT, DEF_BOUND, DEF_ANNOT, SCOPE_OFF, SCOPE_MASK, FREE,
-     LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL)
+from _symtable import (
+    USE,
+    DEF_GLOBAL,  # noqa: F401
+    DEF_NONLOCAL, DEF_LOCAL,
+    DEF_PARAM, DEF_TYPE_PARAM, DEF_FREE_CLASS,
+    DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
+    DEF_COMP_ITER, DEF_COMP_CELL,
+    SCOPE_OFF, SCOPE_MASK,
+    FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
+)
 
 import weakref
+from enum import StrEnum
 
-__all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
+__all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "Symbol"]
 
-def symtable(code, filename, compile_type):
+def symtable(code, filename, compile_type, *, module=None):
     """ Return the toplevel *SymbolTable* for the source code.
 
     *filename* is the name of the file with the code
     and *compile_type* is the *compile()* mode argument.
     """
-    top = _symtable.symtable(code, filename, compile_type)
+    top = _symtable.symtable(code, filename, compile_type, module=module)
     return _newSymbolTable(top, filename)
 
 class SymbolTableFactory:
@@ -37,6 +45,16 @@ class SymbolTableFactory:
         return obj
 
 _newSymbolTable = SymbolTableFactory()
+
+
+class SymbolTableType(StrEnum):
+    MODULE = "module"
+    FUNCTION = "function"
+    CLASS = "class"
+    ANNOTATION = "annotation"
+    TYPE_ALIAS = "type alias"
+    TYPE_PARAMETERS = "type parameters"
+    TYPE_VARIABLE = "type variable"
 
 
 class SymbolTable:
@@ -62,17 +80,24 @@ class SymbolTable:
     def get_type(self):
         """Return the type of the symbol table.
 
-        The values returned are 'class', 'module' and
-        'function'.
+        The value returned is one of the values in
+        the ``SymbolTableType`` enumeration.
         """
         if self._table.type == _symtable.TYPE_MODULE:
-            return "module"
+            return SymbolTableType.MODULE
         if self._table.type == _symtable.TYPE_FUNCTION:
-            return "function"
+            return SymbolTableType.FUNCTION
         if self._table.type == _symtable.TYPE_CLASS:
-            return "class"
-        assert self._table.type in (1, 2, 3), \
-               "unexpected type: {0}".format(self._table.type)
+            return SymbolTableType.CLASS
+        if self._table.type == _symtable.TYPE_ANNOTATION:
+            return SymbolTableType.ANNOTATION
+        if self._table.type == _symtable.TYPE_TYPE_ALIAS:
+            return SymbolTableType.TYPE_ALIAS
+        if self._table.type == _symtable.TYPE_TYPE_PARAMETERS:
+            return SymbolTableType.TYPE_PARAMETERS
+        if self._table.type == _symtable.TYPE_TYPE_VARIABLE:
+            return SymbolTableType.TYPE_VARIABLE
+        assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):
         """Return an identifier for the table.
@@ -147,6 +172,10 @@ class SymbolTable:
                 for st in self._table.children]
 
 
+def _get_scope(flags):  # like _PyST_GetScope()
+    return (flags >> SCOPE_OFF) & SCOPE_MASK
+
+
 class Function(SymbolTable):
 
     # Default values for instance variables
@@ -172,7 +201,7 @@ class Function(SymbolTable):
         """
         if self.__locals is None:
             locs = (LOCAL, CELL)
-            test = lambda x: ((x >> SCOPE_OFF) & SCOPE_MASK) in locs
+            test = lambda x: _get_scope(x) in locs
             self.__locals = self.__idents_matching(test)
         return self.__locals
 
@@ -181,7 +210,7 @@ class Function(SymbolTable):
         """
         if self.__globals is None:
             glob = (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT)
-            test = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) in glob
+            test = lambda x: _get_scope(x) in glob
             self.__globals = self.__idents_matching(test)
         return self.__globals
 
@@ -196,7 +225,7 @@ class Function(SymbolTable):
         """Return a tuple of free variables in the function.
         """
         if self.__frees is None:
-            is_free = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) == FREE
+            is_free = lambda x: _get_scope(x) == FREE
             self.__frees = self.__idents_matching(is_free)
         return self.__frees
 
@@ -208,10 +237,33 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
+        import warnings
+        typename = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        warnings.warn(f'{typename}.get_methods() is deprecated '
+                      f'and will be removed in Python 3.16.',
+                      DeprecationWarning, stacklevel=2)
+
         if self.__methods is None:
             d = {}
+
+            def is_local_symbol(ident):
+                flags = self._table.symbols.get(ident, 0)
+                return ((flags >> SCOPE_OFF) & SCOPE_MASK) == LOCAL
+
             for st in self._table.children:
-                d[st.name] = 1
+                # pick the function-like symbols that are local identifiers
+                if is_local_symbol(st.name):
+                    match st.type:
+                        case _symtable.TYPE_FUNCTION:
+                            d[st.name] = 1
+                        case _symtable.TYPE_TYPE_PARAMETERS:
+                            # Get the function-def block in the annotation
+                            # scope 'st' with the same identifier, if any.
+                            scope_name = st.name
+                            for c in st.children:
+                                if c.name == scope_name and c.type == _symtable.TYPE_FUNCTION:
+                                    d[scope_name] = 1
+                                    break
             self.__methods = tuple(d)
         return self.__methods
 
@@ -221,12 +273,21 @@ class Symbol:
     def __init__(self, name, flags, namespaces=None, *, module_scope=False):
         self.__name = name
         self.__flags = flags
-        self.__scope = (flags >> SCOPE_OFF) & SCOPE_MASK # like PyST_GetScope()
+        self.__scope = _get_scope(flags)
         self.__namespaces = namespaces or ()
         self.__module_scope = module_scope
 
     def __repr__(self):
-        return "<symbol {0!r}>".format(self.__name)
+        flags_str = '|'.join(self._flags_str())
+        return f'<symbol {self.__name!r}: {self._scope_str()}, {flags_str}>'
+
+    def _scope_str(self):
+        return _scopes_value_to_name.get(self.__scope) or str(self.__scope)
+
+    def _flags_str(self):
+        for flagname, flagvalue in _flags:
+            if self.__flags & flagvalue == flagvalue:
+                yield flagname
 
     def get_name(self):
         """Return a name of a symbol.
@@ -237,12 +298,17 @@ class Symbol:
         """Return *True* if the symbol is used in
         its block.
         """
-        return bool(self.__flags & _symtable.USE)
+        return bool(self.__flags & USE)
 
     def is_parameter(self):
         """Return *True* if the symbol is a parameter.
         """
         return bool(self.__flags & DEF_PARAM)
+
+    def is_type_parameter(self):
+        """Return *True* if the symbol is a type parameter.
+        """
+        return bool(self.__flags & DEF_TYPE_PARAM)
 
     def is_global(self):
         """Return *True* if the symbol is global.
@@ -276,6 +342,11 @@ class Symbol:
         """
         return bool(self.__scope == FREE)
 
+    def is_free_class(self):
+        """Return *True* if a class-scoped symbol is free from
+        the perspective of a method."""
+        return bool(self.__flags & DEF_FREE_CLASS)
+
     def is_imported(self):
         """Return *True* if the symbol is created from
         an import statement.
@@ -285,6 +356,16 @@ class Symbol:
     def is_assigned(self):
         """Return *True* if a symbol is assigned to."""
         return bool(self.__flags & DEF_LOCAL)
+
+    def is_comp_iter(self):
+        """Return *True* if the symbol is a comprehension iteration variable.
+        """
+        return bool(self.__flags & DEF_COMP_ITER)
+
+    def is_comp_cell(self):
+        """Return *True* if the symbol is a cell in an inlined comprehension.
+        """
+        return bool(self.__flags & DEF_COMP_CELL)
 
     def is_namespace(self):
         """Returns *True* if name binding introduces new namespace.
@@ -316,11 +397,43 @@ class Symbol:
         else:
             return self.__namespaces[0]
 
+
+_flags = [('USE', USE)]
+_flags.extend(kv for kv in globals().items() if kv[0].startswith('DEF_'))
+_scopes_names = ('FREE', 'LOCAL', 'GLOBAL_IMPLICIT', 'GLOBAL_EXPLICIT', 'CELL')
+_scopes_value_to_name = {globals()[n]: n for n in _scopes_names}
+
+
+def main(args):
+    import sys
+    def print_symbols(table, level=0):
+        indent = '    ' * level
+        nested = "nested " if table.is_nested() else ""
+        if table.get_type() == 'module':
+            what = f'from file {table._filename!r}'
+        else:
+            what = f'{table.get_name()!r}'
+        print(f'{indent}symbol table for {nested}{table.get_type()} {what}:')
+        for ident in table.get_identifiers():
+            symbol = table.lookup(ident)
+            flags = ', '.join(symbol._flags_str()).lower()
+            print(f'    {indent}{symbol._scope_str().lower()} symbol {symbol.get_name()!r}: {flags}')
+        print()
+
+        for table2 in table.get_children():
+            print_symbols(table2, level + 1)
+
+    for filename in args or ['-']:
+        if filename == '-':
+            src = sys.stdin.read()
+            filename = '<stdin>'
+        else:
+            with open(filename, 'rb') as f:
+                src = f.read()
+        mod = symtable(src, filename, 'exec')
+        print_symbols(mod)
+
+
 if __name__ == "__main__":
-    import os, sys
-    with open(sys.argv[0]) as f:
-        src = f.read()
-    mod = symtable(src, os.path.split(sys.argv[0])[1], "exec")
-    for ident in mod.get_identifiers():
-        info = mod.lookup(ident)
-        print(info, info.is_local(), info.is_namespace())
+    import sys
+    main(sys.argv[1:])

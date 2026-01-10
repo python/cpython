@@ -1,4 +1,0 @@
-Fixed issue where :meth:`pathlib.Path.glob` returned incomplete results when
-it encountered a :exc:`PermissionError`. This method now suppresses all
-:exc:`OSError` exceptions, except those raised from calling
-:meth:`~pathlib.Path.is_dir` on the top-level path.

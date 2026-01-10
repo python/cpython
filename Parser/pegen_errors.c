@@ -1,7 +1,10 @@
 #include <Python.h>
 #include <errcode.h>
 
-#include "tokenizer.h"
+#include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "lexer/state.h"
+#include "lexer/lexer.h"
 #include "pegen.h"
 
 // TOKENIZER ERRORS
@@ -21,6 +24,13 @@ _PyPegen_raise_tokenizer_init_error(PyObject *filename)
     PyObject *value;
     PyObject *tback;
     PyErr_Fetch(&type, &value, &tback);
+    if (PyErr_GivenExceptionMatches(value, PyExc_SyntaxError)) {
+        if (PyObject_SetAttr(value, &_Py_ID(filename), filename)) {
+            goto error;
+        }
+        PyErr_Restore(type, value, tback);
+        return;
+    }
     errstr = PyObject_Str(value);
     if (!errstr) {
         goto error;
@@ -33,7 +43,7 @@ _PyPegen_raise_tokenizer_init_error(PyObject *filename)
 
     tuple = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(tmp);
-    if (!value) {
+    if (!tuple) {
         goto error;
     }
     PyErr_SetObject(PyExc_SyntaxError, tuple);
@@ -66,6 +76,7 @@ _Pypegen_tokenizer_error(Parser *p)
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
     Py_ssize_t col_offset = -1;
+    p->error_indicator = 1;
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -101,6 +112,10 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "unexpected character after line continuation character";
             break;
         }
+        case E_COLUMNOVERFLOW:
+            PyErr_SetString(PyExc_OverflowError,
+                    "Parser column offset overflow - source line is too big");
+            return -1;
         default:
             msg = "unknown parsing error";
     }
@@ -148,7 +163,7 @@ _Pypegen_raise_decode_error(Parser *p)
 static int
 _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     // Tokenize the whole input to see if there are any tokenization
-    // errors such as mistmatching parentheses. These will get priority
+    // errors such as mismatching parentheses. These will get priority
     // over generic syntax errors only if the line number of the error is
     // before the one that we had for the generic error.
 
@@ -165,7 +180,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
     int ret = 0;
     struct token new_token;
-    new_token.metadata = NULL;
+    _PyToken_Init(&new_token);
 
     for (;;) {
         switch (_PyTokenizer_Get(p->tok, &new_token)) {
@@ -193,7 +208,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 
 exit:
-    Py_XDECREF(new_token.metadata);
+    _PyToken_Free(&new_token);
     // If we're in an f-string, we want the syntax error in the expression part
     // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
     // do not swallow it.
@@ -212,6 +227,10 @@ exit:
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     if (p->fill == 0) {
         va_list va;
         va_start(va, errmsg);
@@ -265,11 +284,15 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
         assert(p->tok->fp_interactive);
         // We can reach this point if the tokenizer buffers for interactive source have not been
         // initialized because we failed to decode the original source with the given locale.
-        return PyUnicode_FromStringAndSize("", 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
     const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
+
+    if (buf_end < cur_line) {
+        buf_end = cur_line + strlen(cur_line);
+    }
 
     for (int i = 0; i < relative_lineno - 1; i++) {
         char *new_line = strchr(cur_line, '\n');
@@ -296,6 +319,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     PyObject *value = NULL;
     PyObject *errstr = NULL;
     PyObject *error_line = NULL;
@@ -309,21 +336,6 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         end_col_offset = p->tok->cur - p->tok->line_start;
     }
 
-    if (p->start_rule == Py_fstring_input) {
-        const char *fstring_msg = "f-string: ";
-        Py_ssize_t len = strlen(fstring_msg) + strlen(errmsg);
-
-        char *new_errmsg = PyMem_Malloc(len + 1); // Lengths of both strings plus NULL character
-        if (!new_errmsg) {
-            return (void *) PyErr_NoMemory();
-        }
-
-        // Copy both strings into new buffer
-        memcpy(new_errmsg, fstring_msg, strlen(fstring_msg));
-        memcpy(new_errmsg + strlen(fstring_msg), errmsg, strlen(errmsg));
-        new_errmsg[len] = 0;
-        errmsg = new_errmsg;
-    }
     errstr = PyUnicode_FromFormatV(errmsg, va);
     if (!errstr) {
         goto error;
@@ -348,42 +360,35 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
 
         if (p->tok->lineno <= lineno && p->tok->inp > p->tok->buf) {
-            Py_ssize_t size = p->tok->inp - p->tok->buf;
-            error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+            Py_ssize_t size = p->tok->inp - p->tok->line_start;
+            error_line = PyUnicode_DecodeUTF8(p->tok->line_start, size, "replace");
         }
         else if (p->tok->fp == NULL || p->tok->fp == stdin) {
             error_line = get_error_line_from_tokenizer_buffers(p, lineno);
         }
         else {
-            error_line = PyUnicode_FromStringAndSize("", 0);
+            error_line = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         }
         if (!error_line) {
             goto error;
         }
     }
 
-    if (p->start_rule == Py_fstring_input) {
-        col_offset -= p->starting_col_offset;
-        end_col_offset -= p->starting_col_offset;
-    }
-
     Py_ssize_t col_number = col_offset;
     Py_ssize_t end_col_number = end_col_offset;
 
-    if (p->tok->encoding != NULL) {
-        col_number = _PyPegen_byte_offset_to_character_offset(error_line, col_offset);
-        if (col_number < 0) {
+    col_number = _PyPegen_byte_offset_to_character_offset(error_line, col_offset);
+    if (col_number < 0) {
+        goto error;
+    }
+
+    if (end_col_offset > 0) {
+        end_col_number = _PyPegen_byte_offset_to_character_offset(error_line, end_col_offset);
+        if (end_col_number < 0) {
             goto error;
         }
-        if (end_col_number > 0) {
-            Py_ssize_t end_col_offset = _PyPegen_byte_offset_to_character_offset(error_line, end_col_number);
-            if (end_col_offset < 0) {
-                goto error;
-            } else {
-                end_col_number = end_col_offset;
-            }
-        }
     }
+
     tmp = Py_BuildValue("(OnnNnn)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
         goto error;
@@ -397,23 +402,17 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     Py_DECREF(errstr);
     Py_DECREF(value);
-    if (p->start_rule == Py_fstring_input) {
-        PyMem_Free((void *)errmsg);
-    }
     return NULL;
 
 error:
     Py_XDECREF(errstr);
     Py_XDECREF(error_line);
-    if (p->start_rule == Py_fstring_input) {
-        PyMem_Free((void *)errmsg);
-    }
     return NULL;
 }
 
 void
 _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
-    // Existing sintax error
+    // Existing syntax error
     if (PyErr_Occurred()) {
         // Prioritize tokenizer errors to custom syntax errors raised
         // on the second phase only if the errors come from the parser.
@@ -452,4 +451,12 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     // _PyPegen_tokenize_full_source_to_check_for_errors will override the existing
     // generic SyntaxError we just raised if errors are found.
     _PyPegen_tokenize_full_source_to_check_for_errors(p);
+}
+
+void
+_Pypegen_stack_overflow(Parser *p)
+{
+    p->error_indicator = 1;
+    PyErr_SetString(PyExc_MemoryError,
+        "Parser stack overflowed - Python source too complex to parse");
 }

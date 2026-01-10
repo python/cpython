@@ -28,10 +28,7 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop',
-    'AbstractChildWatcher', 'SafeChildWatcher',
-    'FastChildWatcher', 'PidfdChildWatcher',
-    'MultiLoopChildWatcher', 'ThreadedChildWatcher',
-    'DefaultEventLoopPolicy',
+    'EventLoop',
 )
 
 
@@ -63,6 +60,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def __init__(self, selector=None):
         super().__init__(selector)
         self._signal_handlers = {}
+        self._unix_server_sockets = {}
+        if can_use_pidfd():
+            self._watcher = _PidfdChildWatcher()
+        else:
+            self._watcher = _ThreadedChildWatcher()
 
     def close(self):
         super().close()
@@ -92,7 +94,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise RuntimeError if there is a problem setting up the handler.
         """
         if (coroutines.iscoroutine(callback) or
-                coroutines.iscoroutinefunction(callback)):
+                coroutines._iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)
@@ -195,39 +197,27 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def _make_subprocess_transport(self, protocol, args, shell,
                                          stdin, stdout, stderr, bufsize,
                                          extra=None, **kwargs):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            watcher = events.get_child_watcher()
-
-        with watcher:
-            if not watcher.is_active():
-                # Check early.
-                # Raising exception before process creation
-                # prevents subprocess execution if the watcher
-                # is not ready to handle it.
-                raise RuntimeError("asyncio.get_child_watcher() is not activated, "
-                                "subprocess support is not installed.")
-            waiter = self.create_future()
-            transp = _UnixSubprocessTransport(self, protocol, args, shell,
-                                            stdin, stdout, stderr, bufsize,
-                                            waiter=waiter, extra=extra,
-                                            **kwargs)
-            watcher.add_child_handler(transp.get_pid(),
-                                    self._child_watcher_callback, transp)
-            try:
-                await waiter
-            except (SystemExit, KeyboardInterrupt):
-                raise
-            except BaseException:
-                transp.close()
-                await transp._wait()
-                raise
+        watcher = self._watcher
+        waiter = self.create_future()
+        transp = _UnixSubprocessTransport(self, protocol, args, shell,
+                                        stdin, stdout, stderr, bufsize,
+                                        waiter=waiter, extra=extra,
+                                        **kwargs)
+        watcher.add_child_handler(transp.get_pid(),
+                                self._child_watcher_callback, transp)
+        try:
+            await waiter
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException:
+            transp.close()
+            await transp._wait()
+            raise
 
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
-        # Skip one iteration for callbacks to be executed
-        self.call_soon_threadsafe(self.call_soon, transp._process_exited, returncode)
+        self.call_soon_threadsafe(transp._process_exited, returncode)
 
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
@@ -284,7 +274,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            start_serving=True):
+            start_serving=True, cleanup_socket=True):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -340,6 +330,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
 
+        if cleanup_socket:
+            path = sock.getsockname()
+            # Check for abstract socket. `str` and `bytes` paths are supported.
+            if path[0] not in (0, '\x00'):
+                try:
+                    self._unix_server_sockets[sock] = os.stat(path).st_ino
+                except FileNotFoundError:
+                    pass
+
         sock.setblocking(False)
         server = base_events.Server(self, [sock], protocol_factory,
                                     ssl, backlog, ssl_handshake_timeout,
@@ -360,7 +359,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 "os.sendfile() is not available")
         try:
             fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as err:
+        except (AttributeError, io.UnsupportedOperation):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
@@ -393,6 +392,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_result(total_sent)
                 return
+
+        # On 32-bit architectures truncate to 1GiB to avoid OverflowError
+        blocksize = min(blocksize, sys.maxsize//2 + 1)
 
         try:
             sent = os.sendfile(fd, fileno, offset, blocksize)
@@ -456,6 +458,27 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 if fd != -1:
                     self.remove_writer(fd)
         fut.add_done_callback(cb)
+
+    def _stop_serving(self, sock):
+        # Is this a unix socket that needs cleanup?
+        if sock in self._unix_server_sockets:
+            path = sock.getsockname()
+        else:
+            path = None
+
+        super()._stop_serving(sock)
+
+        if path is not None:
+            prev_ino = self._unix_server_sockets[sock]
+            del self._unix_server_sockets[sock]
+            try:
+                if os.stat(path).st_ino == prev_ino:
+                    os.unlink(path)
+            except FileNotFoundError:
+                pass
+            except OSError as err:
+                logger.error('Unable to clean up listening UNIX socket '
+                             '%r: %r', path, err)
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):
@@ -831,93 +854,7 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
                 stdin_w.close()
 
 
-class AbstractChildWatcher:
-    """Abstract base class for monitoring child processes.
-
-    Objects derived from this class monitor a collection of subprocesses and
-    report their termination or interruption by a signal.
-
-    New callbacks are registered with .add_child_handler(). Starting a new
-    process must be done within a 'with' block to allow the watcher to suspend
-    its activity until the new process if fully registered (this is needed to
-    prevent a race condition in some implementations).
-
-    Example:
-        with watcher:
-            proc = subprocess.Popen("sleep 1")
-            watcher.add_child_handler(proc.pid, callback)
-
-    Notes:
-        Implementations of this class must be thread-safe.
-
-        Since child watcher objects may catch the SIGCHLD signal and call
-        waitpid(-1), there should be only one active object per process.
-    """
-
-    def __init_subclass__(cls) -> None:
-        if cls.__module__ != __name__:
-            warnings._deprecated("AbstractChildWatcher",
-                             "{name!r} is deprecated as of Python 3.12 and will be "
-                             "removed in Python {remove}.",
-                              remove=(3, 14))
-
-    def add_child_handler(self, pid, callback, *args):
-        """Register a new child handler.
-
-        Arrange for callback(pid, returncode, *args) to be called when
-        process 'pid' terminates. Specifying another callback for the same
-        process replaces the previous handler.
-
-        Note: callback() must be thread-safe.
-        """
-        raise NotImplementedError()
-
-    def remove_child_handler(self, pid):
-        """Removes the handler for process 'pid'.
-
-        The function returns True if the handler was successfully removed,
-        False if there was nothing to remove."""
-
-        raise NotImplementedError()
-
-    def attach_loop(self, loop):
-        """Attach the watcher to an event loop.
-
-        If the watcher was previously attached to an event loop, then it is
-        first detached before attaching to the new loop.
-
-        Note: loop may be None.
-        """
-        raise NotImplementedError()
-
-    def close(self):
-        """Close the watcher.
-
-        This must be called to make sure that any underlying resource is freed.
-        """
-        raise NotImplementedError()
-
-    def is_active(self):
-        """Return ``True`` if the watcher is active and is used by the event loop.
-
-        Return True if the watcher is installed and ready to handle process exit
-        notifications.
-
-        """
-        raise NotImplementedError()
-
-    def __enter__(self):
-        """Enter the watcher's context and allow starting new processes
-
-        This function must return self"""
-        raise NotImplementedError()
-
-    def __exit__(self, a, b, c):
-        """Exit the watcher's context"""
-        raise NotImplementedError()
-
-
-class PidfdChildWatcher(AbstractChildWatcher):
+class _PidfdChildWatcher:
     """Child watcher implementation using Linux's pid file descriptors.
 
     This child watcher polls process file descriptors (pidfds) to await child
@@ -928,21 +865,6 @@ class PidfdChildWatcher(AbstractChildWatcher):
     main disadvantage is that pidfds are specific to Linux, and only work on
     recent (5.3+) kernels.
     """
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        pass
-
-    def is_active(self):
-        return True
-
-    def close(self):
-        pass
-
-    def attach_loop(self, loop):
-        pass
 
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
@@ -968,386 +890,7 @@ class PidfdChildWatcher(AbstractChildWatcher):
         os.close(pidfd)
         callback(pid, returncode, *args)
 
-    def remove_child_handler(self, pid):
-        # asyncio never calls remove_child_handler() !!!
-        # The method is no-op but is implemented because
-        # abstract base classes require it.
-        return True
-
-
-class BaseChildWatcher(AbstractChildWatcher):
-
-    def __init__(self):
-        self._loop = None
-        self._callbacks = {}
-
-    def close(self):
-        self.attach_loop(None)
-
-    def is_active(self):
-        return self._loop is not None and self._loop.is_running()
-
-    def _do_waitpid(self, expected_pid):
-        raise NotImplementedError()
-
-    def _do_waitpid_all(self):
-        raise NotImplementedError()
-
-    def attach_loop(self, loop):
-        assert loop is None or isinstance(loop, events.AbstractEventLoop)
-
-        if self._loop is not None and loop is None and self._callbacks:
-            warnings.warn(
-                'A loop is being detached '
-                'from a child watcher with pending handlers',
-                RuntimeWarning)
-
-        if self._loop is not None:
-            self._loop.remove_signal_handler(signal.SIGCHLD)
-
-        self._loop = loop
-        if loop is not None:
-            loop.add_signal_handler(signal.SIGCHLD, self._sig_chld)
-
-            # Prevent a race condition in case a child terminated
-            # during the switch.
-            self._do_waitpid_all()
-
-    def _sig_chld(self):
-        try:
-            self._do_waitpid_all()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except BaseException as exc:
-            # self._loop should always be available here
-            # as '_sig_chld' is added as a signal handler
-            # in 'attach_loop'
-            self._loop.call_exception_handler({
-                'message': 'Unknown exception in SIGCHLD handler',
-                'exception': exc,
-            })
-
-
-class SafeChildWatcher(BaseChildWatcher):
-    """'Safe' child watcher implementation.
-
-    This implementation avoids disrupting other code spawning processes by
-    polling explicitly each process in the SIGCHLD handler instead of calling
-    os.waitpid(-1).
-
-    This is a safe solution but it has a significant overhead when handling a
-    big number of children (O(n) each time SIGCHLD is raised)
-    """
-
-    def __init__(self):
-        super().__init__()
-        warnings._deprecated("SafeChildWatcher",
-                             "{name!r} is deprecated as of Python 3.12 and will be "
-                             "removed in Python {remove}.",
-                              remove=(3, 14))
-
-    def close(self):
-        self._callbacks.clear()
-        super().close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, a, b, c):
-        pass
-
-    def add_child_handler(self, pid, callback, *args):
-        self._callbacks[pid] = (callback, args)
-
-        # Prevent a race condition in case the child is already terminated.
-        self._do_waitpid(pid)
-
-    def remove_child_handler(self, pid):
-        try:
-            del self._callbacks[pid]
-            return True
-        except KeyError:
-            return False
-
-    def _do_waitpid_all(self):
-
-        for pid in list(self._callbacks):
-            self._do_waitpid(pid)
-
-    def _do_waitpid(self, expected_pid):
-        assert expected_pid > 0
-
-        try:
-            pid, status = os.waitpid(expected_pid, os.WNOHANG)
-        except ChildProcessError:
-            # The child process is already reaped
-            # (may happen if waitpid() is called elsewhere).
-            pid = expected_pid
-            returncode = 255
-            logger.warning(
-                "Unknown child process pid %d, will report returncode 255",
-                pid)
-        else:
-            if pid == 0:
-                # The child process is still alive.
-                return
-
-            returncode = waitstatus_to_exitcode(status)
-            if self._loop.get_debug():
-                logger.debug('process %s exited with returncode %s',
-                             expected_pid, returncode)
-
-        try:
-            callback, args = self._callbacks.pop(pid)
-        except KeyError:  # pragma: no cover
-            # May happen if .remove_child_handler() is called
-            # after os.waitpid() returns.
-            if self._loop.get_debug():
-                logger.warning("Child watcher got an unexpected pid: %r",
-                               pid, exc_info=True)
-        else:
-            callback(pid, returncode, *args)
-
-
-class FastChildWatcher(BaseChildWatcher):
-    """'Fast' child watcher implementation.
-
-    This implementation reaps every terminated processes by calling
-    os.waitpid(-1) directly, possibly breaking other code spawning processes
-    and waiting for their termination.
-
-    There is no noticeable overhead when handling a big number of children
-    (O(1) each time a child terminates).
-    """
-    def __init__(self):
-        super().__init__()
-        self._lock = threading.Lock()
-        self._zombies = {}
-        self._forks = 0
-        warnings._deprecated("FastChildWatcher",
-                             "{name!r} is deprecated as of Python 3.12 and will be "
-                             "removed in Python {remove}.",
-                              remove=(3, 14))
-
-    def close(self):
-        self._callbacks.clear()
-        self._zombies.clear()
-        super().close()
-
-    def __enter__(self):
-        with self._lock:
-            self._forks += 1
-
-            return self
-
-    def __exit__(self, a, b, c):
-        with self._lock:
-            self._forks -= 1
-
-            if self._forks or not self._zombies:
-                return
-
-            collateral_victims = str(self._zombies)
-            self._zombies.clear()
-
-        logger.warning(
-            "Caught subprocesses termination from unknown pids: %s",
-            collateral_victims)
-
-    def add_child_handler(self, pid, callback, *args):
-        assert self._forks, "Must use the context manager"
-
-        with self._lock:
-            try:
-                returncode = self._zombies.pop(pid)
-            except KeyError:
-                # The child is running.
-                self._callbacks[pid] = callback, args
-                return
-
-        # The child is dead already. We can fire the callback.
-        callback(pid, returncode, *args)
-
-    def remove_child_handler(self, pid):
-        try:
-            del self._callbacks[pid]
-            return True
-        except KeyError:
-            return False
-
-    def _do_waitpid_all(self):
-        # Because of signal coalescing, we must keep calling waitpid() as
-        # long as we're able to reap a child.
-        while True:
-            try:
-                pid, status = os.waitpid(-1, os.WNOHANG)
-            except ChildProcessError:
-                # No more child processes exist.
-                return
-            else:
-                if pid == 0:
-                    # A child process is still alive.
-                    return
-
-                returncode = waitstatus_to_exitcode(status)
-
-            with self._lock:
-                try:
-                    callback, args = self._callbacks.pop(pid)
-                except KeyError:
-                    # unknown child
-                    if self._forks:
-                        # It may not be registered yet.
-                        self._zombies[pid] = returncode
-                        if self._loop.get_debug():
-                            logger.debug('unknown process %s exited '
-                                         'with returncode %s',
-                                         pid, returncode)
-                        continue
-                    callback = None
-                else:
-                    if self._loop.get_debug():
-                        logger.debug('process %s exited with returncode %s',
-                                     pid, returncode)
-
-            if callback is None:
-                logger.warning(
-                    "Caught subprocess termination from unknown pid: "
-                    "%d -> %d", pid, returncode)
-            else:
-                callback(pid, returncode, *args)
-
-
-class MultiLoopChildWatcher(AbstractChildWatcher):
-    """A watcher that doesn't require running loop in the main thread.
-
-    This implementation registers a SIGCHLD signal handler on
-    instantiation (which may conflict with other code that
-    install own handler for this signal).
-
-    The solution is safe but it has a significant overhead when
-    handling a big number of processes (*O(n)* each time a
-    SIGCHLD is received).
-    """
-
-    # Implementation note:
-    # The class keeps compatibility with AbstractChildWatcher ABC
-    # To achieve this it has empty attach_loop() method
-    # and doesn't accept explicit loop argument
-    # for add_child_handler()/remove_child_handler()
-    # but retrieves the current loop by get_running_loop()
-
-    def __init__(self):
-        self._callbacks = {}
-        self._saved_sighandler = None
-        warnings._deprecated("MultiLoopChildWatcher",
-                             "{name!r} is deprecated as of Python 3.12 and will be "
-                             "removed in Python {remove}.",
-                              remove=(3, 14))
-
-    def is_active(self):
-        return self._saved_sighandler is not None
-
-    def close(self):
-        self._callbacks.clear()
-        if self._saved_sighandler is None:
-            return
-
-        handler = signal.getsignal(signal.SIGCHLD)
-        if handler != self._sig_chld:
-            logger.warning("SIGCHLD handler was changed by outside code")
-        else:
-            signal.signal(signal.SIGCHLD, self._saved_sighandler)
-        self._saved_sighandler = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def add_child_handler(self, pid, callback, *args):
-        loop = events.get_running_loop()
-        self._callbacks[pid] = (loop, callback, args)
-
-        # Prevent a race condition in case the child is already terminated.
-        self._do_waitpid(pid)
-
-    def remove_child_handler(self, pid):
-        try:
-            del self._callbacks[pid]
-            return True
-        except KeyError:
-            return False
-
-    def attach_loop(self, loop):
-        # Don't save the loop but initialize itself if called first time
-        # The reason to do it here is that attach_loop() is called from
-        # unix policy only for the main thread.
-        # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is not None:
-            return
-
-        self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-        if self._saved_sighandler is None:
-            logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-                           "restore to default handler on watcher close.")
-            self._saved_sighandler = signal.SIG_DFL
-
-        # Set SA_RESTART to limit EINTR occurrences.
-        signal.siginterrupt(signal.SIGCHLD, False)
-
-    def _do_waitpid_all(self):
-        for pid in list(self._callbacks):
-            self._do_waitpid(pid)
-
-    def _do_waitpid(self, expected_pid):
-        assert expected_pid > 0
-
-        try:
-            pid, status = os.waitpid(expected_pid, os.WNOHANG)
-        except ChildProcessError:
-            # The child process is already reaped
-            # (may happen if waitpid() is called elsewhere).
-            pid = expected_pid
-            returncode = 255
-            logger.warning(
-                "Unknown child process pid %d, will report returncode 255",
-                pid)
-            debug_log = False
-        else:
-            if pid == 0:
-                # The child process is still alive.
-                return
-
-            returncode = waitstatus_to_exitcode(status)
-            debug_log = True
-        try:
-            loop, callback, args = self._callbacks.pop(pid)
-        except KeyError:  # pragma: no cover
-            # May happen if .remove_child_handler() is called
-            # after os.waitpid() returns.
-            logger.warning("Child watcher got an unexpected pid: %r",
-                           pid, exc_info=True)
-        else:
-            if loop.is_closed():
-                logger.warning("Loop %r that handles pid %r is closed", loop, pid)
-            else:
-                if debug_log and loop.get_debug():
-                    logger.debug('process %s exited with returncode %s',
-                                 expected_pid, returncode)
-                loop.call_soon_threadsafe(callback, pid, returncode, *args)
-
-    def _sig_chld(self, signum, frame):
-        try:
-            self._do_waitpid_all()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except BaseException:
-            logger.warning('Unknown exception in SIGCHLD handler', exc_info=True)
-
-
-class ThreadedChildWatcher(AbstractChildWatcher):
+class _ThreadedChildWatcher:
     """Threaded child watcher implementation.
 
     The watcher uses a thread per process
@@ -1364,25 +907,6 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         self._pid_counter = itertools.count(0)
         self._threads = {}
 
-    def is_active(self):
-        return True
-
-    def close(self):
-        self._join_threads()
-
-    def _join_threads(self):
-        """Internal: Join all non-daemon threads"""
-        threads = [thread for thread in list(self._threads.values())
-                   if thread.is_alive() and not thread.daemon]
-        for thread in threads:
-            thread.join()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
     def __del__(self, _warn=warnings.warn):
         threads = [thread for thread in list(self._threads.values())
                    if thread.is_alive()]
@@ -1394,20 +918,11 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
         thread = threading.Thread(target=self._do_waitpid,
-                                  name=f"waitpid-{next(self._pid_counter)}",
+                                  name=f"asyncio-waitpid-{next(self._pid_counter)}",
                                   args=(loop, pid, callback, args),
                                   daemon=True)
         self._threads[pid] = thread
         thread.start()
-
-    def remove_child_handler(self, pid):
-        # asyncio never calls remove_child_handler() !!!
-        # The method is no-op but is implemented because
-        # abstract base classes require it.
-        return True
-
-    def attach_loop(self, loop):
-        pass
 
     def _do_waitpid(self, loop, expected_pid, callback, args):
         assert expected_pid > 0
@@ -1447,64 +962,11 @@ def can_use_pidfd():
     return True
 
 
-class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
-    """UNIX event loop policy with a watcher for child processes."""
+class _UnixDefaultEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
+    """UNIX event loop policy"""
     _loop_factory = _UnixSelectorEventLoop
-
-    def __init__(self):
-        super().__init__()
-        self._watcher = None
-
-    def _init_watcher(self):
-        with events._lock:
-            if self._watcher is None:  # pragma: no branch
-                if can_use_pidfd():
-                    self._watcher = PidfdChildWatcher()
-                else:
-                    self._watcher = ThreadedChildWatcher()
-                if threading.current_thread() is threading.main_thread():
-                    self._watcher.attach_loop(self._local._loop)
-
-    def set_event_loop(self, loop):
-        """Set the event loop.
-
-        As a side effect, if a child watcher was set before, then calling
-        .set_event_loop() from the main thread will call .attach_loop(loop) on
-        the child watcher.
-        """
-
-        super().set_event_loop(loop)
-
-        if (self._watcher is not None and
-                threading.current_thread() is threading.main_thread()):
-            self._watcher.attach_loop(loop)
-
-    def get_child_watcher(self):
-        """Get the watcher for child processes.
-
-        If not yet set, a ThreadedChildWatcher object is automatically created.
-        """
-        if self._watcher is None:
-            self._init_watcher()
-
-        warnings._deprecated("get_child_watcher",
-                            "{name!r} is deprecated as of Python 3.12 and will be "
-                            "removed in Python {remove}.", remove=(3, 14))
-        return self._watcher
-
-    def set_child_watcher(self, watcher):
-        """Set the watcher for child processes."""
-
-        assert watcher is None or isinstance(watcher, AbstractChildWatcher)
-
-        if self._watcher is not None:
-            self._watcher.close()
-
-        self._watcher = watcher
-        warnings._deprecated("set_child_watcher",
-                            "{name!r} is deprecated as of Python 3.12 and will be "
-                            "removed in Python {remove}.", remove=(3, 14))
 
 
 SelectorEventLoop = _UnixSelectorEventLoop
-DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+_DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+EventLoop = SelectorEventLoop

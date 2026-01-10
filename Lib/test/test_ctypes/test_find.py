@@ -1,11 +1,12 @@
-import unittest
-import unittest.mock
 import os.path
 import sys
 import test.support
-from test.support import os_helper
-from ctypes import *
+import unittest
+import unittest.mock
+from ctypes import CDLL, RTLD_GLOBAL
 from ctypes.util import find_library
+from test.support import os_helper, thread_unsafe
+
 
 # On some systems, loading the OpenGL libraries needs the RTLD_GLOBAL mode.
 class Test_OpenGL_libs(unittest.TestCase):
@@ -22,7 +23,7 @@ class Test_OpenGL_libs(unittest.TestCase):
             lib_glu = find_library("GLU")
             lib_gle = find_library("gle")
 
-        ## print, for debugging
+        # print, for debugging
         if test.support.verbose:
             print("OpenGL libraries:")
             for item in (("GL", lib_gl),
@@ -36,11 +37,13 @@ class Test_OpenGL_libs(unittest.TestCase):
                 cls.gl = CDLL(lib_gl, mode=RTLD_GLOBAL)
             except OSError:
                 pass
+
         if lib_glu:
             try:
                 cls.glu = CDLL(lib_glu, RTLD_GLOBAL)
             except OSError:
                 pass
+
         if lib_gle:
             try:
                 cls.gle = CDLL(lib_gle)
@@ -75,6 +78,7 @@ class Test_OpenGL_libs(unittest.TestCase):
 @unittest.skipUnless(sys.platform.startswith('linux'),
                      'Test only valid for Linux')
 class FindLibraryLinux(unittest.TestCase):
+    @thread_unsafe('uses setenv')
     def test_find_on_libpath(self):
         import subprocess
         import tempfile
@@ -121,6 +125,100 @@ class FindLibraryLinux(unittest.TestCase):
         with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None), \
              unittest.mock.patch("ctypes.util._findLib_gcc", lambda *args: None):
             self.assertNotEqual(find_library('c'), None)
+
+    def test_gh114257(self):
+        self.assertIsNone(find_library("libc"))
+
+
+@unittest.skipUnless(sys.platform == 'android', 'Test only valid for Android')
+class FindLibraryAndroid(unittest.TestCase):
+    def test_find(self):
+        for name in [
+            "c", "m",  # POSIX
+            "z",  # Non-POSIX, but present on Linux
+            "log",  # Not present on Linux
+        ]:
+            with self.subTest(name=name):
+                path = find_library(name)
+                self.assertIsInstance(path, str)
+                self.assertEqual(
+                    os.path.dirname(path),
+                    "/system/lib64" if "64" in os.uname().machine
+                    else "/system/lib")
+                self.assertEqual(os.path.basename(path), f"lib{name}.so")
+                self.assertTrue(os.path.isfile(path), path)
+
+        for name in ["libc", "nonexistent"]:
+            with self.subTest(name=name):
+                self.assertIsNone(find_library(name))
+
+
+@unittest.skipUnless(test.support.is_emscripten,
+                     'Test only valid for Emscripten')
+class FindLibraryEmscripten(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import tempfile
+
+        # A very simple wasm module
+        # In WAT format: (module)
+        cls.wasm_module = b'\x00asm\x01\x00\x00\x00\x00\x08\x04name\x02\x01\x00'
+
+        cls.non_wasm_content = b'This is not a WASM file'
+
+        cls.temp_dir = tempfile.mkdtemp()
+        cls.libdummy_so_path = os.path.join(cls.temp_dir, 'libdummy.so')
+        with open(cls.libdummy_so_path, 'wb') as f:
+            f.write(cls.wasm_module)
+
+        cls.libother_wasm_path = os.path.join(cls.temp_dir, 'libother.wasm')
+        with open(cls.libother_wasm_path, 'wb') as f:
+            f.write(cls.wasm_module)
+
+        cls.libnowasm_so_path = os.path.join(cls.temp_dir, 'libnowasm.so')
+        with open(cls.libnowasm_so_path, 'wb') as f:
+            f.write(cls.non_wasm_content)
+
+    @classmethod
+    def tearDownClass(cls):
+        import shutil
+        shutil.rmtree(cls.temp_dir)
+
+    def test_find_wasm_file_with_so_extension(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.set('LD_LIBRARY_PATH', self.temp_dir)
+            result = find_library('dummy')
+            self.assertEqual(result, self.libdummy_so_path)
+    def test_find_wasm_file_with_wasm_extension(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.set('LD_LIBRARY_PATH', self.temp_dir)
+            result = find_library('other')
+            self.assertEqual(result, self.libother_wasm_path)
+
+    def test_ignore_non_wasm_file(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.set('LD_LIBRARY_PATH', self.temp_dir)
+            result = find_library('nowasm')
+            self.assertIsNone(result)
+
+    def test_find_nothing_without_ld_library_path(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            if 'LD_LIBRARY_PATH' in env:
+                del env['LD_LIBRARY_PATH']
+            result = find_library('dummy')
+            self.assertIsNone(result)
+            result = find_library('other')
+            self.assertIsNone(result)
+
+    def test_find_nothing_with_wrong_ld_library_path(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as empty_dir:
+            with os_helper.EnvironmentVarGuard() as env:
+                env.set('LD_LIBRARY_PATH', empty_dir)
+                result = find_library('dummy')
+                self.assertIsNone(result)
+                result = find_library('other')
+                self.assertIsNone(result)
 
 
 if __name__ == "__main__":

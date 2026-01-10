@@ -49,7 +49,8 @@ CATEGORIES = {
     r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
     r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
     r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
-    r"\Z": (AT, AT_END_STRING), # end of string
+    r"\z": (AT, AT_END_STRING), # end of string
+    r"\Z": (AT, AT_END_STRING), # end of string (obsolete)
 }
 
 FLAGS = {
@@ -61,12 +62,15 @@ FLAGS = {
     "x": SRE_FLAG_VERBOSE,
     # extensions
     "a": SRE_FLAG_ASCII,
-    "t": SRE_FLAG_TEMPLATE,
     "u": SRE_FLAG_UNICODE,
 }
 
 TYPE_FLAGS = SRE_FLAG_ASCII | SRE_FLAG_LOCALE | SRE_FLAG_UNICODE
-GLOBAL_FLAGS = SRE_FLAG_DEBUG | SRE_FLAG_TEMPLATE
+GLOBAL_FLAGS = SRE_FLAG_DEBUG
+
+# Maximal value returned by SubPattern.getwidth().
+# Must be larger than MAXREPEAT, MAXCODE and sys.maxsize.
+MAXWIDTH = 1 << 64
 
 class State:
     # keeps track of state for parsing
@@ -114,7 +118,6 @@ class SubPattern:
         self.width = None
 
     def dump(self, level=0):
-        nl = True
         seqtypes = (tuple, list)
         for op, av in self.data:
             print(level*"  " + str(op), end='')
@@ -136,6 +139,9 @@ class SubPattern:
                 if item_no:
                     print(level*"  " + "ELSE")
                     item_no.dump(level+1)
+            elif isinstance(av, SubPattern):
+                print()
+                av.dump(level+1)
             elif isinstance(av, seqtypes):
                 nl = False
                 for a in av:
@@ -176,7 +182,7 @@ class SubPattern:
         lo = hi = 0
         for op, av in self.data:
             if op is BRANCH:
-                i = MAXREPEAT - 1
+                i = MAXWIDTH
                 j = 0
                 for av in av[1]:
                     l, h = av.getwidth()
@@ -195,7 +201,10 @@ class SubPattern:
             elif op in _REPEATCODES:
                 i, j = av[2].getwidth()
                 lo = lo + i * av[0]
-                hi = hi + j * av[1]
+                if av[1] == MAXREPEAT and j:
+                    hi = MAXWIDTH
+                else:
+                    hi = hi + j * av[1]
             elif op in _UNITCODES:
                 lo = lo + 1
                 hi = hi + 1
@@ -215,7 +224,7 @@ class SubPattern:
                 hi = hi + j
             elif op is SUCCESS:
                 break
-        self.width = min(lo, MAXREPEAT - 1), min(hi, MAXREPEAT)
+        self.width = min(lo, MAXWIDTH), min(hi, MAXWIDTH)
         return self.width
 
 class Tokenizer:
@@ -446,7 +455,6 @@ def _parse_sub(source, state, verbose, nested):
     items = []
     itemsappend = items.append
     sourcematch = source.match
-    start = source.tell()
     while True:
         itemsappend(_parse(source, state, verbose, nested + 1,
                            not nested and not items))
@@ -772,8 +780,10 @@ def _parse(source, state, verbose, nested, first=False):
                                            source.tell() - start)
                     if char == "=":
                         subpatternappend((ASSERT, (dir, p)))
-                    else:
+                    elif p:
                         subpatternappend((ASSERT_NOT, (dir, p)))
+                    else:
+                        subpatternappend((FAILURE, ()))
                     continue
 
                 elif char == "(":
@@ -796,14 +806,6 @@ def _parse(source, state, verbose, nested, first=False):
                         if condgroup not in state.grouprefpos:
                             state.grouprefpos[condgroup] = (
                                 source.tell() - len(condname) - 1
-                            )
-                        if not (condname.isdecimal() and condname.isascii()):
-                            import warnings
-                            warnings.warn(
-                                "bad character in group name %s at position %d" %
-                                (repr(condname) if source.istext else ascii(condname),
-                                 source.tell() - len(condname) - 1),
-                                DeprecationWarning, stacklevel=nested + 6
                             )
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
@@ -1028,14 +1030,6 @@ def parse_template(source, pattern):
                     if index >= MAXGROUPS:
                         raise s.error("invalid group reference %d" % index,
                                       len(name) + 1)
-                    if not (name.isdecimal() and name.isascii()):
-                        import warnings
-                        warnings.warn(
-                            "bad character in group name %s at position %d" %
-                            (repr(name) if s.istext else ascii(name),
-                             s.tell() - len(name) - 1),
-                            DeprecationWarning, stacklevel=5
-                        )
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:

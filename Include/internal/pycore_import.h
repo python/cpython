@@ -5,83 +5,35 @@
 extern "C" {
 #endif
 
-
-struct _import_runtime_state {
-    /* The builtin modules (defined in config.c). */
-    struct _inittab *inittab;
-    /* The most recent value assigned to a PyModuleDef.m_base.m_index.
-       This is incremented each time PyModuleDef_Init() is called,
-       which is just about every time an extension module is imported.
-       See PyInterpreterState.modules_by_index for more info. */
-    Py_ssize_t last_module_index;
-    struct {
-        /* A thread state tied to the main interpreter,
-           used exclusively for when the extensions dict is access/modified
-           from an arbitrary thread. */
-        PyThreadState main_tstate;
-        /* A lock to guard the dict. */
-        PyThread_type_lock mutex;
-        /* A dict mapping (filename, name) to PyModuleDef for modules.
-           Only legacy (single-phase init) extension modules are added
-           and only if they support multiple initialization (m_size >- 0)
-           or are imported in the main interpreter.
-           This is initialized lazily in _PyImport_FixupExtensionObject().
-           Modules are added there and looked up in _imp.find_extension(). */
-        PyObject *dict;
-    } extensions;
-    /* Package context -- the full module name for package imports */
-    const char * pkgcontext;
-};
-
-struct _import_state {
-    /* cached sys.modules dictionary */
-    PyObject *modules;
-    /* This is the list of module objects for all legacy (single-phase init)
-       extension modules ever loaded in this process (i.e. imported
-       in this interpreter or in any other).  Py_None stands in for
-       modules that haven't actually been imported in this interpreter.
-
-       A module's index (PyModuleDef.m_base.m_index) is used to look up
-       the corresponding module object for this interpreter, if any.
-       (See PyState_FindModule().)  When any extension module
-       is initialized during import, its moduledef gets initialized by
-       PyModuleDef_Init(), and the first time that happens for each
-       PyModuleDef, its index gets set to the current value of
-       a global counter (see _PyRuntimeState.imports.last_module_index).
-       The entry for that index in this interpreter remains unset until
-       the module is actually imported here.  (Py_None is used as
-       a placeholder.)  Note that multi-phase init modules always get
-       an index for which there will never be a module set.
-
-       This is initialized lazily in PyState_AddModule(), which is also
-       where modules get added. */
-    PyObject *modules_by_index;
-    /* importlib module._bootstrap */
-    PyObject *importlib;
-    /* override for config->use_frozen_modules (for tests)
-       (-1: "off", 1: "on", 0: no override) */
-    int override_frozen_modules;
-    int override_multi_interp_extensions_check;
-#ifdef HAVE_DLOPEN
-    int dlopenflags;
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
-    PyObject *import_func;
-    /* The global import lock. */
-    struct {
-        PyThread_type_lock mutex;
-        unsigned long thread;
-        int level;
-    } lock;
-    /* diagnostic info in PyImport_ImportModuleLevelObject() */
-    struct {
-        int import_level;
-        _PyTime_t accumulated;
-        int header;
-    } find_and_load;
-};
+
+#include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_interp_structs.h" // _import_state
+
+extern int _PyImport_IsInitialized(PyInterpreterState *);
+
+// Export for 'pyexpat' shared extension
+PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
+
+// Export for 'math' shared extension
+PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
+
+extern void _PyImport_AcquireLock(PyInterpreterState *interp);
+extern void _PyImport_ReleaseLock(PyInterpreterState *interp);
+extern void _PyImport_ReInitLock(PyInterpreterState *interp);
+
+// This is used exclusively for the sys and builtins modules:
+extern int _PyImport_FixupBuiltin(
+    PyThreadState *tstate,
+    PyObject *mod,
+    const char *name,            /* UTF-8 encoded string */
+    PyObject *modules
+    );
 
 #ifdef HAVE_DLOPEN
-#  include <dlfcn.h>
+#  include <dlfcn.h>              // RTLD_NOW, RTLD_LAZY
 #  if HAVE_DECL_RTLD_NOW
 #    define _Py_DLOPEN_FLAGS RTLD_NOW
 #  else
@@ -96,11 +48,6 @@ struct _import_state {
 #define IMPORTS_INIT \
     { \
         DLOPENFLAGS_INIT \
-        .lock = { \
-            .mutex = NULL, \
-            .thread = PYTHREAD_INVALID_THREAD_ID, \
-            .level = 0, \
-        }, \
         .find_and_load = { \
             .header = 1, \
         }, \
@@ -117,6 +64,7 @@ extern void _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val);
 
 extern PyObject * _PyImport_InitModules(PyInterpreterState *interp);
 extern PyObject * _PyImport_GetModules(PyInterpreterState *interp);
+extern PyObject * _PyImport_GetModulesRef(PyInterpreterState *interp);
 extern void _PyImport_ClearModules(PyInterpreterState *interp);
 
 extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
@@ -153,11 +101,6 @@ extern void _PyImport_FiniCore(PyInterpreterState *interp);
 extern void _PyImport_FiniExternal(PyInterpreterState *interp);
 
 
-#ifdef HAVE_FORK
-extern PyStatus _PyImport_ReInitLock(PyInterpreterState *interp);
-#endif
-
-
 extern PyObject* _PyImport_GetBuiltinModuleNames(void);
 
 struct _module_alias {
@@ -165,17 +108,39 @@ struct _module_alias {
     const char *orig;                 /* ASCII encoded string */
 };
 
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenBootstrap;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenStdlib;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenTest;
+// Export these 3 symbols for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenBootstrap;
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenStdlib;
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenTest;
+
 extern const struct _module_alias * _PyImport_FrozenAliases;
 
-PyAPI_FUNC(int) _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
+extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
     const char *name);
 
 
-// for testing
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
+
+#ifdef Py_GIL_DISABLED
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), resolve the transient request depending on the
+// state of the module argument:
+// - If module is NULL or a PyModuleObject with md_gil == Py_MOD_GIL_NOT_USED,
+//   call _PyEval_DisableGIL().
+// - Otherwise, call _PyImport_EnableGILAndWarn
+//
+// This function may raise an exception.
+extern int _PyImport_CheckGILForModule(PyObject *module, PyObject *module_name);
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), call _PyEval_EnableGILPermanent().
+// If the GIL was not already enabled permanently, issue a warning referencing
+// the module's name.
+// Leave a message in verbose mode.
+//
+// This function may raise an exception.
+extern int _PyImport_EnableGILAndWarn(PyThreadState *, PyObject *module_name);
+#endif
 
 #ifdef __cplusplus
 }

@@ -4,7 +4,7 @@ import copy
 import copyreg
 import weakref
 import abc
-from operator import le, lt, ge, gt, eq, ne
+from operator import le, lt, ge, gt, eq, ne, attrgetter
 
 import unittest
 from test import support
@@ -19,7 +19,7 @@ class TestCopy(unittest.TestCase):
 
     def test_exceptions(self):
         self.assertIs(copy.Error, copy.error)
-        self.assertTrue(issubclass(copy.Error, Exception))
+        self.assertIsSubclass(copy.Error, Exception)
 
     # The copy() method
 
@@ -371,6 +371,8 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x[0], y[0])
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_list(self):
         x = []
         x.append(x)
@@ -398,6 +400,8 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertIs(x, y)
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_tuple(self):
         x = ([],)
         x[0].append(x)
@@ -415,6 +419,8 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_dict(self):
         x = {}
         x['foo'] = x
@@ -666,7 +672,7 @@ class TestCopy(unittest.TestCase):
     def test_reduce_5tuple(self):
         class C(dict):
             def __reduce__(self):
-                return (C, (), self.__dict__, None, self.items())
+                return (C, (), self.__dict__, None, iter(self.items()))
             def __eq__(self, other):
                 return (dict(self) == dict(other) and
                         self.__dict__ == other.__dict__)
@@ -899,7 +905,85 @@ class TestCopy(unittest.TestCase):
         g.b()
 
 
+class TestReplace(unittest.TestCase):
+
+    def test_unsupported(self):
+        self.assertRaises(TypeError, copy.replace, 1)
+        self.assertRaises(TypeError, copy.replace, [])
+        self.assertRaises(TypeError, copy.replace, {})
+        def f(): pass
+        self.assertRaises(TypeError, copy.replace, f)
+        class A: pass
+        self.assertRaises(TypeError, copy.replace, A)
+        self.assertRaises(TypeError, copy.replace, A())
+
+    def test_replace_method(self):
+        class A:
+            def __new__(cls, x, y=0):
+                self = object.__new__(cls)
+                self.x = x
+                self.y = y
+                return self
+
+            def __init__(self, *args, **kwargs):
+                self.z = self.x + self.y
+
+            def __replace__(self, **changes):
+                x = changes.get('x', self.x)
+                y = changes.get('y', self.y)
+                return type(self)(x, y)
+
+        attrs = attrgetter('x', 'y', 'z')
+        a = A(11, 22)
+        self.assertEqual(attrs(copy.replace(a)), (11, 22, 33))
+        self.assertEqual(attrs(copy.replace(a, x=1)), (1, 22, 23))
+        self.assertEqual(attrs(copy.replace(a, y=2)), (11, 2, 13))
+        self.assertEqual(attrs(copy.replace(a, x=1, y=2)), (1, 2, 3))
+
+    def test_namedtuple(self):
+        from collections import namedtuple
+        from typing import NamedTuple
+        PointFromCall = namedtuple('Point', 'x y', defaults=(0,))
+        class PointFromInheritance(PointFromCall):
+            pass
+        class PointFromClass(NamedTuple):
+            x: int
+            y: int = 0
+        for Point in (PointFromCall, PointFromInheritance, PointFromClass):
+            with self.subTest(Point=Point):
+                p = Point(11, 22)
+                self.assertIsInstance(p, Point)
+                self.assertEqual(copy.replace(p), (11, 22))
+                self.assertIsInstance(copy.replace(p), Point)
+                self.assertEqual(copy.replace(p, x=1), (1, 22))
+                self.assertEqual(copy.replace(p, y=2), (11, 2))
+                self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
+                with self.assertRaisesRegex(TypeError, 'unexpected field name'):
+                    copy.replace(p, x=1, error=2)
+
+    def test_dataclass(self):
+        from dataclasses import dataclass
+        @dataclass
+        class C:
+            x: int
+            y: int = 0
+
+        attrs = attrgetter('x', 'y')
+        c = C(11, 22)
+        self.assertEqual(attrs(copy.replace(c)), (11, 22))
+        self.assertEqual(attrs(copy.replace(c, x=1)), (1, 22))
+        self.assertEqual(attrs(copy.replace(c, y=2)), (11, 2))
+        self.assertEqual(attrs(copy.replace(c, x=1, y=2)), (1, 2))
+        with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
+            copy.replace(c, x=1, error=2)
+
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, copy, not_exported={"dispatch_table", "error"})
+
 def global_foo(x, y): return x+y
+
 
 if __name__ == "__main__":
     unittest.main()

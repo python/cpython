@@ -237,7 +237,7 @@ class ModuleSpecMethodsTests:
         self.spec.loader = NewLoader()
         module = self.util.module_from_spec(self.spec)
         sys.modules[self.name] = module
-        self.assertFalse(hasattr(module, 'eggs'))
+        self.assertNotHasAttr(module, 'eggs')
         self.bootstrap._exec(self.spec, module)
 
         self.assertEqual(module.eggs, 1)
@@ -287,20 +287,6 @@ class ModuleSpecMethodsTests:
                 loaded = self.bootstrap._load(self.spec)
             self.assertNotIn(self.spec.name, sys.modules)
 
-    def test_load_legacy_attributes_immutable(self):
-        module = object()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            class ImmutableLoader(TestLoader):
-                def load_module(self, name):
-                    sys.modules[name] = module
-                    return module
-            self.spec.loader = ImmutableLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-
-                self.assertIs(sys.modules[self.spec.name], module)
-
     # reload()
 
     def test_reload(self):
@@ -348,9 +334,8 @@ class ModuleSpecMethodsTests:
         self.assertIs(loaded.__loader__, self.spec.loader)
         self.assertEqual(loaded.__package__, self.spec.parent)
         self.assertIs(loaded.__spec__, self.spec)
-        self.assertFalse(hasattr(loaded, '__path__'))
-        self.assertFalse(hasattr(loaded, '__file__'))
-        self.assertFalse(hasattr(loaded, '__cached__'))
+        self.assertNotHasAttr(loaded, '__path__')
+        self.assertNotHasAttr(loaded, '__file__')
 
 
 (Frozen_ModuleSpecMethodsTests,
@@ -502,7 +487,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.fileloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 
@@ -601,7 +587,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.fileloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 
@@ -626,7 +613,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.pkgloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 

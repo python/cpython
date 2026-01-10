@@ -140,7 +140,7 @@ static wchar_t * get_env(wchar_t * key)
     return buf;
 }
 
-#if defined(_DEBUG)
+#if defined(Py_DEBUG)
 /* Do not define EXECUTABLEPATH_VALUE in debug builds as it'll
    never point to the debug build. */
 #if defined(_WINDOWS)
@@ -1270,6 +1270,9 @@ static PYC_MAGIC magic_values[] = {
     /* Allow 50 magic numbers per version from here on */
     { 3450, 3499, L"3.11" },
     { 3500, 3549, L"3.12" },
+    { 3550, 3599, L"3.13" },
+    { 3600, 3649, L"3.14" },
+    { 3650, 3699, L"3.15" },
     { 0 }
 };
 

@@ -3,12 +3,14 @@ import unittest
 
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
-import time
-import locale
-import sys
+import contextlib
 import datetime
+import io
+import locale
 import os
-import warnings
+import platform
+import sys
+import time
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\
@@ -111,18 +113,25 @@ Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
 
 default_format = dict(year="year", month="month", encoding="ascii")
 
+result_2004_css = """<style>
+:root { color-scheme: light dark; }
+table.year { border: solid; }
+table.year > tbody > tr > td { border: solid; vertical-align: top; }
+</style>"""
+
 result_2004_html = """\
-<?xml version="1.0" encoding="{encoding}"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset={encoding}" />
-<link rel="stylesheet" type="text/css" href="calendar.css" />
+<meta charset="{encoding}">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Calendar for 2004</title>
+{css_styles}
+<link rel="stylesheet" href="calendar.css">
 </head>
 <body>
-<table border="0" cellpadding="0" cellspacing="0" class="{year}">
-<tr><th colspan="3" class="{year}">2004</th></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+<table class="{year}">
+<tr><th colspan="3" class="{year}">2004</th></tr><tr><td><table class="{month}">
 <tr><th colspan="7" class="{month}">January</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="thu">1</td><td class="fri">2</td><td class="sat">3</td><td class="sun">4</td></tr>
@@ -131,7 +140,7 @@ result_2004_html = """\
 <tr><td class="mon">19</td><td class="tue">20</td><td class="wed">21</td><td class="thu">22</td><td class="fri">23</td><td class="sat">24</td><td class="sun">25</td></tr>
 <tr><td class="mon">26</td><td class="tue">27</td><td class="wed">28</td><td class="thu">29</td><td class="fri">30</td><td class="sat">31</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">February</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="sun">1</td></tr>
@@ -140,7 +149,7 @@ result_2004_html = """\
 <tr><td class="mon">16</td><td class="tue">17</td><td class="wed">18</td><td class="thu">19</td><td class="fri">20</td><td class="sat">21</td><td class="sun">22</td></tr>
 <tr><td class="mon">23</td><td class="tue">24</td><td class="wed">25</td><td class="thu">26</td><td class="fri">27</td><td class="sat">28</td><td class="sun">29</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">March</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="mon">1</td><td class="tue">2</td><td class="wed">3</td><td class="thu">4</td><td class="fri">5</td><td class="sat">6</td><td class="sun">7</td></tr>
@@ -149,7 +158,7 @@ result_2004_html = """\
 <tr><td class="mon">22</td><td class="tue">23</td><td class="wed">24</td><td class="thu">25</td><td class="fri">26</td><td class="sat">27</td><td class="sun">28</td></tr>
 <tr><td class="mon">29</td><td class="tue">30</td><td class="wed">31</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td></tr><tr><td><table class="{month}">
 <tr><th colspan="7" class="{month}">April</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="thu">1</td><td class="fri">2</td><td class="sat">3</td><td class="sun">4</td></tr>
@@ -158,7 +167,7 @@ result_2004_html = """\
 <tr><td class="mon">19</td><td class="tue">20</td><td class="wed">21</td><td class="thu">22</td><td class="fri">23</td><td class="sat">24</td><td class="sun">25</td></tr>
 <tr><td class="mon">26</td><td class="tue">27</td><td class="wed">28</td><td class="thu">29</td><td class="fri">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">May</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="sat">1</td><td class="sun">2</td></tr>
@@ -168,7 +177,7 @@ result_2004_html = """\
 <tr><td class="mon">24</td><td class="tue">25</td><td class="wed">26</td><td class="thu">27</td><td class="fri">28</td><td class="sat">29</td><td class="sun">30</td></tr>
 <tr><td class="mon">31</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">June</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="tue">1</td><td class="wed">2</td><td class="thu">3</td><td class="fri">4</td><td class="sat">5</td><td class="sun">6</td></tr>
@@ -177,7 +186,7 @@ result_2004_html = """\
 <tr><td class="mon">21</td><td class="tue">22</td><td class="wed">23</td><td class="thu">24</td><td class="fri">25</td><td class="sat">26</td><td class="sun">27</td></tr>
 <tr><td class="mon">28</td><td class="tue">29</td><td class="wed">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td></tr><tr><td><table class="{month}">
 <tr><th colspan="7" class="{month}">July</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="thu">1</td><td class="fri">2</td><td class="sat">3</td><td class="sun">4</td></tr>
@@ -186,7 +195,7 @@ result_2004_html = """\
 <tr><td class="mon">19</td><td class="tue">20</td><td class="wed">21</td><td class="thu">22</td><td class="fri">23</td><td class="sat">24</td><td class="sun">25</td></tr>
 <tr><td class="mon">26</td><td class="tue">27</td><td class="wed">28</td><td class="thu">29</td><td class="fri">30</td><td class="sat">31</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">August</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="sun">1</td></tr>
@@ -196,7 +205,7 @@ result_2004_html = """\
 <tr><td class="mon">23</td><td class="tue">24</td><td class="wed">25</td><td class="thu">26</td><td class="fri">27</td><td class="sat">28</td><td class="sun">29</td></tr>
 <tr><td class="mon">30</td><td class="tue">31</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">September</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="wed">1</td><td class="thu">2</td><td class="fri">3</td><td class="sat">4</td><td class="sun">5</td></tr>
@@ -205,7 +214,7 @@ result_2004_html = """\
 <tr><td class="mon">20</td><td class="tue">21</td><td class="wed">22</td><td class="thu">23</td><td class="fri">24</td><td class="sat">25</td><td class="sun">26</td></tr>
 <tr><td class="mon">27</td><td class="tue">28</td><td class="wed">29</td><td class="thu">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td></tr><tr><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td></tr><tr><td><table class="{month}">
 <tr><th colspan="7" class="{month}">October</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="fri">1</td><td class="sat">2</td><td class="sun">3</td></tr>
@@ -214,7 +223,7 @@ result_2004_html = """\
 <tr><td class="mon">18</td><td class="tue">19</td><td class="wed">20</td><td class="thu">21</td><td class="fri">22</td><td class="sat">23</td><td class="sun">24</td></tr>
 <tr><td class="mon">25</td><td class="tue">26</td><td class="wed">27</td><td class="thu">28</td><td class="fri">29</td><td class="sat">30</td><td class="sun">31</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">November</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="mon">1</td><td class="tue">2</td><td class="wed">3</td><td class="thu">4</td><td class="fri">5</td><td class="sat">6</td><td class="sun">7</td></tr>
@@ -223,7 +232,7 @@ result_2004_html = """\
 <tr><td class="mon">22</td><td class="tue">23</td><td class="wed">24</td><td class="thu">25</td><td class="fri">26</td><td class="sat">27</td><td class="sun">28</td></tr>
 <tr><td class="mon">29</td><td class="tue">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
-</td><td><table border="0" cellpadding="0" cellspacing="0" class="{month}">
+</td><td><table class="{month}">
 <tr><th colspan="7" class="{month}">December</th></tr>
 <tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
 <tr><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="wed">1</td><td class="thu">2</td><td class="fri">3</td><td class="sat">4</td><td class="sun">5</td></tr>
@@ -233,6 +242,34 @@ result_2004_html = """\
 <tr><td class="mon">27</td><td class="tue">28</td><td class="wed">29</td><td class="thu">30</td><td class="fri">31</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
 </table>
 </td></tr></table></body>
+</html>
+"""
+
+result_2009_6_html = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar for 2009</title>
+<style>
+:root { color-scheme: light dark; }
+table.year { border: solid; }
+table.year > tbody > tr > td { border: solid; vertical-align: top; }
+</style>
+<link rel="stylesheet" href="calendar.css">
+</head>
+<body>
+<table class="month">
+<tr><th colspan="7" class="month">June 2009</th></tr>
+<tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
+<tr><td class="mon">1</td><td class="tue">2</td><td class="wed">3</td><td class="thu">4</td><td class="fri">5</td><td class="sat">6</td><td class="sun">7</td></tr>
+<tr><td class="mon">8</td><td class="tue">9</td><td class="wed">10</td><td class="thu">11</td><td class="fri">12</td><td class="sat">13</td><td class="sun">14</td></tr>
+<tr><td class="mon">15</td><td class="tue">16</td><td class="wed">17</td><td class="thu">18</td><td class="fri">19</td><td class="sat">20</td><td class="sun">21</td></tr>
+<tr><td class="mon">22</td><td class="tue">23</td><td class="wed">24</td><td class="thu">25</td><td class="fri">26</td><td class="sat">27</td><td class="sun">28</td></tr>
+<tr><td class="mon">29</td><td class="tue">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
+</table>
+</body>
 </html>
 """
 
@@ -383,10 +420,12 @@ class OutputTestCase(unittest.TestCase):
         cal = calendar.HTMLCalendar()
         format_ = default_format.copy()
         format_["encoding"] = req or 'utf-8'
+        format_with_css = {**format_, "css_styles": result_2004_css}
+        formatted_html = result_2004_html.format(**format_with_css)
         output = cal.formatyearpage(2004, encoding=req)
         self.assertEqual(
             output,
-            result_2004_html.format(**format_).encode(res)
+            formatted_html.encode(res)
         )
 
     def test_output(self):
@@ -416,7 +455,7 @@ class OutputTestCase(unittest.TestCase):
         self.check_htmlcalendar_encoding('utf-8', 'utf-8')
 
     def test_output_htmlcalendar_encoding_default(self):
-        self.check_htmlcalendar_encoding(None, sys.getdefaultencoding())
+        self.check_htmlcalendar_encoding(None, 'utf-8')
 
     def test_yeardatescalendar(self):
         def shrink(cal):
@@ -456,6 +495,11 @@ class OutputTestCase(unittest.TestCase):
             calendar.TextCalendar().formatmonth(0, 2),
             result_0_02_text
         )
+    def test_formatmonth_with_invalid_month(self):
+        with self.assertRaises(calendar.IllegalMonthError):
+            calendar.TextCalendar().formatmonth(2017, 13)
+        with self.assertRaises(calendar.IllegalMonthError):
+            calendar.TextCalendar().formatmonth(2017, -1)
 
     def test_formatmonthname_with_year(self):
         self.assertEqual(
@@ -489,6 +533,13 @@ class OutputTestCase(unittest.TestCase):
         with support.captured_stdout() as out:
             calendar.format(["1", "2", "3"], colwidth=3, spacing=1)
             self.assertEqual(out.getvalue().strip(), "1   2   3")
+
+    def test_format_html_year_with_month(self):
+        self.assertEqual(
+            calendar.HTMLCalendar().formatmonthpage(2009, 6).decode("ascii"),
+            result_2009_6_html
+        )
+
 
 class CalendarTestCase(unittest.TestCase):
 
@@ -540,7 +591,8 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(value[::-1], list(reversed(value)))
 
     def test_months(self):
-        for attr in "month_name", "month_abbr":
+        for attr in ("month_name", "month_abbr", "standalone_month_name",
+                     "standalone_month_abbr"):
             value = getattr(calendar, attr)
             self.assertEqual(len(value), 13)
             self.assertEqual(len(value[:]), 13)
@@ -550,26 +602,124 @@ class CalendarTestCase(unittest.TestCase):
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
 
-    def test_locale_calendars(self):
+    @support.run_with_locale('LC_ALL', 'pl_PL')
+    @unittest.skipUnless(sys.platform == 'darwin' or platform.libc_ver()[0] == 'glibc',
+                         "Guaranteed to work with glibc and macOS")
+    def test_standalone_month_name_and_abbr_pl_locale(self):
+        expected_standalone_month_names = [
+            "", "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+            "lipiec", "sierpień", "wrzesień", "październik", "listopad",
+            "grudzień"
+        ]
+        expected_standalone_month_abbr = [
+            "", "sty", "lut", "mar", "kwi", "maj", "cze",
+            "lip", "sie", "wrz", "paź", "lis", "gru"
+        ]
+        self.assertEqual(
+            list(calendar.standalone_month_name),
+            expected_standalone_month_names
+        )
+        self.assertEqual(
+            list(calendar.standalone_month_abbr),
+            expected_standalone_month_abbr
+        )
+
+    def test_standalone_month_name_and_abbr_C_locale(self):
+        # Ensure that the standalone month names and abbreviations are
+        # equal to the regular month names and abbreviations for
+        # the "C" locale.
+        with calendar.different_locale("C"):
+            self.assertListEqual(list(calendar.month_name),
+                                 list(calendar.standalone_month_name))
+            self.assertListEqual(list(calendar.month_abbr),
+                                 list(calendar.standalone_month_abbr))
+
+    def test_locale_text_calendar(self):
+        try:
+            cal = calendar.LocaleTextCalendar(locale='')
+            local_weekday = cal.formatweekday(1, 10)
+            local_weekday_abbr = cal.formatweekday(1, 3)
+            local_month = cal.formatmonthname(2010, 10, 10)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
+        self.assertIsInstance(local_month, str)
+        self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
+        self.assertGreaterEqual(len(local_month), 10)
+
+        cal = calendar.LocaleTextCalendar(locale=None)
+        local_weekday = cal.formatweekday(1, 10)
+        local_weekday_abbr = cal.formatweekday(1, 3)
+        local_month = cal.formatmonthname(2010, 10, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
+        self.assertIsInstance(local_month, str)
+        self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
+        self.assertGreaterEqual(len(local_month), 10)
+
+        cal = calendar.LocaleTextCalendar(locale='C')
+        local_weekday = cal.formatweekday(1, 10)
+        local_weekday_abbr = cal.formatweekday(1, 3)
+        local_month = cal.formatmonthname(2010, 10, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
+        self.assertIsInstance(local_month, str)
+        self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
+        self.assertGreaterEqual(len(local_month), 10)
+
+    def test_locale_html_calendar(self):
+        try:
+            cal = calendar.LocaleHTMLCalendar(locale='')
+            local_weekday = cal.formatweekday(1)
+            local_month = cal.formatmonthname(2010, 10)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
+
+        cal = calendar.LocaleHTMLCalendar(locale=None)
+        local_weekday = cal.formatweekday(1)
+        local_month = cal.formatmonthname(2010, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
+
+        cal = calendar.LocaleHTMLCalendar(locale='C')
+        local_weekday = cal.formatweekday(1)
+        local_month = cal.formatmonthname(2010, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
+
+    def test_locale_calendars_reset_locale_properly(self):
         # ensure that Locale{Text,HTML}Calendar resets the locale properly
         # (it is still not thread-safe though)
         old_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         try:
             cal = calendar.LocaleTextCalendar(locale='')
             local_weekday = cal.formatweekday(1, 10)
+            local_weekday_abbr = cal.formatweekday(1, 3)
             local_month = cal.formatmonthname(2010, 10, 10)
         except locale.Error:
             # cannot set the system default locale -- skip rest of test
             raise unittest.SkipTest('cannot set the system default locale')
         self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_weekday_abbr, str)
         self.assertIsInstance(local_month, str)
         self.assertEqual(len(local_weekday), 10)
+        self.assertEqual(len(local_weekday_abbr), 3)
         self.assertGreaterEqual(len(local_month), 10)
+
         cal = calendar.LocaleHTMLCalendar(locale='')
         local_weekday = cal.formatweekday(1)
         local_month = cal.formatmonthname(2010, 10)
         self.assertIsInstance(local_weekday, str)
         self.assertIsInstance(local_month, str)
+
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
 
@@ -587,6 +737,72 @@ class CalendarTestCase(unittest.TestCase):
             # For long widths, the full day name is used.
             self.assertEqual(cal.formatweekday(0, 9), "  Monday ")
             self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
+        except locale.Error:
+            raise unittest.SkipTest('cannot set the en_US locale')
+
+    # These locales have weekday names all shorter than English's longest
+    # 'Wednesday'. They should not be abbreviated unnecessarily
+    @support.run_with_locales("LC_ALL",
+            'Chinese', 'zh_CN.UTF-8',
+            'French', 'fr_FR.UTF-8',
+            'Norwegian', 'nb_NO.UTF-8',
+            'Malay', 'ms_MY.UTF8'
+    )
+    def test_locale_calendar_short_weekday_names(self):
+        names = (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))
+        max_length = max(map(len, names))
+        if max_length >= 9:
+            self.skipTest('weekday names are too long')
+
+        def get_weekday_names(width):
+            return calendar.TextCalendar().formatweekheader(width).split()
+
+        # Weekday names should not be abbreviated if the width is sufficient
+        self.assertEqual(
+            get_weekday_names(max_length),
+            get_weekday_names(max_length + 10)
+        )
+
+        # Any width shorter than necessary should produce abbreviations
+        self.assertNotEqual(
+            get_weekday_names(max_length),
+            get_weekday_names(max_length - 1)
+        )
+
+    # These locales have a weekday name longer than 'Wednesday'
+    # They should be properly abbreviated rather than truncated
+    @support.run_with_locales("LC_ALL",
+            'Portuguese', 'pt_PT.UTF-8',
+            'German',  'de_DE.UTF-8',
+            'Russian', 'ru_RU.UTF-8',
+    )
+    def test_locale_calendar_long_weekday_names(self):
+        names = (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))
+        max_length = max(map(len, names))
+        abbrev_names = (datetime.date(2001, 1, i+1).strftime('%a') for i in range(7))
+        abbrev_max_length = max(map(len, abbrev_names))
+
+        if max_length <= 9:
+            self.skipTest('weekday names are too short')
+        if abbrev_max_length >= 9:
+            self.skipTest('abbreviated weekday names are too long')
+
+        def get_weekday_names(width):
+            return calendar.TextCalendar().formatweekheader(width).split()
+        self.assertEqual(get_weekday_names(abbrev_max_length), get_weekday_names(max_length-1))
+
+    def test_locale_calendar_formatmonthname(self):
+        try:
+            # formatmonthname uses the same month names regardless of the width argument.
+            cal = calendar.LocaleTextCalendar(locale='en_US')
+            # For too short widths, a full name (with year) is used.
+            self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=False), "June")
+            self.assertEqual(cal.formatmonthname(2022, 6, 2, withyear=True), "June 2022")
+            self.assertEqual(cal.formatmonthname(2022, 6, 3, withyear=False), "June")
+            self.assertEqual(cal.formatmonthname(2022, 6, 3, withyear=True), "June 2022")
+            # For long widths, a centered name is used.
+            self.assertEqual(cal.formatmonthname(2022, 6, 10, withyear=False), "   June   ")
+            self.assertEqual(cal.formatmonthname(2022, 6, 15, withyear=True), "   June 2022   ")
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')
 
@@ -848,46 +1064,104 @@ def conv(s):
     return s.replace('\n', os.linesep).encode()
 
 class CommandLineTestCase(unittest.TestCase):
-    def run_ok(self, *args):
+    def setUp(self):
+        self.runners = [self.run_cli_ok, self.run_cmd_ok]
+
+    @contextlib.contextmanager
+    def captured_stdout_with_buffer(self):
+        orig_stdout = sys.stdout
+        buffer = io.BytesIO()
+        sys.stdout = io.TextIOWrapper(buffer)
+        try:
+            yield sys.stdout
+        finally:
+            sys.stdout.flush()
+            sys.stdout.buffer.seek(0)
+            sys.stdout = orig_stdout
+
+    @contextlib.contextmanager
+    def captured_stderr_with_buffer(self):
+        orig_stderr = sys.stderr
+        buffer = io.BytesIO()
+        sys.stderr = io.TextIOWrapper(buffer)
+        try:
+            yield sys.stderr
+        finally:
+            sys.stderr.flush()
+            sys.stderr.buffer.seek(0)
+            sys.stderr = orig_stderr
+
+    def run_cli_ok(self, *args):
+        with self.captured_stdout_with_buffer() as stdout:
+            calendar.main(args)
+        return stdout.buffer.read()
+
+    def run_cmd_ok(self, *args):
         return assert_python_ok('-m', 'calendar', *args)[1]
 
-    def assertFailure(self, *args):
+    def assertCLIFails(self, *args):
+        with self.captured_stderr_with_buffer() as stderr:
+            self.assertRaises(SystemExit, calendar.main, args)
+        stderr = stderr.buffer.read()
+        self.assertIn(b'usage:', stderr)
+        return stderr
+
+    def assertCmdFails(self, *args):
         rc, stdout, stderr = assert_python_failure('-m', 'calendar', *args)
         self.assertIn(b'usage:', stderr)
         self.assertEqual(rc, 2)
+        return rc, stdout, stderr
 
+    def assertFailure(self, *args):
+        self.assertCLIFails(*args)
+        self.assertCmdFails(*args)
+
+    @support.force_not_colorized
     def test_help(self):
-        stdout = self.run_ok('-h')
+        stdout = self.run_cmd_ok('-h')
         self.assertIn(b'usage:', stdout)
-        self.assertIn(b'calendar.py', stdout)
+        self.assertIn(b' -m calendar ', stdout)
         self.assertIn(b'--help', stdout)
+
+        # special case: stdout but sys.exit()
+        with self.captured_stdout_with_buffer() as output:
+            self.assertRaises(SystemExit, calendar.main, ['-h'])
+        output = output.buffer.read()
+        self.assertIn(b'usage:', output)
+        self.assertIn(b'--help', output)
 
     def test_illegal_arguments(self):
         self.assertFailure('-z')
         self.assertFailure('spam')
         self.assertFailure('2004', 'spam')
-        self.assertFailure('-t', 'html', '2004', '1')
+        self.assertFailure('2004', '1', 'spam')
+        self.assertFailure('2004', '1', '1')
+        self.assertFailure('2004', '1', '1', 'spam')
 
     def test_output_current_year(self):
-        stdout = self.run_ok()
-        year = datetime.datetime.now().year
-        self.assertIn((' %s' % year).encode(), stdout)
-        self.assertIn(b'January', stdout)
-        self.assertIn(b'Mo Tu We Th Fr Sa Su', stdout)
+        for run in self.runners:
+            output = run()
+            year = datetime.datetime.now().year
+            self.assertIn(conv(' %s' % year), output)
+            self.assertIn(b'January', output)
+            self.assertIn(b'Mo Tu We Th Fr Sa Su', output)
 
     def test_output_year(self):
-        stdout = self.run_ok('2004')
-        self.assertEqual(stdout, conv(result_2004_text))
+        for run in self.runners:
+            output = run('2004')
+            self.assertEqual(output, conv(result_2004_text))
 
     def test_output_month(self):
-        stdout = self.run_ok('2004', '1')
-        self.assertEqual(stdout, conv(result_2004_01_text))
+        for run in self.runners:
+            output = run('2004', '1')
+            self.assertEqual(output, conv(result_2004_01_text))
 
     def test_option_encoding(self):
         self.assertFailure('-e')
         self.assertFailure('--encoding')
-        stdout = self.run_ok('--encoding', 'utf-16-le', '2004')
-        self.assertEqual(stdout, result_2004_text.encode('utf-16-le'))
+        for run in self.runners:
+            output = run('--encoding', 'utf-16-le', '2004')
+            self.assertEqual(output, result_2004_text.encode('utf-16-le'))
 
     def test_option_locale(self):
         self.assertFailure('-L')
@@ -905,66 +1179,76 @@ class CommandLineTestCase(unittest.TestCase):
                 locale.setlocale(locale.LC_TIME, oldlocale)
         except (locale.Error, ValueError):
             self.skipTest('cannot set the system default locale')
-        stdout = self.run_ok('--locale', lang, '--encoding', enc, '2004')
-        self.assertIn('2004'.encode(enc), stdout)
+        for run in self.runners:
+            for type in ('text', 'html'):
+                output = run(
+                    '--type', type, '--locale', lang, '--encoding', enc, '2004'
+                )
+                self.assertIn('2004'.encode(enc), output)
 
     def test_option_width(self):
         self.assertFailure('-w')
         self.assertFailure('--width')
         self.assertFailure('-w', 'spam')
-        stdout = self.run_ok('--width', '3', '2004')
-        self.assertIn(b'Mon Tue Wed Thu Fri Sat Sun', stdout)
+        for run in self.runners:
+            output = run('--width', '3', '2004')
+            self.assertIn(b'Mon Tue Wed Thu Fri Sat Sun', output)
 
     def test_option_lines(self):
         self.assertFailure('-l')
         self.assertFailure('--lines')
         self.assertFailure('-l', 'spam')
-        stdout = self.run_ok('--lines', '2', '2004')
-        self.assertIn(conv('December\n\nMo Tu We'), stdout)
+        for run in self.runners:
+            output = run('--lines', '2', '2004')
+            self.assertIn(conv('December\n\nMo Tu We'), output)
 
     def test_option_spacing(self):
         self.assertFailure('-s')
         self.assertFailure('--spacing')
         self.assertFailure('-s', 'spam')
-        stdout = self.run_ok('--spacing', '8', '2004')
-        self.assertIn(b'Su        Mo', stdout)
+        for run in self.runners:
+            output = run('--spacing', '8', '2004')
+            self.assertIn(b'Su        Mo', output)
 
     def test_option_months(self):
         self.assertFailure('-m')
         self.assertFailure('--month')
         self.assertFailure('-m', 'spam')
-        stdout = self.run_ok('--months', '1', '2004')
-        self.assertIn(conv('\nMo Tu We Th Fr Sa Su\n'), stdout)
+        for run in self.runners:
+            output = run('--months', '1', '2004')
+            self.assertIn(conv('\nMo Tu We Th Fr Sa Su\n'), output)
 
     def test_option_type(self):
         self.assertFailure('-t')
         self.assertFailure('--type')
         self.assertFailure('-t', 'spam')
-        stdout = self.run_ok('--type', 'text', '2004')
-        self.assertEqual(stdout, conv(result_2004_text))
-        stdout = self.run_ok('--type', 'html', '2004')
-        self.assertEqual(stdout[:6], b'<?xml ')
-        self.assertIn(b'<title>Calendar for 2004</title>', stdout)
+        for run in self.runners:
+            output = run('--type', 'text', '2004')
+            self.assertEqual(output, conv(result_2004_text))
+            output = run('--type', 'html', '2004')
+            self.assertStartsWith(output, b'<!DOCTYPE html>')
+            self.assertIn(b'<title>Calendar for 2004</title>', output)
 
     def test_html_output_current_year(self):
-        stdout = self.run_ok('--type', 'html')
-        year = datetime.datetime.now().year
-        self.assertIn(('<title>Calendar for %s</title>' % year).encode(),
-                      stdout)
-        self.assertIn(b'<tr><th colspan="7" class="month">January</th></tr>',
-                      stdout)
+        for run in self.runners:
+            output = run('--type', 'html')
+            year = datetime.datetime.now().year
+            self.assertIn(('<title>Calendar for %s</title>' % year).encode(), output)
+            self.assertIn(b'<tr><th colspan="7" class="month">January</th></tr>', output)
 
     def test_html_output_year_encoding(self):
-        stdout = self.run_ok('-t', 'html', '--encoding', 'ascii', '2004')
-        self.assertEqual(stdout,
-                         result_2004_html.format(**default_format).encode('ascii'))
+        for run in self.runners:
+            output = run('-t', 'html', '--encoding', 'ascii', '2004')
+            format_with_css = default_format.copy()
+            format_with_css["css_styles"] = result_2004_css
+            self.assertEqual(output, result_2004_html.format(**format_with_css).encode('ascii'))
 
     def test_html_output_year_css(self):
         self.assertFailure('-t', 'html', '-c')
         self.assertFailure('-t', 'html', '--css')
-        stdout = self.run_ok('-t', 'html', '--css', 'custom.css', '2004')
-        self.assertIn(b'<link rel="stylesheet" type="text/css" '
-                      b'href="custom.css" />', stdout)
+        for run in self.runners:
+            output = run('-t', 'html', '--css', 'custom.css', '2004')
+            self.assertIn(b'<link rel="stylesheet" href="custom.css">', output)
 
 
 class MiscTestCase(unittest.TestCase):
@@ -972,7 +1256,7 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {
             'mdays', 'January', 'February', 'EPOCH',
             'different_locale', 'c', 'prweek', 'week', 'format',
-            'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth'}
+            'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth', ""}
         support.check__all__(self, calendar, not_exported=not_exported)
 
 
@@ -1000,6 +1284,13 @@ class TestSubClassingCase(unittest.TestCase):
         self.assertIn('class="text-center month"',
                       self.cal.formatmonth(2017, 5))
 
+    def test_formatmonth_with_invalid_month(self):
+        with self.assertRaises(calendar.IllegalMonthError):
+            self.cal.formatmonth(2017, 13)
+        with self.assertRaises(calendar.IllegalMonthError):
+            self.cal.formatmonth(2017, -1)
+
+
     def test_formatweek(self):
         weeks = self.cal.monthdays2calendar(2017, 5)
         self.assertIn('class="wed text-nowrap"', self.cal.formatweek(weeks[0]))
@@ -1011,7 +1302,7 @@ class TestSubClassingCase(unittest.TestCase):
 
     def test_format_year(self):
         self.assertIn(
-            ('<table border="0" cellpadding="0" cellspacing="0" class="%s">' %
+            ('<table class="%s">' %
              self.cal.cssclass_year), self.cal.formatyear(2017))
 
     def test_format_year_head(self):

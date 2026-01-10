@@ -11,15 +11,9 @@ except ImportError:
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
 
-# Valid arguments for the ...Awareness call below are defined in the following.
-# https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
 if sys.platform == 'win32':
-    try:
-        import ctypes
-        PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
-        ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-    except (ImportError, AttributeError, OSError):
-        pass
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 from tkinter import messagebox
 
@@ -28,7 +22,6 @@ import itertools
 import linecache
 import os
 import os.path
-from platform import python_version
 import re
 import socket
 import subprocess
@@ -133,8 +126,8 @@ class PyShellEditorWindow(EditorWindow):
     def __init__(self, *args):
         self.breakpoints = []
         EditorWindow.__init__(self, *args)
-        self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
-        self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
+        self.text.bind("<<set-breakpoint>>", self.set_breakpoint_event)
+        self.text.bind("<<clear-breakpoint>>", self.clear_breakpoint_event)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
         #TODO: don't read/write this from/to .idlerc when testing
@@ -155,8 +148,8 @@ class PyShellEditorWindow(EditorWindow):
         ("Copy", "<<copy>>", "rmenu_check_copy"),
         ("Paste", "<<paste>>", "rmenu_check_paste"),
         (None, None, None),
-        ("Set Breakpoint", "<<set-breakpoint-here>>", None),
-        ("Clear Breakpoint", "<<clear-breakpoint-here>>", None)
+        ("Set Breakpoint", "<<set-breakpoint>>", None),
+        ("Clear Breakpoint", "<<clear-breakpoint>>", None)
     ]
 
     def color_breakpoint_text(self, color=True):
@@ -181,11 +174,11 @@ class PyShellEditorWindow(EditorWindow):
             self.breakpoints.append(lineno)
         try:    # update the subprocess debugger
             debug = self.flist.pyshell.interp.debugger
-            debug.set_breakpoint_here(filename, lineno)
+            debug.set_breakpoint(filename, lineno)
         except: # but debugger may not be active right now....
             pass
 
-    def set_breakpoint_here(self, event=None):
+    def set_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -194,7 +187,7 @@ class PyShellEditorWindow(EditorWindow):
         lineno = int(float(text.index("insert")))
         self.set_breakpoint(lineno)
 
-    def clear_breakpoint_here(self, event=None):
+    def clear_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -209,7 +202,7 @@ class PyShellEditorWindow(EditorWindow):
                         "insert lineend +1char")
         try:
             debug = self.flist.pyshell.interp.debugger
-            debug.clear_breakpoint_here(filename, lineno)
+            debug.clear_breakpoint(filename, lineno)
         except:
             pass
 
@@ -430,7 +423,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def spawn_subprocess(self):
         if self.subprocess_arglist is None:
             self.subprocess_arglist = self.build_subprocess_arglist()
-        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist)
+        # gh-127060: Disable traceback colors
+        env = dict(os.environ, TERM='dumb')
+        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist, env=env)
 
     def build_subprocess_arglist(self):
         assert (self.port!=0), (
@@ -503,7 +498,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.terminate_subprocess()
         console = self.tkconsole
-        was_executing = console.executing
         console.executing = False
         self.spawn_subprocess()
         try:
@@ -712,7 +706,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             del _filename, _sys, _dirname, _dir
             \n""".format(filename))
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Override Interactive Interpreter method: Use Colorizing
 
         Color the offending position instead of printing it and pointing at it
@@ -747,10 +741,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.tkconsole.open_stack_viewer()
 
     def checklinecache(self):
-        c = linecache.cache
-        for key in list(c.keys()):
+        "Remove keys other than '<pyshell#n>'."
+        cache = linecache.cache
+        for key in list(cache):  # Iterate list because mutate cache.
             if key[:1] + key[-1:] != "<>":
-                del c[key]
+                del cache[key]
 
     def runcommand(self, code):
         "Run the code without invoking the debugger"
@@ -844,7 +839,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 class PyShell(OutputWindow):
     from idlelib.squeezer import Squeezer
 
-    shell_title = "IDLE Shell " + python_version()
+    shell_title = "IDLE Shell"
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
@@ -880,10 +875,9 @@ class PyShell(OutputWindow):
     from idlelib.sidebar import ShellSidebar
 
     def __init__(self, flist=None):
-        if use_subprocess:
-            ms = self.menu_specs
-            if ms[2][0] != "shell":
-                ms.insert(2, ("shell", "She_ll"))
+        ms = self.menu_specs
+        if ms[2][0] != "shell":
+            ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
         if flist is None:
             root = Tk()
@@ -956,6 +950,11 @@ class PyShell(OutputWindow):
         # events generated in Tcl/Tk to go through this delegator.
         self.text.insert = self.per.top.insert
         self.per.insertfilter(UserInputTaggingDelegator())
+
+        if not use_subprocess:
+            # Menu options "View Last Restart" and "Restart Shell" are disabled
+            self.update_menu_state("shell", 0, "disabled")
+            self.update_menu_state("shell", 1, "disabled")
 
     def ResetFont(self):
         super().ResetFont()
@@ -1136,8 +1135,7 @@ class PyShell(OutputWindow):
     def short_title(self):
         return self.shell_title
 
-    COPYRIGHT = \
-          'Type "help", "copyright", "credits" or "license()" for more information.'
+    SPLASHLINE = 'Enter "help" below or click "Help" above for more information.'
 
     def begin(self):
         self.text.mark_set("iomark", "insert")
@@ -1156,7 +1154,7 @@ class PyShell(OutputWindow):
             sys.displayhook = rpc.displayhook
 
         self.write("Python %s on %s\n%s\n%s" %
-                   (sys.version, sys.platform, self.COPYRIGHT, nosub))
+                   (sys.version, sys.platform, self.SPLASHLINE, nosub))
         self.text.focus_force()
         self.showprompt()
         # User code should use separate default Tk root window
@@ -1350,7 +1348,7 @@ class PyShell(OutputWindow):
             self.text.see("insert")
             self.text.undo_block_stop()
 
-    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\Z")
+    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\z")
     def runit(self):
         index_before = self.text.index("end-2c")
         line = self.text.get("iomark", "end-1c")
@@ -1363,19 +1361,19 @@ class PyShell(OutputWindow):
                 self.text.tag_remove(self.user_input_insert_tags, index_before)
             self.shell_sidebar.update_sidebar()
 
-    def open_stack_viewer(self, event=None):
+    def open_stack_viewer(self, event=None):  # -n mode only
         if self.interp.rpcclt:
             return self.interp.remote_stack_viewer()
+
+        from idlelib.stackviewer import StackBrowser
         try:
-            sys.last_traceback
+            StackBrowser(self.root, sys.last_exc, self.flist)
         except:
             messagebox.showerror("No stack trace",
                 "There is no stack trace yet.\n"
-                "(sys.last_traceback is not defined)",
+                "(sys.last_exc is not defined)",
                 parent=self.text)
-            return
-        from idlelib.stackviewer import StackBrowser
-        StackBrowser(self.root, self.flist)
+        return None
 
     def view_restart_mark(self, event=None):
         self.text.see("iomark")
@@ -1692,6 +1690,7 @@ def main():
         root.mainloop()
     root.destroy()
     capture_warnings(False)
+
 
 if __name__ == "__main__":
     main()

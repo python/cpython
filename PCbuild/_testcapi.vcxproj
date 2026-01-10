@@ -80,7 +80,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <TargetExt>.pyd</TargetExt>
+    <TargetExt>$(PyStdlibPydExt)</TargetExt>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -96,24 +96,43 @@
     <ClCompile Include="..\Modules\_testcapimodule.c" />
     <ClCompile Include="..\Modules\_testcapi\getargs.c" />
     <ClCompile Include="..\Modules\_testcapi\vectorcall.c" />
-    <ClCompile Include="..\Modules\_testcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
-    <ClCompile Include="..\Modules\_testcapi\heaptype_relative.c" />
+    <ClCompile Include="..\Modules\_testcapi\abstract.c" />
+    <ClCompile Include="..\Modules\_testcapi\bytes.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
-    <ClCompile Include="..\Modules\_testcapi\pytime.c" />
+    <ClCompile Include="..\Modules\_testcapi\dict.c" />
+    <ClCompile Include="..\Modules\_testcapi\set.c" />
+    <ClCompile Include="..\Modules\_testcapi\list.c" />
+    <ClCompile Include="..\Modules\_testcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testcapi\datetime.c" />
     <ClCompile Include="..\Modules\_testcapi\docstring.c" />
     <ClCompile Include="..\Modules\_testcapi\mem.c" />
     <ClCompile Include="..\Modules\_testcapi\watchers.c" />
     <ClCompile Include="..\Modules\_testcapi\float.c" />
+    <ClCompile Include="..\Modules\_testcapi\complex.c" />
     <ClCompile Include="..\Modules\_testcapi\long.c" />
+    <ClCompile Include="..\Modules\_testcapi\numbers.c" />
     <ClCompile Include="..\Modules\_testcapi\structmember.c" />
     <ClCompile Include="..\Modules\_testcapi\exceptions.c" />
     <ClCompile Include="..\Modules\_testcapi\code.c" />
     <ClCompile Include="..\Modules\_testcapi\buffer.c" />
-    <ClCompile Include="..\Modules\_testcapi\pyos.c" />
+    <ClCompile Include="..\Modules\_testcapi\pyatomic.c" />
+    <ClCompile Include="..\Modules\_testcapi\file.c" />
+    <ClCompile Include="..\Modules\_testcapi\codec.c" />
+    <ClCompile Include="..\Modules\_testcapi\hash.c" />
+    <ClCompile Include="..\Modules\_testcapi\time.c" />
+    <ClCompile Include="..\Modules\_testcapi\object.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />
+    <ClCompile Include="..\Modules\_testcapi\run.c" />
+    <ClCompile Include="..\Modules\_testcapi\modsupport.c" />
+    <ClCompile Include="..\Modules\_testcapi\module.c" />
+    <ClCompile Include="..\Modules\_testcapi\monitoring.c" />
+    <ClCompile Include="..\Modules\_testcapi\config.c" />
+    <ClCompile Include="..\Modules\_testcapi\import.c" />
+    <ClCompile Include="..\Modules\_testcapi\frame.c" />
+    <ClCompile Include="..\Modules\_testcapi\type.c" />
+    <ClCompile Include="..\Modules\_testcapi\function.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

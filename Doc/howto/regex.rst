@@ -245,6 +245,9 @@ You can omit either *m* or *n*; in that case, a reasonable value is assumed for
 the missing value.  Omitting *m* is interpreted as a lower limit of 0, while
 omitting *n* results in an upper bound of infinity.
 
+The simplest case ``{m}`` matches the preceding item exactly *m* times.
+For example, ``a/{2}b`` will only match ``'a//b'``.
+
 Readers of a reductionist bent may notice that the three other quantifiers can
 all be expressed using this notation.  ``{0,}`` is the same as ``*``, ``{1,}``
 is equivalent to ``+``, and ``{0,1}`` is the same as ``?``.  It's better to use
@@ -518,6 +521,8 @@ cache.
 Compilation Flags
 -----------------
 
+.. currentmodule:: re
+
 Compilation flags let you modify some aspects of how regular expressions work.
 Flags are available in the :mod:`re` module under two names, a long name such as
 :const:`IGNORECASE` and a short, one-letter form such as :const:`I`.  (If you're
@@ -733,8 +738,11 @@ given location, they can obviously be matched an infinite number of times.
    different: ``\A`` still matches only at the beginning of the string, but ``^``
    may match at any location inside the string that follows a newline character.
 
-``\Z``
+``\z``
    Matches only at the end of the string.
+
+``\Z``
+   The same as ``\z``.  For compatibility with old Python versions.
 
 ``\b``
    Word boundary.  This is a zero-width assertion that matches only at the
@@ -1008,7 +1016,9 @@ extension.  This regular expression matches ``foo.bar`` and
 Now, consider complicating the problem a bit; what if you want to match
 filenames where the extension is not ``bat``? Some incorrect attempts:
 
-``.*[.][^b].*$``  The first attempt above tries to exclude ``bat`` by requiring
+``.*[.][^b].*$``
+
+The first attempt above tries to exclude ``bat`` by requiring
 that the first character of the extension is not a ``b``.  This is wrong,
 because the pattern also doesn't match ``foo.bar``.
 
@@ -1035,7 +1045,9 @@ confusing.
 
 A negative lookahead cuts through all this confusion:
 
-``.*[.](?!bat$)[^.]*$``  The negative lookahead means: if the expression ``bat``
+``.*[.](?!bat$)[^.]*$``
+
+The negative lookahead means: if the expression ``bat``
 doesn't match at this point, try the rest of the pattern; if ``bat$`` does
 match, the whole pattern will fail.  The trailing ``$`` is required to ensure
 that something like ``sample.batch``, where the extension only starts with

@@ -110,7 +110,7 @@ or :class:`frozenset` or instances of their subtypes.
    .. index:: pair: built-in function; len
 
    Return the length of a :class:`set` or :class:`frozenset` object. Equivalent to
-   ``len(anyset)``.  Raises a :exc:`PyExc_SystemError` if *anyset* is not a
+   ``len(anyset)``.  Raises a :exc:`SystemError` if *anyset* is not a
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
 
 
@@ -122,9 +122,9 @@ or :class:`frozenset` or instances of their subtypes.
 .. c:function:: int PySet_Contains(PyObject *anyset, PyObject *key)
 
    Return ``1`` if found, ``0`` if not found, and ``-1`` if an error is encountered.  Unlike
-   the Python :meth:`__contains__` method, this function does not automatically
+   the Python :meth:`~object.__contains__` method, this function does not automatically
    convert unhashable sets into temporary frozensets.  Raise a :exc:`TypeError` if
-   the *key* is unhashable. Raise :exc:`PyExc_SystemError` if *anyset* is not a
+   the *key* is unhashable. Raise :exc:`SystemError` if *anyset* is not a
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
 
 
@@ -149,7 +149,7 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
    error is encountered.  Does not raise :exc:`KeyError` for missing keys.  Raise a
    :exc:`TypeError` if the *key* is unhashable.  Unlike the Python :meth:`~set.discard`
    method, this function does not automatically convert unhashable sets into
-   temporary frozensets. Raise :exc:`PyExc_SystemError` if *set* is not an
+   temporary frozensets. Raise :exc:`SystemError` if *set* is not an
    instance of :class:`set` or its subtype.
 
 
@@ -163,4 +163,6 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 
 .. c:function:: int PySet_Clear(PyObject *set)
 
-   Empty an existing set of all elements.
+   Empty an existing set of all elements. Return ``0`` on
+   success. Return ``-1`` and raise :exc:`SystemError` if *set* is not an instance of
+   :class:`set` or its subtype.

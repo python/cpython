@@ -144,7 +144,8 @@ class OnHoverTooltipBase(TooltipBase):
 
 class Hovertip(OnHoverTooltipBase):
     "A tooltip that pops up when a mouse hovers over an anchor widget."
-    def __init__(self, anchor_widget, text, hover_delay=1000):
+    def __init__(self, anchor_widget, text, hover_delay=1000,
+                 foreground="#000000", background="#ffffe0"):
         """Create a text tooltip with a mouse hover delay.
 
         anchor_widget: the widget next to which the tooltip will be shown
@@ -156,10 +157,13 @@ class Hovertip(OnHoverTooltipBase):
         """
         super().__init__(anchor_widget, hover_delay=hover_delay)
         self.text = text
+        self.foreground = foreground
+        self.background = background
 
     def showcontents(self):
         label = Label(self.tipwindow, text=self.text, justify=LEFT,
-                      background="#ffffe0", relief=SOLID, borderwidth=1)
+                       relief=SOLID,  borderwidth=1,
+                       foreground=self.foreground, background=self.background)
         label.pack()
 
 

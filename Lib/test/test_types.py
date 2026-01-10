@@ -1,19 +1,30 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only
+from test.support import (
+    run_with_locale, cpython_only, no_rerun,
+    MISSING_C_DOCSTRINGS, EqualToForwardRef, check_disallow_instantiation,
+)
+from test.support.script_helper import assert_python_ok
+from test.support.import_helper import import_fresh_module
+
 import collections.abc
-from collections import namedtuple
+from collections import namedtuple, UserDict
 import copy
+import _datetime
 import gc
 import inspect
 import pickle
 import locale
 import sys
+import textwrap
 import types
 import unittest.mock
 import weakref
 import typing
+import re
 
+c_types = import_fresh_module('types', fresh=['_types'])
+py_types = import_fresh_module('types', blocked=['_types'])
 
 T = typing.TypeVar("T")
 
@@ -28,6 +39,29 @@ def clear_typing_caches():
 
 
 class TypesTests(unittest.TestCase):
+
+    def test_names(self):
+        c_only_names = {'CapsuleType'}
+        ignored = {'new_class', 'resolve_bases', 'prepare_class',
+                   'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
+
+        for name in c_types.__all__:
+            if name not in c_only_names | ignored:
+                self.assertIs(getattr(c_types, name), getattr(py_types, name))
+
+        all_names = ignored | {
+            'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
+            'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
+            'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
+            'FrameLocalsProxyType',
+            'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
+            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
+            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
+            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
+            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+        }
+        self.assertEqual(all_names, set(c_types.__all__))
+        self.assertEqual(all_names - c_only_names, set(py_types.__all__))
 
     def test_truth_values(self):
         if None: self.fail('None is true instead of false')
@@ -226,8 +260,8 @@ class TypesTests(unittest.TestCase):
     def test_int__format__(self):
         def test(i, format_spec, result):
             # just make sure we have the unified type for integers
-            assert type(i) == int
-            assert type(format_spec) == str
+            self.assertIs(type(i), int)
+            self.assertIs(type(format_spec), str)
             self.assertEqual(i.__format__(format_spec), result)
 
         test(123456789, 'd', '123456789')
@@ -392,7 +426,7 @@ class TypesTests(unittest.TestCase):
         test(123456, "1=20", '11111111111111123456')
         test(123456, "*=20", '**************123456')
 
-    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8', '')
     def test_float__format__locale(self):
         # test locale support for __format__ code 'n'
 
@@ -401,7 +435,7 @@ class TypesTests(unittest.TestCase):
             self.assertEqual(locale.format_string('%g', x, grouping=True), format(x, 'n'))
             self.assertEqual(locale.format_string('%.10g', x, grouping=True), format(x, '.10n'))
 
-    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8', '')
     def test_int__format__locale(self):
         # test locale support for __format__ code 'n' for integers
 
@@ -485,8 +519,8 @@ class TypesTests(unittest.TestCase):
         # and a number after the decimal.  This is tricky, because
         # a totally empty format specifier means something else.
         # So, just use a sign flag
-        test(1e200, '+g', '+1e+200')
-        test(1e200, '+', '+1e+200')
+        test(1.25e200, '+g', '+1.25e+200')
+        test(1.25e200, '+', '+1.25e+200')
 
         test(1.1e200, '+g', '+1.1e+200')
         test(1.1e200, '+', '+1.1e+200')
@@ -597,6 +631,8 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
         self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_dunder_get_signature(self):
         sig = inspect.signature(object.__init__.__get__)
         self.assertEqual(list(sig.parameters), ["instance", "owner"])
@@ -619,6 +655,25 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
         self.assertIsInstance(int.__new__, types.BuiltinMethodType)
 
+    def test_method_descriptor_crash(self):
+        # gh-132747: The default __get__() implementation in C was unable
+        # to handle a second argument of None when called from Python
+        import _io
+        import io
+        import _queue
+
+        to_check = [
+            # (method, instance)
+            (_io._TextIOBase.read, io.StringIO()),
+            (_queue.SimpleQueue.put, _queue.SimpleQueue()),
+            (str.capitalize, "nobody expects the spanish inquisition")
+        ]
+
+        for method, instance in to_check:
+            with self.subTest(method=method, instance=instance):
+                bound = method.__get__(instance)
+                self.assertIsInstance(bound, types.BuiltinMethodType)
+
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
 
@@ -635,6 +690,40 @@ class TypesTests(unittest.TestCase):
             exc = e
         self.assertIsInstance(exc.__traceback__, types.TracebackType)
         self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
+
+    def test_capsule_type(self):
+        self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
+
+    def test_call_unbound_crash(self):
+        # GH-131998: The specialized instruction would get tricked into dereferencing
+        # a bound "self" that didn't exist if subsequently called unbound.
+        code = """if True:
+
+        def call(part):
+            [] + ([] + [])
+            part.pop()
+
+        for _ in range(3):
+            call(['a'])
+        try:
+            call(list)
+        except TypeError:
+            pass
+        """
+        assert_python_ok("-c", code)
+
+    def test_frame_locals_proxy_type(self):
+        self.assertIsInstance(types.FrameLocalsProxyType, type)
+        if MISSING_C_DOCSTRINGS:
+            self.assertIsNone(types.FrameLocalsProxyType.__doc__)
+        else:
+            self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
+        self.assertEqual(types.FrameLocalsProxyType.__module__, 'builtins')
+        self.assertEqual(types.FrameLocalsProxyType.__name__, 'FrameLocalsProxy')
+
+        frame = inspect.currentframe()
+        self.assertIsNotNone(frame)
+        self.assertIsInstance(frame.f_locals, types.FrameLocalsProxyType)
 
 
 class UnionTests(unittest.TestCase):
@@ -698,14 +787,53 @@ class UnionTests(unittest.TestCase):
         y = int | bool
         with self.assertRaises(TypeError):
             x < y
-        # Check that we don't crash if typing.Union does not have a tuple in __args__
-        y = typing.Union[str, int]
-        y.__args__ = [str, int]
-        self.assertEqual(x, y)
 
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
         self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
+
+    def test_union_of_unhashable(self):
+        class UnhashableMeta(type):
+            __hash__ = None
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        self.assertEqual((A | B).__args__, (A, B))
+        union1 = A | B
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union1)
+
+        union2 = int | B
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union2)
+
+        union3 = A | int
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union3)
+
+    def test_unhashable_becomes_hashable(self):
+        is_hashable = False
+        class UnhashableMeta(type):
+            def __hash__(self):
+                if is_hashable:
+                    return 1
+                else:
+                    raise TypeError("not hashable")
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        union = A | B
+        self.assertEqual(union.__args__, (A, B))
+
+        with self.assertRaisesRegex(TypeError, "not hashable"):
+            hash(union)
+
+        is_hashable = True
+
+        with self.assertRaisesRegex(TypeError, "union contains 2 unhashable elements"):
+            hash(union)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
@@ -714,15 +842,15 @@ class UnionTests(unittest.TestCase):
                 self.assertIsInstance(True, x)
                 self.assertIsInstance('a', x)
                 self.assertNotIsInstance(None, x)
-                self.assertTrue(issubclass(int, x))
-                self.assertTrue(issubclass(bool, x))
-                self.assertTrue(issubclass(str, x))
-                self.assertFalse(issubclass(type(None), x))
+                self.assertIsSubclass(int, x)
+                self.assertIsSubclass(bool, x)
+                self.assertIsSubclass(str, x)
+                self.assertNotIsSubclass(type(None), x)
 
         for x in (int | None, typing.Union[int, None]):
             with self.subTest(x=x):
                 self.assertIsInstance(None, x)
-                self.assertTrue(issubclass(type(None), x))
+                self.assertIsSubclass(type(None), x)
 
         for x in (
             int | collections.abc.Mapping,
@@ -731,8 +859,8 @@ class UnionTests(unittest.TestCase):
             with self.subTest(x=x):
                 self.assertIsInstance({}, x)
                 self.assertNotIsInstance((), x)
-                self.assertTrue(issubclass(dict, x))
-                self.assertFalse(issubclass(list, x))
+                self.assertIsSubclass(dict, x)
+                self.assertNotIsSubclass(list, x)
 
     def test_instancecheck_and_subclasscheck_order(self):
         T = typing.TypeVar('T')
@@ -744,7 +872,7 @@ class UnionTests(unittest.TestCase):
         for x in will_resolve:
             with self.subTest(x=x):
                 self.assertIsInstance(1, x)
-                self.assertTrue(issubclass(int, x))
+                self.assertIsSubclass(int, x)
 
         wont_resolve = (
             T | int,
@@ -777,13 +905,13 @@ class UnionTests(unittest.TestCase):
             def __subclasscheck__(cls, sub):
                 1/0
         x = int | BadMeta('A', (), {})
-        self.assertTrue(issubclass(int, x))
+        self.assertIsSubclass(int, x)
         self.assertRaises(ZeroDivisionError, issubclass, list, x)
 
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
-        assert TV | str == typing.Union[TV, str]
-        assert str | TV == typing.Union[str, TV]
+        self.assertEqual(TV | str, typing.Union[TV, str])
+        self.assertEqual(str | TV, typing.Union[str, TV])
         self.assertIs((int | TV)[int], int)
         self.assertIs((TV | int)[int], int)
 
@@ -887,43 +1015,45 @@ class UnionTests(unittest.TestCase):
         ForwardBefore = 'Forward' | T
         def forward_after(x: ForwardAfter[int]) -> None: ...
         def forward_before(x: ForwardBefore[int]) -> None: ...
-        assert typing.get_args(typing.get_type_hints(forward_after)['x']) == (int, Forward)
-        assert typing.get_args(typing.get_type_hints(forward_before)['x']) == (int, Forward)
+        self.assertEqual(typing.get_args(typing.get_type_hints(forward_after)['x']),
+                         (int, Forward))
+        self.assertEqual(typing.get_args(typing.get_type_hints(forward_before)['x']),
+                         (Forward, int))
 
     def test_or_type_operator_with_Protocol(self):
         class Proto(typing.Protocol):
             def meth(self) -> int:
                 ...
-        assert Proto | str == typing.Union[Proto, str]
+        self.assertEqual(Proto | str, typing.Union[Proto, str])
 
     def test_or_type_operator_with_Alias(self):
-        assert list | str == typing.Union[list, str]
-        assert typing.List | str == typing.Union[typing.List, str]
+        self.assertEqual(list | str, typing.Union[list, str])
+        self.assertEqual(typing.List | str, typing.Union[typing.List, str])
 
     def test_or_type_operator_with_NamedTuple(self):
-        NT=namedtuple('A', ['B', 'C', 'D'])
-        assert NT | str == typing.Union[NT,str]
+        NT = namedtuple('A', ['B', 'C', 'D'])
+        self.assertEqual(NT | str, typing.Union[NT, str])
 
     def test_or_type_operator_with_TypedDict(self):
         class Point2D(typing.TypedDict):
             x: int
             y: int
             label: str
-        assert Point2D | str == typing.Union[Point2D, str]
+        self.assertEqual(Point2D | str, typing.Union[Point2D, str])
 
     def test_or_type_operator_with_NewType(self):
         UserId = typing.NewType('UserId', int)
-        assert UserId | str == typing.Union[UserId, str]
+        self.assertEqual(UserId | str, typing.Union[UserId, str])
 
     def test_or_type_operator_with_IO(self):
-        assert typing.IO | str == typing.Union[typing.IO, str]
+        self.assertEqual(typing.IO | str, typing.Union[typing.IO, str])
 
     def test_or_type_operator_with_SpecialForm(self):
-        assert typing.Any | str == typing.Union[typing.Any, str]
-        assert typing.NoReturn | str == typing.Union[typing.NoReturn, str]
-        assert typing.Optional[int] | str == typing.Union[typing.Optional[int], str]
-        assert typing.Optional[int] | str == typing.Union[int, str, None]
-        assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
+        self.assertEqual(typing.Any | str, typing.Union[typing.Any, str])
+        self.assertEqual(typing.NoReturn | str, typing.Union[typing.NoReturn, str])
+        self.assertEqual(typing.Optional[int] | str, typing.Union[typing.Optional[int], str])
+        self.assertEqual(typing.Optional[int] | str, typing.Union[int, str, None])
+        self.assertEqual(typing.Union[int, bool] | str, typing.Union[int, bool, str])
 
     def test_or_type_operator_with_Literal(self):
         Literal = typing.Literal
@@ -955,12 +1085,12 @@ class UnionTests(unittest.TestCase):
                          (Literal[1], Literal[Ints.B]))
 
     def test_or_type_repr(self):
-        assert repr(int | str) == "int | str"
-        assert repr((int | str) | list) == "int | str | list"
-        assert repr(int | (str | list)) == "int | str | list"
-        assert repr(int | None) == "int | None"
-        assert repr(int | type(None)) == "int | None"
-        assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
+        self.assertEqual(repr(int | str), "int | str")
+        self.assertEqual(repr((int | str) | list), "int | str | list")
+        self.assertEqual(repr(int | (str | list)), "int | str | list")
+        self.assertEqual(repr(int | None), "int | None")
+        self.assertEqual(repr(int | type(None)), "int | None")
+        self.assertEqual(repr(int | typing.GenericAlias(list, int)), "int | list[int]")
 
     def test_or_type_operator_with_genericalias(self):
         a = list[int]
@@ -982,9 +1112,14 @@ class UnionTests(unittest.TestCase):
                 return 1 / 0
 
         bt = BadType('bt', (), {})
+        bt2 = BadType('bt2', (), {})
         # Comparison should fail and errors should propagate out for bad types.
+        union1 = int | bt
+        union2 = int | bt2
         with self.assertRaises(ZeroDivisionError):
-            list[int] | list[bt]
+            union1 == union2
+        with self.assertRaises(ZeroDivisionError):
+            bt | bt2
 
         union_ga = (list[str] | int, collections.abc.Callable[..., str] | int,
                     d | int)
@@ -1026,6 +1161,19 @@ class UnionTests(unittest.TestCase):
         leeway = 15
         self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
                              msg='Check for union reference leak.')
+
+    def test_instantiation(self):
+        check_disallow_instantiation(self, types.UnionType)
+        self.assertIs(int, types.UnionType[int])
+        self.assertIs(int, types.UnionType[int, int])
+        self.assertEqual(int | str, types.UnionType[int, str])
+
+        for obj in (
+            int | typing.ForwardRef("str"),
+            typing.Union[int, "str"],
+        ):
+            self.assertIsInstance(obj, types.UnionType)
+            self.assertEqual(obj.__args__, (int, EqualToForwardRef("str")))
 
 
 class MappingProxyTests(unittest.TestCase):
@@ -1242,6 +1390,27 @@ class MappingProxyTests(unittest.TestCase):
         view = self.mappingproxy(mapping)
         self.assertEqual(hash(view), hash(mapping))
 
+    def test_richcompare(self):
+        mp1 = self.mappingproxy({'a': 1})
+        mp1_2 = self.mappingproxy({'a': 1})
+        mp2 = self.mappingproxy({'a': 2})
+
+        self.assertTrue(mp1 == mp1_2)
+        self.assertFalse(mp1 != mp1_2)
+        self.assertFalse(mp1 == mp2)
+        self.assertTrue(mp1 != mp2)
+
+        msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
+
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 > mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 < mp1_2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp2 >= mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1_2 <= mp1
+
 
 class ClassCreationTests(unittest.TestCase):
 
@@ -1265,7 +1434,7 @@ class ClassCreationTests(unittest.TestCase):
 
     def test_new_class_subclass(self):
         C = types.new_class("C", (int,))
-        self.assertTrue(issubclass(C, int))
+        self.assertIsSubclass(C, int)
 
     def test_new_class_meta(self):
         Meta = self.Meta
@@ -1310,7 +1479,7 @@ class ClassCreationTests(unittest.TestCase):
                             bases=(int,),
                             kwds=dict(metaclass=Meta, z=2),
                             exec_body=func)
-        self.assertTrue(issubclass(C, int))
+        self.assertIsSubclass(C, int)
         self.assertIsInstance(C, Meta)
         self.assertEqual(C.x, 0)
         self.assertEqual(C.y, 1)
@@ -1395,6 +1564,7 @@ class ClassCreationTests(unittest.TestCase):
         class B(typing.Generic[T]): pass
         class C(B[int]): pass
         class D(B[str], float): pass
+
         self.assertEqual(types.get_original_bases(A), (object,))
         self.assertEqual(types.get_original_bases(B), (typing.Generic[T],))
         self.assertEqual(types.get_original_bases(C), (B[int],))
@@ -1406,6 +1576,18 @@ class ClassCreationTests(unittest.TestCase):
 
         self.assertEqual(types.get_original_bases(E), (list[T],))
         self.assertEqual(types.get_original_bases(F), (list[int],))
+
+        class FirstBase(typing.Generic[T]): pass
+        class SecondBase(typing.Generic[T]): pass
+        class First(FirstBase[int]): pass
+        class Second(SecondBase[int]): pass
+        class G(First, Second): pass
+        self.assertEqual(types.get_original_bases(G), (First, Second))
+
+        class First_(typing.Generic[T]): pass
+        class Second_(typing.Generic[T]): pass
+        class H(First_, Second_): pass
+        self.assertEqual(types.get_original_bases(H), (First_, Second_))
 
         class ClassBasedNamedTuple(typing.NamedTuple):
             x: int
@@ -1710,25 +1892,80 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(RuntimeWarning):
             type("SouthPonies", (Model,), {})
 
+    def test_subclass_inherited_slot_update(self):
+        # gh-132284: Make sure slot update still works after fix.
+        # Note that after assignment to D.__getitem__ the actual C slot will
+        # never go back to dict_subscript as it was on class type creation but
+        # rather be set to slot_mp_subscript, unfortunately there is no way to
+        # check that here.
+
+        class D(dict):
+            pass
+
+        d = D({None: None})
+        self.assertIs(d[None], None)
+        D.__getitem__ = lambda self, item: 42
+        self.assertEqual(d[None], 42)
+        D.__getitem__ = dict.__getitem__
+        self.assertIs(d[None], None)
+
+    def test_tuple_subclass_as_bases(self):
+        # gh-132176: it used to crash on using
+        # tuple subclass for as base classes.
+        class TupleSubclass(tuple): pass
+
+        typ = type("typ", TupleSubclass((int, object)), {})
+        self.assertEqual(typ.__bases__, (int, object))
+        self.assertEqual(type(typ.__bases__), TupleSubclass)
+
 
 class SimpleNamespaceTests(unittest.TestCase):
 
     def test_constructor(self):
-        ns1 = types.SimpleNamespace()
-        ns2 = types.SimpleNamespace(x=1, y=2)
-        ns3 = types.SimpleNamespace(**dict(x=1, y=2))
+        def check(ns, expected):
+            self.assertEqual(len(ns.__dict__), len(expected))
+            self.assertEqual(vars(ns), expected)
+            # check order
+            self.assertEqual(list(vars(ns).items()), list(expected.items()))
+            for name in expected:
+                self.assertEqual(getattr(ns, name), expected[name])
+
+        check(types.SimpleNamespace(), {})
+        check(types.SimpleNamespace(x=1, y=2), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace(**dict(x=1, y=2)), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}, x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]], x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace(UserDict({'x': 1, 'y': 2}), x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]]), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([], x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace({}, x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace([]), {})
+        check(types.SimpleNamespace({}), {})
 
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(1, 2, 3)
+            types.SimpleNamespace([], [])  # too many positional arguments
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(**{1: 2})
-
-        self.assertEqual(len(ns1.__dict__), 0)
-        self.assertEqual(vars(ns1), {})
-        self.assertEqual(len(ns2.__dict__), 2)
-        self.assertEqual(vars(ns2), {'y': 2, 'x': 1})
-        self.assertEqual(len(ns3.__dict__), 2)
-        self.assertEqual(vars(ns3), {'y': 2, 'x': 1})
+            types.SimpleNamespace(1)  # not a mapping or iterable
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([1])  # non-iterable
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x']])  # not a pair
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x', 'y', 'z']])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(**{1: 2})  # non-string key
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace({1: 2})
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[1, 2]])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(UserDict({1: 2}))
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[[], 2]])  # non-hashable key
 
     def test_unbound(self):
         ns1 = vars(types.SimpleNamespace())
@@ -1808,6 +2045,24 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertEqual(ns1, ns2)
         self.assertNotEqual(ns2, types.SimpleNamespace())
 
+    def test_richcompare_unsupported(self):
+        ns1 = types.SimpleNamespace(x=1)
+        ns2 = types.SimpleNamespace(y=2)
+
+        msg = re.escape(
+            "not supported between instances of "
+            "'types.SimpleNamespace' and 'types.SimpleNamespace'"
+        )
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 > ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 >= ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 < ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 <= ns2
+
     def test_nested(self):
         ns1 = types.SimpleNamespace(a=1, b=2)
         ns2 = types.SimpleNamespace()
@@ -1884,6 +2139,33 @@ class SimpleNamespaceTests(unittest.TestCase):
             ns_roundtrip = pickle.loads(ns_pickled)
 
             self.assertEqual(ns, ns_roundtrip, pname)
+
+    def test_replace(self):
+        ns = types.SimpleNamespace(x=11, y=22)
+
+        ns2 = copy.replace(ns)
+        self.assertEqual(ns2, ns)
+        self.assertIsNot(ns2, ns)
+        self.assertIs(type(ns2), types.SimpleNamespace)
+        self.assertEqual(vars(ns2), {'x': 11, 'y': 22})
+        ns2.x = 3
+        self.assertEqual(ns.x, 11)
+        ns.x = 4
+        self.assertEqual(ns2.x, 3)
+
+        self.assertEqual(vars(copy.replace(ns, x=1)), {'x': 1, 'y': 22})
+        self.assertEqual(vars(copy.replace(ns, y=2)), {'x': 4, 'y': 2})
+        self.assertEqual(vars(copy.replace(ns, x=1, y=2)), {'x': 1, 'y': 2})
+
+    def test_replace_subclass(self):
+        class Spam(types.SimpleNamespace):
+            pass
+
+        spam = Spam(ham=8, eggs=9)
+        spam2 = copy.replace(spam, ham=5)
+
+        self.assertIs(type(spam2), Spam)
+        self.assertEqual(vars(spam2), {'ham': 5, 'eggs': 9})
 
     def test_fake_namespace_compare(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
@@ -2213,6 +2495,125 @@ class CoroutineTests(unittest.TestCase):
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',
             'cr_frame', 'gi_code', 'gi_frame', 'gi_running', 'send',
             'close', 'throw'}))
+
+
+class FunctionTests(unittest.TestCase):
+    def test_function_type_defaults(self):
+        def ex(a, /, b, *, c):
+            return a + b + c
+
+        func = types.FunctionType(
+            ex.__code__, {}, "func", (1, 2), None, {'c': 3},
+        )
+
+        self.assertEqual(func(), 6)
+        self.assertEqual(func.__defaults__, (1, 2))
+        self.assertEqual(func.__kwdefaults__, {'c': 3})
+
+        func = types.FunctionType(
+            ex.__code__, {}, "func", None, None, None,
+        )
+        self.assertEqual(func.__defaults__, None)
+        self.assertEqual(func.__kwdefaults__, None)
+
+    def test_function_type_wrong_defaults(self):
+        def ex(a, /, b, *, c):
+            return a + b + c
+
+        with self.assertRaisesRegex(TypeError, 'arg 4'):
+            types.FunctionType(
+                ex.__code__, {}, "func", 1, None, {'c': 3},
+            )
+        with self.assertRaisesRegex(TypeError, 'arg 6'):
+            types.FunctionType(
+                ex.__code__, {}, "func", None, None, 3,
+            )
+
+
+class SubinterpreterTests(unittest.TestCase):
+
+    NUMERIC_METHODS = {
+        '__abs__',
+        '__add__',
+        '__bool__',
+        '__divmod__',
+        '__float__',
+        '__floordiv__',
+        '__index__',
+        '__int__',
+        '__lshift__',
+        '__mod__',
+        '__mul__',
+        '__neg__',
+        '__pos__',
+        '__pow__',
+        '__radd__',
+        '__rdivmod__',
+        '__rfloordiv__',
+        '__rlshift__',
+        '__rmod__',
+        '__rmul__',
+        '__rpow__',
+        '__rrshift__',
+        '__rshift__',
+        '__rsub__',
+        '__rtruediv__',
+        '__sub__',
+        '__truediv__',
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        global interpreters
+        try:
+            from concurrent import interpreters
+        except ModuleNotFoundError:
+            raise unittest.SkipTest('subinterpreters required')
+        from test.support import channels  # noqa: F401
+        cls.create_channel = staticmethod(channels.create)
+
+    @cpython_only
+    @no_rerun('channels (and queues) might have a refleak; see gh-122199')
+    def test_static_types_inherited_slots(self):
+        rch, sch = self.create_channel()
+
+        script = textwrap.dedent("""
+            import test.support
+            results = []
+            for cls in test.support.iter_builtin_types():
+                for attr, _ in test.support.iter_slot_wrappers(cls):
+                    wrapper = getattr(cls, attr)
+                    res = (cls, attr, wrapper)
+                    results.append(res)
+            results = tuple((repr(c), a, repr(w)) for c, a, w in results)
+            sch.send_nowait(results)
+            """)
+        def collate_results(raw):
+            results = {}
+            for cls, attr, wrapper in raw:
+                key = cls, attr
+                assert key not in results, (results, key, wrapper)
+                results[key] = wrapper
+            return results
+
+        exec(script)
+        raw = rch.recv_nowait()
+        main_results = collate_results(raw)
+
+        interp = interpreters.create()
+        interp.exec('from concurrent import interpreters')
+        interp.prepare_main(sch=sch)
+        interp.exec(script)
+        raw = rch.recv_nowait()
+        interp_results = collate_results(raw)
+
+        for key, expected in main_results.items():
+            cls, attr = key
+            with self.subTest(cls=cls, slotattr=attr):
+                actual = interp_results.pop(key)
+                self.assertEqual(actual, expected)
+        self.maxDiff = None
+        self.assertEqual(interp_results, {})
 
 
 if __name__ == '__main__':

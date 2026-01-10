@@ -23,7 +23,6 @@
 
 #ifndef PYSQLITE_CONNECTION_H
 #define PYSQLITE_CONNECTION_H
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 #include "structmember.h"
@@ -37,6 +36,7 @@ typedef struct _callback_context
     PyObject *callable;
     PyObject *module;
     pysqlite_state *state;
+    Py_ssize_t refcount;
 } callback_context;
 
 enum autocommit_mode {

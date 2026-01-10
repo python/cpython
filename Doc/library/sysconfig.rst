@@ -1,5 +1,5 @@
-:mod:`sysconfig` --- Provide access to Python's configuration information
-=========================================================================
+:mod:`!sysconfig` --- Provide access to Python's configuration information
+==========================================================================
 
 .. module:: sysconfig
    :synopsis: Python's configuration information
@@ -9,7 +9,7 @@
 
 .. versionadded:: 3.2
 
-**Source code:** :source:`Lib/sysconfig.py`
+**Source code:** :source:`Lib/sysconfig`
 
 .. index::
    single: configuration information
@@ -19,6 +19,7 @@
 The :mod:`sysconfig` module provides access to Python's configuration
 information like the list of installation paths and the configuration variables
 relevant for the current platform.
+
 
 Configuration variables
 -----------------------
@@ -60,6 +61,7 @@ Example of usage::
    >>> sysconfig.get_config_vars('AR', 'CXX')
    ['ar', 'g++']
 
+
 .. _installation_paths:
 
 Installation paths
@@ -68,29 +70,26 @@ Installation paths
 Python uses an installation scheme that differs depending on the platform and on
 the installation options.  These schemes are stored in :mod:`sysconfig` under
 unique identifiers based on the value returned by :const:`os.name`.
-
-Every new component that is installed using :mod:`distutils` or a
-Distutils-based system will follow the same scheme to copy its file in the right
-places.
+The schemes are used by package installers to determine where to copy files to.
 
 Python currently supports nine schemes:
 
 - *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
   the default scheme used when Python or a component is installed.
-- *posix_home*: scheme for POSIX platforms used when a *home* option is used
-  upon installation.  This scheme is used when a component is installed through
-  Distutils with a specific home prefix.
-- *posix_user*: scheme for POSIX platforms used when a component is installed
-  through Distutils and the *user* option is used.  This scheme defines paths
-  located under the user home directory.
+- *posix_home*: scheme for POSIX platforms, when the *home* option is used.
+  This scheme defines paths located under a specific home prefix.
+- *posix_user*: scheme for POSIX platforms, when the *user* option is used.
+  This scheme defines paths located under the user's home directory
+  (:const:`site.USER_BASE`).
 - *posix_venv*: scheme for :mod:`Python virtual environments <venv>` on POSIX
-  platforms; by default it is the same as *posix_prefix* .
-- *nt*: scheme for NT platforms like Windows.
-- *nt_user*: scheme for NT platforms, when the *user* option is used.
-- *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on NT
-  platforms; by default it is the same as *nt* .
-- *venv*: a scheme with values from ether *posix_venv* or *nt_venv* depending
-  on the platform Python runs on
+  platforms; by default it is the same as *posix_prefix*.
+- *nt*: scheme for Windows.
+  This is the default scheme used when Python or a component is installed.
+- *nt_user*: scheme for Windows, when the *user* option is used.
+- *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on Windows;
+  by default it is the same as *nt*.
+- *venv*: a scheme with values from either *posix_venv* or *nt_venv* depending
+  on the platform Python runs on.
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
 
 Each scheme is itself composed of a series of paths and each path has a unique
@@ -101,7 +100,7 @@ identifier.  Python currently uses eight paths:
 - *platstdlib*: directory containing the standard Python library files that are
   platform-specific.
 - *platlib*: directory for site-specific, platform-specific files.
-- *purelib*: directory for site-specific, non-platform-specific files.
+- *purelib*: directory for site-specific, non-platform-specific files ('pure' Python).
 - *include*: directory for non-platform-specific header files for
   the Python C-API.
 - *platinclude*: directory for platform-specific header files for
@@ -109,7 +108,157 @@ identifier.  Python currently uses eight paths:
 - *scripts*: directory for script files.
 - *data*: directory for data files.
 
-:mod:`sysconfig` provides some functions to determine these paths.
+
+.. _sysconfig-user-scheme:
+
+User scheme
+---------------
+
+This scheme is designed to be the most convenient solution for users that don't
+have write permission to the global site-packages directory or don't want to
+install into it.
+
+Files will be installed into subdirectories of :const:`site.USER_BASE` (written
+as :file:`{userbase}` hereafter).  This scheme installs pure Python modules and
+extension modules in the same location (also known as :const:`site.USER_SITE`).
+
+``posix_user``
+^^^^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{userbase}/lib/python{X.Y}`
+*platstdlib*   :file:`{userbase}/lib/python{X.Y}`
+*platlib*      :file:`{userbase}/lib/python{X.Y}/site-packages`
+*purelib*      :file:`{userbase}/lib/python{X.Y}/site-packages`
+*include*      :file:`{userbase}/include/python{X.Y}`
+*scripts*      :file:`{userbase}/bin`
+*data*         :file:`{userbase}`
+============== ===========================================================
+
+``nt_user``
+^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{userbase}\\Python{XY}`
+*platstdlib*   :file:`{userbase}\\Python{XY}`
+*platlib*      :file:`{userbase}\\Python{XY}\\site-packages`
+*purelib*      :file:`{userbase}\\Python{XY}\\site-packages`
+*include*      :file:`{userbase}\\Python{XY}\\Include`
+*scripts*      :file:`{userbase}\\Python{XY}\\Scripts`
+*data*         :file:`{userbase}`
+============== ===========================================================
+
+``osx_framework_user``
+^^^^^^^^^^^^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{userbase}/lib/python`
+*platstdlib*   :file:`{userbase}/lib/python`
+*platlib*      :file:`{userbase}/lib/python/site-packages`
+*purelib*      :file:`{userbase}/lib/python/site-packages`
+*include*      :file:`{userbase}/include/python{X.Y}`
+*scripts*      :file:`{userbase}/bin`
+*data*         :file:`{userbase}`
+============== ===========================================================
+
+
+.. _sysconfig-home-scheme:
+
+Home scheme
+-----------
+
+The idea behind the "home scheme" is that you build and maintain a personal
+stash of Python modules.  This scheme's name is derived from the idea of a
+"home" directory on Unix, since it's not unusual for a Unix user to make their
+home directory have a layout similar to :file:`/usr/` or :file:`/usr/local/`.
+This scheme can be used by anyone, regardless of the operating system they
+are installing for.
+
+``posix_home``
+^^^^^^^^^^^^^^
+
+============== ===========================================================
+Path           Installation directory
+============== ===========================================================
+*stdlib*       :file:`{home}/lib/python`
+*platstdlib*   :file:`{home}/lib/python`
+*platlib*      :file:`{home}/lib/python`
+*purelib*      :file:`{home}/lib/python`
+*include*      :file:`{home}/include/python`
+*platinclude*  :file:`{home}/include/python`
+*scripts*      :file:`{home}/bin`
+*data*         :file:`{home}`
+============== ===========================================================
+
+
+.. _sysconfig-prefix-scheme:
+
+Prefix scheme
+-------------
+
+The "prefix scheme" is useful when you wish to use one Python installation to
+perform the build/install (i.e., to run the setup script), but install modules
+into the third-party module directory of a different Python installation (or
+something that looks like a different Python installation).  If this sounds a
+trifle unusual, it is---that's why the user and home schemes come before.  However,
+there are at least two known cases where the prefix scheme will be useful.
+
+First, consider that many Linux distributions put Python in :file:`/usr`, rather
+than the more traditional :file:`/usr/local`.  This is entirely appropriate,
+since in those cases Python is part of "the system" rather than a local add-on.
+However, if you are installing Python modules from source, you probably want
+them to go in :file:`/usr/local/lib/python2.{X}` rather than
+:file:`/usr/lib/python2.{X}`.
+
+Another possibility is a network filesystem where the name used to write to a
+remote directory is different from the name used to read it: for example, the
+Python interpreter accessed as :file:`/usr/local/bin/python` might search for
+modules in :file:`/usr/local/lib/python2.{X}`, but those modules would have to
+be installed to, say, :file:`/mnt/{@server}/export/lib/python2.{X}`.
+
+``posix_prefix``
+^^^^^^^^^^^^^^^^
+
+============== ==========================================================
+Path           Installation directory
+============== ==========================================================
+*stdlib*       :file:`{prefix}/lib/python{X.Y}`
+*platstdlib*   :file:`{prefix}/lib/python{X.Y}`
+*platlib*      :file:`{prefix}/lib/python{X.Y}/site-packages`
+*purelib*      :file:`{prefix}/lib/python{X.Y}/site-packages`
+*include*      :file:`{prefix}/include/python{X.Y}`
+*platinclude*  :file:`{prefix}/include/python{X.Y}`
+*scripts*      :file:`{prefix}/bin`
+*data*         :file:`{prefix}`
+============== ==========================================================
+
+``nt``
+^^^^^^
+
+============== ==========================================================
+Path           Installation directory
+============== ==========================================================
+*stdlib*       :file:`{prefix}\\Lib`
+*platstdlib*   :file:`{prefix}\\Lib`
+*platlib*      :file:`{prefix}\\Lib\\site-packages`
+*purelib*      :file:`{prefix}\\Lib\\site-packages`
+*include*      :file:`{prefix}\\Include`
+*platinclude*  :file:`{prefix}\\Include`
+*scripts*      :file:`{prefix}\\Scripts`
+*data*         :file:`{prefix}`
+============== ==========================================================
+
+
+Installation path functions
+---------------------------
+
+:mod:`sysconfig` provides some functions to determine these installation paths.
 
 .. function:: get_scheme_names()
 
@@ -156,7 +305,7 @@ identifier.  Python currently uses eight paths:
    mix with those by the other.
 
    End users should not use this function, but :func:`get_default_scheme` and
-   :func:`get_preferred_scheme()` instead.
+   :func:`get_preferred_scheme` instead.
 
    .. versionadded:: 3.10
 
@@ -187,7 +336,7 @@ identifier.  Python currently uses eight paths:
    platform is used.
 
    If *vars* is provided, it must be a dictionary of variables that will update
-   the dictionary return by :func:`get_config_vars`.
+   the dictionary returned by :func:`get_config_vars`.
 
    If *expand* is set to ``False``, the path will not be expanded using the
    variables.
@@ -227,27 +376,28 @@ Other functions
 
    This is used mainly to distinguish platform-specific build directories and
    platform-specific built distributions.  Typically includes the OS name and
-   version and the architecture (as supplied by 'os.uname()'), although the
+   version and the architecture (as supplied by :func:`os.uname`), although the
    exact information included depends on the OS; e.g., on Linux, the kernel
    version isn't particularly important.
 
    Examples of returned values:
 
-   - linux-i586
-   - linux-alpha (?)
+   - linux-x86_64
+   - linux-aarch64
    - solaris-2.6-sun4u
 
-   Windows will return one of:
+   Windows:
 
-   - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+   - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+   - win-arm64 (64-bit Windows on ARM64, aka AArch64)
    - win32 (all others - specifically, sys.platform is returned)
 
-   macOS can return:
+   POSIX based OS:
 
-   - macosx-10.6-ppc
-   - macosx-10.4-ppc64
-   - macosx-10.3-i386
-   - macosx-10.4-fat
+   - linux-x86_64
+   - macosx-15.5-arm64
+   - macosx-26.0-universal2 (macOS on Apple Silicon or Intel)
+   - android-24-arm64_v8a
 
    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
 
@@ -278,9 +428,11 @@ Other functions
 
    Return the path of :file:`Makefile`.
 
+.. _sysconfig-cli:
+.. _using-sysconfig-as-a-script:
 
-Using :mod:`sysconfig` as a script
-----------------------------------
+Command-line usage
+------------------
 
 You can use :mod:`sysconfig` as a script with Python's *-m* option:
 

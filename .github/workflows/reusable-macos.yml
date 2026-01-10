@@ -1,0 +1,73 @@
+name: Reusable macOS
+
+on:
+  workflow_call:
+    inputs:
+      free-threading:
+        required: false
+        type: boolean
+        default: false
+      os:
+        description: OS to run the job
+        required: true
+        type: string
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-macos:
+    name: build and test (${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 60
+    env:
+      HOMEBREW_NO_ANALYTICS: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+      HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+      PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Install Homebrew dependencies
+      run: |
+        brew install pkg-config openssl@3.0 xz gdbm tcl-tk@9 make
+        # Because alternate versions are not symlinked into place by default:
+        brew link --overwrite tcl-tk@9
+    - name: Configure CPython
+      run: |
+        MACOSX_DEPLOYMENT_TARGET=10.15 \
+        GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
+        GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
+        ./configure \
+          --config-cache \
+          --with-pydebug \
+          --enable-slower-safety \
+          --enable-safety \
+          ${{ inputs.free-threading && '--disable-gil' || '' }} \
+          --prefix=/opt/python-dev \
+          --with-openssl="$(brew --prefix openssl@3.0)"
+    - name: Build CPython
+      if : ${{ inputs.free-threading || inputs.os != 'macos-15-intel' }}
+      run: gmake -j8
+    - name: Build CPython for compiler warning check
+      if : ${{ !inputs.free-threading && inputs.os == 'macos-15-intel' }}
+      run: set -o pipefail; gmake -j8 --output-sync 2>&1 | tee compiler_output_macos.txt
+    - name: Display build info
+      run: make pythoninfo
+    - name: Check compiler warnings
+      if : ${{ !inputs.free-threading && inputs.os == 'macos-15-intel' }}
+      run: >-
+        python3 Tools/build/check_warnings.py
+        --compiler-output-file-path=compiler_output_macos.txt
+        --warning-ignore-file-path=Tools/build/.warningignore_macos
+        --compiler-output-type=clang
+        --fail-on-regression
+        --fail-on-improvement
+        --path-prefix="./"
+    - name: Tests
+      run: make ci

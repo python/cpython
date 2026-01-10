@@ -1,2 +1,0 @@
-Deprecate :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
-in favor of :func:`importlib.util.find_spec`.

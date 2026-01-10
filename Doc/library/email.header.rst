@@ -1,5 +1,5 @@
-:mod:`email.header`: Internationalized headers
-----------------------------------------------
+:mod:`!email.header`: Internationalized headers
+-----------------------------------------------
 
 .. module:: email.header
    :synopsis: Representing non-ASCII headers
@@ -77,7 +77,7 @@ Here is the :class:`Header` class description:
    The maximum line length can be specified explicitly via *maxlinelen*.  For
    splitting the first line to a shorter value (to account for the field header
    which isn't included in *s*, e.g. :mailheader:`Subject`) pass in the name of the
-   field in *header_name*.  The default *maxlinelen* is 76, and the default value
+   field in *header_name*.  The default *maxlinelen* is 78, and the default value
    for *header_name* is ``None``, meaning it is not taken into account for the
    first line of a long, split header.
 
@@ -178,16 +178,36 @@ The :mod:`email.header` module also provides the following convenient functions.
    Decode a message header value without converting the character set. The header
    value is in *header*.
 
-   This function returns a list of ``(decoded_string, charset)`` pairs containing
-   each of the decoded parts of the header.  *charset* is ``None`` for non-encoded
-   parts of the header, otherwise a lower case string containing the name of the
-   character set specified in the encoded string.
+   For historical reasons, this function may return either:
 
-   Here's an example::
+   1. A list of pairs containing each of the decoded parts of the header,
+      ``(decoded_bytes, charset)``, where *decoded_bytes* is always an instance of
+      :class:`bytes`, and *charset* is either:
+
+        - A lower case string containing the name of the character set specified.
+
+        - ``None`` for non-encoded parts of the header.
+
+   2. A list of length 1 containing a pair ``(string, None)``, where
+      *string* is always an instance of :class:`str`.
+
+   An :exc:`email.errors.HeaderParseError` may be raised when certain decoding
+   errors occur (e.g. a base64 decoding exception).
+
+   Here are examples:
 
       >>> from email.header import decode_header
       >>> decode_header('=?iso-8859-1?q?p=F6stal?=')
       [(b'p\xf6stal', 'iso-8859-1')]
+      >>> decode_header('unencoded_string')
+      [('unencoded_string', None)]
+      >>> decode_header('bar =?utf-8?B?ZsOzbw==?=')
+      [(b'bar ', None), (b'f\xc3\xb3o', 'utf-8')]
+
+   .. note::
+
+       This function exists for backwards compatibility only. For
+       new code, we recommend using :class:`email.headerregistry.HeaderRegistry`.
 
 
 .. function:: make_header(decoded_seq, maxlinelen=None, header_name=None, continuation_ws=' ')
@@ -203,3 +223,7 @@ The :mod:`email.header` module also provides the following convenient functions.
    :class:`Header` instance.  Optional *maxlinelen*, *header_name*, and
    *continuation_ws* are as in the :class:`Header` constructor.
 
+   .. note::
+
+       This function exists for backwards compatibility only, and is
+       not recommended for use in new code.

@@ -1,2 +1,0 @@
-Fixed a bug where :exc:`TypeError` was raised when calling
-:func:`ntpath.realpath` with a bytes parameter in some cases.

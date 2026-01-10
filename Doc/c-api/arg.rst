@@ -5,7 +5,7 @@
 Parsing arguments and building values
 =====================================
 
-These functions are useful when creating your own extensions functions and
+These functions are useful when creating your own extension functions and
 methods.  Additional information and examples are available in
 :ref:`extending-index`.
 
@@ -27,8 +27,17 @@ unit; the entry in (round) parentheses is the Python object type that matches
 the format unit; and the entry in [square] brackets is the type of the C
 variable(s) whose address should be passed.
 
+.. _arg-parsing-string-and-buffers:
+
 Strings and buffers
 -------------------
+
+.. note::
+
+   On Python 3.12 and older, the macro :c:macro:`!PY_SSIZE_T_CLEAN` must be
+   defined before including :file:`Python.h` to use all ``#`` variants of
+   formats (``s#``, ``y#``, etc.) explained below.
+   This is not necessary on Python 3.13 and later.
 
 These formats allow accessing an object as a contiguous chunk of memory.
 You don't have to provide raw storage for the returned unicode or bytes
@@ -67,15 +76,6 @@ There are three ways strings and buffers can be converted to C:
    Besides this ``bf_releasebuffer`` requirement, there is no check to verify
    whether the input object is immutable (e.g. whether it would honor a request
    for a writable buffer, or whether another thread can mutate the data).
-
-.. note::
-
-   For all ``#`` variants of formats (``s#``, ``y#``, etc.), the macro
-   :c:macro:`PY_SSIZE_T_CLEAN` must be defined before including
-   :file:`Python.h`. On Python 3.9 and older, the type of the length argument
-   is :c:type:`Py_ssize_t` if the :c:macro:`PY_SSIZE_T_CLEAN` macro is defined,
-   or int otherwise.
-
 
 ``s`` (:class:`str`) [const char \*]
    Convert a Unicode object to a C pointer to a character string.
@@ -160,7 +160,7 @@ There are three ways strings and buffers can be converted to C:
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
-   The buffer may contain embedded null bytes. The caller have to call
+   The buffer may contain embedded null bytes. The caller has to call
    :c:func:`PyBuffer_Release` when it is done with the buffer.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
@@ -229,41 +229,58 @@ There are three ways strings and buffers can be converted to C:
 Numbers
 -------
 
+These formats allow representing Python numbers or single characters as C numbers.
+Formats that require :class:`int`, :class:`float` or :class:`complex` can
+also use the corresponding special methods :meth:`~object.__index__`,
+:meth:`~object.__float__` or :meth:`~object.__complex__` to convert
+the Python object to the required type.
+
+For signed integer formats, :exc:`OverflowError` is raised if the value
+is out of range for the C type.
+For unsigned integer formats, the
+most significant bits are silently truncated when the receiving field is too
+small to receive the value, and :exc:`DeprecationWarning` is emitted when
+the value is larger than the maximal value for the C type or less than
+the minimal value for the corresponding signed integer type of the same size.
+
 ``b`` (:class:`int`) [unsigned char]
-   Convert a nonnegative Python integer to an unsigned tiny int, stored in a C
+   Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
    :c:expr:`unsigned char`.
 
 ``B`` (:class:`int`) [unsigned char]
-   Convert a Python integer to a tiny int without overflow checking, stored in a C
+   Convert a Python integer to a tiny integer without overflow checking, stored in a C
    :c:expr:`unsigned char`.
+   Convert a Python integer to a C :c:expr:`unsigned char`.
 
 ``h`` (:class:`int`) [short int]
    Convert a Python integer to a C :c:expr:`short int`.
 
 ``H`` (:class:`int`) [unsigned short int]
-   Convert a Python integer to a C :c:expr:`unsigned short int`, without overflow
-   checking.
+   Convert a Python integer to a C :c:expr:`unsigned short int`.
 
 ``i`` (:class:`int`) [int]
    Convert a Python integer to a plain C :c:expr:`int`.
 
 ``I`` (:class:`int`) [unsigned int]
-   Convert a Python integer to a C :c:expr:`unsigned int`, without overflow
-   checking.
+   Convert a Python integer to a C :c:expr:`unsigned int`.
 
 ``l`` (:class:`int`) [long int]
    Convert a Python integer to a C :c:expr:`long int`.
 
 ``k`` (:class:`int`) [unsigned long]
-   Convert a Python integer to a C :c:expr:`unsigned long` without
-   overflow checking.
+   Convert a Python integer to a C :c:expr:`unsigned long`.
+
+   .. versionchanged:: 3.14
+      Use :meth:`~object.__index__` if available.
 
 ``L`` (:class:`int`) [long long]
    Convert a Python integer to a C :c:expr:`long long`.
 
 ``K`` (:class:`int`) [unsigned long long]
-   Convert a Python integer to a C :c:expr:`unsigned long long`
-   without overflow checking.
+   Convert a Python integer to a C :c:expr:`unsigned long long`.
+
+   .. versionchanged:: 3.14
+      Use :meth:`~object.__index__` if available.
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
@@ -280,21 +297,31 @@ Numbers
    length 1, to a C :c:expr:`int`.
 
 ``f`` (:class:`float`) [float]
-   Convert a Python floating point number to a C :c:expr:`float`.
+   Convert a Python floating-point number to a C :c:expr:`float`.
 
 ``d`` (:class:`float`) [double]
-   Convert a Python floating point number to a C :c:expr:`double`.
+   Convert a Python floating-point number to a C :c:expr:`double`.
 
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
+
+.. deprecated:: 3.15
+
+   For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
+   :exc:`DeprecationWarning` is emitted when the value is larger than
+   the maximal value for the C type or less than the minimal value for
+   the corresponding signed integer type of the same size.
+
 
 Other objects
 -------------
 
 ``O`` (object) [PyObject \*]
    Store a Python object (without any conversion) in a C object pointer.  The C
-   program thus receives the actual object that was passed.  The object's reference
-   count is not increased.  The pointer stored is not ``NULL``.
+   program thus receives the actual object that was passed.  A new
+   :term:`strong reference` to the object is not created
+   (i.e. its reference count is not increased).
+   The pointer stored is not ``NULL``.
 
 ``O!`` (object) [*typeobject*, PyObject \*]
    Store a Python object in a C object pointer.  This is similar to ``O``, but
@@ -305,7 +332,7 @@ Other objects
 
 .. _o_ampersand:
 
-``O&`` (object) [*converter*, *anything*]
+``O&`` (object) [*converter*, *address*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C
    variable (of arbitrary type), converted to :c:expr:`void *`.  The *converter*
@@ -319,14 +346,20 @@ Other objects
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
 
-   If the *converter* returns ``Py_CLEANUP_SUPPORTED``, it may get called a
+   .. c:macro:: Py_CLEANUP_SUPPORTED
+      :no-typesetting:
+
+   If the *converter* returns :c:macro:`!Py_CLEANUP_SUPPORTED`, it may get called a
    second time if the argument parsing eventually fails, giving the converter a
    chance to release any memory that it had already allocated. In this second
    call, the *object* parameter will be ``NULL``; *address* will have the same value
    as in the original call.
 
+   Examples of converters: :c:func:`PyUnicode_FSConverter` and
+   :c:func:`PyUnicode_FSDecoder`.
+
    .. versionchanged:: 3.1
-      ``Py_CLEANUP_SUPPORTED`` was added.
+      :c:macro:`!Py_CLEANUP_SUPPORTED` was added.
 
 ``p`` (:class:`bool`) [int]
    Tests the value passed in for truth (a boolean **p**\ redicate) and converts
@@ -337,16 +370,25 @@ Other objects
 
    .. versionadded:: 3.3
 
-``(items)`` (:class:`tuple`) [*matching-items*]
-   The object must be a Python sequence whose length is the number of format units
+``(items)`` (sequence) [*matching-items*]
+   The object must be a Python sequence (except :class:`str`, :class:`bytes`
+   or :class:`bytearray`) whose length is the number of format units
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
 
-It is possible to pass "long" integers (integers whose value exceeds the
-platform's :const:`LONG_MAX`) however no proper range checking is done --- the
-most significant bits are silently truncated when the receiving field is too
-small to receive the value (actually, the semantics are inherited from downcasts
-in C --- your mileage may vary).
+   If *items* contains format units which store a :ref:`borrowed buffer
+   <c-arg-borrowed-buffer>` (``s``, ``s#``, ``z``, ``z#``, ``y``, or ``y#``)
+   or a :term:`borrowed reference` (``S``, ``Y``, ``U``, ``O``, or ``O!``),
+   the object must be a Python tuple.
+   The *converter* for the ``O&`` format unit in *items* must not store
+   a borrowed buffer or a borrowed reference.
+
+   .. versionchanged:: 3.14
+      :class:`str` and :class:`bytearray` objects no longer accepted as a sequence.
+
+   .. deprecated:: 3.14
+      Non-tuple sequences are deprecated if *items* contains format units
+      which store a borrowed buffer or a borrowed reference.
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
@@ -378,7 +420,8 @@ inside nested parentheses.  They are:
    mutually exclude each other.
 
 Note that any Python object references which are provided to the caller are
-*borrowed* references; do not decrement their reference count!
+*borrowed* references; do not release them
+(i.e. do not decrement their reference count)!
 
 Additional arguments passed to these functions must be addresses of variables
 whose type is determined by the format string; these are used to store values
@@ -410,21 +453,35 @@ API Functions
    than a variable number of arguments.
 
 
-.. c:function:: int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], ...)
+.. c:function:: int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char * const *keywords, ...)
 
    Parse the parameters of a function that takes both positional and keyword
-   parameters into local variables.  The *keywords* argument is a
-   ``NULL``-terminated array of keyword parameter names.  Empty names denote
+   parameters into local variables.
+   The *keywords* argument is a ``NULL``-terminated array of keyword parameter
+   names specified as null-terminated ASCII or UTF-8 encoded C strings.
+   Empty names denote
    :ref:`positional-only parameters <positional-only_parameter>`.
    Returns true on success; on failure, it returns false and raises the
    appropriate exception.
+
+   .. note::
+
+      The *keywords* parameter declaration is :c:expr:`char * const *` in C and
+      :c:expr:`const char * const *` in C++.
+      This can be overridden with the :c:macro:`PY_CXX_CONST` macro.
 
    .. versionchanged:: 3.6
       Added support for :ref:`positional-only parameters
       <positional-only_parameter>`.
 
+   .. versionchanged:: 3.13
+      The *keywords* parameter has now type :c:expr:`char * const *` in C and
+      :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
+      Added support for non-ASCII keyword parameter names.
 
-.. c:function:: int PyArg_VaParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], va_list vargs)
+
+
+.. c:function:: int PyArg_VaParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char * const *keywords, va_list vargs)
 
    Identical to :c:func:`PyArg_ParseTupleAndKeywords`, except that it accepts a
    va_list rather than a variable number of arguments.
@@ -439,23 +496,31 @@ API Functions
    .. versionadded:: 3.2
 
 
-.. XXX deprecated, will be removed
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
-   Function used to deconstruct the argument lists of "old-style" functions ---
-   these are functions which use the :const:`METH_OLDARGS` parameter parsing
-   method, which has been removed in Python 3.  This is not recommended for use
-   in parameter parsing in new code, and most code in the standard interpreter
-   has been modified to no longer use this for that purpose.  It does remain a
-   convenient way to decompose other tuples, however, and may continue to be
-   used for that purpose.
+   Parse the parameter of a function that takes a single positional parameter
+   into a local variable.  Returns true on success; on failure, it returns
+   false and raises the appropriate exception.
+
+   Example::
+
+       // Function using METH_O calling convention
+       static PyObject*
+       my_function(PyObject *module, PyObject *arg)
+       {
+           int value;
+           if (!PyArg_Parse(arg, "i:my_function", &value)) {
+               return NULL;
+           }
+           // ... use value ...
+       }
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
 
    A simpler form of parameter retrieval which does not use a format string to
    specify the types of the arguments.  Functions which use this method to retrieve
-   their parameters should be declared as :const:`METH_VARARGS` in function or
+   their parameters should be declared as :c:macro:`METH_VARARGS` in function or
    method tables.  The tuple containing the actual parameters should be passed as
    *args*; it must actually be a tuple.  The length of the tuple must be at least
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
@@ -469,7 +534,7 @@ API Functions
    will be set if there was a failure.
 
    This is an example of the use of this function, taken from the sources for the
-   :mod:`_weakref` helper module for weak references::
+   :mod:`!_weakref` helper module for weak references::
 
       static PyObject *
       weakref_ref(PyObject *self, PyObject *args)
@@ -488,6 +553,19 @@ API Functions
    this call to :c:func:`PyArg_ParseTuple`::
 
       PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
+
+.. c:macro:: PY_CXX_CONST
+
+   The value to be inserted, if any, before :c:expr:`char * const *`
+   in the *keywords* parameter declaration of
+   :c:func:`PyArg_ParseTupleAndKeywords` and
+   :c:func:`PyArg_VaParseTupleAndKeywords`.
+   Default empty for C and ``const`` for C++
+   (:c:expr:`const char * const *`).
+   To override, define it to the desired value before including
+   :file:`Python.h`.
+
+   .. versionadded:: 3.13
 
 
 ---------------
@@ -547,7 +625,7 @@ Building values
       Same as ``s#``.
 
    ``u`` (:class:`str`) [const wchar_t \*]
-      Convert a null-terminated :c:expr:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
+      Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
       data to a Python Unicode object.  If the Unicode buffer pointer is ``NULL``,
       ``None`` is returned.
 
@@ -589,11 +667,24 @@ Building values
    ``L`` (:class:`int`) [long long]
       Convert a C :c:expr:`long long` to a Python integer object.
 
+   .. _capi-py-buildvalue-format-K:
+
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:expr:`unsigned long long` to a Python integer object.
 
    ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
+
+   ``p`` (:class:`bool`) [int]
+      Convert a C :c:expr:`int` to a Python :class:`bool` object.
+
+      Be aware that this format requires an ``int`` argument.
+      Unlike most other contexts in C, variadic arguments are not coerced to
+      a suitable type automatically.
+      You can convert another type (for example, a pointer or a float) to a
+      suitable ``int`` value using ``(x) ? 1 : 0`` or ``!!x``.
+
+      .. versionadded:: 3.14
 
    ``c`` (:class:`bytes` of length 1) [char]
       Convert a C :c:expr:`int` representing a byte to a Python :class:`bytes` object of
@@ -604,17 +695,19 @@ Building values
       object of length 1.
 
    ``d`` (:class:`float`) [double]
-      Convert a C :c:expr:`double` to a Python floating point number.
+      Convert a C :c:expr:`double` to a Python floating-point number.
 
    ``f`` (:class:`float`) [float]
-      Convert a C :c:expr:`float` to a Python floating point number.
+      Convert a C :c:expr:`float` to a Python floating-point number.
 
    ``D`` (:class:`complex`) [Py_complex \*]
       Convert a C :c:type:`Py_complex` structure to a Python complex number.
 
    ``O`` (object) [PyObject \*]
-      Pass a Python object untouched (except for its reference count, which is
-      incremented by one).  If the object passed in is a ``NULL`` pointer, it is assumed
+      Pass a Python object untouched but create a new
+      :term:`strong reference` to it
+      (i.e. its reference count is incremented by one).
+      If the object passed in is a ``NULL`` pointer, it is assumed
       that this was caused because the call producing the argument found an error and
       set an exception. Therefore, :c:func:`Py_BuildValue` will return ``NULL`` but won't
       raise an exception.  If no exception has been raised yet, :exc:`SystemError` is
@@ -624,7 +717,7 @@ Building values
       Same as ``O``.
 
    ``N`` (object) [PyObject \*]
-      Same as ``O``, except it doesn't increment the reference count on the object.
+      Same as ``O``, except it doesn't create a new :term:`strong reference`.
       Useful when the object is created by a call to an object constructor in the
       argument list.
 

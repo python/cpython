@@ -4,11 +4,8 @@
 
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
-
-#ifdef Py_TRACE_REFS
-/* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-#endif
+PyAPI_FUNC(void) _Py_ResurrectReference(PyObject *op);
+PyAPI_FUNC(void) _Py_ForgetReference(PyObject *op);
 
 #ifdef Py_REF_DEBUG
 /* These are useful as debugging aids when chasing down refleaks. */
@@ -44,6 +41,10 @@ typedef struct _Py_Identifier {
     // Index in PyInterpreterState.unicode.ids.array. It is process-wide
     // unique and must be initialized to -1.
     Py_ssize_t index;
+    // Hidden PyMutex struct for non free-threaded build.
+    struct {
+        uint8_t v;
+    } mutex;
 } _Py_Identifier;
 
 #ifndef Py_BUILD_CORE
@@ -55,6 +56,7 @@ typedef struct _Py_Identifier {
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
 #endif /* !Py_BUILD_CORE */
+
 
 typedef struct {
     /* Number implementations must check *both*
@@ -220,18 +222,29 @@ struct _typeobject {
     PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
-    /* Type attribute cache version tag. Added in version 2.6 */
+    /* Type attribute cache version tag. Added in version 2.6.
+     * If zero, the cache is invalid and must be initialized.
+     */
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
 
     /* bitset of which type-watchers care about this type */
-    char tp_watched;
+    unsigned char tp_watched;
+
+    /* Number of tp_version_tag values used.
+     * Set to _Py_ATTR_CACHE_UNUSED if the attribute cache is
+     * disabled for this type (e.g. due to custom MRO entries).
+     * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
+     */
+    uint16_t tp_versions_used;
 };
 
+#define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
+
 /* This struct is used by the specializer
- * It should should be treated as an opaque blob
+ * It should be treated as an opaque blob
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
     // In order to avoid bloating the bytecode with lots of inline caches, the
@@ -243,9 +256,10 @@ struct _specialization_cache {
     // - If getitem is NULL, then getitem_version is meaningless.
     // - If getitem->func_version == getitem_version, then getitem can be called
     //   with two positional arguments and no keyword arguments, and has neither
-    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
+    //   *args nor **kwargs (as required by BINARY_OP_SUBSCR_GETITEM):
     PyObject *getitem;
     uint32_t getitem_version;
+    PyObject *init;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -266,50 +280,33 @@ typedef struct _heaptypeobject {
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
+    void *ht_token;  // Storage for the "Py_tp_token" slot
     struct _specialization_cache _spec_cache; // For use by the specializer.
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t unique_id;  // ID used for per-thread refcounting
+#endif
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
-#ifndef Py_BUILD_CORE
-// Backward compatibility for 3rd-party extensions
-// that may be using the old name.
-#define _PyObject_LookupSpecial _PyObject_LookupSpecialId
-#endif
-PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
-PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
-PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+PyAPI_FUNC(PyObject *) _PyType_LookupRef(PyTypeObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
-PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
-PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
+PyAPI_FUNC(void) PyUnstable_Object_Dump(PyObject *);
 
-PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
-PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
-/* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
-   don't raise AttributeError.
+// Alias for backward compatibility
+#define _PyObject_Dump PyUnstable_Object_Dump
 
-   Return 1 and set *result != NULL if an attribute is found.
-   Return 0 and set *result == NULL if an attribute is not found;
-   an AttributeError is silenced.
-   Return -1 and set *result == NULL if an error other than AttributeError
-   is raised.
-*/
-PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, _Py_Identifier *, PyObject **);
-
-PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
+
+PyAPI_FUNC(void) PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *);
 
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
@@ -336,7 +333,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * triggered as a side-effect of `dst` getting torn down no longer believes
  * `dst` points to a valid object.
  *
- * Temporary variables are used to only evalutate macro arguments once and so
+ * Temporary variables are used to only evaluate macro arguments once and so
  * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
  * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
  * implementation details about type punning.
@@ -386,20 +383,6 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #endif
 
 
-PyAPI_DATA(PyTypeObject) _PyNone_Type;
-PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
-
-/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
- * Defined in object.c.
- */
-PyAPI_DATA(int) _Py_SwappedOp[];
-
-PyAPI_FUNC(void)
-_PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
-                       size_t sizeof_block);
-PyAPI_FUNC(void)
-_PyObject_DebugTypeStats(FILE *out);
-
 /* Define a pair of assertion macros:
    _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
 
@@ -407,10 +390,11 @@ _PyObject_DebugTypeStats(FILE *out);
    process with a message on stderr if the given condition fails to hold,
    but compile away to nothing if NDEBUG is defined.
 
-   However, before aborting, Python will also try to call _PyObject_Dump() on
-   the given object.  This may be of use when investigating bugs in which a
-   particular object is corrupt (e.g. buggy a tp_visit method in an extension
-   module breaking the garbage collector), to help locate the broken objects.
+   However, before aborting, Python will also try to call
+   PyUnstable_Object_Dump() on the given object. This may be of use when
+   investigating bugs in which a particular object is corrupt (e.g. buggy a
+   tp_visit method in an extension module breaking the garbage collector), to
+   help locate the broken objects.
 
    The WITH_MSG variant allows you to supply an additional message that Python
    will attempt to print to stderr, after the object dump. */
@@ -448,117 +432,20 @@ PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
     int line,
     const char *function);
 
-/* Check if an object is consistent. For example, ensure that the reference
-   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
 
-   Call _PyObject_AssertFailed() if the object is inconsistent.
+PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
+PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 
-   If check_content is zero, only check header fields: reduce the overhead.
+/* For backwards compatibility with the old trashcan mechanism */
+#define Py_TRASHCAN_BEGIN(op, dealloc)
+#define Py_TRASHCAN_END
 
-   The function always return 1. The return value is just here to be able to
-   write:
-
-   assert(_PyObject_CheckConsistency(obj, 1)); */
-PyAPI_FUNC(int) _PyObject_CheckConsistency(
-    PyObject *op,
-    int check_content);
-
-
-/* Trashcan mechanism, thanks to Christian Tismer.
-
-When deallocating a container object, it's possible to trigger an unbounded
-chain of deallocations, as each Py_DECREF in turn drops the refcount on "the
-next" object in the chain to 0.  This can easily lead to stack overflows,
-especially in threads (which typically have less stack space to work with).
-
-A container object can avoid this by bracketing the body of its tp_dealloc
-function with a pair of macros:
-
-static void
-mytype_dealloc(mytype *p)
-{
-    ... declarations go here ...
-
-    PyObject_GC_UnTrack(p);        // must untrack first
-    Py_TRASHCAN_BEGIN(p, mytype_dealloc)
-    ... The body of the deallocator goes here, including all calls ...
-    ... to Py_DECREF on contained objects.                         ...
-    Py_TRASHCAN_END                // there should be no code after this
-}
-
-CAUTION:  Never return from the middle of the body!  If the body needs to
-"get out early", put a label immediately before the Py_TRASHCAN_END
-call, and goto it.  Else the call-depth counter (see below) will stay
-above 0 forever, and the trashcan will never get emptied.
-
-How it works:  The BEGIN macro increments a call-depth counter.  So long
-as this counter is small, the body of the deallocator is run directly without
-further ado.  But if the counter gets large, it instead adds p to a list of
-objects to be deallocated later, skips the body of the deallocator, and
-resumes execution after the END macro.  The tp_dealloc routine then returns
-without deallocating anything (and so unbounded call-stack depth is avoided).
-
-When the call stack finishes unwinding again, code generated by the END macro
-notices this, and calls another routine to deallocate all the objects that
-may have been added to the list of deferred deallocations.  In effect, a
-chain of N deallocations is broken into (N-1)/(_PyTrash_UNWIND_LEVEL-1) pieces,
-with the call stack never exceeding a depth of _PyTrash_UNWIND_LEVEL.
-
-Since the tp_dealloc of a subclass typically calls the tp_dealloc of the base
-class, we need to ensure that the trashcan is only triggered on the tp_dealloc
-of the actual class being deallocated. Otherwise we might end up with a
-partially-deallocated object. To check this, the tp_dealloc function must be
-passed as second argument to Py_TRASHCAN_BEGIN().
-*/
-
-/* Python 3.9 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
-PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
-/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
-PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
-
-#define Py_TRASHCAN_BEGIN_CONDITION(op, cond) \
-    do { \
-        PyThreadState *_tstate = NULL; \
-        /* If "cond" is false, then _tstate remains NULL and the deallocator \
-         * is run normally without involving the trashcan */ \
-        if (cond) { \
-            _tstate = _PyThreadState_UncheckedGet(); \
-            if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
-                break; \
-            } \
-        }
-        /* The body of the deallocator is here. */
-#define Py_TRASHCAN_END \
-        if (_tstate) { \
-            _PyTrash_end(_tstate); \
-        } \
-    } while (0);
-
-#define Py_TRASHCAN_BEGIN(op, dealloc) \
-    Py_TRASHCAN_BEGIN_CONDITION((op), \
-        _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
-
-/* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
- * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
- * will be removed in the future.
- * Use Py_TRASHCAN_BEGIN and Py_TRASHCAN_END instead.
- */
-Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
-#define Py_TRASHCAN_SAFE_BEGIN(op) \
-    do { \
-        UsingDeprecatedTrashcanMacro cond=1; \
-        Py_TRASHCAN_BEGIN_CONDITION((op), cond);
-#define Py_TRASHCAN_SAFE_END(op) \
-        Py_TRASHCAN_END; \
-    } while(0);
 
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
-PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
+PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
-#define TYPE_MAX_WATCHERS 8
 
 typedef int(*PyType_WatchCallback)(PyTypeObject *);
 PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
@@ -572,3 +459,37 @@ PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
  * assigned, or 0 if a new tag could not be assigned.
  */
 PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
+
+
+typedef enum {
+    PyRefTracer_CREATE = 0,
+    PyRefTracer_DESTROY = 1,
+    PyRefTracer_TRACKER_REMOVED = 2,
+} PyRefTracerEvent;
+
+typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);
+PyAPI_FUNC(int) PyRefTracer_SetTracer(PyRefTracer tracer, void *data);
+PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
+
+/* Enable PEP-703 deferred reference counting on the object.
+ *
+ * Returns 1 if deferred reference counting was successfully enabled, and
+ * 0 if the runtime ignored it. This function cannot fail.
+ */
+PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
+
+/* Determine if the object exists as a unique temporary variable on the
+ * topmost frame of the interpreter.
+ */
+PyAPI_FUNC(int) PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *);
+
+/* Check whether the object is immortal. This cannot fail. */
+PyAPI_FUNC(int) PyUnstable_IsImmortal(PyObject *);
+
+// Increments the reference count of the object, if it's not zero.
+// PyUnstable_EnableTryIncRef() should be called on the object
+// before calling this function in order to avoid spurious failures.
+PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
+PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
+
+PyAPI_FUNC(int) PyUnstable_Object_IsUniquelyReferenced(PyObject *);

@@ -1,5 +1,5 @@
-:mod:`cmath` --- Mathematical functions for complex numbers
-===========================================================
+:mod:`!cmath` --- Mathematical functions for complex numbers
+============================================================
 
 .. module:: cmath
    :synopsis: Mathematical functions for complex numbers.
@@ -9,7 +9,7 @@
 This module provides access to mathematical functions for complex numbers.  The
 functions in this module accept integers, floating-point numbers or complex
 numbers as arguments. They will also accept any Python object that has either a
-:meth:`__complex__` or a :meth:`__float__` method: these methods are used to
+:meth:`~object.__complex__` or a :meth:`~object.__float__` method: these methods are used to
 convert the object to a complex or floating-point number, respectively, and
 the function is then applied to the result of the conversion.
 
@@ -24,18 +24,69 @@ the function is then applied to the result of the conversion.
    imaginary axis we look at the sign of the real part.
 
    For example, the :func:`cmath.sqrt` function has a branch cut along the
-   negative real axis. An argument of ``complex(-2.0, -0.0)`` is treated as
+   negative real axis. An argument of ``-2-0j`` is treated as
    though it lies *below* the branch cut, and so gives a result on the negative
    imaginary axis::
 
-      >>> cmath.sqrt(complex(-2.0, -0.0))
+      >>> cmath.sqrt(-2-0j)
       -1.4142135623730951j
 
-   But an argument of ``complex(-2.0, 0.0)`` is treated as though it lies above
+   But an argument of ``-2+0j`` is treated as though it lies above
    the branch cut::
 
-      >>> cmath.sqrt(complex(-2.0, 0.0))
+      >>> cmath.sqrt(-2+0j)
       1.4142135623730951j
+
+
+====================================================  ============================================
+**Conversions to and from polar coordinates**
+--------------------------------------------------------------------------------------------------
+:func:`phase(z) <phase>`                              Return the phase of *z*
+:func:`polar(z) <polar>`                              Return the representation of *z* in polar coordinates
+:func:`rect(r, phi) <rect>`                           Return the complex number *z* with polar coordinates *r* and *phi*
+
+**Power and logarithmic functions**
+--------------------------------------------------------------------------------------------------
+:func:`exp(z) <exp>`                                  Return *e* raised to the power *z*
+:func:`log(z[, base]) <log>`                          Return the logarithm of *z* to the given *base* (*e* by default)
+:func:`log10(z) <log10>`                              Return the base-10 logarithm of *z*
+:func:`sqrt(z) <sqrt>`                                Return the square root of *z*
+
+**Trigonometric functions**
+--------------------------------------------------------------------------------------------------
+:func:`acos(z) <acos>`                                Return the arc cosine of *z*
+:func:`asin(z) <asin>`                                Return the arc sine of *z*
+:func:`atan(z) <atan>`                                Return the arc tangent of *z*
+:func:`cos(z) <cos>`                                  Return the cosine of *z*
+:func:`sin(z) <sin>`                                  Return the sine of *z*
+:func:`tan(z) <tan>`                                  Return the tangent of *z*
+
+**Hyperbolic functions**
+--------------------------------------------------------------------------------------------------
+:func:`acosh(z) <acosh>`                              Return the inverse hyperbolic cosine of *z*
+:func:`asinh(z) <asinh>`                              Return the inverse hyperbolic sine of *z*
+:func:`atanh(z) <atanh>`                              Return the inverse hyperbolic tangent of *z*
+:func:`cosh(z) <cosh>`                                Return the hyperbolic cosine of *z*
+:func:`sinh(z) <sinh>`                                Return the hyperbolic sine of *z*
+:func:`tanh(z) <tanh>`                                Return the hyperbolic tangent of *z*
+
+**Classification functions**
+--------------------------------------------------------------------------------------------------
+:func:`isfinite(z) <isfinite>`                        Check if all components of *z* are finite
+:func:`isinf(z) <isinf>`                              Check if any component of *z* is infinite
+:func:`isnan(z) <isnan>`                              Check if any component of *z* is a NaN
+:func:`isclose(a, b, *, rel_tol, abs_tol) <isclose>`  Check if the values *a* and *b* are close to each other
+
+**Constants**
+--------------------------------------------------------------------------------------------------
+:data:`pi`                                            *π* = 3.141592...
+:data:`e`                                             *e* = 2.718281...
+:data:`tau`                                           *τ* = 2\ *π* = 6.283185...
+:data:`inf`                                           Positive infinity
+:data:`infj`                                          Pure imaginary infinity
+:data:`nan`                                           "Not a number" (NaN)
+:data:`nanj`                                          Pure imaginary NaN
+====================================================  ============================================
 
 
 Conversions to and from polar coordinates
@@ -43,10 +94,7 @@ Conversions to and from polar coordinates
 
 A Python complex number ``z`` is stored internally using *rectangular*
 or *Cartesian* coordinates.  It is completely determined by its *real
-part* ``z.real`` and its *imaginary part* ``z.imag``.  In other
-words::
-
-   z == z.real + z.imag*1j
+part* ``z.real`` and its *imaginary part* ``z.imag``.
 
 *Polar coordinates* give an alternative way to represent a complex
 number.  In polar coordinates, a complex number *z* is defined by the
@@ -58,163 +106,163 @@ segment that joins the origin to *z*.
 The following functions can be used to convert from the native
 rectangular coordinates to polar coordinates and back.
 
-.. function:: phase(x)
+.. function:: phase(z)
 
-   Return the phase of *x* (also known as the *argument* of *x*), as a float.
-   ``phase(x)`` is equivalent to ``math.atan2(x.imag, x.real)``.  The result
+   Return the phase of *z* (also known as the *argument* of *z*), as a float.
+   ``phase(z)`` is equivalent to ``math.atan2(z.imag, z.real)``.  The result
    lies in the range [-\ *π*, *π*], and the branch cut for this operation lies
    along the negative real axis.  The sign of the result is the same as the
-   sign of ``x.imag``, even when ``x.imag`` is zero::
+   sign of ``z.imag``, even when ``z.imag`` is zero::
 
-      >>> phase(complex(-1.0, 0.0))
+      >>> phase(-1+0j)
       3.141592653589793
-      >>> phase(complex(-1.0, -0.0))
+      >>> phase(-1-0j)
       -3.141592653589793
 
 
 .. note::
 
-   The modulus (absolute value) of a complex number *x* can be
+   The modulus (absolute value) of a complex number *z* can be
    computed using the built-in :func:`abs` function.  There is no
    separate :mod:`cmath` module function for this operation.
 
 
-.. function:: polar(x)
+.. function:: polar(z)
 
-   Return the representation of *x* in polar coordinates.  Returns a
-   pair ``(r, phi)`` where *r* is the modulus of *x* and phi is the
-   phase of *x*.  ``polar(x)`` is equivalent to ``(abs(x),
-   phase(x))``.
+   Return the representation of *z* in polar coordinates.  Returns a
+   pair ``(r, phi)`` where *r* is the modulus of *z* and *phi* is the
+   phase of *z*.  ``polar(z)`` is equivalent to ``(abs(z),
+   phase(z))``.
 
 
 .. function:: rect(r, phi)
 
-   Return the complex number *x* with polar coordinates *r* and *phi*.
-   Equivalent to ``r * (math.cos(phi) + math.sin(phi)*1j)``.
+   Return the complex number *z* with polar coordinates *r* and *phi*.
+   Equivalent to ``complex(r * math.cos(phi), r * math.sin(phi))``.
 
 
 Power and logarithmic functions
 -------------------------------
 
-.. function:: exp(x)
+.. function:: exp(z)
 
-   Return *e* raised to the power *x*, where *e* is the base of natural
+   Return *e* raised to the power *z*, where *e* is the base of natural
    logarithms.
 
 
-.. function:: log(x[, base])
+.. function:: log(z[, base])
 
-   Returns the logarithm of *x* to the given *base*. If the *base* is not
-   specified, returns the natural logarithm of *x*. There is one branch cut,
+   Return the logarithm of *z* to the given *base*. If the *base* is not
+   specified, returns the natural logarithm of *z*. There is one branch cut,
    from 0 along the negative real axis to -∞.
 
 
-.. function:: log10(x)
+.. function:: log10(z)
 
-   Return the base-10 logarithm of *x*. This has the same branch cut as
+   Return the base-10 logarithm of *z*. This has the same branch cut as
    :func:`log`.
 
 
-.. function:: sqrt(x)
+.. function:: sqrt(z)
 
-   Return the square root of *x*. This has the same branch cut as :func:`log`.
+   Return the square root of *z*. This has the same branch cut as :func:`log`.
 
 
 Trigonometric functions
 -----------------------
 
-.. function:: acos(x)
+.. function:: acos(z)
 
-   Return the arc cosine of *x*. There are two branch cuts: One extends right
+   Return the arc cosine of *z*. There are two branch cuts: One extends right
    from 1 along the real axis to ∞. The other extends left from -1 along the
    real axis to -∞.
 
 
-.. function:: asin(x)
+.. function:: asin(z)
 
-   Return the arc sine of *x*. This has the same branch cuts as :func:`acos`.
+   Return the arc sine of *z*. This has the same branch cuts as :func:`acos`.
 
 
-.. function:: atan(x)
+.. function:: atan(z)
 
-   Return the arc tangent of *x*. There are two branch cuts: One extends from
+   Return the arc tangent of *z*. There are two branch cuts: One extends from
    ``1j`` along the imaginary axis to ``∞j``. The other extends from ``-1j``
    along the imaginary axis to ``-∞j``.
 
 
-.. function:: cos(x)
+.. function:: cos(z)
 
-   Return the cosine of *x*.
-
-
-.. function:: sin(x)
-
-   Return the sine of *x*.
+   Return the cosine of *z*.
 
 
-.. function:: tan(x)
+.. function:: sin(z)
 
-   Return the tangent of *x*.
+   Return the sine of *z*.
+
+
+.. function:: tan(z)
+
+   Return the tangent of *z*.
 
 
 Hyperbolic functions
 --------------------
 
-.. function:: acosh(x)
+.. function:: acosh(z)
 
-   Return the inverse hyperbolic cosine of *x*. There is one branch cut,
+   Return the inverse hyperbolic cosine of *z*. There is one branch cut,
    extending left from 1 along the real axis to -∞.
 
 
-.. function:: asinh(x)
+.. function:: asinh(z)
 
-   Return the inverse hyperbolic sine of *x*. There are two branch cuts:
+   Return the inverse hyperbolic sine of *z*. There are two branch cuts:
    One extends from ``1j`` along the imaginary axis to ``∞j``.  The other
    extends from ``-1j`` along the imaginary axis to ``-∞j``.
 
 
-.. function:: atanh(x)
+.. function:: atanh(z)
 
-   Return the inverse hyperbolic tangent of *x*. There are two branch cuts: One
+   Return the inverse hyperbolic tangent of *z*. There are two branch cuts: One
    extends from ``1`` along the real axis to ``∞``. The other extends from
    ``-1`` along the real axis to ``-∞``.
 
 
-.. function:: cosh(x)
+.. function:: cosh(z)
 
-   Return the hyperbolic cosine of *x*.
-
-
-.. function:: sinh(x)
-
-   Return the hyperbolic sine of *x*.
+   Return the hyperbolic cosine of *z*.
 
 
-.. function:: tanh(x)
+.. function:: sinh(z)
 
-   Return the hyperbolic tangent of *x*.
+   Return the hyperbolic sine of *z*.
+
+
+.. function:: tanh(z)
+
+   Return the hyperbolic tangent of *z*.
 
 
 Classification functions
 ------------------------
 
-.. function:: isfinite(x)
+.. function:: isfinite(z)
 
-   Return ``True`` if both the real and imaginary parts of *x* are finite, and
+   Return ``True`` if both the real and imaginary parts of *z* are finite, and
    ``False`` otherwise.
 
    .. versionadded:: 3.2
 
 
-.. function:: isinf(x)
+.. function:: isinf(z)
 
-   Return ``True`` if either the real or the imaginary part of *x* is an
+   Return ``True`` if either the real or the imaginary part of *z* is an
    infinity, and ``False`` otherwise.
 
 
-.. function:: isnan(x)
+.. function:: isnan(z)
 
-   Return ``True`` if either the real or the imaginary part of *x* is a NaN,
+   Return ``True`` if either the real or the imaginary part of *z* is a NaN,
    and ``False`` otherwise.
 
 
@@ -224,19 +272,21 @@ Classification functions
    ``False`` otherwise.
 
    Whether or not two values are considered close is determined according to
-   given absolute and relative tolerances.
+   given absolute and relative tolerances.  If no errors occur, the result will
+   be: ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
 
    *rel_tol* is the relative tolerance -- it is the maximum allowed difference
    between *a* and *b*, relative to the larger absolute value of *a* or *b*.
    For example, to set a tolerance of 5%, pass ``rel_tol=0.05``.  The default
    tolerance is ``1e-09``, which assures that the two values are the same
-   within about 9 decimal digits.  *rel_tol* must be greater than zero.
+   within about 9 decimal digits.  *rel_tol* must be nonnegative and less
+   than ``1.0``.
 
-   *abs_tol* is the minimum absolute tolerance -- useful for comparisons near
-   zero. *abs_tol* must be at least zero.
-
-   If no errors occur, the result will be:
-   ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
+   *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
+   nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any ``x`` and
+   rel_tol less than ``1.0``.  So add an appropriate positive abs_tol argument
+   to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be
    handled according to IEEE rules.  Specifically, ``NaN`` is not considered
@@ -288,7 +338,7 @@ Constants
 .. data:: nan
 
    A floating-point "not a number" (NaN) value.  Equivalent to
-   ``float('nan')``.
+   ``float('nan')``. See also :data:`math.nan`.
 
    .. versionadded:: 3.6
 

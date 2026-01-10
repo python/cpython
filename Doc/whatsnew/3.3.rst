@@ -174,7 +174,7 @@ Features
   b or c are now hashable.  (Contributed by Antoine Pitrou in :issue:`13411`.)
 
 * Arbitrary slicing of any 1-D arrays type is supported. For example, it
-  is now possible to reverse a memoryview in O(1) by using a negative step.
+  is now possible to reverse a memoryview in *O*\ (1) by using a negative step.
 
 API changes
 -----------
@@ -249,7 +249,7 @@ Changes introduced by :pep:`393` are the following:
     non-BMP code points.
 
 * The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
-  in hexadecimal).  The :c:func:`PyUnicode_GetMax` function still returns
+  in hexadecimal).  The :c:func:`!PyUnicode_GetMax` function still returns
   either ``0xFFFF`` or ``0x10FFFF`` for backward compatibility, and it should
   not be used with the new Unicode API (see :issue:`13054`).
 
@@ -331,7 +331,7 @@ simplified and finer-grained.
 
 You don't have to worry anymore about choosing the appropriate exception
 type between :exc:`OSError`, :exc:`IOError`, :exc:`EnvironmentError`,
-:exc:`WindowsError`, :exc:`mmap.error`, :exc:`socket.error` or
+:exc:`WindowsError`, :exc:`!mmap.error`, :exc:`socket.error` or
 :exc:`select.error`.  All these exception types are now only one:
 :exc:`OSError`.  The other names are kept as aliases for compatibility
 reasons.
@@ -549,9 +549,11 @@ separation of binary and text data).
 PEP 3155: Qualified name for classes and functions
 ==================================================
 
-Functions and class objects have a new ``__qualname__`` attribute representing
+Functions and class objects have a new :attr:`~definition.__qualname__`
+attribute representing
 the "path" from the module top-level to their definition.  For global functions
-and classes, this is the same as ``__name__``.  For other functions and classes,
+and classes, this is the same as :attr:`~definition.__name__`.
+For other functions and classes,
 it provides better information about where they were actually defined, and
 how they might be accessible from the global scope.
 
@@ -648,7 +650,7 @@ PEP 421: Adding sys.implementation
 
 A new attribute on the :mod:`sys` module exposes details specific to the
 implementation of the currently running interpreter.  The initial set of
-attributes on :attr:`sys.implementation` are ``name``, ``version``,
+attributes on :data:`sys.implementation` are ``name``, ``version``,
 ``hexversion``, and ``cache_tag``.
 
 The intention of ``sys.implementation`` is to consolidate into one namespace
@@ -719,7 +721,7 @@ and does not enforce any method requirements.
 
 In terms of finders, :class:`importlib.machinery.FileFinder` exposes the
 mechanism used to search for source and bytecode files of a module. Previously
-this class was an implicit member of :attr:`sys.path_hooks`.
+this class was an implicit member of :data:`sys.path_hooks`.
 
 For loaders, the new abstract base class :class:`importlib.abc.FileLoader` helps
 write a loader that uses the file system as the storage mechanism for a module's
@@ -735,7 +737,7 @@ provide the full name of the module now instead of just the tail end of the
 module's name.
 
 The :func:`importlib.invalidate_caches` function will now call the method with
-the same name on all finders cached in :attr:`sys.path_importer_cache` to help
+the same name on all finders cached in :data:`sys.path_importer_cache` to help
 clean up any stored state as necessary.
 
 Visible Changes
@@ -745,8 +747,8 @@ For potential required changes to code, see the `Porting Python code`_
 section.
 
 Beyond the expanse of what :mod:`importlib` now exposes, there are other
-visible changes to import. The biggest is that :attr:`sys.meta_path` and
-:attr:`sys.path_hooks` now store all of the meta path finders and path entry
+visible changes to import. The biggest is that :data:`sys.meta_path` and
+:data:`sys.path_hooks` now store all of the meta path finders and path entry
 hooks used by import.  Previously the finders were implicit and hidden within
 the C code of import instead of being directly exposed. This means that one can
 now easily remove or change the order of the various finders to fit one's needs.
@@ -761,9 +763,9 @@ Loaders are also now expected to set the ``__package__`` attribute from
 :pep:`366`. Once again, import itself is already setting this on all loaders
 from :mod:`importlib` and import itself is setting the attribute post-load.
 
-``None`` is now inserted into :attr:`sys.path_importer_cache` when no finder
-can be found on :attr:`sys.path_hooks`. Since :class:`!imp.NullImporter` is not
-directly exposed on :attr:`sys.path_hooks` it could no longer be relied upon to
+``None`` is now inserted into :data:`sys.path_importer_cache` when no finder
+can be found on :data:`sys.path_hooks`. Since :class:`!imp.NullImporter` is not
+directly exposed on :data:`sys.path_hooks` it could no longer be relied upon to
 always be available to use as a value representing no finder found.
 
 All other changes relate to semantic changes which should be taken into
@@ -779,8 +781,8 @@ Other Language Changes
 Some smaller changes made to the core Python language are:
 
 * Added support for Unicode name aliases and named sequences.
-  Both :func:`unicodedata.lookup()` and ``'\N{...}'`` now resolve name aliases,
-  and :func:`unicodedata.lookup()` resolves named sequences too.
+  Both :func:`unicodedata.lookup` and ``'\N{...}'`` now resolve name aliases,
+  and :func:`unicodedata.lookup` resolves named sequences too.
 
   (Contributed by Ezio Melotti in :issue:`12753`.)
 
@@ -803,7 +805,7 @@ Some smaller changes made to the core Python language are:
 * New methods have been added to :class:`list` and :class:`bytearray`:
   ``copy()`` and ``clear()`` (:issue:`10516`).  Consequently,
   :class:`~collections.abc.MutableSequence` now also defines a
-  :meth:`~collections.abc.MutableSequence.clear` method (:issue:`11388`).
+  :meth:`!clear` method (:issue:`11388`).
 
 * Raw bytes literals can now be written ``rb"..."`` as well as ``br"..."``.
 
@@ -827,7 +829,7 @@ Previous versions of CPython have always relied on a global import lock.
 This led to unexpected annoyances, such as deadlocks when importing a module
 would trigger code execution in a different thread as a side-effect.
 Clumsy workarounds were sometimes employed, such as the
-:c:func:`PyImport_ImportModuleNoBlock` C API function.
+:c:func:`!PyImport_ImportModuleNoBlock` C API function.
 
 In Python 3.3, importing a module takes a per-module lock.  This correctly
 serializes importation of a given module from multiple threads (preventing
@@ -842,7 +844,7 @@ Builtin functions and types
 
 * :func:`open` gets a new *opener* parameter: the underlying file descriptor
   for the file object is then obtained by calling *opener* with (*file*,
-  *flags*). It can be used to use custom flags like :data:`os.O_CLOEXEC` for
+  *flags*). It can be used to use custom flags like :const:`os.O_CLOEXEC` for
   example. The ``'x'`` mode was added: open for exclusive creation, failing if
   the file already exists.
 * :func:`print`: added the *flush* keyword argument. If the *flush* keyword
@@ -867,10 +869,10 @@ faulthandler
 This new debug module :mod:`faulthandler` contains functions to dump Python tracebacks explicitly,
 on a fault (a crash like a segmentation fault), after a timeout, or on a user
 signal. Call :func:`faulthandler.enable` to install fault handlers for the
-:const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS`, and
-:const:`SIGILL` signals. You can also enable them at startup by setting the
-:envvar:`PYTHONFAULTHANDLER` environment variable or by using :option:`-X`
-``faulthandler`` command line option.
+:const:`~signal.SIGSEGV`, :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`,
+:const:`~signal.SIGBUS`, and :const:`~signal.SIGILL` signals.
+You can also enable them at startup by setting the :envvar:`PYTHONFAULTHANDLER`
+environment variable or by using :option:`-X` ``faulthandler`` command line option.
 
 Example of a segmentation fault on Linux:
 
@@ -914,15 +916,15 @@ abc
 
 Improved support for abstract base classes containing descriptors composed with
 abstract methods. The recommended approach to declaring abstract descriptors is
-now to provide :attr:`__isabstractmethod__` as a dynamically updated
+now to provide :attr:`!__isabstractmethod__` as a dynamically updated
 property. The built-in descriptors have been updated accordingly.
 
-  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
-    with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractclassmethod` has been deprecated, use
-    :class:`classmethod` with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractstaticmethod` has been deprecated, use
-    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractproperty` has been deprecated, use :class:`property`
+  with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractclassmethod` has been deprecated, use
+  :class:`classmethod` with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractstaticmethod` has been deprecated, use
+  :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
 (Contributed by Darren Dale in :issue:`11610`.)
 
@@ -977,7 +979,7 @@ new features have been added:
   (Contributed by Nir Aides in :issue:`1625`.)
 
 * :class:`bz2.BZ2File` now implements all of the :class:`io.BufferedIOBase` API,
-  except for the :meth:`detach` and :meth:`truncate` methods.
+  except for the :meth:`!detach` and :meth:`!truncate` methods.
 
 
 codecs
@@ -1052,40 +1054,40 @@ their ``__init__`` method (for example, file objects) or in their
 crypt
 -----
 
-Addition of salt and modular crypt format (hashing method) and the :func:`~crypt.mksalt`
-function to the :mod:`crypt` module.
+Addition of salt and modular crypt format (hashing method) and the :func:`!mksalt`
+function to the :mod:`!crypt` module.
 
 (:issue:`10924`)
 
 curses
 ------
 
- * If the :mod:`curses` module is linked to the ncursesw library, use Unicode
-   functions when Unicode strings or characters are passed (e.g.
-   :c:func:`waddwstr`), and bytes functions otherwise (e.g. :c:func:`waddstr`).
- * Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
- * :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
- * The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
-   method to get a wide character
- * The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to
-   push a wide character so the next :meth:`~curses.window.get_wch` will return
-   it
+* If the :mod:`curses` module is linked to the ncursesw library, use Unicode
+  functions when Unicode strings or characters are passed (e.g.
+  :c:func:`!waddwstr`), and bytes functions otherwise (e.g. :c:func:`!waddstr`).
+* Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
+* :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
+* The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
+  method to get a wide character
+* The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to
+  push a wide character so the next :meth:`~curses.window.get_wch` will return
+  it
 
 (Contributed by Iñigo Serna in :issue:`6755`.)
 
 datetime
 --------
 
- * Equality comparisons between naive and aware :class:`~datetime.datetime`
-   instances now return :const:`False` instead of raising :exc:`TypeError`
-   (:issue:`15006`).
- * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
-   corresponding to the :class:`~datetime.datetime` instance.
- * The :meth:`datetime.datetime.strftime` method supports formatting years
-   older than 1000.
- * The :meth:`datetime.datetime.astimezone` method can now be
-   called without arguments to convert datetime instance to the system
-   timezone.
+* Equality comparisons between naive and aware :class:`~datetime.datetime`
+  instances now return :const:`False` instead of raising :exc:`TypeError`
+  (:issue:`15006`).
+* New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
+  corresponding to the :class:`~datetime.datetime` instance.
+* The :meth:`datetime.datetime.strftime` method supports formatting years
+  older than 1000.
+* The :meth:`datetime.datetime.astimezone` method can now be
+  called without arguments to convert datetime instance to the system
+  timezone.
 
 
 .. _new-decimal:
@@ -1097,12 +1099,12 @@ decimal
    C-module and libmpdec written by Stefan Krah.
 
 The new C version of the decimal module integrates the high speed libmpdec
-library for arbitrary precision correctly rounded decimal floating point
+library for arbitrary precision correctly rounded decimal floating-point
 arithmetic. libmpdec conforms to IBM's General Decimal Arithmetic Specification.
 
 Performance gains range from 10x for database applications to 100x for
 numerically intensive applications. These numbers are expected gains
-for standard precisions used in decimal floating point arithmetic. Since
+for standard precisions used in decimal floating-point arithmetic. Since
 the precision is user configurable, the exact figures may vary. For example,
 in integer bignum arithmetic the differences can be significantly higher.
 
@@ -1127,7 +1129,7 @@ Features
 
 * If Python is compiled without threads, the C version automatically
   disables the expensive thread local context machinery. In this case,
-  the variable :data:`~decimal.HAVE_THREADS` is set to ``False``.
+  the variable :const:`~decimal.HAVE_THREADS` is set to ``False``.
 
 API changes
 ~~~~~~~~~~~
@@ -1135,20 +1137,20 @@ API changes
 * The C module has the following context limits, depending on the machine
   architecture:
 
-   +-------------------+---------------------+------------------------------+
-   |                   |       32-bit        |            64-bit            |
-   +===================+=====================+==============================+
-   | :const:`MAX_PREC` | :const:`425000000`  | :const:`999999999999999999`  |
-   +-------------------+---------------------+------------------------------+
-   | :const:`MAX_EMAX` | :const:`425000000`  | :const:`999999999999999999`  |
-   +-------------------+---------------------+------------------------------+
-   | :const:`MIN_EMIN` | :const:`-425000000` | :const:`-999999999999999999` |
-   +-------------------+---------------------+------------------------------+
+   +----------------------------+----------------+-------------------------+
+   |                            |       32-bit   |            64-bit       |
+   +============================+================+=========================+
+   | :const:`~decimal.MAX_PREC` | ``425000000``  | ``999999999999999999``  |
+   +----------------------------+----------------+-------------------------+
+   | :const:`~decimal.MAX_EMAX` | ``425000000``  | ``999999999999999999``  |
+   +----------------------------+----------------+-------------------------+
+   | :const:`~decimal.MIN_EMIN` | ``-425000000`` | ``-999999999999999999`` |
+   +----------------------------+----------------+-------------------------+
 
-* In the context templates (:class:`~decimal.DefaultContext`,
-  :class:`~decimal.BasicContext` and :class:`~decimal.ExtendedContext`)
+* In the context templates (:const:`~decimal.DefaultContext`,
+  :const:`~decimal.BasicContext` and :const:`~decimal.ExtendedContext`)
   the magnitude of :attr:`~decimal.Context.Emax` and
-  :attr:`~decimal.Context.Emin` has changed to :const:`999999`.
+  :attr:`~decimal.Context.Emin` has changed to ``999999``.
 
 * The :class:`~decimal.Decimal` constructor in decimal.py does not observe
   the context limits and converts values with arbitrary exponents or precision
@@ -1210,25 +1212,25 @@ the ``Message`` object it is serializing.  The default policy is
 
 The minimum set of controls implemented by all ``policy`` objects are:
 
-    .. tabularcolumns:: |l|L|
+.. tabularcolumns:: |l|L|
 
-    ===============     =======================================================
-    max_line_length     The maximum length, excluding the linesep character(s),
-                        individual lines may have when a ``Message`` is
-                        serialized.  Defaults to 78.
+===============     =======================================================
+max_line_length     The maximum length, excluding the linesep character(s),
+                    individual lines may have when a ``Message`` is
+                    serialized.  Defaults to 78.
 
-    linesep             The character used to separate individual lines when a
-                        ``Message`` is serialized.  Defaults to ``\n``.
+linesep             The character used to separate individual lines when a
+                    ``Message`` is serialized.  Defaults to ``\n``.
 
-    cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
-                        ``Bytes`` ``generator``, and means that non-ASCII may
-                        be used where allowed by the protocol (or where it
-                        exists in the original input).
+cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
+                    ``Bytes`` ``generator``, and means that non-ASCII may
+                    be used where allowed by the protocol (or where it
+                    exists in the original input).
 
-    raise_on_defect     Causes a ``parser`` to raise error when defects are
-                        encountered instead of adding them to the ``Message``
-                        object's ``defects`` list.
-    ===============     =======================================================
+raise_on_defect     Causes a ``parser`` to raise error when defects are
+                    encountered instead of adding them to the ``Message``
+                    object's ``defects`` list.
+===============     =======================================================
 
 A new policy instance, with new settings, is created using the
 :meth:`~email.policy.Policy.clone` method of policy objects.  ``clone`` takes
@@ -1263,21 +1265,21 @@ removal of the code) may occur if deemed necessary by the core developers.
 The new policies are instances of :class:`~email.policy.EmailPolicy`,
 and add the following additional controls:
 
-    .. tabularcolumns:: |l|L|
+.. tabularcolumns:: |l|L|
 
-    ===============     =======================================================
-    refold_source       Controls whether or not headers parsed by a
-                        :mod:`~email.parser` are refolded by the
-                        :mod:`~email.generator`.  It can be ``none``, ``long``,
-                        or ``all``.  The default is ``long``, which means that
-                        source headers with a line longer than
-                        ``max_line_length`` get refolded.  ``none`` means no
-                        line get refolded, and ``all`` means that all lines
-                        get refolded.
+===============     =======================================================
+refold_source       Controls whether or not headers parsed by a
+                    :mod:`~email.parser` are refolded by the
+                    :mod:`~email.generator`.  It can be ``none``, ``long``,
+                    or ``all``.  The default is ``long``, which means that
+                    source headers with a line longer than
+                    ``max_line_length`` get refolded.  ``none`` means no
+                    line get refolded, and ``all`` means that all lines
+                    get refolded.
 
-    header_factory      A callable that take a ``name`` and ``value`` and
-                        produces a custom header object.
-    ===============     =======================================================
+header_factory      A callable that take a ``name`` and ``value`` and
+                    produces a custom header object.
+===============     =======================================================
 
 The ``header_factory`` is the key to the new features provided by the new
 policies.  When one of the new policies is used, any header retrieved from
@@ -1352,18 +1354,18 @@ API.
 
 New utility functions:
 
-   * :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
-     produce a string formatted for use in an email header.
+* :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
+  produce a string formatted for use in an email header.
 
-   * :func:`~email.utils.parsedate_to_datetime`: given a date string from
-     an email header, convert it into an aware :class:`~datetime.datetime`,
-     or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
+* :func:`~email.utils.parsedate_to_datetime`: given a date string from
+  an email header, convert it into an aware :class:`~datetime.datetime`,
+  or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
 
-   * :func:`~email.utils.localtime`: With no argument, returns the
-     current local time as an aware :class:`~datetime.datetime` using the local
-     :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
-     converts it into an aware :class:`~datetime.datetime` using the
-     local :class:`~datetime.timezone`.
+* :func:`~email.utils.localtime`: With no argument, returns the
+  current local time as an aware :class:`~datetime.datetime` using the local
+  :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
+  converts it into an aware :class:`~datetime.datetime` using the
+  local :class:`~datetime.timezone`.
 
 
 ftplib
@@ -1432,7 +1434,7 @@ html
 
 :class:`html.parser.HTMLParser` is now able to parse broken markup without
 raising errors, therefore the *strict* argument of the constructor and the
-:exc:`~html.parser.HTMLParseError` exception are now deprecated.
+:exc:`!HTMLParseError` exception are now deprecated.
 The ability to parse broken markup is the result of a number of bug fixes that
 are also available on the latest bug fix releases of Python 2.7/3.2.
 (Contributed by Ezio Melotti in :issue:`15114`, and :issue:`14538`,
@@ -1484,7 +1486,7 @@ already exists. It is based on the C11 'x' mode to fopen().
 
 The constructor of the :class:`~io.TextIOWrapper` class has a new
 *write_through* optional argument. If *write_through* is ``True``, calls to
-:meth:`~io.TextIOWrapper.write` are guaranteed not to be buffered: any data
+:meth:`!write` are guaranteed not to be buffered: any data
 written on the :class:`~io.TextIOWrapper` object is immediately handled to its
 underlying binary buffer.
 
@@ -1502,7 +1504,7 @@ logging
 The :func:`~logging.basicConfig` function now supports an optional ``handlers``
 argument taking an iterable of handlers to be added to the root logger.
 
-A class level attribute :attr:`~logging.handlers.SysLogHandler.append_nul` has
+A class level attribute :attr:`!append_nul` has
 been added to :class:`~logging.handlers.SysLogHandler` to allow control of the
 appending of the ``NUL`` (``\000``) byte to syslog records, since for some
 daemons it is required while for others it is passed through to the log.
@@ -1534,8 +1536,8 @@ The new :func:`multiprocessing.connection.wait` function allows polling
 multiple objects (such as connections, sockets and pipes) with a timeout.
 (Contributed by Richard Oudkerk in :issue:`12328`.)
 
-:class:`multiprocessing.Connection` objects can now be transferred over
-multiprocessing connections.
+:class:`multiprocessing.connection.Connection` objects can now be transferred
+over multiprocessing connections.
 (Contributed by Richard Oudkerk in :issue:`4892`.)
 
 :class:`multiprocessing.Process` now accepts a ``daemon`` keyword argument
@@ -1558,7 +1560,7 @@ Schlawack in :issue:`12708`.)
 nntplib
 -------
 
-The :class:`nntplib.NNTP` class now supports the context management protocol to
+The :class:`!nntplib.NNTP` class now supports the context management protocol to
 unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
 connection when done::
 
@@ -1576,8 +1578,8 @@ os
 --
 
 * The :mod:`os` module has a new :func:`~os.pipe2` function that makes it
-  possible to create a pipe with :data:`~os.O_CLOEXEC` or
-  :data:`~os.O_NONBLOCK` flags set atomically. This is especially useful to
+  possible to create a pipe with :const:`~os.O_CLOEXEC` or
+  :const:`~os.O_NONBLOCK` flags set atomically. This is especially useful to
   avoid race conditions in multi-threaded programs.
 
 * The :mod:`os` module has a new :func:`~os.sendfile` function which provides
@@ -1609,7 +1611,7 @@ os
     :func:`~os.rename`, :func:`~os.replace`, :func:`~os.rmdir`, :func:`~os.stat`,
     :func:`~os.symlink`, :func:`~os.unlink`, :func:`~os.utime`.  Platform
     support for using these parameters can be checked via the sets
-    :data:`os.supports_dir_fd` and :data:`os.supports_follows_symlinks`.
+    :data:`os.supports_dir_fd` and :data:`os.supports_follow_symlinks`.
 
   - The following functions now support a file descriptor for their path argument:
     :func:`~os.chdir`, :func:`~os.chmod`, :func:`~os.chown`,
@@ -1691,12 +1693,12 @@ os
 * Some platforms now support additional constants for the :func:`~os.lseek`
   function, such as ``os.SEEK_HOLE`` and ``os.SEEK_DATA``.
 
-* New constants :data:`~os.RTLD_LAZY`, :data:`~os.RTLD_NOW`,
-  :data:`~os.RTLD_GLOBAL`, :data:`~os.RTLD_LOCAL`, :data:`~os.RTLD_NODELETE`,
-  :data:`~os.RTLD_NOLOAD`, and :data:`~os.RTLD_DEEPBIND` are available on
+* New constants :const:`~os.RTLD_LAZY`, :const:`~os.RTLD_NOW`,
+  :const:`~os.RTLD_GLOBAL`, :const:`~os.RTLD_LOCAL`, :const:`~os.RTLD_NODELETE`,
+  :const:`~os.RTLD_NOLOAD`, and :const:`~os.RTLD_DEEPBIND` are available on
   platforms that support them.   These are for use with the
   :func:`sys.setdlopenflags` function, and supersede the similar constants
-  defined in :mod:`ctypes` and :mod:`DLFCN`.  (Contributed by Victor Stinner
+  defined in :mod:`ctypes` and :mod:`!DLFCN`.  (Contributed by Victor Stinner
   in :issue:`13226`.)
 
 * :func:`os.symlink` now accepts (and ignores) the ``target_is_directory``
@@ -1726,8 +1728,8 @@ reduction functions to be set.
 pydoc
 -----
 
-The Tk GUI and the :func:`~pydoc.serve` function have been removed from the
-:mod:`pydoc` module: ``pydoc -g`` and :func:`~pydoc.serve` have been deprecated
+The Tk GUI and the :func:`!serve` function have been removed from the
+:mod:`pydoc` module: ``pydoc -g`` and :func:`!serve` have been deprecated
 in Python 3.2.
 
 
@@ -1778,7 +1780,7 @@ shlex
 -----
 
 The previously undocumented helper function ``quote`` from the
-:mod:`pipes` modules has been moved to the :mod:`shlex` module and
+:mod:`!pipes` modules has been moved to the :mod:`shlex` module and
 documented.  :func:`~shlex.quote` properly escapes all characters in a string
 that might be otherwise given special meaning by the shell.
 
@@ -1845,7 +1847,7 @@ signal
 smtpd
 -----
 
-The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
+The :mod:`!smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
 (size extension).  Per the standard, these extensions are enabled if and only
 if the client initiates the session with an ``EHLO`` command.
 
@@ -1929,7 +1931,7 @@ ssl
 
   * :func:`~ssl.RAND_bytes`: generate cryptographically strong
     pseudo-random bytes.
-  * :func:`~ssl.RAND_pseudo_bytes`: generate pseudo-random bytes.
+  * :func:`!RAND_pseudo_bytes`: generate pseudo-random bytes.
 
   (Contributed by Victor Stinner in :issue:`12049`.)
 
@@ -1952,7 +1954,7 @@ ssl
 
 * You can query the SSL compression algorithm used by an SSL socket, thanks
   to its new :meth:`~ssl.SSLSocket.compression` method.  The new attribute
-  :attr:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
+  :const:`~ssl.OP_NO_COMPRESSION` can be used to disable compression.
   (Contributed by Antoine Pitrou in :issue:`13634`.)
 
 * Support has been added for the Next Protocol Negotiation extension using
@@ -1966,7 +1968,7 @@ ssl
 * The :func:`~ssl.get_server_certificate` function now supports IPv6.
   (Contributed by Charles-François Natali in :issue:`11811`.)
 
-* New attribute :attr:`~ssl.OP_CIPHER_SERVER_PREFERENCE` allows setting
+* New attribute :const:`~ssl.OP_CIPHER_SERVER_PREFERENCE` allows setting
   SSLv3 server sockets to use the server's cipher ordering preference rather
   than the client's (:issue:`13635`).
 
@@ -1984,7 +1986,7 @@ the form '-rwxrwxrwx'.
 struct
 ------
 
-The :mod:`struct` module now supports ``ssize_t`` and ``size_t`` via the
+The :mod:`struct` module now supports :c:type:`ssize_t` and :c:type:`size_t` via the
 new codes ``n`` and ``N``, respectively.  (Contributed by Antoine Pitrou
 in :issue:`3163`.)
 
@@ -1995,7 +1997,7 @@ subprocess
 Command strings can now be bytes objects on posix platforms.  (Contributed by
 Victor Stinner in :issue:`8513`.)
 
-A new constant :data:`~subprocess.DEVNULL` allows suppressing output in a
+A new constant :const:`~subprocess.DEVNULL` allows suppressing output in a
 platform-independent fashion.  (Contributed by Ross Lagerwall in
 :issue:`5870`.)
 
@@ -2018,8 +2020,7 @@ tarfile
 tempfile
 --------
 
-:class:`tempfile.SpooledTemporaryFile`\'s
-:meth:`~tempfile.SpooledTemporaryFile.truncate` method now accepts
+:class:`tempfile.SpooledTemporaryFile`\'s :meth:`!truncate` method now accepts
 a ``size`` parameter.  (Contributed by Ryan Kelly in :issue:`9957`.)
 
 
@@ -2067,7 +2068,7 @@ The :pep:`418` added new functions to the :mod:`time` module:
 Other new functions:
 
 * :func:`~time.clock_getres`, :func:`~time.clock_gettime` and
-  :func:`~time.clock_settime` functions with ``CLOCK_xxx`` constants.
+  :func:`~time.clock_settime` functions with :samp:`CLOCK_{xxx}` constants.
   (Contributed by Victor Stinner in :issue:`10278`.)
 
 To improve cross platform consistency, :func:`~time.sleep` now raises a
@@ -2127,7 +2128,7 @@ xml.etree.ElementTree
 
 The :mod:`xml.etree.ElementTree` module now imports its C accelerator by
 default; there is no longer a need to explicitly import
-:mod:`xml.etree.cElementTree` (this module stays for backwards compatibility,
+:mod:`!xml.etree.cElementTree` (this module stays for backwards compatibility,
 but is now deprecated).  In addition,  the ``iter`` family of methods of
 :class:`~xml.etree.ElementTree.Element` has been optimized (rewritten in C).
 The module's documentation has also been greatly improved with added examples
@@ -2141,7 +2142,7 @@ New attribute :attr:`zlib.Decompress.eof` makes it possible to distinguish
 between a properly formed compressed stream and an incomplete or truncated one.
 (Contributed by Nadeem Vawda in :issue:`12646`.)
 
-New attribute :attr:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of
+New attribute :const:`zlib.ZLIB_RUNTIME_VERSION` reports the version string of
 the underlying ``zlib`` library that is loaded at runtime.  (Contributed by
 Torsten Landschoff in :issue:`12306`.)
 
@@ -2195,8 +2196,8 @@ Changes to Python's build process and to the C API include:
     * :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsUCS4Copy`
     * :c:macro:`PyUnicode_DATA`, :c:macro:`PyUnicode_1BYTE_DATA`,
       :c:macro:`PyUnicode_2BYTE_DATA`, :c:macro:`PyUnicode_4BYTE_DATA`
-    * :c:macro:`PyUnicode_KIND` with :c:type:`PyUnicode_Kind` enum:
-      :c:data:`PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
+    * :c:macro:`PyUnicode_KIND` with :c:enum:`!PyUnicode_Kind` enum:
+      :c:data:`!PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
       :c:data:`PyUnicode_2BYTE_KIND`, :c:data:`PyUnicode_4BYTE_KIND`
     * :c:macro:`PyUnicode_READ`, :c:macro:`PyUnicode_READ_CHAR`, :c:macro:`PyUnicode_WRITE`
     * :c:macro:`PyUnicode_MAX_CHAR_VALUE`
@@ -2230,17 +2231,17 @@ Deprecated Python modules, functions and methods
   (``utf-32-le`` or ``utf-32-be``)
 * :meth:`ftplib.FTP.nlst` and :meth:`ftplib.FTP.dir`: use
   :meth:`ftplib.FTP.mlsd`
-* :func:`platform.popen`: use the :mod:`subprocess` module. Check especially
+* :func:`!platform.popen`: use the :mod:`subprocess` module. Check especially
   the :ref:`subprocess-replacements` section (:issue:`11377`).
 * :issue:`13374`: The Windows bytes API has been deprecated in the :mod:`os`
   module. Use Unicode filenames, instead of bytes filenames, to not depend on
   the ANSI code page anymore and to support any filename.
-* :issue:`13988`: The :mod:`xml.etree.cElementTree` module is deprecated.  The
+* :issue:`13988`: The :mod:`!xml.etree.cElementTree` module is deprecated.  The
   accelerator is used automatically whenever available.
-* The behaviour of :func:`time.clock` depends on the platform: use the new
+* The behaviour of :func:`!time.clock` depends on the platform: use the new
   :func:`time.perf_counter` or :func:`time.process_time` function instead,
   depending on your requirements, to have a well defined behaviour.
-* The :func:`os.stat_float_times` function is deprecated.
+* The :func:`!os.stat_float_times` function is deprecated.
 * :mod:`abc` module:
 
   * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
@@ -2270,58 +2271,58 @@ removed in Python 4. All functions using this type are deprecated:
 Unicode functions and methods using :c:type:`Py_UNICODE` and
 :c:expr:`Py_UNICODE*` types:
 
-* :c:macro:`PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
+* :c:macro:`!PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
   :c:func:`PyUnicode_FromKindAndData`
-* :c:macro:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_AsUnicode`,
-  :c:func:`PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
-* :c:macro:`PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
+* :c:macro:`!PyUnicode_AS_UNICODE`, :c:func:`!PyUnicode_AsUnicode`,
+  :c:func:`!PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
+* :c:macro:`!PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
   :c:macro:`PyUnicode_READ` and :c:macro:`PyUnicode_WRITE`
-* :c:macro:`PyUnicode_GET_SIZE`, :c:func:`PyUnicode_GetSize`: use
+* :c:macro:`!PyUnicode_GET_SIZE`, :c:func:`!PyUnicode_GetSize`: use
   :c:macro:`PyUnicode_GET_LENGTH` or :c:func:`PyUnicode_GetLength`
-* :c:macro:`PyUnicode_GET_DATA_SIZE`: use
+* :c:macro:`!PyUnicode_GET_DATA_SIZE`: use
   ``PyUnicode_GET_LENGTH(str) * PyUnicode_KIND(str)`` (only work on ready
   strings)
-* :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
+* :c:func:`!PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
   :c:func:`PyUnicode_AsWideCharString`
-* :c:func:`PyUnicode_GetMax`
+* :c:func:`!PyUnicode_GetMax`
 
 
 Functions and macros manipulating Py_UNICODE* strings:
 
-* :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
+* :c:macro:`!Py_UNICODE_strlen()`: use :c:func:`PyUnicode_GetLength` or
   :c:macro:`PyUnicode_GET_LENGTH`
-* :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
+* :c:macro:`!Py_UNICODE_strcat()`: use :c:func:`PyUnicode_CopyCharacters` or
   :c:func:`PyUnicode_FromFormat`
-* :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
-  :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
+* :c:macro:`!Py_UNICODE_strcpy()`, :c:macro:`!Py_UNICODE_strncpy()`,
+  :c:macro:`!Py_UNICODE_COPY()`: use :c:func:`PyUnicode_CopyCharacters` or
   :c:func:`PyUnicode_Substring`
-* :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
-* :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
-* :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
+* :c:macro:`!Py_UNICODE_strcmp()`: use :c:func:`PyUnicode_Compare`
+* :c:macro:`!Py_UNICODE_strncmp()`: use :c:func:`PyUnicode_Tailmatch`
+* :c:macro:`!Py_UNICODE_strchr()`, :c:macro:`!Py_UNICODE_strrchr()`: use
   :c:func:`PyUnicode_FindChar`
-* :c:macro:`Py_UNICODE_FILL`: use :c:func:`PyUnicode_Fill`
-* :c:macro:`Py_UNICODE_MATCH`
+* :c:macro:`!Py_UNICODE_FILL()`: use :c:func:`PyUnicode_Fill`
+* :c:macro:`!Py_UNICODE_MATCH`
 
 Encoders:
 
-* :c:func:`PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
-* :c:func:`PyUnicode_EncodeUTF7`
-* :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
+* :c:func:`!PyUnicode_Encode`: use :c:func:`!PyUnicode_AsEncodedObject`
+* :c:func:`!PyUnicode_EncodeUTF7`
+* :c:func:`!PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
   :c:func:`PyUnicode_AsUTF8String`
-* :c:func:`PyUnicode_EncodeUTF32`
-* :c:func:`PyUnicode_EncodeUTF16`
-* :c:func:`PyUnicode_EncodeUnicodeEscape` use
+* :c:func:`!PyUnicode_EncodeUTF32`
+* :c:func:`!PyUnicode_EncodeUTF16`
+* :c:func:`!PyUnicode_EncodeUnicodeEscape` use
   :c:func:`PyUnicode_AsUnicodeEscapeString`
-* :c:func:`PyUnicode_EncodeRawUnicodeEscape` use
+* :c:func:`!PyUnicode_EncodeRawUnicodeEscape` use
   :c:func:`PyUnicode_AsRawUnicodeEscapeString`
-* :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
-* :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
-* :c:func:`PyUnicode_EncodeCharmap`
-* :c:func:`PyUnicode_TranslateCharmap`
-* :c:func:`PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
+* :c:func:`!PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
+* :c:func:`!PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
+* :c:func:`!PyUnicode_EncodeCharmap`
+* :c:func:`!PyUnicode_TranslateCharmap`
+* :c:func:`!PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
   :c:func:`PyUnicode_EncodeCodePage` (with ``CP_ACP`` code_page)
-* :c:func:`PyUnicode_EncodeDecimal`,
-  :c:func:`PyUnicode_TransformDecimalToASCII`
+* :c:func:`!PyUnicode_EncodeDecimal`,
+  :c:func:`!PyUnicode_TransformDecimalToASCII`
 
 
 Deprecated features
@@ -2378,16 +2379,16 @@ Porting Python code
 * :func:`__import__` no longer allows one to use an index value other than 0
   for top-level modules. E.g. ``__import__('sys', level=1)`` is now an error.
 
-* Because :attr:`sys.meta_path` and :attr:`sys.path_hooks` now have finders on
+* Because :data:`sys.meta_path` and :data:`sys.path_hooks` now have finders on
   them by default, you will most likely want to use :meth:`list.insert` instead
   of :meth:`list.append` to add to those lists.
 
-* Because ``None`` is now inserted into :attr:`sys.path_importer_cache`, if you
+* Because ``None`` is now inserted into :data:`sys.path_importer_cache`, if you
   are clearing out entries in the dictionary of paths that do not have a
   finder, you will need to remove keys paired with values of ``None`` **and**
   :class:`!imp.NullImporter` to be backwards-compatible. This will lead to extra
   overhead on older versions of Python that re-insert ``None`` into
-  :attr:`sys.path_importer_cache` where it represents the use of implicit
+  :data:`sys.path_importer_cache` where it represents the use of implicit
   finders, but semantically it should not change anything.
 
 * :class:`!importlib.abc.Finder` no longer specifies a ``find_module()`` abstract
@@ -2445,7 +2446,7 @@ Porting Python code
   error instead of sleeping forever.  It has always raised an error on posix.
 
 * The ``ast.__version__`` constant has been removed.  If you need to
-  make decisions affected by the AST version, use :attr:`sys.version_info`
+  make decisions affected by the AST version, use :data:`sys.version_info`
   to make the decision.
 
 * Code that used to work around the fact that the :mod:`threading` module used
@@ -2462,9 +2463,9 @@ Porting C code
 --------------
 
 * In the course of changes to the buffer API the undocumented
-  :c:member:`~Py_buffer.smalltable` member of the
+  :c:member:`!smalltable` member of the
   :c:type:`Py_buffer` structure has been removed and the
-  layout of the :c:type:`PyMemoryViewObject` has changed.
+  layout of the :c:type:`!PyMemoryViewObject` has changed.
 
   All extensions relying on the relevant parts in ``memoryobject.h``
   or ``object.h`` must be rebuilt.

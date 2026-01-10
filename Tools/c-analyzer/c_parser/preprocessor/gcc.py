@@ -3,6 +3,22 @@ import re
 
 from . import common as _common
 
+# The following C files must not built with Py_BUILD_CORE.
+FILES_WITHOUT_INTERNAL_CAPI = frozenset((
+    # Modules/
+    '_testcapimodule.c',
+    '_testlimitedcapi.c',
+    '_testclinic_limited.c',
+    'xxlimited.c',
+    'xxlimited_35.c',
+))
+
+# C files in the fhe following directories must not be built with
+# Py_BUILD_CORE.
+DIRS_WITHOUT_INTERNAL_CAPI = frozenset((
+    '_testcapi',            # Modules/_testcapi/
+    '_testlimitedcapi',     # Modules/_testlimitedcapi/
+))
 
 TOOL = 'gcc'
 
@@ -49,6 +65,8 @@ POST_ARGS = (
     '-E',
 )
 
+EXIT_MARKERS = {'# 0 "<command-line>" 2', '# 1 "<command-line>" 2'}
+
 
 def preprocess(filename,
                incldirs=None,
@@ -60,6 +78,14 @@ def preprocess(filename,
     if not cwd or not os.path.isabs(cwd):
         cwd = os.path.abspath(cwd or '.')
     filename = _normpath(filename, cwd)
+
+    postargs = POST_ARGS
+    basename = os.path.basename(filename)
+    dirname = os.path.basename(os.path.dirname(filename))
+    if (basename not in FILES_WITHOUT_INTERNAL_CAPI
+       and dirname not in DIRS_WITHOUT_INTERNAL_CAPI):
+        postargs += ('-DPy_BUILD_CORE=1',)
+
     text = _common.preprocess(
         TOOL,
         filename,
@@ -67,7 +93,7 @@ def preprocess(filename,
         includes=includes,
         macros=macros,
         #preargs=PRE_ARGS,
-        postargs=POST_ARGS,
+        postargs=postargs,
         executable=['gcc'],
         compiler='unix',
         cwd=cwd,
@@ -114,6 +140,7 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
             filter_reqfile,
             make_info,
             raw,
+            EXIT_MARKERS
         )
         last = included
     # The last one is always the requested file.
@@ -122,20 +149,28 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
 
 def _iter_top_include_lines(lines, topfile, cwd,
                             filter_reqfile, make_info,
-                            raw):
+                            raw, exit_markers):
     partial = 0  # depth
     files = [topfile]
-    # We start at 1 in case there are source lines (including blank onces)
+    # We start at 1 in case there are source lines (including blank ones)
     # before the first marker line.  Also, we already verified in
     # _parse_marker_line() that the preprocessor reported lno as 1.
     lno = 1
     for line in lines:
-        if line == '# 0 "<command-line>" 2' or line == '# 1 "<command-line>" 2':
+        if line in exit_markers:
             # We're done with this top-level include.
             return
 
         _lno, included, flags = _parse_marker_line(line)
         if included:
+            # HACK:
+            # Mixes curses.h and ncurses.h marker lines
+            # gcc silently passes this, while clang fails
+            # See: /Include/py_curses.h #if-elif directives
+            # And compare with preprocessor output
+            if os.path.basename(included) == 'curses.h':
+                included = os.path.join(os.path.dirname(included), 'ncurses.h')
+
             lno = _lno
             included = _normpath(included, cwd)
             # We hit a marker line.
@@ -219,6 +254,7 @@ def _strip_directives(line, partial=0):
         line = line[m.end():]
 
     line = re.sub(r'__extension__', '', line)
+    line = re.sub(r'__thread\b', '_Thread_local', line)
 
     while (m := COMPILER_DIRECTIVE_RE.match(line)):
         before, _, _, closed = m.groups()

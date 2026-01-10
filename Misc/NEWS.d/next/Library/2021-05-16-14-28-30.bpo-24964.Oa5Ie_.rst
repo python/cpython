@@ -1,3 +1,0 @@
-Added attribute '_proxy_response_headers' to HTTPConnection class. This
-attribute contains the headers of the proxy server response to the CONNECT
-request.

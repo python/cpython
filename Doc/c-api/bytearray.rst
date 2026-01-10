@@ -42,16 +42,21 @@ Direct API functions
    Return a new bytearray object from any object, *o*, that implements the
    :ref:`buffer protocol <bufferobjects>`.
 
+   On failure, return ``NULL`` with an exception set.
+
 
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
-   Create a new bytearray object from *string* and its length, *len*.  On
-   failure, ``NULL`` is returned.
+   Create a new bytearray object from *string* and its length, *len*.
+
+   On failure, return ``NULL`` with an exception set.
 
 
 .. c:function:: PyObject* PyByteArray_Concat(PyObject *a, PyObject *b)
 
    Concat bytearrays *a* and *b* and return a new bytearray with the result.
+
+   On failure, return ``NULL`` with an exception set.
 
 
 .. c:function:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
@@ -69,6 +74,11 @@ Direct API functions
 .. c:function:: int PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
 
    Resize the internal buffer of *bytearray* to *len*.
+   Failure is a ``-1`` return with an exception set.
+
+   .. versionchanged:: 3.14
+      A negative *len* will now result in an exception being set and -1 returned.
+
 
 Macros
 ^^^^^^

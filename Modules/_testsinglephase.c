@@ -1,6 +1,207 @@
 
 /* Testing module for single-phase initialization of extension modules
- */
+
+This file contains several distinct modules, meaning each as its own name
+and its own init function (PyInit_...).  The default import system will
+only find the one matching the filename: _testsinglephase.  To load the
+others you must do so manually.  For example:
+
+```python
+name = '_testsinglephase_base_wrapper'
+filename = _testsinglephase.__file__
+loader = importlib.machinery.ExtensionFileLoader(name, filename)
+spec = importlib.util.spec_from_file_location(name, filename, loader=loader)
+mod = importlib._bootstrap._load(spec)
+loader.exec_module(module)
+sys.modules[modname] = module
+```
+
+(The last two lines are just for completeness.)
+
+Here are the modules:
+
+* _testsinglephase
+   * def: _testsinglephase_basic,
+      * m_name: "_testsinglephase"
+      * m_size: -1
+   * state
+      * process-global
+         * <int> initialized_count  (default to -1; will never be 0)
+         * <module_state> module  (see module state below)
+      * module state: no
+      * initial __dict__: see common initial __dict__ below
+   * init function
+      1. create module
+      2. clear <global>.module
+      3. initialize <global>.module: see module state below
+      4. initialize module: set initial __dict__
+      5. increment <global>.initialized_count
+   * functions
+      * (3 common, see below)
+      * initialized_count() - return <global>.module.initialized_count
+   * import system
+      * caches
+         * global extensions cache: yes
+         * def.m_base.m_copy: yes
+         * def.m_base.m_init: no
+         * per-interpreter cache: yes  (all single-phase init modules)
+      * load in main interpreter
+         * initial  (not already in global cache)
+            1. get init function from shared object file
+            2. run init function
+            3. copy __dict__ into def.m_base.m_copy
+            4. set entry in global cache
+            5. set entry in per-interpreter cache
+            6. set entry in sys.modules
+         * reload  (already in sys.modules)
+            1. get def from global cache
+            2. get module from sys.modules
+            3. update module with contents of def.m_base.m_copy
+         * already loaded in other interpreter  (already in global cache)
+            * same as reload, but create new module and update *it*
+         * not in any sys.modules, still in global cache
+            * same as already loaded
+      * load in legacy (non-isolated) interpreter
+         * same as main interpreter
+      * unload: never  (all single-phase init modules)
+* _testsinglephase_basic_wrapper
+   * identical to _testsinglephase except module name
+* _testsinglephase_basic_copy
+   * def: static local variable in init function
+      * m_name: "_testsinglephase_basic_copy"
+      * m_size: -1
+   * state: same as _testsinglephase
+   * init function: same as _testsinglephase
+   * functions: same as _testsinglephase
+   * import system: same as _testsinglephase
+* _testsinglephase_with_reinit
+   * def: _testsinglephase_with_reinit,
+      * m_name: "_testsinglephase_with_reinit"
+      * m_size: 0
+   * state
+      * process-global state: no
+      * module state: no
+      * initial __dict__: see common initial __dict__ below
+   * init function
+      1. create module
+      2. initialize temporary module state (local var): see module state below
+      3. initialize module: set initial __dict__
+   * functions: see common functions below
+   * import system
+      * caches
+         * global extensions cache: only if loaded in main interpreter
+         * def.m_base.m_copy: no
+         * def.m_base.m_init: only if loaded in the main interpreter
+         * per-interpreter cache: yes  (all single-phase init modules)
+      * load in main interpreter
+         * initial  (not already in global cache)
+            * (same as _testsinglephase except step 3)
+            1. get init function from shared object file
+            2. run init function
+            3. set def.m_base.m_init to the init function
+            4. set entry in global cache
+            5. set entry in per-interpreter cache
+            6. set entry in sys.modules
+         * reload  (already in sys.modules)
+            1. get def from global cache
+            2. call def->m_base.m_init to get a new module object
+            3. replace the existing module in sys.modules
+         * already loaded in other interpreter  (already in global cache)
+            * same as reload (since will only be in cache for main interp)
+         * not in any sys.modules, still in global cache
+            * same as already loaded
+      * load in legacy (non-isolated) interpreter
+         * initial  (not already in global cache)
+            * (same as main interpreter except skip steps 3 & 4 there)
+            1. get init function from shared object file
+            2. run init function
+            ...
+            5. set entry in per-interpreter cache
+            6. set entry in sys.modules
+         * reload  (already in sys.modules)
+            * same as initial  (load from scratch)
+         * already loaded in other interpreter  (already in global cache)
+            * same as initial  (load from scratch)
+         * not in any sys.modules, still in global cache
+            * same as initial  (load from scratch)
+      * unload: never  (all single-phase init modules)
+* _testsinglephase_with_state
+   * def: _testsinglephase_with_state,
+      * m_name: "_testsinglephase_with_state"
+      * m_size: sizeof(module_state)
+   * state
+      * process-global: no
+      * module state: see module state below
+      * initial __dict__: see common initial __dict__ below
+   * init function
+      1. create module
+      3. initialize module state: see module state below
+      4. initialize module: set initial __dict__
+      5. increment <global>.initialized_count
+   * functions: see common functions below
+   * import system: same as _testsinglephase_basic_copy
+* _testsinglephase_check_cache_first
+   * def: _testsinglepahse_check_cache_first
+      * m_name: "_testsinglephase_check_cache_first"
+      * m_size: -1
+   * state: none
+   * init function:
+      * tries PyState_FindModule() first
+      * otherwise creates empty module
+   * functions: none
+   * import system: same as _testsinglephase
+* _testsinglephase_with_reinit_check_cache_first
+   * def: _testsinglepahse_with_reinit_check_cache_first
+      * m_name: "_testsinglephase_with_reinit_check_cache_first"
+      * m_size: 0
+   * state: none
+   * init function: same as _testsinglephase_check_cache_first
+   * functions: none
+   * import system: same as _testsinglephase_with_reinit
+* _testsinglephase_with_state_check_cache_first
+   * def: _testsinglepahse_with_state_check_cache_first
+      * m_name: "_testsinglephase_with_state_check_cache_first"
+      * m_size: 42
+   * state: none
+   * init function: same as _testsinglephase_check_cache_first
+   * functions: none
+   * import system: same as _testsinglephase_with_state
+
+* _testsinglephase_circular
+   Regression test for gh-123880.
+   Does not have the common attributes & methods.
+   See test_singlephase_circular test.test_import.SinglephaseInitTests.
+
+Module state:
+
+* fields
+   * <PyTime_t> initialized - when the module was first initialized
+   * <PyObject> *error
+   * <PyObject> *int_const
+   * <PyObject> *str_const
+* initialization
+   1. set state.initialized to the current time
+   2. set state.error to a new exception class
+   3. set state->int_const to int(1969)
+   4. set state->str_const to "something different"
+
+Common initial __dict__:
+
+* error: state.error
+* int_const: state.int_const
+* str_const: state.str_const
+* _module_initialized: state.initialized
+
+Common functions:
+
+* look_up_self() - return the module from the per-interpreter "by-index" cache
+* sum() - return a + b
+* state_initialized() - return state->initialized (or None if m_size == 0)
+
+See Python/import.c, especially the long comments, for more about
+single-phase init modules.
+*/
+
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
@@ -11,7 +212,7 @@
 
 
 typedef struct {
-    _PyTime_t initialized;
+    PyTime_t initialized;
     PyObject *error;
     PyObject *int_const;
     PyObject *str_const;
@@ -43,6 +244,8 @@ static inline module_state *
 get_module_state(PyObject *module)
 {
     PyModuleDef *def = PyModule_GetDef(module);
+    assert(def);
+
     if (def->m_size == -1) {
         return &global_state.module;
     }
@@ -66,17 +269,17 @@ clear_state(module_state *state)
 }
 
 static int
-_set_initialized(_PyTime_t *initialized)
+_set_initialized(PyTime_t *initialized)
 {
     /* We go strictly monotonic to ensure each time is unique. */
-    _PyTime_t prev;
-    if (_PyTime_GetMonotonicClockWithInfo(&prev, NULL) != 0) {
+    PyTime_t prev;
+    if (PyTime_Monotonic(&prev) != 0) {
         return -1;
     }
     /* We do a busy sleep since the interval should be super short. */
-    _PyTime_t t;
+    PyTime_t t;
     do {
-        if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) != 0) {
+        if (PyTime_Monotonic(&t) != 0) {
             return -1;
         }
     } while (t == prev);
@@ -135,12 +338,8 @@ init_module(PyObject *module, module_state *state)
         return -1;
     }
 
-    double d = _PyTime_AsSecondsDouble(state->initialized);
-    PyObject *initialized = PyFloat_FromDouble(d);
-    if (initialized == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(module, "_module_initialized", initialized) != 0) {
+    double d = PyTime_AsSecondsDouble(state->initialized);
+    if (PyModule_Add(module, "_module_initialized", PyFloat_FromDouble(d)) < 0) {
         return -1;
     }
 
@@ -160,7 +359,7 @@ common_state_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL) {
         Py_RETURN_NONE;
     }
-    double d = _PyTime_AsSecondsDouble(state->initialized);
+    double d = PyTime_AsSecondsDouble(state->initialized);
     return PyFloat_FromDouble(d);
 }
 
@@ -246,6 +445,25 @@ basic__clear_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
      basic__clear_globals_doc}
 
 
+PyDoc_STRVAR(basic__clear_module_state_doc, "_clear_module_state()\n\
+\n\
+Free the module state and set it to uninitialized.");
+
+static PyObject *
+basic__clear_module_state(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    module_state *state = get_module_state(self);
+    if (state != NULL) {
+        clear_state(state);
+    }
+    Py_RETURN_NONE;
+}
+
+#define _CLEAR_MODULE_STATE_METHODDEF \
+    {"_clear_module_state", basic__clear_module_state, METH_NOARGS, \
+     basic__clear_module_state_doc}
+
+
 /*********************************************/
 /* the _testsinglephase module (and aliases) */
 /*********************************************/
@@ -290,6 +508,9 @@ init__testsinglephase_basic(PyModuleDef *def)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     module_state *state = &global_state.module;
     // It may have been set by a previous run or under a different name.
@@ -381,6 +602,9 @@ PyInit__testsinglephase_with_reinit(void)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     assert(get_module_state(module) == NULL);
 
@@ -406,7 +630,7 @@ finally:
 /* the _testsinglephase_with_state module */
 /******************************************/
 
-/* This ia less typical of legacy extensions in the wild:
+/* This is less typical of legacy extensions in the wild:
    - single-phase init  (same as _testsinglephase above)
    - has some module state
    - supports repeated initialization
@@ -422,6 +646,7 @@ static PyMethodDef TestMethods_WithState[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
     STATE_INITIALIZED_METHODDEF,
+    _CLEAR_MODULE_STATE_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 
@@ -442,6 +667,9 @@ PyInit__testsinglephase_with_state(void)
     if (module == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     module_state *state = get_module_state(module);
     assert(state != NULL);
@@ -458,4 +686,118 @@ PyInit__testsinglephase_with_state(void)
 
 finally:
     return module;
+}
+
+
+/****************************************************/
+/* the _testsinglephase_*_check_cache_first modules */
+/****************************************************/
+
+/* Each of these modules should only be freshly loaded.  That means
+   clearing the caches and each module def's m_base after each load. */
+
+static struct PyModuleDef _testsinglephase_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_check_cache_first"),
+    .m_size = -1,  // no module state
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_check_cache_first(void)
+{
+    assert(_testsinglephase_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_check_cache_first);
+}
+
+
+static struct PyModuleDef _testsinglephase_with_reinit_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_with_reinit_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_with_reinit_check_cache_first"),
+    .m_size = 0,  // no module state
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_with_reinit_check_cache_first(void)
+{
+    assert(_testsinglephase_with_reinit_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_with_reinit_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_with_reinit_check_cache_first);
+}
+
+
+static struct PyModuleDef _testsinglephase_with_state_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_with_state_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_with_state_check_cache_first"),
+    .m_size = 42,  // not used
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_with_state_check_cache_first(void)
+{
+    assert(_testsinglephase_with_state_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_with_state_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_with_state_check_cache_first);
+}
+
+
+/****************************************/
+/* the _testsinglephase_circular module */
+/****************************************/
+
+static PyObject *static_module_circular;
+
+static PyObject *
+circularmod_clear_static_var(PyObject *self, PyObject *arg)
+{
+    PyObject *result = static_module_circular;
+    static_module_circular = NULL;
+    return result;
+}
+
+static struct PyModuleDef _testsinglephase_circular = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_circular",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_circular"),
+    .m_methods = (PyMethodDef[]) {
+        {"clear_static_var", circularmod_clear_static_var, METH_NOARGS,
+         "Clear the static variable and return its previous value."},
+        {NULL, NULL}           /* sentinel */
+    }
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_circular(void)
+{
+    if (!static_module_circular) {
+        static_module_circular = PyModule_Create(&_testsinglephase_circular);
+        if (!static_module_circular) {
+            return NULL;
+        }
+    }
+    static const char helper_mod_name[] = (
+        "test.test_import.data.circular_imports.singlephase");
+    PyObject *helper_mod = PyImport_ImportModule(helper_mod_name);
+    Py_XDECREF(helper_mod);
+    if (!helper_mod) {
+        return NULL;
+    }
+    if(PyModule_AddStringConstant(static_module_circular,
+                                  "helper_mod_name",
+                                  helper_mod_name) < 0) {
+        return NULL;
+    }
+    return Py_NewRef(static_module_circular);
 }

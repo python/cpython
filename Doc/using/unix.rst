@@ -17,12 +17,12 @@ On Linux
 
 Python comes preinstalled on most Linux distributions, and is available as a
 package on all others.  However there are certain features you might want to use
-that are not available on your distro's package.  You can easily compile the
+that are not available on your distro's package.  You can compile the
 latest version of Python from source.
 
-In the event that Python doesn't come preinstalled and isn't in the repositories as
-well, you can easily make packages for your own distro.  Have a look at the
-following links:
+In the event that the latest version of Python doesn't come preinstalled and isn't
+in the repositories as well, you can make packages for your own distro.  Have a
+look at the following links:
 
 .. seealso::
 
@@ -30,10 +30,35 @@ following links:
       for Debian users
    https://en.opensuse.org/Portal:Packaging
       for OpenSuse users
-   https://docs-old.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
+   https://docs.fedoraproject.org/en-US/package-maintainers/Packaging_Tutorial_GNU_Hello/
       for Fedora users
-   http://www.slackbook.org/html/package-management-making-packages.html
+   https://slackbook.org/html/package-management-making-packages.html
       for Slackware users
+
+.. _installing_idle_on_linux:
+
+Installing IDLE
+~~~~~~~~~~~~~~~
+
+In some cases, IDLE might not be included in your Python installation.
+
+* For Debian and Ubuntu users::
+
+   sudo apt update
+   sudo apt install idle
+
+* For Fedora, RHEL, and CentOS users::
+
+   sudo dnf install python3-idle
+
+* For SUSE and OpenSUSE users::
+
+   sudo zypper install python3-idle
+
+* For Alpine Linux users::
+
+   sudo apk add python3-idle
+
 
 
 On FreeBSD and OpenBSD
@@ -59,11 +84,17 @@ On FreeBSD and OpenBSD
 Building Python
 ===============
 
+.. seealso::
+
+   If you want to contribute to CPython, refer to the
+   `devguide <https://devguide.python.org/getting-started/setup-building/>`_,
+   which includes build instructions and other tips on setting up environment.
+
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
-latest release's source or just grab a fresh `clone
-<https://devguide.python.org/setup/#get-the-source-code>`_.  (If you want
-to contribute patches, you will need a clone.)
+latest release's source or grab a fresh `clone
+<https://devguide.python.org/setup/#get-the-source-code>`_.
+You will also need to install the :ref:`build requirements <build-requirements>`.
 
 The build process consists of the usual commands::
 

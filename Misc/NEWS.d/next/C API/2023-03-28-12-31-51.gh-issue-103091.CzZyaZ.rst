@@ -1,1 +1,0 @@
-Add a new C-API function to eagerly assign a version tag to a PyTypeObject: ``PyUnstable_Type_AssignVersionTag()``.

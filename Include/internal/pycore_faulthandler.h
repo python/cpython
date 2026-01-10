@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #ifdef HAVE_SIGACTION
-#  include <signal.h>
+#  include <signal.h>             // sigaction
 #endif
 
 
@@ -56,6 +56,7 @@ struct _faulthandler_runtime_state {
 #ifdef MS_WINDOWS
         void *exc_handler;
 #endif
+        int c_stack;
     } fatal_error;
 
     struct {

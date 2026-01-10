@@ -22,7 +22,6 @@ IMPORT_MAPPING = {
     'tkMessageBox': 'tkinter.messagebox',
     'ScrolledText': 'tkinter.scrolledtext',
     'Tkconstants': 'tkinter.constants',
-    'Tix': 'tkinter.tix',
     'ttk': 'tkinter.ttk',
     'Tkinter': 'tkinter',
     'markupbase': '_markupbase',
@@ -176,7 +175,6 @@ IMPORT_MAPPING.update({
     'SimpleDialog': 'tkinter.simpledialog',
     'DocXMLRPCServer': 'xmlrpc.server',
     'SimpleHTTPServer': 'http.server',
-    'CGIHTTPServer': 'http.server',
     # For compatibility with broken pickles saved in old Python 3 versions
     'UserDict': 'collections',
     'UserList': 'collections',
@@ -218,8 +216,6 @@ REVERSE_NAME_MAPPING.update({
         ('DocXMLRPCServer', 'DocCGIXMLRPCRequestHandler'),
     ('http.server', 'SimpleHTTPRequestHandler'):
         ('SimpleHTTPServer', 'SimpleHTTPRequestHandler'),
-    ('http.server', 'CGIHTTPRequestHandler'):
-        ('CGIHTTPServer', 'CGIHTTPRequestHandler'),
     ('_socket', 'socket'): ('socket', '_socketobject'),
 })
 

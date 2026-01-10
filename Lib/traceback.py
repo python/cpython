@@ -5,18 +5,31 @@ import itertools
 import linecache
 import sys
 import textwrap
+import warnings
+import codeop
+import keyword
+import tokenize
+import io
+import _colorize
+
 from contextlib import suppress
+
+try:
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb']
+           'walk_stack', 'walk_tb', 'print_list']
 
 #
 # Formatting and printing lists of traceback lines.
 #
+
 
 def print_list(extracted_list, file=None):
     """Print the list of tuples as returned by extract_tb() or
@@ -109,7 +122,7 @@ def _parse_value_tb(exc, value, tb):
 
 
 def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
-                    file=None, chain=True):
+                    file=None, chain=True, **kwargs):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -120,13 +133,24 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
+    colorize = kwargs.get("colorize", False)
     value, tb = _parse_value_tb(exc, value, tb)
     te = TracebackException(type(value), value, tb, limit=limit, compact=True)
-    te.print(file=file, chain=chain)
+    te.print(file=file, chain=chain, colorize=colorize)
+
+
+BUILTIN_EXCEPTION_LIMIT = object()
+
+
+def _print_exception_bltin(exc, file=None, /):
+    if file is None:
+        file = sys.stderr if sys.stderr is not None else sys.__stderr__
+    colorize = _colorize.can_colorize(file=file)
+    return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
 def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
-                     chain=True):
+                     chain=True, **kwargs):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -135,40 +159,49 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
+    colorize = kwargs.get("colorize", False)
     value, tb = _parse_value_tb(exc, value, tb)
     te = TracebackException(type(value), value, tb, limit=limit, compact=True)
-    return list(te.format(chain=chain))
+    return list(te.format(chain=chain, colorize=colorize))
 
 
-def format_exception_only(exc, /, value=_sentinel):
+def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs):
     """Format the exception part of a traceback.
 
     The return value is a list of strings, each ending in a newline.
 
-    Normally, the list contains a single string; however, for
-    SyntaxError exceptions, it contains several lines that (when
-    printed) display detailed information about where the syntax
-    error occurred.
+    The list contains the exception's message, which is
+    normally a single string; however, for :exc:`SyntaxError` exceptions, it
+    contains several lines that (when printed) display detailed information
+    about where the syntax error occurred. Following the message, the list
+    contains the exception's ``__notes__``.
 
-    The message indicating which exception occurred is always the last
-    string in the list.
-
+    When *show_group* is ``True``, and the exception is an instance of
+    :exc:`BaseExceptionGroup`, the nested exceptions are included as
+    well, recursively, with indentation relative to their nesting depth.
     """
+    colorize = kwargs.get("colorize", False)
     if value is _sentinel:
         value = exc
     te = TracebackException(type(value), value, None, compact=True)
-    return list(te.format_exception_only())
+    return list(te.format_exception_only(show_group=show_group, colorize=colorize))
 
 
 # -- not official API but folk probably use these two functions.
 
-def _format_final_exc_line(etype, value):
+def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=False):
     valuestr = _safe_string(value, 'exception')
-    if value is None or not valuestr:
-        line = "%s\n" % etype
+    end_char = "\n" if insert_final_newline else ""
+    if colorize:
+        theme = _colorize.get_theme(force_color=True).traceback
     else:
-        line = "%s: %s\n" % (etype, valuestr)
+        theme = _colorize.get_theme(force_no_color=True).traceback
+    if value is None or not valuestr:
+        line = f"{theme.type}{etype}{theme.reset}{end_char}"
+    else:
+        line = f"{theme.type}{etype}{theme.reset}: {theme.message}{valuestr}{theme.reset}{end_char}"
     return line
+
 
 def _safe_string(value, what, func=str):
     try:
@@ -178,24 +211,24 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
+def print_exc(limit=None, file=None, chain=True, **kwargs):
+    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain, **kwargs)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
     return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain)'."""
     if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit, file, chain)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit, file, chain)
+                        limit=limit, file=file, chain=chain)
 
 
 #
@@ -260,14 +293,20 @@ class FrameSummary:
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
+    - :attr:`end_lineno` The last line number of the source code for this frame.
+      By default, it is set to lineno and indexation starts from 1.
+    - :attr:`colno` The column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
+    - :attr:`end_colno` The last column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_line', 'locals')
+                 'name', '_lines', '_lines_dedented', 'locals', '_code')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
-            end_lineno=None, colno=None, end_colno=None):
+            end_lineno=None, colno=None, end_colno=None, **kwargs):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -279,15 +318,17 @@ class FrameSummary:
         """
         self.filename = filename
         self.lineno = lineno
+        self.end_lineno = lineno if end_lineno is None else end_lineno
+        self.colno = colno
+        self.end_colno = end_colno
         self.name = name
-        self._line = line
+        self._code = kwargs.get("_code")
+        self._lines = line
+        self._lines_dedented = None
         if lookup_line:
             self.line
         self.locals = {k: _safe_string(v, 'local', func=repr)
             for k, v in locals.items()} if locals else None
-        self.end_lineno = end_lineno
-        self.colno = colno
-        self.end_colno = end_colno
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):
@@ -312,19 +353,42 @@ class FrameSummary:
     def __len__(self):
         return 4
 
+    def _set_lines(self):
+        if (
+            self._lines is None
+            and self.lineno is not None
+            and self.end_lineno is not None
+        ):
+            lines = []
+            for lineno in range(self.lineno, self.end_lineno + 1):
+                # treat errors (empty string) and empty lines (newline) as the same
+                line = linecache.getline(self.filename, lineno).rstrip()
+                if not line and self._code is not None and self.filename.startswith("<"):
+                    line = linecache._getline_from_code(self._code, lineno).rstrip()
+                lines.append(line)
+            self._lines = "\n".join(lines) + "\n"
+
     @property
-    def _original_line(self):
+    def _original_lines(self):
         # Returns the line as-is from the source, without modifying whitespace.
-        self.line
-        return self._line
+        self._set_lines()
+        return self._lines
+
+    @property
+    def _dedented_lines(self):
+        # Returns _original_lines, but dedented
+        self._set_lines()
+        if self._lines_dedented is None and self._lines is not None:
+            self._lines_dedented = textwrap.dedent(self._lines)
+        return self._lines_dedented
 
     @property
     def line(self):
-        if self._line is None:
-            if self.lineno is None:
-                return None
-            self._line = linecache.getline(self.filename, self.lineno)
-        return self._line.strip()
+        self._set_lines()
+        if self._lines is None:
+            return None
+        # return only the first line, stripped
+        return self._lines.partition("\n")[0].strip()
 
 
 def walk_stack(f):
@@ -334,10 +398,14 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back.f_back.f_back
-    while f is not None:
-        yield f, f.f_lineno
-        f = f.f_back
+        f = sys._getframe().f_back
+
+    def walk_stack_generator(frame):
+        while frame is not None:
+            yield frame, frame.f_lineno
+            frame = frame.f_back
+
+    return walk_stack_generator(f)
 
 
 def walk_tb(tb):
@@ -374,6 +442,7 @@ def _get_code_position(code, instruction_index):
 
 _RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 
+
 class StackSummary(list):
     """A list of FrameSummary objects, representing a stack of frames."""
 
@@ -406,12 +475,16 @@ class StackSummary(list):
         # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
         # Only lineno is required, the remaining fields can be None if the
         # information is not available.
-        if limit is None:
+        builtin_limit = limit is BUILTIN_EXCEPTION_LIMIT
+        if limit is None or builtin_limit:
             limit = getattr(sys, 'tracebacklimit', None)
             if limit is not None and limit < 0:
                 limit = 0
         if limit is not None:
-            if limit >= 0:
+            if builtin_limit:
+                frame_gen = tuple(frame_gen)
+                frame_gen = frame_gen[len(frame_gen) - limit:]
+            elif limit >= 0:
                 frame_gen = itertools.islice(frame_gen, limit)
             else:
                 frame_gen = collections.deque(frame_gen, maxlen=-limit)
@@ -422,7 +495,6 @@ class StackSummary(list):
             co = f.f_code
             filename = co.co_filename
             name = co.co_name
-
             fnames.add(filename)
             linecache.lazycache(filename, f.f_globals)
             # Must defer line lookups until we have called checkcache.
@@ -430,11 +502,16 @@ class StackSummary(list):
                 f_locals = f.f_locals
             else:
                 f_locals = None
-            result.append(FrameSummary(
-                filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+            result.append(
+                FrameSummary(filename, lineno, name,
+                    lookup_line=False, locals=f_locals,
+                    end_lineno=end_lineno, colno=colno, end_colno=end_colno,
+                    _code=f.f_code,
+                )
+            )
         for filename in fnames:
             linecache.checkcache(filename)
+
         # If immediate lookup was desired, trigger lookups now.
         if lookup_lines:
             for f in result:
@@ -460,62 +537,224 @@ class StackSummary(list):
                 result.append(FrameSummary(filename, lineno, name, line=line))
         return result
 
-    def format_frame_summary(self, frame_summary):
+    def format_frame_summary(self, frame_summary, **kwargs):
         """Format the lines for a single FrameSummary.
 
         Returns a string representing one frame involved in the stack. This
         gets called for every frame to be printed in the stack summary.
         """
+        colorize = kwargs.get("colorize", False)
         row = []
-        row.append('  File "{}", line {}, in {}\n'.format(
-            frame_summary.filename, frame_summary.lineno, frame_summary.name))
-        if frame_summary.line:
-            stripped_line = frame_summary.line.strip()
-            row.append('    {}\n'.format(stripped_line))
-
-            orig_line_len = len(frame_summary._original_line)
-            frame_line_len = len(frame_summary.line.lstrip())
-            stripped_characters = orig_line_len - frame_line_len
+        filename = frame_summary.filename
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
+            filename = "<stdin>"
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
+        row.append(
+            '  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
+                theme.filename,
+                filename,
+                theme.reset,
+                theme.line_no,
+                frame_summary.lineno,
+                theme.reset,
+                theme.frame,
+                frame_summary.name,
+                theme.reset,
+            )
+        )
+        if frame_summary._dedented_lines and frame_summary._dedented_lines.strip():
             if (
-                frame_summary.colno is not None
-                and frame_summary.end_colno is not None
+                frame_summary.colno is None or
+                frame_summary.end_colno is None
             ):
-                start_offset = _byte_offset_to_character_offset(
-                    frame_summary._original_line, frame_summary.colno) + 1
-                end_offset = _byte_offset_to_character_offset(
-                    frame_summary._original_line, frame_summary.end_colno) + 1
+                # only output first line if column information is missing
+                row.append(textwrap.indent(frame_summary.line, '    ') + "\n")
+            else:
+                # get first and last line
+                all_lines_original = frame_summary._original_lines.splitlines()
+                first_line = all_lines_original[0]
+                # assume all_lines_original has enough lines (since we constructed it)
+                last_line = all_lines_original[frame_summary.end_lineno - frame_summary.lineno]
 
+                # character index of the start/end of the instruction
+                start_offset = _byte_offset_to_character_offset(first_line, frame_summary.colno)
+                end_offset = _byte_offset_to_character_offset(last_line, frame_summary.end_colno)
+
+                all_lines = frame_summary._dedented_lines.splitlines()[
+                    :frame_summary.end_lineno - frame_summary.lineno + 1
+                ]
+
+                # adjust start/end offset based on dedent
+                dedent_characters = len(first_line) - len(all_lines[0])
+                start_offset = max(0, start_offset - dedent_characters)
+                end_offset = max(0, end_offset - dedent_characters)
+
+                # When showing this on a terminal, some of the non-ASCII characters
+                # might be rendered as double-width characters, so we need to take
+                # that into account when calculating the length of the line.
+                dp_start_offset = _display_width(all_lines[0], offset=start_offset)
+                dp_end_offset = _display_width(all_lines[-1], offset=end_offset)
+
+                # get exact code segment corresponding to the instruction
+                segment = "\n".join(all_lines)
+                segment = segment[start_offset:len(segment) - (len(all_lines[-1]) - end_offset)]
+
+                # attempt to parse for anchors
                 anchors = None
-                if frame_summary.lineno == frame_summary.end_lineno:
-                    with suppress(Exception):
-                        anchors = _extract_caret_anchors_from_line_segment(
-                            frame_summary._original_line[start_offset - 1:end_offset - 1]
-                        )
-                else:
-                    end_offset = stripped_characters + len(stripped_line)
+                show_carets = False
+                with suppress(Exception):
+                    anchors = _extract_caret_anchors_from_line_segment(segment)
+                show_carets = self._should_show_carets(start_offset, end_offset, all_lines, anchors)
 
-                # show indicators if primary char doesn't span the frame line
-                if end_offset - start_offset < len(stripped_line) or (
-                        anchors and anchors.right_start_offset - anchors.left_end_offset > 0):
-                    row.append('    ')
-                    row.append(' ' * (start_offset - stripped_characters))
+                result = []
 
-                    if anchors:
-                        row.append(anchors.primary_char * (anchors.left_end_offset))
-                        row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
-                        row.append(anchors.primary_char * (end_offset - start_offset - anchors.right_start_offset))
+                # only display first line, last line, and lines around anchor start/end
+                significant_lines = {0, len(all_lines) - 1}
+
+                anchors_left_end_offset = 0
+                anchors_right_start_offset = 0
+                primary_char = "^"
+                secondary_char = "^"
+                if anchors:
+                    anchors_left_end_offset = anchors.left_end_offset
+                    anchors_right_start_offset = anchors.right_start_offset
+                    # computed anchor positions do not take start_offset into account,
+                    # so account for it here
+                    if anchors.left_end_lineno == 0:
+                        anchors_left_end_offset += start_offset
+                    if anchors.right_start_lineno == 0:
+                        anchors_right_start_offset += start_offset
+
+                    # account for display width
+                    anchors_left_end_offset = _display_width(
+                        all_lines[anchors.left_end_lineno], offset=anchors_left_end_offset
+                    )
+                    anchors_right_start_offset = _display_width(
+                        all_lines[anchors.right_start_lineno], offset=anchors_right_start_offset
+                    )
+
+                    primary_char = anchors.primary_char
+                    secondary_char = anchors.secondary_char
+                    significant_lines.update(
+                        range(anchors.left_end_lineno - 1, anchors.left_end_lineno + 2)
+                    )
+                    significant_lines.update(
+                        range(anchors.right_start_lineno - 1, anchors.right_start_lineno + 2)
+                    )
+
+                # remove bad line numbers
+                significant_lines.discard(-1)
+                significant_lines.discard(len(all_lines))
+
+                def output_line(lineno):
+                    """output all_lines[lineno] along with carets"""
+                    result.append(all_lines[lineno] + "\n")
+                    if not show_carets:
+                        return
+                    num_spaces = len(all_lines[lineno]) - len(all_lines[lineno].lstrip())
+                    carets = []
+                    num_carets = dp_end_offset if lineno == len(all_lines) - 1 else _display_width(all_lines[lineno])
+                    # compute caret character for each position
+                    for col in range(num_carets):
+                        if col < num_spaces or (lineno == 0 and col < dp_start_offset):
+                            # before first non-ws char of the line, or before start of instruction
+                            carets.append(' ')
+                        elif anchors and (
+                            lineno > anchors.left_end_lineno or
+                            (lineno == anchors.left_end_lineno and col >= anchors_left_end_offset)
+                        ) and (
+                            lineno < anchors.right_start_lineno or
+                            (lineno == anchors.right_start_lineno and col < anchors_right_start_offset)
+                        ):
+                            # within anchors
+                            carets.append(secondary_char)
+                        else:
+                            carets.append(primary_char)
+                    if colorize:
+                        # Replace the previous line with a red version of it only in the parts covered
+                        # by the carets.
+                        line = result[-1]
+                        colorized_line_parts = []
+                        colorized_carets_parts = []
+
+                        for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
+                            caret_group = list(group)
+                            if color == "^":
+                                colorized_line_parts.append(theme.error_highlight + "".join(char for char, _ in caret_group) + theme.reset)
+                                colorized_carets_parts.append(theme.error_highlight + "".join(caret for _, caret in caret_group) + theme.reset)
+                            elif color == "~":
+                                colorized_line_parts.append(theme.error_range + "".join(char for char, _ in caret_group) + theme.reset)
+                                colorized_carets_parts.append(theme.error_range + "".join(caret for _, caret in caret_group) + theme.reset)
+                            else:
+                                colorized_line_parts.append("".join(char for char, _ in caret_group))
+                                colorized_carets_parts.append("".join(caret for _, caret in caret_group))
+
+                        colorized_line = "".join(colorized_line_parts)
+                        colorized_carets = "".join(colorized_carets_parts)
+                        result[-1] = colorized_line
+                        result.append(colorized_carets + "\n")
                     else:
-                        row.append('^' * (end_offset - start_offset))
+                        result.append("".join(carets) + "\n")
 
-                    row.append('\n')
+                # display significant lines
+                sig_lines_list = sorted(significant_lines)
+                for i, lineno in enumerate(sig_lines_list):
+                    if i:
+                        linediff = lineno - sig_lines_list[i - 1]
+                        if linediff == 2:
+                            # 1 line in between - just output it
+                            output_line(lineno - 1)
+                        elif linediff > 2:
+                            # > 1 line in between - abbreviate
+                            result.append(f"...<{linediff - 1} lines>...\n")
+                    output_line(lineno)
 
+                row.append(
+                    textwrap.indent(textwrap.dedent("".join(result)), '    ', lambda line: True)
+                )
         if frame_summary.locals:
             for name, value in sorted(frame_summary.locals.items()):
                 row.append('    {name} = {value}\n'.format(name=name, value=value))
 
         return ''.join(row)
 
-    def format(self):
+    def _should_show_carets(self, start_offset, end_offset, all_lines, anchors):
+        with suppress(SyntaxError, ImportError):
+            import ast
+            tree = ast.parse('\n'.join(all_lines))
+            if not tree.body:
+                return False
+            statement = tree.body[0]
+            value = None
+            def _spawns_full_line(value):
+                return (
+                    value.lineno == 1
+                    and value.end_lineno == len(all_lines)
+                    and value.col_offset == start_offset
+                    and value.end_col_offset == end_offset
+                )
+            match statement:
+                case ast.Return(value=ast.Call()):
+                    if isinstance(statement.value.func, ast.Name):
+                        value = statement.value
+                case ast.Assign(value=ast.Call()):
+                    if (
+                        len(statement.targets) == 1 and
+                        isinstance(statement.targets[0], ast.Name)
+                    ):
+                        value = statement.value
+            if value is not None and _spawns_full_line(value):
+                return False
+        if anchors:
+            return True
+        if all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
+            return True
+        return False
+
+    def format(self, **kwargs):
         """Format the stack ready for printing.
 
         Returns a list of strings ready for printing.  Each string in the
@@ -527,13 +766,14 @@ class StackSummary(list):
         repetitions are shown, followed by a summary line stating the exact
         number of further repetitions.
         """
+        colorize = kwargs.get("colorize", False)
         result = []
         last_file = None
         last_line = None
         last_name = None
         count = 0
         for frame_summary in self:
-            formatted_frame = self.format_frame_summary(frame_summary)
+            formatted_frame = self.format_frame_summary(frame_summary, colorize=colorize)
             if formatted_frame is None:
                 continue
             if (last_file is None or last_file != frame_summary.filename or
@@ -571,7 +811,9 @@ def _byte_offset_to_character_offset(str, offset):
 _Anchors = collections.namedtuple(
     "_Anchors",
     [
+        "left_end_lineno",
         "left_end_offset",
+        "right_start_lineno",
         "right_start_offset",
         "primary_char",
         "secondary_char",
@@ -580,41 +822,172 @@ _Anchors = collections.namedtuple(
 )
 
 def _extract_caret_anchors_from_line_segment(segment):
+    """
+    Given source code `segment` corresponding to a FrameSummary, determine:
+        - for binary ops, the location of the binary op
+        - for indexing and function calls, the location of the brackets.
+    `segment` is expected to be a valid Python expression.
+    """
     import ast
 
     try:
-        tree = ast.parse(segment)
+        # Without parentheses, `segment` is parsed as a statement.
+        # Binary ops, subscripts, and calls are expressions, so
+        # we can wrap them with parentheses to parse them as
+        # (possibly multi-line) expressions.
+        # e.g. if we try to highlight the addition in
+        # x = (
+        #     a +
+        #     b
+        # )
+        # then we would ast.parse
+        #     a +
+        #     b
+        # which is not a valid statement because of the newline.
+        # Adding brackets makes it a valid expression.
+        # (
+        #     a +
+        #     b
+        # )
+        # Line locations will be different than the original,
+        # which is taken into account later on.
+        tree = ast.parse(f"(\n{segment}\n)")
     except SyntaxError:
         return None
 
     if len(tree.body) != 1:
         return None
 
-    normalize = lambda offset: _byte_offset_to_character_offset(segment, offset)
+    lines = segment.splitlines()
+
+    def normalize(lineno, offset):
+        """Get character index given byte offset"""
+        return _byte_offset_to_character_offset(lines[lineno], offset)
+
+    def next_valid_char(lineno, col):
+        """Gets the next valid character index in `lines`, if
+        the current location is not valid. Handles empty lines.
+        """
+        while lineno < len(lines) and col >= len(lines[lineno]):
+            col = 0
+            lineno += 1
+        assert lineno < len(lines) and col < len(lines[lineno])
+        return lineno, col
+
+    def increment(lineno, col):
+        """Get the next valid character index in `lines`."""
+        col += 1
+        lineno, col = next_valid_char(lineno, col)
+        return lineno, col
+
+    def nextline(lineno, col):
+        """Get the next valid character at least on the next line"""
+        col = 0
+        lineno += 1
+        lineno, col = next_valid_char(lineno, col)
+        return lineno, col
+
+    def increment_until(lineno, col, stop):
+        """Get the next valid non-"\\#" character that satisfies the `stop` predicate"""
+        while True:
+            ch = lines[lineno][col]
+            if ch in "\\#":
+                lineno, col = nextline(lineno, col)
+            elif not stop(ch):
+                lineno, col = increment(lineno, col)
+            else:
+                break
+        return lineno, col
+
+    def setup_positions(expr, force_valid=True):
+        """Get the lineno/col position of the end of `expr`. If `force_valid` is True,
+        forces the position to be a valid character (e.g. if the position is beyond the
+        end of the line, move to the next line)
+        """
+        # -2 since end_lineno is 1-indexed and because we added an extra
+        # bracket + newline to `segment` when calling ast.parse
+        lineno = expr.end_lineno - 2
+        col = normalize(lineno, expr.end_col_offset)
+        return next_valid_char(lineno, col) if force_valid else (lineno, col)
+
     statement = tree.body[0]
     match statement:
         case ast.Expr(expr):
             match expr:
                 case ast.BinOp():
-                    operator_start = normalize(expr.left.end_col_offset)
-                    operator_end = normalize(expr.right.col_offset)
-                    operator_str = segment[operator_start:operator_end]
-                    operator_offset = len(operator_str) - len(operator_str.lstrip())
+                    # ast gives these locations for BinOp subexpressions
+                    # ( left_expr ) + ( right_expr )
+                    #   left^^^^^       right^^^^^
+                    lineno, col = setup_positions(expr.left)
 
-                    left_anchor = expr.left.end_col_offset + operator_offset
-                    right_anchor = left_anchor + 1
+                    # First operator character is the first non-space/')' character
+                    lineno, col = increment_until(lineno, col, lambda x: not x.isspace() and x != ')')
+
+                    # binary op is 1 or 2 characters long, on the same line,
+                    # before the right subexpression
+                    right_col = col + 1
                     if (
-                        operator_offset + 1 < len(operator_str)
-                        and not operator_str[operator_offset + 1].isspace()
+                        right_col < len(lines[lineno])
+                        and (
+                            # operator char should not be in the right subexpression
+                            expr.right.lineno - 2 > lineno or
+                            right_col < normalize(expr.right.lineno - 2, expr.right.col_offset)
+                        )
+                        and not (ch := lines[lineno][right_col]).isspace()
+                        and ch not in "\\#"
                     ):
-                        right_anchor += 1
-                    return _Anchors(normalize(left_anchor), normalize(right_anchor))
+                        right_col += 1
+
+                    # right_col can be invalid since it is exclusive
+                    return _Anchors(lineno, col, lineno, right_col)
                 case ast.Subscript():
-                    subscript_start = normalize(expr.value.end_col_offset)
-                    subscript_end = normalize(expr.slice.end_col_offset + 1)
-                    return _Anchors(subscript_start, subscript_end)
+                    # ast gives these locations for value and slice subexpressions
+                    # ( value_expr ) [ slice_expr ]
+                    #   value^^^^^     slice^^^^^
+                    # subscript^^^^^^^^^^^^^^^^^^^^
+
+                    # find left bracket
+                    left_lineno, left_col = setup_positions(expr.value)
+                    left_lineno, left_col = increment_until(left_lineno, left_col, lambda x: x == '[')
+                    # find right bracket (final character of expression)
+                    right_lineno, right_col = setup_positions(expr, force_valid=False)
+                    return _Anchors(left_lineno, left_col, right_lineno, right_col)
+                case ast.Call():
+                    # ast gives these locations for function call expressions
+                    # ( func_expr ) (args, kwargs)
+                    #   func^^^^^
+                    # call^^^^^^^^^^^^^^^^^^^^^^^^
+
+                    # find left bracket
+                    left_lineno, left_col = setup_positions(expr.func)
+                    left_lineno, left_col = increment_until(left_lineno, left_col, lambda x: x == '(')
+                    # find right bracket (final character of expression)
+                    right_lineno, right_col = setup_positions(expr, force_valid=False)
+                    return _Anchors(left_lineno, left_col, right_lineno, right_col)
 
     return None
+
+_WIDE_CHAR_SPECIFIERS = "WF"
+
+def _display_width(line, offset=None):
+    """Calculate the extra amount of width space the given source
+    code segment might take if it were to be displayed on a fixed
+    width output device. Supports wide unicode characters and emojis."""
+
+    if offset is None:
+        offset = len(line)
+
+    # Fast track for ASCII-only strings
+    if line.isascii():
+        return offset
+
+    import unicodedata
+
+    return sum(
+        2 if unicodedata.east_asian_width(char) in _WIDE_CHAR_SPECIFIERS else 1
+        for char in line[:offset]
+    )
+
 
 
 class _ExceptionPrintContext:
@@ -658,10 +1031,13 @@ class TracebackException:
 
     - :attr:`__cause__` A TracebackException of the original *__cause__*.
     - :attr:`__context__` A TracebackException of the original *__context__*.
+    - :attr:`exceptions` For exception groups - a list of TracebackException
+      instances for the nested *exceptions*.  ``None`` for other exceptions.
     - :attr:`__suppress_context__` The *__suppress_context__* value from the
       original exception.
     - :attr:`stack` A `StackSummary` representing the traceback.
-    - :attr:`exc_type` The class of the original traceback.
+    - :attr:`exc_type` (deprecated) The class of the original traceback.
+    - :attr:`exc_type_str` String display of exc_type
     - :attr:`filename` For syntax errors - the filename where the error
       occurred.
     - :attr:`lineno` For syntax errors - the linenumber where the error
@@ -672,14 +1048,14 @@ class TracebackException:
       occurred.
     - :attr:`offset` For syntax errors - the offset into the text where the
       error occurred.
-    - :attr:`end_offset` For syntax errors - the offset into the text where the
-      error occurred. Can be `None` if not present.
+    - :attr:`end_offset` For syntax errors - the end offset into the text where
+      the error occurred. Can be `None` if not present.
     - :attr:`msg` For syntax errors - the compiler error message.
     """
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
-            max_group_width=15, max_group_depth=10, _seen=None):
+            max_group_width=15, max_group_depth=10, save_exc_type=True, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
@@ -696,11 +1072,26 @@ class TracebackException:
             _walk_tb_with_full_positions(exc_traceback),
             limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
-        self.exc_type = exc_type
+
+        self._exc_type = exc_type if save_exc_type else None
+
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _safe_string(exc_value, 'exception')
-        self.__notes__ = getattr(exc_value, '__notes__', None)
+        try:
+            self.__notes__ = getattr(exc_value, '__notes__', None)
+        except Exception as e:
+            self.__notes__ = [
+                f'Ignored error getting __notes__: {_safe_string(e, '__notes__', repr)}']
+
+        self._is_syntax_error = False
+        self._have_exc_type = exc_type is not None
+        if exc_type is not None:
+            self.exc_type_qualname = exc_type.__qualname__
+            self.exc_type_module = exc_type.__module__
+        else:
+            self.exc_type_qualname = None
+            self.exc_type_module = None
 
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
@@ -713,12 +1104,26 @@ class TracebackException:
             self.offset = exc_value.offset
             self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
+            self._is_syntax_error = True
+            self._exc_metadata = getattr(exc_value, "_metadata", None)
         elif exc_type and issubclass(exc_type, ImportError) and \
                 getattr(exc_value, "name_from", None) is not None:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError):
+            module_name = getattr(exc_value, "name", None)
+            if module_name in sys.stdlib_module_names:
+                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
+                    module_name,
+                    f"Standard library module {module_name!r} was not found"
+                )
+                self._str = message
+            elif sys.flags.no_site:
+                self._str += (". Site initialization is disabled, did you forget to "
+                    + "add the site-packages directory to sys.path "
+                    + "or to enable your virtual environment?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -729,9 +1134,9 @@ class TracebackException:
                 wrong_name = getattr(exc_value, "name", None)
                 if wrong_name is not None and wrong_name in sys.stdlib_module_names:
                     if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'"
+                        self._str += f" Or did you forget to import '{wrong_name}'?"
                     else:
-                        self._str += f". Did you forget to import '{wrong_name}'"
+                        self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -743,7 +1148,7 @@ class TracebackException:
             queue = [(self, exc_value)]
             while queue:
                 te, e = queue.pop()
-                if (e and e.__cause__ is not None
+                if (e is not None and e.__cause__ is not None
                     and id(e.__cause__) not in _seen):
                     cause = TracebackException(
                         type(e.__cause__),
@@ -764,7 +1169,7 @@ class TracebackException:
                                     not e.__suppress_context__)
                 else:
                     need_context = True
-                if (e and e.__context__ is not None
+                if (e is not None and e.__context__ is not None
                     and need_context and id(e.__context__) not in _seen):
                     context = TracebackException(
                         type(e.__context__),
@@ -779,7 +1184,7 @@ class TracebackException:
                 else:
                     context = None
 
-                if e and isinstance(e, BaseExceptionGroup):
+                if e is not None and isinstance(e, BaseExceptionGroup):
                     exceptions = []
                     for exc in e.exceptions:
                         texc = TracebackException(
@@ -811,6 +1216,24 @@ class TracebackException:
         """Create a TracebackException from an exception."""
         return cls(type(exc), exc, exc.__traceback__, *args, **kwargs)
 
+    @property
+    def exc_type(self):
+        warnings.warn('Deprecated in 3.13. Use exc_type_str instead.',
+                      DeprecationWarning, stacklevel=2)
+        return self._exc_type
+
+    @property
+    def exc_type_str(self):
+        if not self._have_exc_type:
+            return None
+        stype = self.exc_type_qualname
+        smod = self.exc_type_module
+        if smod not in ("__main__", "builtins"):
+            if not isinstance(smod, str):
+                smod = "<unknown>"
+            stype = smod + '.' + stype
+        return stype
+
     def _load_lines(self):
         """Private API. force all lines in the stack to be loaded."""
         for frame in self.stack:
@@ -824,34 +1247,45 @@ class TracebackException:
     def __str__(self):
         return self._str
 
-    def format_exception_only(self):
+    def format_exception_only(self, *, show_group=False, _depth=0, **kwargs):
         """Format the exception part of the traceback.
 
         The return value is a generator of strings, each ending in a newline.
 
-        Normally, the generator emits a single string; however, for
-        SyntaxError exceptions, it emits several lines that (when
-        printed) display detailed information about where the syntax
-        error occurred.
+        Generator yields the exception message.
+        For :exc:`SyntaxError` exceptions, it
+        also yields (before the exception message)
+        several lines that (when printed)
+        display detailed information about where the syntax error occurred.
+        Following the message, generator also yields
+        all the exception's ``__notes__``.
 
-        The message indicating which exception occurred is always the last
-        string in the output.
+        When *show_group* is ``True``, and the exception is an instance of
+        :exc:`BaseExceptionGroup`, the nested exceptions are included as
+        well, recursively, with indentation relative to their nesting depth.
         """
-        if self.exc_type is None:
-            yield _format_final_exc_line(None, self._str)
+        colorize = kwargs.get("colorize", False)
+
+        indent = 3 * _depth * ' '
+        if not self._have_exc_type:
+            yield indent + _format_final_exc_line(None, self._str, colorize=colorize)
             return
 
-        stype = self.exc_type.__qualname__
-        smod = self.exc_type.__module__
-        if smod not in ("__main__", "builtins"):
-            if not isinstance(smod, str):
-                smod = "<unknown>"
-            stype = smod + '.' + stype
-
-        if not issubclass(self.exc_type, SyntaxError):
-            yield _format_final_exc_line(stype, self._str)
+        stype = self.exc_type_str
+        if not self._is_syntax_error:
+            if _depth > 0:
+                # Nested exceptions needs correct handling of multiline messages.
+                formatted = _format_final_exc_line(
+                    stype, self._str, insert_final_newline=False, colorize=colorize
+                ).split('\n')
+                yield from [
+                    indent + l + '\n'
+                    for l in formatted
+                ]
+            else:
+                yield _format_final_exc_line(stype, self._str, colorize=colorize)
         else:
-            yield from self._format_syntax_error(stype)
+            yield from [indent + l for l in self._format_syntax_error(stype, colorize=colorize)]
 
         if (
             isinstance(self.__notes__, collections.abc.Sequence)
@@ -859,47 +1293,213 @@ class TracebackException:
         ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [l + '\n' for l in note.split('\n')]
+                yield from [indent + l + '\n' for l in note.split('\n')]
         elif self.__notes__ is not None:
-            yield "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
 
-    def _format_syntax_error(self, stype):
+        if self.exceptions and show_group:
+            for ex in self.exceptions:
+                yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1, colorize=colorize)
+
+    def _find_keyword_typos(self):
+        assert self._is_syntax_error
+        try:
+            import _suggestions
+        except ImportError:
+            _suggestions = None
+
+        # Only try to find keyword typos if there is no custom message
+        if self.msg != "invalid syntax" and "Perhaps you forgot a comma" not in self.msg:
+            return
+
+        if not self._exc_metadata:
+            return
+
+        line, offset, source = self._exc_metadata
+        end_line = int(self.lineno) if self.lineno is not None else 0
+        lines = None
+        from_filename = False
+
+        if source is None:
+            if self.filename:
+                try:
+                    with open(self.filename) as f:
+                        lines = f.read().splitlines()
+                except Exception:
+                    line, end_line, offset = 0,1,0
+                else:
+                    from_filename = True
+            lines = lines if lines is not None else self.text.splitlines()
+        else:
+            lines = source.splitlines()
+
+        error_code = lines[line -1 if line > 0 else 0:end_line]
+        error_code = textwrap.dedent('\n'.join(error_code))
+
+        # Do not continue if the source is too large
+        if len(error_code) > 1024:
+            return
+
+        # If the original code doesn't raise SyntaxError, we can't validate
+        # that a keyword replacement actually fixes anything
+        try:
+            codeop.compile_command(error_code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+        except SyntaxError:
+            pass  # Good - the original code has a syntax error we might fix
+        else:
+            return  # Original code compiles or is incomplete - can't validate fixes
+
+        error_lines = error_code.splitlines()
+        tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
+        tokens_left_to_process = 10
+        import difflib
+        for token in tokens:
+            start, end = token.start, token.end
+            if token.type != tokenize.NAME:
+                continue
+            # Only consider NAME tokens on the same line as the error
+            the_end = end_line if line == 0 else end_line + 1
+            if from_filename and token.start[0]+line != the_end:
+                continue
+            wrong_name = token.string
+            if wrong_name in keyword.kwlist:
+                continue
+
+            # Limit the number of valid tokens to consider to not spend
+            # to much time in this function
+            tokens_left_to_process -= 1
+            if tokens_left_to_process < 0:
+                break
+            # Limit the number of possible matches to try
+            max_matches = 3
+            matches = []
+            if _suggestions is not None:
+                suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
+                if suggestion:
+                    matches.append(suggestion)
+            matches.extend(difflib.get_close_matches(wrong_name, keyword.kwlist, n=max_matches, cutoff=0.5))
+            matches = matches[:max_matches]
+            for suggestion in matches:
+                if not suggestion or suggestion == wrong_name:
+                    continue
+                # Try to replace the token with the keyword
+                the_lines = error_lines.copy()
+                the_line = the_lines[start[0] - 1][:]
+                chars = list(the_line)
+                chars[token.start[1]:token.end[1]] = suggestion
+                the_lines[start[0] - 1] = ''.join(chars)
+                code = '\n'.join(the_lines)
+
+                # Check if it works
+                try:
+                    codeop.compile_command(code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+                except SyntaxError:
+                    continue
+
+                # Keep token.line but handle offsets correctly
+                self.text = token.line
+                self.offset = token.start[1] + 1
+                self.end_offset = token.end[1] + 1
+                self.lineno = start[0]
+                self.end_lineno = end[0]
+                self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
+                return
+
+
+    def _format_syntax_error(self, stype, **kwargs):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
+        colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
         filename_suffix = ''
         if self.lineno is not None:
-            yield '  File "{}", line {}\n'.format(
-                self.filename or "<string>", self.lineno)
+            yield '  File {}"{}"{}, line {}{}{}\n'.format(
+                theme.filename,
+                self.filename or "<string>",
+                theme.reset,
+                theme.line_no,
+                self.lineno,
+                theme.reset,
+                )
         elif self.filename is not None:
             filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
-        if text is not None:
+        if isinstance(text, str):
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
+            with suppress(Exception):
+                self._find_keyword_typos()
+            text = self.text
             rtext = text.rstrip('\n')
             ltext = rtext.lstrip(' \n\f')
             spaces = len(rtext) - len(ltext)
-            yield '    {}\n'.format(ltext)
-
-            if self.offset is not None:
+            if self.offset is None:
+                yield '    {}\n'.format(ltext)
+            elif isinstance(self.offset, int):
                 offset = self.offset
-                end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
-                if offset == end_offset or end_offset == -1:
+                if self.lineno == self.end_lineno:
+                    end_offset = (
+                        self.end_offset
+                        if (
+                            isinstance(self.end_offset, int)
+                            and self.end_offset != 0
+                        )
+                        else offset
+                    )
+                else:
+                    end_offset = len(rtext) + 1
+
+                if self.text and offset > len(self.text):
+                    offset = len(rtext) + 1
+                if self.text and end_offset > len(self.text):
+                    end_offset = len(rtext) + 1
+                if offset >= end_offset or end_offset < 0:
                     end_offset = offset + 1
 
                 # Convert 1-based column offset to 0-based index into stripped text
                 colno = offset - 1 - spaces
                 end_colno = end_offset - 1 - spaces
                 if colno >= 0:
-                    # non-space whitespace (likes tabs) must be kept for alignment
-                    caretspace = ((c if c.isspace() else ' ') for c in ltext[:colno])
-                    yield '    {}{}'.format("".join(caretspace), ('^' * (end_colno - colno) + "\n"))
+                    # Calculate display width to account for wide characters
+                    dp_colno = _display_width(ltext, colno)
+                    highlighted = ltext[colno:end_colno]
+                    caret_count = _display_width(highlighted) if highlighted else (end_colno - colno)
+                    start_color = end_color = ""
+                    if colorize:
+                        # colorize from colno to end_colno
+                        ltext = (
+                            ltext[:colno] +
+                            theme.error_highlight + ltext[colno:end_colno] + theme.reset +
+                            ltext[end_colno:]
+                        )
+                        start_color = theme.error_highlight
+                        end_color = theme.reset
+                    yield '    {}\n'.format(ltext)
+                    yield '    {}{}{}{}\n'.format(
+                        ' ' * dp_colno,
+                        start_color,
+                        '^' * caret_count,
+                        end_color,
+                    )
+                else:
+                    yield '    {}\n'.format(ltext)
         msg = self.msg or "<no detail available>"
-        yield "{}: {}{}\n".format(stype, msg, filename_suffix)
+        yield "{}{}{}: {}{}{}{}\n".format(
+            theme.type,
+            stype,
+            theme.reset,
+            theme.message,
+            msg,
+            theme.reset,
+            filename_suffix,
+        )
 
-    def format(self, *, chain=True, _ctx=None):
+    def format(self, *, chain=True, _ctx=None, **kwargs):
         """Format the exception.
 
         If chain is not *True*, *__cause__* and *__context__* will not be formatted.
@@ -911,7 +1511,7 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
-
+        colorize = kwargs.get("colorize", False)
         if _ctx is None:
             _ctx = _ExceptionPrintContext()
 
@@ -941,8 +1541,8 @@ class TracebackException:
             if exc.exceptions is None:
                 if exc.stack:
                     yield from _ctx.emit('Traceback (most recent call last):\n')
-                    yield from _ctx.emit(exc.stack.format())
-                yield from _ctx.emit(exc.format_exception_only())
+                    yield from _ctx.emit(exc.stack.format(colorize=colorize))
+                yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
             elif _ctx.exception_group_depth > self.max_group_depth:
                 # exception group, but depth exceeds limit
                 yield from _ctx.emit(
@@ -957,9 +1557,9 @@ class TracebackException:
                     yield from _ctx.emit(
                         'Exception Group Traceback (most recent call last):\n',
                         margin_char = '+' if is_toplevel else None)
-                    yield from _ctx.emit(exc.stack.format())
+                    yield from _ctx.emit(exc.stack.format(colorize=colorize))
 
-                yield from _ctx.emit(exc.format_exception_only())
+                yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
                 num_excs = len(exc.exceptions)
                 if num_excs <= self.max_group_width:
                     n = num_excs
@@ -982,7 +1582,7 @@ class TracebackException:
                            f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
                     if not truncated:
-                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize)
                     else:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''
@@ -1000,11 +1600,12 @@ class TracebackException:
                     _ctx.exception_group_depth = 0
 
 
-    def print(self, *, file=None, chain=True):
+    def print(self, *, file=None, chain=True, **kwargs):
         """Print the result of self.format(chain=chain) to 'file'."""
+        colorize = kwargs.get("colorize", False)
         if file is None:
             file = sys.stderr
-        for line in self.format(chain=chain):
+        for line in self.format(chain=chain, colorize=colorize):
             print(line, file=file, end="")
 
 
@@ -1022,19 +1623,66 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _check_for_nested_attribute(obj, wrong_name, attrs):
+    """Check if any attribute of obj has the wrong_name as a nested attribute.
+
+    Returns the first nested attribute suggestion found, or None.
+    Limited to checking 20 attributes.
+    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    """
+    # Check for nested attributes (only one level deep)
+    attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
+    for attr_name in attrs_to_check:
+        with suppress(Exception):
+            # Check if attr_name is a descriptor - if so, skip it
+            attr_from_class = getattr(type(obj), attr_name, None)
+            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+                continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Safe to get the attribute since it's not a descriptor
+            attr_obj = getattr(obj, attr_name)
+
+            # Check if the nested attribute exists and is not a descriptor
+            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+
+            if hasattr(attr_obj, wrong_name):
+                return f"{attr_name}.{wrong_name}"
+
+    return None
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            d = dir(obj)
+            try:
+                d = dir(obj)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
+            hide_underscored = (wrong_name[:1] != '_')
+            if hide_underscored and tb is not None:
+                while tb.tb_next is not None:
+                    tb = tb.tb_next
+                frame = tb.tb_frame
+                if 'self' in frame.f_locals and frame.f_locals['self'] is obj:
+                    hide_underscored = False
+            if hide_underscored:
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            d = dir(mod)
+            try:
+                d = dir(mod)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(mod.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
+            if wrong_name[:1] != '_':
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     else:
@@ -1050,13 +1698,27 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_globals)
             + list(frame.f_builtins)
         )
+        d = [x for x in d if isinstance(x, str)]
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
         if 'self' in frame.f_locals:
             self = frame.f_locals['self']
-            if hasattr(self, wrong_name):
+            try:
+                has_wrong_name = hasattr(self, wrong_name)
+            except Exception:
+                has_wrong_name = False
+            if has_wrong_name:
                 return f"self.{wrong_name}"
+
+    try:
+        import _suggestions
+    except ImportError:
+        pass
+    else:
+        suggestion = _suggestions._generate_suggestions(d, wrong_name)
+        if suggestion:
+            return suggestion
 
     # Compute closest match
 
@@ -1081,6 +1743,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         if not suggestion or current_distance < best_distance:
             suggestion = possible_name
             best_distance = current_distance
+
+    # If no direct attribute match found, check for nested attributes
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
+            if nested_suggestion:
+                return nested_suggestion
+
     return suggestion
 
 

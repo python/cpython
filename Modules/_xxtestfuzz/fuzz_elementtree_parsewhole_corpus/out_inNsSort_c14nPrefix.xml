@@ -1,0 +1,4 @@
+<n2:foo xmlns:n0="http://z1" xmlns:n1="http://z2" xmlns:n2="http://z3" n0:att3="val3" n1:att1="val1" n1:att2="val2">
+ <n0:bar></n0:bar>
+ <n0:bar xmlns:n3="http://z0" n3:att3="val3"></n0:bar>
+</n2:foo>

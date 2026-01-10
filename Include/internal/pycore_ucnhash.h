@@ -28,6 +28,8 @@ typedef struct {
 
 } _PyUnicode_Name_CAPI;
 
+extern _PyUnicode_Name_CAPI* _PyUnicode_GetNameCAPI(void);
+
 #ifdef __cplusplus
 }
 #endif

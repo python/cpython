@@ -1,5 +1,0 @@
-The bitwise inversion operator (``~``) on bool is deprecated.
-It returns the bitwise inversion of the underlying ``int`` representation such that
-``bool(~True) == True``, which can be confusing. Use ``not`` for logical negation
-of bools. In the rare case that you really need the bitwise inversion of the underlying ``int``,
-convert to int explicitly ``~int(x)``.

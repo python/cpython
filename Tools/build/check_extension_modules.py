@@ -17,21 +17,32 @@ Module information is parsed from several sources:
 
 See --help for more information
 """
+
+from __future__ import annotations
+
+import _imp
 import argparse
-import collections
 import enum
+import json
 import logging
 import os
 import pathlib
+import pprint
 import re
 import sys
 import sysconfig
 import warnings
-
-from importlib._bootstrap import _load as bootstrap_load
-from importlib.machinery import BuiltinImporter, ExtensionFileLoader, ModuleSpec
+from collections.abc import Iterable
+from importlib._bootstrap import (  # type: ignore[attr-defined]
+    _load as bootstrap_load,
+)
+from importlib.machinery import (
+    BuiltinImporter,
+    ExtensionFileLoader,
+    ModuleSpec,
+)
 from importlib.util import spec_from_file_location, spec_from_loader
-from typing import Iterable
+from typing import NamedTuple
 
 SRC_DIR = pathlib.Path(__file__).parent.parent.parent
 
@@ -50,10 +61,10 @@ CORE_MODULES = {
 
 # Windows-only modules
 WINDOWS_MODULES = {
-    "_msi",
     "_overlapped",
     "_testconsole",
     "_winapi",
+    "_wmi",
     "msvcrt",
     "nt",
     "winreg",
@@ -107,7 +118,20 @@ parser.add_argument(
     help="Print a list of module names to stdout and exit",
 )
 
+parser.add_argument(
+    "--generate-missing-stdlib-info",
+    action="store_true",
+    help="Generate file with stdlib module info",
+)
 
+parser.add_argument(
+    "--with-missing-stdlib-config",
+    metavar="CONFIG_FILE",
+    help="Path to JSON config file with custom missing module messages",
+)
+
+
+@enum.unique
 class ModuleState(enum.Enum):
     # Makefile state "yes"
     BUILTIN = "builtin"
@@ -119,11 +143,13 @@ class ModuleState(enum.Enum):
     # disabled by Setup / makesetup rule
     DISABLED_SETUP = "disabled_setup"
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self.value in {"builtin", "shared"}
 
 
-ModuleInfo = collections.namedtuple("ModuleInfo", "name state")
+class ModuleInfo(NamedTuple):
+    name: str
+    state: ModuleState
 
 
 class ModuleChecker:
@@ -131,9 +157,9 @@ class ModuleChecker:
 
     setup_files = (
         # see end of configure.ac
-        "Modules/Setup.local",
-        "Modules/Setup.stdlib",
-        "Modules/Setup.bootstrap",
+        pathlib.Path("Modules/Setup.local"),
+        pathlib.Path("Modules/Setup.stdlib"),
+        pathlib.Path("Modules/Setup.bootstrap"),
         SRC_DIR / "Modules/Setup",
     )
 
@@ -145,15 +171,20 @@ class ModuleChecker:
         self.builddir = self.get_builddir()
         self.modules = self.get_modules()
 
-        self.builtin_ok = []
-        self.shared_ok = []
-        self.failed_on_import = []
-        self.missing = []
-        self.disabled_configure = []
-        self.disabled_setup = []
-        self.notavailable = []
+        self.builtin_ok: list[ModuleInfo] = []
+        self.shared_ok: list[ModuleInfo] = []
+        self.failed_on_import: list[ModuleInfo] = []
+        self.missing: list[ModuleInfo] = []
+        self.disabled_configure: list[ModuleInfo] = []
+        self.disabled_setup: list[ModuleInfo] = []
+        self.notavailable: list[ModuleInfo] = []
 
-    def check(self):
+    def check(self) -> None:
+        if not hasattr(_imp, 'create_dynamic'):
+            logger.warning(
+                ('Dynamic extensions not supported '
+                 '(HAVE_DYNAMIC_LOADING not defined)'),
+            )
         for modinfo in self.modules:
             logger.debug("Checking '%s' (%s)", modinfo.name, self.get_location(modinfo))
             if modinfo.state == ModuleState.DISABLED:
@@ -180,16 +211,16 @@ class ModuleChecker:
                         assert modinfo.state == ModuleState.SHARED
                         self.shared_ok.append(modinfo)
 
-    def summary(self, *, verbose: bool = False):
+    def summary(self, *, verbose: bool = False) -> None:
         longest = max([len(e.name) for e in self.modules], default=0)
 
-        def print_three_column(modinfos: list[ModuleInfo]):
+        def print_three_column(modinfos: list[ModuleInfo]) -> None:
             names = [modinfo.name for modinfo in modinfos]
             names.sort(key=str.lower)
             # guarantee zip() doesn't drop anything
             while len(names) % 3:
                 names.append("")
-            for l, m, r in zip(names[::3], names[1::3], names[2::3]):
+            for l, m, r in zip(names[::3], names[1::3], names[2::3]):  # noqa: E741
                 print("%-*s   %-*s   %-*s" % (longest, l, longest, m, longest, r))
 
         if verbose and self.builtin_ok:
@@ -253,16 +284,49 @@ class ModuleChecker:
             f"{len(self.failed_on_import)} failed on import)"
         )
 
-    def check_strict_build(self):
+    def check_strict_build(self) -> None:
         """Fail if modules are missing and it's a strict build"""
         if self.strict_extensions_build and (self.failed_on_import or self.missing):
             raise RuntimeError("Failed to build some stdlib modules")
 
-    def list_module_names(self, *, all: bool = False) -> set:
+    def list_module_names(self, *, all: bool = False) -> set[str]:
         names = {modinfo.name for modinfo in self.modules}
         if all:
             names.update(WINDOWS_MODULES)
         return names
+
+    def generate_missing_stdlib_info(self, config_path: str | None = None) -> None:
+        config_messages = {}
+        if config_path:
+            try:
+                with open(config_path, encoding='utf-8') as f:
+                    config_messages = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                raise RuntimeError(f"Failed to load missing stdlib config {config_path!r}") from e
+
+        messages = {}
+        for name in WINDOWS_MODULES:
+            messages[name] = f"Unsupported platform for Windows-only standard library module {name!r}"
+
+        for modinfo in self.modules:
+            if modinfo.state in (ModuleState.DISABLED, ModuleState.DISABLED_SETUP):
+                messages[modinfo.name] = f"Standard library module disabled during build {modinfo.name!r} was not found"
+            elif modinfo.state == ModuleState.NA:
+                messages[modinfo.name] = f"Unsupported platform for standard library module {modinfo.name!r}"
+
+        messages.update(config_messages)
+
+        content = f'''\
+# Standard library information used by the traceback module for more informative
+# ModuleNotFound error messages.
+# Generated by check_extension_modules.py
+
+_MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
+'''
+
+        output_path = self.builddir / "_missing_stdlib_info.py"
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
 
     def get_builddir(self) -> pathlib.Path:
         try:
@@ -271,9 +335,9 @@ class ModuleChecker:
         except FileNotFoundError:
             logger.error("%s must be run from the top build directory", __file__)
             raise
-        builddir = pathlib.Path(builddir)
-        logger.debug("%s: %s", self.pybuilddir_txt, builddir)
-        return builddir
+        builddir_path = pathlib.Path(builddir)
+        logger.debug("%s: %s", self.pybuilddir_txt, builddir_path)
+        return builddir_path
 
     def get_modules(self) -> list[ModuleInfo]:
         """Get module info from sysconfig and Modules/Setup* files"""
@@ -358,7 +422,7 @@ class ModuleChecker:
                     case ["*disabled*"]:
                         state = ModuleState.DISABLED
                     case ["*noconfig*"]:
-                        state = None
+                        continue
                     case [*items]:
                         if state == ModuleState.DISABLED:
                             # *disabled* can disable multiple modules per line
@@ -375,26 +439,33 @@ class ModuleChecker:
     def get_spec(self, modinfo: ModuleInfo) -> ModuleSpec:
         """Get ModuleSpec for builtin or extension module"""
         if modinfo.state == ModuleState.SHARED:
-            location = os.fspath(self.get_location(modinfo))
+            mod_location = self.get_location(modinfo)
+            assert mod_location is not None
+            location = os.fspath(mod_location)
             loader = ExtensionFileLoader(modinfo.name, location)
-            return spec_from_file_location(modinfo.name, location, loader=loader)
+            spec = spec_from_file_location(modinfo.name, location, loader=loader)
+            assert spec is not None
+            return spec
         elif modinfo.state == ModuleState.BUILTIN:
-            return spec_from_loader(modinfo.name, loader=BuiltinImporter)
+            spec = spec_from_loader(modinfo.name, loader=BuiltinImporter)
+            assert spec is not None
+            return spec
         else:
             raise ValueError(modinfo)
 
-    def get_location(self, modinfo: ModuleInfo) -> pathlib.Path:
+    def get_location(self, modinfo: ModuleInfo) -> pathlib.Path | None:
         """Get shared library location in build directory"""
         if modinfo.state == ModuleState.SHARED:
             return self.builddir / f"{modinfo.name}{self.ext_suffix}"
         else:
             return None
 
-    def _check_file(self, modinfo: ModuleInfo, spec: ModuleSpec):
+    def _check_file(self, modinfo: ModuleInfo, spec: ModuleSpec) -> None:
         """Check that the module file is present and not empty"""
-        if spec.loader is BuiltinImporter:
+        if spec.loader is BuiltinImporter:  # type: ignore[comparison-overlap]
             return
         try:
+            assert spec.origin is not None
             st = os.stat(spec.origin)
         except FileNotFoundError:
             logger.error("%s (%s) is missing", modinfo.name, spec.origin)
@@ -402,7 +473,7 @@ class ModuleChecker:
         if not st.st_size:
             raise ImportError(f"{spec.origin} is an empty file")
 
-    def check_module_import(self, modinfo: ModuleInfo):
+    def check_module_import(self, modinfo: ModuleInfo) -> None:
         """Attempt to import module and report errors"""
         spec = self.get_spec(modinfo)
         self._check_file(modinfo, spec)
@@ -414,11 +485,14 @@ class ModuleChecker:
         except ImportError as e:
             logger.error("%s failed to import: %s", modinfo.name, e)
             raise
-        except Exception as e:
+        except Exception:
+            if not hasattr(_imp, 'create_dynamic'):
+                logger.warning("Dynamic extension '%s' ignored", modinfo.name)
+                return
             logger.exception("Importing extension '%s' failed!", modinfo.name)
             raise
 
-    def check_module_cross(self, modinfo: ModuleInfo):
+    def check_module_cross(self, modinfo: ModuleInfo) -> None:
         """Sanity check for cross compiling"""
         spec = self.get_spec(modinfo)
         self._check_file(modinfo, spec)
@@ -431,6 +505,7 @@ class ModuleChecker:
 
         failed_name = f"{modinfo.name}_failed{self.ext_suffix}"
         builddir_path = self.get_location(modinfo)
+        assert builddir_path is not None
         if builddir_path.is_symlink():
             symlink = builddir_path
             module_path = builddir_path.resolve().relative_to(os.getcwd())
@@ -454,7 +529,7 @@ class ModuleChecker:
             logger.debug("Rename '%s' -> '%s'", module_path, failed_path)
 
 
-def main():
+def main() -> None:
     args = parser.parse_args()
     if args.debug:
         args.verbose = True
@@ -471,6 +546,9 @@ def main():
         names = checker.list_module_names(all=True)
         for name in sorted(names):
             print(name)
+    elif args.generate_missing_stdlib_info:
+        checker.check()
+        checker.generate_missing_stdlib_info(args.with_missing_stdlib_config)
     else:
         checker.check()
         checker.summary(verbose=args.verbose)

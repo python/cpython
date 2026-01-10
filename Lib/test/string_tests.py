@@ -8,18 +8,12 @@ from test.support import import_helper
 from collections import UserList
 import random
 
+
 class Sequence:
     def __init__(self, seq='wxyz'): self.seq = seq
     def __len__(self): return len(self.seq)
     def __getitem__(self, i): return self.seq[i]
 
-class BadSeq1(Sequence):
-    def __init__(self): self.seq = [7, 'hello', 123]
-    def __str__(self): return '{0} {1} {2}'.format(*self.seq)
-
-class BadSeq2(Sequence):
-    def __init__(self): self.seq = ['a', 'b', 'c']
-    def __len__(self): return 8
 
 class BaseTest:
     # These tests are for buffers of values (bytes) and not
@@ -27,7 +21,7 @@ class BaseTest:
     # and various string implementations
 
     # The type to be tested
-    # Change in subclasses to change the behaviour of fixtesttype()
+    # Change in subclasses to change the behaviour of fixtype()
     type2test = None
 
     # Whether the "contained items" of the container are integers in
@@ -36,7 +30,7 @@ class BaseTest:
     contains_bytes = False
 
     # All tests pass their arguments to the testing methods
-    # as str objects. fixtesttype() can be used to propagate
+    # as str objects. fixtype() can be used to propagate
     # these arguments to the appropriate type
     def fixtype(self, obj):
         if isinstance(obj, str):
@@ -96,6 +90,18 @@ class BaseTest:
         args = self.fixtype(args)
         getattr(obj, methodname)(*args)
 
+    def _get_teststrings(self, charset, digits):
+        base = len(charset)
+        teststrings = set()
+        for i in range(base ** digits):
+            entry = []
+            for j in range(digits):
+                i, m = divmod(i, base)
+                entry.append(charset[m])
+            teststrings.add(''.join(entry))
+        teststrings = [self.fixtype(ts) for ts in teststrings]
+        return teststrings
+
     def test_count(self):
         self.checkequal(3, 'aaa', 'count', 'a')
         self.checkequal(0, 'aaa', 'count', 'b')
@@ -136,17 +142,7 @@ class BaseTest:
         # For a variety of combinations,
         #    verify that str.count() matches an equivalent function
         #    replacing all occurrences and then differencing the string lengths
-        charset = ['', 'a', 'b']
-        digits = 7
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(['', 'a', 'b'], 7)
         for i in teststrings:
             n = len(i)
             for j in teststrings:
@@ -159,6 +155,12 @@ class BaseTest:
                 if rem or r1 != r2:
                     self.assertEqual(rem, 0, '%s != 0 for %s' % (rem, i))
                     self.assertEqual(r1, r2, '%s != %s for %s' % (r1, r2, i))
+
+    def test_count_keyword(self):
+        self.assertEqual('aa'.replace('a', 'b', 0), 'aa'.replace('a', 'b', count=0))
+        self.assertEqual('aa'.replace('a', 'b', 1), 'aa'.replace('a', 'b', count=1))
+        self.assertEqual('aa'.replace('a', 'b', 2), 'aa'.replace('a', 'b', count=2))
+        self.assertEqual('aa'.replace('a', 'b', 3), 'aa'.replace('a', 'b', count=3))
 
     def test_find(self):
         self.checkequal(0, 'abcdefghiabc', 'find', 'abc')
@@ -197,17 +199,7 @@ class BaseTest:
         # For a variety of combinations,
         #    verify that str.find() matches __contains__
         #    and that the found substring is really at that location
-        charset = ['', 'a', 'b', 'c']
-        digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
         for i in teststrings:
             for j in teststrings:
                 loc = i.find(j)
@@ -244,17 +236,7 @@ class BaseTest:
         # For a variety of combinations,
         #    verify that str.rfind() matches __contains__
         #    and that the found substring is really at that location
-        charset = ['', 'a', 'b', 'c']
-        digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
         for i in teststrings:
             for j in teststrings:
                 loc = i.rfind(j)
@@ -295,6 +277,19 @@ class BaseTest:
         else:
             self.checkraises(TypeError, 'hello', 'index', 42)
 
+        # For a variety of combinations,
+        #    verify that str.index() matches __contains__
+        #    and that the found substring is really at that location
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
+        for i in teststrings:
+            for j in teststrings:
+                if j in i:
+                    loc = i.index(j)
+                    self.assertGreaterEqual(loc, 0)
+                    self.assertEqual(i[loc:loc+len(j)], j)
+                else:
+                    self.assertRaises(ValueError, i.index, j)
+
     def test_rindex(self):
         self.checkequal(12, 'abcdefghiabc', 'rindex', '')
         self.checkequal(3,  'abcdefghiabc', 'rindex', 'def')
@@ -321,17 +316,31 @@ class BaseTest:
         else:
             self.checkraises(TypeError, 'hello', 'rindex', 42)
 
+        # For a variety of combinations,
+        #    verify that str.rindex() matches __contains__
+        #    and that the found substring is really at that location
+        teststrings = self._get_teststrings(['', 'a', 'b', 'c'], 5)
+        for i in teststrings:
+            for j in teststrings:
+                if j in i:
+                    loc = i.rindex(j)
+                    self.assertGreaterEqual(loc, 0)
+                    self.assertEqual(i[loc:loc+len(j)], j)
+                else:
+                    self.assertRaises(ValueError, i.rindex, j)
+
     def test_find_periodic_pattern(self):
         """Cover the special path for periodic patterns."""
         def reference_find(p, s):
             for i in range(len(s)):
                 if s.startswith(p, i):
                     return i
+            if p == '' and s == '':
+                return 0
             return -1
 
-        rr = random.randrange
-        choices = random.choices
-        for _ in range(1000):
+        def check_pattern(rr):
+            choices = random.choices
             p0 = ''.join(choices('abcde', k=rr(10))) * rr(10, 20)
             p = p0[:len(p0) - rr(10)] # pop off some characters
             left = ''.join(choices('abcdef', k=rr(2000)))
@@ -340,6 +349,13 @@ class BaseTest:
             with self.subTest(p=p, text=text):
                 self.checkequal(reference_find(p, text),
                                 text, 'find', p)
+
+        rr = random.randrange
+        for _ in range(1000):
+            check_pattern(rr)
+
+        # Test that empty string always work:
+        check_pattern(lambda *args: 0)
 
     def test_find_many_lengths(self):
         haystack_repeats = [a * 10**e for e in range(6) for a in (1,2,5)]
@@ -759,6 +775,15 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+    def test_replacement_on_buffer_boundary(self):
+        # gh-127971: Check we don't read past the end of the buffer when a
+        # potential match misses on the last character.
+        any_3_nonblank_codepoints = '!!!'
+        seven_codepoints = any_3_nonblank_codepoints + ' ' + any_3_nonblank_codepoints
+        a = (' ' * 243) + seven_codepoints + (' ' * 7)
+        b = ' ' * 6 + chr(256)
+        a.replace(seven_codepoints, b)
+
     def test_replace_uses_two_way_maxcount(self):
         # Test that maxcount works in _two_way_count in fastsearch.h
         A, B = "A"*1000, "B"*1000
@@ -1096,7 +1121,7 @@ class BaseTest:
         self.checkraises(TypeError, 'abc', 'splitlines', 42, 42)
 
 
-class CommonTest(BaseTest):
+class StringLikeTest(BaseTest):
     # This testcase contains tests that can be used in all
     # stringlike classes. Currently this is str and UserString.
 
@@ -1124,13 +1149,8 @@ class CommonTest(BaseTest):
         self.checkequal('\u2160\u2171\u2172',
                         '\u2170\u2171\u2172', 'capitalize')
         # check with Ll chars with no upper - nothing changes here
-        self.checkequal('\u019b\u1d00\u1d86\u0221\u1fb7',
-                        '\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
-
-
-class MixinStrUnicodeUserStringTest:
-    # additional tests that only work for
-    # stringlike objects, i.e. str, UserString
+        self.checkequal('\u1d00\u1d86\u0221\u1fb7',
+                        '\u1d00\u1d86\u0221\u1fb7', 'capitalize')
 
     def test_startswith(self):
         self.checkequal(True, 'hello', 'startswith', 'he')
@@ -1313,8 +1333,11 @@ class MixinStrUnicodeUserStringTest:
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ('a' * i,) * i)
 
-        #self.checkequal(str(BadSeq1()), ' ', 'join', BadSeq1())
-        self.checkequal('a b c', ' ', 'join', BadSeq2())
+        class LiesAboutLengthSeq(Sequence):
+            def __init__(self): self.seq = ['a', 'b', 'c']
+            def __len__(self): return 8
+
+        self.checkequal('a b c', ' ', 'join', LiesAboutLengthSeq())
 
         self.checkraises(TypeError, ' ', 'join')
         self.checkraises(TypeError, ' ', 'join', None)
@@ -1497,19 +1520,19 @@ class MixinStrUnicodeUserStringTest:
         # issue 11828
         s = 'hello'
         x = 'x'
-        self.assertRaisesRegex(TypeError, r'^find\(', s.find,
+        self.assertRaisesRegex(TypeError, r'^find\b', s.find,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rfind\(', s.rfind,
+        self.assertRaisesRegex(TypeError, r'^rfind\b', s.rfind,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^index\(', s.index,
+        self.assertRaisesRegex(TypeError, r'^index\b', s.index,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rindex\(', s.rindex,
+        self.assertRaisesRegex(TypeError, r'^rindex\b', s.rindex,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^count\(', s.count,
+        self.assertRaisesRegex(TypeError, r'^count\b', s.count,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^startswith\(', s.startswith,
+        self.assertRaisesRegex(TypeError, r'^startswith\b', s.startswith,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^endswith\(', s.endswith,
+        self.assertRaisesRegex(TypeError, r'^endswith\b', s.endswith,
                                 x, None, None, None)
 
         # issue #15534
