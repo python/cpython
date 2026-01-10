@@ -1751,20 +1751,24 @@ class ExecutionConcurrentlyCloseConnectionBaseTests:
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # A fresh module is required for this class so that adapters
+        # registered by the tests do not pollute other tests.
         cls.sqlite = import_helper.import_fresh_module("sqlite3", fresh=["_sqlite3"])
 
     def inittest(self, **adapters):
         """Return a pair (connection, connection or cursor) to use in tests."""
         # Counter for the number of calls to the tracked functions.
         self.ncalls = Counter()
-        self.colname = "a"
 
         cx = self.sqlite.connect(":memory:")
-        # table to use to query the database to ensure that it's not closed
-        cx.execute(f"create table canary({self.colname} nunmber)")
-        cx.execute(f"insert into canary({self.colname}) values (?)", (1,))
-        cx.execute(f"create table tmp({self.colname} number)")
         self.addCleanup(cx.close)
+
+        # table to use to query the database to ensure that it's not closed
+        cx.execute(f"create table canary(flag nunmber)")
+        cx.execute(f"insert into canary values (?)", (1,))
+
+        self.colname = "a"
+        cx.execute(f"create table tmp({self.colname} number)")
         return cx, self.executor(cx)
 
     def executor(self, connection):
@@ -1779,18 +1783,20 @@ class ExecutionConcurrentlyCloseConnectionBaseTests:
     def check_execute(self, executor, payload, *, named=False):
         self.assertEqual(self.ncalls.total(), 0)
         self.check_alive(executor)
+
+        binding = f"(:{self.colname})" if named else "(?)"
         msg = r"Cannot operate on a closed database\."
-        binding = "(:a)" if named else "(?)"
         with self.assertRaisesRegex(self.sqlite.ProgrammingError, msg):
-            executor.execute(f"insert into tmp(a) values {binding}", payload)
+            executor.execute(f"insert into tmp values {binding}", payload)
 
     def check_executemany(self, executor, payload, *, named=False):
         self.assertEqual(self.ncalls.total(), 0)
         self.check_alive(executor)
+
+        binding = f"(:{self.colname})" if named else "(?)"
         msg = r"Cannot operate on a closed database\."
-        binding = "(:a)" if named else "(?)"
         with self.assertRaisesRegex(self.sqlite.ProgrammingError, msg):
-            executor.executemany(f"insert into tmp(a) values {binding}", payload)
+            executor.executemany(f"insert into tmp values {binding}", payload)
 
     # Simple tests
 
@@ -2000,7 +2006,6 @@ class CursorExecutionConcurrentlyCloseConnectionTests(
     """Regression tests for cursor.execute() and cursor.executemany()."""
     def executor(self, connection):
         return connection.cursor()
-
 
 
 class ClosedConTests(unittest.TestCase):
