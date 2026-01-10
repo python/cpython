@@ -1195,7 +1195,7 @@ run_presite(PyThreadState *tstate)
 #endif
 
 void
-_PyInterpreter_SetJitWithEnvVar(PyConfig *config, PyInterpreterState *interp)
+_PyInterpreter_SetJitWithEnvVar(const PyConfig *config, PyInterpreterState *interp)
 {
     int enabled = 1;
 #if _Py_TIER2 & 2
@@ -1218,7 +1218,7 @@ _PyInterpreter_SetJitWithEnvVar(PyConfig *config, PyInterpreterState *interp)
         } else
 #endif
         {
-            FT_ATOMIC_STORE_CHAR_RELAXED(interp->jit, 1);
+            FT_ATOMIC_STORE_UINT8(interp->jit, 1);
         }
     }
 }
