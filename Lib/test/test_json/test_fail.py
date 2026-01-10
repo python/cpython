@@ -262,7 +262,7 @@ class TestFail:
             json.decoder.JSONDecodeError = hook
             del hook
 
-            with self.assertRaises(ValueError):
+            with self.assertRaises(TypeError):
                 json.loads('"\\uZZZZ"')
         finally:
             json.JSONDecodeError = orig_json_error
