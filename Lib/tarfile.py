@@ -2487,8 +2487,10 @@ class TarFile(object):
 
         if isinstance(member, str):
             unfiltered = self.getmember(member)
+            unfiltered = unfiltered.replace(r'/', os.sep)
         else:
             unfiltered = member
+            unfiltered.path = unfiltered.path.replace(r'/', os.sep)
 
         filtered = None
         try:
