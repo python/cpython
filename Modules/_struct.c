@@ -71,6 +71,7 @@ typedef struct {
     PyObject *s_format;
     PyObject *weakreflist; /* List of weak references */
     PyMutex mutex; /* to prevent mutation during packing */
+    bool ready;
 } PyStructObject;
 
 #define PyStructObject_CAST(op)     ((PyStructObject *)(op))
@@ -1763,6 +1764,12 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *self;
 
+    if (PyTuple_GET_SIZE(args) != 1
+        && PyErr_WarnEx(PyExc_DeprecationWarning,
+                        "Struct().__new__() has one required argument", 1))
+    {
+        return NULL;
+    }
     assert(type != NULL);
     allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
     assert(alloc_func != NULL);
@@ -1775,6 +1782,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         s->s_size = -1;
         s->s_len = -1;
         s->mutex = (PyMutex){0};
+        s->ready = false;
     }
     return self;
 }
@@ -1796,8 +1804,13 @@ static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
 /*[clinic end generated code: output=b8e80862444e92d0 input=192a4575a3dde802]*/
 {
-    int ret = 0;
-
+    if (self->ready
+        && PyErr_WarnEx(PyExc_DeprecationWarning,
+                        ("Explicit call of __init__() on "
+                         "initialized Struct()"), 1))
+    {
+        return -1;
+    }
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
         if (format == NULL)
@@ -1823,8 +1836,11 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
                         "Call Struct.__init__() in struct.pack()");
         return -1;
     }
-    ret = prepare_s(self);
-    return ret;
+    if (prepare_s(self)) {
+        return -1;
+    }
+    self->ready = true;
+    return 0;
 }
 
 static int
@@ -1924,6 +1940,10 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
+    if (!self->ready) {
+        PyErr_SetString(PyExc_RuntimeError, "Call unpack on non-initialized Struct()");
+        return NULL;
+    }
     assert(self->s_codes != NULL);
     if (buffer->len != self->s_size) {
         PyErr_Format(state->StructError,
@@ -1956,6 +1976,10 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
 /*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
+    if (!self->ready) {
+        PyErr_SetString(PyExc_RuntimeError, "Call unpack_from on non-initialized Struct()");
+        return NULL;
+    }
     assert(self->s_codes != NULL);
 
     if (offset < 0) {
@@ -2108,6 +2132,10 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     unpackiterobject *iter;
+    if (!self->ready) {
+        PyErr_SetString(PyExc_RuntimeError, "Call iter_unpack on non-initialized Struct()");
+        return NULL;
+    }
 
     assert(self->s_codes != NULL);
 
@@ -2249,6 +2277,10 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments. */
     soself = PyStructObject_CAST(self);
+    if (!soself->ready) {
+        PyErr_SetString(PyExc_RuntimeError, "Call pack on non-initialized Struct()");
+        return NULL;
+    }
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
@@ -2295,6 +2327,10 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = PyStructObject_CAST(self);
+    if (!soself->ready) {
+        PyErr_SetString(PyExc_RuntimeError, "Call pack_into on non-initialized Struct()");
+        return NULL;
+    }
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))

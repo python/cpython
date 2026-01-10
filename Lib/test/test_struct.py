@@ -7,6 +7,7 @@ import operator
 import unittest
 import struct
 import sys
+import warnings
 import weakref
 
 from test import support
@@ -575,7 +576,11 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
         s = struct.Struct('i')
-        s.__init__('ii')
+        with self.assertWarns(DeprecationWarning):
+            s.__init__('ii')
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, s.__init__, 'ii')
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
@@ -783,7 +788,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __init__(self):
                 super().__init__('>h')
 
-        my_struct = MyStruct()
+        with self.assertWarns(DeprecationWarning):
+            my_struct = MyStruct()
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
     def test_repr(self):
@@ -826,8 +832,19 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 S.__init__('I')
                 return True
 
-        self.assertRaises(RuntimeError, S.pack, Evil(), 1)
-        self.assertRaises(RuntimeError, S.pack_into, buf, 0, Evil(), 1)
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(RuntimeError, S.pack, Evil(), 1)
+            self.assertRaises(RuntimeError, S.pack_into, buf, 0, Evil(), 1)
+
+    def test_operations_on_half_initialized_Struct(self):
+        with self.assertWarns(DeprecationWarning):
+            S = struct.Struct.__new__(struct.Struct)
+
+        spam = array.array('b', b' ')
+        for attr in ['iter_unpack', 'pack', 'pack_into',
+                     'unpack', 'unpack_from']:
+            meth = getattr(S, attr)
+            self.assertRaises(RuntimeError, meth, spam)
 
 
 class UnpackIteratorTest(unittest.TestCase):

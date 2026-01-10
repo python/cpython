@@ -1,0 +1,6 @@
+Prevent crashes due to using half-initialized :class:`~struct.Struct`
+objects. For example, created by ``Struct.__new__(Struct)``.  Calling the
+``Struct.__new__()`` dunder without required argument now is deprecated.
+Calling :meth:`~object.__init__` dunder method of :class:`~struct.Struct`
+object on initialized object now also is deprecated.  Patch by Sergey B
+Kirpichev.
