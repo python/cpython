@@ -820,10 +820,13 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         S = struct.Struct.__new__(struct.Struct)
 
         spam = array.array('b', b' ')
-        for attr in ['iter_unpack', 'pack', 'pack_into',
-                     'unpack', 'unpack_from']:
-            meth = getattr(S, attr)
-            self.assertRaises(RuntimeError, meth, spam)
+        self.assertRaises(RuntimeError, S.iter_unpack, 1)
+        self.assertRaises(RuntimeError, S.pack, 1)
+        self.assertRaises(RuntimeError, S.pack_into, 1)
+        self.assertRaises(RuntimeError, S.unpack, spam)
+        self.assertRaises(RuntimeError, S.unpack_from, spam)
+        self.assertRaises(RuntimeError, getattr, S, 'format')
+        self.assertEqual(S.size, -1)
 
 
 class UnpackIteratorTest(unittest.TestCase):

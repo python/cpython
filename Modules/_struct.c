@@ -1926,7 +1926,6 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     ENSURE_STRUCT_IS_READY(self);
-    assert(self->s_codes != NULL);
     if (buffer->len != self->s_size) {
         PyErr_Format(state->StructError,
                      "unpack requires a buffer of %zd bytes",
@@ -1959,7 +1958,6 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     ENSURE_STRUCT_IS_READY(self);
-    assert(self->s_codes != NULL);
 
     if (offset < 0) {
         if (offset + self->s_size > 0) {
@@ -2113,8 +2111,6 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
     unpackiterobject *iter;
     ENSURE_STRUCT_IS_READY(self);
 
-    assert(self->s_codes != NULL);
-
     if (self->s_size == 0) {
         PyErr_Format(state->StructError,
                      "cannot iteratively unpack with a struct of length 0");
@@ -2255,7 +2251,6 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     soself = PyStructObject_CAST(self);
     ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
     {
         PyErr_Format(state->StructError,
@@ -2299,7 +2294,6 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     soself = PyStructObject_CAST(self);
     ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))
     {
         if (nargs == 0) {
@@ -2386,6 +2380,7 @@ static PyObject *
 s_get_format(PyObject *op, void *Py_UNUSED(closure))
 {
     PyStructObject *self = PyStructObject_CAST(op);
+    ENSURE_STRUCT_IS_READY(self);
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
                                        PyBytes_GET_SIZE(self->s_format));
 }
