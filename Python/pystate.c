@@ -515,6 +515,13 @@ _Py_LazyJitShim(
    to the other dynamically initialized fields.
   */
 
+static inline bool
+is_env_enabled(const char *env_name)
+{
+    char *env = Py_GETENV(env_name);
+    return env && *env != '\0' && *env != '0';
+}
+
 static inline void
 init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
                 long min_value, long max_value)
@@ -589,29 +596,31 @@ init_interpreter(PyInterpreterState *interp,
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
 
     // Initialize optimization configuration from environment variables
+    // PYTHON_JIT_STRESS sets aggressive defaults for testing, but can be overridden
+    uint16_t jump_default = JUMP_BACKWARD_INITIAL_VALUE;
+    uint16_t side_exit_default = SIDE_EXIT_INITIAL_VALUE;
+
+    if (is_env_enabled("PYTHON_JIT_STRESS")) {
+        jump_default = 63;
+        side_exit_default = 63;
+    }
+
     init_policy(&interp->opt_config.jump_backward_initial_value,
                 "PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE",
-                JUMP_BACKWARD_INITIAL_VALUE, 1, MAX_VALUE);
+                jump_default, 1, MAX_VALUE);
     init_policy(&interp->opt_config.jump_backward_initial_backoff,
                 "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
                 JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
 #ifdef _Py_TIER2
     init_policy(&interp->opt_config.side_exit_initial_value,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
-                SIDE_EXIT_INITIAL_VALUE, 1, MAX_VALUE);
+                side_exit_default, 1, MAX_VALUE);
     init_policy(&interp->opt_config.side_exit_initial_backoff,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
 #endif
 
-    // Check if specialization should be disabled
-    // If PYTHON_SPECIALIZATION_OFF is set to any non-empty value, disable specialization
-    char *spec_off_env = Py_GETENV("PYTHON_SPECIALIZATION_OFF");
-    if (spec_off_env && *spec_off_env != '\0' && *spec_off_env != '0') {
-        interp->opt_config.specialization_enabled = false;
-    } else {
-        interp->opt_config.specialization_enabled = true;
-    }
+    interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
