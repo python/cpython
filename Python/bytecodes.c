@@ -44,7 +44,6 @@
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
-#include "../Include/internal/pycore_pyerrors.h"
 
 /* Flow control macros */
 
