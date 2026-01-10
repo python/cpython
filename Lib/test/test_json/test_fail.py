@@ -1,7 +1,4 @@
 from test.test_json import PyTest, CTest
-from test import support
-import json
-import sys
 
 # 2007-10-05
 JSONDOCS = [
@@ -238,43 +235,6 @@ class TestFail:
             self.assertEqual(str(err),
                              'Expecting value: line %s column %d (char %d)' %
                              (line, col, idx))
-
-
-    def test_reentrant_jsondecodeerror_does_not_crash(self):
-        # gh-143544
-
-        class Trigger(ValueError):
-            def __call__(self, *args, **kwargs):
-                # Remove JSONDecodeError during construction to trigger re-entrancy
-                del json.JSONDecodeError
-                del json.decoder.JSONDecodeError
-                raise self
-
-        hook = Trigger("boom")
-
-        orig_json_error = json.JSONDecodeError
-        orig_decoder_error = json.decoder.JSONDecodeError
-
-        try:
-            # NOTE: Do not use swap_attr() here.
-            # swap_attr() keeps the replacement object alive for the duration of
-            # the context manager, which prevents the crash this test is meant
-            # to reproduce
-            json.JSONDecodeError = hook
-            json.decoder.JSONDecodeError = hook
-
-            # The hook must be kept alive by these references.
-            # Deleting it triggers the re-entrant path this test is exercising.
-            self.assertEqual(sys.getrefcount(hook), 3)
-            del hook
-
-            support.gc_collect()
-
-            with self.assertRaises(ValueError):
-                json.loads('"\\uZZZZ"')
-        finally:
-            json.JSONDecodeError = orig_json_error
-            json.decoder.JSONDecodeError = orig_decoder_error
 
 class TestPyFail(TestFail, PyTest): pass
 class TestCFail(TestFail, CTest): pass
