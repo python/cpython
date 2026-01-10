@@ -32,7 +32,6 @@ import urllib.parse
 import warnings
 from collections import Counter
 
-from test import support
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess, subTests
 )
