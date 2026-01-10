@@ -2266,11 +2266,6 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
-    if (PyMutex_IsLocked(&soself->mutex)) {
-        PyErr_SetString(PyExc_RuntimeError, "XXX");
-        PyBytesWriter_Discard(writer);
-        return NULL;
-    }
     PyMutex_Lock(&soself->mutex);
     if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
         PyMutex_Unlock(&soself->mutex);
