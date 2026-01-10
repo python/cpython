@@ -44,6 +44,7 @@
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
+#include "../Include/internal/pycore_pyerrors.h"
 
 /* Flow control macros */
 
@@ -3224,6 +3225,7 @@ dummy_func(
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
             FOR_ITER_GEN,
+            FOR_ITER_DICT_ITEMS,
         };
 
         specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter, null_or_index -- iter, null_or_index)) {
@@ -3478,6 +3480,52 @@ dummy_func(
             _CHECK_PEP_523 +
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
+
+        op(_ITER_CHECK_DICT_ITEMS, (iter, null_or_index -- iter, null_or_index)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            EXIT_IF(!Py_IS_TYPE(iter_o, &PyDictIterItem_Type));
+#ifdef Py_GIL_DISABLED
+            EXIT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)iter_o));
+#endif
+        }
+
+        replaced op(_ITER_JUMP_DICT_ITEMS, (iter, null_or_index -- iter, null_or_index)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(iter_o) == &PyDictIterItem_Type);
+#ifdef Py_GIL_DISABLED
+            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
+#endif
+            STAT_INC(FOR_ITER, hit);
+            if (((_PyDictIterItemObject *)iter_o)->di_dict == NULL) {
+                // Jump over END_FOR instruction.
+                JUMPBY(oparg + 1);
+                DISPATCH();
+            }
+        }
+
+        tier2 op(_GUARD_NOT_EXHAUSTED_DICT_ITEMS, (iter, null_or_index -- iter, null_or_index)) {
+            _PyDictIterItemObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            EXIT_IF(((_PyDictIterItemObject *)iter_o)->di_dict == NULL);
+        }
+
+        op(_ITER_NEXT_DICT_ITEMS, (iter, null_or_index -- iter, null_or_index, next)) {
+            PyObject *item = _PyDictIter_IterNextItem(PyStackRef_AsPyObjectBorrow(iter));
+            if (item == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    ERROR_NO_POP();
+                }
+                /* iterator ended normally */
+                /* The translator sets the deopt target just past the matching END_FOR */
+                EXIT_IF(true);
+            }
+            next = PyStackRef_FromPyObjectSteal(item);
+        }
+
+        macro(FOR_ITER_DICT_ITEMS) =
+            unused/1 +
+            _ITER_CHECK_DICT_ITEMS +
+            _ITER_JUMP_DICT_ITEMS +
+            _ITER_NEXT_DICT_ITEMS;
 
         op(_INSERT_NULL, (self -- method_and_self[2])) {
             method_and_self[1] = self;

@@ -344,6 +344,17 @@ extern void _PyDict_EnablePerThreadRefcounting(PyObject *op);
 
 PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 
+PyAPI_FUNC(PyObject *) _PyDictIter_IterNextItem(PyObject *self);
+
+typedef struct {
+    PyObject_HEAD
+    PyDictObject *di_dict; /* Set to NULL when iterator is exhausted */
+    Py_ssize_t di_used;
+    Py_ssize_t di_pos;
+    PyObject* di_result; /* reusable result tuple for iteritems */
+    Py_ssize_t len;
+} _PyDictIterItemObject;
+
 // See `_Py_INCREF_TYPE()` in pycore_object.h
 #ifndef Py_GIL_DISABLED
 #  define _Py_INCREF_DICT Py_INCREF

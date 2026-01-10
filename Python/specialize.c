@@ -2541,6 +2541,10 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
             specialize(instr, FOR_ITER_GEN);
             return;
         }
+        else if (tp == &PyDictIterItem_Type) {
+            specialize(instr, FOR_ITER_DICT_ITEMS);
+            return;
+        }
     }
     else {
         if (tp == &PyList_Type) {

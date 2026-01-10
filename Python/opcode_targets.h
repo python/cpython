@@ -174,6 +174,7 @@ static void *opcode_targets_table[256] = {
     &&TARGET_COMPARE_OP_STR,
     &&TARGET_CONTAINS_OP_DICT,
     &&TARGET_CONTAINS_OP_SET,
+    &&TARGET_FOR_ITER_DICT_ITEMS,
     &&TARGET_FOR_ITER_GEN,
     &&TARGET_FOR_ITER_LIST,
     &&TARGET_FOR_ITER_RANGE,
@@ -213,7 +214,6 @@ static void *opcode_targets_table[256] = {
     &&TARGET_UNPACK_SEQUENCE_LIST,
     &&TARGET_UNPACK_SEQUENCE_TUPLE,
     &&TARGET_UNPACK_SEQUENCE_TWO_TUPLE,
-    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -472,7 +472,7 @@ static void *opcode_tracing_targets_table[256] = {
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
-    &&_unknown_opcode,
+    &&TARGET_TRACE_RECORD,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -617,6 +617,7 @@ static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_EXTENDED_ARG(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS);
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FOR_ITER_DICT_ITEMS(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS);
@@ -858,6 +859,7 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [FORMAT_SIMPLE] = _TAIL_CALL_FORMAT_SIMPLE,
     [FORMAT_WITH_SPEC] = _TAIL_CALL_FORMAT_WITH_SPEC,
     [FOR_ITER] = _TAIL_CALL_FOR_ITER,
+    [FOR_ITER_DICT_ITEMS] = _TAIL_CALL_FOR_ITER_DICT_ITEMS,
     [FOR_ITER_GEN] = _TAIL_CALL_FOR_ITER_GEN,
     [FOR_ITER_LIST] = _TAIL_CALL_FOR_ITER_LIST,
     [FOR_ITER_RANGE] = _TAIL_CALL_FOR_ITER_RANGE,
@@ -1007,7 +1009,6 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,
     [126] = _TAIL_CALL_UNKNOWN_OPCODE,
     [127] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [213] = _TAIL_CALL_UNKNOWN_OPCODE,
     [214] = _TAIL_CALL_UNKNOWN_OPCODE,
     [215] = _TAIL_CALL_UNKNOWN_OPCODE,
     [216] = _TAIL_CALL_UNKNOWN_OPCODE,
@@ -1116,6 +1117,7 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [FORMAT_SIMPLE] = _TAIL_CALL_TRACE_RECORD,
     [FORMAT_WITH_SPEC] = _TAIL_CALL_TRACE_RECORD,
     [FOR_ITER] = _TAIL_CALL_TRACE_RECORD,
+    [FOR_ITER_DICT_ITEMS] = _TAIL_CALL_TRACE_RECORD,
     [FOR_ITER_GEN] = _TAIL_CALL_TRACE_RECORD,
     [FOR_ITER_LIST] = _TAIL_CALL_TRACE_RECORD,
     [FOR_ITER_RANGE] = _TAIL_CALL_TRACE_RECORD,
@@ -1265,7 +1267,6 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,
     [126] = _TAIL_CALL_UNKNOWN_OPCODE,
     [127] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [213] = _TAIL_CALL_UNKNOWN_OPCODE,
     [214] = _TAIL_CALL_UNKNOWN_OPCODE,
     [215] = _TAIL_CALL_UNKNOWN_OPCODE,
     [216] = _TAIL_CALL_UNKNOWN_OPCODE,

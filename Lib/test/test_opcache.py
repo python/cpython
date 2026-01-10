@@ -768,6 +768,23 @@ class TestRacesDoNotCrash(TestBase):
         opname = "FOR_ITER_LIST"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization
+    def test_for_iter_dict_items(self):
+        def get_items():
+            return dict.fromkeys(zip(range(self.ITEMS), range(self.ITEMS)))
+
+        def read(items):
+            for k, v in items.items():
+                pass
+
+        def write(items):
+            for k, v in items.items():
+                items[k] = None
+
+        opname = "FOR_ITER_DICT_ITEMS"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+
     @requires_specialization_ft
     def test_load_attr_class(self):
         def get_items():
@@ -1914,6 +1931,17 @@ class TestSpecializer(TestBase):
         for_iter_generator()
         self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
+
+        def for_iter_dict():
+            n = _testinternalcapi.SPECIALIZATION_THRESHOLD
+            dct = dict.fromkeys(zip(range(n), range(n)))
+            for k, v in dct.items():
+                pass
+
+        for_iter_dict()
+        self.assert_specialized(for_iter_dict, "FOR_ITER_DICT_ITEMS")
+        self.assert_no_opcode(for_iter_dict, "FOR_ITER")
+
 
     @cpython_only
     @requires_specialization_ft

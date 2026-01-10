@@ -2564,6 +2564,26 @@
             break;
         }
 
+        case _ITER_CHECK_DICT_ITEMS: {
+            break;
+        }
+
+        /* _ITER_JUMP_DICT_ITEMS is not a viable micro-op for tier 2 */
+
+        case _GUARD_NOT_EXHAUSTED_DICT_ITEMS: {
+            break;
+        }
+
+        case _ITER_NEXT_DICT_ITEMS: {
+            JitOptRef next;
+            next = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[0] = next;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _INSERT_NULL: {
             JitOptRef self;
             JitOptRef *method_and_self;
