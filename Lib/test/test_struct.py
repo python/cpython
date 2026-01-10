@@ -7,6 +7,7 @@ import operator
 import unittest
 import struct
 import sys
+import warnings
 import weakref
 
 from test import support
@@ -575,7 +576,11 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
         s = struct.Struct('i')
-        s.__init__('ii')
+        with self.assertWarns(DeprecationWarning):
+            s.__init__('ii')
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, s.__init__, 'ii')
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
@@ -783,7 +788,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __init__(self):
                 super().__init__('>h')
 
-        my_struct = MyStruct()
+        with self.assertWarns(DeprecationWarning):
+            my_struct = MyStruct()
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
     def test_repr(self):

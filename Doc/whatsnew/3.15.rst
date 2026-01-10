@@ -1137,6 +1137,15 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+* :mod:`struct`:
+
+  * Calling the ``Struct.__new__()`` without required argument now is
+    deprecated and will be removed in Python 3.20.  Calling
+    :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
+    objects is deprecated and will be removed in Python 3.20.
+
+    (Contributed by Sergey B Kirpichev in :gh:`78724`.)
+
 * ``__version__``
 
   * The ``__version__``, ``version`` and ``VERSION`` attributes have been

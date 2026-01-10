@@ -1762,6 +1762,12 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *self;
 
+    if (PyTuple_GET_SIZE(args) != 1
+        && PyErr_WarnEx(PyExc_DeprecationWarning,
+                        "Struct().__new__() has one required argument", 1))
+    {
+        return NULL;
+    }
     assert(type != NULL);
     allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
     assert(alloc_func != NULL);
@@ -1796,6 +1802,13 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 {
     int ret = 0;
 
+    if (self->s_codes
+        && PyErr_WarnEx(PyExc_DeprecationWarning,
+                        ("Explicit call of __init__() on "
+                         "initialized Struct() is deprecated"), 1))
+    {
+        return -1;
+    }
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
         if (format == NULL)
