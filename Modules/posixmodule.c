@@ -7611,6 +7611,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
                         PyObject *setsigdef, PyObject *scheduler,
                         posix_spawnattr_t *attrp)
 {
+    assert(scheduler == NULL || PyTuple_Check(scheduler));
     long all_flags = 0;
 
     errno = posix_spawnattr_init(attrp);
@@ -7914,6 +7915,12 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     if (!PyMapping_Check(env) && env != Py_None) {
         PyErr_Format(PyExc_TypeError,
                      "%s: environment must be a mapping object or None", func_name);
+        goto exit;
+    }
+
+    if (scheduler && !PyTuple_Check(scheduler)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%s: scheduler must be a tuple", func_name);
         goto exit;
     }
 
