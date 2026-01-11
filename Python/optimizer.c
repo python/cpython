@@ -1509,7 +1509,7 @@ uop_optimize(
         if (length <= 0) {
             return length;
         }
-        buffer = _tstate->jit_tracer_state->opt_context.out_buffer;
+        buffer = _tstate->jit_tracer_state->out_buffer;
     }
     assert(length < UOP_MAX_TRACE_LENGTH/2);
     assert(length >= 1);
