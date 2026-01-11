@@ -2817,6 +2817,7 @@ types.
 
    .. versionchanged:: 3.9
       ``TypedDict`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
 
    .. versionchanged:: 3.11
       Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
