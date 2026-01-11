@@ -1303,82 +1303,51 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         only = C(
             'foobar',
-            'foobar',
-            'foobar',
-            [],
-            '',
             ),
 
         all_printables = C(
             RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"'),
-            RFC_PRINTABLES,
-            RFC_PRINTABLES,
-            [],
-            '',
+            stringified=RFC_PRINTABLES,
             ),
 
         two_words_gets_first = C(
              'foo de',
-             'foo',
-             'foo',
-             [],
-             ' de',
+             remainder=' de',
              ),
 
         following_wsp_preserved = C(
             'foo \t\tde',
-            'foo',
-            'foo',
-            [],
-            ' \t\tde',
+            remainder=' \t\tde',
             ),
 
         up_to_dquote_only = C(
             'foo"',
-            'foo',
-            'foo',
-            [],
-            '"',
+            remainder='"',
             ),
 
         wsp_before_close_paren_preserved = C(
             'foo  "',
-            'foo',
-            'foo',
-            [],
-            '  "',
+            remainder='  "',
             ),
 
         close_paren_mid_word = C(
             'foo"bar',
-            'foo',
-            'foo',
-            [],
-            '"bar',
+            remainder='"bar',
             ),
 
         non_printables = C(
             'foo\x00fg"',
-            'foo\x00fg',
-            'foo\x00fg',
-            [errors.NonPrintableDefect],
-            '"',
+            defects=[errors.NonPrintableDefect],
+            remainder='"',
             ),
             #self.assertEqual(ptext.defects[0].non_printables[0], '\x00'
 
         empty = C(
             '"',
-            '',
-            '',
-            [],
-            '"',
+            remainder='"',
             ),
 
         no_end_char = C(
-            '',
-            '',
-            '',
-            [],
             '',
             ),
 
