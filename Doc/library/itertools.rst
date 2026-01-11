@@ -838,11 +838,16 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
+   from itertools import (accumulate, batched, chain, combinations, compress,
+        count, cycle, filterfalse, groupby, islice, permutations, product,
+        repeat, starmap, tee, zip_longest)
    from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
    from math import comb, prod, sumprod, isqrt
    from operator import is_not, itemgetter, getitem, mul, neg
+
+   # ==== Basic one liners ====
 
    def take(n, iterable):
        "Return first n items of the iterable as a list."
@@ -907,6 +912,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Returns True if all the elements are equal to each other."
        # all_equal('4٤௪౪໔', key=int) → True
        return len(take(2, groupby(iterable, key))) <= 1
+
+   # ==== Data streams ====
 
    def unique_justseen(iterable, key=None):
        "Yield unique elements, preserving order. Remember only the element just seen."
@@ -1014,10 +1021,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
            while True:
                yield function()
 
-
-The following recipes have a more mathematical flavor:
-
-.. testcode::
+   # ==== Mathematical operations ====
 
    def multinomial(*counts):
        "Number of distinct arrangements of a multiset."
@@ -1035,6 +1039,8 @@ The following recipes have a more mathematical flavor:
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) → 1400
        return sumprod(*tee(iterable))
+
+   # ==== Matrix operations ====
 
    def reshape(matrix, columns):
        "Reshape a 2-D matrix to have a given number of columns."
@@ -1073,6 +1079,8 @@ The following recipes have a more mathematical flavor:
        windowed_signal = sliding_window(padded_signal, n)
        return map(sumprod, repeat(kernel), windowed_signal)
 
+   # ==== Polynomial arithmetic ====
+
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
 
@@ -1105,6 +1113,8 @@ The following recipes have a more mathematical flavor:
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(mul, coefficients, powers))
+
+   # ==== Number theory ====
 
    def sieve(n):
        "Primes less than n."
