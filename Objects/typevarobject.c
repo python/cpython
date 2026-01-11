@@ -251,7 +251,7 @@ static PyType_Slot constevaluator_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec constevaluator_spec = {
+static PyType_Spec constevaluator_spec = {
     .name = "_typing._ConstEvaluator",
     .basicsize = sizeof(constevaluatorobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
@@ -930,7 +930,7 @@ static PyType_Slot typevar_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec typevar_spec = {
+static PyType_Spec typevar_spec = {
     .name = "typing.TypeVar",
     .basicsize = sizeof(typevarobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
@@ -1078,7 +1078,7 @@ static PyType_Slot paramspecargs_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec paramspecargs_spec = {
+static PyType_Spec paramspecargs_spec = {
     .name = "typing.ParamSpecArgs",
     .basicsize = sizeof(paramspecattrobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
@@ -1158,7 +1158,7 @@ static PyType_Slot paramspeckwargs_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec paramspeckwargs_spec = {
+static PyType_Spec paramspeckwargs_spec = {
     .name = "typing.ParamSpecKwargs",
     .basicsize = sizeof(paramspecattrobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
@@ -1451,13 +1451,13 @@ The following syntax creates a parameter specification that defaults\n\
 to a callable accepting two positional-only arguments of types int\n\
 and str:\n\
 \n\
-    type IntFuncDefault[**P = (int, str)] = Callable[P, int]\n\
+    type IntFuncDefault[**P = [int, str]] = Callable[P, int]\n\
 \n\
 For compatibility with Python 3.11 and earlier, ParamSpec objects\n\
 can also be created as follows::\n\
 \n\
     P = ParamSpec('P')\n\
-    DefaultP = ParamSpec('DefaultP', default=(int, str))\n\
+    DefaultP = ParamSpec('DefaultP', default=[int, str])\n\
 \n\
 Parameter specification variables exist primarily for the benefit of\n\
 static type checkers.  They are used to forward the parameter types of\n\
@@ -1509,7 +1509,7 @@ static PyType_Slot paramspec_slots[] = {
     {0, 0},
 };
 
-PyType_Spec paramspec_spec = {
+static PyType_Spec paramspec_spec = {
     .name = "typing.ParamSpec",
     .basicsize = sizeof(paramspecobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
@@ -1789,7 +1789,7 @@ Note that only TypeVarTuples defined in the global scope can be\n\
 pickled.\n\
 ");
 
-PyType_Slot typevartuple_slots[] = {
+static PyType_Slot typevartuple_slots[] = {
     {Py_tp_doc, (void *)typevartuple_doc},
     {Py_tp_members, typevartuple_members},
     {Py_tp_methods, typevartuple_methods},
@@ -1805,7 +1805,7 @@ PyType_Slot typevartuple_slots[] = {
     {0, 0},
 };
 
-PyType_Spec typevartuple_spec = {
+static PyType_Spec typevartuple_spec = {
     .name = "typing.TypeVarTuple",
     .basicsize = sizeof(typevartupleobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT
@@ -2347,7 +2347,7 @@ static PyType_Slot generic_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec generic_spec = {
+static PyType_Spec generic_spec = {
     .name = "typing.Generic",
     .basicsize = sizeof(PyObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,

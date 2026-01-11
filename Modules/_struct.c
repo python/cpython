@@ -9,6 +9,7 @@
 
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -1505,6 +1506,53 @@ static formatdef lilendian_table[] = {
     {0}
 };
 
+/* Ensure endian table optimization happens exactly once across all interpreters */
+static _PyOnceFlag endian_tables_init_once = {0};
+
+static int
+init_endian_tables(void *Py_UNUSED(arg))
+{
+    const formatdef *native = native_table;
+    formatdef *other, *ptr;
+#if PY_LITTLE_ENDIAN
+    other = lilendian_table;
+#else
+    other = bigendian_table;
+#endif
+    /* Scan through the native table, find a matching
+        entry in the endian table and swap in the
+        native implementations whenever possible
+        (64-bit platforms may not have "standard" sizes) */
+    while (native->format != '\0' && other->format != '\0') {
+        ptr = other;
+        while (ptr->format != '\0') {
+            if (ptr->format == native->format) {
+                /* Match faster when formats are
+                    listed in the same order */
+                if (ptr == other)
+                    other++;
+                /* Only use the trick if the
+                    size matches */
+                if (ptr->size != native->size)
+                    break;
+                /* Skip float and double, could be
+                    "unknown" float format */
+                if (ptr->format == 'd' || ptr->format == 'f')
+                    break;
+                /* Skip _Bool, semantics are different for standard size */
+                if (ptr->format == '?')
+                    break;
+                ptr->pack = native->pack;
+                ptr->unpack = native->unpack;
+                break;
+            }
+            ptr++;
+        }
+        native++;
+    }
+    return 0;
+}
+
 
 static const formatdef *
 whichtable(const char **pfmt)
@@ -1650,8 +1698,6 @@ prepare_s(PyStructObject *self)
         return -1;
     }
 
-    self->s_size = size;
-    self->s_len = len;
     codes = PyMem_Malloc((ncodes + 1) * sizeof(formatcode));
     if (codes == NULL) {
         PyErr_NoMemory();
@@ -1661,6 +1707,8 @@ prepare_s(PyStructObject *self)
     if (self->s_codes != NULL)
         PyMem_Free(self->s_codes);
     self->s_codes = codes;
+    self->s_size = size;
+    self->s_len = len;
 
     s = fmt;
     size = 0;
@@ -1849,6 +1897,14 @@ fail:
     return NULL;
 }
 
+#define ENSURE_STRUCT_IS_READY(self)                             \
+    do {                                                         \
+        if (!(self)->s_codes) {                                  \
+            PyErr_SetString(PyExc_RuntimeError,                  \
+                            "Struct object is not initialized"); \
+            return NULL;                                         \
+        }                                                        \
+    } while (0);
 
 /*[clinic input]
 Struct.unpack
@@ -1869,7 +1925,7 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
     if (buffer->len != self->s_size) {
         PyErr_Format(state->StructError,
                      "unpack requires a buffer of %zd bytes",
@@ -1901,7 +1957,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
 /*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
 
     if (offset < 0) {
         if (offset + self->s_size > 0) {
@@ -2053,8 +2109,7 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     unpackiterobject *iter;
-
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
 
     if (self->s_size == 0) {
         PyErr_Format(state->StructError,
@@ -2194,8 +2249,8 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments. */
     soself = PyStructObject_CAST(self);
+    ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
     {
         PyErr_Format(state->StructError,
@@ -2237,8 +2292,8 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = PyStructObject_CAST(self);
+    ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))
     {
         if (nargs == 0) {
@@ -2325,6 +2380,7 @@ static PyObject *
 s_get_format(PyObject *op, void *Py_UNUSED(closure))
 {
     PyStructObject *self = PyStructObject_CAST(op);
+    ENSURE_STRUCT_IS_READY(self);
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
                                        PyBytes_GET_SIZE(self->s_format));
 }
@@ -2710,47 +2766,8 @@ _structmodule_exec(PyObject *m)
         return -1;
     }
 
-    /* Check endian and swap in faster functions */
-    {
-        const formatdef *native = native_table;
-        formatdef *other, *ptr;
-#if PY_LITTLE_ENDIAN
-        other = lilendian_table;
-#else
-        other = bigendian_table;
-#endif
-        /* Scan through the native table, find a matching
-           entry in the endian table and swap in the
-           native implementations whenever possible
-           (64-bit platforms may not have "standard" sizes) */
-        while (native->format != '\0' && other->format != '\0') {
-            ptr = other;
-            while (ptr->format != '\0') {
-                if (ptr->format == native->format) {
-                    /* Match faster when formats are
-                       listed in the same order */
-                    if (ptr == other)
-                        other++;
-                    /* Only use the trick if the
-                       size matches */
-                    if (ptr->size != native->size)
-                        break;
-                    /* Skip float and double, could be
-                       "unknown" float format */
-                    if (ptr->format == 'd' || ptr->format == 'f')
-                        break;
-                    /* Skip _Bool, semantics are different for standard size */
-                    if (ptr->format == '?')
-                        break;
-                    ptr->pack = native->pack;
-                    ptr->unpack = native->unpack;
-                    break;
-                }
-                ptr++;
-            }
-            native++;
-        }
-    }
+    /* init cannot fail */
+    (void)_PyOnceFlag_CallOnce(&endian_tables_init_once, init_endian_tables, NULL);
 
     /* Add some symbolic constants to the module */
     state->StructError = PyErr_NewException("struct.error", NULL, NULL);
