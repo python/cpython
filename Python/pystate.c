@@ -611,14 +611,12 @@ init_interpreter(PyInterpreterState *interp,
     init_policy(&interp->opt_config.jump_backward_initial_backoff,
                 "PYTHON_JIT_JUMP_BACKWARD_INITIAL_BACKOFF",
                 JUMP_BACKWARD_INITIAL_BACKOFF, 0, MAX_BACKOFF);
-#ifdef _Py_TIER2
     init_policy(&interp->opt_config.side_exit_initial_value,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE",
                 side_exit_default, 1, MAX_VALUE);
     init_policy(&interp->opt_config.side_exit_initial_backoff,
                 "PYTHON_JIT_SIDE_EXIT_INITIAL_BACKOFF",
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
-#endif
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
     if (interp != &runtime->_main_interpreter) {
