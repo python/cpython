@@ -1,0 +1,1 @@
+Fixed BufferedReader.read1() leaving the object in a reentrant state after an error.
