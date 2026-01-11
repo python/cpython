@@ -10,6 +10,7 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
+from test.support import check_sanitizer
 from test.support import os_helper, threading_helper
 from .utils import byteslike, CTestCase, PyTestCase
 
@@ -623,16 +624,10 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
             bufio.readline()
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @unittest.skipIf(check_sanitizer(thread=True),
+                     'ThreadSanitizer aborts on huge allocations (exit code 66).')
     def test_read1_error_does_not_cause_reentrant_failure(self):
-        # 32-bit builds (e.g. win32) can raise OverflowError
-        # converting huge Python int to Py_ssize_t.
-        if sys.maxsize <= 2**32:
-            self.skipTest("requires 64-bit build")
-        # Under TSan, the process may abort on huge allocation
-        # attempts (exit code 66).
-        if support.check_sanitizer(thread=True):
-            self.skipTest("TSan aborts on huge allocations")
-
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with self.open(os_helper.TESTFN, "wb") as f:
             f.write(b"hello")
