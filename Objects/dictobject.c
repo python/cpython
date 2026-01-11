@@ -5447,6 +5447,7 @@ fail:
 int
 _PyDictIter_IterNextItemPair(PyObject *self, PyObject **key, PyObject **value)
 {
+    assert(Py_IS_TYPE(self, &PyDictIterItem_Type));
     _PyDictIterObject *di = (_PyDictIterObject *)self;
     PyDictObject *d = di->di_dict;
 
