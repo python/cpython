@@ -896,7 +896,7 @@ macOS, the JIT has a
 `7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-macm4pro-arm64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
-builds versus no JIT builds range from roughly 10% slowdown to over
+builds versus no JIT builds range from roughly 15% slowdown to over
 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
 x86-64 Linux and AArch64 macOS systems.
 
