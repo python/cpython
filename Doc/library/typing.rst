@@ -2444,6 +2444,7 @@ types.
 
    .. versionchanged:: 3.9
       ``NamedTuple`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
 
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
