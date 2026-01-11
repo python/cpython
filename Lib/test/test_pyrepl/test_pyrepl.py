@@ -1476,7 +1476,7 @@ class TestPyReplModuleCompleter(TestCase):
             (dir / "pack" / "__init__.py").write_text("foo = 1; bar = 2;")
             (dir / "pack" / "bar.py").touch()
             sys.modules.pop("graphlib", None)  # test modules may have been imported by previous tests
-            sys.modules.pop("html.entities", None)
+            sys.modules.pop("string.templatelib", None)
             with patch.object(sys, "path", [_dir, *sys.path]):
                 pkgutil.get_importer(_dir).invalidate_caches()
                 cases = (
@@ -1501,7 +1501,7 @@ class TestPyReplModuleCompleter(TestCase):
                     ("from pack.bar import ", ([], None), set()),
                     # stdlib = auto-imported
                     ("from graphlib import T", (["TopologicalSorter"], None), {"graphlib"}),
-                    ("from html.entities import h", (["html5"], None), {"html", "html.entities"}),
+                    ("from string.templatelib import c", (["convert"], None), {"string.templatelib"}),
                 )
                 completer = ModuleCompleter()
                 for i, (code, expected, expected_imports) in enumerate(cases):
