@@ -81,19 +81,14 @@ def copy(x):
     if copier is not None:
         return copier(x)
 
-    reductor = dispatch_table.get(cls)
-    if reductor is not None:
+    if (reductor := dispatch_table.get(cls)) is not None:
         rv = reductor(x)
+    elif (reductor := getattr(x, "__reduce_ex__", None)) is not None:
+        rv = reductor(4)
+    elif reductor := getattr(x, "__reduce__", None):
+        rv = reductor()
     else:
-        reductor = getattr(x, "__reduce_ex__", None)
-        if reductor is not None:
-            rv = reductor(4)
-        else:
-            reductor = getattr(x, "__reduce__", None)
-            if reductor:
-                rv = reductor()
-            else:
-                raise Error("un(shallow)copyable object of type %s" % cls)
+        raise Error("un(shallow)copyable object of type %s" % cls)
 
     if isinstance(rv, str):
         return x
@@ -126,35 +121,25 @@ def deepcopy(x, memo=None):
         if y is not None:
             return y
 
-    copier = _deepcopy_dispatch.get(cls)
-    if copier is not None:
+    if (copier := _deepcopy_dispatch.get(cls)) is not None:
         y = copier(x, memo)
+    elif issubclass(cls, type):
+        y = x # atomic copy
+    elif (copier := getattr(x, "__deepcopy__", None)) is not None:
+        y = copier(memo)
     else:
-        if issubclass(cls, type):
-            y = x # atomic copy
+        if (reductor := dispatch_table.get(cls)):
+            rv = reductor(x)
+        elif (reductor := getattr(x, "__reduce_ex__", None)) is not None:
+            rv = reductor(4)
+        elif reductor := getattr(x, "__reduce__", None):
+            rv = reductor()
         else:
-            copier = getattr(x, "__deepcopy__", None)
-            if copier is not None:
-                y = copier(memo)
-            else:
-                reductor = dispatch_table.get(cls)
-                if reductor:
-                    rv = reductor(x)
-                else:
-                    reductor = getattr(x, "__reduce_ex__", None)
-                    if reductor is not None:
-                        rv = reductor(4)
-                    else:
-                        reductor = getattr(x, "__reduce__", None)
-                        if reductor:
-                            rv = reductor()
-                        else:
-                            raise Error(
-                                "un(deep)copyable object of type %s" % cls)
-                if isinstance(rv, str):
-                    y = x
-                else:
-                    y = _reconstruct(x, memo, *rv)
+            raise Error("un(deep)copyable object of type %s" % cls)
+        if isinstance(rv, str):
+            y = x
+        else:
+            y = _reconstruct(x, memo, *rv)
 
     # If is its own copy, don't memoize.
     if y is not x:
