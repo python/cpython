@@ -1794,6 +1794,8 @@ static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
 /*[clinic end generated code: output=b8e80862444e92d0 input=192a4575a3dde802]*/
 {
+    int ret = 0;
+
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
         if (format == NULL)
@@ -1814,10 +1816,8 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 
     Py_SETREF(self->s_format, format);
 
-    if (prepare_s(self)) {
-        return -1;
-    }
-    return 0;
+    ret = prepare_s(self);
+    return ret;
 }
 
 static int
