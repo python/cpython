@@ -93,13 +93,14 @@ Context Variables
           # After the reset call the var has no value again, so
           # var.get() would raise a LookupError.
 
+      The same *token* cannot be used twice.
 
 .. class:: Token
 
    *Token* objects are returned by the :meth:`ContextVar.set` method.
    They can be passed to the :meth:`ContextVar.reset` method to revert
    the value of the variable to what it was before the corresponding
-   *set*.
+   *set*. A single token cannot reset a context variable more than once.
 
    The token supports :ref:`context manager protocol <context-managers>`
    to restore the corresponding context variable value at the exit from
