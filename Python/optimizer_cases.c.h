@@ -241,6 +241,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 (void)v_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                        REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
                 CHECK_STACK_BOUNDS(1);
                 stack_pointer[-1] = res;
                 stack_pointer[0] = v;
@@ -470,6 +477,13 @@
                     /* End of uop copied from bytecodes for constant evaluation */
                     (void)v_stackref;
                     res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                    if (sym_is_const(ctx, res)) {
+                        PyObject *result = sym_get_const(ctx, res);
+                        if (_Py_IsImmortal(result)) {
+                            // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                            REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        }
+                    }
                     CHECK_STACK_BOUNDS(1);
                     stack_pointer[-1] = res;
                     stack_pointer[0] = v;

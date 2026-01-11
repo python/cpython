@@ -1619,7 +1619,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_UNARY_NEGATIVE", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_unary_not_pop_top_load_const_inline_borrow(self):
+    def test_unary_not_insert_1_load_const_inline_borrow(self):
         def testfunc(n):
                 x = 0
                 for i in range(n):
@@ -1634,9 +1634,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NOT", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_unary_invert_pop_top_load_const_inline_borrow(self):
+    def test_unary_invert_inert_1_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for i in range(n):
@@ -1651,7 +1651,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_INVERT", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
