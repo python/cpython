@@ -242,7 +242,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
                 tfp.write(block)
                 blocknum += 1
                 if reporthook:
-                    reporthook(blocknum, len(block), size)
+                    reporthook(blocknum, bs, size)
 
     if size >= 0 and read < size:
         raise ContentTooShortError(
