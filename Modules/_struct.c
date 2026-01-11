@@ -2689,7 +2689,7 @@ these can be preceded by a decimal repeat count:\n\
   ?: _Bool (requires C99; if not available, char is used instead)\n\
   h:short; H:unsigned short; i:int; I:unsigned int;\n\
   l:long; L:unsigned long; f:float; d:double; e:half-float.\n\
-  F:complex (two floats); D:complex (two doubles).\n\
+  F:float complex; D:double complex.\n\
 Special cases (preceding decimal count indicates length):\n\
   s:string (array of char); p: pascal string (with count byte).\n\
 Special cases (only available in native format):\n\
