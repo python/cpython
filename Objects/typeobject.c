@@ -6101,12 +6101,6 @@ PyTypeObject PyType_Type = {
    symmetrically, __new__() complains about excess arguments unless
    __init__() is overridden and __new__() is not overridden
    (IOW, if __new__() is overridden or __init__() is not overridden).
-
-   However, for backwards compatibility, this breaks too much code.
-   Therefore, in 2.6, we'll *warn* about excess arguments when both
-   methods are overridden; for all other cases we'll use the above
-   rules.
-
 */
 
 /* Forward */
