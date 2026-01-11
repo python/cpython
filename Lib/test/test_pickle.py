@@ -429,18 +429,6 @@ if has_c_implementation:
             pickler.dump(X())  # should not crash
             self.assertEqual(pickle.loads(f.getvalue()), [])
 
-        def test_concurrent_pickler_dump_and_clear_memo(self):
-            for clear_memo in [lambda: pickler.clear_memo(), lambda: pickler.memo.clear()]:
-                f = io.BytesIO()
-                pickler = self.pickler_class(f)
-                class X:
-                    def __reduce__(slf):
-                        self.assertRaises(RuntimeError, clear_memo)
-                        return list, (('inner',),), None, iter((slf,))
-                pickler.dump(['outer', X()])
-                unpickled = pickle.loads(f.getvalue())
-                self.assertIs(unpickled[1][1], unpickled[1])
-
         def test_concurrent_pickler_dump_and_init(self):
             f = io.BytesIO()
             pickler = self.pickler_class(f)
