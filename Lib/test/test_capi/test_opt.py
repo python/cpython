@@ -1636,7 +1636,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_UNARY_NOT", uops)
         self.assertNotIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_unary_invert_inert_1_load_const_inline_borrow(self):
+    def test_unary_invert_insert_1_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for i in range(n):
