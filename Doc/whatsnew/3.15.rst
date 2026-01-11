@@ -402,6 +402,9 @@ Other language changes
   :class:`tuple` (including classes created by :func:`collections.namedtuple`).
   (Contributed by Serhiy Storchaka in :gh:`41779`.)
 
+* The :class:`slice` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 New modules
 ===========
