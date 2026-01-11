@@ -7693,7 +7693,7 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
     }
 #endif
 
-    if (scheduler) {
+    if (scheduler && scheduler != Py_None) {
 #ifdef POSIX_SPAWN_SETSCHEDULER
         PyObject *py_schedpolicy;
         PyObject *schedparam_obj;
@@ -7918,9 +7918,9 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    if (scheduler && !PyTuple_Check(scheduler)) {
+    if (!PyTuple_Check(scheduler) && scheduler != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "%s: scheduler must be a tuple", func_name);
+                     "%s: scheduler must be a tuple or None", func_name);
         goto exit;
     }
 
@@ -8045,7 +8045,7 @@ os.posix_spawn
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -8057,7 +8057,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=808aed1090d84e33]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=242939f993243c45]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -8091,7 +8091,7 @@ os.posix_spawnp
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
+    scheduler: object(c_default='NULL') = None
         A tuple with the scheduler policy (optional) and parameters.
 
 Execute the program specified by path in a new process.
@@ -8103,7 +8103,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=9e89e616116752a1]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=e77db185549d088c]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,

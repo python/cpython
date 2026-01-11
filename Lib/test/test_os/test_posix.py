@@ -2096,10 +2096,13 @@ class _PosixSpawnMixin:
                             [sys.executable, "-c", "pass"],
                             os.environ, setsigdef=[signal.NSIG, signal.NSIG+1])
 
-    @support.subTests("scheduler", [None, 1, [1, 2]])
+    @support.subTests("scheduler", [object(), 1, [1, 2]])
     def test_invalid_scheduler_param(self, scheduler):
         path, args = self.NOOP_PROGRAM[0], self.NOOP_PROGRAM
-        with self.assertRaisesRegex(TypeError, "scheduler must be a tuple"):
+        with self.assertRaisesRegex(
+            TypeError,
+            "scheduler must be a tuple or None",
+        ):
             self.spawn_func(path, args, os.environ, scheduler=scheduler)
 
     @requires_sched
