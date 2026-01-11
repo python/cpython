@@ -1,1 +1,1 @@
-Fixed BufferedReader.read1() leaving the object in a reentrant state after an error.
+Fix :meth:`io.BufferedReader.read1` state cleanup on buffer allocation failure.
