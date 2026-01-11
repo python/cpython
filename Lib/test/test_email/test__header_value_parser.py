@@ -1301,7 +1301,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_qcontent = old_api_only(
 
-        only = C(
+        no_qp_no_end_char = C(
             'foobar',
             ),
 
@@ -1310,10 +1310,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified=RFC_PRINTABLES,
             ),
 
-        two_words_gets_first = C(
-             'foo de',
-             remainder=' de',
-             ),
+        **for_each_character(RFC_WSP)(
+            two_words_gets_first = C(
+                 'foo{char}de',
+                 remainder='{char}de',
+                 ),
+            ),
 
         following_wsp_preserved = C(
             'foo \t\tde',
@@ -1325,29 +1327,30 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='"',
             ),
 
-        wsp_before_close_paren_preserved = C(
+        wsp_before_dquote_preserved = C(
             'foo  "',
             remainder='  "',
             ),
 
-        close_paren_mid_word = C(
+        dquote_mid_word = C(
             'foo"bar',
             remainder='"bar',
             ),
 
-        non_printables = C(
-            'foo\x00fg"',
-            defects=[errors.NonPrintableDefect],
-            remainder='"',
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable = C(
+                'foo{char}bar"',
+                defects=[(nonprintable_defect, '{char}')],
+                remainder='"',
+                ),
             ),
-            #self.assertEqual(ptext.defects[0].non_printables[0], '\x00'
 
-        empty = C(
+        no_content_before_dquote = C(
             '"',
             remainder='"',
             ),
 
-        no_end_char = C(
+        empty_value = C(
             '',
             ),
 
