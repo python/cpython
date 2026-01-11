@@ -77,7 +77,7 @@ Context Variables
       to restore the variable to its previous value via the
       :meth:`ContextVar.reset` method.
 
-      For convenience, the token object can used as a context manager
+      For convenience, the token object can be used as a context manager
       to avoid calling :meth:`ContextVar.reset` manually::
 
           var = ContextVar('var', default='default value')
