@@ -1,0 +1,2 @@
+:mod:`ssl`: fix reference leaks in :class:`ssl.SSLContext` objects. Patch by
+Bénédikt Tran.
