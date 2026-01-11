@@ -2369,7 +2369,7 @@ These functions and classes should not be used directly as annotations.
 Their intended purpose is to be building blocks for creating and declaring
 types.
 
-.. class:: NamedTuple
+.. function:: NamedTuple
 
    Typed version of :func:`collections.namedtuple`.
 
