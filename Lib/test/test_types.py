@@ -2170,15 +2170,17 @@ class SimpleNamespaceTests(unittest.TestCase):
     def test_replace_invalid_subtype(self):
         # See https://github.com/python/cpython/issues/143636.
         class NS(types.SimpleNamespace):
-            called = False
             def __new__(cls, *args, **kwargs):
-                if cls.called:
+                if created:
                     return object()
-                cls.called = True
                 return super().__new__(cls)
 
-        err = re.escape("expecting a types.SimpleNamespace object, got object")
-        self.assertRaisesRegex(TypeError, err, NS().__replace__)
+        created = False
+        ns = NS()
+        created = True
+        err = re.escape("NS.__new__() must return an instance "
+                        "of a subclass of types.SimpleNamespace")
+        self.assertRaisesRegex(TypeError, err, copy.replace, ns)
 
     def test_fake_namespace_compare(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
