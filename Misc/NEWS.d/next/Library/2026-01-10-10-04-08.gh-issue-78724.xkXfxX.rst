@@ -1,0 +1,3 @@
+Raise :exc:`RuntimeError`'s when user attempts to call methods on
+half-initialized :class:`~struct.Struct` objects, For example, created by
+``Struct.__new__(Struct)``.  Patch by Sergey B Kirpichev.
