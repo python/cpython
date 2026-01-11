@@ -623,6 +623,19 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
             bufio.readline()
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
+    def test_read1_error_does_not_cause_reentrant_failure(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.write(b"hello")
+
+        with self.open(os_helper.TESTFN, "rb", buffering=0) as raw:
+            bufio = self.tp(raw, buffer_size=8)
+            huge = 10**18
+            with self.assertRaises(MemoryError):
+                bufio.read1(huge)
+
+            self.assertEqual(bufio.read1(1), b"h")
+
 
 class PyBufferedReaderTest(BufferedReaderTest, PyTestCase):
     tp = pyio.BufferedReader
