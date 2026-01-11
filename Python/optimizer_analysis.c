@@ -152,6 +152,16 @@ incorrect_keys(PyObject *obj, uint32_t version)
     (INST)->oparg = ARG;            \
     (INST)->operand0 = OPERAND;
 
+#define ADD_OP(OP, ARG, OPERAND) ( \
+    ctx->out_buffer[ctx->out_len].opcode = (OP), \
+    ctx->out_buffer[ctx->out_len].format = this_instr->format, \
+    ctx->out_buffer[ctx->out_len].oparg = (ARG), \
+    ctx->out_buffer[ctx->out_len].target = this_instr->target, \
+    ctx->out_buffer[ctx->out_len].operand0 = (OPERAND), \
+    ctx->out_buffer[ctx->out_len].operand1 = this_instr->operand1, \
+    ctx->out_len++ \
+)
+
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
@@ -219,7 +229,7 @@ optimize_to_bool(
     bool insert_mode)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
-        REPLACE_OP(this_instr, _NOP, 0, 0);
+        ADD_OP(_NOP, 0, 0);
         *result_ptr = value;
         return 1;
     }
@@ -229,7 +239,7 @@ optimize_to_bool(
         int opcode = insert_mode ?
             _INSERT_1_LOAD_CONST_INLINE_BORROW :
             _POP_TOP_LOAD_CONST_INLINE_BORROW;
-        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)load);
+        ADD_OP(opcode, 0, (uintptr_t)load);
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
@@ -237,9 +247,9 @@ optimize_to_bool(
 }
 
 static void
-eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
+eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit)
 {
-    REPLACE_OP(this_instr, _POP_TOP, 0, 0);
+    ADD_OP(_POP_TOP, 0, 0);
     if (exit) {
         REPLACE_OP((this_instr+1), _EXIT_TRACE, 0, 0);
         this_instr[1].target = this_instr->target;
@@ -256,7 +266,7 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
             int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
-            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
+            ADD_OP(opcode, 0, (uintptr_t)lookup);
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
             return sym_new_const(ctx, lookup);
@@ -364,6 +374,7 @@ optimize_uops(
     frame->func = func;
     ctx->curr_frame_depth++;
     ctx->frame = frame;
+    ctx->out_len = 0;
 
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
@@ -387,6 +398,7 @@ optimize_uops(
         }
 #endif
 
+        int out_len_before = ctx->out_len;
         switch (opcode) {
 
 #include "optimizer_cases.c.h"
@@ -394,6 +406,10 @@ optimize_uops(
             default:
                 DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
+        }
+        // If no ADD_OP was called during this iteration, copy the original instruction
+        if (ctx->out_len == out_len_before) {
+            ctx->out_buffer[ctx->out_len++] = *this_instr;
         }
         assert(ctx->frame != NULL);
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
@@ -423,7 +439,18 @@ optimize_uops(
     /* Either reached the end or cannot optimize further, but there
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
-    return trace_len;
+    // Check that the trace ends with a proper terminator
+    if (ctx->out_len > 0) {
+        int last_opcode = ctx->out_buffer[ctx->out_len - 1].opcode;
+        if (last_opcode != _EXIT_TRACE &&
+            last_opcode != _JUMP_TO_TOP &&
+            last_opcode != _DYNAMIC_EXIT &&
+            last_opcode != _DEOPT) {
+            return 0;
+        }
+    }
+
+    return ctx->out_len;
 
 error:
     DPRINTF(3, "\n");
@@ -584,6 +611,7 @@ _Py_uop_analyze_and_optimize(
 )
 {
     OPT_STAT_INC(optimizer_attempts);
+    JitOptContext *ctx = &tstate->jit_tracer_state->opt_context;
 
     length = optimize_uops(
          tstate, buffer,
@@ -595,7 +623,7 @@ _Py_uop_analyze_and_optimize(
 
     assert(length > 0);
 
-    length = remove_unneeded_uops(buffer, length);
+    length = remove_unneeded_uops(ctx->out_buffer, length);
     assert(length > 0);
 
     OPT_STAT_INC(optimizer_successes);

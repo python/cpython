@@ -128,6 +128,10 @@ typedef struct _JitOptContext {
     JitOptRef *n_consumed;
     JitOptRef *limit;
     JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+
+    // buffer to save optimized result
+    int out_len;
+    _PyUOpInstruction out_buffer[UOP_MAX_TRACE_LENGTH];
 } JitOptContext;
 
 
