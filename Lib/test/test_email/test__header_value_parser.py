@@ -1301,49 +1301,86 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_qcontent = old_api_only(
 
-        test_get_qcontent_only = C(
-                                'foobar', 'foobar', 'foobar', [], '')
-                        ,
-
-        test_get_qcontent_all_printables = C(
-            RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"'),
-                                 RFC_PRINTABLES,
-                                 RFC_PRINTABLES, [], '',
+        only = C(
+            'foobar',
+            'foobar',
+            'foobar',
+            [],
+            '',
             ),
 
-        test_get_qcontent_two_words_gets_first = C(
-                        'foo de', 'foo', 'foo', [], ' de')
-                        ,
+        all_printables = C(
+            RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"'),
+            RFC_PRINTABLES,
+            RFC_PRINTABLES,
+            [],
+            '',
+            ),
 
-        test_get_qcontent_following_wsp_preserved = C(
-                        'foo \t\tde', 'foo', 'foo', [], ' \t\tde')
-                        ,
+        two_words_gets_first = C(
+             'foo de',
+             'foo',
+             'foo',
+             [],
+             ' de',
+             ),
 
-        test_get_qcontent_up_to_dquote_only = C(
-                        'foo"', 'foo', 'foo', [], '"')
-                        ,
+        following_wsp_preserved = C(
+            'foo \t\tde',
+            'foo',
+            'foo',
+            [],
+            ' \t\tde',
+            ),
 
-        test_get_qcontent_wsp_before_close_paren_preserved = C(
-                        'foo  "', 'foo', 'foo', [], '  "')
-                        ,
+        up_to_dquote_only = C(
+            'foo"',
+            'foo',
+            'foo',
+            [],
+            '"',
+            ),
 
-        test_get_qcontent_close_paren_mid_word = C(
-                        'foo"bar', 'foo', 'foo', [], '"bar')
-                        ,
+        wsp_before_close_paren_preserved = C(
+            'foo  "',
+            'foo',
+            'foo',
+            [],
+            '  "',
+            ),
 
-        test_get_qcontent_non_printables = C(
-                                'foo\x00fg"', 'foo\x00fg', 'foo\x00fg',
-                                [errors.NonPrintableDefect], '"')
-                        ,
-       #self.assertEqual(ptext.defects[0].non_printables[0], '\x00'
+        close_paren_mid_word = C(
+            'foo"bar',
+            'foo',
+            'foo',
+            [],
+            '"bar',
+            ),
 
-        test_get_qcontent_empty = C(
-                         '"', '', '', [], '"')
-                         ,
+        non_printables = C(
+            'foo\x00fg"',
+            'foo\x00fg',
+            'foo\x00fg',
+            [errors.NonPrintableDefect],
+            '"',
+            ),
+            #self.assertEqual(ptext.defects[0].non_printables[0], '\x00'
 
-        test_get_qcontent_no_end_char = C(
-                         '', '', '', [], '')
-                         ,
+        empty = C(
+            '"',
+            '',
+            '',
+            [],
+            '"',
+            ),
+
+        no_end_char = C(
+            '',
+            '',
+            '',
+            [],
+            '',
+            ),
 
         )
 
