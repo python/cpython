@@ -70,7 +70,7 @@ typedef struct {
     formatcode *s_codes;
     PyObject *s_format;
     PyObject *weakreflist; /* List of weak references */
-    PyMutex mutex; /* to prevent mutation during packing */
+    Py_ssize_t mutex_cnt; /* to prevent mutation during packing */
 } PyStructObject;
 
 #define PyStructObject_CAST(op)     ((PyStructObject *)(op))
@@ -1774,7 +1774,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;
-        s->mutex = (PyMutex){0};
+        s->mutex_cnt = 0;
     }
     return self;
 }
@@ -1818,7 +1818,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 
     Py_SETREF(self->s_format, format);
 
-    if (PyMutex_IsLocked(&self->mutex)) {
+    if (FT_ATOMIC_LOAD_SSIZE(self->mutex_cnt)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Call Struct.__init__() in struct.pack()");
         return -1;
@@ -2266,13 +2266,15 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
-    PyMutex_Lock(&soself->mutex);
+    Py_ssize_t prev_cnt = FT_ATOMIC_LOAD_SSIZE(soself->mutex_cnt);
+
+    FT_ATOMIC_ADD_SSIZE(soself->mutex_cnt, 1);
     if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
-        PyMutex_Unlock(&soself->mutex);
+        FT_ATOMIC_STORE_SSIZE(soself->mutex_cnt, prev_cnt);
         PyBytesWriter_Discard(writer);
         return NULL;
     }
-    PyMutex_Unlock(&soself->mutex);
+    FT_ATOMIC_STORE_SSIZE(soself->mutex_cnt, prev_cnt);
 
     return PyBytesWriter_FinishWithSize(writer, soself->s_size);
 }
@@ -2370,13 +2372,16 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     /* Call the guts */
-    PyMutex_Lock(&soself->mutex);
+    Py_ssize_t prev_cnt = FT_ATOMIC_LOAD_SSIZE(soself->mutex_cnt);
+
+    FT_ATOMIC_ADD_SSIZE(soself->mutex_cnt, 1);
     if (s_pack_internal(soself, args, 2, (char*)buffer.buf + offset, state) != 0) {
-        PyMutex_Unlock(&soself->mutex);
+        FT_ATOMIC_STORE_SSIZE(soself->mutex_cnt, prev_cnt);
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    PyMutex_Unlock(&soself->mutex);
+    FT_ATOMIC_STORE_SSIZE(soself->mutex_cnt, prev_cnt);
+
     PyBuffer_Release(&buffer);
     Py_RETURN_NONE;
 }

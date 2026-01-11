@@ -579,7 +579,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
-        totalsize = support.calcobjsize('2n3PB')
+        totalsize = support.calcobjsize('2n3P1n')
         # The size taken up by the 'formatcode' dynamic array
         totalsize += struct.calcsize('P3n0P') * (number_of_codes + 1)
         support.check_sizeof(self, struct.Struct(format_str), totalsize)
