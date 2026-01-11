@@ -1065,6 +1065,13 @@ dummy_func(void) {
             REPLACE_OP((this_instr + 2), _NOP, 0, 0);
             REPLACE_OP((this_instr + 3), _NOP, 0, 0);
             REPLACE_OP((this_instr + 4), _NOP, 0, 0);
+            // We need to move forward to the state of _UNPACK_SEQUENCE_TWO_TUPLE
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[0] = sym_new_not_null(ctx);
+            stack_pointer[1] = sym_new_not_null(ctx);
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
         }
         next = sym_new_not_null(ctx);
     }

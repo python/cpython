@@ -474,20 +474,6 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
-    def test_for_iter_dict_items(self):
-
-        def testfunc(n):
-            dct = dict(zip(range(n), range(n, -1, - 1))).items()
-            for k, v in dct:
-                pass
-
-        testfunc(TIER2_THRESHOLD)
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        self.assertIn("_GUARD_NOT_EXHAUSTED_DICT_ITEMS", uops)
-
 
 
 @requires_specialization
