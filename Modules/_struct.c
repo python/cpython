@@ -1498,8 +1498,6 @@ prepare_s(PyStructObject *self)
         return -1;
     }
 
-    self->s_size = size;
-    self->s_len = len;
     codes = PyMem_Malloc((ncodes + 1) * sizeof(formatcode));
     if (codes == NULL) {
         PyErr_NoMemory();
@@ -1509,6 +1507,8 @@ prepare_s(PyStructObject *self)
     if (self->s_codes != NULL)
         PyMem_Free(self->s_codes);
     self->s_codes = codes;
+    self->s_size = size;
+    self->s_len = len;
 
     s = fmt;
     size = 0;
@@ -1695,6 +1695,14 @@ fail:
     return NULL;
 }
 
+#define ENSURE_STRUCT_IS_READY(self)                             \
+    do {                                                         \
+        if (!(self)->s_codes) {                                  \
+            PyErr_SetString(PyExc_RuntimeError,                  \
+                            "Struct object is not initialized"); \
+            return NULL;                                         \
+        }                                                        \
+    } while (0);
 
 /*[clinic input]
 Struct.unpack
@@ -1715,7 +1723,7 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=873a24faf02e848a input=3113f8e7038b2f6c]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
     if (buffer->len != self->s_size) {
         PyErr_Format(state->StructError,
                      "unpack requires a buffer of %zd bytes",
@@ -1747,7 +1755,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
 /*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
 
     if (offset < 0) {
         if (offset + self->s_size > 0) {
@@ -1890,8 +1898,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     unpackiterobject *iter;
-
-    assert(self->s_codes != NULL);
+    ENSURE_STRUCT_IS_READY(self);
 
     if (self->s_size == 0) {
         PyErr_Format(state->StructError,
@@ -2032,8 +2039,8 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments. */
     soself = (PyStructObject *)self;
+    ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
     {
         PyErr_Format(state->StructError,
@@ -2077,8 +2084,8 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
     soself = (PyStructObject *)self;
+    ENSURE_STRUCT_IS_READY(soself);
     assert(PyStruct_Check(self, state));
-    assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))
     {
         if (nargs == 0) {
@@ -2164,6 +2171,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 static PyObject *
 s_get_format(PyStructObject *self, void *unused)
 {
+    ENSURE_STRUCT_IS_READY(self);
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
                                        PyBytes_GET_SIZE(self->s_format));
 }
