@@ -30,7 +30,7 @@ HARDCODED_SUBMODULES = {
     "xml.parsers.expat": ["errors", "model"],
 }
 
-AUTO_IMPORT_BLACKLIST = {
+AUTO_IMPORT_DENYLIST = {
     # Standard library modules/submodules that have import side effects
     # and must not be automatically imported to complete attributes
     re.compile(r"antigravity"),  # Calls webbrowser.open
@@ -263,7 +263,7 @@ class ModuleCompleter:
         return self._global_cache
 
     def _maybe_import_module(self, fqname: str) -> ModuleType | None:
-        if any(pattern.fullmatch(fqname) for pattern in AUTO_IMPORT_BLACKLIST):
+        if any(pattern.fullmatch(fqname) for pattern in AUTO_IMPORT_DENYLIST):
             # Special-cased modules with known import side-effects
             return None
         root = fqname.split(".")[0]
