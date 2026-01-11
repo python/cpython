@@ -3912,7 +3912,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         if (mod_check != mod) {
             Py_XDECREF(mod_check);
             if (_PyErr_Occurred(tstate)) {
-                Py_DECREF(mod);
                 goto error;
             }
             Py_DECREF(mod);
