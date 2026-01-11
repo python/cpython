@@ -211,7 +211,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP, (lhs, rhs -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(lhs, rhs);
+        REPLACE_OPCODE_IF_EVALUATES_PURE(lhs, rhs, res);
         bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
         bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
@@ -269,18 +269,21 @@ dummy_func(void) {
         res = sym_new_compact_int(ctx);
         l = left;
         r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
         res = sym_new_compact_int(ctx);
         l = left;
         r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res, l, r)) {
         res = sym_new_compact_int(ctx);
         l = left;
         r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
@@ -441,13 +444,14 @@ dummy_func(void) {
     }
 
     op(_UNARY_NOT, (value -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(value);
+        REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
         sym_set_type(value, &PyBool_Type);
         res = sym_new_truthiness(ctx, value, false);
     }
 
-    op(_UNARY_NEGATIVE, (value -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(value);
+    op(_UNARY_NEGATIVE, (value -- res, v)) {
+        v = value;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
         if (sym_is_compact_int(value)) {
             res = sym_new_compact_int(ctx);
         }
@@ -462,10 +466,11 @@ dummy_func(void) {
         }
     }
 
-    op(_UNARY_INVERT, (value -- res)) {
+    op(_UNARY_INVERT, (value -- res, v)) {
+        v = value;
         // Required to avoid a warning due to the deprecation of bitwise inversion of bools
         if (!sym_matches_type(value, &PyBool_Type)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(value);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
         }
         if (sym_matches_type(value, &PyLong_Type)) {
             res = sym_new_type(ctx, &PyLong_Type);
@@ -478,7 +483,7 @@ dummy_func(void) {
     op(_COMPARE_OP, (left, right -- res)) {
         // Comparison between bytes and str or int is not impacted by this optimization as bytes
         // is not a safe type (due to its ability to raise a warning during comparisons).
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
         if (oparg & 16) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
@@ -491,18 +496,21 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyBool_Type);
         l = left;
         r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyBool_Type);
         l = left;
         r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_COMPARE_OP_STR, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyBool_Type);
         l = left;
         r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_IS_OP, (left, right -- b, l, r)) {
@@ -512,7 +520,7 @@ dummy_func(void) {
     }
 
     op(_CONTAINS_OP, (left, right -- b)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
         b = sym_new_type(ctx, &PyBool_Type);
     }
 

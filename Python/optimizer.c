@@ -138,6 +138,12 @@ _PyOptimizer_Optimize(
         // return immediately without optimization.
         return 0;
     }
+    _PyExecutorObject *prev_executor = _tstate->jit_tracer_state->initial_state.executor;
+    if (prev_executor != NULL && !prev_executor->vm_data.valid) {
+        // gh-143604: If we are a side exit executor and the original executor is no
+        // longer valid, don't compile to prevent a reference leak.
+        return 0;
+    }
     assert(!interp->compiling);
     assert(_tstate->jit_tracer_state->initial_state.stack_depth >= 0);
 #ifndef Py_GIL_DISABLED
@@ -1015,7 +1021,7 @@ Py_NO_INLINE int
 _PyJit_TryInitializeTracing(
     PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr,
     _Py_CODEUNIT *start_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth,
-    _PyExitData *exit, int oparg)
+    _PyExitData *exit, int oparg, _PyExecutorObject *current_executor)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     if (_tstate->jit_tracer_state == NULL) {
@@ -1062,6 +1068,7 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.close_loop_instr = close_loop_instr;
     tracer->initial_state.code = (PyCodeObject *)Py_NewRef(code);
     tracer->initial_state.func = (PyFunctionObject *)Py_NewRef(func);
+    tracer->initial_state.executor = (_PyExecutorObject *)Py_XNewRef(current_executor);
     tracer->initial_state.exit = exit;
     tracer->initial_state.stack_depth = curr_stackdepth;
     tracer->initial_state.chain_depth = chain_depth;
@@ -1090,6 +1097,7 @@ _PyJit_FinalizeTracing(PyThreadState *tstate)
     _PyJitTracerState *tracer = _tstate->jit_tracer_state;
     Py_CLEAR(tracer->initial_state.code);
     Py_CLEAR(tracer->initial_state.func);
+    Py_CLEAR(tracer->initial_state.executor);
     Py_CLEAR(tracer->prev_state.instr_code);
     tracer->prev_state.code_curr_size = CODE_SIZE_EMPTY;
     tracer->prev_state.code_max_size = UOP_MAX_TRACE_LENGTH/2 - 1;
