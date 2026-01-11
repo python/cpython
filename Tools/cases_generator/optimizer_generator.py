@@ -242,7 +242,7 @@ class OptimizerEmitter(Emitter):
                     0: "_POP_TOP_LOAD_CONST_INLINE_BORROW",
                     # (left -- res, left)
                     # usually for unary ops with passthrough references
-                    2: "_INSERT_1_LOAD_CONST_INLINE_BORROW",
+                    1: "_INSERT_1_LOAD_CONST_INLINE_BORROW",
                 },
                 2: {
                     # (a. b -- res), usually for binary ops

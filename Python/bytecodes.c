@@ -434,14 +434,19 @@ dummy_func(
             PyStackRef_CLOSE(receiver);
         }
 
-        inst(UNARY_NEGATIVE, (value -- res)) {
+        macro(UNARY_NEGATIVE) = _UNARY_NEGATIVE + POP_TOP;
+
+        op(_UNARY_NEGATIVE, (value -- res, v)) {
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
-            PyStackRef_CLOSE(value);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            v = value;
+            DEAD(value);
         }
 
-        pure inst(UNARY_NOT, (value -- res)) {
+        inst(UNARY_NOT, (value -- res)) {
             assert(PyStackRef_BoolCheck(value));
             res = PyStackRef_IsFalse(value)
                 ? PyStackRef_True : PyStackRef_False;
@@ -570,11 +575,16 @@ dummy_func(
             _REPLACE_WITH_TRUE +
             POP_TOP;
 
-        inst(UNARY_INVERT, (value -- res)) {
+        macro(UNARY_INVERT) = _UNARY_INVERT + POP_TOP;
+
+        op(_UNARY_INVERT, (value -- res, v)) {
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
-            PyStackRef_CLOSE(value);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            v = value;
+            DEAD(value);
         }
 
         family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
