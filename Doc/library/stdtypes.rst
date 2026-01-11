@@ -2340,7 +2340,7 @@ expression support in the :mod:`re` module).
       >>> 'Monty Python'.partition('-')
       ('Monty Python', '', '')
 
-    See also :meth:`rpartition`.
+   See also :meth:`rpartition`.
 
 
 .. method:: str.removeprefix(prefix, /)
