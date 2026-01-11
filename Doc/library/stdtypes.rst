@@ -2335,6 +2335,8 @@ expression support in the :mod:`re` module).
 
       >>> 'Monty Python'.partition(' ')
       ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".partition(' ')
+      ('Monty', ' ', "Python's Flying Circus")
       >>> 'Monty Python'.partition('-')
       ('Monty Python', '', '')
 
