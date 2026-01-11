@@ -1223,29 +1223,23 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, f"import {mod}.")
                 del sys.modules[mod]
 
-    def test_attribute_completion_module_already_imported(self):
-        cases = (
-            ("from collections import def\t\n", "from collections import defaultdict"),
-            ("from collections.abc import \tB\t\n", "from collections.abc import Buffer"),
-        )
-        for code, expected in cases:
-            with self.subTest(code=code):
-                events = code_to_events(code)
-                reader = self.prepare_reader(events, namespace={})
-                output = reader.readline()
-                self.assertEqual(output, expected)
-
-    def test_attribute_completion_module_on_demand(self):
+    @patch.dict(sys.modules)
+    def test_attribute_completion(self):
         with tempfile.TemporaryDirectory() as _dir:
             dir = pathlib.Path(_dir)
             (dir / "foo.py").write_text("bar = 42")
+            (dir / "bar.py").write_text("baz = 42")
             (dir / "pack").mkdir()
             (dir / "pack" / "__init__.py").write_text("attr = 42")
             (dir / "pack" / "foo.py").touch()
             (dir / "pack" / "bar.py").touch()
             (dir / "pack" / "baz.py").touch()
             sys.modules.pop("graphlib", None)  # test modules may have been imported by previous tests
+            sys.modules.pop("antigravity", None)
+            sys.modules.pop("unittest.__main__", None)
             with patch.object(sys, "path", [_dir, *sys.path]):
+                pkgutil.get_importer(_dir).invalidate_caches()
+                importlib.import_module("bar")
                 cases = (
                     # needs 2 tabs to import (show prompt, then import)
                     ("from foo import \t\n", "from foo import ", set()),
@@ -1265,6 +1259,8 @@ class TestPyReplModuleCompleter(TestCase):
                     ("from pack import b\t\n", "from pack import ba", set()),
                     ("from pack import b\t\t\n", "from pack import ba", set()),
                     ("from pack import b\t\t\t\n", "from pack import ba", {"pack"}),
+                    # module already imported
+                    ("from bar import b\t\n", "from bar import baz", set()),
                     # stdlib modules are automatically imported
                     ("from graphlib import T\t\n", "from graphlib import TopologicalSorter", {"graphlib"}),
                     # except those with known side-effects
@@ -1480,8 +1476,9 @@ class TestPyReplModuleCompleter(TestCase):
             (dir / "pack" / "__init__.py").write_text("foo = 1; bar = 2;")
             (dir / "pack" / "bar.py").touch()
             sys.modules.pop("graphlib", None)  # test modules may have been imported by previous tests
-            sys.modules.pop("compression.zstd", None)
+            sys.modules.pop("html.entities", None)
             with patch.object(sys, "path", [_dir, *sys.path]):
+                pkgutil.get_importer(_dir).invalidate_caches()
                 cases = (
                     # no match != not an import
                     ("import nope", ([], None), set()),
@@ -1504,7 +1501,7 @@ class TestPyReplModuleCompleter(TestCase):
                     ("from pack.bar import ", ([], None), set()),
                     # stdlib = auto-imported
                     ("from graphlib import T", (["TopologicalSorter"], None), {"graphlib"}),
-                    ("from compression.zstd import c", (["compress"], None), {"compression.zstd"}),
+                    ("from html.entities import h", (["html5"], None), {"html", "html.entities"}),
                 )
                 completer = ModuleCompleter()
                 for i, (code, expected, expected_imports) in enumerate(cases):
