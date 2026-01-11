@@ -60,6 +60,12 @@ PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
 requires_keylog = unittest.skipUnless(
     HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
+CAN_SET_KEYLOG = HAS_KEYLOG and os.name != "nt"
+requires_keylog_setter = unittest.skipUnless(
+    CAN_SET_KEYLOG,
+    "cannot set 'keylog_filename' on Windows"
+)
+
 
 PROTOCOL_TO_TLS_VERSION = {}
 for proto, ver in (
@@ -1777,7 +1783,7 @@ class ContextTests(unittest.TestCase):
         ctx._msg_callback = msg_callback
 
     @support.cpython_only
-    @requires_keylog
+    @requires_keylog_setter
     def test_refcycle_keylog_filename(self):
         # See https://github.com/python/cpython/issues/142516.
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
