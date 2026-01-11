@@ -3910,7 +3910,7 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"            setpgroup=None, resetids=False, setsid=False,\n"
 "            setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
@@ -4063,7 +4063,7 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"             setpgroup=None, resetids=False, setsid=False,\n"
 "             setsigmask=(), setsigdef=(), scheduler=None)\n"
 "--\n"
 "\n"
@@ -13611,4 +13611,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=57e10a4363feb170 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d63fe97ccc3b1792 input=a9049054013a1b77]*/
