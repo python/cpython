@@ -348,7 +348,6 @@ _PyTime_windows_filetime(time_t timer, struct tm *tm, int is_local)
     tm->tm_wday = st_result.wDayOfWeek; /* 0=Sunday */
 
     // `time.gmtime` and `time.localtime` will return `struct_time` containing this
-    // not currently used by `datetime` module
     tm->tm_yday = _PyTime_calc_yday(&st_result);
 
     /* DST flag: -1 (unknown) for local time on historical dates, 0 for UTC */
@@ -1324,7 +1323,7 @@ _PyTime_localtime(time_t t, struct tm *tm)
 {
 #ifdef MS_WINDOWS
     if (t >= 0) {
-        /* For non-negative timestamps, use standard conversion */
+        /* For non-negative timestamps, use localtime_s() */
         int error = localtime_s(tm, &t);
         if (error != 0) {
             errno = error;
@@ -1366,7 +1365,7 @@ int
 _PyTime_gmtime(time_t t, struct tm *tm)
 {
 #ifdef MS_WINDOWS
-    /* For non-negative timestamps, use standard conversion */
+    /* For non-negative timestamps, use gmtime_s() */
     if (t >= 0) {
         int error = gmtime_s(tm, &t);
         if (error != 0) {
