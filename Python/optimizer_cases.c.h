@@ -221,30 +221,38 @@
         case _UNARY_NEGATIVE: {
             JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
             value = stack_pointer[-1];
+            v = value;
             if (
                 sym_is_safe_const(ctx, value)
             ) {
                 JitOptRef value_sym = value;
                 _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
                 _PyStackRef res_stackref;
+                _PyStackRef v_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
                 PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
-                PyStackRef_CLOSE(value);
                 if (res_o == NULL) {
-                    goto error;
+                    JUMP_TO_LABEL(error);
                 }
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                v_stackref = value;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)v_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
-                        // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                        ADD_OP(_POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                        REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                     }
                 }
+                CHECK_STACK_BOUNDS(1);
                 stack_pointer[-1] = res;
+                stack_pointer[0] = v;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 break;
             }
             if (sym_is_compact_int(value)) {
@@ -259,7 +267,11 @@
                     res = sym_new_not_null(ctx);
                 }
             }
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -444,7 +456,9 @@
         case _UNARY_INVERT: {
             JitOptRef value;
             JitOptRef res;
+            JitOptRef v;
             value = stack_pointer[-1];
+            v = value;
             if (!sym_matches_type(value, &PyBool_Type)) {
                 if (
                     sym_is_safe_const(ctx, value)
@@ -452,23 +466,29 @@
                     JitOptRef value_sym = value;
                     _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
                     _PyStackRef res_stackref;
+                    _PyStackRef v_stackref;
                     /* Start of uop copied from bytecodes for constant evaluation */
                     PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
-                    PyStackRef_CLOSE(value);
                     if (res_o == NULL) {
-                        goto error;
+                        JUMP_TO_LABEL(error);
                     }
                     res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                    v_stackref = value;
                     /* End of uop copied from bytecodes for constant evaluation */
+                    (void)v_stackref;
                     res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                     if (sym_is_const(ctx, res)) {
                         PyObject *result = sym_get_const(ctx, res);
                         if (_Py_IsImmortal(result)) {
-                            // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                            ADD_OP(_POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                            REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         }
                     }
+                    CHECK_STACK_BOUNDS(1);
                     stack_pointer[-1] = res;
+                    stack_pointer[0] = v;
+                    stack_pointer += 1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     break;
                 }
             }
@@ -478,7 +498,11 @@
             else {
                 res = sym_new_not_null(ctx);
             }
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = res;
+            stack_pointer[0] = v;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

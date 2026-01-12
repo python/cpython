@@ -449,7 +449,8 @@ dummy_func(void) {
         res = sym_new_truthiness(ctx, value, false);
     }
 
-    op(_UNARY_NEGATIVE, (value -- res)) {
+    op(_UNARY_NEGATIVE, (value -- res, v)) {
+        v = value;
         REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
         if (sym_is_compact_int(value)) {
             res = sym_new_compact_int(ctx);
@@ -465,7 +466,8 @@ dummy_func(void) {
         }
     }
 
-    op(_UNARY_INVERT, (value -- res)) {
+    op(_UNARY_INVERT, (value -- res, v)) {
+        v = value;
         // Required to avoid a warning due to the deprecation of bitwise inversion of bools
         if (!sym_matches_type(value, &PyBool_Type)) {
             REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
