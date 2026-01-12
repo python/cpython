@@ -129,6 +129,7 @@ typedef struct _JitOptContext {
     JitOptRef *limit;
     JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
     _PyUOpInstruction *out_buffer;
+    int out_len;
 } JitOptContext;
 
 
