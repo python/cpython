@@ -634,6 +634,7 @@ from the combinatoric iterators in the :mod:`itertools` module
 or the :pypi:`more-itertools` project:
 
 .. testcode::
+
    import random
 
    def random_product(*iterables, repeat=1):
