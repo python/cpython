@@ -1,6 +1,11 @@
 #!/usr/bin/env python
-# Script checking that all symbols exported by libpython start with Py or _Py
+"""Check exported symbols
 
+Check that all symbols exported by CPython (libpython, stdlib extension
+modules, and similar) start with Py or _Py, or are covered by an exception.
+"""
+
+import argparse
 import dataclasses
 import functools
 import pathlib
@@ -136,6 +141,12 @@ def get_extension_libraries():
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description=__doc__.split('\n', 1)[-1])
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='be verbose (currently: print out all symbols)')
+    args = parser.parse_args()
+
     libraries = []
 
     # static library
@@ -161,9 +172,11 @@ def main():
     smelly_symbols = []
     for library in libraries:
         symbols = get_exported_symbols(library)
-        print(f"{library.path}: {len(symbols)} symbol(s) found")
+        if args.verbose:
+            print(f"{library.path}: {len(symbols)} symbol(s) found")
         for symbol in sorted(symbols):
-            print("    -", symbol.name)
+            if args.verbose:
+                print("    -", symbol.name)
             if symbol.is_smelly:
                 smelly_symbols.append(symbol)
 
