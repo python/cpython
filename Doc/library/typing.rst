@@ -3348,7 +3348,7 @@ Introspection helpers
      annotations from ``C``'s base classes with those on ``C`` directly. This
      is done by traversing :attr:`C.__mro__ <type.__mro__>` and iteratively
      combining
-     ``__annotations__`` dictionaries. Annotations on classes appearing
+     :term:`annotations <variable annotation>` of each base class. Annotations on classes appearing
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.
    * The function recursively replaces all occurrences of
@@ -3366,11 +3366,12 @@ Introspection helpers
 
    .. note::
 
-      If any forward references in the annotations of *obj* are not resolvable
-      or are not valid Python code, this function will raise an exception
-      such as :exc:`NameError`. For example, this can happen with imported
-      :ref:`type aliases <type-aliases>` that include forward references,
-      or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      If :attr:`Format.VALUE <annotationlib.Format.VALUE>` is used and any
+      forward references in the annotations of *obj* are not resolvable, a
+      :exc:`NameError` exception is raised. For example, this can happen
+      with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      More generally, any kind of exception can be raised if an annotation
+      contains invalid Python code.
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
