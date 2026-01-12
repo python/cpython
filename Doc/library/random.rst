@@ -637,7 +637,7 @@ or the :pypi:`more-itertools` project:
    import random
 
    def random_product(*iterables, repeat=1):
-       "Random selection from itertools.product(*args, **kwds)"
+       "Random selection from itertools.product(*iterables, repeat=repeat)"
        pools = tuple(map(tuple, iterables)) * repeat
        return tuple(map(random.choice, pools))
 
