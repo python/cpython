@@ -153,6 +153,12 @@ Module Contents
 
       Return a list of all power-of-two integers contained in a flag.
 
+   :func:`enum.bin`
+
+      Like built-in :func:`bin`, except negative values are represented in
+      two's complement, and the leading bit always indicates sign
+      (``0`` implies positive, ``1`` implies negative).
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
@@ -1034,6 +1040,20 @@ Utilities and Decorators
    Return a list of all power-of-two integers contained in a flag *value*.
 
    .. versionadded:: 3.11
+
+.. function:: bin(num, max_bits=None)
+
+   Like built-in :func:`bin`, except negative values are represented in
+   two's complement, and the leading bit always indicates sign
+   (``0`` implies positive, ``1`` implies negative).
+
+      >>> import enum
+      >>> enum.bin(10)
+      '0b0 1010'
+      >>> enum.bin(~10)   # ~10 is -11
+      '0b1 0101'
+
+   .. versionadded:: 3.10
 
 ---------------
 
