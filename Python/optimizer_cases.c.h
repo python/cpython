@@ -2275,6 +2275,9 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            b = sym_new_type(ctx, &PyBool_Type);
+            l = left;
+            r = right;
             if (
                 sym_is_safe_const(ctx, left) &&
                 sym_is_safe_const(ctx, right)
@@ -2315,9 +2318,6 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 break;
             }
-            b = sym_new_type(ctx, &PyBool_Type);
-            l = left;
-            r = right;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = b;
             stack_pointer[-1] = l;

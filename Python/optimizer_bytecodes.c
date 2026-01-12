@@ -526,10 +526,10 @@ dummy_func(void) {
     }
 
     op(_CONTAINS_OP, (left, right -- b, l, r)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
         b = sym_new_type(ctx, &PyBool_Type);
         l = left;
         r = right;
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
     }
 
     op(_CONTAINS_OP_SET, (left, right -- b, l, r)) {
