@@ -1486,6 +1486,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.format_map(mapping)
 
     def index(self, sub, start=0, end=_sys.maxsize):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.index(sub, start, end)
 
     def isalpha(self):
@@ -1554,6 +1556,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.rfind(sub, start, end)
 
     def rindex(self, sub, start=0, end=_sys.maxsize):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.rindex(sub, start, end)
 
     def rjust(self, width, *args):

@@ -2169,9 +2169,9 @@ Changes to Python's build process and to the C API include:
 
 * Two new macros can be used to indicate C functions that are local to the
   current file so that a faster calling convention can be used.
-  ``Py_LOCAL(type)`` declares the function as returning a value of the
+  :c:macro:`Py_LOCAL` declares the function as returning a value of the
   specified *type* and uses a fast-calling qualifier.
-  ``Py_LOCAL_INLINE(type)`` does the same thing and also requests the
+  :c:macro:`Py_LOCAL_INLINE` does the same thing and also requests the
   function be inlined.  If macro :c:macro:`!PY_LOCAL_AGGRESSIVE` is defined before
   :file:`python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these

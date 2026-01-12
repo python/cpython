@@ -311,7 +311,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.parser
 
    The implementation of the :mod:`os.path` module used for low-level path
-   parsing and joining: either :mod:`posixpath` or :mod:`ntpath`.
+   parsing and joining: either :mod:`!posixpath` or :mod:`!ntpath`.
 
    .. versionadded:: 3.13
 
@@ -1287,6 +1287,10 @@ Reading directories
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
+
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
@@ -1320,6 +1324,10 @@ Reading directories
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
 
    .. seealso::
       :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.

@@ -758,9 +758,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 
     .. attribute:: default_factory
 
-        This attribute is used by the :meth:`__missing__` method; it is
-        initialized from the first argument to the constructor, if present, or to
-        ``None``, if absent.
+        This attribute is used by the :meth:`~defaultdict.__missing__` method;
+        it is initialized from the first argument to the constructor, if present,
+        or to ``None``, if absent.
 
     .. versionchanged:: 3.9
        Added merge (``|``) and update (``|=``) operators, specified in

@@ -242,6 +242,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | ag_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | ag_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | ag_code           | code                      |
 +-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
@@ -254,6 +257,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | cr_frame          | frame                     |
 +-----------------+-------------------+---------------------------+
 |                 | cr_running        | is the coroutine running? |
++-----------------+-------------------+---------------------------+
+|                 | cr_suspended      | is the coroutine          |
+|                 |                   | suspended?                |
 +-----------------+-------------------+---------------------------+
 |                 | cr_code           | code                      |
 +-----------------+-------------------+---------------------------+
@@ -287,6 +293,19 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. versionchanged:: 3.10
 
    Add ``__builtins__`` attribute to functions.
+
+.. versionchanged:: 3.11
+
+   Add ``gi_suspended`` attribute to generators.
+
+.. versionchanged:: 3.11
+
+   Add ``cr_suspended`` attribute to coroutines.
+
+.. versionchanged:: 3.12
+
+   Add ``ag_suspended`` attribute to async generators.
+
 
 .. function:: getmembers(object[, predicate])
 
@@ -1123,7 +1142,7 @@ Classes and functions
       :func:`signature` in Python 3.5, but that decision has been reversed
       in order to restore a clearly supported standard interface for
       single-source Python 2/3 code migrating away from the legacy
-      :func:`getargspec` API.
+      :func:`!getargspec` API.
 
    .. versionchanged:: 3.7
       Python only explicitly guaranteed that it preserved the declaration
@@ -1740,7 +1759,7 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`inspect` module also provides a basic introspection capability

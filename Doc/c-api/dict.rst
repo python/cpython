@@ -43,6 +43,17 @@ Dictionary Objects
    prevent modification of the dictionary for non-dynamic class types.
 
 
+.. c:var:: PyTypeObject PyDictProxy_Type
+
+   The type object for mapping proxy objects created by
+   :c:func:`PyDictProxy_New` and for the read-only ``__dict__`` attribute
+   of many built-in types. A :c:type:`PyDictProxy_Type` instance provides a
+   dynamic, read-only view of an underlying dictionary: changes to the
+   underlying dictionary are reflected in the proxy, but the proxy itself
+   does not support mutation operations. This corresponds to
+   :class:`types.MappingProxyType` in Python.
+
+
 .. c:function:: void PyDict_Clear(PyObject *p)
 
    Empty an existing dictionary of all key-value pairs.
@@ -422,3 +433,138 @@ Dictionary Objects
    it before returning.
 
    .. versionadded:: 3.12
+
+
+Dictionary View Objects
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:function:: int PyDictViewSet_Check(PyObject *op)
+
+   Return true if *op* is a view of a set inside a dictionary. This is currently
+   equivalent to :c:expr:`PyDictKeys_Check(op) || PyDictItems_Check(op)`. This
+   function always succeeds.
+
+
+.. c:var:: PyTypeObject PyDictKeys_Type
+
+   Type object for a view of dictionary keys. In Python, this is the type of
+   the object returned by :meth:`dict.keys`.
+
+
+.. c:function:: int PyDictKeys_Check(PyObject *op)
+
+   Return true if *op* is an instance of a dictionary keys view. This function
+   always succeeds.
+
+
+.. c:var:: PyTypeObject PyDictValues_Type
+
+   Type object for a view of dictionary values. In Python, this is the type of
+   the object returned by :meth:`dict.values`.
+
+
+.. c:function:: int PyDictValues_Check(PyObject *op)
+
+   Return true if *op* is an instance of a dictionary values view. This function
+   always succeeds.
+
+
+.. c:var:: PyTypeObject PyDictItems_Type
+
+   Type object for a view of dictionary items. In Python, this is the type of
+   the object returned by :meth:`dict.items`.
+
+
+.. c:function:: int PyDictItems_Check(PyObject *op)
+
+   Return true if *op* is an instance of a dictionary items view. This function
+   always succeeds.
+
+
+Ordered Dictionaries
+^^^^^^^^^^^^^^^^^^^^
+
+Python's C API provides interface for :class:`collections.OrderedDict` from C.
+Since Python 3.7, dictionaries are ordered by default, so there is usually
+little need for these functions; prefer ``PyDict*`` where possible.
+
+
+.. c:var:: PyTypeObject PyODict_Type
+
+   Type object for ordered dictionaries. This is the same object as
+   :class:`collections.OrderedDict` in the Python layer.
+
+
+.. c:function:: int PyODict_Check(PyObject *od)
+
+   Return true if *od* is an ordered dictionary object or an instance of a
+   subtype of the :class:`~collections.OrderedDict` type.  This function
+   always succeeds.
+
+
+.. c:function:: int PyODict_CheckExact(PyObject *od)
+
+   Return true if *od* is an ordered dictionary object, but not an instance of
+   a subtype of the :class:`~collections.OrderedDict` type.
+   This function always succeeds.
+
+
+.. c:var:: PyTypeObject PyODictKeys_Type
+
+   Analogous to :c:type:`PyDictKeys_Type` for ordered dictionaries.
+
+
+.. c:var:: PyTypeObject PyODictValues_Type
+
+   Analogous to :c:type:`PyDictValues_Type` for ordered dictionaries.
+
+
+.. c:var:: PyTypeObject PyODictItems_Type
+
+   Analogous to :c:type:`PyDictItems_Type` for ordered dictionaries.
+
+
+.. c:function:: PyObject *PyODict_New(void)
+
+   Return a new empty ordered dictionary, or ``NULL`` on failure.
+
+   This is analogous to :c:func:`PyDict_New`.
+
+
+.. c:function:: int PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
+
+   Insert *value* into the ordered dictionary *od* with a key of *key*.
+   Return ``0`` on success or ``-1`` with an exception set on failure.
+
+   This is analogous to :c:func:`PyDict_SetItem`.
+
+
+.. c:function:: int PyODict_DelItem(PyObject *od, PyObject *key)
+
+   Remove the entry in the ordered dictionary *od* with key *key*.
+   Return ``0`` on success or ``-1`` with an exception set on failure.
+
+   This is analogous to :c:func:`PyDict_DelItem`.
+
+
+These are :term:`soft deprecated` aliases to ``PyDict`` APIs:
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * ``PyODict``
+     * ``PyDict``
+   * * .. c:macro:: PyODict_GetItem(od, key)
+     * :c:func:`PyDict_GetItem`
+   * * .. c:macro:: PyODict_GetItemWithError(od, key)
+     * :c:func:`PyDict_GetItemWithError`
+   * * .. c:macro:: PyODict_GetItemString(od, key)
+     * :c:func:`PyDict_GetItemString`
+   * * .. c:macro:: PyODict_Contains(od, key)
+     * :c:func:`PyDict_Contains`
+   * * .. c:macro:: PyODict_Size(od)
+     * :c:func:`PyDict_Size`
+   * * .. c:macro:: PyODict_SIZE(od)
+     * :c:func:`PyDict_GET_SIZE`

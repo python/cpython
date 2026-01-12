@@ -1,0 +1,3 @@
+:mod:`hmac`: Ensure that the :attr:`HMAC.block_size <hmac.HMAC.block_size>`
+attribute is correctly copied by :meth:`HMAC.copy <hmac.HMAC.copy>`. Patch
+by Bénédikt Tran.

@@ -1660,7 +1660,7 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const wchar_t *name)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegQueryValueEx");
     }
-    obData = Reg2Py(retBuf, bufSize, typ);
+    obData = Reg2Py(retBuf, retSize, typ);
     PyMem_Free(retBuf);
     if (obData == NULL)
         return NULL;

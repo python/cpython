@@ -24,14 +24,6 @@ from sphinx.util.docutils import SphinxDirective
 # Used in conf.py and updated here by python/release-tools/run_release.py
 SOURCE_URI = 'https://github.com/python/cpython/tree/3.13/%s'
 
-# monkey-patch reST parser to disable alphabetic and roman enumerated lists
-from docutils.parsers.rst.states import Body
-Body.enum.converters['loweralpha'] = \
-    Body.enum.converters['upperalpha'] = \
-    Body.enum.converters['lowerroman'] = \
-    Body.enum.converters['upperroman'] = lambda x: None
-
-
 class PyAwaitableMixin(object):
     def handle_signature(self, sig, signode):
         ret = super(PyAwaitableMixin, self).handle_signature(sig, signode)

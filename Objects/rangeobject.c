@@ -1014,6 +1014,11 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 static PyObject *
 longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
 {
+    if (!PyLong_CheckExact(state)) {
+        PyErr_Format(PyExc_TypeError, "state must be an int, not %T", state);
+        return NULL;
+    }
+
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp;
 

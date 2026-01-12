@@ -539,7 +539,7 @@ process and user.
 
 .. function:: initgroups(username, gid, /)
 
-   Call the system initgroups() to initialize the group access list with all of
+   Call the system ``initgroups()`` to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
@@ -1889,7 +1889,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program, other file descriptors are inherited.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
@@ -5523,7 +5524,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-      :func:`cpu_count` returns the overridden value *n*.
+      :func:`cpu_count` returns the override value *n*.
 
 
 .. function:: getloadavg()
@@ -5545,7 +5546,7 @@ Miscellaneous System Information
    in the **system**.
 
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-   :func:`process_cpu_count` returns the overridden value *n*.
+   :func:`process_cpu_count` returns the override value *n*.
 
    See also the :func:`sched_getaffinity` function.
 

@@ -2,7 +2,7 @@
 .. gh-issue: 125008
 .. nonce: ETANpd
 .. release date: 2024-10-07
-.. section: Core and Builtins
+.. section: Library
 
 Fix :func:`tokenize.untokenize` producing invalid syntax for double braces
 preceded by certain escape characters.

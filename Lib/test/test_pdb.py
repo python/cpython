@@ -2736,6 +2736,37 @@ def test_pdb_issue_gh_127321():
     """
 
 
+def test_pdb_issue_gh_136057():
+    """See GH-136057
+    "step" and "next" commands should be able to get over list comprehensions
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'next',
+    ...     'next',
+    ...     'step',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) step
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()->None
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
@@ -3039,6 +3070,35 @@ class PdbTestCase(unittest.TestCase):
         self.assertEqual(
             expected, pdb.find_function(func_name, os_helper.TESTFN))
 
+    def _fd_dir_for_pipe_targets(self):
+        """Return a directory exposing live file descriptors, if any."""
+        return self._proc_fd_dir() or self._dev_fd_dir()
+
+    def _proc_fd_dir(self):
+        """Return /proc-backed fd dir when it can be used for pipes."""
+        # GH-142836: Opening /proc/self/fd entries for pipes raises EACCES on
+        # Solaris, so prefer other mechanisms there.
+        if sys.platform.startswith("sunos"):
+            return None
+
+        proc_fd = "/proc/self/fd"
+        if os.path.isdir(proc_fd) and os.path.exists(os.path.join(proc_fd, '0')):
+            return proc_fd
+        return None
+
+    def _dev_fd_dir(self):
+        """Return /dev-backed fd dir when usable."""
+        dev_fd = "/dev/fd"
+        if os.path.isdir(dev_fd) and os.path.exists(os.path.join(dev_fd, '0')):
+            if sys.platform.startswith("freebsd"):
+                try:
+                    if os.stat("/dev").st_dev == os.stat(dev_fd).st_dev:
+                        return None
+                except FileNotFoundError:
+                    return None
+            return dev_fd
+        return None
+
     def test_find_function_empty_file(self):
         self._assert_find_function(b'', 'foo', None)
 
@@ -3096,6 +3156,47 @@ def bœr():
 
         stdout, _ = self.run_pdb_script(script, commands)
         self.assertIn('None', stdout)
+
+    def test_script_target_anonymous_pipe(self):
+        """
+        _ScriptTarget doesn't fail on an anonymous pipe.
+
+        GH-142315
+        """
+        fd_dir = self._fd_dir_for_pipe_targets()
+        if fd_dir is None:
+            self.skipTest('anonymous pipe targets require /proc/self/fd or /dev/fd')
+
+        read_fd, write_fd = os.pipe()
+
+        def safe_close(fd):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+        self.addCleanup(safe_close, read_fd)
+        self.addCleanup(safe_close, write_fd)
+
+        pipe_path = os.path.join(fd_dir, str(read_fd))
+        if not os.path.exists(pipe_path):
+            self.skipTest('fd directory does not expose anonymous pipes')
+
+        script_source = 'marker = "via_pipe"\n'
+        os.write(write_fd, script_source.encode('utf-8'))
+        os.close(write_fd)
+
+        original_path0 = sys.path[0]
+        self.addCleanup(sys.path.__setitem__, 0, original_path0)
+
+        target = pdb._ScriptTarget(pipe_path)
+        code_text = target.code
+        namespace = target.namespace
+        exec(code_text, namespace)
+
+        self.assertEqual(namespace['marker'], 'via_pipe')
+        self.assertEqual(namespace['__file__'], target.filename)
+        self.assertIsNone(namespace['__spec__'])
 
     def test_find_function_first_executable_line(self):
         code = textwrap.dedent("""\
@@ -3981,6 +4082,22 @@ def bœr():
             ]))
             self.assertIn('42', stdout)
             self.assertIn('return x + 1', stdout)
+
+    def test_issue_59000(self):
+        script = """
+            def foo():
+                pass
+
+            class C:
+                def foo(self):
+                    pass
+        """
+        commands = """
+            break C.foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
 
 class ChecklineTests(unittest.TestCase):

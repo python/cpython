@@ -180,18 +180,18 @@ resize_buffer(bytesio *self, size_t size)
 Py_NO_INLINE static Py_ssize_t
 write_bytes(bytesio *self, PyObject *b)
 {
-    if (check_closed(self)) {
-        return -1;
-    }
-    if (check_exports(self)) {
-        return -1;
-    }
-
     Py_buffer buf;
+    Py_ssize_t len;
     if (PyObject_GetBuffer(b, &buf, PyBUF_CONTIG_RO) < 0) {
         return -1;
     }
-    Py_ssize_t len = buf.len;
+
+    if (check_closed(self) || check_exports(self)) {
+        len = -1;
+        goto done;
+    }
+
+    len = buf.len;
     if (len == 0) {
         goto done;
     }
@@ -407,6 +407,13 @@ read_bytes(bytesio *self, Py_ssize_t size)
         return Py_NewRef(self->buf);
     }
 
+    /* gh-141311: Avoid undefined behavior when self->pos (limit PY_SSIZE_T_MAX)
+       is beyond the size of self->buf. Assert above validates size is always in
+       bounds. When self->pos is out of bounds calling code sets size to 0. */
+    if (size == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
     output = PyBytes_AS_STRING(self->buf) + self->pos;
     self->pos += size;
     return PyBytes_FromStringAndSize(output, size);
@@ -575,13 +582,16 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
     n = self->string_size - self->pos;
     if (len > n) {
         len = n;
-        if (len < 0)
-            len = 0;
+        if (len < 0) {
+            /* gh-141311: Avoid undefined behavior when self->pos (limit
+               PY_SSIZE_T_MAX) points beyond the size of self->buf. */
+            return PyLong_FromSsize_t(0);
+        }
     }
 
-    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
-    assert(self->pos + len < PY_SSIZE_T_MAX);
+    assert(self->pos + len <= PY_SSIZE_T_MAX);
     assert(len >= 0);
+    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
     self->pos += len;
 
     return PyLong_FromSsize_t(len);

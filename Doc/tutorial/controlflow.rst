@@ -1038,31 +1038,28 @@ blank, visually separating the summary from the rest of the description.  The
 following lines should be one or more paragraphs describing the object's calling
 conventions, its side effects, etc.
 
-The Python parser does not strip indentation from multi-line string literals in
-Python, so tools that process documentation have to strip indentation if
-desired.  This is done using the following convention. The first non-blank line
-*after* the first line of the string determines the amount of indentation for
-the entire documentation string.  (We can't use the first line since it is
-generally adjacent to the string's opening quotes so its indentation is not
-apparent in the string literal.)  Whitespace "equivalent" to this indentation is
-then stripped from the start of all lines of the string.  Lines that are
-indented less should not occur, but if they occur all their leading whitespace
-should be stripped.  Equivalence of whitespace should be tested after expansion
-of tabs (to 8 spaces, normally).
+The Python parser strips indentation from multi-line string literals when they
+serve as module, class, or function docstrings.
 
 Here is an example of a multi-line docstring::
 
    >>> def my_function():
    ...     """Do nothing, but document it.
    ...
-   ...     No, really, it doesn't do anything.
+   ...     No, really, it doesn't do anything:
+   ...
+   ...         >>> my_function()
+   ...         >>>
    ...     """
    ...     pass
    ...
    >>> print(my_function.__doc__)
    Do nothing, but document it.
 
-   No, really, it doesn't do anything.
+   No, really, it doesn't do anything:
+
+       >>> my_function()
+       >>>
 
 
 .. _tut-annotations:

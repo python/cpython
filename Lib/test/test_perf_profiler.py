@@ -157,6 +157,16 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::baz_fork:{script}", child_perf_file_contents)
 
+        # The parent's map should not contain the child's symbols.
+        self.assertNotIn(f"py::foo_fork:{script}", perf_file_contents)
+        self.assertNotIn(f"py::bar_fork:{script}", perf_file_contents)
+        self.assertNotIn(f"py::baz_fork:{script}", perf_file_contents)
+
+        # The child's map should not contain the parent's symbols.
+        self.assertNotIn(f"py::foo:{script}", child_perf_file_contents)
+        self.assertNotIn(f"py::bar:{script}", child_perf_file_contents)
+        self.assertNotIn(f"py::baz:{script}", child_perf_file_contents)
+
     def test_sys_api(self):
         code = """if 1:
                 import sys
@@ -224,6 +234,24 @@ class TestPerfTrampoline(unittest.TestCase):
                 assert sys.is_stack_trampoline_active() is False
                 """
         assert_python_ok("-c", code)
+
+    def test_sys_api_perf_jit_backend(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf_jit")
+                assert sys.is_stack_trampoline_active() is True
+                sys.deactivate_stack_trampoline()
+                assert sys.is_stack_trampoline_active() is False
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
+
+    def test_sys_api_with_existing_perf_jit_trampoline(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf_jit")
+                sys.activate_stack_trampoline("perf_jit")
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
 
 def is_unwinding_reliable_with_frame_pointers():

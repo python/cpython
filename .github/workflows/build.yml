@@ -154,20 +154,10 @@ jobs:
           python-version: '3.x'
       - name: Runner image version
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-      - name: Restore config.cache
-        uses: actions/cache@v4
-        with:
-          path: config.cache
-          # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
-          key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}-${{ env.pythonLocation }}
       - name: Install dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
         run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-      - name: Configure ccache action
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          save: false
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
@@ -197,6 +187,9 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
+      - name: Check for undocumented C APIs
+        run: make check-c-api-docs
+
 
   build-windows:
     name: >-
@@ -251,7 +244,7 @@ jobs:
       macOS
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-macos == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -268,7 +261,6 @@ jobs:
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
@@ -277,7 +269,7 @@ jobs:
       Ubuntu
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -286,7 +278,6 @@ jobs:
         - true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
   build-ubuntu-ssltests:
@@ -294,7 +285,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -314,11 +305,6 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -340,10 +326,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Configure CPython
       run: ./configure --config-cache --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
@@ -356,7 +338,7 @@ jobs:
   build-android:
     name: Android (${{ matrix.arch }})
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-android == 'true'
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -378,17 +360,15 @@ jobs:
   build-wasi:
     name: 'WASI'
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-wasi == 'true'
     uses: ./.github/workflows/reusable-wasi.yml
-    with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
       OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
@@ -417,10 +397,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -431,11 +407,6 @@ jobs:
       run: sudo mount --bind -o ro "$GITHUB_WORKSPACE" "$CPYTHON_RO_SRCDIR"
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -503,7 +474,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -518,11 +489,6 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -548,11 +514,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
@@ -566,7 +527,7 @@ jobs:
     # ${{ '' } is a hack to nest jobs under the same sidebar category.
     name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -580,7 +541,6 @@ jobs:
     uses: ./.github/workflows/reusable-san.yml
     with:
       sanitizer: ${{ matrix.sanitizer }}
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
@@ -637,7 +597,6 @@ jobs:
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
-    - build-android
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -650,46 +609,35 @@ jobs:
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
+          build-android,
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
           cifuzz,
         allowed-skips: >-
-          ${{
-            !fromJSON(needs.build-context.outputs.run-docs)
-            && '
-            check-docs,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-docs) && 'check-docs,' || '' }}
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '
             check-autoconf-regen,
             check-generated-files,
-            build-macos,
+            '
+            || ''
+          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz) && 'cifuzz,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-ubuntu)
+            && '
             build-ubuntu,
             build-ubuntu-ssltests,
-            build-android,
-            build-wasi,
             test-hypothesis,
             build-asan,
             build-san,
             '
             || ''
           }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-windows-tests)
-            && '
-            build-windows,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
-            && '
-            cifuzz,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-android) && 'build-android,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
         jobs: ${{ toJSON(needs) }}

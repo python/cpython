@@ -4700,6 +4700,25 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
+    def test_mutex_groups_with_mixed_optionals_positionals_wrap(self):
+        # https://github.com/python/cpython/issues/75949
+        # Mutually exclusive groups containing both optionals and positionals
+        # should preserve pipe separators when the usage line wraps.
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument('-v', '--verbose', action='store_true')
+        g.add_argument('-q', '--quiet', action='store_true')
+        g.add_argument('-x', '--extra-long-option-name', nargs='?')
+        g.add_argument('-y', '--yet-another-long-option', nargs='?')
+        g.add_argument('positional', nargs='?')
+
+        usage = textwrap.dedent('''\
+        usage: PROG [-h] [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
+                    -y [YET_ANOTHER_LONG_OPTION] |
+                    positional]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
 
 class TestHelpVariableExpansion(HelpTestCase):
     """Test that variables are expanded properly in help messages"""
@@ -5115,6 +5134,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
     argument_signatures = [
         Sig('--foo', help='foo help - oh and by the way, %(default)s'),
         Sig('--bar', action='store_true', help='bar help'),
+        Sig('--required', required=True, help='some help'),
         Sig('--taz', action=argparse.BooleanOptionalAction,
             help='Whether to taz it', default=True),
         Sig('--corge', action=argparse.BooleanOptionalAction,
@@ -5128,8 +5148,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--corge | --no-corge]
-                    [--quux QUUX] [--baz BAZ]
+        usage: PROG [-h] [--foo FOO] [--bar] --required REQUIRED [--taz | --no-taz]
+                    [--corge | --no-corge] [--quux QUUX] [--baz BAZ]
                     spam [badger]
         '''
     help = usage + '''\
@@ -5144,6 +5164,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
           -h, --help           show this help message and exit
           --foo FOO            foo help - oh and by the way, None
           --bar                bar help (default: False)
+          --required REQUIRED  some help
           --taz, --no-taz      Whether to taz it (default: True)
           --corge, --no-corge  Whether to corge it
           --quux QUUX          Set the quux (default: 42)

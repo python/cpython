@@ -2122,6 +2122,14 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
 
+    def test_gh_140938(self):
+        # Inputs with inf/nan should raise a ValueError
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
+
+
 class TestSqrtHelpers(unittest.TestCase):
 
     def test_integer_sqrt_of_frac_rto(self):
@@ -2239,6 +2247,14 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
     def test_center_not_at_mean(self):
         data = (1.0, 2.0)
         self.assertEqual(self.func(data, xbar=2.0), 1.0)
+
+    def test_gh_140938(self):
+        # Inputs with inf/nan should raise a ValueError
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
+
 
 class TestGeometricMean(unittest.TestCase):
 

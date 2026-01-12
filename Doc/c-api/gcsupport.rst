@@ -175,6 +175,10 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    object argument.  If *visit* returns a non-zero value that value should be
    returned immediately.
 
+   The traversal function must not have any side effects.  Implementations
+   may not modify the reference counts of any Python objects nor create or
+   destroy any Python objects.
+
 To simplify writing :c:member:`~PyTypeObject.tp_traverse` handlers, a :c:func:`Py_VISIT` macro is
 provided.  In order to use this macro, the :c:member:`~PyTypeObject.tp_traverse` implementation
 must name its arguments exactly *visit* and *arg*:

@@ -29,6 +29,7 @@ in_source_tree = (
     ANDROID_DIR.name == "Android" and (PYTHON_DIR / "pyconfig.h.in").exists()
 )
 
+ENV_SCRIPT = ANDROID_DIR / "android-env.sh"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
@@ -129,12 +130,11 @@ def android_env(host):
         sysconfig_filename = next(sysconfig_files).name
         host = re.fullmatch(r"_sysconfigdata__android_(.+).py", sysconfig_filename)[1]
 
-    env_script = ANDROID_DIR / "android-env.sh"
     env_output = subprocess.run(
         f"set -eu; "
         f"HOST={host}; "
         f"PREFIX={prefix}; "
-        f". {env_script}; "
+        f". {ENV_SCRIPT}; "
         f"export",
         check=True, shell=True, capture_output=True, encoding='utf-8',
     ).stdout
@@ -151,7 +151,7 @@ def android_env(host):
                 env[key] = value
 
     if not env:
-        raise ValueError(f"Found no variables in {env_script.name} output:\n"
+        raise ValueError(f"Found no variables in {ENV_SCRIPT.name} output:\n"
                          + env_output)
     return env
 
@@ -281,15 +281,30 @@ def clean_all(context):
 
 
 def setup_ci():
-    # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
-    if "GITHUB_ACTIONS" in os.environ and platform.system() == "Linux":
-        run(
-            ["sudo", "tee", "/etc/udev/rules.d/99-kvm4all.rules"],
-            input='KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n',
-            text=True,
-        )
-        run(["sudo", "udevadm", "control", "--reload-rules"])
-        run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
+    if "GITHUB_ACTIONS" in os.environ:
+        # Enable emulator hardware acceleration
+        # (https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
+        if platform.system() == "Linux":
+            run(
+                ["sudo", "tee", "/etc/udev/rules.d/99-kvm4all.rules"],
+                input='KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n',
+                text=True,
+            )
+            run(["sudo", "udevadm", "control", "--reload-rules"])
+            run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
+
+        # Free up disk space by deleting unused versions of the NDK
+        # (https://github.com/freakboy3742/pyspamsum/pull/108).
+        for line in ENV_SCRIPT.read_text().splitlines():
+            if match := re.fullmatch(r"ndk_version=(.+)", line):
+                ndk_version = match[1]
+                break
+        else:
+            raise ValueError(f"Failed to find NDK version in {ENV_SCRIPT.name}")
+
+        for item in (android_home / "ndk").iterdir():
+            if item.name[0].isdigit() and item.name != ndk_version:
+                delete_glob(item)
 
 
 def setup_sdk():

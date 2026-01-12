@@ -106,6 +106,27 @@ static inline int _PyMem_IsPtrFreed(const void *ptr)
 #endif
 }
 
+// Similar to _PyMem_IsPtrFreed() but expects an 'unsigned long' instead of a
+// pointer.
+static inline int _PyMem_IsULongFreed(unsigned long value)
+{
+#if SIZEOF_LONG == 8
+    return (value == 0
+            || value == (unsigned long)0xCDCDCDCDCDCDCDCD
+            || value == (unsigned long)0xDDDDDDDDDDDDDDDD
+            || value == (unsigned long)0xFDFDFDFDFDFDFDFD
+            || value == (unsigned long)0xFFFFFFFFFFFFFFFF);
+#elif SIZEOF_LONG == 4
+    return (value == 0
+            || value == (unsigned long)0xCDCDCDCD
+            || value == (unsigned long)0xDDDDDDDD
+            || value == (unsigned long)0xFDFDFDFD
+            || value == (unsigned long)0xFFFFFFFF);
+#else
+#  error "unknown long size"
+#endif
+}
+
 extern int _PyMem_GetAllocatorName(
     const char *name,
     PyMemAllocatorName *allocator);

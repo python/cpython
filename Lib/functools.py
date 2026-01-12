@@ -947,8 +947,7 @@ def singledispatch(func):
 class singledispatchmethod:
     """Single-dispatch generic method descriptor.
 
-    Supports wrapping existing descriptors and handles non-descriptor
-    callables as instance methods.
+    Supports wrapping existing descriptors.
     """
 
     def __init__(self, func):

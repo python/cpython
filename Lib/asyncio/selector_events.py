@@ -173,16 +173,20 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # listening socket has triggered an EVENT_READ. There may be multiple
         # connections waiting for an .accept() so it is called in a loop.
         # See https://bugs.python.org/issue27906 for more details.
-        for _ in range(backlog):
+        for _ in range(backlog + 1):
             try:
                 conn, addr = sock.accept()
                 if self._debug:
                     logger.debug("%r got a new connection from %r: %r",
                                  server, addr, conn)
                 conn.setblocking(False)
-            except (BlockingIOError, InterruptedError, ConnectionAbortedError):
-                # Early exit because the socket accept buffer is empty.
-                return None
+            except ConnectionAbortedError:
+                # Discard connections that were aborted before accept().
+                continue
+            except (BlockingIOError, InterruptedError):
+                # Early exit because of a signal or
+                # the socket accept buffer is empty.
+                return
             except OSError as exc:
                 # There's nowhere to send the error, so just log it.
                 if exc.errno in (errno.EMFILE, errno.ENFILE,

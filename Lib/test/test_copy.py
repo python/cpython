@@ -666,7 +666,7 @@ class TestCopy(unittest.TestCase):
     def test_reduce_5tuple(self):
         class C(dict):
             def __reduce__(self):
-                return (C, (), self.__dict__, None, self.items())
+                return (C, (), self.__dict__, None, iter(self.items()))
             def __eq__(self, other):
                 return (dict(self) == dict(other) and
                         self.__dict__ == other.__dict__)

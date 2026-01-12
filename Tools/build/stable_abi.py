@@ -230,7 +230,7 @@ ITEM_KIND_TO_DOC_ROLE = {
     'data': 'data',
     'struct': 'type',
     'macro': 'macro',
-    # 'const': 'const',  # all undocumented
+    'const': 'macro',
     'typedef': 'type',
 }
 

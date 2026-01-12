@@ -34,12 +34,45 @@ class TextTest(AbstractTkTest, unittest.TestCase):
 
         # Invalid text index.
         self.assertRaises(tkinter.TclError, text.search, '', 0)
+        self.assertRaises(tkinter.TclError, text.search, '', '')
+        self.assertRaises(tkinter.TclError, text.search, '', 'invalid')
+        self.assertRaises(tkinter.TclError, text.search, '', '1.0', 'invalid')
 
-        # Check if we are getting the indices as strings -- you are likely
-        # to get Tcl_Obj under Tk 8.5 if Tkinter doesn't convert it.
-        text.insert('1.0', 'hi-test')
-        self.assertEqual(text.search('-test', '1.0', 'end'), '1.2')
-        self.assertEqual(text.search('test', '1.0', 'end'), '1.3')
+        text.insert('1.0',
+            'This is a test. This is only a test.\n'
+            'Another line.\n'
+            'Yet another line.\n'
+            '64-bit')
+
+        self.assertEqual(text.search('test', '1.0'), '1.10')
+        self.assertEqual(text.search('test', '1.0', 'end'), '1.10')
+        self.assertEqual(text.search('test', '1.0', '1.10'), '')
+        self.assertEqual(text.search('test', '1.11'), '1.31')
+        self.assertEqual(text.search('test', '1.32', 'end'), '')
+        self.assertEqual(text.search('test', '1.32'), '1.10')
+
+        self.assertEqual(text.search('', '1.0'), '1.0')  # empty pattern
+        self.assertEqual(text.search('nonexistent', '1.0'), '')
+        self.assertEqual(text.search('-bit', '1.0'), '4.2')  # starts with a hyphen
+
+        self.assertEqual(text.search('line', '3.0'), '3.12')
+        self.assertEqual(text.search('line', '3.0', forwards=True), '3.12')
+        self.assertEqual(text.search('line', '3.0', backwards=True), '2.8')
+        self.assertEqual(text.search('line', '3.0', forwards=True, backwards=True), '2.8')
+
+        self.assertEqual(text.search('t.', '1.0'), '1.13')
+        self.assertEqual(text.search('t.', '1.0', exact=True), '1.13')
+        self.assertEqual(text.search('t.', '1.0', regexp=True), '1.10')
+        self.assertEqual(text.search('t.', '1.0', exact=True, regexp=True), '1.10')
+
+        self.assertEqual(text.search('TEST', '1.0'), '')
+        self.assertEqual(text.search('TEST', '1.0', nocase=True), '1.10')
+
+        var = tkinter.Variable(self.root)
+        self.assertEqual(text.search('test', '1.0', count=var), '1.10')
+        self.assertEqual(var.get(), 4 if self.wantobjects else '4')
+
+        # TODO: Add test for elide=True
 
     def test_count(self):
         text = self.text

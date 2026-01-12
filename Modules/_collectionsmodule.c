@@ -2203,11 +2203,11 @@ defdict_missing(defdictobject *dd, PyObject *key)
     value = _PyObject_CallNoArgs(factory);
     if (value == NULL)
         return value;
-    if (PyObject_SetItem((PyObject *)dd, key, value) < 0) {
-        Py_DECREF(value);
-        return NULL;
-    }
-    return value;
+    PyObject *result = NULL;
+    (void)PyDict_SetDefaultRef((PyObject *)dd, key, value, &result);
+    // 'result' is NULL, or a strong reference to 'value' or 'dd[key]'
+    Py_DECREF(value);
+    return result;
 }
 
 static inline PyObject*
@@ -2549,7 +2549,12 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
                 if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
                     goto done;
             } else {
+                /* oldval is a borrowed reference.  Keep it alive across
+                   PyNumber_Add(), which can execute arbitrary user code and
+                   mutate (or even clear) the underlying dict. */
+                Py_INCREF(oldval);
                 newval = PyNumber_Add(oldval, one);
+                Py_DECREF(oldval);
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
