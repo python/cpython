@@ -1,0 +1,50 @@
+# CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
+name: Reusable CIFuzz
+
+on:
+  workflow_call:
+    inputs:
+      oss-fuzz-project-name:
+        description: OSS-Fuzz project name
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  cifuzz:
+    name: CIFuzz
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, undefined, memory]
+    steps:
+      - name: Build fuzzers (${{ matrix.sanitizer }})
+        id: build
+        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+        with:
+          oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Run fuzzers (${{ matrix.sanitizer }})
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+        with:
+          fuzz-seconds: 600
+          oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
+          output-sarif: true
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Upload crash
+        if: failure() && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.sanitizer }}-artifacts
+          path: ./out/artifacts
+      - name: Upload SARIF
+        if: always() && steps.build.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: cifuzz-sarif/results.sarif
+          checkout_path: cifuzz-sarif

@@ -23,7 +23,7 @@ on:  # yamllint disable-line rule:truthy
       run-ci-fuzz:
         description: Whether to run the CIFuzz job for 'cpython' fuzzer
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
-      run-ci-fuzz-libraries:
+      run-ci-fuzz-stdlib:
         description: Whether to run the CIFuzz job for 'python3-libraries' fuzzer
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
       run-docs:
@@ -59,7 +59,7 @@ jobs:
     outputs:
       run-android: ${{ steps.changes.outputs.run-android }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
-      run-ci-fuzz-libraries: ${{ steps.changes.outputs.run-ci-fuzz-libraries }}
+      run-ci-fuzz-stdlib: ${{ steps.changes.outputs.run-ci-fuzz-stdlib }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-ios: ${{ steps.changes.outputs.run-ios }}
       run-macos: ${{ steps.changes.outputs.run-macos }}

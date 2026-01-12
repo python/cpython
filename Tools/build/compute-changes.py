@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 TYPE_CHECKING = False
@@ -53,6 +53,7 @@ WASI_DIRS = frozenset({Path("Tools", "wasm")})
 LIBRARY_FUZZER_PATHS = frozenset({
     # All C/CPP fuzzers.
     Path("configure"),
+    Path(".github/workflows/reusable-cifuzz.yml"),
     # ast
     Path("Lib/ast.py"),
     Path("Python/ast.c"),
@@ -100,7 +101,7 @@ LIBRARY_FUZZER_PATHS = frozenset({
 class Outputs:
     run_android: bool = False
     run_ci_fuzz: bool = False
-    run_ci_fuzz_libraries: bool = False
+    run_ci_fuzz_stdlib: bool = False
     run_docs: bool = False
     run_ios: bool = False
     run_macos: bool = False
@@ -140,7 +141,7 @@ def compute_changes() -> None:
     else:
         print("Branch too old for CIFuzz tests; or no C files were changed")
 
-    if outputs.run_ci_fuzz_libraries:
+    if outputs.run_ci_fuzz_stdlib:
         print("Run CIFuzz tests for libraries")
     else:
         print("Branch too old for CIFuzz tests; or no library files were changed")
@@ -206,7 +207,7 @@ def is_fuzzable_library_file(file: Path) -> bool:
 def process_changed_files(changed_files: Set[Path]) -> Outputs:
     run_tests = False
     run_ci_fuzz = False
-    run_ci_fuzz_libraries = False
+    run_ci_fuzz_stdlib = False
     run_docs = False
     run_windows_tests = False
     run_windows_msi = False
@@ -220,8 +221,8 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         doc_file = file.suffix in SUFFIXES_DOCUMENTATION or doc_or_misc
 
         if file.parent == GITHUB_WORKFLOWS_PATH:
-            if file.name == "build.yml":
-                run_tests = run_ci_fuzz = run_ci_fuzz_libraries = True
+            if file.name == "build.yml" or file.name == "reusable-cifuzz.yml":
+                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = True
                 has_platform_specific_change = False
             if file.name == "reusable-docs.yml":
                 run_docs = True
@@ -256,8 +257,8 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             ("Modules", "_xxtestfuzz"),
         }:
             run_ci_fuzz = True
-        if not run_ci_fuzz_libraries and is_fuzzable_library_file(file):
-            run_ci_fuzz_libraries = True
+        if not run_ci_fuzz_stdlib and is_fuzzable_library_file(file):
+            run_ci_fuzz_stdlib = True
 
         # Check for changed documentation-related files
         if doc_file:
@@ -291,7 +292,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     return Outputs(
         run_android=run_android,
         run_ci_fuzz=run_ci_fuzz,
-        run_ci_fuzz_libraries=run_ci_fuzz_libraries,
+        run_ci_fuzz_stdlib=run_ci_fuzz_stdlib,
         run_docs=run_docs,
         run_ios=run_ios,
         run_macos=run_macos,
@@ -326,17 +327,10 @@ def write_github_output(outputs: Outputs) -> None:
         return
 
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
-        f.write(f"run-android={bool_lower(outputs.run_android)}\n")
-        f.write(f"run-ci-fuzz={bool_lower(outputs.run_ci_fuzz)}\n")
-        f.write(f"run-ci-fuzz-libraries={bool_lower(outputs.run_ci_fuzz_libraries)}\n")
-        f.write(f"run-docs={bool_lower(outputs.run_docs)}\n")
-        f.write(f"run-ios={bool_lower(outputs.run_ios)}\n")
-        f.write(f"run-macos={bool_lower(outputs.run_macos)}\n")
-        f.write(f"run-tests={bool_lower(outputs.run_tests)}\n")
-        f.write(f"run-ubuntu={bool_lower(outputs.run_ubuntu)}\n")
-        f.write(f"run-wasi={bool_lower(outputs.run_wasi)}\n")
-        f.write(f"run-windows-msi={bool_lower(outputs.run_windows_msi)}\n")
-        f.write(f"run-windows-tests={bool_lower(outputs.run_windows_tests)}\n")
+        for field in fields(outputs):
+            name = field.name.replace("_", "-")
+            val = bool_lower(getattr(outputs, field.name))
+            f.write(f"{name}={val}\n")
 
 
 def bool_lower(value: bool, /) -> str:

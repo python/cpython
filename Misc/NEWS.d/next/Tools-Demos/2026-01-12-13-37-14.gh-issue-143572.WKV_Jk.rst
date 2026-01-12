@@ -1,2 +1,0 @@
-Run the 'python3-libraries' fuzzer using CIFuzz. Automatically detect when
-modules are changed.
