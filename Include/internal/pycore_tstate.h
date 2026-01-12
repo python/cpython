@@ -31,6 +31,7 @@ typedef struct _PyJitTracerInitialState {
     struct _PyExitData *exit;
     PyCodeObject *code; // Strong
     PyFunctionObject *func; // Strong
+    struct _PyExecutorObject *executor; // Strong
     _Py_CODEUNIT *start_instr;
     _Py_CODEUNIT *close_loop_instr;
     _Py_CODEUNIT *jump_backward_instr;
@@ -153,7 +154,7 @@ typedef struct _PyThreadStateImpl {
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
 #if _Py_TIER2
-    _PyJitTracerState jit_tracer_state;
+    _PyJitTracerState *jit_tracer_state;
 #endif
     _PyPolicy policy;
 } _PyThreadStateImpl;
