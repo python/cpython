@@ -245,7 +245,7 @@
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
                         // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                        REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                     }
                 }
                 CHECK_STACK_BOUNDS(1);
@@ -481,7 +481,7 @@
                         PyObject *result = sym_get_const(ctx, res);
                         if (_Py_IsImmortal(result)) {
                             // Replace with _INSERT_1_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                            REPLACE_OP(this_instr, _INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            ADD_OP(_INSERT_1_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                         }
                     }
                     CHECK_STACK_BOUNDS(1);
