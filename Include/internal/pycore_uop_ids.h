@@ -503,9 +503,9 @@ extern "C" {
 #define _COMPARE_OP_FLOAT_r23 699
 #define _COMPARE_OP_INT_r23 700
 #define _COMPARE_OP_STR_r23 701
-#define _CONTAINS_OP_r21 702
-#define _CONTAINS_OP_DICT_r21 703
-#define _CONTAINS_OP_SET_r21 704
+#define _CONTAINS_OP_r23 702
+#define _CONTAINS_OP_DICT_r23 703
+#define _CONTAINS_OP_SET_r23 704
 #define _CONVERT_VALUE_r11 705
 #define _COPY_r01 706
 #define _COPY_1_r02 707

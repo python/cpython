@@ -1,0 +1,2 @@
+Eliminate redundant refcounting from ``_CONTAINS_OP``, ``_CONTAINS_OP_SET``
+and ``_CONTAINS_OP_DICT``.
