@@ -423,11 +423,12 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 
     PyObject *exc;
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
-    Py_DECREF(JSONDecodeError);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
     }
+
+    Py_DECREF(JSONDecodeError);
 }
 
 static void
