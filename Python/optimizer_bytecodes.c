@@ -384,7 +384,6 @@ dummy_func(void) {
         res = sym_new_not_null(ctx);
         ds = dict_st;
         ss = sub_st;
-        INPUTS_DEAD();
     }
 
     op(_TO_BOOL, (value -- res)) {

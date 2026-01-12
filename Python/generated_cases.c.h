@@ -643,7 +643,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
                 if (rc <= 0) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 ds = dict_st;

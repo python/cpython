@@ -1069,11 +1069,13 @@ dummy_func(
             if (rc == 0) {
                 _PyErr_SetKeyError(sub);
             }
-            INPUTS_DEAD();
-            ERROR_IF(rc <= 0); // not found or error
+            if (rc <= 0) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             ds = dict_st;
             ss = sub_st;
+            INPUTS_DEAD();
         }
 
         op(_BINARY_OP_SUBSCR_CHECK_FUNC, (container, unused -- container, unused, getitem)) {

@@ -6064,8 +6064,6 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             if (rc <= 0) {
-                stack_pointer += -2;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
