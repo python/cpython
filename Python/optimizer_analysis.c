@@ -395,8 +395,7 @@ optimize_uops(
     ctx->curr_frame_depth++;
     ctx->frame = frame;
 
-    int *cur_len = &ctx->out_len;
-    *cur_len = 0;
+    ctx->out_len = 0;
 
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
@@ -429,8 +428,8 @@ optimize_uops(
                 Py_UNREACHABLE();
         }
         // If no ADD_OP was called during this iteration, copy the original instruction
-        if (*cur_len == i) {
-            ctx->out_buffer[(*cur_len)++] = *this_instr;
+        if (ctx->out_len == i) {
+            ctx->out_buffer[ctx->out_len++] = *this_instr;
         }
         assert(ctx->frame != NULL);
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
@@ -461,12 +460,12 @@ optimize_uops(
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
     // Check that the trace ends with a proper terminator
-    if (*cur_len > 0) {
-        _PyUOpInstruction *last_uop = &ctx->out_buffer[*cur_len - 1];
+    if (ctx->out_len > 0) {
+        _PyUOpInstruction *last_uop = &ctx->out_buffer[ctx->out_len - 1];
         if (!is_terminator_uop(last_uop)) {
             // Copy remaining uops from original trace until we find a terminator
-            for (int i = *cur_len; i < trace_len; i++) {
-                ctx->out_buffer[(*cur_len)++] = trace[i];
+            for (int i = ctx->out_len; i < trace_len; i++) {
+                ctx->out_buffer[ctx->out_len++] = trace[i];
                 if (is_terminator_uop(&trace[i])) {
                     break;
                 }
@@ -474,7 +473,7 @@ optimize_uops(
         }
     }
 
-    return *cur_len;
+    return ctx->out_len;
 
 error:
     DPRINTF(3, "\n");
