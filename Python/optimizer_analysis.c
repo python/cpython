@@ -418,7 +418,6 @@ optimize_uops(
         }
 #endif
 
-        int out_len_before = ctx->tracer->out_len;
         switch (opcode) {
 
 #include "optimizer_cases.c.h"
@@ -428,7 +427,7 @@ optimize_uops(
                 Py_UNREACHABLE();
         }
         // If no ADD_OP was called during this iteration, copy the original instruction
-        if (ctx->tracer->out_len == out_len_before) {
+        if (ctx->tracer->out_len == i) {
             ctx->tracer->out_buffer[ctx->tracer->out_len++] = *this_instr;
         }
         assert(ctx->frame != NULL);
@@ -461,8 +460,15 @@ optimize_uops(
     _Py_uop_abstractcontext_fini(ctx);
     // Check that the trace ends with a proper terminator
     if (ctx->tracer->out_len > 0) {
-        if (!is_terminator_uop(&ctx->tracer->out_buffer[ctx->tracer->out_len - 1])) {
-            return 0;
+        _PyUOpInstruction *last_uop = &ctx->tracer->out_buffer[ctx->tracer->out_len - 1];
+        if (!is_terminator_uop(last_uop)) {
+            // Copy remaining uops from original trace until we find a terminator
+            for (int i = ctx->tracer->out_len; i < trace_len; i++) {
+                ctx->tracer->out_buffer[ctx->tracer->out_len++] = trace[i];
+                if (is_terminator_uop(&trace[i])) {
+                    break;
+                }
+            }
         }
     }
 
