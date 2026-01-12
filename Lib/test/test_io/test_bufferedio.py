@@ -638,6 +638,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
             with self.assertRaises(MemoryError):
                 bufio.read1(huge)
 
+            # Used to crash before gh-143689:
             self.assertEqual(bufio.read1(1), b"h")
 
 
