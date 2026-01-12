@@ -636,9 +636,9 @@ or the :pypi:`more-itertools` project:
 .. testcode::
    import random
 
-   def random_product(*args, repeat=1):
+   def random_product(*iterables, repeat=1):
        "Random selection from itertools.product(*args, **kwds)"
-       pools = [tuple(pool) for pool in args] * repeat
+       pools = tuple(map(tuple, iterables)) * repeat
        return tuple(map(random.choice, pools))
 
    def random_permutation(iterable, r=None):
@@ -680,6 +680,13 @@ or the :pypi:`more-itertools` project:
     :hide:
 
     >>> import random
+
+
+    >>> random.seed(8675309)
+    >>> random_product('ABCDEFG', repeat=5)
+    ('D', 'B', 'E', 'F', 'E')
+
+
     >>> random.seed(8675309)
     >>> random_derangement('')
     ()
