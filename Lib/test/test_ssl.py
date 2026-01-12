@@ -5277,6 +5277,20 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             client_context._msg_callback = object()
 
+    def test_msg_callback_exception(self):
+        client_context, server_context, hostname = testing_context()
+
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            raise RuntimeError("msg_cb exception")
+
+        client_context._msg_callback = msg_cb
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                with self.assertRaisesRegex(RuntimeError, "msg_cb exception"):
+                    s.connect((HOST, server.port))
+
     def test_msg_callback_tls12(self):
         client_context, server_context, hostname = testing_context()
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
