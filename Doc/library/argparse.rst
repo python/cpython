@@ -1782,7 +1782,7 @@ Sub-commands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to ``add_parser()`` as above.)
+   to :meth:`~_SubParsersAction.add_parser` as above.)
 
    ::
 
@@ -1895,7 +1895,9 @@ Sub-commands
       Subparser's *prog* is no longer affected by a custom usage message in
       the main parser.
 
-.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
+
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None,
+                                           deprecated=False, **kwargs)
 
    Creates and returns a new :class:`!ArgumentParser` object for the
    subcommand *name*.
@@ -1904,7 +1906,7 @@ Sub-commands
 
    The *help* argument provides a short description for this sub-command.
    If provided, it will be listed next to the command in the main parser’s
-   help message (e.g., ``PROG --help``).
+   help message (for example, ``PROG --help``).
 
    The *aliases* argument allows providing alternative names for this
    sub-command.
@@ -1921,8 +1923,6 @@ Sub-commands
    The *deprecated* argument, if ``True``, marks the sub-command as
    deprecated and will issue a warning when used.
 
-   .. versionadded:: 3.13
-
    For example::
 
       >>> parser = argparse.ArgumentParser(prog='chicken.py')
@@ -1931,6 +1931,9 @@ Sub-commands
       >>> parser.parse_args(['fly'])  # doctest: +SKIP
       chicken.py: warning: command 'fly' is deprecated
       Namespace()
+
+   .. versionadded:: 3.13
+      Added the *deprecated* parameter.
 
 
    All other keyword arguments are passed directly to the
