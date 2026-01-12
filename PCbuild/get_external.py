@@ -14,7 +14,7 @@ import urllib.request
 import zipfile
 
 
-@functools.cache
+#@functools.cache
 def trigger_automatic_root_certificate_update(url: str, timeout: int = 30) -> None:
     escaped_url = url.replace("'", "''")
     try:
@@ -32,8 +32,8 @@ def trigger_automatic_root_certificate_update(url: str, timeout: int = 30) -> No
             capture_output=True,
             timeout=timeout + 5,
         )
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        pass
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+        print(e)
 
 
 def retrieve_with_retries(download_location, output_path, reporthook,
