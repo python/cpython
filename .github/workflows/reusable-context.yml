@@ -26,6 +26,9 @@ on:  # yamllint disable-line rule:truthy
       run-docs:
         description: Whether to build the docs
         value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
+      run-idle-help-doc:
+        description: Whether to check the IDLE help doc check
+        value: ${{ jobs.compute-changes.outputs.run-idle-help-doc }}  # bool
       run-ios:
         description: Whether to run the iOS tests
         value: ${{ jobs.compute-changes.outputs.run-ios }}  # bool
@@ -57,6 +60,7 @@ jobs:
       run-android: ${{ steps.changes.outputs.run-android }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
+      run-idle-help-doc: ${{ steps.changes.outputs.run-idle-help-doc }}
       run-ios: ${{ steps.changes.outputs.run-ios }}
       run-macos: ${{ steps.changes.outputs.run-macos }}
       run-tests: ${{ steps.changes.outputs.run-tests }}

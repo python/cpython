@@ -51,7 +51,8 @@ jobs:
 
   check-idle-help-doc:
     name: IDLE help doc
-    needs: check-docs
+    needs: [build-context, check-docs]
+    if: fromJSON(needs.build-context.outputs.run-idle-help-doc)
     uses: ./.github/workflows/reusable-idle-help-doc.yml
 
   check-autoconf-regen:

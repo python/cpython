@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 TYPE_CHECKING = False
@@ -56,6 +56,7 @@ class Outputs:
     run_android: bool = False
     run_ci_fuzz: bool = False
     run_docs: bool = False
+    run_idle_help_doc: bool = False
     run_ios: bool = False
     run_macos: bool = False
     run_tests: bool = False
@@ -148,6 +149,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     run_tests = False
     run_ci_fuzz = False
     run_docs = False
+    run_idle_help_doc = False
     run_windows_tests = False
     run_windows_msi = False
 
@@ -201,6 +203,10 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         if doc_file:
             run_docs = True
 
+        # Check for changed IDLE docs
+        if file == Path("Doc/library/idle.rst"):
+            run_idle_help_doc = True
+
         # Check for changed MSI installer-related files
         if file.parts[:2] == ("Tools", "msi"):
             run_windows_msi = True
@@ -230,6 +236,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         run_android=run_android,
         run_ci_fuzz=run_ci_fuzz,
         run_docs=run_docs,
+        run_idle_help_doc=run_idle_help_doc,
         run_ios=run_ios,
         run_macos=run_macos,
         run_tests=run_tests,
@@ -263,16 +270,10 @@ def write_github_output(outputs: Outputs) -> None:
         return
 
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
-        f.write(f"run-android={bool_lower(outputs.run_android)}\n")
-        f.write(f"run-ci-fuzz={bool_lower(outputs.run_ci_fuzz)}\n")
-        f.write(f"run-docs={bool_lower(outputs.run_docs)}\n")
-        f.write(f"run-ios={bool_lower(outputs.run_ios)}\n")
-        f.write(f"run-macos={bool_lower(outputs.run_macos)}\n")
-        f.write(f"run-tests={bool_lower(outputs.run_tests)}\n")
-        f.write(f"run-ubuntu={bool_lower(outputs.run_ubuntu)}\n")
-        f.write(f"run-wasi={bool_lower(outputs.run_wasi)}\n")
-        f.write(f"run-windows-msi={bool_lower(outputs.run_windows_msi)}\n")
-        f.write(f"run-windows-tests={bool_lower(outputs.run_windows_tests)}\n")
+        for field in fields(outputs):
+            name = field.name.replace("_", "-")
+            val = bool_lower(getattr(outputs, field.name))
+            f.write(f"{name}={val}\n")
 
 
 def bool_lower(value: bool, /) -> str:
