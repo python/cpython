@@ -11731,6 +11731,7 @@
             _PyStackRef tos;
             _PyStackRef value;
             _PyStackRef res;
+            _PyStackRef v;
             // _GUARD_TOS_LIST
             {
                 tos = stack_pointer[-1];
@@ -11750,11 +11751,14 @@
                 assert(PyList_CheckExact(value_o));
                 STAT_INC(TO_BOOL, hit);
                 res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
+                v = value;
+            }
+            // _POP_TOP
+            {
+                value = v;
+                stack_pointer[-1] = res;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = value;
-                value = res;
-                stack_pointer[-1] = value;
-                PyStackRef_CLOSE(tmp);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();

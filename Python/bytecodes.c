@@ -514,14 +514,15 @@ dummy_func(
             EXIT_IF(!PySlice_Check(o));
         }
 
-        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST;
+        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST + POP_TOP;
 
-        op(_TO_BOOL_LIST, (value -- res)) {
+        op(_TO_BOOL_LIST, (value -- res, v)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(PyList_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
             res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            DECREF_INPUTS();
+            v = value;
+            DEAD(value);
         }
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
