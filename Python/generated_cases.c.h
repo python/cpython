@@ -611,6 +611,9 @@
             _PyStackRef dict_st;
             _PyStackRef sub_st;
             _PyStackRef res;
+            _PyStackRef ds;
+            _PyStackRef ss;
+            _PyStackRef value;
             // _GUARD_NOS_DICT
             {
                 nos = stack_pointer[-2];
@@ -639,26 +642,31 @@
                     _PyErr_SetKeyError(sub);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = sub_st;
-                sub_st = PyStackRef_NULL;
-                stack_pointer[-1] = sub_st;
-                PyStackRef_CLOSE(tmp);
-                tmp = dict_st;
-                dict_st = PyStackRef_NULL;
-                stack_pointer[-2] = dict_st;
-                PyStackRef_CLOSE(tmp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -2;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 if (rc <= 0) {
                     JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
+                ds = dict_st;
+                ss = sub_st;
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            // _POP_TOP
+            {
+                value = ss;
+                stack_pointer[-2] = res;
+                stack_pointer[-1] = ds;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = ds;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 
