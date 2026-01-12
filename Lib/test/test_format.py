@@ -278,6 +278,8 @@ class FormatTest(unittest.TestCase):
                         "unsupported format %z at position 4")
         test_exc_common("abc %Id", 1, ValueError,
                         "unsupported format %I at position 4")
+        test_exc_common("abc %'d", 1, ValueError,
+                        "stray % at position 4 or unexpected format character \"'\" at position 5")
         test_exc_common("abc %1 d", 1, ValueError,
                         "stray % at position 4 or unexpected format character ' ' at position 6")
         test_exc_common('abc % (x)r', {}, ValueError,
@@ -365,8 +367,6 @@ class FormatTest(unittest.TestCase):
             print('Testing exceptions')
         test_exc('abc %b', 1, ValueError,
                  "unsupported format %b at position 4")
-        test_exc("abc %'d", 1, ValueError,
-                 "stray % at position 4 or unexpected format character ''' (U+0027) at position 5")
         test_exc("abc %\nd", 1, ValueError,
                  "stray % at position 4 or unexpected format character U+000A at position 5")
         test_exc("abc %\x1fd", 1, ValueError,
