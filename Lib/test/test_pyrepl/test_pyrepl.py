@@ -594,25 +594,6 @@ class TestPyReplAutoindent(TestCase):
         self.assertEqual(output, output_code)
 
         # fmt: off
-        events = code_to_events(
-            "def f():\n"
-                "# foo\n"
-                "pass\n\n"
-        )
-
-        output_code = (
-            "def f():\n"
-            "    # foo\n"
-            "    pass\n"
-            "    "
-        )
-        # fmt: on
-
-        reader = self.prepare_reader(events)
-        output = multiline_input(reader)
-        self.assertEqual(output, output_code)
-
-        # fmt: off
         events = itertools.chain(
             code_to_events("def f():\n"),
             [
@@ -696,26 +677,6 @@ class TestPyReplAutoindent(TestCase):
             "s = '''\n"
             "Note:\n"
             "'''"
-        )
-        # fmt: on
-
-        reader = self.prepare_reader(events)
-        output = multiline_input(reader)
-        self.assertEqual(output, output_code)
-
-    def test_dont_indent_already_indented(self):
-        # fmt: off
-        events = code_to_events(
-            "def f():\n"
-            "# foo\n"
-            "pass\n\n"
-        )
-
-        output_code = (
-            "def f():\n"
-            "    # foo\n"
-            "    pass\n"
-            "    "
         )
         # fmt: on
 

@@ -40,6 +40,7 @@ from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
+from .utils import gen_colors
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -251,57 +252,23 @@ def _get_first_indentation(buffer: list[str]) -> str | None:
             return ''.join(buffer[indented_line_start : i])
     return None
 
-
 def _should_auto_indent(buffer: list[str], pos: int) -> bool:
-    # check if last character before "pos" is a colon, ignoring
-    # whitespaces and comments.
-    last_char = None
-    # A stack to keep track of string delimiters. Push a quote when entering a
-    # string, pop it when the string ends. If the stack is empty, we're not
-    # inside a string. When see a '#', it's a comment start if we're not inside
-    # a string; otherwise, it's just a '#' character within a string.
-    str_delims: list[str] = []
-    in_comment = False
-    char_line_indent_start = None
-    char_line_indent = 0
-    lastchar_line_indent = 0
-    cursor_line_indent = 0
-
-    i = -1
-    while i < pos - 1:
-        i += 1
-        char = buffer[i]
-
-        # update last_char
-        if char == "#":
-            if str_delims:
-                last_char = char # '#' inside a string is just a character
-            else:
-                in_comment = True
-        elif char == "\n":
-            # newline ends a comment
-            in_comment = False
-            if i < pos - 1 and buffer[i + 1] in " \t":
-                char_line_indent_start = i + 1
-            else:
-                char_line_indent_start = None # clear last line's line_indent_start
-                char_line_indent = 0
-        elif char not in " \t":
-            if char_line_indent_start is not None:
-                char_line_indent = i - char_line_indent_start
-            if not in_comment and not str_delims:
-                # update last_char with non-whitespace chars outside comments and strings
-                last_char = char
-                lastchar_line_indent = char_line_indent
-
-        # update stack
-        if char in "\"'" and (i == 0 or buffer[i - 1] != "\\"):
-            if str_delims and str_delims[-1] == char:
-                str_delims.pop()
-            else:
-                str_delims.append(char)
-    cursor_line_indent = char_line_indent
-    return last_char == ":" and cursor_line_indent <= lastchar_line_indent
+    buffer_str = ''.join(buffer)
+    colors = tuple(gen_colors(buffer_str))
+    string_spans = tuple(c.span for c in colors if c.tag == "string")
+    comment_spans = tuple(c.span for c in colors if c.tag == "comment")
+    def in_span(i, spans):
+        return any(s.start <= i <= s.end for s in spans)
+    i = pos - 1
+    while i >= 0:
+        if buffer_str[i] in " \t\n":
+            i -= 1
+            continue
+        if in_span(i, string_spans) or in_span(i, comment_spans):
+            i -= 1
+            continue
+        break
+    return i >= 0 and buffer_str[i] == ":"
 
 
 class maybe_accept(commands.Command):
