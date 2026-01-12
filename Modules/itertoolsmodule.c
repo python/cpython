@@ -555,7 +555,7 @@ groupby_next(PyObject *op)
 
             Py_DECREF(tgtkey);
             Py_DECREF(currkey);
-            
+
             if (rcmp == -1)
                 return NULL;
             else if (rcmp == 0)
