@@ -53,13 +53,13 @@ jobs:
         sudo update-alternatives --set clang++ /usr/bin/clang++-20
         sudo update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-20 100
         sudo update-alternatives --set llvm-symbolizer /usr/bin/llvm-symbolizer-20
-        if [ "${{ inputs.sanitizer }}" = "TSan" ]; then
-          # Reduce ASLR to avoid TSan crashing
-          sudo sysctl -w vm.mmap_rnd_bits=28
-        fi
 
     - name: Sanitizer option setup
       run: |
+        if [ "${SANITIZER}" = "TSan" ]; then
+          # Reduce ASLR to avoid TSan crashing
+          sudo sysctl -w vm.mmap_rnd_bits=28
+        fi
         if [ "${SANITIZER}" = "TSan" ]; then
           echo "TSAN_OPTIONS=${SAN_LOG_OPTION} suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
               fromJSON(inputs.free-threading)
