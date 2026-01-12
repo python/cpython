@@ -1,0 +1,1 @@
+Added lookups to global and per-interpreter tables of interned strings while creating codeobjects, so some of the string constants could be reused
