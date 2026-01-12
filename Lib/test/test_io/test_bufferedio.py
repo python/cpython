@@ -634,7 +634,9 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
 
         with self.open(os_helper.TESTFN, "rb", buffering=0) as raw:
             bufio = self.tp(raw, buffer_size=8)
-            huge = 10**18
+            # To request a size that is far too huge to ever be satisfied,
+            # so that the internal buffer allocation reliably fails with MemoryError.
+            huge = sys.maxsize // 2 + 1
             with self.assertRaises(MemoryError):
                 bufio.read1(huge)
 
