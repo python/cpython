@@ -420,7 +420,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state.prev_state.code_curr_size == 2); \
+        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state->prev_state.code_curr_size == 2); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \

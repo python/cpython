@@ -434,14 +434,19 @@ dummy_func(
             PyStackRef_CLOSE(receiver);
         }
 
-        inst(UNARY_NEGATIVE, (value -- res)) {
+        macro(UNARY_NEGATIVE) = _UNARY_NEGATIVE + POP_TOP;
+
+        op(_UNARY_NEGATIVE, (value -- res, v)) {
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
-            PyStackRef_CLOSE(value);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            v = value;
+            DEAD(value);
         }
 
-        pure inst(UNARY_NOT, (value -- res)) {
+        inst(UNARY_NOT, (value -- res)) {
             assert(PyStackRef_BoolCheck(value));
             res = PyStackRef_IsFalse(value)
                 ? PyStackRef_True : PyStackRef_False;
@@ -570,11 +575,16 @@ dummy_func(
             _REPLACE_WITH_TRUE +
             POP_TOP;
 
-        inst(UNARY_INVERT, (value -- res)) {
+        macro(UNARY_INVERT) = _UNARY_INVERT + POP_TOP;
+
+        op(_UNARY_INVERT, (value -- res, v)) {
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
-            PyStackRef_CLOSE(value);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            v = value;
+            DEAD(value);
         }
 
         family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
@@ -2990,7 +3000,7 @@ dummy_func(
                     oparg >>= 8;
                     insert_exec_at--;
                 }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg, NULL);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -5395,6 +5405,13 @@ dummy_func(
             INPUTS_DEAD();
         }
 
+        tier2 op(_INSERT_2_LOAD_CONST_INLINE_BORROW, (ptr/4, left, right -- res, l, r)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
@@ -5518,7 +5535,7 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg, previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
@@ -5738,15 +5755,17 @@ dummy_func(
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
             // JIT should have disabled super instructions, as we can
             // do these optimizations ourselves in the JIT.
-            _tstate->jit_tracer_state.prev_state.instr = next_instr;
+            _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+            assert(tracer != NULL);
+            tracer->prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
-            if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
-                Py_SETREF(_tstate->jit_tracer_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
+            if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
+                Py_SETREF(tracer->prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
             }
 
-            _tstate->jit_tracer_state.prev_state.instr_frame = frame;
-            _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
-            _tstate->jit_tracer_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tracer->prev_state.instr_frame = frame;
+            tracer->prev_state.instr_oparg = oparg;
+            tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }

@@ -343,9 +343,10 @@ optimize_uops(
 )
 {
     assert(!PyErr_Occurred());
-    PyFunctionObject *func = tstate->jit_tracer_state.initial_state.func;
+    assert(tstate->jit_tracer_state != NULL);
+    PyFunctionObject *func = tstate->jit_tracer_state->initial_state.func;
 
-    JitOptContext *ctx = &tstate->jit_tracer_state.opt_context;
+    JitOptContext *ctx = &tstate->jit_tracer_state->opt_context;
     uint32_t opcode = UINT16_MAX;
 
     // Make sure that watchers are set up
