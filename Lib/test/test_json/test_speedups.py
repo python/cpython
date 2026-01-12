@@ -92,26 +92,22 @@ class TestEncode(CTest):
             sort_keys=False,
             skipkeys=False,
             allow_nan=False)
-        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 0)[0],
-                         '[\n'
-                         '\t"spam", \n'
-                         '\t{\n'
-                         '\t\t"ham": "eggs"\n'
-                         '\t}\n'
-                         ']')
-        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 3)[0],
-                         '[\n'
-                         '\t\t\t\t"spam", \n'
-                         '\t\t\t\t{\n'
-                         '\t\t\t\t\t"ham": "eggs"\n'
-                         '\t\t\t\t}\n'
-                         '\t\t\t]')
-        self.assertEqual(enc(['spam', {'ham': 'eggs'}], -3)[0],
-                         '[\n'
-                         '\t"spam", \n'
-                         '\t{\n'
-                         '\t\t"ham": "eggs"\n'
-                         '\t}\n'
-                         ']')
+        expected = (
+            '[\n'
+            '\t"spam", \n'
+            '\t{\n'
+            '\t\t"ham": "eggs"\n'
+            '\t}\n'
+            ']')
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 0)[0], expected)
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], -3)[0], expected)
+        expected2 = (
+            '[\n'
+            '\t\t\t\t"spam", \n'
+            '\t\t\t\t{\n'
+            '\t\t\t\t\t"ham": "eggs"\n'
+            '\t\t\t\t}\n'
+            '\t\t\t]')
+        self.assertEqual(enc(['spam', {'ham': 'eggs'}], 3)[0], expected2)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}], 3.0)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])
