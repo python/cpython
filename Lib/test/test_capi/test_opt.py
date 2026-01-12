@@ -1636,7 +1636,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_UNARY_NOT", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_unary_invert_pop_top_load_const_inline_borrow(self):
+    def test_unary_invert_insert_1_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for i in range(n):
@@ -1651,7 +1651,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_INVERT", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_INSERT_1_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_compare_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
@@ -3469,6 +3469,39 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_SEND_GEN_FRAME", uops)
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+
+    def test_unary_negative(self):
+        def testfunc(n):
+            a = 3
+            for _ in range(n):
+                res = -a
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, -3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_UNARY_NEGATIVE", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_unary_invert(self):
+        def testfunc(n):
+            a = 3
+            for _ in range(n):
+                res = ~a
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, -4)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_UNARY_INVERT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
 
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
