@@ -6,7 +6,7 @@ Quick Start Guide
 1a. Optionally install Python 3.10 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
     NuGet.
-2.  Run "build.bat" to build Python in 32-bit Release configuration.
+2.  Run "build.bat" to build Python in 64-bit Release configuration.
 3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
@@ -70,7 +70,7 @@ You can also use a specific version of clang-cl downloaded from
 https://github.com/llvm/llvm-project/releases, e.g.
 clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz.
 Given you have extracted that to <my-clang-dir>, you can use it like so
-build.bat --pgo "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=<my-clang-dir> "/p:LLVMToolsVersion=18"
+build.bat --pgo "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=<my-clang-dir>" "/p:LLVMToolsVersion=18"
 
 Setting LLVMToolsVersion to the major version is enough, although you
 can be specific and use 18.1.8 in the above example, too.
@@ -173,24 +173,27 @@ library which are implemented in C; each one builds a DLL (renamed to
  * _asyncio
  * _ctypes
  * _ctypes_test
- * _zoneinfo
  * _decimal
  * _elementtree
  * _hashlib
  * _multiprocessing
  * _overlapped
+ * _queue
+ * _remote_debugging
  * _socket
  * _testbuffer
  * _testcapi
- * _testlimitedcapi
- * _testinternalcapi
  * _testclinic
  * _testclinic_limited
  * _testconsole
  * _testimportmultiple
+ * _testinternalcapi
+ * _testlimitedcapi
  * _testmultiphase
  * _testsinglephase
- * _tkinter
+ * _uuid
+ * _wmi
+ * _zoneinfo
  * pyexpat
  * select
  * unicodedata
@@ -202,18 +205,22 @@ interpreter, but they do implement several major features.  See the
 "Getting External Sources" section below for additional information
 about getting the source for building these libraries.  The sub-projects
 are:
+
 _bz2
     Python wrapper for version 1.0.8 of the libbzip2 compression library
     Homepage:
         http://www.bzip.org/
+
 _lzma
-    Python wrapper for version 5.2.2 of the liblzma compression library
+    Python wrapper for version 5.2.2 of the liblzma compression library,
+    which is itself built by liblzma.vcxproj.
     Homepage:
         https://tukaani.org/xz/
+
 _ssl
     Python wrapper for version 3.0.15 of the OpenSSL secure sockets
-    library, which is downloaded from our binaries repository at
-    https://github.com/python/cpython-bin-deps.
+    library, which is itself downloaded from our binaries repository at
+    https://github.com/python/cpython-bin-deps and built by openssl.vcxproj.
 
     Homepage:
         https://www.openssl.org/
@@ -230,9 +237,10 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.49.1, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.50.4, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
+
 _tkinter
     Wraps version 8.6.15 of the Tk windowing system, which is downloaded
     from our binaries repository at
@@ -245,13 +253,20 @@ _tkinter
     PCbuild\prepare_tcltk.bat. This will retrieve the version of the
     sources matched to the current commit from the Tcl and Tk branches
     in our source repository at
-    https://github.com/python/cpython-source-deps.
+    https://github.com/python/cpython-source-deps and build them via the
+    tcl.vcxproj and tk.vcxproj sub-projects.
 
     The two projects install their respective components in a
     directory alongside the source directories called "tcltk" on
     Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
+
+_zstd
+    Python wrapper for version 1.5.7 of the zstd compression library
+    Homepage:
+        https://facebook.github.io/zstd/
+
 zlib-ng
     Compiles zlib-ng as a static library, which is later included by
     pythoncore.vcxproj. This was generated using CMake against zlib-ng
@@ -262,6 +277,10 @@ zlib-ng
 
     Sources for zlib-ng are imported unmodified into our source
     repository at https://github.com/python/cpython-source-deps.
+_zstd
+    Python wrapper for version 1.5.7 of the Zstandard compression library
+    Homepage:
+        https://facebook.github.io/zstd/
 
 
 Getting External Sources

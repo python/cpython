@@ -2,6 +2,7 @@ from test import support
 from test.support import warnings_helper
 import decimal
 import enum
+import fractions
 import math
 import platform
 import sys
@@ -170,10 +171,12 @@ class TimeTestCase(unittest.TestCase):
         # Improved exception #81267
         with self.assertRaises(TypeError) as errmsg:
             time.sleep([])
-        self.assertIn("integer or float", str(errmsg.exception))
+        self.assertIn("real number", str(errmsg.exception))
 
     def test_sleep(self):
-        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2,
+                      decimal.Decimal('0.02'),
+                      fractions.Fraction(1, 50)]:
             with self.subTest(value=value):
                 time.sleep(value)
 
@@ -345,11 +348,11 @@ class TimeTestCase(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             time.strptime('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
-        # additional check for IndexError branch (issue #19545)
+        self.assertTrue(e.exception.__suppress_context__)
+        # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
-            time.strptime('19', '%Y %')
-        self.assertIsNone(e.exception.__context__)
+            time.strptime('%', '%')
+        self.assertTrue(e.exception.__suppress_context__)
 
     def test_strptime_leap_year(self):
         # GH-70647: warns if parsing a format with a day and no year.
@@ -577,11 +580,10 @@ class TimeTestCase(unittest.TestCase):
 
         # thread_time() should not include time spend during a sleep
         start = time.thread_time()
-        time.sleep(0.100)
+        time.sleep(0.200)
         stop = time.thread_time()
-        # use 20 ms because thread_time() has usually a resolution of 15 ms
-        # on Windows
-        self.assertLess(stop - start, 0.020)
+        # gh-143528: use 100 ms to support slow CI
+        self.assertLess(stop - start, 0.100)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
@@ -756,22 +758,21 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 class TestPytime(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.
         lt = time.localtime()
-        self.assertTrue(hasattr(lt, "tm_gmtoff"))
-        self.assertTrue(hasattr(lt, "tm_zone"))
+        self.assertHasAttr(lt, "tm_gmtoff")
+        self.assertHasAttr(lt, "tm_zone")
 
         # See if the offset and zone are similar to the module
         # attributes.
         if lt.tm_gmtoff is None:
-            self.assertTrue(not hasattr(time, "timezone"))
+            self.assertNotHasAttr(time, "timezone")
         else:
             self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
         if lt.tm_zone is None:
-            self.assertTrue(not hasattr(time, "tzname"))
+            self.assertNotHasAttr(time, "tzname")
         else:
             self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
 
@@ -791,14 +792,12 @@ class TestPytime(unittest.TestCase):
         self.assertEqual(new_lt.tm_gmtoff, lt.tm_gmtoff)
         self.assertEqual(new_lt9.tm_zone, lt.tm_zone)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_strptime_timezone(self):
         t = time.strptime("UTC", "%Z")
         self.assertEqual(t.tm_zone, 'UTC')
         t = time.strptime("+0500", "%z")
         self.assertEqual(t.tm_gmtoff, 5 * 3600)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_short_times(self):
 
         import pickle
@@ -1184,11 +1183,11 @@ class TestTimeWeaklinking(unittest.TestCase):
 
         if mac_ver >= (10, 12):
             for name in clock_names:
-                self.assertTrue(hasattr(time, name), f"time.{name} is not available")
+                self.assertHasAttr(time, name)
 
         else:
             for name in clock_names:
-                self.assertFalse(hasattr(time, name), f"time.{name} is available")
+                self.assertNotHasAttr(time, name)
 
 
 if __name__ == "__main__":

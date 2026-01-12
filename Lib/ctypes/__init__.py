@@ -1,23 +1,19 @@
 """create and manipulate C data types in Python"""
 
-import os as _os, sys as _sys
+import os as _os
+import sys as _sys
+import sysconfig as _sysconfig
 import types as _types
-
-__version__ = "1.1.0"
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
 from _ctypes import CFuncPtr as _CFuncPtr
-from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
 from _ctypes import CField
 
 from struct import calcsize as _calcsize
-
-if __version__ != _ctypes_version:
-    raise Exception("Version number mismatch", __version__, _ctypes_version)
 
 if _os.name == "nt":
     from _ctypes import COMError, CopyComPointer, FormatError
@@ -108,7 +104,7 @@ def CFUNCTYPE(restype, *argtypes, **kw):
     return CFunctionType
 
 if _os.name == "nt":
-    from _ctypes import LoadLibrary as _dlopen
+    from _ctypes import LoadLibrary as _LoadLibrary
     from _ctypes import FUNCFLAG_STDCALL as _FUNCFLAG_STDCALL
 
     _win_functype_cache = {}
@@ -162,6 +158,7 @@ class py_object(_SimpleCData):
             return super().__repr__()
         except ValueError:
             return "%s(<NULL>)" % type(self).__name__
+    __class_getitem__ = classmethod(_types.GenericAlias)
 _check_size(py_object, "P")
 
 class c_short(_SimpleCData):
@@ -208,13 +205,13 @@ if sizeof(c_longdouble) == sizeof(c_double):
 
 try:
     class c_double_complex(_SimpleCData):
-        _type_ = "C"
+        _type_ = "D"
     _check_size(c_double_complex)
     class c_float_complex(_SimpleCData):
-        _type_ = "E"
+        _type_ = "F"
     _check_size(c_float_complex)
     class c_longdouble_complex(_SimpleCData):
-        _type_ = "F"
+        _type_ = "G"
 except AttributeError:
     pass
 
@@ -265,7 +262,72 @@ _check_size(c_void_p)
 class c_bool(_SimpleCData):
     _type_ = "?"
 
-from _ctypes import POINTER, pointer, _pointer_type_cache
+def POINTER(cls):
+    """Create and return a new ctypes pointer type.
+
+    Pointer types are cached and reused internally,
+    so calling this function repeatedly is cheap.
+    """
+    if cls is None:
+        return c_void_p
+    try:
+        return cls.__pointer_type__
+    except AttributeError:
+        pass
+    if isinstance(cls, str):
+        # handle old-style incomplete types (see test_ctypes.test_incomplete)
+        import warnings
+        warnings._deprecated("ctypes.POINTER with string", remove=(3, 19))
+        try:
+            return _pointer_type_cache_fallback[cls]
+        except KeyError:
+            result = type(f'LP_{cls}', (_Pointer,), {})
+            _pointer_type_cache_fallback[cls] = result
+            return result
+
+    # create pointer type and set __pointer_type__ for cls
+    return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
+
+def pointer(obj):
+    """Create a new pointer instance, pointing to 'obj'.
+
+    The returned object is of the type POINTER(type(obj)). Note that if you
+    just want to pass a pointer to an object to a foreign function call, you
+    should use byref(obj) which is much faster.
+    """
+    typ = POINTER(type(obj))
+    return typ(obj)
+
+class _PointerTypeCache:
+    def __setitem__(self, cls, pointer_type):
+        import warnings
+        warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
+        try:
+            cls.__pointer_type__ = pointer_type
+        except AttributeError:
+            _pointer_type_cache_fallback[cls] = pointer_type
+
+    def __getitem__(self, cls):
+        import warnings
+        warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
+        try:
+            return cls.__pointer_type__
+        except AttributeError:
+            return _pointer_type_cache_fallback[cls]
+
+    def get(self, cls, default=None):
+        import warnings
+        warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
+        try:
+            return cls.__pointer_type__
+        except AttributeError:
+            return _pointer_type_cache_fallback.get(cls, default)
+
+    def __contains__(self, cls):
+        return hasattr(cls, '__pointer_type__')
+
+_pointer_type_cache_fallback = {}
+_pointer_type_cache = _PointerTypeCache()
 
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
@@ -276,7 +338,7 @@ class c_wchar(_SimpleCData):
     _type_ = "u"
 
 def _reset_cache():
-    _pointer_type_cache.clear()
+    _pointer_type_cache_fallback.clear()
     _c_functype_cache.clear()
     if _os.name == "nt":
         _win_functype_cache.clear()
@@ -284,7 +346,6 @@ def _reset_cache():
     POINTER(c_wchar).from_param = c_wchar_p.from_param
     # _SimpleCData.c_char_p_from_param
     POINTER(c_char).from_param = c_char_p.from_param
-    _pointer_type_cache[None] = c_void_p
 
 def create_unicode_buffer(init, size=None):
     """create_unicode_buffer(aString) -> character array
@@ -313,18 +374,6 @@ def create_unicode_buffer(init, size=None):
         buf = buftype()
         return buf
     raise TypeError(init)
-
-
-def SetPointerType(pointer, cls):
-    import warnings
-    warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
-    if _pointer_type_cache.get(cls, None) is not None:
-        raise RuntimeError("This type already exists in the cache")
-    if id(pointer) not in _pointer_type_cache:
-        raise RuntimeError("What's this???")
-    pointer.set_type(cls)
-    _pointer_type_cache[cls] = pointer
-    del _pointer_type_cache[id(pointer)]
 
 def ARRAY(typ, len):
     return typ * len
@@ -357,52 +406,59 @@ class CDLL(object):
                  use_errno=False,
                  use_last_error=False,
                  winmode=None):
+        class _FuncPtr(_CFuncPtr):
+            _flags_ = self._func_flags_
+            _restype_ = self._func_restype_
+            if use_errno:
+                _flags_ |= _FUNCFLAG_USE_ERRNO
+            if use_last_error:
+                _flags_ |= _FUNCFLAG_USE_LASTERROR
+
+        self._FuncPtr = _FuncPtr
         if name:
             name = _os.fspath(name)
 
+        self._handle = self._load_library(name, mode, handle, winmode)
+
+    if _os.name == "nt":
+        def _load_library(self, name, mode, handle, winmode):
+            if winmode is None:
+                import nt as _nt
+                winmode = _nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
+                # WINAPI LoadLibrary searches for a DLL if the given name
+                # is not fully qualified with an explicit drive. For POSIX
+                # compatibility, and because the DLL search path no longer
+                # contains the working directory, begin by fully resolving
+                # any name that contains a path separator.
+                if name is not None and ('/' in name or '\\' in name):
+                    name = _nt._getfullpathname(name)
+                    winmode |= _nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+            self._name = name
+            if handle is not None:
+                return handle
+            return _LoadLibrary(self._name, winmode)
+
+    else:
+        def _load_library(self, name, mode, handle, winmode):
             # If the filename that has been provided is an iOS/tvOS/watchOS
             # .fwork file, dereference the location to the true origin of the
             # binary.
-            if name.endswith(".fwork"):
+            if name and name.endswith(".fwork"):
                 with open(name) as f:
                     name = _os.path.join(
                         _os.path.dirname(_sys.executable),
                         f.read().strip()
                     )
-
-        self._name = name
-        flags = self._func_flags_
-        if use_errno:
-            flags |= _FUNCFLAG_USE_ERRNO
-        if use_last_error:
-            flags |= _FUNCFLAG_USE_LASTERROR
-        if _sys.platform.startswith("aix"):
-            """When the name contains ".a(" and ends with ")",
-               e.g., "libFOO.a(libFOO.so)" - this is taken to be an
-               archive(member) syntax for dlopen(), and the mode is adjusted.
-               Otherwise, name is presented to dlopen() as a file argument.
-            """
-            if name and name.endswith(")") and ".a(" in name:
-                mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
-        if _os.name == "nt":
-            if winmode is not None:
-                mode = winmode
-            else:
-                import nt
-                mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
-                if '/' in name or '\\' in name:
-                    self._name = nt._getfullpathname(self._name)
-                    mode |= nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
-
-        class _FuncPtr(_CFuncPtr):
-            _flags_ = flags
-            _restype_ = self._func_restype_
-        self._FuncPtr = _FuncPtr
-
-        if handle is None:
-            self._handle = _dlopen(self._name, mode)
-        else:
-            self._handle = handle
+            if _sys.platform.startswith("aix"):
+                """When the name contains ".a(" and ends with ")",
+                   e.g., "libFOO.a(libFOO.so)" - this is taken to be an
+                   archive(member) syntax for dlopen(), and the mode is adjusted.
+                   Otherwise, name is presented to dlopen() as a file argument.
+                """
+                if name and name.endswith(")") and ".a(" in name:
+                    mode |= _os.RTLD_MEMBER | _os.RTLD_NOW
+            self._name = name
+            return _dlopen(name, mode)
 
     def __repr__(self):
         return "<%s '%s', handle %x at %#x>" % \
@@ -490,10 +546,9 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
-elif _sys.platform == "android":
-    pythonapi = PyDLL("libpython%d.%d.so" % _sys.version_info[:2])
-elif _sys.platform == "cygwin":
-    pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
+elif _sys.platform in ["android", "cygwin"]:
+    # These are Unix-like platforms which use a dynamically-linked libpython.
+    pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
 else:
     pythonapi = PyDLL(None)
 
@@ -612,3 +667,12 @@ else:
     raise SystemError(f"Unexpected sizeof(time_t): {SIZEOF_TIME_T=}")
 
 _reset_cache()
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

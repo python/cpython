@@ -92,6 +92,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->In_singleton);
     Py_CLEAR(state->In_type);
     Py_CLEAR(state->Interactive_type);
+    Py_CLEAR(state->Interpolation_type);
     Py_CLEAR(state->Invert_singleton);
     Py_CLEAR(state->Invert_type);
     Py_CLEAR(state->IsNot_singleton);
@@ -154,6 +155,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->Sub_singleton);
     Py_CLEAR(state->Sub_type);
     Py_CLEAR(state->Subscript_type);
+    Py_CLEAR(state->TemplateStr_type);
     Py_CLEAR(state->TryStar_type);
     Py_CLEAR(state->Try_type);
     Py_CLEAR(state->Tuple_type);
@@ -259,6 +261,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->slice);
     Py_CLEAR(state->step);
     Py_CLEAR(state->stmt_type);
+    Py_CLEAR(state->str);
     Py_CLEAR(state->subject);
     Py_CLEAR(state->tag);
     Py_CLEAR(state->target);
@@ -357,6 +360,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return -1;
     if ((state->slice = PyUnicode_InternFromString("slice")) == NULL) return -1;
     if ((state->step = PyUnicode_InternFromString("step")) == NULL) return -1;
+    if ((state->str = PyUnicode_InternFromString("str")) == NULL) return -1;
     if ((state->subject = PyUnicode_InternFromString("subject")) == NULL) return -1;
     if ((state->tag = PyUnicode_InternFromString("tag")) == NULL) return -1;
     if ((state->target = PyUnicode_InternFromString("target")) == NULL) return -1;
@@ -619,7 +623,16 @@ static const char * const FormattedValue_fields[]={
     "conversion",
     "format_spec",
 };
+static const char * const Interpolation_fields[]={
+    "value",
+    "str",
+    "conversion",
+    "format_spec",
+};
 static const char * const JoinedStr_fields[]={
+    "values",
+};
+static const char * const TemplateStr_fields[]={
     "values",
 };
 static const char * const Constant_fields[]={
@@ -3174,6 +3187,70 @@ add_ast_annotations(struct ast_state *state)
         return 0;
     }
     Py_DECREF(FormattedValue_annotations);
+    PyObject *Interpolation_annotations = PyDict_New();
+    if (!Interpolation_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Interpolation_annotations, "value", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Interpolation_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyBaseObject_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Interpolation_annotations, "str", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Interpolation_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Interpolation_annotations, "conversion",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Interpolation_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Interpolation_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Interpolation_annotations, "format_spec",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Interpolation_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Interpolation_type, "_field_types",
+                                  Interpolation_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Interpolation_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Interpolation_type, "__annotations__",
+                                  Interpolation_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Interpolation_annotations);
+        return 0;
+    }
+    Py_DECREF(Interpolation_annotations);
     PyObject *JoinedStr_annotations = PyDict_New();
     if (!JoinedStr_annotations) return 0;
     {
@@ -3204,6 +3281,37 @@ add_ast_annotations(struct ast_state *state)
         return 0;
     }
     Py_DECREF(JoinedStr_annotations);
+    PyObject *TemplateStr_annotations = PyDict_New();
+    if (!TemplateStr_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TemplateStr_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TemplateStr_annotations, "values", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TemplateStr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TemplateStr_type, "_field_types",
+                                  TemplateStr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TemplateStr_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->TemplateStr_type, "__annotations__",
+                                  TemplateStr_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(TemplateStr_annotations);
+        return 0;
+    }
+    Py_DECREF(TemplateStr_annotations);
     PyObject *Constant_annotations = PyDict_New();
     if (!Constant_annotations) return 0;
     {
@@ -5185,7 +5293,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "Field '%U' is missing from %.400s._field_types. "
+                        "Field %R is missing from %.400s._field_types. "
                         "This will become an error in Python 3.15.",
                         name, Py_TYPE(self)->tp_name
                     ) < 0) {
@@ -5220,7 +5328,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
+                    "%.400s.__init__ missing 1 required positional argument: %R. "
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
@@ -5420,6 +5528,32 @@ ast_type_replace_check(PyObject *self,
             Py_DECREF(unused);
         }
     }
+
+    // Discard fields from 'expecting' that default to None
+    PyObject *field_types = NULL;
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
+                                 &_Py_ID(_field_types),
+                                 &field_types) < 0)
+    {
+        Py_DECREF(expecting);
+        return -1;
+    }
+    if (field_types != NULL) {
+        Py_ssize_t pos = 0;
+        PyObject *field_name, *field_type;
+        while (PyDict_Next(field_types, &pos, &field_name, &field_type)) {
+            if (_PyUnion_Check(field_type)) {
+                // optional field
+                if (PySet_Discard(expecting, field_name) < 0) {
+                    Py_DECREF(expecting);
+                    Py_DECREF(field_types);
+                    return -1;
+                }
+            }
+        }
+        Py_DECREF(field_types);
+    }
+
     // Now 'expecting' contains the fields or attributes
     // that would not be filled inside ast_type_replace().
     Py_ssize_t m = PySet_GET_SIZE(expecting);
@@ -5662,7 +5796,7 @@ ast_repr_list(PyObject *list, int depth)
 
     for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
@@ -5686,7 +5820,7 @@ ast_repr_list(PyObject *list, int depth)
         }
 
         if (i == 0 && length > 2) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ...", 5) < 0) {
                 goto error;
             }
         }
@@ -5790,7 +5924,7 @@ ast_repr_max_depth(AST_object *self, int depth)
         }
 
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 Py_DECREF(name);
                 Py_DECREF(value_repr);
                 goto error;
@@ -6254,7 +6388,7 @@ init_types(void *arg)
         "     | UnaryOp(unaryop op, expr operand)\n"
         "     | Lambda(arguments args, expr body)\n"
         "     | IfExp(expr test, expr body, expr orelse)\n"
-        "     | Dict(expr* keys, expr* values)\n"
+        "     | Dict(expr?* keys, expr* values)\n"
         "     | Set(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
         "     | SetComp(expr elt, comprehension* generators)\n"
@@ -6266,7 +6400,9 @@ init_types(void *arg)
         "     | Compare(expr left, cmpop* ops, expr* comparators)\n"
         "     | Call(expr func, expr* args, keyword* keywords)\n"
         "     | FormattedValue(expr value, int conversion, expr? format_spec)\n"
+        "     | Interpolation(expr value, constant str, int conversion, expr? format_spec)\n"
         "     | JoinedStr(expr* values)\n"
+        "     | TemplateStr(expr* values)\n"
         "     | Constant(constant value, string? kind)\n"
         "     | Attribute(expr value, identifier attr, expr_context ctx)\n"
         "     | Subscript(expr value, expr slice, expr_context ctx)\n"
@@ -6309,7 +6445,7 @@ init_types(void *arg)
     if (!state->IfExp_type) return -1;
     state->Dict_type = make_type(state, "Dict", state->expr_type, Dict_fields,
                                  2,
-        "Dict(expr* keys, expr* values)");
+        "Dict(expr?* keys, expr* values)");
     if (!state->Dict_type) return -1;
     state->Set_type = make_type(state, "Set", state->expr_type, Set_fields, 1,
         "Set(expr* elts)");
@@ -6361,10 +6497,22 @@ init_types(void *arg)
     if (PyObject_SetAttr(state->FormattedValue_type, state->format_spec,
         Py_None) == -1)
         return -1;
+    state->Interpolation_type = make_type(state, "Interpolation",
+                                          state->expr_type,
+                                          Interpolation_fields, 4,
+        "Interpolation(expr value, constant str, int conversion, expr? format_spec)");
+    if (!state->Interpolation_type) return -1;
+    if (PyObject_SetAttr(state->Interpolation_type, state->format_spec,
+        Py_None) == -1)
+        return -1;
     state->JoinedStr_type = make_type(state, "JoinedStr", state->expr_type,
                                       JoinedStr_fields, 1,
         "JoinedStr(expr* values)");
     if (!state->JoinedStr_type) return -1;
+    state->TemplateStr_type = make_type(state, "TemplateStr", state->expr_type,
+                                        TemplateStr_fields, 1,
+        "TemplateStr(expr* values)");
+    if (!state->TemplateStr_type) return -1;
     state->Constant_type = make_type(state, "Constant", state->expr_type,
                                      Constant_fields, 2,
         "Constant(constant value, string? kind)");
@@ -6665,7 +6813,7 @@ init_types(void *arg)
         return -1;
     state->arguments_type = make_type(state, "arguments", state->AST_type,
                                       arguments_fields, 7,
-        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
+        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr?* kw_defaults, arg? kwarg, expr* defaults)");
     if (!state->arguments_type) return -1;
     if (add_attributes(state, state->arguments_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)
@@ -8039,6 +8187,37 @@ _PyAST_FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int
 }
 
 expr_ty
+_PyAST_Interpolation(expr_ty value, constant str, int conversion, expr_ty
+                     format_spec, int lineno, int col_offset, int end_lineno,
+                     int end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'value' is required for Interpolation");
+        return NULL;
+    }
+    if (!str) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'str' is required for Interpolation");
+        return NULL;
+    }
+    p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = Interpolation_kind;
+    p->v.Interpolation.value = value;
+    p->v.Interpolation.str = str;
+    p->v.Interpolation.conversion = conversion;
+    p->v.Interpolation.format_spec = format_spec;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
 _PyAST_JoinedStr(asdl_expr_seq * values, int lineno, int col_offset, int
                  end_lineno, int end_col_offset, PyArena *arena)
 {
@@ -8048,6 +8227,23 @@ _PyAST_JoinedStr(asdl_expr_seq * values, int lineno, int col_offset, int
         return NULL;
     p->kind = JoinedStr_kind;
     p->v.JoinedStr.values = values;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
+_PyAST_TemplateStr(asdl_expr_seq * values, int lineno, int col_offset, int
+                   end_lineno, int end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = TemplateStr_kind;
+    p->v.TemplateStr.values = values;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -9674,11 +9870,47 @@ ast2obj_expr(struct ast_state *state, void* _o)
             goto failed;
         Py_DECREF(value);
         break;
+    case Interpolation_kind:
+        tp = (PyTypeObject *)state->Interpolation_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(state, o->v.Interpolation.value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_constant(state, o->v.Interpolation.str);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->str, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(state, o->v.Interpolation.conversion);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->conversion, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(state, o->v.Interpolation.format_spec);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->format_spec, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
     case JoinedStr_kind:
         tp = (PyTypeObject *)state->JoinedStr_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
         value = ast2obj_list(state, (asdl_seq*)o->v.JoinedStr.values,
+                             ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->values, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case TemplateStr_kind:
+        tp = (PyTypeObject *)state->TemplateStr_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_list(state, (asdl_seq*)o->v.TemplateStr.values,
                              ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->values, value) == -1)
@@ -14793,6 +15025,91 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->Interpolation_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (isinstance) {
+        expr_ty value;
+        constant str;
+        int conversion;
+        expr_ty format_spec;
+
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Interpolation");
+            return -1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->str, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"str\" missing from Interpolation");
+            return -1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
+                goto failed;
+            }
+            res = obj2ast_constant(state, tmp, &str, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->conversion, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"conversion\" missing from Interpolation");
+            return -1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
+                goto failed;
+            }
+            res = obj2ast_int(state, tmp, &conversion, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->format_spec, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            format_spec = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &format_spec, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_Interpolation(value, str, conversion, format_spec,
+                                    lineno, col_offset, end_lineno,
+                                    end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     tp = state->JoinedStr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -14841,6 +15158,57 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         }
         *out = _PyAST_JoinedStr(values, lineno, col_offset, end_lineno,
                                 end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
+    tp = state->TemplateStr_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (isinstance) {
+        asdl_expr_seq* values;
+
+        if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
+        }
+        {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "TemplateStr field \"values\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            values = _Py_asdl_expr_seq_new(len, arena);
+            if (values == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                expr_ty val;
+                PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
+                if (_Py_EnterRecursiveCall(" while traversing 'TemplateStr' node")) {
+                    goto failed;
+                }
+                res = obj2ast_expr(state, tmp2, &val, arena);
+                _Py_LeaveRecursiveCall();
+                Py_DECREF(tmp2);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "TemplateStr field \"values\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(values, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_TemplateStr(values, lineno, col_offset, end_lineno,
+                                  end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -17794,7 +18162,14 @@ astmodule_exec(PyObject *m)
         < 0) {
         return -1;
     }
+    if (PyModule_AddObjectRef(m, "Interpolation", state->Interpolation_type) <
+        0) {
+        return -1;
+    }
     if (PyModule_AddObjectRef(m, "JoinedStr", state->JoinedStr_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "TemplateStr", state->TemplateStr_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "Constant", state->Constant_type) < 0) {

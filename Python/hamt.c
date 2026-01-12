@@ -256,9 +256,9 @@ Debug
 =====
 
 The HAMT datatype is accessible for testing purposes under the
-`_testcapi` module:
+`_testinternalcapi` module:
 
-    >>> from _testcapi import hamt
+    >>> from _testinternalcapi import hamt
     >>> h = hamt()
     >>> h2 = h.set('a', 2)
     >>> h3 = h2.set('b', 3)
@@ -1118,7 +1118,6 @@ hamt_node_bitmap_dealloc(PyObject *self)
     }
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_bitmap_dealloc)
 
     if (len > 0) {
         i = len;
@@ -1128,7 +1127,6 @@ hamt_node_bitmap_dealloc(PyObject *self)
     }
 
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1178,7 +1176,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         }
 
         if (key_or_null == NULL) {
-            if (PyUnicodeWriter_WriteUTF8(writer, "NULL:\n", -1) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, "NULL:\n", 6) < 0) {
                 goto error;
             }
 
@@ -1196,7 +1194,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
             }
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -1508,7 +1506,6 @@ hamt_node_collision_dealloc(PyObject *self)
     /* Collision's tp_dealloc */
     Py_ssize_t len = Py_SIZE(self);
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
     if (len > 0) {
         PyHamtNode_Collision *node = _PyHamtNode_Collision_CAST(self);
         while (--len >= 0) {
@@ -1516,7 +1513,6 @@ hamt_node_collision_dealloc(PyObject *self)
         }
     }
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1878,13 +1874,11 @@ hamt_node_array_dealloc(PyObject *self)
 {
     /* Array's tp_dealloc */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_array_dealloc)
     PyHamtNode_Array *obj = _PyHamtNode_Array_CAST(self);
     for (Py_ssize_t i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
         Py_XDECREF(obj->a_array[i]);
     }
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1921,7 +1915,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -2334,6 +2328,10 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
         return 0;
     }
 
+    Py_INCREF(v);
+    Py_INCREF(w);
+
+    int res = 1;
     PyHamtIteratorState iter;
     hamt_iter_t iter_res;
     hamt_find_t find_res;
@@ -2349,25 +2347,38 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
             find_res = hamt_find(w, v_key, &w_val);
             switch (find_res) {
                 case F_ERROR:
-                    return -1;
+                    res = -1;
+                    goto done;
 
                 case F_NOT_FOUND:
-                    return 0;
+                    res = 0;
+                    goto done;
 
                 case F_FOUND: {
+                    Py_INCREF(v_key);
+                    Py_INCREF(v_val);
+                    Py_INCREF(w_val);
                     int cmp = PyObject_RichCompareBool(v_val, w_val, Py_EQ);
+                    Py_DECREF(v_key);
+                    Py_DECREF(v_val);
+                    Py_DECREF(w_val);
                     if (cmp < 0) {
-                        return -1;
+                        res = -1;
+                        goto done;
                     }
                     if (cmp == 0) {
-                        return 0;
+                        res = 0;
+                        goto done;
                     }
                 }
             }
         }
     } while (iter_res != I_END);
 
-    return 1;
+done:
+    Py_DECREF(v);
+    Py_DECREF(w);
+    return res;
 }
 
 Py_ssize_t

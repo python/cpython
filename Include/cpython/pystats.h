@@ -4,7 +4,7 @@
 //
 // - _Py_INCREF_STAT_INC() and _Py_DECREF_STAT_INC() used by Py_INCREF()
 //   and Py_DECREF().
-// - _Py_stats variable
+// - _PyStats_GET()
 //
 // Functions of the sys module:
 //
@@ -14,7 +14,7 @@
 // - sys._stats_dump()
 //
 // Python must be built with ./configure --enable-pystats to define the
-// Py_STATS macro.
+// _PyStats_GET() macro.
 //
 // Define _PY_INTERPRETER macro to increment interpreter_increfs and
 // interpreter_decrefs. Otherwise, increment increfs and decrefs.
@@ -29,9 +29,9 @@
 #  error "this header file must not be included directly"
 #endif
 
-#define PYSTATS_MAX_UOP_ID 512
+#define PYSTATS_MAX_UOP_ID 2000
 
-#define SPECIALIZATION_FAILURE_KINDS 44
+#define SPECIALIZATION_FAILURE_KINDS 60
 
 /* Stats for determining who is calling PyEval_EvalFrame */
 #define EVAL_CALL_TOTAL 0
@@ -109,6 +109,18 @@ typedef struct _gc_stats {
     uint64_t objects_not_transitively_reachable;
 } GCStats;
 
+#ifdef Py_GIL_DISABLED
+// stats specific to free-threaded build
+typedef struct _ft_stats {
+    // number of times interpreter had to spin or park when trying to acquire a mutex
+    uint64_t mutex_sleeps;
+    // number of times that the QSBR mechanism polled (compute read sequence value)
+    uint64_t qsbr_polls;
+    // number of times stop-the-world mechanism was used
+    uint64_t world_stops;
+} FTStats;
+#endif
+
 typedef struct _uop_stats {
     uint64_t execution_count;
     uint64_t miss;
@@ -130,6 +142,7 @@ typedef struct _optimization_stats {
     uint64_t recursive_call;
     uint64_t low_confidence;
     uint64_t unknown_callee;
+    uint64_t trace_immediately_deopts;
     uint64_t executors_invalidated;
     UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
     uint64_t unsupported_opcode[256];
@@ -138,6 +151,8 @@ typedef struct _optimization_stats {
     uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t optimizer_attempts;
     uint64_t optimizer_successes;
+    uint64_t optimizer_contradiction;
+    uint64_t optimizer_frame_overflow;
     uint64_t optimizer_failure_reason_no_memory;
     uint64_t remove_globals_builtins_changed;
     uint64_t remove_globals_incorrect_keys;
@@ -173,22 +188,48 @@ typedef struct _stats {
     CallStats call_stats;
     ObjectStats object_stats;
     OptimizationStats optimization_stats;
+#ifdef Py_GIL_DISABLED
+    FTStats ft_stats;
+#endif
     RareEventStats rare_event_stats;
-    GCStats *gc_stats;
+    GCStats gc_stats[3]; // must match NUM_GENERATIONS
 } PyStats;
 
+// Export for most shared extensions
+PyAPI_FUNC(PyStats *) _PyStats_GetLocal(void);
 
-// Export for shared extensions like 'math'
-PyAPI_DATA(PyStats*) _Py_stats;
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+// use inline function version defined in cpython/pystate.h
+static inline PyStats *_PyThreadState_GetStatsFast(void);
+#define _PyStats_GET _PyThreadState_GetStatsFast
+#else
+#define _PyStats_GET _PyStats_GetLocal
+#endif
+
+#define _Py_STATS_EXPR(expr) \
+    do { \
+        PyStats *s = _PyStats_GET(); \
+        if (s != NULL) { \
+            s->expr; \
+        } \
+    } while (0)
+
+#define _Py_STATS_COND_EXPR(cond, expr) \
+    do { \
+        PyStats *s = _PyStats_GET(); \
+        if (s != NULL && (cond)) { \
+            s->expr; \
+        } \
+    } while (0)
 
 #ifdef _PY_INTERPRETER
-#  define _Py_INCREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_increfs++; } while (0)
-#  define _Py_DECREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_decrefs++; } while (0)
-#  define _Py_INCREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_immortal_increfs++; } while (0)
-#  define _Py_DECREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_immortal_decrefs++; } while (0)
+#  define _Py_INCREF_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_increfs++)
+#  define _Py_DECREF_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_decrefs++)
+#  define _Py_INCREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_immortal_increfs++)
+#  define _Py_DECREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_immortal_decrefs++)
 #else
-#  define _Py_INCREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.increfs++; } while (0)
-#  define _Py_DECREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.decrefs++; } while (0)
-#  define _Py_INCREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.immortal_increfs++; } while (0)
-#  define _Py_DECREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.immortal_decrefs++; } while (0)
+#  define _Py_INCREF_STAT_INC() _Py_STATS_EXPR(object_stats.increfs++)
+#  define _Py_DECREF_STAT_INC() _Py_STATS_EXPR(object_stats.decrefs++)
+#  define _Py_INCREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.immortal_increfs++)
+#  define _Py_DECREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.immortal_decrefs++)
 #endif

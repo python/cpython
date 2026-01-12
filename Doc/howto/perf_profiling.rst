@@ -2,34 +2,35 @@
 
 .. _perf_profiling:
 
-==============================================
-Python support for the Linux ``perf`` profiler
-==============================================
+========================================================
+Python support for the ``perf map`` compatible profilers
+========================================================
 
 :author: Pablo Galindo
 
-`The Linux perf profiler <https://perf.wiki.kernel.org>`_
-is a very powerful tool that allows you to profile and obtain
-information about the performance of your application.
-``perf`` also has a very vibrant ecosystem of tools
-that aid with the analysis of the data that it produces.
+`The Linux perf profiler <https://perf.wiki.kernel.org>`_ and
+`samply <https://github.com/mstange/samply>`_ are powerful tools that allow you to
+profile and obtain information about the performance of your application.
+Both tools have vibrant ecosystems that aid with the analysis of the data they produce.
 
-The main problem with using the ``perf`` profiler with Python applications is that
-``perf`` only gets information about native symbols, that is, the names of
+The main problem with using these profilers with Python applications is that
+they only get information about native symbols, that is, the names of
 functions and procedures written in C. This means that the names and file names
-of Python functions in your code will not appear in the output of ``perf``.
+of Python functions in your code will not appear in the profiler output.
 
 Since Python 3.12, the interpreter can run in a special mode that allows Python
-functions to appear in the output of the ``perf`` profiler. When this mode is
+functions to appear in the output of compatible profilers. When this mode is
 enabled, the interpreter will interpose a small piece of code compiled on the
-fly before the execution of every Python function and it will teach ``perf`` the
+fly before the execution of every Python function and it will teach the profiler the
 relationship between this piece of code and the associated Python function using
 :doc:`perf map files <../c-api/perfmaps>`.
 
 .. note::
 
-    Support for the ``perf`` profiler is currently only available for Linux on
-    select architectures. Check the output of the ``configure`` build step or
+    Support for profiling is available on Linux and macOS on select architectures.
+    Perf is available on Linux, while samply can be used on both Linux and macOS.
+    samply support on macOS is available starting from Python 3.15.
+    Check the output of the ``configure`` build step or
     check the output of ``python -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
     to see if your system is supported.
 
@@ -92,7 +93,7 @@ Then we can use ``perf report`` to analyze the data:
                             |          |          |                     |
                             |          |          |                     |--51.67%--_PyEval_EvalFrameDefault
                             |          |          |                     |          |
-                            |          |          |                     |          |--11.52%--_PyLong_Add
+                            |          |          |                     |          |--11.52%--_PyCompactLong_Add
                             |          |          |                     |          |          |
                             |          |          |                     |          |          |--2.97%--_PyObject_Malloc
     ...
@@ -142,11 +143,36 @@ Instead, if we run the same experiment with ``perf`` support enabled we get:
                             |          |          |                     |
                             |          |          |                     |--51.81%--_PyEval_EvalFrameDefault
                             |          |          |                     |          |
-                            |          |          |                     |          |--13.77%--_PyLong_Add
+                            |          |          |                     |          |--13.77%--_PyCompactLong_Add
                             |          |          |                     |          |          |
                             |          |          |                     |          |          |--3.26%--_PyObject_Malloc
 
 
+
+Using the samply profiler
+-------------------------
+
+samply is a modern profiler that can be used as an alternative to perf.
+It uses the same perf map files that Python generates, making it compatible
+with Python's profiling support. samply is particularly useful on macOS
+where perf is not available.
+
+To use samply with Python, first install it following the instructions at
+https://github.com/mstange/samply, then run::
+
+    $ samply record PYTHONPERFSUPPORT=1 python my_script.py
+
+This will open a web interface where you can analyze the profiling data
+interactively. The advantage of samply is that it provides a modern
+web-based interface for analyzing profiling data and works on both Linux
+and macOS.
+
+On macOS, samply support requires Python 3.15 or later. Also on macOS, samply
+can't profile signed Python executables due to restrictions by macOS. You can
+profile with Python binaries that you've compiled yourself, or which are
+unsigned or locally-signed (such as anything installed by Homebrew). In
+order to attach to running processes on macOS, run ``samply setup`` once (and
+every time samply is updated) to self-sign the samply binary.
 
 How to enable ``perf`` profiling support
 ----------------------------------------
@@ -254,13 +280,28 @@ files in the current directory which are ELF images for all the JIT trampolines
 that were created by Python.
 
 .. warning::
-    Notice that when using ``--call-graph dwarf`` the ``perf`` tool will take
+    When using ``--call-graph dwarf``, the ``perf`` tool will take
     snapshots of the stack of the process being profiled and save the
-    information in the ``perf.data`` file. By default the size of the stack dump
-    is 8192 bytes but the user can change the size by passing the size after
-    comma like ``--call-graph dwarf,4096``. The size of the stack dump is
-    important because if the size is too small ``perf`` will not be able to
-    unwind the stack and the output will be incomplete. On the other hand, if
-    the size is too big, then ``perf`` won't be able to sample the process as
-    frequently as it would like as the overhead will be higher.
+    information in the ``perf.data`` file. By default, the size of the stack dump
+    is 8192 bytes, but you can change the size by passing it after
+    a comma like ``--call-graph dwarf,16384``.
 
+    The size of the stack dump is important because if the size is too small
+    ``perf`` will not be able to unwind the stack and the output will be
+    incomplete. On the other hand, if the size is too big, then ``perf`` won't
+    be able to sample the process as frequently as it would like as the overhead
+    will be higher.
+
+    The stack size is particularly important when profiling Python code compiled
+    with low optimization levels (like ``-O0``), as these builds tend to have
+    larger stack frames. If you are compiling Python with ``-O0`` and not seeing
+    Python functions in your profiling output, try increasing the stack dump
+    size to 65528 bytes (the maximum)::
+
+        $ perf record -F 9999 -g -k 1 --call-graph dwarf,65528 -o perf.data python -Xperf_jit my_script.py
+
+    Different compilation flags can significantly impact stack sizes:
+
+    - Builds with ``-O0`` typically have much larger stack frames than those with ``-O1`` or higher
+    - Adding optimizations (``-O1``, ``-O2``, etc.) typically reduces stack size
+    - Frame pointers (``-fno-omit-frame-pointer``) generally provide more reliable stack unwinding

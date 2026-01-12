@@ -76,7 +76,7 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
+        return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
         return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
                                (os.getpid(), next(_mmap_counter)), dir="")
@@ -709,8 +709,7 @@ if sys.platform == 'win32':
                 # written data and then disconnected -- see Issue 14725.
             else:
                 try:
-                    res = _winapi.WaitForMultipleObjects(
-                        [ov.event], False, INFINITE)
+                    _winapi.WaitForMultipleObjects([ov.event], False, INFINITE)
                 except:
                     ov.cancel()
                     _winapi.CloseHandle(handle)

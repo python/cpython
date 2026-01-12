@@ -16,6 +16,7 @@ filename	funcname	name	reason
 ## indicators for resource availability/capability
 # (set during first init)
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/bootstrap_hash.c	py_getentropy	getentropy_works	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, *after* first init)
@@ -24,6 +25,7 @@ Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
+Modules/_struct.c	-	endian_tables_init_once	-
 
 ##-----------------------
 ## other values (not Python-specific)
@@ -56,7 +58,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 Python/parking_lot.c	-	buckets	-
 
 ## data needed for introspecting asyncio state from debuggers and profilers
-Modules/_asynciomodule.c	-	AsyncioDebug	-
+Modules/_asynciomodule.c	-	_Py_AsyncioDebug	-
 
 
 ##################################
@@ -166,6 +168,9 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 # thread-safety
 # XXX need race protection?
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
+Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
+Modules/grpmodule.c	-	group_db_mutex	-
+Modules/pwdmodule.c	-	pwd_db_mutex	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
@@ -190,6 +195,8 @@ Python/pyfpe.c	-	PyFPE_counter	-
 
 Python/import.c	-	pkgcontext	-
 Python/pystate.c	-	_Py_tss_tstate	-
+Python/pystate.c	-	_Py_tss_gilstate	-
+Python/pystate.c	-	_Py_tss_interp	-
 
 ##-----------------------
 ## should be const
@@ -224,6 +231,7 @@ Modules/_datetimemodule.c	datetime_isoformat	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
 Modules/_datetimemodule.c	-	capi_types	-
+Modules/_datetimemodule.c	normalize_century	cache	-
 Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
@@ -339,6 +347,8 @@ Objects/obmalloc.c	-	obmalloc_state_main	-
 Objects/obmalloc.c	-	obmalloc_state_initialized	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
+# It initialized only once when main interpeter starts
+Objects/typeobject.c	-	slotdefs_name_counts	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
 Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
@@ -348,9 +358,9 @@ Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
 Parser/lexer/lexer.c	-	type_comment_prefix	-
-Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
+Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	codecs_builtin_error_handlers	-
 Python/codecs.c	-	ucnhash_capi	-
@@ -747,6 +757,7 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
+Modules/_zstd/_zstdmodule.c	-	_zstdmodule	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-

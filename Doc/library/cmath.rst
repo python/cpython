@@ -38,6 +38,57 @@ the function is then applied to the result of the conversion.
       1.4142135623730951j
 
 
+====================================================  ============================================
+**Conversions to and from polar coordinates**
+--------------------------------------------------------------------------------------------------
+:func:`phase(z) <phase>`                              Return the phase of *z*
+:func:`polar(z) <polar>`                              Return the representation of *z* in polar coordinates
+:func:`rect(r, phi) <rect>`                           Return the complex number *z* with polar coordinates *r* and *phi*
+
+**Power and logarithmic functions**
+--------------------------------------------------------------------------------------------------
+:func:`exp(z) <exp>`                                  Return *e* raised to the power *z*
+:func:`log(z[, base]) <log>`                          Return the logarithm of *z* to the given *base* (*e* by default)
+:func:`log10(z) <log10>`                              Return the base-10 logarithm of *z*
+:func:`sqrt(z) <sqrt>`                                Return the square root of *z*
+
+**Trigonometric functions**
+--------------------------------------------------------------------------------------------------
+:func:`acos(z) <acos>`                                Return the arc cosine of *z*
+:func:`asin(z) <asin>`                                Return the arc sine of *z*
+:func:`atan(z) <atan>`                                Return the arc tangent of *z*
+:func:`cos(z) <cos>`                                  Return the cosine of *z*
+:func:`sin(z) <sin>`                                  Return the sine of *z*
+:func:`tan(z) <tan>`                                  Return the tangent of *z*
+
+**Hyperbolic functions**
+--------------------------------------------------------------------------------------------------
+:func:`acosh(z) <acosh>`                              Return the inverse hyperbolic cosine of *z*
+:func:`asinh(z) <asinh>`                              Return the inverse hyperbolic sine of *z*
+:func:`atanh(z) <atanh>`                              Return the inverse hyperbolic tangent of *z*
+:func:`cosh(z) <cosh>`                                Return the hyperbolic cosine of *z*
+:func:`sinh(z) <sinh>`                                Return the hyperbolic sine of *z*
+:func:`tanh(z) <tanh>`                                Return the hyperbolic tangent of *z*
+
+**Classification functions**
+--------------------------------------------------------------------------------------------------
+:func:`isfinite(z) <isfinite>`                        Check if all components of *z* are finite
+:func:`isinf(z) <isinf>`                              Check if any component of *z* is infinite
+:func:`isnan(z) <isnan>`                              Check if any component of *z* is a NaN
+:func:`isclose(a, b, *, rel_tol, abs_tol) <isclose>`  Check if the values *a* and *b* are close to each other
+
+**Constants**
+--------------------------------------------------------------------------------------------------
+:data:`pi`                                            *π* = 3.141592...
+:data:`e`                                             *e* = 2.718281...
+:data:`tau`                                           *τ* = 2\ *π* = 6.283185...
+:data:`inf`                                           Positive infinity
+:data:`infj`                                          Pure imaginary infinity
+:data:`nan`                                           "Not a number" (NaN)
+:data:`nanj`                                          Pure imaginary NaN
+====================================================  ============================================
+
+
 Conversions to and from polar coordinates
 -----------------------------------------
 
@@ -287,7 +338,7 @@ Constants
 .. data:: nan
 
    A floating-point "not a number" (NaN) value.  Equivalent to
-   ``float('nan')``.
+   ``float('nan')``. See also :data:`math.nan`.
 
    .. versionadded:: 3.6
 
