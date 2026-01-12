@@ -27,7 +27,9 @@ jobs:
       with:
         python-version: '3'
     - name: 'Regenerate Lib/idlelib/help.html'
-      run: python ../Tools/build/generate_idle_help.py
+      run: |
+        mkdir -v html/  # trick make into skipping the dependency target
+        make idlehelp
       working-directory: Doc
     - name: 'Check for changes'
       run: |

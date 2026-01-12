@@ -167,6 +167,8 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
                 has_platform_specific_change = False
             if file.name == "reusable-docs.yml":
                 run_docs = True
+            if file.name == "reusable-idle-help-doc.yml":
+                run_idle_help_doc = True
             if file.name == "reusable-windows-msi.yml":
                 run_windows_msi = True
             if file.name == "reusable-macos.yml":
@@ -204,7 +206,8 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             run_docs = True
 
         # Check for changed IDLE docs
-        if file == Path("Doc/library/idle.rst"):
+        if file in (Path("Doc/library/idle.rst"),
+                    Path("Tools/build/generate_idle_help.py")):
             run_idle_help_doc = True
 
         # Check for changed MSI installer-related files

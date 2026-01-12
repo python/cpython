@@ -20,9 +20,14 @@ master, repeat the procedure above to generate a maintenance
 version.
 """
 
+from os.path import abspath, dirname, join
+
+
 def copy_strip():
-    src = 'build/html/library/idle.html'
-    dst = '../Lib/idlelib/help.html'
+    src = join(abspath(dirname(dirname(dirname(__file__)))),
+               'Doc', 'build', 'html', 'library', 'idle.html')
+    dst = join(abspath(dirname(dirname(dirname(__file__)))),
+               'Lib', 'idlelib', 'help.html')
 
     with open(src, encoding="utf-8") as inn, open(dst, 'w', encoding="utf-8") as out:
         copy = False
