@@ -35,6 +35,9 @@
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_warnings.h"      // _PyWarnings_InitState()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#ifdef _Py_JIT
+#include "pycore_jit.h"           // _PyJIT_Fini()
+#endif
 
 #include "opcode.h"
 
@@ -829,6 +832,8 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
     interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
     interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
+    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject*)&PyList_Type;
+    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject*)&PySet_Type;
 
     for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
@@ -1941,7 +1946,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
-        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
@@ -2267,6 +2271,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Print debug stats if any */
     _PyEval_Fini();
 
+
     /* Flush sys.stdout and sys.stderr (again, in case more was printed) */
     if (flush_std_files() < 0) {
         status = -1;
@@ -2346,6 +2351,10 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     finalize_interp_clear(tstate);
 
+#ifdef _Py_JIT
+    /* Free JIT shim memory */
+    _PyJIT_Fini();
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2426,7 +2435,7 @@ new_interpreter(PyThreadState **tstate_p,
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
-    runtime->gilstate.check_enabled = 0;
+    _Py_atomic_store_int_relaxed(&runtime->gilstate.check_enabled, 0);
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
@@ -2571,7 +2580,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->current_frame != NULL) {
+    if (tstate->current_frame != tstate->base_frame) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2643,7 +2652,7 @@ finalize_subinterpreters(void)
     (void)PyErr_WarnEx(
             PyExc_RuntimeWarning,
             "remaining subinterpreters; "
-            "destroy them with _interpreters.destroy()",
+            "close them with Interpreter.close()",
             0);
 
     /* Swap out the current tstate, which we know must belong

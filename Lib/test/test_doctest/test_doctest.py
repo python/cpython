@@ -833,6 +833,118 @@ class TestDocTestFinder(unittest.TestCase):
             self.assertEqual(len(include_empty_finder.find(mod)), 1)
             self.assertEqual(len(exclude_empty_finder.find(mod)), 0)
 
+    def test_lineno_of_test_dict_strings(self):
+        """Test line numbers are found for __test__ dict strings."""
+        module_content = '''\
+"""Module docstring."""
+
+def dummy_function():
+    """Dummy function docstring."""
+    pass
+
+__test__ = {
+    'test_string': """
+    This is a test string.
+    >>> 1 + 1
+    2
+    """,
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            module_path = os.path.join(tmpdir, 'test_module_lineno.py')
+            with open(module_path, 'w') as f:
+                f.write(module_content)
+
+            sys.path.insert(0, tmpdir)
+            try:
+                import test_module_lineno
+                finder = doctest.DocTestFinder()
+                tests = finder.find(test_module_lineno)
+
+                test_dict_test = None
+                for test in tests:
+                    if '__test__' in test.name:
+                        test_dict_test = test
+                        break
+
+                self.assertIsNotNone(
+                    test_dict_test,
+                    "__test__ dict test not found"
+                )
+                # gh-69113: line number should not be None for __test__ strings
+                self.assertIsNotNone(
+                    test_dict_test.lineno,
+                    "Line number should not be None for __test__ dict strings"
+                )
+                self.assertGreater(
+                    test_dict_test.lineno,
+                    0,
+                    "Line number should be positive"
+                )
+            finally:
+                if 'test_module_lineno' in sys.modules:
+                    del sys.modules['test_module_lineno']
+                sys.path.pop(0)
+
+    def test_lineno_multiline_matching(self):
+        """Test multi-line matching when no unique line exists."""
+        # gh-69113: test that line numbers are found even when lines
+        # appear multiple times (e.g., ">>> x = 1" in both test entries)
+        module_content = '''\
+"""Module docstring."""
+
+__test__ = {
+    'test_one': """
+    >>> x = 1
+    >>> x
+    1
+    """,
+    'test_two': """
+    >>> x = 1
+    >>> x
+    2
+    """,
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            module_path = os.path.join(tmpdir, 'test_module_multiline.py')
+            with open(module_path, 'w') as f:
+                f.write(module_content)
+
+            sys.path.insert(0, tmpdir)
+            try:
+                import test_module_multiline
+                finder = doctest.DocTestFinder()
+                tests = finder.find(test_module_multiline)
+
+                test_one = None
+                test_two = None
+                for test in tests:
+                    if 'test_one' in test.name:
+                        test_one = test
+                    elif 'test_two' in test.name:
+                        test_two = test
+
+                self.assertIsNotNone(test_one, "test_one not found")
+                self.assertIsNotNone(test_two, "test_two not found")
+                self.assertIsNotNone(
+                    test_one.lineno,
+                    "Line number should not be None for test_one"
+                )
+                self.assertIsNotNone(
+                    test_two.lineno,
+                    "Line number should not be None for test_two"
+                )
+                self.assertNotEqual(
+                    test_one.lineno,
+                    test_two.lineno,
+                    "test_one and test_two should have different line numbers"
+                )
+            finally:
+                if 'test_module_multiline' in sys.modules:
+                    del sys.modules['test_module_multiline']
+                sys.path.pop(0)
+
 def test_DocTestParser(): r"""
 Unit tests for the `DocTestParser` class.
 
@@ -2434,7 +2546,8 @@ def test_DocTestSuite_errors():
          <BLANKLINE>
          >>> print(result.failures[1][1]) # doctest: +ELLIPSIS
          Traceback (most recent call last):
-           File "...sample_doctest_errors.py", line None, in test.test_doctest.sample_doctest_errors.__test__.bad
+           File "...sample_doctest_errors.py", line 37, in test.test_doctest.sample_doctest_errors.__test__.bad
+             >...>> 2 + 2
          AssertionError: Failed example:
              2 + 2
          Expected:
@@ -2464,7 +2577,8 @@ def test_DocTestSuite_errors():
          <BLANKLINE>
          >>> print(result.errors[1][1]) # doctest: +ELLIPSIS
          Traceback (most recent call last):
-           File "...sample_doctest_errors.py", line None, in test.test_doctest.sample_doctest_errors.__test__.bad
+           File "...sample_doctest_errors.py", line 39, in test.test_doctest.sample_doctest_errors.__test__.bad
+             >...>> 1/0
            File "<doctest test.test_doctest.sample_doctest_errors.__test__.bad[1]>", line 1, in <module>
              1/0
              ~^~
@@ -3256,7 +3370,7 @@ Tests for error reporting in the testmod() function.
             ~^~
         ZeroDivisionError: division by zero
     **********************************************************************
-    File "...sample_doctest_errors.py", line ?, in test.test_doctest.sample_doctest_errors.__test__.bad
+    File "...sample_doctest_errors.py", line 37, in test.test_doctest.sample_doctest_errors.__test__.bad
     Failed example:
         2 + 2
     Expected:
@@ -3264,7 +3378,7 @@ Tests for error reporting in the testmod() function.
     Got:
         4
     **********************************************************************
-    File "...sample_doctest_errors.py", line ?, in test.test_doctest.sample_doctest_errors.__test__.bad
+    File "...sample_doctest_errors.py", line 39, in test.test_doctest.sample_doctest_errors.__test__.bad
     Failed example:
         1/0
     Exception raised:

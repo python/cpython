@@ -1,2 +1,0 @@
-Add ``.cjs`` to :mod:`mimetypes` to give CommonJS modules a MIME type of
-``application/node``.

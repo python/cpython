@@ -18,6 +18,7 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_uop_metadata.h"
 #include "pycore_long.h"
 #include "pycore_interpframe.h"  // _PyFrame_GetCode
@@ -144,10 +145,6 @@ incorrect_keys(PyObject *obj, uint32_t version)
 
 #define CURRENT_FRAME_IS_INIT_SHIM() (ctx->frame->code == ((PyCodeObject *)&_Py_InitCleanup))
 
-#define WITHIN_STACK_BOUNDS() \
-    (CURRENT_FRAME_IS_INIT_SHIM() || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
-
-
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
 #define REPLACE_OP(INST, OP, ARG, OPERAND)    \
@@ -193,11 +190,33 @@ incorrect_keys(PyObject *obj, uint32_t version)
 #define JUMP_TO_LABEL(label) goto label;
 
 static int
+check_stack_bounds(JitOptContext *ctx, JitOptRef *stack_pointer, int offset, int opcode)
+{
+    int stack_level = (int)(stack_pointer + (offset) - ctx->frame->stack);
+    int should_check = !CURRENT_FRAME_IS_INIT_SHIM() ||
+        (opcode == _RETURN_VALUE) ||
+        (opcode == _RETURN_GENERATOR) ||
+        (opcode == _YIELD_VALUE);
+    if (should_check && (stack_level < 0 || stack_level > STACK_SIZE() + MAX_CACHED_REGISTER)) {
+        ctx->contradiction = true;
+        ctx->done = true;
+        return 1;
+    }
+    return 0;
+}
+
+#define CHECK_STACK_BOUNDS(offset) \
+    if (check_stack_bounds(ctx, stack_pointer, offset, opcode)) { \
+        break; \
+    } \
+
+static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
     JitOptRef value,
-    JitOptRef *result_ptr)
+    JitOptRef *result_ptr,
+    bool insert_mode)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -207,7 +226,10 @@ optimize_to_bool(
     int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
-        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        int opcode = insert_mode ?
+            _INSERT_1_LOAD_CONST_INLINE_BORROW :
+            _POP_TOP_LOAD_CONST_INLINE_BORROW;
+        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)load);
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
@@ -225,7 +247,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 }
 
 static JitOptRef
-lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
+lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
             PyTypeObject *type, PyObject *name, uint16_t immortal,
             uint16_t mortal)
 {
@@ -235,6 +257,8 @@ lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
         if (lookup) {
             int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+            _Py_BloomFilter_Add(dependencies, type);
             return sym_new_const(ctx, lookup);
         }
     }
@@ -278,17 +302,40 @@ get_co_name(JitOptContext *ctx, int index)
     return PyTuple_GET_ITEM(get_current_code_object(ctx)->co_names, index);
 }
 
-// TODO (gh-134584) generate most of this table automatically
-const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
-    [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS,
-    [_BINARY_OP_ADD_FLOAT] = _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS,
-    [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
-};
+#ifdef Py_DEBUG
+void
+_Py_opt_assert_within_stack_bounds(
+    _Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer,
+    const char *filename, int lineno
+) {
+    if (frame->code == ((PyCodeObject *)&_Py_InitCleanup)) {
+        return;
+    }
+    int level = (int)(stack_pointer - frame->stack);
+    if (level < 0) {
+        printf("Stack underflow (depth = %d) at %s:%d\n", level, filename, lineno);
+        fflush(stdout);
+        abort();
+    }
+    int size = (int)(frame->stack_len) + MAX_CACHED_REGISTER;
+    if (level > size) {
+        printf("Stack overflow (depth = %d) at %s:%d\n", level, filename, lineno);
+        fflush(stdout);
+        abort();
+    }
+}
+#endif
+
+#ifdef Py_DEBUG
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_opt_assert_within_stack_bounds(ctx->frame, stack_pointer, (F), (L))
+#else
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
+#endif
 
 /* >0 (length) for success, 0 for not ready, clears all possible errors. */
 static int
 optimize_uops(
-    PyFunctionObject *func,
+    _PyThreadStateImpl *tstate,
     _PyUOpInstruction *trace,
     int trace_len,
     int curr_stacklen,
@@ -296,9 +343,10 @@ optimize_uops(
 )
 {
     assert(!PyErr_Occurred());
+    assert(tstate->jit_tracer_state != NULL);
+    PyFunctionObject *func = tstate->jit_tracer_state->initial_state.func;
 
-    JitOptContext context;
-    JitOptContext *ctx = &context;
+    JitOptContext *ctx = &tstate->jit_tracer_state->opt_context;
     uint32_t opcode = UINT16_MAX;
 
     // Make sure that watchers are set up
@@ -404,7 +452,9 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE,
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_TWO,
+    [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
@@ -416,6 +466,10 @@ const bool op_skip[MAX_UOP_ID + 1] = {
 
 const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP] = _NOP,
+    [_POP_TOP_NOP] = _NOP,
+    [_POP_TOP_INT] = _NOP,
+    [_POP_TOP_FLOAT] = _NOP,
+    [_POP_TOP_UNICODE] = _NOP,
     [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
     [_POP_TWO] = _POP_TOP,
@@ -522,7 +576,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 //  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
-    PyFunctionObject *func,
+    _PyThreadStateImpl *tstate,
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
@@ -532,7 +586,7 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         func, buffer,
+         tstate, buffer,
          length, curr_stacklen, dependencies);
 
     if (length == 0) {

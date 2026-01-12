@@ -1,4 +1,0 @@
-:func:`xml.etree.ElementTree.iterparse` now emits a :exc:`ResourceWarning`
-when the iterator is not explicitly closed and was opened with a filename.
-This helps developers identify and fix resource leaks. Patch by Osama
-Abdelkader.

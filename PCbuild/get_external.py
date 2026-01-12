@@ -3,6 +3,7 @@
 import argparse
 import os
 import pathlib
+import platform
 import sys
 import tarfile
 import time
@@ -44,20 +45,38 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
 
 
 def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
-    url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{tag}.tar.xz'
+    arch = os.environ.get('PreferredToolArchitecture')
+    if not arch:
+        machine = platform.machine()
+        arch = 'ARM64' if machine == 'ARM64' else 'AMD64'
+    elif arch.lower() in ('x86', 'x64'):
+        arch = 'AMD64'
     reporthook = None
     if verbose:
         reporthook = print
     tarball_dir.mkdir(parents=True, exist_ok=True)
-    output_path = tarball_dir / f'{tag}.tar.xz'
-    retrieve_with_retries(url, output_path, reporthook)
+
+    arch_filename = f'{tag}-{arch}.tar.xz'
+    arch_url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{arch_filename}'
+    try:
+        output_path = tarball_dir / arch_filename
+        retrieve_with_retries(arch_url, output_path, reporthook)
+        return output_path
+    except OSError:
+        if verbose:
+            print(f'{arch_filename} not found, trying generic binary...')
+
+    generic_filename = f'{tag}.tar.xz'
+    generic_url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{generic_filename}'
+    output_path = tarball_dir / generic_filename
+    retrieve_with_retries(generic_url, output_path, reporthook)
     return output_path
 
 
 def extract_tarball(externals_dir, tarball_path, tag):
     output_path = externals_dir / tag
     with tarfile.open(tarball_path) as tf:
-        tf.extractall(os.fspath(externals_dir))
+        tf.extractall(os.fspath(externals_dir), filter='data')
     return output_path
 
 
