@@ -196,10 +196,9 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
-
 /* Intern constants. In the default build, this interns selected string
-constants. In the free-threaded build, this also interns non-string
-constants. */
+   constants. In the free-threaded build, this also interns non-string
+   constants. */
 static int
 intern_constants(PyObject *tuple, int *modified)
 {
@@ -213,6 +212,7 @@ intern_constants(PyObject *tuple, int *modified)
                 continue;
             }
 #if !defined(Py_GIL_DISABLED)
+            // borrowed reference
             PyObject *interned = _Py_hashtable_get(INTERNED_STRINGS, v);
             if (interned == NULL) {
                 interned = PyDict_GetItemWithError(get_interned_dict(interp), v);
@@ -308,7 +308,7 @@ intern_constants(PyObject *tuple, int *modified)
             else if (interned != v) {
                 PyTuple_SET_ITEM(tuple, i, interned);
                 Py_SETREF(v, interned);
-                _constants_tuple_modified(modified);
+                set_modified(modified);
             }
         }
 #endif
