@@ -248,43 +248,6 @@ class HelpWindow(Toplevel):
         self.grid_rowconfigure(0, weight=1)
 
 
-def copy_strip():  # pragma: no cover
-    """Copy the text part of idle.html to idlelib/help.html while stripping trailing whitespace.
-
-    Files with trailing whitespace cannot be pushed to the git cpython
-    repository.  For 3.x (on Windows), help.html is generated, after
-    editing idle.rst on the master branch, with
-      sphinx-build -bhtml . build/html
-      python_d.exe -c "from idlelib.help import copy_strip; copy_strip()"
-    Check build/html/library/idle.html, the help.html diff, and the text
-    displayed by Help => IDLE Help.  Add a blurb and create a PR.
-
-    It can be worthwhile to occasionally generate help.html without
-    touching idle.rst.  Changes to the master version and to the doc
-    build system may result in changes that should not change
-    the displayed text, but might break HelpParser.
-
-    As long as master and maintenance versions of idle.rst remain the
-    same, help.html can be backported.  The internal Python version
-    number is not displayed.  If maintenance idle.rst diverges from
-    the master version, then instead of backporting help.html from
-    master, repeat the procedure above to generate a maintenance
-    version.
-    """
-    src = join(abspath(dirname(dirname(dirname(__file__)))),
-            'Doc', 'build', 'html', 'library', 'idle.html')
-    dst = join(abspath(dirname(__file__)), 'help.html')
-
-    with open(src, 'r', encoding="utf-8") as inn, open(dst, 'w', encoding="utf-8") as out:
-        copy = False
-        for line in inn:
-            if '<section id="idle">' in line: copy = True
-            if '<div class="clearer">' in line: break
-            if copy: out.write(line.strip() + '\n')
-
-    print(f'{src} copied to {dst}')
-
-
 def show_idlehelp(parent):
     "Create HelpWindow; called from Idle Help event handler."
     filename = join(abspath(dirname(__file__)), 'help.html')

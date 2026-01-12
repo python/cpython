@@ -1,0 +1,45 @@
+name: Reusable check if IDLE's help.html is up to date
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  check-idle-doc-sync:
+    name: 'Check IDLE help.html sync'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10 # XXX run and possibly lower!
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: 'Download built idle.html'
+      uses: actions/download-artifact@v4
+      with:
+        name: idle-html
+        path: Doc/build/html/library
+    - name: 'Set up Python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3'
+    - name: 'Regenerate Lib/idlelib/help.html'
+      run: python Tools/build/generate_idle_help.py
+      working-directory: Doc
+    - name: 'Check for changes'
+      run: |
+          git add -u
+          changes=$(git status --porcelain)
+          # Check for changes in regenerated files
+          if test -n "$changes"; then
+            echo "Generated files not up to date."
+            echo "Perhaps you forgot to run make idlehelp ;)"
+            echo "$changes"
+            echo ""
+            git diff --staged || true
+            exit 1
+          fi

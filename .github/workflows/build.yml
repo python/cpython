@@ -49,6 +49,11 @@ jobs:
     if: fromJSON(needs.build-context.outputs.run-docs)
     uses: ./.github/workflows/reusable-docs.yml
 
+  check-idle-help-doc:
+    name: "Check if IDLE's help.html is up to date"
+    needs: check-docs
+    uses: ./.github/workflows/reusable-idle-help-doc.yml
+
   check-autoconf-regen:
     name: 'Check if Autoconf files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
@@ -711,8 +716,16 @@ jobs:
           build-ubuntu-ssltests-openssl,
           test-hypothesis,
           cifuzz,
+          check-idle-help-doc,
         allowed-skips: >-
-          ${{ !fromJSON(needs.build-context.outputs.run-docs) && 'check-docs,' || '' }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-docs)
+            && '
+            check-docs,
+            check-idle-help-doc,
+            '
+            || ''
+          }}
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '

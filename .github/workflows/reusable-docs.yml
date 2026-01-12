@@ -75,6 +75,12 @@ jobs:
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
+    - name: 'Upload built idle.html'
+      uses: actions/upload-artifact@v4
+      with:
+        name: idle-html
+        path: Doc/build/html/library/idle.html
+        retention-days: 1
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:

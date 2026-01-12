@@ -46,6 +46,7 @@ help:
 	@echo "  coverage   to check documentation coverage for library and C API"
 	@echo "  doctest    to run doctests in the documentation"
 	@echo "  pydoc-topics  to regenerate the pydoc topics file"
+	@echo "  idlehelp   to regenerate Lib/idlelib/help.html"
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
 	@echo "  check      to run a check for frequent markup errors"
 
@@ -142,6 +143,10 @@ pydoc-topics: build
 	@echo "Building finished; now run this:" \
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py" \
 	      "&& cp build/pydoc-topics/module_docs.py ../Lib/pydoc_data/module_docs.py"
+
+.PHONY: idlehelp
+idlehelp: html
+	$(PYTHON) ../Tools/build/generate_idle_help.py
 
 .PHONY: gettext
 gettext: BUILDER = gettext
