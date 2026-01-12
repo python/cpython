@@ -2015,10 +2015,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    The temporary script file is created with restrictive permissions (typically
    ``0o600``). The target process must be able to read this file.
-
-   .. availability:: Unix, Windows.
-   .. versionadded:: 3.14
-
    Callers should adjust permissions before calling, for example::
 
       import os
@@ -2031,6 +2027,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
           os.chmod(f.name, 0o644)  # Readable by group/other
           sys.remote_exec(pid, f.name)
       os.unlink(f.name)  # Cleanup
+
+   .. availability:: Unix, Windows.
+   .. versionadded:: 3.14
 
 .. function:: _enablelegacywindowsfsencoding()
 
