@@ -6939,6 +6939,26 @@ class MiscTestCase(unittest.TestCase):
         out = out.decode().split("\n")
         self.assertEqual(out, ['__main__', '__mp_main__', 'f', 'f', ''])
 
+    def test_preload_main_sys_argv(self):
+        # gh-143706: Check that sys.argv is set before __main__ is pre-loaded
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_sysargv.py')
+        _, out, err = test.support.script_helper.assert_python_ok(
+            name, 'foo', 'bar')
+        self.assertEqual(err, b'')
+
+        out = out.decode().split("\n")
+        expected_argv = "['foo', 'bar']"
+        self.assertEqual(out, [
+            f"module:{expected_argv}",
+            f"fun:{expected_argv}",
+            f"module:{expected_argv}",
+            f"fun:{expected_argv}",
+            '',
+        ])
+
 #
 # Mixins
 #
