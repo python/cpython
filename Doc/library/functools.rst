@@ -718,12 +718,10 @@ The :mod:`functools` module defines the following functions:
    The same pattern can be used for other similar decorators:
    :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
 
-    ``singledispatchmethod`` always dispatches on the first argument passed at call
-    time, irrespective of whether the method is bound or unbound. As a result,
-    calling the method through an instance or through the class may result in
-    different dispatch behavior. This behavior is required to support correct
-    dispatch when used with ``staticmethod`` and ``classmethod``.
-
+    For every ``singledispatchmethod`` method defined in a class, the value
+    dispatched on by that method is *always* the first argument passed for the call.
+    Therefore, dispatching to regular methods can only be sensibly performed by
+    calling such a method from instances of the class, and not from the class object.
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.15
