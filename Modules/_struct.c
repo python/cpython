@@ -2243,7 +2243,7 @@ s_pack_impl(PyStructObject *self, PyObject * const *args,
     _structmodulestate *state = get_struct_state_structinst(self);
 
     /* Validate arguments. */
-    ENSURE_STRUCT_IS_READY(soself);
+    ENSURE_STRUCT_IS_READY(self);
     assert(PyStruct_Check(self, state));
     if (args_length != self->s_len) {
         PyErr_Format(state->StructError,
@@ -2290,7 +2290,7 @@ s_pack_into_impl(PyStructObject *self, Py_buffer *buffer, Py_ssize_t offset,
     _structmodulestate *state = get_struct_state_structinst(self);
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
-    ENSURE_STRUCT_IS_READY(soself);
+    ENSURE_STRUCT_IS_READY(self);
     assert(PyStruct_Check(self, state));
     if (args_length != self->s_len) {
         PyErr_Format(state->StructError,
