@@ -1,30 +1,29 @@
-name: Reusable check if IDLE's help.html is up to date
+name: Reusable check IDLE help
 
 on:
   workflow_call:
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   FORCE_COLOR: 1
 
 jobs:
   check-idle-doc-sync:
-    name: 'Check if Lib/idlelib/help.html needs to be regenerated'
+    name: 'Check if IDLE help needs regenerating'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: 'Download built idle.html'
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: idle-html
         path: Doc/build/html/library
     - name: 'Set up Python'
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3'
     - name: 'Regenerate Lib/idlelib/help.html'
