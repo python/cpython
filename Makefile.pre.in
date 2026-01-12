@@ -1883,7 +1883,7 @@ regen-abidump: all
 
 .PHONY: check-abidump
 check-abidump: all
-	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms
+	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms --suppressions $(srcdir)/Misc/libabigail.abignore
 
 .PHONY: regen-limited-abi
 regen-limited-abi: all

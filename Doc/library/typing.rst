@@ -2369,7 +2369,7 @@ These functions and classes should not be used directly as annotations.
 Their intended purpose is to be building blocks for creating and declaring
 types.
 
-.. class:: NamedTuple
+.. function:: NamedTuple
 
    Typed version of :func:`collections.namedtuple`.
 
@@ -2441,6 +2441,10 @@ types.
    .. versionchanged:: 3.9
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
+
+   .. versionchanged:: 3.9
+      ``NamedTuple`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
 
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
@@ -2585,10 +2589,10 @@ types.
       for more details.
 
 
-.. class:: TypedDict(dict)
+.. function:: TypedDict
 
    Special construct to add type hints to a dictionary.
-   At runtime it is a plain :class:`dict`.
+   At runtime ":class:`!TypedDict` instances" are simply :class:`dicts <dict>`.
 
    ``TypedDict`` declares a dictionary type that expects all of its
    instances to have a certain set of keys, where each key is
@@ -2810,6 +2814,10 @@ types.
    See the `TypedDict <https://typing.python.org/en/latest/spec/typeddict.html#typeddict>`_ section in the typing documentation for more examples and detailed rules.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.9
+      ``TypedDict`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
 
    .. versionchanged:: 3.11
       Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
