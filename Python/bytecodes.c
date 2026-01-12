@@ -488,20 +488,16 @@ dummy_func(
             STAT_INC(TO_BOOL, hit);
         }
 
-        inst(TO_BOOL_INT, (unused/1, unused/2, value -- res)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!PyLong_CheckExact(value_o));
+        op(_TO_BOOL_INT, (value -- res, v)) {
             STAT_INC(TO_BOOL, hit);
-            if (_PyLong_IsZero((PyLongObject *)value_o)) {
-                assert(_Py_IsImmortal(value_o));
-                DEAD(value);
-                res = PyStackRef_False;
-            }
-            else {
-                PyStackRef_CLOSE(value);
-                res = PyStackRef_True;
-            }
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            res = (_PyLong_IsZero((PyLongObject *)value_o)) ? PyStackRef_False : PyStackRef_True;
+            v = value;
+            DEAD(value);
         }
+
+        macro(TO_BOOL_INT) =
+            _GUARD_TOS_INT + unused/1 + unused/2 + _TO_BOOL_INT + _POP_TOP_INT;
 
         op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
@@ -518,14 +514,15 @@ dummy_func(
             EXIT_IF(!PySlice_Check(o));
         }
 
-        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST;
+        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST + POP_TOP;
 
-        op(_TO_BOOL_LIST, (value -- res)) {
+        op(_TO_BOOL_LIST, (value -- res, v)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(PyList_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
             res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            DECREF_INPUTS();
+            v = value;
+            DEAD(value);
         }
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {

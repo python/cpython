@@ -400,19 +400,21 @@ dummy_func(void) {
         }
     }
 
-    op(_TO_BOOL_INT, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+    op(_TO_BOOL_INT, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
         if (!already_bool) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_truthiness(ctx, value, true);
         }
+        v = value;
     }
 
-    op(_TO_BOOL_LIST, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+    op(_TO_BOOL_LIST, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
         if (!already_bool) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
+        v = value;
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
