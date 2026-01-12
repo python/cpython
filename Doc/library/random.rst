@@ -663,15 +663,43 @@ or the :pypi:`more-itertools` project:
        return tuple(pool[i] for i in indices)
 
    def random_derangement(iterable):
-       "Choose a permutation where no element is in its original position."
+       "Choose a permutation where no element stays in its original position."
        seq = tuple(iterable)
        if len(seq) < 2:
-           raise ValueError('derangements require at least two values')
-       perm = list(seq)
+           if not seq:
+               return ()
+           raise IndexError('No derangments to choose from')
+       perm = list(range(len(seq)))
+       start = tuple(perm)
        while True:
            random.shuffle(perm)
-           if all(p != q for p, q in zip(seq, perm)):
-               return tuple(perm)
+           if all(p != q for p, q in zip(start, perm)):
+               return tuple([seq[i] for i in perm])
+
+.. doctest::
+    :hide:
+
+    >>> import random
+    >>> random.seed(8675309)
+    >>> random_derangement('')
+    ()
+    >>> random_derangement('A')
+    Traceback (most recent call last):
+    ...
+    IndexError: No derangments to choose from
+    >>> random_derangement('AB')
+    ('B', 'A')
+    >>> random_derangement('ABC')
+    ('C', 'A', 'B')
+    >>> random_derangement('ABCD')
+    ('B', 'A', 'D', 'C')
+    >>> random_derangement('ABCDE')
+    ('B', 'C', 'A', 'E', 'D')
+    >>> # Identical inputs treated as distinct
+    >>> identical = 20
+    >>> random_derangement((10, identical, 30, identical))
+    (20, 30, 10, 20)
+
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
