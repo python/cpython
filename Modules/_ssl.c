@@ -1100,6 +1100,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     }
     Py_RETURN_NONE;
 error:
+    assert(exc == NULL);
     Py_XDECREF(sock);
     return NULL;
 }
@@ -2836,6 +2837,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     }
     return PyLong_FromSize_t(count);
 error:
+    assert(exc == NULL);
     Py_XDECREF(sock);
     return NULL;
 }
@@ -2890,7 +2892,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     int retval;
     int sockstate;
     _PySSLError err;
-    PyObject *exc;
+    PyObject *exc = NULL;
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     PyTime_t timeout, deadline = 0;
@@ -2995,14 +2997,17 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
     if (retval == 0) {
         PySSL_SetError(self, err, exc, __FILE__, __LINE__);
+        exc = NULL;
         goto error;
     }
     else if (exc != NULL) {
         PyErr_SetRaisedException(exc);
+        exc = NULL;
         goto error;
     }
 
 done:
+    assert(exc == NULL);
     Py_XDECREF(sock);
     if (!group_right_1) {
         return PyBytesWriter_FinishWithSize(writer, count);
@@ -3012,6 +3017,7 @@ done:
     }
 
 error:
+    assert(exc == NULL);
     Py_XDECREF(sock);
     if (!group_right_1) {
         PyBytesWriter_Discard(writer);
@@ -3143,6 +3149,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
         Py_RETURN_NONE;
 
 error:
+    assert(exc == NULL);
     Py_XDECREF(sock);
     return NULL;
 }
