@@ -1894,7 +1894,7 @@ Sub-commands
    .. versionchanged:: 3.14
       Subparser's *prog* is no longer affected by a custom usage message in
       the main parser.
-      
+
 .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
 
    Creates and returns a new :class:`!ArgumentParser` object for the
