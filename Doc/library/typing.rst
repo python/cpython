@@ -3328,7 +3328,7 @@ Functions and decorators
 Introspection helpers
 ---------------------
 
-.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False, *, format=Format.VALUE)
 
    Return a dictionary containing type hints for a function, method, module
    or class object.
@@ -3380,6 +3380,10 @@ Introspection helpers
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
+
+   .. versionchanged:: 3.14
+      Added the ``format`` parameter. See the documentation on
+      :func:`annotationlib.get_annotations` for more information.
 
 .. function:: get_origin(tp)
 
