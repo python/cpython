@@ -959,7 +959,7 @@ The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
 
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
-Noam Cohen, Tomas Roun, and PuQing in :gh:`134584`.)
+Reiden Ong, Noam Cohen, Tomas Roun, PuQing, and Cajetan Rodrigues in :gh:`134584`.)
 
 .. rubric:: Better machine code generation
 
