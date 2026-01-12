@@ -46,10 +46,12 @@ class _Target(typing.Generic[_S, _R]):
     optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     label_prefix: typing.ClassVar[str]
     symbol_prefix: typing.ClassVar[str]
+    re_global: typing.ClassVar[re.Pattern[str]]
     stable: bool = False
     debug: bool = False
     verbose: bool = False
     cflags: str = ""
+    llvm_version: str = _llvm._LLVM_VERSION
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
@@ -71,14 +73,19 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
-            for filename in filenames:
+            # Exclude cache files from digest computation to ensure reproducible builds.
+            if dirpath.endswith("__pycache__"):
+                continue
+            for filename in sorted(filenames):
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
 
     async def _parse(self, path: pathlib.Path) -> _stencils.StencilGroup:
         group = _stencils.StencilGroup()
         args = ["--disassemble", "--reloc", f"{path}"]
-        output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
+        output = await _llvm.maybe_run(
+            "llvm-objdump", args, echo=self.verbose, llvm_version=self.llvm_version
+        )
         if output is not None:
             # Make sure that full paths don't leak out (for reproducibility):
             long, short = str(path), str(path.name)
@@ -96,7 +103,9 @@ class _Target(typing.Generic[_S, _R]):
             "--sections",
             f"{path}",
         ]
-        output = await _llvm.run("llvm-readobj", args, echo=self.verbose)
+        output = await _llvm.run(
+            "llvm-readobj", args, echo=self.verbose, llvm_version=self.llvm_version
+        )
         # --elf-output-style=JSON is only *slightly* broken on Mach-O...
         output = output.replace("PrivateExtern\n", "\n")
         output = output.replace("Extern\n", "\n")
@@ -116,7 +125,7 @@ class _Target(typing.Generic[_S, _R]):
         raise NotImplementedError(type(self))
 
     def _handle_relocation(
-        self, base: int, relocation: _R, raw: bytes | bytearray
+        self, base: int, relocation: _R, raw: bytearray
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
@@ -129,6 +138,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
+            f"-DSUPPORTS_SMALL_CONSTS={1 if self.optimizer.supports_small_constants else 0}",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
@@ -158,10 +168,6 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-asynchronous-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
-            # about emitting in-range trampolines for out-of-range targets.
-            # We can probably remove this and emit trampolines in the future:
-            "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
@@ -172,12 +178,19 @@ class _Target(typing.Generic[_S, _R]):
             # Allow user-provided CFLAGS to override any defaults
             *shlex.split(self.cflags),
         ]
-        await _llvm.run("clang", args_s, echo=self.verbose)
+        await _llvm.run(
+            "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
+        )
         self.optimizer(
-            s, label_prefix=self.label_prefix, symbol_prefix=self.symbol_prefix
+            s,
+            label_prefix=self.label_prefix,
+            symbol_prefix=self.symbol_prefix,
+            re_global=self.re_global,
         ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
-        await _llvm.run("clang", args_o, echo=self.verbose)
+        await _llvm.run(
+            "clang", args_o, echo=self.verbose, llvm_version=self.llvm_version
+        )
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
@@ -191,8 +204,8 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
-                tasks.append(group.create_task(coro, name="trampoline"))
+                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
+                tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -206,6 +219,7 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
+            stencil_group.convert_labels_to_relocations()
             stencil_group.process_relocations(self.known_symbols)
         return stencil_groups
 
@@ -221,6 +235,8 @@ class _Target(typing.Generic[_S, _R]):
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
+            if self.llvm_version != _llvm._LLVM_VERSION:
+                request = f"Warning! Building with an LLVM version other than {_llvm._LLVM_VERSION} is not supported."
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest()}\n"
@@ -256,6 +272,10 @@ class _COFF(
     def _handle_section(
         self, section: _schema.COFFSection, group: _stencils.StencilGroup
     ) -> None:
+        name = section["Name"]["Value"]
+        if name == ".debug$S":
+            # skip debug sections
+            return
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
@@ -294,10 +314,7 @@ class _COFF(
         return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: _schema.COFFRelocation,
-        raw: bytes | bytearray,
+        self, base: int, relocation: _schema.COFFRelocation, raw: bytearray
     ) -> _stencils.Hole:
         match relocation:
             case {
@@ -324,7 +341,8 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Name": "IMAGE_REL_ARM64_BRANCH26"
+                    "Name": "IMAGE_REL_ARM64_BRANCH19"
+                    | "IMAGE_REL_ARM64_BRANCH26"
                     | "IMAGE_REL_ARM64_PAGEBASE_REL21"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
@@ -342,12 +360,14 @@ class _COFF32(_COFF):
     # These mangle like Mach-O and other "older" formats:
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _COFF64(_COFF):
     # These mangle like ELF and other "newer" formats:
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _ELF(
@@ -355,6 +375,7 @@ class _ELF(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
@@ -407,10 +428,7 @@ class _ELF(
             }, section_type
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: _schema.ELFRelocation,
-        raw: bytes | bytearray,
+        self, base: int, relocation: _schema.ELFRelocation, raw: bytearray
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -448,6 +466,7 @@ class _MachO(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup
@@ -489,10 +508,7 @@ class _MachO(
             stencil.holes.append(hole)
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: _schema.MachORelocation,
-        raw: bytes | bytearray,
+        self, base: int, relocation: _schema.MachORelocation, raw: bytearray
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -557,38 +573,45 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     optimizer: type[_optimizers.Optimizer]
     target: _COFF32 | _COFF64 | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
+        host = "aarch64-apple-darwin"
         condition = "defined(__aarch64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerAArch64
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll", "-fplt"]
+        host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
+        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerAArch64
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        # -mno-outline-atomics: Keep intrinsics from being emitted.
-        args = ["-fpic", "-mno-outline-atomics"]
+        host = "aarch64-unknown-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
+        # -mno-outline-atomics: Keep intrinsics from being emitted.
+        args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
         optimizer = _optimizers.OptimizerAArch64
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
+        host = "i686-pc-windows-msvc"
+        condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
         args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
         optimizer = _optimizers.OptimizerX86
-        condition = "defined(_M_IX86)"
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
+        host = "x86_64-apple-darwin"
         condition = "defined(__x86_64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerX86
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll"]
+        host = "x86_64-pc-windows-msvc"
         condition = "defined(_M_X64)"
+        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
+        host = "x86_64-unknown-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         optimizer = _optimizers.OptimizerX86
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     else:

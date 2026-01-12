@@ -947,6 +947,35 @@ _PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
     return 0;
 }
 
+void *
+_PyPegen_raise_error_for_missing_comma(Parser *p, expr_ty a, expr_ty b)
+{
+    // Don't raise for legacy statements like "print x" or "exec x"
+    if (_PyPegen_check_legacy_stmt(p, a)) {
+        return NULL;
+    }
+    // Only raise inside parentheses/brackets (level > 0)
+    if (p->tokens[p->mark - 1]->level == 0) {
+        return NULL;
+    }
+    // For multi-line expressions (like string concatenations), point to the
+    // last line instead of the first for a more helpful error message.
+    // Use a->col_offset as the starting column since all strings in the
+    // concatenation typically share the same indentation.
+    if (a->end_lineno > a->lineno) {
+        return RAISE_ERROR_KNOWN_LOCATION(
+            p, PyExc_SyntaxError, a->end_lineno, a->col_offset,
+            a->end_lineno, a->end_col_offset,
+            "invalid syntax. Perhaps you forgot a comma?"
+        );
+    }
+    return RAISE_ERROR_KNOWN_LOCATION(
+        p, PyExc_SyntaxError, a->lineno, a->col_offset,
+        b->end_lineno, b->end_col_offset,
+        "invalid syntax. Perhaps you forgot a comma?"
+    );
+}
+
 static ResultTokenWithMetadata *
 result_token_with_metadata(Parser *p, void *result, PyObject *metadata)
 {
@@ -1612,19 +1641,46 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
     Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
 
-    PyObject* res = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-
     /* Bytes literals never get a kind, but just for consistency
         since they are represented as Constant nodes, we'll mirror
         the same behavior as unicode strings for determining the
         kind. */
-    PyObject* kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+    PyObject *kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+
+    Py_ssize_t total = 0;
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        PyBytes_Concat(&res, elem->v.Constant.value);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
+        if (part > PY_SSIZE_T_MAX - total) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        total += part;
     }
-    if (!res || _PyArena_AddPyObject(arena, res) < 0) {
-        Py_XDECREF(res);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(total);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *out = PyBytesWriter_GetData(writer);
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
+        if (part > 0) {
+            memcpy(out, PyBytes_AS_STRING(bytes), part);
+            out += part;
+        }
+    }
+
+    PyObject *res = PyBytesWriter_Finish(writer);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(arena, res) < 0) {
+        Py_DECREF(res);
         return NULL;
     }
     return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, p->arena);

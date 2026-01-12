@@ -45,9 +45,12 @@ single-phase initialization.
 Multi-Phase Initialization
 ..........................
 
-Extensions that use multi-phase initialization (i.e.,
-:c:func:`PyModuleDef_Init`) should add a :c:data:`Py_mod_gil` slot in the
-module definition.  If your extension supports older versions of CPython,
+Extensions that use :ref:`multi-phase initialization <multi-phase-initialization>`
+(functions like :c:func:`PyModuleDef_Init`,
+:c:func:`PyModExport_* <PyModExport_modulename>` export hook,
+:c:func:`PyModule_FromSlotsAndSpec`) should add a
+:c:data:`Py_mod_gil` slot in the module definition.
+If your extension supports older versions of CPython,
 you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
 
 ::
@@ -60,18 +63,12 @@ you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
         {0, NULL}
     };
 
-    static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT,
-        .m_slots = module_slots,
-        ...
-    };
-
 
 Single-Phase Initialization
 ...........................
 
-Extensions that use single-phase initialization (i.e.,
-:c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
+Extensions that use legacy :ref:`single-phase initialization <single-phase-initialization>`
+(that is, :c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
 indicate that they support running with the GIL disabled.  The function is
 only defined in the free-threaded build, so you should guard the call with
 ``#ifdef Py_GIL_DISABLED`` to avoid compilation errors in the regular build.
@@ -173,9 +170,9 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_Next`             | none (see :ref:`PyDict_Next`)     |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GetObject`     | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GetObject`    | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GET_OBJECT`    | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GET_OBJECT`   | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
 +-----------------------------------+-----------------------------------+
@@ -203,7 +200,7 @@ Memory Allocation APIs
 Python's memory management C API provides functions in three different
 :ref:`allocation domains <allocator-domains>`: "raw", "mem", and "object".
 For thread-safety, the free-threaded build requires that only Python objects
-are allocated using the object domain, and that all Python object are
+are allocated using the object domain, and that all Python objects are
 allocated using that domain.  This differs from the prior Python versions,
 where this was only a best practice and not a hard requirement.
 
@@ -344,12 +341,12 @@ This means you cannot rely on nested critical sections to lock multiple objects
 at once, as the inner critical section may suspend the outer ones. Instead, use
 :c:macro:`Py_BEGIN_CRITICAL_SECTION2` to lock two objects simultaneously.
 
-Note that the locks described above are only :c:type:`!PyMutex` based locks.
+Note that the locks described above are only :c:type:`PyMutex` based locks.
 The critical section implementation does not know about or affect other locking
 mechanisms that might be in use, like POSIX mutexes.  Also note that while
-blocking on any :c:type:`!PyMutex` causes the critical sections to be
+blocking on any :c:type:`PyMutex` causes the critical sections to be
 suspended, only the mutexes that are part of the critical sections are
-released.  If :c:type:`!PyMutex` is used without a critical section, it will
+released.  If :c:type:`PyMutex` is used without a critical section, it will
 not be released and therefore does not get the same deadlock avoidance.
 
 Important Considerations
@@ -397,7 +394,8 @@ The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
   free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
 * `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build if you set
+  free-threaded build on Python 3.13 and 3.14. On Python 3.14, free-threaded
+  wheels will be built by default. On Python 3.13, you will need to set
   `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
 
 Limited C API and Stable ABI

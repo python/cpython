@@ -30,9 +30,9 @@
 #endif
 
 #include <Python.h>
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
-#include "complexobject.h"
 
 #include <mpdecimal.h>
 
@@ -57,6 +57,9 @@
 #endif
 
 #include "clinic/_decimal.c.h"
+
+#define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
+                                 // See https://speleotrove.com/decimal/decarith.html
 
 /*[clinic input]
 module _decimal
@@ -746,13 +749,6 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
     return 0;
 }
 
-static int
-signaldict_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 signaldict_dealloc(PyObject *self)
 {
@@ -845,7 +841,7 @@ static PyMethodDef signaldict_methods[] = {
 
 static PyType_Slot signaldict_slots[] = {
     {Py_tp_dealloc, signaldict_dealloc},
-    {Py_tp_traverse, signaldict_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, signaldict_repr},
     {Py_tp_hash, PyObject_HashNotImplemented},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1014,16 +1010,19 @@ context_setemax(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 }
 
 #ifdef CONFIG_32
+/*[clinic input]
+_decimal.Context._unsafe_setprec
+
+    x: Py_ssize_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-context_unsafe_setprec(PyObject *self, PyObject *value)
+_decimal_Context__unsafe_setprec_impl(PyObject *self, Py_ssize_t x)
+/*[clinic end generated code: output=dd838edf08e12dd9 input=23a1b19ceb1569be]*/
 {
     mpd_context_t *ctx = CTX(self);
-    mpd_ssize_t x;
-
-    x = PyLong_AsSsize_t(value);
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
 
     if (x < 1 || x > 1070000000L) {
         return value_error_ptr(
@@ -1034,16 +1033,19 @@ context_unsafe_setprec(PyObject *self, PyObject *value)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_decimal.Context._unsafe_setemin
+
+    x: Py_ssize_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-context_unsafe_setemin(PyObject *self, PyObject *value)
+_decimal_Context__unsafe_setemin_impl(PyObject *self, Py_ssize_t x)
+/*[clinic end generated code: output=0c49cafee8a65846 input=652f1ecacca7e0ce]*/
 {
     mpd_context_t *ctx = CTX(self);
-    mpd_ssize_t x;
-
-    x = PyLong_AsSsize_t(value);
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
 
     if (x < -1070000000L || x > 0) {
         return value_error_ptr(
@@ -1054,16 +1056,19 @@ context_unsafe_setemin(PyObject *self, PyObject *value)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_decimal.Context._unsafe_setemax
+
+    x: Py_ssize_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-context_unsafe_setemax(PyObject *self, PyObject *value)
+_decimal_Context__unsafe_setemax_impl(PyObject *self, Py_ssize_t x)
+/*[clinic end generated code: output=776563e0377a00e8 input=b2a32a9a2750e7a8]*/
 {
     mpd_context_t *ctx = CTX(self);
-    mpd_ssize_t x;
-
-    x = PyLong_AsSsize_t(value);
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
 
     if (x < 0 || x > 1070000000L) {
         return value_error_ptr(
@@ -1648,45 +1653,68 @@ error:
     return NULL;
 }
 
+static PyObject *
+context_copy(decimal_state *state, PyObject *v)
+{
+    PyObject *copy =
+        PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
+
+    if (copy == NULL) {
+        return NULL;
+    }
+
+    *CTX(copy) = *CTX(v);
+    CTX(copy)->newtrap = 0;
+    CtxCaps(copy) = CtxCaps(v);
+
+    return copy;
+}
+
 /*[clinic input]
 _decimal.Context.copy
+
+    cls: defining_class
 
 Return a duplicate of the context with all flags cleared.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_copy_impl(PyObject *self)
-/*[clinic end generated code: output=f99649a60a9c10f8 input=2589aa46b77cbc28]*/
+_decimal_Context_copy_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=31c9c8eeb0c0cf77 input=aef1c0bddabdf8f0]*/
 {
-    PyObject *copy;
+    decimal_state *state = PyType_GetModuleState(cls);
 
-    decimal_state *state = get_module_state_from_ctx(self);
-    copy = PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
-    if (copy == NULL) {
-        return NULL;
-    }
-
-    *CTX(copy) = *CTX(self);
-    CTX(copy)->newtrap = 0;
-    CtxCaps(copy) = CtxCaps(self);
-
-    return copy;
+    return context_copy(state, self);
 }
 
-static PyObject *
-context_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
-{
-    return _decimal_Context_copy_impl(self);
-}
+/*[clinic input]
+_decimal.Context.__copy__ = _decimal.Context.copy
+
+[clinic start generated code]*/
 
 static PyObject *
-context_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Context___copy___impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=93552486e5fb0ab4 input=4a55dd22f6d31bcc]*/
+{
+    decimal_state *state = PyType_GetModuleState(cls);
+
+    return context_copy(state, self);
+}
+
+/*[clinic input]
+_decimal.Context.__reduce__ = _decimal.Context.copy
+
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context___reduce___impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=4e77de55efdbb56a input=787683f13d047ce8]*/
 {
     PyObject *flags;
     PyObject *traps;
     PyObject *ret;
     mpd_context_t *ctx;
-    decimal_state *state = get_module_state_from_ctx(self);
+    decimal_state *state = PyType_GetModuleState(cls);
 
     ctx = CTX(self);
 
@@ -1789,7 +1817,7 @@ current_context_from_dict(decimal_state *modstate)
         }
 
         /* Set up a new thread local context. */
-        tl_context = context_copy(modstate->default_context_template, NULL);
+        tl_context = context_copy(modstate, modstate->default_context_template);
         if (tl_context == NULL) {
             return NULL;
         }
@@ -1865,7 +1893,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
     if (v == state->default_context_template ||
         v == state->basic_context_template ||
         v == state->extended_context_template) {
-        v = context_copy(v, NULL);
+        v = context_copy(state, v);
         if (v == NULL) {
             return NULL;
         }
@@ -1888,7 +1916,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 static PyObject *
 init_current_context(decimal_state *state)
 {
-    PyObject *tl_context = context_copy(state->default_context_template, NULL);
+    PyObject *tl_context = context_copy(state, state->default_context_template);
     if (tl_context == NULL) {
         return NULL;
     }
@@ -1949,7 +1977,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
     if (v == state->default_context_template ||
         v == state->basic_context_template ||
         v == state->extended_context_template) {
-        v = context_copy(v, NULL);
+        v = context_copy(state, v);
         if (v == NULL) {
             return NULL;
         }
@@ -2046,7 +2074,7 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
         return NULL;
     }
 
-    PyObject *local_copy = context_copy(local, NULL);
+    PyObject *local_copy = context_copy(state, local);
     if (local_copy == NULL) {
         return NULL;
     }
@@ -2193,13 +2221,6 @@ PyDecType_New(decimal_state *state, PyTypeObject *type)
     return (PyObject *)dec;
 }
 #define dec_alloc(st) PyDecType_New(st, (st)->PyDec_Type)
-
-static int
-dec_traverse(PyObject *dec, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(dec));
-    return 0;
-}
 
 static void
 dec_dealloc(PyObject *dec)
@@ -2978,6 +2999,7 @@ PyDecType_FromSequenceExact(PyTypeObject *type, PyObject *v,
 @classmethod
 _decimal.Decimal.from_float
 
+    cls: defining_class
     f as pyfloat: object
     /
 
@@ -2997,13 +3019,14 @@ Decimal.from_float(0.1) is not the same as Decimal('0.1').
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_from_float_impl(PyTypeObject *type, PyObject *pyfloat)
-/*[clinic end generated code: output=e62775271ac469e6 input=052036648342f8c8]*/
+_decimal_Decimal_from_float_impl(PyTypeObject *type, PyTypeObject *cls,
+                                 PyObject *pyfloat)
+/*[clinic end generated code: output=fcb7d55d2f9dc790 input=03bc8dbe963e52ca]*/
 {
     PyObject *context;
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
     result = PyDecType_FromFloatExact(state->PyDec_Type, pyfloat, context);
     if (type != state->PyDec_Type && result != NULL) {
@@ -3018,9 +3041,10 @@ _decimal_Decimal_from_float_impl(PyTypeObject *type, PyObject *pyfloat)
    an exact conversion. If the result does not meet the restrictions
    for an mpd_t, fail with InvalidOperation. */
 static PyObject *
-PyDecType_FromNumberExact(PyTypeObject *type, PyObject *v, PyObject *context)
+PyDecType_FromNumberExact(PyTypeObject *type, PyTypeObject *cls,
+                          PyObject *v, PyObject *context)
 {
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = PyType_GetModuleState(cls);
     assert(v != NULL);
     if (PyDec_Check(state, v)) {
         return PyDecType_FromDecimalExact(type, v, context);
@@ -3046,6 +3070,7 @@ PyDecType_FromNumberExact(PyTypeObject *type, PyObject *v, PyObject *context)
 @classmethod
 _decimal.Decimal.from_number
 
+    cls: defining_class
     number: object
     /
 
@@ -3060,15 +3085,16 @@ Class method that converts a real number to a decimal number, exactly.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_from_number_impl(PyTypeObject *type, PyObject *number)
-/*[clinic end generated code: output=41885304e5beea0a input=c58b678e8916f66b]*/
+_decimal_Decimal_from_number_impl(PyTypeObject *type, PyTypeObject *cls,
+                                  PyObject *number)
+/*[clinic end generated code: output=4d3ec722b7acfd8b input=271cb4feb3148804]*/
 {
     PyObject *context;
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
-    result = PyDecType_FromNumberExact(state->PyDec_Type, number, context);
+    result = PyDecType_FromNumberExact(state->PyDec_Type, cls, number, context);
     if (type != state->PyDec_Type && result != NULL) {
         Py_SETREF(result,
             PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
@@ -3083,6 +3109,7 @@ _decimal_Decimal_from_number_impl(PyTypeObject *type, PyObject *number)
 _decimal.Context.create_decimal_from_float
 
     self as context: self
+    cls: defining_class
     f: object
     /
 
@@ -3093,10 +3120,12 @@ the context limits.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_create_decimal_from_float(PyObject *context, PyObject *f)
-/*[clinic end generated code: output=c660c343f6f7158b input=05a8c54b7a5b457b]*/
+_decimal_Context_create_decimal_from_float_impl(PyObject *context,
+                                                PyTypeObject *cls,
+                                                PyObject *f)
+/*[clinic end generated code: output=a5548f5140fa0870 input=8c66eeb22b01ddd4]*/
 {
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     return PyDec_FromFloat(state, f, context);
 }
 
@@ -3702,6 +3731,7 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
 _decimal.Decimal.__format__
 
     self as dec: self
+    cls: defining_class
     format_spec as fmtarg: unicode
     override: object = NULL
     /
@@ -3710,9 +3740,9 @@ Formats the Decimal according to format_spec.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
-                                 PyObject *override)
-/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=e53488e49a0fff00]*/
+_decimal_Decimal___format___impl(PyObject *dec, PyTypeObject *cls,
+                                 PyObject *fmtarg, PyObject *override)
+/*[clinic end generated code: output=6d95f91bbb28b3ed input=2dbfaa0cbe243e9e]*/
 {
     PyObject *result = NULL;
     PyObject *dot = NULL;
@@ -3725,7 +3755,7 @@ _decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
     uint32_t status = 0;
     int replace_fillchar = 0;
     Py_ssize_t size;
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
     fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
     if (fmt == NULL) {
@@ -3734,7 +3764,8 @@ _decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
 
     if (size > 0 && fmt[size-1] == 'N') {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Format specifier 'N' is deprecated", 1) < 0) {
+                         "Format specifier 'N' is deprecated and "
+                         "slated for removal in Python 3.18", 1) < 0) {
             return NULL;
         }
     }
@@ -3929,6 +3960,8 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
 /*[clinic input]
 _decimal.Decimal.as_integer_ratio
 
+    cls: defining_class
+
 Return a pair of integers whose ratio is exactly equal to the original.
 
 The ratio is in lowest terms and with a positive denominator.
@@ -3936,8 +3969,8 @@ Raise OverflowError on infinities and a ValueError on NaNs.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=c5d88e900080c264 input=7861cb643f01525a]*/
+_decimal_Decimal_as_integer_ratio_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=eb49c512701f844b input=07e33d8852184761]*/
 {
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
@@ -3960,7 +3993,7 @@ _decimal_Decimal_as_integer_ratio_impl(PyObject *self)
         return NULL;
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
 
     tmp = dec_alloc(state);
@@ -4042,6 +4075,7 @@ error:
 /*[clinic input]
 _decimal.Decimal.to_integral_value
 
+    cls: defining_class
     rounding: object = None
     context: object = None
 
@@ -4053,15 +4087,16 @@ rounding mode of the current default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_value_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=7301465765f48b6b input=04e2312d5ed19f77]*/
+/*[clinic end generated code: output=23047d848ef84db1 input=85aa9499a21ea8d7]*/
 {
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -4099,11 +4134,12 @@ versions.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
-                                  PyObject *context)
-/*[clinic end generated code: output=a0c7188686ee7f5c input=709b54618ecd0d8b]*/
+_decimal_Decimal_to_integral_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *rounding, PyObject *context)
+/*[clinic end generated code: output=5dac8f54c2a3ed26 input=709b54618ecd0d8b]*/
 {
-    return _decimal_Decimal_to_integral_value_impl(self, rounding, context);
+    return _decimal_Decimal_to_integral_value_impl(self, cls, rounding,
+                                                   context);
 }
 
 /*[clinic input]
@@ -4118,15 +4154,16 @@ given, then the rounding mode of the current default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=8b004f9b45ac7746 input=fabce7a744b8087c]*/
+/*[clinic end generated code: output=543a39a02eea9917 input=fabce7a744b8087c]*/
 {
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -4189,6 +4226,7 @@ PyDec_AsFloat(PyObject *dec)
 /*[clinic input]
 _decimal.Decimal.__round__
 
+    cls: defining_class
     ndigits: object = NULL
     /
 
@@ -4196,13 +4234,14 @@ Return the Integral closest to self, rounding half toward even.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits)
-/*[clinic end generated code: output=ca6b3570a8df0c91 input=dc72084114f59380]*/
+_decimal_Decimal___round___impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *ndigits)
+/*[clinic end generated code: output=790c2c6bd57890e6 input=d69e7178a58a66b1]*/
 {
     PyObject *result;
     uint32_t status = 0;
     PyObject *context;
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
     if (ndigits) {
         mpd_uint_t dq[1] = {1};
@@ -4241,12 +4280,14 @@ _decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits)
 /*[clinic input]
 _decimal.Decimal.as_tuple
 
+    cls: defining_class
+
 Return a tuple representation of the number.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_as_tuple_impl(PyObject *self)
-/*[clinic end generated code: output=c6e8e2420c515eca input=e26f2151d78ff59d]*/
+_decimal_Decimal_as_tuple_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=d68b967becee8ab9 input=bfa86d640224d9f5]*/
 {
     PyObject *result = NULL;
     PyObject *sign = NULL;
@@ -4326,7 +4367,7 @@ _decimal_Decimal_as_tuple_impl(PyObject *self)
         }
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     result = PyObject_CallFunctionObjArgs((PyObject *)state->DecimalTuple,
                                           sign, coeff, expt, NULL);
 
@@ -4378,7 +4419,7 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
     PyObject *context;                                           \
     uint32_t status = 0;                                         \
                                                                  \
-    decimal_state *state = find_state_left_or_right(self, other);  \
+    decimal_state *state = find_state_left_or_right(self, other); \
     CURRENT_CONTEXT(state, context) ;                            \
     CONVERT_BINOP(&a, &b, self, other, context);                 \
                                                                  \
@@ -4408,25 +4449,26 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 }
 
 /* Boolean function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *context
 */
 #define Dec_BoolFuncVA(MPDFUNC) \
 {                                                                         \
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));        \
+    decimal_state *state = PyType_GetModuleState(cls);                    \
     CONTEXT_CHECK_VA(state, context);                                     \
                                                                           \
     return MPDFUNC(MPD(self), CTX(context)) ? incr_true() : incr_false(); \
 }
 
 /* Unary function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *context
 */
 #define Dec_UnaryFuncVA(MPDFUNC) \
 {                                                              \
     PyObject *result;                                          \
     uint32_t status = 0;                                       \
-    decimal_state *state =                                     \
-        get_module_state_by_def(Py_TYPE(self));                \
+    decimal_state *state = PyType_GetModuleState(cls);         \
     CONTEXT_CHECK_VA(state, context);                          \
                                                                \
     if ((result = dec_alloc(state)) == NULL) {                 \
@@ -4443,15 +4485,15 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 }
 
 /* Binary function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *other, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *context
 */
 #define Dec_BinaryFuncVA(MPDFUNC) \
 {                                                                \
     PyObject *a, *b;                                             \
     PyObject *result;                                            \
     uint32_t status = 0;                                         \
-    decimal_state *state =                                       \
-        get_module_state_by_def(Py_TYPE(self));                  \
+    decimal_state *state = PyType_GetModuleState(cls);           \
     CONTEXT_CHECK_VA(state, context);                            \
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);           \
                                                                  \
@@ -4476,14 +4518,14 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
    NOT take a context. The context is used to record InvalidOperation
    if the second operand cannot be converted exactly.
 
-   Argument Clinic provides PyObject *self, PyObject *other, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *context
 */
 #define Dec_BinaryFuncVA_NO_CTX(MPDFUNC) \
 {                                                               \
     PyObject *a, *b;                                            \
     PyObject *result;                                           \
-    decimal_state *state =                                      \
-        get_module_state_by_def(Py_TYPE(self));                 \
+    decimal_state *state = PyType_GetModuleState(cls);          \
     CONTEXT_CHECK_VA(state, context);                           \
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);          \
                                                                 \
@@ -4501,7 +4543,8 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 }
 
 /* Ternary function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *other, PyObject *third,
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *third,
                             PyObject *context
 */
 #define Dec_TernaryFuncVA(MPDFUNC) \
@@ -4509,7 +4552,7 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
     PyObject *a, *b, *c;                                                 \
     PyObject *result;                                                    \
     uint32_t status = 0;                                                 \
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
+    decimal_state *state = PyType_GetModuleState(cls);                   \
     CONTEXT_CHECK_VA(state, context);                                    \
     CONVERT_TERNOP_RAISE(&a, &b, &c, self, other, third, context);       \
                                                                          \
@@ -4662,6 +4705,7 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
 /*[clinic input]
 _decimal.Decimal.exp
 
+    cls: defining_class
     context: object = None
 
 Return the value of the (natural) exponential function e**x.
@@ -4671,8 +4715,9 @@ correctly rounded.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_exp_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=c0833b6e9b8c836f input=274784af925e60c9]*/
+_decimal_Decimal_exp_impl(PyObject *self, PyTypeObject *cls,
+                          PyObject *context)
+/*[clinic end generated code: output=40317012aedbaeac input=84919aad3dabda08]*/
 Dec_UnaryFuncVA(mpd_qexp)
 
 /*[clinic input]
@@ -4685,8 +4730,9 @@ correctly rounded.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_ln_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=5191f4ef739b04b0 input=d353c51ec00d1cff]*/
+_decimal_Decimal_ln_impl(PyObject *self, PyTypeObject *cls,
+                         PyObject *context)
+/*[clinic end generated code: output=e8f9e81cac38e5dc input=d353c51ec00d1cff]*/
 Dec_UnaryFuncVA(mpd_qln)
 
 /*[clinic input]
@@ -4699,8 +4745,9 @@ correctly rounded.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_log10_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=d5da63df75900275 input=48a6be60154c0b46]*/
+_decimal_Decimal_log10_impl(PyObject *self, PyTypeObject *cls,
+                            PyObject *context)
+/*[clinic end generated code: output=00b3255648135c95 input=48a6be60154c0b46]*/
 Dec_UnaryFuncVA(mpd_qlog10)
 
 /*[clinic input]
@@ -4710,8 +4757,9 @@ Returns the largest representable number smaller than itself.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_next_minus_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=aacbd758399f883f input=666b348f71e6c090]*/
+_decimal_Decimal_next_minus_impl(PyObject *self, PyTypeObject *cls,
+                                 PyObject *context)
+/*[clinic end generated code: output=a187a55e6976b572 input=666b348f71e6c090]*/
 Dec_UnaryFuncVA(mpd_qnext_minus)
 
 /*[clinic input]
@@ -4721,8 +4769,9 @@ Returns the smallest representable number larger than itself.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_next_plus_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=f3a7029a213c553c input=04e105060ad1fa15]*/
+_decimal_Decimal_next_plus_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *context)
+/*[clinic end generated code: output=13737d41714e320e input=04e105060ad1fa15]*/
 Dec_UnaryFuncVA(mpd_qnext_plus)
 
 /*[clinic input]
@@ -4737,8 +4786,9 @@ the equivalent value Decimal('32.1').
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_normalize_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=db2c8b3c8eccff36 input=d5ee63acd904d4de]*/
+_decimal_Decimal_normalize_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *context)
+/*[clinic end generated code: output=32c4c0d13fe33fb9 input=d5ee63acd904d4de]*/
 Dec_UnaryFuncVA(mpd_qreduce)
 
 /*[clinic input]
@@ -4750,8 +4800,9 @@ The result is correctly rounded using the ROUND_HALF_EVEN rounding mode.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_sqrt_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=420722a199dd9c2b input=3a76afbd39dc20b9]*/
+_decimal_Decimal_sqrt_impl(PyObject *self, PyTypeObject *cls,
+                           PyObject *context)
+/*[clinic end generated code: output=deb1280077b5e586 input=3a76afbd39dc20b9]*/
 Dec_UnaryFuncVA(mpd_qsqrt)
 
 /* Binary arithmetic functions, optional context arg */
@@ -4759,6 +4810,7 @@ Dec_UnaryFuncVA(mpd_qsqrt)
 /*[clinic input]
 _decimal.Decimal.compare
 
+    cls: defining_class
     other: object
     context: object = None
 
@@ -4773,9 +4825,9 @@ Return a decimal value:
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_compare_impl(PyObject *self, PyObject *other,
-                              PyObject *context)
-/*[clinic end generated code: output=d6967aa3578b9d48 input=1b7b75a2a154e520]*/
+_decimal_Decimal_compare_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *other, PyObject *context)
+/*[clinic end generated code: output=a4a1d383ec192cfa input=d18a02bb8083e92a]*/
 Dec_BinaryFuncVA(mpd_qcompare)
 
 /*[clinic input]
@@ -4785,9 +4837,9 @@ Identical to compare, except that all NaNs signal.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_compare_signal_impl(PyObject *self, PyObject *other,
-                                     PyObject *context)
-/*[clinic end generated code: output=0b8d0ff43f6c8a95 input=a52a39d1c6fc369d]*/
+_decimal_Decimal_compare_signal_impl(PyObject *self, PyTypeObject *cls,
+                                     PyObject *other, PyObject *context)
+/*[clinic end generated code: output=22f757371fd4167b input=a52a39d1c6fc369d]*/
 Dec_BinaryFuncVA(mpd_qcompare_signal)
 
 /*[clinic input]
@@ -4800,8 +4852,9 @@ operand is returned.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_max_impl(PyObject *self, PyObject *other, PyObject *context)
-/*[clinic end generated code: output=f3a5c5d76761c9ff input=2ae2582f551296d8]*/
+_decimal_Decimal_max_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
+                          PyObject *context)
+/*[clinic end generated code: output=d3d12db9815869e5 input=2ae2582f551296d8]*/
 Dec_BinaryFuncVA(mpd_qmax)
 
 /*[clinic input]
@@ -4811,9 +4864,9 @@ As the max() method, but compares the absolute values of the operands.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_max_mag_impl(PyObject *self, PyObject *other,
-                              PyObject *context)
-/*[clinic end generated code: output=52b0451987bac65f input=88b105e66cf138c5]*/
+_decimal_Decimal_max_mag_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *other, PyObject *context)
+/*[clinic end generated code: output=f71f2c27d9bc7cac input=88b105e66cf138c5]*/
 Dec_BinaryFuncVA(mpd_qmax_mag)
 
 /*[clinic input]
@@ -4826,8 +4879,9 @@ operand is returned.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_min_impl(PyObject *self, PyObject *other, PyObject *context)
-/*[clinic end generated code: output=d2f38ecb9d6f0493 input=2a70f2c087c418c9]*/
+_decimal_Decimal_min_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
+                          PyObject *context)
+/*[clinic end generated code: output=c5620344ae5f3dd1 input=2a70f2c087c418c9]*/
 Dec_BinaryFuncVA(mpd_qmin)
 
 /*[clinic input]
@@ -4837,9 +4891,9 @@ As the min() method, but compares the absolute values of the operands.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_min_mag_impl(PyObject *self, PyObject *other,
-                              PyObject *context)
-/*[clinic end generated code: output=aa3391935f6c8fc9 input=351fa3c0e592746a]*/
+_decimal_Decimal_min_mag_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *other, PyObject *context)
+/*[clinic end generated code: output=018562ad1c22aae3 input=351fa3c0e592746a]*/
 Dec_BinaryFuncVA(mpd_qmin_mag)
 
 /*[clinic input]
@@ -4854,9 +4908,9 @@ to be the same as the sign of the second operand.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_next_toward_impl(PyObject *self, PyObject *other,
-                                  PyObject *context)
-/*[clinic end generated code: output=edb933755644af69 input=fdf0091ea6e9e416]*/
+_decimal_Decimal_next_toward_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *other, PyObject *context)
+/*[clinic end generated code: output=71d879bca8bc1019 input=fdf0091ea6e9e416]*/
 Dec_BinaryFuncVA(mpd_qnext_toward)
 
 /*[clinic input]
@@ -4874,9 +4928,9 @@ If the result is zero then its sign will be the sign of self.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_remainder_near_impl(PyObject *self, PyObject *other,
-                                     PyObject *context)
-/*[clinic end generated code: output=6ce0fb3b0faff2f9 input=eb5a8dfe3470b794]*/
+_decimal_Decimal_remainder_near_impl(PyObject *self, PyTypeObject *cls,
+                                     PyObject *other, PyObject *context)
+/*[clinic end generated code: output=d3fbb4985f2077fa input=eb5a8dfe3470b794]*/
 Dec_BinaryFuncVA(mpd_qrem_near)
 
 /* Ternary arithmetic functions, optional context arg */
@@ -4884,6 +4938,7 @@ Dec_BinaryFuncVA(mpd_qrem_near)
 /*[clinic input]
 _decimal.Decimal.fma
 
+    cls: defining_class
     other: object
     third: object
     context: object = None
@@ -4898,9 +4953,9 @@ self*other.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_fma_impl(PyObject *self, PyObject *other, PyObject *third,
-                          PyObject *context)
-/*[clinic end generated code: output=74a82b984e227b69 input=48f9aec6f389227a]*/
+_decimal_Decimal_fma_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
+                          PyObject *third, PyObject *context)
+/*[clinic end generated code: output=db49a777e85b71e4 input=2104c001f6077c35]*/
 Dec_TernaryFuncVA(mpd_qfma)
 
 /* Boolean functions, no context arg */
@@ -5009,8 +5064,9 @@ Normal number is a finite nonzero number, which is not subnormal.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_is_normal_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=40cc429d388eb464 input=9afe43b9db9f4818]*/
+_decimal_Decimal_is_normal_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *context)
+/*[clinic end generated code: output=92a3878e293758d4 input=9afe43b9db9f4818]*/
 Dec_BoolFuncVA(mpd_isnormal)
 
 /*[clinic input]
@@ -5023,8 +5079,9 @@ exponent less than Emin.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_is_subnormal_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=6f7d422b1f387d7f input=11839c122c185b8b]*/
+_decimal_Decimal_is_subnormal_impl(PyObject *self, PyTypeObject *cls,
+                                   PyObject *context)
+/*[clinic end generated code: output=1404c04d980ebc07 input=11839c122c185b8b]*/
 Dec_BoolFuncVA(mpd_issubnormal)
 
 /* Unary functions, no context arg */
@@ -5097,6 +5154,8 @@ _dec_mpd_radix(decimal_state *state)
 /*[clinic input]
 _decimal.Decimal.radix
 
+    cls: defining_class
+
 Return Decimal(10).
 
 This is the radix (base) in which the Decimal class does
@@ -5104,15 +5163,17 @@ all its arithmetic. Included for compatibility with the specification.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_radix_impl(PyObject *self)
-/*[clinic end generated code: output=6b1db4c3fcdb5ee1 input=18b72393549ca8fd]*/
+_decimal_Decimal_radix_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=40a3bc7ec3d99228 input=b0d4cb9f870bbac1]*/
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     return _dec_mpd_radix(state);
 }
 
 /*[clinic input]
 _decimal.Decimal.copy_abs
+
+    cls: defining_class
 
 Return the absolute value of the argument.
 
@@ -5121,13 +5182,13 @@ changed and no rounding is performed.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_copy_abs_impl(PyObject *self)
-/*[clinic end generated code: output=fff53742cca94d70 input=a263c2e71d421f1b]*/
+_decimal_Decimal_copy_abs_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=081cb7fb4230676e input=676d7c62b1795512]*/
 {
     PyObject *result;
     uint32_t status = 0;
+    decimal_state *state = PyType_GetModuleState(cls);
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     if ((result = dec_alloc(state)) == NULL) {
         return NULL;
     }
@@ -5143,7 +5204,7 @@ _decimal_Decimal_copy_abs_impl(PyObject *self)
 }
 
 /*[clinic input]
-_decimal.Decimal.copy_negate
+_decimal.Decimal.copy_negate = _decimal.Decimal.copy_abs
 
 Return the negation of the argument.
 
@@ -5152,13 +5213,13 @@ changed and no rounding is performed.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_copy_negate_impl(PyObject *self)
-/*[clinic end generated code: output=8551bc26dbc5d01d input=13d47ed3a5d228b1]*/
+_decimal_Decimal_copy_negate_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=04fed82c17d4e28b input=23f41ee8899f3891]*/
 {
     PyObject *result;
     uint32_t status = 0;
+    decimal_state *state = PyType_GetModuleState(cls);
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     if ((result = dec_alloc(state)) == NULL) {
         return NULL;
     }
@@ -5178,12 +5239,15 @@ _decimal_Decimal_copy_negate_impl(PyObject *self)
 /*[clinic input]
 _decimal.Decimal.logical_invert = _decimal.Decimal.exp
 
-Return the digit-wise inversion of the (logical) operand.
+Invert all its digits.
+
+The self must be logical number.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_logical_invert_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=59beb9b1b51b9f34 input=3531dac8b9548dad]*/
+_decimal_Decimal_logical_invert_impl(PyObject *self, PyTypeObject *cls,
+                                     PyObject *context)
+/*[clinic end generated code: output=c626ed4b104a97b7 input=7158d5b525417955]*/
 Dec_UnaryFuncVA(mpd_qinvert)
 
 /*[clinic input]
@@ -5197,8 +5261,9 @@ Decimal('Infinity') is returned.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_logb_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=f278db20b47f301c input=a8df027d1b8a2b17]*/
+_decimal_Decimal_logb_impl(PyObject *self, PyTypeObject *cls,
+                           PyObject *context)
+/*[clinic end generated code: output=36b0bda09e934245 input=a8df027d1b8a2b17]*/
 Dec_UnaryFuncVA(mpd_qlogb)
 
 /*[clinic input]
@@ -5225,12 +5290,13 @@ The returned value is one of the following ten strings:
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_number_class_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=3044cd45966b4949 input=447095d2677fa0ca]*/
+_decimal_Decimal_number_class_impl(PyObject *self, PyTypeObject *cls,
+                                   PyObject *context)
+/*[clinic end generated code: output=1ac82412e0849c52 input=447095d2677fa0ca]*/
 {
     const char *cp;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
 
     cp = mpd_class(MPD(self), CTX(context));
@@ -5252,14 +5318,15 @@ operation.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_eng_string_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=d386194c25ffffa7 input=b2cb7e01e268e45d]*/
+_decimal_Decimal_to_eng_string_impl(PyObject *self, PyTypeObject *cls,
+                                    PyObject *context)
+/*[clinic end generated code: output=901f128d437ae5c0 input=b2cb7e01e268e45d]*/
 {
     PyObject *result;
     mpd_ssize_t size;
     char *s;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
 
     size = mpd_to_eng_size(&s, MPD(self), CtxCaps(context));
@@ -5303,9 +5370,9 @@ exactly.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_compare_total_impl(PyObject *self, PyObject *other,
-                                    PyObject *context)
-/*[clinic end generated code: output=dca119b5e881a83e input=6f3111ec5fdbf3c1]*/
+_decimal_Decimal_compare_total_impl(PyObject *self, PyTypeObject *cls,
+                                    PyObject *other, PyObject *context)
+/*[clinic end generated code: output=83649010bad7815f input=6f3111ec5fdbf3c1]*/
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total)
 
 /*[clinic input]
@@ -5323,9 +5390,9 @@ exactly.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyObject *other,
-                                        PyObject *context)
-/*[clinic end generated code: output=6bf1b3419112d0dd input=eba17c4c24eb2833]*/
+_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *other, PyObject *context)
+/*[clinic end generated code: output=b99c924cafb5f0e3 input=eba17c4c24eb2833]*/
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag)
 
 /*[clinic input]
@@ -5345,15 +5412,15 @@ exactly.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_copy_sign_impl(PyObject *self, PyObject *other,
-                                PyObject *context)
-/*[clinic end generated code: output=72c62177763e012e input=51ed9e4691e2249e]*/
+_decimal_Decimal_copy_sign_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *other, PyObject *context)
+/*[clinic end generated code: output=e4c8f884f4d75801 input=51ed9e4691e2249e]*/
 {
     PyObject *a, *b;
     PyObject *result;
     uint32_t status = 0;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);
 
@@ -5387,14 +5454,14 @@ exactly.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
-                                   PyObject *context)
-/*[clinic end generated code: output=c0a3a046c662a7e2 input=8339415fa359e7df]*/
+_decimal_Decimal_same_quantum_impl(PyObject *self, PyTypeObject *cls,
+                                   PyObject *other, PyObject *context)
+/*[clinic end generated code: output=7c757edb0c263721 input=8339415fa359e7df]*/
 {
     PyObject *a, *b;
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);
 
@@ -5410,37 +5477,43 @@ _decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
 /*[clinic input]
 _decimal.Decimal.logical_and = _decimal.Decimal.compare
 
-Return the digit-wise 'and' of the two (logical) operands.
+Applies an 'and' operation between self and other's digits.
+
+Both self and other must be logical numbers.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_logical_and_impl(PyObject *self, PyObject *other,
-                                  PyObject *context)
-/*[clinic end generated code: output=1526a357f97eaf71 input=2b319baee8970929]*/
+_decimal_Decimal_logical_and_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *other, PyObject *context)
+/*[clinic end generated code: output=9a4cbb74c180b0bb input=f22460f1285782d2]*/
 Dec_BinaryFuncVA(mpd_qand)
 
 /*[clinic input]
 _decimal.Decimal.logical_or = _decimal.Decimal.compare
 
-Return the digit-wise 'or' of the two (logical) operands.
+Applies an 'or' operation between self and other's digits.
+
+Both self and other must be logical numbers.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_logical_or_impl(PyObject *self, PyObject *other,
-                                 PyObject *context)
-/*[clinic end generated code: output=e57a72acf0982f56 input=75e0e1d4dd373b90]*/
+_decimal_Decimal_logical_or_impl(PyObject *self, PyTypeObject *cls,
+                                 PyObject *other, PyObject *context)
+/*[clinic end generated code: output=063c4de18dc41ecb input=b5afa1e1fdebdfce]*/
 Dec_BinaryFuncVA(mpd_qor)
 
 /*[clinic input]
 _decimal.Decimal.logical_xor = _decimal.Decimal.compare
 
-Return the digit-wise 'xor' of the two (logical) operands.
+Applies an 'xor' operation between self and other's digits.
+
+Both self and other must be logical numbers.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_logical_xor_impl(PyObject *self, PyObject *other,
-                                  PyObject *context)
-/*[clinic end generated code: output=ae3a7aeddde5a1a8 input=a1ed8d6ac38c1c9e]*/
+_decimal_Decimal_logical_xor_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *other, PyObject *context)
+/*[clinic end generated code: output=829b09cb49926ad7 input=84d722ada08a2da7]*/
 Dec_BinaryFuncVA(mpd_qxor)
 
 /*[clinic input]
@@ -5457,9 +5530,9 @@ necessary. The sign and exponent of the first operand are unchanged.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_rotate_impl(PyObject *self, PyObject *other,
-                             PyObject *context)
-/*[clinic end generated code: output=e59e757e70a8416a input=cde7b032eac43f0b]*/
+_decimal_Decimal_rotate_impl(PyObject *self, PyTypeObject *cls,
+                             PyObject *other, PyObject *context)
+/*[clinic end generated code: output=09f2737082882b83 input=cde7b032eac43f0b]*/
 Dec_BinaryFuncVA(mpd_qrotate)
 
 /*[clinic input]
@@ -5472,9 +5545,9 @@ second operand must be an integer.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_scaleb_impl(PyObject *self, PyObject *other,
-                             PyObject *context)
-/*[clinic end generated code: output=f01e99600eda34d7 input=7f29f83278d05f83]*/
+_decimal_Decimal_scaleb_impl(PyObject *self, PyTypeObject *cls,
+                             PyObject *other, PyObject *context)
+/*[clinic end generated code: output=ae8730536c9f2d30 input=7f29f83278d05f83]*/
 Dec_BinaryFuncVA(mpd_qscaleb)
 
 /*[clinic input]
@@ -5491,14 +5564,15 @@ operand are unchanged.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_shift_impl(PyObject *self, PyObject *other,
-                            PyObject *context)
-/*[clinic end generated code: output=f79ff9ce6d5b05ed input=501759c2522cb78e]*/
+_decimal_Decimal_shift_impl(PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *context)
+/*[clinic end generated code: output=82e061a0d9ecc4f5 input=501759c2522cb78e]*/
 Dec_BinaryFuncVA(mpd_qshift)
 
 /*[clinic input]
 _decimal.Decimal.quantize
 
+    cls: defining_class
     exp as w: object
     rounding: object = None
     context: object = None
@@ -5528,16 +5602,17 @@ current thread's context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
-                               PyObject *rounding, PyObject *context)
-/*[clinic end generated code: output=5e84581f96dc685c input=4c7d28d36948e9aa]*/
+_decimal_Decimal_quantize_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *w, PyObject *rounding,
+                               PyObject *context)
+/*[clinic end generated code: output=fc51edf458559913 input=1166e6311e047b74]*/
 {
     PyObject *a, *b;
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -5634,16 +5709,18 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
 /*[clinic input]
 _decimal.Decimal.__ceil__
 
+    cls: defining_class
+
 Return the ceiling as an Integral.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal___ceil___impl(PyObject *self)
-/*[clinic end generated code: output=e755a6fb7bceac19 input=4a18ef307ac57da0]*/
+_decimal_Decimal___ceil___impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=d986ebf9aadbf9fe input=a8e0b87897706816]*/
 {
     PyObject *context;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
     return dec_as_long(self, context, MPD_ROUND_CEILING);
 }
@@ -5703,18 +5780,18 @@ _decimal_Decimal___deepcopy__(PyObject *self, PyObject *memo)
 }
 
 /*[clinic input]
-_decimal.Decimal.__floor__
+_decimal.Decimal.__floor__ = _decimal.Decimal.__ceil__
 
 Return the floor as an Integral.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal___floor___impl(PyObject *self)
-/*[clinic end generated code: output=56767050ac1a1d5a input=cabcc5618564548b]*/
+_decimal_Decimal___floor___impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=e239a2f7f6514c12 input=dcc37aeceb0efb8d]*/
 {
     PyObject *context;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
     return dec_as_long(self, context, MPD_ROUND_FLOOR);
 }
@@ -5723,7 +5800,7 @@ _decimal_Decimal___floor___impl(PyObject *self)
 static Py_hash_t
 _dec_hash(PyDecObject *v)
 {
-#if defined(CONFIG_64) && _PyHASH_BITS == 61
+#if defined(CONFIG_64) && PyHASH_BITS == 61
     /* 2**61 - 1 */
     mpd_uint_t p_data[1] = {2305843009213693951ULL};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 19, 1, 1, p_data};
@@ -5731,7 +5808,7 @@ _dec_hash(PyDecObject *v)
     mpd_uint_t inv10_p_data[1] = {2075258708292324556ULL};
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 19, 1, 1, inv10_p_data};
-#elif defined(CONFIG_32) && _PyHASH_BITS == 31
+#elif defined(CONFIG_32) && PyHASH_BITS == 31
     /* 2**31 - 1 */
     mpd_uint_t p_data[2] = {147483647UL, 2};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 10, 2, 2, p_data};
@@ -5740,7 +5817,7 @@ _dec_hash(PyDecObject *v)
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 10, 2, 2, inv10_p_data};
 #else
-    #error "No valid combination of CONFIG_64, CONFIG_32 and _PyHASH_BITS"
+    #error "No valid combination of CONFIG_64, CONFIG_32 and PyHASH_BITS"
 #endif
     const Py_hash_t py_hash_inf = 314159;
     mpd_uint_t ten_data[1] = {10};
@@ -5889,18 +5966,18 @@ _decimal_Decimal___sizeof___impl(PyObject *v)
 }
 
 /*[clinic input]
-_decimal.Decimal.__trunc__
+_decimal.Decimal.__trunc__ = _decimal.Decimal.__ceil__
 
 Return the Integral closest to x between 0 and x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal___trunc___impl(PyObject *self)
-/*[clinic end generated code: output=9ef59578960f80c0 input=a965a61096dcefeb]*/
+_decimal_Decimal___trunc___impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=7b3decc4b636ce32 input=9b3a3a85f63b0515]*/
 {
     PyObject *context;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CURRENT_CONTEXT(state, context);
     return dec_as_long(self, context, MPD_ROUND_DOWN);
 }
@@ -6032,7 +6109,7 @@ static PyType_Slot dec_slots[] = {
     {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, dec_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, dec_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, dec_repr},
     {Py_tp_hash, dec_hash},
     {Py_tp_str, dec_str},
@@ -6110,7 +6187,8 @@ static PyType_Spec dec_spec = {
 }
 
 /* Unary context method.
-   Argument Clinic provides PyObject *context, PyObject *x
+   Argument Clinic provides PyObject *context,
+                            PyTypeObject *cls, PyObject *x
 */
 #define DecCtx_UnaryFunc(MPDFUNC) \
 {                                                        \
@@ -6118,8 +6196,7 @@ static PyType_Spec dec_spec = {
     uint32_t status = 0;                                 \
                                                          \
     CONVERT_OP_RAISE(&a, x, context);                    \
-    decimal_state *state =                               \
-        get_module_state_from_ctx(context);              \
+    decimal_state *state = PyType_GetModuleState(cls);   \
     if ((result = dec_alloc(state)) == NULL) {           \
         Py_DECREF(a);                                    \
         return NULL;                                     \
@@ -6136,7 +6213,8 @@ static PyType_Spec dec_spec = {
 }
 
 /* Binary context method.
-   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
+   Argument Clinic provides PyObject *context, PyTypeObject *cls,
+                            PyObject *x, PyObject *y
 */
 #define DecCtx_BinaryFunc(MPDFUNC) \
 {                                                                \
@@ -6145,8 +6223,7 @@ static PyType_Spec dec_spec = {
     uint32_t status = 0;                                         \
                                                                  \
     CONVERT_BINOP_RAISE(&a, &b, x, y, context);                  \
-    decimal_state *state =                                       \
-        get_module_state_from_ctx(context);                      \
+    decimal_state *state = PyType_GetModuleState(cls);           \
     if ((result = dec_alloc(state)) == NULL) {                   \
         Py_DECREF(a);                                            \
         Py_DECREF(b);                                            \
@@ -6167,7 +6244,8 @@ static PyType_Spec dec_spec = {
 /*
  * Binary context method. The context is only used for conversion.
  * The actual MPDFUNC does NOT take a context arg.
- * Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
+ * Argument Clinic provides PyObject *context, PyTypeObject *cls,
+ *                          PyObject *x, PyObject *y
  */
 #define DecCtx_BinaryFunc_NO_CTX(MPDFUNC) \
 {                                                \
@@ -6176,7 +6254,7 @@ static PyType_Spec dec_spec = {
                                                  \
     CONVERT_BINOP_RAISE(&a, &b, x, y, context);  \
     decimal_state *state =                       \
-        get_module_state_from_ctx(context);      \
+        PyType_GetModuleState(cls);              \
     if ((result = dec_alloc(state)) == NULL) {   \
         Py_DECREF(a);                            \
         Py_DECREF(b);                            \
@@ -6191,8 +6269,8 @@ static PyType_Spec dec_spec = {
 }
 
 /* Ternary context method.
-   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y,
-                            PyObject *z
+   Argument Clinic provides PyObject *context, PyTypeObject *cls,
+                            PyObject *x, PyObject *y, PyObject *z
 */
 #define DecCtx_TernaryFunc(MPDFUNC) \
 {                                                                        \
@@ -6201,7 +6279,7 @@ static PyType_Spec dec_spec = {
     uint32_t status = 0;                                                 \
                                                                          \
     CONVERT_TERNOP_RAISE(&a, &b, &c, x, y, z, context);                  \
-    decimal_state *state = get_module_state_from_ctx(context);           \
+    decimal_state *state = PyType_GetModuleState(cls);                   \
     if ((result = dec_alloc(state)) == NULL) {                           \
         Py_DECREF(a);                                                    \
         Py_DECREF(b);                                                    \
@@ -6228,6 +6306,7 @@ static PyType_Spec dec_spec = {
 _decimal.Context.abs
 
     self as context: self
+    cls: defining_class
     x: object
     /
 
@@ -6235,8 +6314,8 @@ Return the absolute value of x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_abs(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=5cafb5edf96df9e4 input=8384b327e52d6723]*/
+_decimal_Context_abs_impl(PyObject *context, PyTypeObject *cls, PyObject *x)
+/*[clinic end generated code: output=fe080467d32e229c input=00a33f9c68463bb0]*/
 DecCtx_UnaryFunc(mpd_qabs)
 
 /*[clinic input]
@@ -6246,8 +6325,8 @@ Return e ** x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_exp(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=787085815e6a9aa4 input=5b443c4ab153dd2e]*/
+_decimal_Context_exp_impl(PyObject *context, PyTypeObject *cls, PyObject *x)
+/*[clinic end generated code: output=c7477a67010ccc5f input=5b443c4ab153dd2e]*/
 DecCtx_UnaryFunc(mpd_qexp)
 
 /*[clinic input]
@@ -6257,8 +6336,8 @@ Return the natural (base e) logarithm of x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_ln(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=9ecce76097f16bbe input=cf43cd98a0fe7425]*/
+_decimal_Context_ln_impl(PyObject *context, PyTypeObject *cls, PyObject *x)
+/*[clinic end generated code: output=63e691b0680bffc7 input=cf43cd98a0fe7425]*/
 DecCtx_UnaryFunc(mpd_qln)
 
 /*[clinic input]
@@ -6268,8 +6347,9 @@ Return the base 10 logarithm of x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_log10(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=08080765645630e4 input=309e57faf42c257d]*/
+_decimal_Context_log10_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x)
+/*[clinic end generated code: output=e0d9fc928570304d input=309e57faf42c257d]*/
 DecCtx_UnaryFunc(mpd_qlog10)
 
 /*[clinic input]
@@ -6281,8 +6361,9 @@ This operation applies the context to the result.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_minus(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=49c1a0d59f4585b6 input=63be4c419d1d554b]*/
+_decimal_Context_minus_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x)
+/*[clinic end generated code: output=f06c409b6aef1aad input=63be4c419d1d554b]*/
 DecCtx_UnaryFunc(mpd_qminus)
 
 /*[clinic input]
@@ -6292,8 +6373,9 @@ Return the largest representable number smaller than x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_next_minus(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=0c11a0d5fa9103d2 input=969f4d24dfcd5e85]*/
+_decimal_Context_next_minus_impl(PyObject *context, PyTypeObject *cls,
+                                 PyObject *x)
+/*[clinic end generated code: output=8dd168f08bec9547 input=969f4d24dfcd5e85]*/
 DecCtx_UnaryFunc(mpd_qnext_minus)
 
 /*[clinic input]
@@ -6303,8 +6385,9 @@ Return the smallest representable number larger than x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_next_plus(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=fd834e8c58b76031 input=af1a85ee59b56a3c]*/
+_decimal_Context_next_plus_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x)
+/*[clinic end generated code: output=2a50586ad2f7c108 input=af1a85ee59b56a3c]*/
 DecCtx_UnaryFunc(mpd_qnext_plus)
 
 /*[clinic input]
@@ -6314,8 +6397,9 @@ Reduce x to its simplest form. Alias for reduce(x).
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_normalize(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=492c6ca375bcf020 input=a65bc39c81a654a9]*/
+_decimal_Context_normalize_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x)
+/*[clinic end generated code: output=9a9510f442ba2852 input=a65bc39c81a654a9]*/
 DecCtx_UnaryFunc(mpd_qreduce)
 
 /*[clinic input]
@@ -6327,8 +6411,8 @@ This operation applies the context to the result.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_plus(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=ee089d734941936e input=5d8a75702d20e2f9]*/
+_decimal_Context_plus_impl(PyObject *context, PyTypeObject *cls, PyObject *x)
+/*[clinic end generated code: output=c37d29f58a47f93a input=5d8a75702d20e2f9]*/
 DecCtx_UnaryFunc(mpd_qplus)
 
 /*[clinic input]
@@ -6338,8 +6422,9 @@ Round to an integer.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_to_integral_value(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=ffc6470421c1439b input=3103e147cb9de9ed]*/
+_decimal_Context_to_integral_value_impl(PyObject *context, PyTypeObject *cls,
+                                        PyObject *x)
+/*[clinic end generated code: output=e3d9ad000bc06036 input=3103e147cb9de9ed]*/
 DecCtx_UnaryFunc(mpd_qround_to_int)
 
 /*[clinic input]
@@ -6349,8 +6434,9 @@ Round to an integer. Signal if the result is rounded or inexact.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_to_integral_exact(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=7fac8eca35da9290 input=677dc4b915907b68]*/
+_decimal_Context_to_integral_exact_impl(PyObject *context, PyTypeObject *cls,
+                                        PyObject *x)
+/*[clinic end generated code: output=680b796dfae8e2ef input=677dc4b915907b68]*/
 DecCtx_UnaryFunc(mpd_qround_to_intx)
 
 /*[clinic input]
@@ -6360,8 +6446,9 @@ Identical to to_integral_value(x).
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_to_integral(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=2741701ed141df91 input=89d4a4b15495b8c9]*/
+_decimal_Context_to_integral_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x)
+/*[clinic end generated code: output=09f4823b90b2cf17 input=89d4a4b15495b8c9]*/
 DecCtx_UnaryFunc(mpd_qround_to_int)
 
 /*[clinic input]
@@ -6371,8 +6458,8 @@ Square root of a non-negative number to context precision.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_sqrt(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=5595ae901120606c input=90bd954b0b8076fb]*/
+_decimal_Context_sqrt_impl(PyObject *context, PyTypeObject *cls, PyObject *x)
+/*[clinic end generated code: output=2b9c16c6f5ceead0 input=90bd954b0b8076fb]*/
 DecCtx_UnaryFunc(mpd_qsqrt)
 
 /* Binary arithmetic functions */
@@ -6381,6 +6468,7 @@ DecCtx_UnaryFunc(mpd_qsqrt)
 _decimal.Context.add
 
     self as context: self
+    cls: defining_class
     x: object
     y: object
     /
@@ -6389,8 +6477,9 @@ Return the sum of x and y.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_add_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=9957850af48fe295 input=8b8eac286bdf6cb4]*/
+_decimal_Context_add_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y)
+/*[clinic end generated code: output=ab4f0fb841e6a867 input=f2c74f6a845f62e9]*/
 DecCtx_BinaryFunc(mpd_qadd)
 
 /*[clinic input]
@@ -6400,8 +6489,9 @@ Compare x and y numerically.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_compare_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=646ab96420b9aad7 input=f701cb179c966ec1]*/
+_decimal_Context_compare_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x, PyObject *y)
+/*[clinic end generated code: output=56efd1faf653f1d7 input=f701cb179c966ec1]*/
 DecCtx_BinaryFunc(mpd_qcompare)
 
 /*[clinic input]
@@ -6411,9 +6501,9 @@ Compare x and y numerically.  All NaNs signal.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_compare_signal_impl(PyObject *context, PyObject *x,
-                                     PyObject *y)
-/*[clinic end generated code: output=dd56e9e6c3d12216 input=32a1bcef7bbc5179]*/
+_decimal_Context_compare_signal_impl(PyObject *context, PyTypeObject *cls,
+                                     PyObject *x, PyObject *y)
+/*[clinic end generated code: output=7c1a9a9f6ae4e5cd input=32a1bcef7bbc5179]*/
 DecCtx_BinaryFunc(mpd_qcompare_signal)
 
 /*[clinic input]
@@ -6423,8 +6513,9 @@ Return x divided by y.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_divide_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=0a07a5e718fe4a2c input=00cd9bc2ba2a1786]*/
+_decimal_Context_divide_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x, PyObject *y)
+/*[clinic end generated code: output=1a7924b20e24a528 input=00cd9bc2ba2a1786]*/
 DecCtx_BinaryFunc(mpd_qdiv)
 
 /*[clinic input]
@@ -6434,8 +6525,9 @@ Return x divided by y, truncated to an integer.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_divide_int_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=8c2d505d4339f4ef input=e80ada2f50d9719d]*/
+_decimal_Context_divide_int_impl(PyObject *context, PyTypeObject *cls,
+                                 PyObject *x, PyObject *y)
+/*[clinic end generated code: output=7a1d8948625105f0 input=e80ada2f50d9719d]*/
 DecCtx_BinaryFunc(mpd_qdivint)
 
 /*[clinic input]
@@ -6445,8 +6537,9 @@ Compare the values numerically and return the maximum.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_max_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=c8545b7718414761 input=22008ab898c86a8b]*/
+_decimal_Context_max_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y)
+/*[clinic end generated code: output=cd54af10a51c11fc input=22008ab898c86a8b]*/
 DecCtx_BinaryFunc(mpd_qmax)
 
 /*[clinic input]
@@ -6456,8 +6549,9 @@ Compare the values numerically with their sign ignored.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_max_mag_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=3cd67457cbc4d961 input=f7ce42ef82a7c52e]*/
+_decimal_Context_max_mag_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x, PyObject *y)
+/*[clinic end generated code: output=1c812e73bcb7827f input=f7ce42ef82a7c52e]*/
 DecCtx_BinaryFunc(mpd_qmax_mag)
 
 /*[clinic input]
@@ -6467,8 +6561,9 @@ Compare the values numerically and return the minimum.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_min_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=c1bc3852a7c09707 input=2aeec1167638c5ef]*/
+_decimal_Context_min_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y)
+/*[clinic end generated code: output=aa494e95b88107b3 input=2aeec1167638c5ef]*/
 DecCtx_BinaryFunc(mpd_qmin)
 
 /*[clinic input]
@@ -6478,8 +6573,9 @@ Compare the values numerically with their sign ignored.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_min_mag_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=f662c9d1b49abfd2 input=19d158c29e4fc140]*/
+_decimal_Context_min_mag_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x, PyObject *y)
+/*[clinic end generated code: output=ee0b69c1d9a14185 input=19d158c29e4fc140]*/
 DecCtx_BinaryFunc(mpd_qmin_mag)
 
 /*[clinic input]
@@ -6489,8 +6585,9 @@ Return the product of x and y.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_multiply_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=970be645784d70ad input=2fdd01acdbeef8ba]*/
+_decimal_Context_multiply_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x, PyObject *y)
+/*[clinic end generated code: output=45f33b805afa01a8 input=2fdd01acdbeef8ba]*/
 DecCtx_BinaryFunc(mpd_qmul)
 
 /*[clinic input]
@@ -6500,9 +6597,9 @@ Return the number closest to x, in the direction towards y.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_next_toward_impl(PyObject *context, PyObject *x,
-                                  PyObject *y)
-/*[clinic end generated code: output=938f2b4034e83618 input=aac775298e02b68c]*/
+_decimal_Context_next_toward_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x, PyObject *y)
+/*[clinic end generated code: output=436afff6f43edec2 input=aac775298e02b68c]*/
 DecCtx_BinaryFunc(mpd_qnext_toward)
 
 /*[clinic input]
@@ -6512,8 +6609,9 @@ Return a value equal to x (rounded), having the exponent of y.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_quantize_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=38ae7ac037d093d0 input=43d67a696ab6d895]*/
+_decimal_Context_quantize_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x, PyObject *y)
+/*[clinic end generated code: output=fcf8cd32b7d628c9 input=43d67a696ab6d895]*/
 DecCtx_BinaryFunc(mpd_qquantize)
 
 /*[clinic input]
@@ -6526,8 +6624,9 @@ original dividend.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_remainder_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=eb158964831b5ca4 input=36d0eb2b392c1215]*/
+_decimal_Context_remainder_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x, PyObject *y)
+/*[clinic end generated code: output=e0f96c834abbfbd2 input=36d0eb2b392c1215]*/
 DecCtx_BinaryFunc(mpd_qrem)
 
 /*[clinic input]
@@ -6540,9 +6639,9 @@ is 0 then its sign will be the sign of x).
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_remainder_near_impl(PyObject *context, PyObject *x,
-                                     PyObject *y)
-/*[clinic end generated code: output=2bcbd9bb031d0d13 input=bafb6327bb314c5c]*/
+_decimal_Context_remainder_near_impl(PyObject *context, PyTypeObject *cls,
+                                     PyObject *x, PyObject *y)
+/*[clinic end generated code: output=7f18c535a12cf8ac input=bafb6327bb314c5c]*/
 DecCtx_BinaryFunc(mpd_qrem_near)
 
 /*[clinic input]
@@ -6552,8 +6651,9 @@ Return the difference between x and y.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_subtract_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=fa8847e07b7c2bcc input=6767683ec68f7a1a]*/
+_decimal_Context_subtract_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x, PyObject *y)
+/*[clinic end generated code: output=3d764a8a87e79401 input=6767683ec68f7a1a]*/
 DecCtx_BinaryFunc(mpd_qsub)
 
 /*[clinic input]
@@ -6613,6 +6713,7 @@ _decimal_Context_divmod_impl(PyObject *context, PyObject *x, PyObject *y)
 _decimal.Context.power
 
     self as context: self
+    cls: defining_class
     a as base: object
     b as exp: object
     modulo as mod: object = None
@@ -6635,9 +6736,9 @@ restrictions hold:
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
-                            PyObject *mod)
-/*[clinic end generated code: output=d2e68694ec545245 input=e9aef844813de243]*/
+_decimal_Context_power_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *base, PyObject *exp, PyObject *mod)
+/*[clinic end generated code: output=d06d40c37cdd69dc input=2a70edd03317c666]*/
 {
     PyObject *a, *b, *c = NULL;
     PyObject *result;
@@ -6653,7 +6754,7 @@ _decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
         }
     }
 
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -6687,6 +6788,7 @@ _decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
 _decimal.Context.fma
 
     self as context: self
+    cls: defining_class
     x: object
     y: object
     z: object
@@ -6696,9 +6798,9 @@ Return x multiplied by y, plus z.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_fma_impl(PyObject *context, PyObject *x, PyObject *y,
-                          PyObject *z)
-/*[clinic end generated code: output=2d6174716faaf4e1 input=80479612da3333d1]*/
+_decimal_Context_fma_impl(PyObject *context, PyTypeObject *cls, PyObject *x,
+                          PyObject *y, PyObject *z)
+/*[clinic end generated code: output=08ec3cefc59d71a9 input=da3963b1a1da83b9]*/
 DecCtx_TernaryFunc(mpd_qfma)
 
 /* No argument */
@@ -6707,15 +6809,16 @@ DecCtx_TernaryFunc(mpd_qfma)
 _decimal.Context.radix
 
     self as context: self
+    cls: defining_class
 
 Return 10.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_radix_impl(PyObject *context)
-/*[clinic end generated code: output=9218fa309e0fcaa1 input=faeaa5b71f838c38]*/
+_decimal_Context_radix_impl(PyObject *context, PyTypeObject *cls)
+/*[clinic end generated code: output=674b88b7cd0c264d input=e1e4f8c0abf86825]*/
 {
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     return _dec_mpd_radix(state);
 }
 
@@ -6725,6 +6828,7 @@ _decimal_Context_radix_impl(PyObject *context)
 _decimal.Context.is_normal
 
     self as context: self
+    cls: defining_class
     x: object
     /
 
@@ -6732,8 +6836,9 @@ Return True if x is a normal number, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_normal(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=fed613aed8b286de input=1e7ff3f560842b8d]*/
+_decimal_Context_is_normal_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x)
+/*[clinic end generated code: output=089c5609db60bf57 input=7c90b825a517ef7e]*/
 DecCtx_BoolFunc(mpd_isnormal)
 
 /*[clinic input]
@@ -6743,8 +6848,9 @@ Return True if x is subnormal, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_subnormal(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=834450c602d58759 input=73f1bd9367b913a4]*/
+_decimal_Context_is_subnormal_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x)
+/*[clinic end generated code: output=f58c45a288aadeda input=73f1bd9367b913a4]*/
 DecCtx_BoolFunc(mpd_issubnormal)
 
 /*[clinic input]
@@ -6754,8 +6860,9 @@ Return True if x is finite, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_finite(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=45606d2f56874fef input=abff92a8a6bb85e6]*/
+_decimal_Context_is_finite_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x)
+/*[clinic end generated code: output=dfb00f1b5589b9f0 input=abff92a8a6bb85e6]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isfinite)
 
 /*[clinic input]
@@ -6765,8 +6872,9 @@ Return True if x is infinite, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_infinite(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=35c480cd0a2c3cf9 input=591242ae9a1e60e6]*/
+_decimal_Context_is_infinite_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x)
+/*[clinic end generated code: output=1c28517500811d01 input=591242ae9a1e60e6]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isinfinite)
 
 /*[clinic input]
@@ -6776,8 +6884,9 @@ Return True if x is a qNaN or sNaN, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_nan(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=cb529f55bf3106b3 input=520218376d5eec5e]*/
+_decimal_Context_is_nan_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x)
+/*[clinic end generated code: output=9dc15463ee19864a input=520218376d5eec5e]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isnan)
 
 /*[clinic input]
@@ -6787,8 +6896,9 @@ Return True if x is a quiet NaN, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_qnan(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=3e2e750eb643db1d input=97d06a14ab3360d1]*/
+_decimal_Context_is_qnan_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x)
+/*[clinic end generated code: output=4caa672e03703b6d input=97d06a14ab3360d1]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isqnan)
 
 /*[clinic input]
@@ -6798,8 +6908,9 @@ Return True if x is a signaling NaN, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_snan(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=a7ead03a2dfa15e4 input=0059fe4e9c3b25a8]*/
+_decimal_Context_is_snan_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x)
+/*[clinic end generated code: output=a8caa929d9f82ecd input=0059fe4e9c3b25a8]*/
 DecCtx_BoolFunc_NO_CTX(mpd_issnan)
 
 /*[clinic input]
@@ -6809,8 +6920,9 @@ Return True if x is negative, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_signed(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=c85cc15479d5ed47 input=b950cd697721ab8b]*/
+_decimal_Context_is_signed_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x)
+/*[clinic end generated code: output=42c450c99d4fe7db input=b950cd697721ab8b]*/
 DecCtx_BoolFunc_NO_CTX(mpd_issigned)
 
 /*[clinic input]
@@ -6820,8 +6932,9 @@ Return True if x is a zero, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_zero(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=24150f3c2422ebf8 input=bf08197d142a8027]*/
+_decimal_Context_is_zero_impl(PyObject *context, PyTypeObject *cls,
+                              PyObject *x)
+/*[clinic end generated code: output=e6c55359b7241d9e input=bf08197d142a8027]*/
 DecCtx_BoolFunc_NO_CTX(mpd_iszero)
 
 /*[clinic input]
@@ -6831,10 +6944,11 @@ Return True if x is canonical, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_is_canonical(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=b5b522b930a41186 input=1bf2129808e55eb9]*/
+_decimal_Context_is_canonical_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x)
+/*[clinic end generated code: output=18ee249d9aec957c input=1bf2129808e55eb9]*/
 {
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     if (!PyDec_Check(state, x)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a Decimal");
@@ -6852,8 +6966,9 @@ Apply self to Decimal x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context__apply(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=8db39d294602492e input=12b34468ca4a4c30]*/
+_decimal_Context__apply_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x)
+/*[clinic end generated code: output=c6b542f4e8114b97 input=12b34468ca4a4c30]*/
 {
     PyObject *result, *a;
 
@@ -6872,8 +6987,9 @@ Apply self to Decimal x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_apply(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=4d39653645a6df44 input=388e66ca82733516]*/
+_decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x)
+/*[clinic end generated code: output=f8a7142d47ad4ff3 input=388e66ca82733516]*/
 {
     return _decimal_Context__apply(context, v);
 }
@@ -6886,10 +7002,11 @@ Return a new instance of x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_canonical(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=28fa845499e5d485 input=025ecb106ac15bff]*/
+_decimal_Context_canonical_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x)
+/*[clinic end generated code: output=f213e433e2032e5e input=025ecb106ac15bff]*/
 {
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     if (!PyDec_Check(state, x)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a Decimal");
@@ -6906,14 +7023,15 @@ Return a copy of x with the sign set to 0.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_copy_abs(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=a9035e6606261b30 input=4aa2f612625f0f73]*/
+_decimal_Context_copy_abs_impl(PyObject *context, PyTypeObject *cls,
+                               PyObject *x)
+/*[clinic end generated code: output=a141ad4b9afe2deb input=4aa2f612625f0f73]*/
 {
     PyObject *result, *a;
     uint32_t status = 0;
 
     CONVERT_OP_RAISE(&a, x, context);
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -6937,8 +7055,9 @@ Return a copy of Decimal x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_copy_decimal(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=b9ec251a2a568a14 input=4db4f942f45fb7c9]*/
+_decimal_Context_copy_decimal_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x)
+/*[clinic end generated code: output=639a82e1193d31f6 input=4db4f942f45fb7c9]*/
 {
     PyObject *result;
 
@@ -6953,14 +7072,15 @@ Return a copy of x with the sign inverted.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_copy_negate(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=5fe136d7bac13391 input=2e6e213e2ed0efda]*/
+_decimal_Context_copy_negate_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x)
+/*[clinic end generated code: output=e49d013489dc252b input=2e6e213e2ed0efda]*/
 {
     PyObject *result, *a;
     uint32_t status = 0;
 
     CONVERT_OP_RAISE(&a, x, context);
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -6984,19 +7104,33 @@ Return the exponent of the magnitude of the operand's MSD.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_logb(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=d2d8469f828daa41 input=28d1cd1a8a906b9a]*/
+_decimal_Context_logb_impl(PyObject *context, PyTypeObject *cls, PyObject *x)
+/*[clinic end generated code: output=9b9697e1eb68093f input=28d1cd1a8a906b9a]*/
 DecCtx_UnaryFunc(mpd_qlogb)
 
 /*[clinic input]
 _decimal.Context.logical_invert = _decimal.Context.abs
 
-Invert all digits of x.
+Invert all the digits in the operand.
+
+The operand must be a logical number.
+
+    >>> ExtendedContext.logical_invert(Decimal('0'))
+    Decimal('111111111')
+    >>> ExtendedContext.logical_invert(Decimal('1'))
+    Decimal('111111110')
+    >>> ExtendedContext.logical_invert(Decimal('111111111'))
+    Decimal('0')
+    >>> ExtendedContext.logical_invert(Decimal('101010101'))
+    Decimal('10101010')
+    >>> ExtendedContext.logical_invert(1101)
+    Decimal('111110010')
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_logical_invert(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=b863a5cdb986f684 input=1fa8dcc59c557fcc]*/
+_decimal_Context_logical_invert_impl(PyObject *context, PyTypeObject *cls,
+                                     PyObject *x)
+/*[clinic end generated code: output=97760277a958e2b0 input=8e568f4c745ab596]*/
 DecCtx_UnaryFunc(mpd_qinvert)
 
 /*[clinic input]
@@ -7006,8 +7140,9 @@ Return an indication of the class of x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_number_class(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=2b39fa98dd723c6f input=1ead8462f1800e4e]*/
+_decimal_Context_number_class_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x)
+/*[clinic end generated code: output=c1592a23e25ba5ee input=1ead8462f1800e4e]*/
 {
     PyObject *a;
     const char *cp;
@@ -7027,8 +7162,9 @@ Convert a number to a string using scientific notation.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_to_sci_string(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=7d461d24824c6f15 input=ed442677c66d342d]*/
+_decimal_Context_to_sci_string_impl(PyObject *context, PyTypeObject *cls,
+                                    PyObject *x)
+/*[clinic end generated code: output=092dcdef999d72da input=ed442677c66d342d]*/
 {
     PyObject *result;
     PyObject *a;
@@ -7057,8 +7193,9 @@ Convert a number to a string, using engineering notation.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_to_eng_string(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=3a54b9de0b01708f input=a574385e2e3e3bc0]*/
+_decimal_Context_to_eng_string_impl(PyObject *context, PyTypeObject *cls,
+                                    PyObject *x)
+/*[clinic end generated code: output=7fc53216c208f487 input=a574385e2e3e3bc0]*/
 {
     PyObject *result;
     PyObject *a;
@@ -7086,6 +7223,7 @@ _decimal_Context_to_eng_string(PyObject *context, PyObject *x)
 _decimal.Context.compare_total
 
     self as context: self
+    cls: defining_class
     x: object
     y: object
     /
@@ -7094,9 +7232,9 @@ Compare x and y using their abstract representation.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_compare_total_impl(PyObject *context, PyObject *x,
-                                    PyObject *y)
-/*[clinic end generated code: output=a9299ef125fb2245 input=020b30c9bc2ea2c6]*/
+_decimal_Context_compare_total_impl(PyObject *context, PyTypeObject *cls,
+                                    PyObject *x, PyObject *y)
+/*[clinic end generated code: output=f79177b27fe930e3 input=2bfc677a841e297a]*/
 DecCtx_BinaryFunc_NO_CTX(mpd_compare_total)
 
 /*[clinic input]
@@ -7106,9 +7244,9 @@ Compare x and y using their abstract representation, ignoring sign.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_compare_total_mag_impl(PyObject *context, PyObject *x,
-                                        PyObject *y)
-/*[clinic end generated code: output=7c376de9f94feeaf input=2b982e69f932dcb2]*/
+_decimal_Context_compare_total_mag_impl(PyObject *context, PyTypeObject *cls,
+                                        PyObject *x, PyObject *y)
+/*[clinic end generated code: output=2528c669ccd6d6ff input=2b982e69f932dcb2]*/
 DecCtx_BinaryFunc_NO_CTX(mpd_compare_total_mag)
 
 /*[clinic input]
@@ -7118,15 +7256,16 @@ Copy the sign from y to x.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_copy_sign_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=fff3c5c474acf78e input=c0682aeaffc7cfdf]*/
+_decimal_Context_copy_sign_impl(PyObject *context, PyTypeObject *cls,
+                                PyObject *x, PyObject *y)
+/*[clinic end generated code: output=77d23b6f4e42120c input=c0682aeaffc7cfdf]*/
 {
     PyObject *a, *b;
     PyObject *result;
     uint32_t status = 0;
 
     CONVERT_BINOP_RAISE(&a, &b, x, y, context);
-    decimal_state *state = get_module_state_from_ctx(context);
+    decimal_state *state = PyType_GetModuleState(cls);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -7148,36 +7287,100 @@ _decimal_Context_copy_sign_impl(PyObject *context, PyObject *x, PyObject *y)
 /*[clinic input]
 _decimal.Context.logical_and = _decimal.Context.add
 
-Digit-wise and of x and y.
+Applies the logical operation 'and' between each operand's digits.
+
+The operands must be both logical numbers.
+
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('1'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_and(Decimal('1100'), Decimal('1010'))
+    Decimal('1000')
+    >>> ExtendedContext.logical_and(Decimal('1111'), Decimal('10'))
+    Decimal('10')
+    >>> ExtendedContext.logical_and(110, 1101)
+    Decimal('100')
+    >>> ExtendedContext.logical_and(Decimal(110), 1101)
+    Decimal('100')
+    >>> ExtendedContext.logical_and(110, Decimal(1101))
+    Decimal('100')
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_logical_and_impl(PyObject *context, PyObject *x,
-                                  PyObject *y)
-/*[clinic end generated code: output=f1e9bf7844a395fc input=30ee33b5b365fd80]*/
+_decimal_Context_logical_and_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x, PyObject *y)
+/*[clinic end generated code: output=009dfa08ecaa2ac8 input=bcb7d3d6ab7530de]*/
 DecCtx_BinaryFunc(mpd_qand)
 
 /*[clinic input]
 _decimal.Context.logical_or = _decimal.Context.add
 
-Digit-wise or of x and y.
+Applies the logical operation 'or' between each operand's digits.
+
+The operands must be both logical numbers.
+
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('0'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1100'), Decimal('1010'))
+    Decimal('1110')
+    >>> ExtendedContext.logical_or(Decimal('1110'), Decimal('10'))
+    Decimal('1110')
+    >>> ExtendedContext.logical_or(110, 1101)
+    Decimal('1111')
+    >>> ExtendedContext.logical_or(Decimal(110), 1101)
+    Decimal('1111')
+    >>> ExtendedContext.logical_or(110, Decimal(1101))
+    Decimal('1111')
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_logical_or_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=28f7ecd1af3262f0 input=3b1a6725d0262fb9]*/
+_decimal_Context_logical_or_impl(PyObject *context, PyTypeObject *cls,
+                                 PyObject *x, PyObject *y)
+/*[clinic end generated code: output=eb38617e8d31bf12 input=47b45d296fb90846]*/
 DecCtx_BinaryFunc(mpd_qor)
 
 /*[clinic input]
 _decimal.Context.logical_xor = _decimal.Context.add
 
-Digit-wise xor of x and y.
+Applies the logical operation 'xor' between each operand's digits.
+
+The operands must be both logical numbers.
+
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('0'))
+    Decimal('1')
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('1'))
+    Decimal('0')
+    >>> ExtendedContext.logical_xor(Decimal('1100'), Decimal('1010'))
+    Decimal('110')
+    >>> ExtendedContext.logical_xor(Decimal('1111'), Decimal('10'))
+    Decimal('1101')
+    >>> ExtendedContext.logical_xor(110, 1101)
+    Decimal('1011')
+    >>> ExtendedContext.logical_xor(Decimal(110), 1101)
+    Decimal('1011')
+    >>> ExtendedContext.logical_xor(110, Decimal(1101))
+    Decimal('1011')
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_logical_xor_impl(PyObject *context, PyObject *x,
-                                  PyObject *y)
-/*[clinic end generated code: output=7d8461ace42d1871 input=5ebbbe8bb35da380]*/
+_decimal_Context_logical_xor_impl(PyObject *context, PyTypeObject *cls,
+                                  PyObject *x, PyObject *y)
+/*[clinic end generated code: output=23cd81fdcd865d5a input=fcaaf828c1d2d089]*/
 DecCtx_BinaryFunc(mpd_qxor)
 
 /*[clinic input]
@@ -7187,8 +7390,9 @@ Return a copy of x, rotated by y places.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_rotate_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=6d8b718f218712a2 input=7ad91845c909eb0a]*/
+_decimal_Context_rotate_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x, PyObject *y)
+/*[clinic end generated code: output=3d5b3cfcb4659432 input=7ad91845c909eb0a]*/
 DecCtx_BinaryFunc(mpd_qrotate)
 
 /*[clinic input]
@@ -7198,8 +7402,9 @@ Return the first operand after adding the second value to its exp.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_scaleb_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=3c9cb117027c7722 input=c5d2ee7a57f65f8c]*/
+_decimal_Context_scaleb_impl(PyObject *context, PyTypeObject *cls,
+                             PyObject *x, PyObject *y)
+/*[clinic end generated code: output=795ac61bcbe61c67 input=c5d2ee7a57f65f8c]*/
 DecCtx_BinaryFunc(mpd_qscaleb)
 
 /*[clinic input]
@@ -7209,8 +7414,9 @@ Return a copy of x, shifted by y places.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_shift_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=78625878a264b3e5 input=1ab44ff0854420ce]*/
+_decimal_Context_shift_impl(PyObject *context, PyTypeObject *cls,
+                            PyObject *x, PyObject *y)
+/*[clinic end generated code: output=43d69615f0271c81 input=1ab44ff0854420ce]*/
 DecCtx_BinaryFunc(mpd_qshift)
 
 /*[clinic input]
@@ -7220,9 +7426,9 @@ Return True if the two operands have the same exponent.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_same_quantum_impl(PyObject *context, PyObject *x,
-                                   PyObject *y)
-/*[clinic end generated code: output=137acab27ece605c input=194cd156e398eaf9]*/
+_decimal_Context_same_quantum_impl(PyObject *context, PyTypeObject *cls,
+                                   PyObject *x, PyObject *y)
+/*[clinic end generated code: output=91a4d8325f98d9e9 input=194cd156e398eaf9]*/
 {
     PyObject *a, *b;
     PyObject *result;
@@ -7324,16 +7530,14 @@ static PyMethodDef context_methods [] =
   _DECIMAL_CONTEXT_CLEAR_FLAGS_METHODDEF
   _DECIMAL_CONTEXT_CLEAR_TRAPS_METHODDEF
 
-#ifdef CONFIG_32
   /* Unsafe set functions with relaxed range checks */
-  { "_unsafe_setprec", context_unsafe_setprec, METH_O, NULL },
-  { "_unsafe_setemin", context_unsafe_setemin, METH_O, NULL },
-  { "_unsafe_setemax", context_unsafe_setemax, METH_O, NULL },
-#endif
+  _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF
+  _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF
+  _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF
 
   /* Miscellaneous */
-  { "__copy__", context_copy, METH_NOARGS, NULL },
-  { "__reduce__", context_reduce, METH_NOARGS, NULL },
+  _DECIMAL_CONTEXT___COPY___METHODDEF
+  _DECIMAL_CONTEXT___REDUCE___METHODDEF
   _DECIMAL_CONTEXT_COPY_METHODDEF
   _DECIMAL_CONTEXT_CREATE_DECIMAL_METHODDEF
   _DECIMAL_CONTEXT_CREATE_DECIMAL_FROM_FLOAT_METHODDEF
@@ -7366,12 +7570,35 @@ static PyType_Spec context_spec = {
 };
 
 
+static PyObject *
+decimal_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString(MPD_SPEC_VERSION);
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
+    return NULL;
+}
+
+
 static PyMethodDef _decimal_methods [] =
 {
   _DECIMAL_GETCONTEXT_METHODDEF
   _DECIMAL_SETCONTEXT_METHODDEF
   _DECIMAL_LOCALCONTEXT_METHODDEF
   _DECIMAL_IEEECONTEXT_METHODDEF
+  {"__getattr__", decimal_getattr, METH_VARARGS, "Module __getattr__"},
   { NULL, NULL, 1, NULL }
 };
 
@@ -7527,10 +7754,15 @@ _decimal_exec(PyObject *m)
 
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
-    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
-                                 "namedtuple", "(ss)", "DecimalTuple",
-                                 "sign digits exponent"));
-
+    ASSIGN_PTR(obj, PyObject_CallMethod(collections, "namedtuple", "(ss)",
+                                        "DecimalTuple",
+                                        "sign digits exponent"));
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "type is expected from namedtuple call");
+        goto error;
+    }
+    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)obj);
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
     CHECK_INT(PyDict_SetItemString(state->DecimalTuple->tp_dict, "__module__", obj));
     Py_CLEAR(obj);
@@ -7691,7 +7923,7 @@ _decimal_exec(PyObject *m)
     }
 
     /* Add specification version number */
-    CHECK_INT(PyModule_AddStringConstant(m, "__version__", "1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
     return 0;
