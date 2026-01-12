@@ -3487,6 +3487,44 @@ class TestUopsOptimization(unittest.TestCase):
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
+    def test_binary_op_subscr_init_frame(self):
+        class B:
+            def __getitem__(self, other):
+                return other + 1
+        def testfunc(*args):
+            n, b = args[0]
+            for _ in range(n):
+                y = b[2]
+
+        res, ex = self._run_with_optimizer(testfunc, (TIER2_THRESHOLD, B()))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BINARY_OP_SUBSCR_INIT_CALL", uops)
+        # _POP_TOP_NOP is a sign the optimizer ran and didn't hit bottom.
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
+
+    def test_load_attr_property_frame(self):
+        class B:
+            @property
+            def prop(self):
+                return 3
+        def testfunc(*args):
+            n, b = args[0]
+            for _ in range(n):
+                y = b.prop + b.prop
+
+        testfunc((3, B()))
+        import dis
+        dis.dis(testfunc, adaptive=True)
+        res, ex = self._run_with_optimizer(testfunc, (TIER2_THRESHOLD, B()))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_ATTR_PROPERTY_FRAME", uops)
+        # This is a sign the optimizer ran and didn't hit bottom.
+        self.assertIn("_INSERT_2_LOAD_CONST_INLINE_BORROW", uops)
+
     def test_unary_negative(self):
         def testfunc(n):
             a = 3

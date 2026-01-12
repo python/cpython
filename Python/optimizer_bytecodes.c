@@ -327,9 +327,17 @@ dummy_func(void) {
         GETLOCAL(this_instr->operand0) = sym_new_null(ctx);
     }
 
-    op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame)) {
-        new_frame = PyJitRef_NULL;
-        ctx->done = true;
+    op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem -- new_frame)) {
+        assert((this_instr + 1)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging(this_instr + 1);
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+        f->locals[0] = container;
+        f->locals[1] = sub;
+        new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
     }
 
     op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
@@ -753,9 +761,15 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
-        (void)fget;
-        new_frame = PyJitRef_NULL;
-        ctx->done = true;
+        assert((this_instr + 2)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging(this_instr + 2);
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+        f->locals[0] = owner;
+        new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
     }
 
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
