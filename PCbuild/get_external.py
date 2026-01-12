@@ -49,6 +49,7 @@ def retrieve_with_retries(download_location, output_path, reporthook,
         except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
                 raise OSError(f'Download from {download_location} failed.') from ex
+            trigger_automatic_root_certificate_update(download_location)
             time.sleep(2.25**attempt)
         else:
             return resp
