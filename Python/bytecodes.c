@@ -5607,6 +5607,16 @@ dummy_func(
 #else
             assert(_PyErr_Occurred(tstate));
 #endif
+#if _Py_TIER2
+            if (IS_JIT_TRACING()) {
+                LEAVE_TRACING();
+                int res = stop_tracing_and_jit(tstate, frame);
+                (void)res;
+                // We shouldn't ven have compiled in the first place.
+                assert(res == 0);
+            }
+#endif
+
 
             /* Log traceback info. */
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);

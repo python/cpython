@@ -12323,6 +12323,16 @@ JUMP_TO_LABEL(error);
             #else
             assert(_PyErr_Occurred(tstate));
             #endif
+            #if _Py_TIER2
+            if (IS_JIT_TRACING()) {
+                LEAVE_TRACING();
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int res = stop_tracing_and_jit(tstate, frame);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                (void)res;
+                assert(res == 0);
+            }
+            #endif
 
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             if (!_PyFrame_IsIncomplete(frame)) {
