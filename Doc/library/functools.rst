@@ -722,6 +722,7 @@ The :mod:`functools` module defines the following functions:
     dispatched on by that method is *always* the first argument passed for the call.
     Therefore, dispatching to regular methods can only be sensibly performed by
     calling such a method from instances of the class, and not from the class object.
+
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.15
