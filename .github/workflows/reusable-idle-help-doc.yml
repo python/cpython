@@ -32,14 +32,8 @@ jobs:
       working-directory: Doc
     - name: 'Check for changes'
       run: |
-          git add -u
-          changes=$(git status --porcelain)
-          # Check for changes in regenerated files
-          if test -n "$changes"; then
-            echo "Generated files not up to date."
-            echo "Perhaps you forgot to run make idlehelp ;)"
-            echo "$changes"
-            echo ""
-            git diff --staged || true
-            exit 1
-          fi
+        git diff --exit-code Lib/idlelib/help.html || {
+          echo "Lib/idlelib/help.html is not up to date."
+          echo "Run make idlehelp in the Doc directory."
+          exit 1
+        }
