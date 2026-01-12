@@ -688,6 +688,45 @@ or the :pypi:`more-itertools` project:
 
 
     >>> random.seed(8675309)
+    >>> random_permutation('ABCDEFG')
+    ('D', 'B', 'E', 'C', 'G', 'A', 'F')
+    >>> random_permutation('ABCDEFG', 5)
+    ('A', 'G', 'D', 'C', 'B')
+
+
+    >>> random.seed(8675309)
+    >>> random_combination('ABCDEFG', 7)
+    ('A', 'B', 'C', 'D', 'E', 'F', 'G')
+    >>> random_combination('ABCDEFG', 6)
+    ('A', 'B', 'C', 'D', 'F', 'G')
+    >>> random_combination('ABCDEFG', 5)
+    ('A', 'B', 'C', 'E', 'F')
+    >>> random_combination('ABCDEFG', 4)
+    ('B', 'C', 'D', 'G')
+    >>> random_combination('ABCDEFG', 3)
+    ('B', 'E', 'G')
+    >>> random_combination('ABCDEFG', 2)
+    ('E', 'G')
+    >>> random_combination('ABCDEFG', 1)
+    ('C',)
+    >>> random_combination('ABCDEFG', 0)
+    ()
+
+
+    >>> random.seed(8675309)
+    >>> random_combination_with_replacement('ABCDEFG', 7)
+    ('B', 'C', 'D', 'E', 'E', 'E', 'G')
+    >>> random_combination_with_replacement('ABCDEFG', 3)
+    ('A', 'B', 'E')
+    >>> random_combination_with_replacement('ABCDEFG', 2)
+    ('A', 'G')
+    >>> random_combination_with_replacement('ABCDEFG', 1)
+    ('E',)
+    >>> random_combination_with_replacement('ABCDEFG', 0)
+    ()
+
+
+    >>> random.seed(8675309)
     >>> random_derangement('')
     ()
     >>> random_derangement('A')
