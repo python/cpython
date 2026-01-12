@@ -50,7 +50,7 @@ jobs:
     uses: ./.github/workflows/reusable-docs.yml
 
   check-idle-help-doc:
-    name: "Check if IDLE's help.html is up to date"
+    name: IDLE help doc
     needs: check-docs
     uses: ./.github/workflows/reusable-idle-help-doc.yml
 

@@ -489,9 +489,10 @@ Lib/test/test_html*.py              @ezio-melotti
 Tools/build/parse_html5_entities.py @ezio-melotti
 
 # IDLE
-Doc/library/idle.rst          @terryjreedy
-Lib/idlelib/                  @terryjreedy
-Lib/turtledemo/               @terryjreedy
+Doc/library/idle.rst              @terryjreedy
+Lib/idlelib/                      @terryjreedy
+Lib/turtledemo/                   @terryjreedy
+Tools/build/generate_idle_help.py @terryjreedy
 
 # importlib.metadata
 Doc/library/importlib.metadata.rst  @jaraco @warsaw

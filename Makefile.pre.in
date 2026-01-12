@@ -3231,6 +3231,10 @@ rmtestturds:
 docclean:
 	$(MAKE) -C $(srcdir)/Doc clean
 
+.PHONY: idlehelp
+idlehelp:
+	@echo "To regenerate Lib/idlelib/help.html, run make idlehelp in the Doc directory."
+
 # like the 'clean' target but retain the profile guided optimization (PGO)
 # data.  The PGO data is only valid if source code remains unchanged.
 .PHONY: clean-retain-profile
