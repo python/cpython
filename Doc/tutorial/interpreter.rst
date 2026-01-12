@@ -32,6 +32,7 @@ Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
 status.  If that doesn't work, you can exit the interpreter by typing the
 following command: ``quit()``.
+
 The interpreter's line-editing features include interactive editing, history
 substitution and code completion on most systems.
 Perhaps the quickest check to see whether command line editing is supported is
