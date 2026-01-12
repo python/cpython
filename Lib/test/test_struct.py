@@ -823,7 +823,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertListEqual(list(results), [None] * 5)
 
     def test_operations_on_half_initialized_Struct(self):
-        S = struct.Struct.__new__(struct.Struct)
+        with self.assertWarns(DeprecationWarning):
+            S = struct.Struct.__new__(struct.Struct)
 
         spam = array.array('b', b' ')
         self.assertRaises(RuntimeError, S.iter_unpack, spam)
