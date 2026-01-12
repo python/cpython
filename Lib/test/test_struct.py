@@ -816,6 +816,18 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             results = executor.map(exec, [code] * 5)
             self.assertListEqual(list(results), [None] * 5)
 
+    def test_operations_on_half_initialized_Struct(self):
+        S = struct.Struct.__new__(struct.Struct)
+
+        spam = array.array('b', b' ')
+        self.assertRaises(RuntimeError, S.iter_unpack, spam)
+        self.assertRaises(RuntimeError, S.pack, 1)
+        self.assertRaises(RuntimeError, S.pack_into, spam, 1)
+        self.assertRaises(RuntimeError, S.unpack, spam)
+        self.assertRaises(RuntimeError, S.unpack_from, spam)
+        self.assertRaises(RuntimeError, getattr, S, 'format')
+        self.assertEqual(S.size, -1)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
