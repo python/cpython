@@ -380,6 +380,12 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        res = sym_new_not_null(ctx);
+        ds = dict_st;
+        ss = sub_st;
+    }
+
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
