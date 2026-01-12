@@ -1460,6 +1460,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
+    indent_level = 0;
     if (encoder_listencode_obj(self, writer, obj, indent_level, indent_cache)) {
         PyUnicodeWriter_Discard(writer);
         Py_XDECREF(indent_cache);
