@@ -2,6 +2,10 @@ name: Reusable Docs
 
 on:
   workflow_call:
+    outputs:
+      idle-html-artifact-id:
+        description: 'Artifact ID for the built idle.html'
+        value: ${{ jobs.build-doc.outputs.idle-html-artifact-id }}
   workflow_dispatch:
 
 permissions:
@@ -19,6 +23,8 @@ jobs:
     name: 'Docs'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      idle-html-artifact-id: ${{ steps.upload-idle-html.outputs.artifact-id }}
     env:
       branch_base: 'origin/${{ github.event.pull_request.base.ref }}'
       branch_pr: 'origin/${{ github.event.pull_request.head.ref }}'
@@ -76,6 +82,7 @@ jobs:
           --fail-if-improved \
           --fail-if-new-news-nit
     - name: 'Upload built idle.html'
+      id: upload-idle-html
       uses: actions/upload-artifact@v4
       with:
         name: idle-html

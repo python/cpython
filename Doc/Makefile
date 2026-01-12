@@ -145,7 +145,7 @@ pydoc-topics: build
 	      "&& cp build/pydoc-topics/module_docs.py ../Lib/pydoc_data/module_docs.py"
 
 .PHONY: idlehelp
-idlehelp: html
+idlehelp: build/html/library/idle.html
 	$(PYTHON) ../Tools/build/generate_idle_help.py
 
 .PHONY: gettext

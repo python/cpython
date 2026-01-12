@@ -2,6 +2,11 @@ name: Reusable check IDLE help
 
 on:
   workflow_call:
+    inputs:
+      idle-html-artifact-id:
+        description: 'Artifact ID for the built idle.html'
+        required: true
+        type: string
 
 permissions: {}
 
@@ -20,16 +25,14 @@ jobs:
     - name: 'Download built idle.html'
       uses: actions/download-artifact@v7
       with:
-        name: idle-html
+        artifact-ids: ${{ inputs.idle-html-artifact-id }}
         path: Doc/build/html/library
     - name: 'Set up Python'
       uses: actions/setup-python@v6
       with:
         python-version: '3'
     - name: 'Regenerate Lib/idlelib/help.html'
-      run: |
-        mkdir -v html/  # trick make into skipping the dependency target
-        make idlehelp
+      run: make idlehelp
       working-directory: Doc
     - name: 'Check for changes'
       run: |

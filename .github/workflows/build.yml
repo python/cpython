@@ -54,6 +54,8 @@ jobs:
     needs: [build-context, check-docs]
     if: fromJSON(needs.build-context.outputs.run-idle-help-doc)
     uses: ./.github/workflows/reusable-idle-help-doc.yml
+    with:
+      idle-html-artifact-id: ${{ needs.check-docs.outputs.idle-html-artifact-id }}
 
   check-autoconf-regen:
     name: 'Check if Autoconf files are up to date'
@@ -719,14 +721,7 @@ jobs:
           cifuzz,
           check-idle-help-doc,
         allowed-skips: >-
-          ${{
-            !fromJSON(needs.build-context.outputs.run-docs)
-            && '
-            check-docs,
-            check-idle-help-doc,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-docs) && 'check-docs,' || '' }}
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '
