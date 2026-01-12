@@ -57,6 +57,9 @@ static void
 atexit_delete_cb(struct atexit_state *state, int i)
 {
     atexit_py_callback *cb = state->callbacks[i];
+    if (cb == NULL) {
+        return;
+    }
     state->callbacks[i] = NULL;
 
     Py_DECREF(cb->func);
