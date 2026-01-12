@@ -47,7 +47,7 @@ Iterator            Arguments               Results                             
 Iterator                        Arguments                       Results                                             Example
 ============================    ============================    =================================================   =============================================================
 :func:`accumulate`              p [,func]                       p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) → 1 3 6 10 15``
-:func:`batched`                 p, n                            (p0, p1, ..., p_n-1), ...                           ``batched('ABCDEFG', n=2) → AB CD EF G``
+:func:`batched`                 p, n                            (p0, p1, ..., p_n-1), ...                           ``batched('ABCDEFG', n=3) → ABC DEF G``
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') → A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) → A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) → A C E F``
@@ -181,7 +181,7 @@ loops that truncate the stream.
    Roughly equivalent to::
 
       def batched(iterable, n, *, strict=False):
-          # batched('ABCDEFG', 2) → AB CD EF G
+          # batched('ABCDEFG', 3) → ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
           iterator = iter(iterable)
@@ -842,7 +842,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from contextlib import suppress
    from functools import reduce
    from math import comb, prod, sumprod, isqrt
-   from operator import itemgetter, getitem, mul, neg
+   from operator import is_not, itemgetter, getitem, mul, neg
 
    def take(n, iterable):
        "Return first n items of the iterable as a list."
@@ -977,6 +977,16 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # subslices('ABCD') → A AB ABC ABCD B BC BCD C CD D
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(getitem, repeat(seq), slices)
+
+   def derangements(iterable, r=None):
+       "Produce r length permutations without fixed points."
+       # derangements('ABCD') → BADC BCDA BDAC CADB CDAB CDBA DABC DCAB DCBA
+       # Algorithm credited to Stefan Pochmann
+       seq = tuple(iterable)
+       pos = tuple(range(len(seq)))
+       have_moved = map(map, repeat(is_not), repeat(pos), permutations(pos, r=r))
+       valid_derangements = map(all, have_moved)
+       return compress(permutations(seq, r=r), valid_derangements)
 
    def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
@@ -1661,6 +1671,36 @@ The following recipes have a more mathematical flavor:
 
     >>> list(subslices('ABCD'))
     ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
+
+
+    >>> ' '.join(map(''.join, derangements('ABCD')))
+    'BADC BCDA BDAC CADB CDAB CDBA DABC DCAB DCBA'
+    >>> ' '.join(map(''.join, derangements('ABCD', 3)))
+    'BAD BCA BCD BDA CAB CAD CDA CDB DAB DCA DCB'
+    >>> ' '.join(map(''.join, derangements('ABCD', 2)))
+    'BA BC BD CA CD DA DC'
+    >>> ' '.join(map(''.join, derangements('ABCD', 1)))
+    'B C D'
+    >>> ' '.join(map(''.join, derangements('ABCD', 0)))
+    ''
+    >>> # Compare number of derangements to https://oeis.org/A000166
+    >>> [len(list(derangements(range(n)))) for n in range(10)]
+    [1, 0, 1, 2, 9, 44, 265, 1854, 14833, 133496]
+    >>> # Verify that identical objects are treated as unique by position
+    >>> identical = 'X'
+    >>> distinct = 'x'
+    >>> seq1 = ('A', identical, 'B', identical)
+    >>> result1 = ' '.join(map(''.join, derangements(seq1)))
+    >>> result1
+    'XAXB XBXA XXAB BAXX BXAX BXXA XAXB XBAX XBXA'
+    >>> seq2 = ('A', identical, 'B', distinct)
+    >>> result2 = ' '.join(map(''.join, derangements(seq2)))
+    >>> result2
+    'XAxB XBxA XxAB BAxX BxAX BxXA xAXB xBAX xBXA'
+    >>> result1 == result2
+    False
+    >>> result1.casefold() == result2.casefold()
+    True
 
 
     >>> list(powerset([1,2,3]))

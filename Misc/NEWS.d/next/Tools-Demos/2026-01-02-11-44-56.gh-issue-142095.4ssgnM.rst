@@ -1,0 +1,2 @@
+Make gdb 'py-bt' command use frame from thread local state when available.
+Patch by Sam Gross and Victor Stinner.
