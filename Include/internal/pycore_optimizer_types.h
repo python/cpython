@@ -10,8 +10,6 @@ extern "C" {
 
 #include "pycore_uop.h"  // UOP_MAX_TRACE_LENGTH
 
-typedef struct _PyJitTracerState _PyJitTracerState;
-
 // Holds locals, stack, locals, stack ... (in that order)
 #define MAX_ABSTRACT_INTERP_SIZE 512
 
@@ -130,7 +128,7 @@ typedef struct _JitOptContext {
     JitOptRef *n_consumed;
     JitOptRef *limit;
     JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
-    _PyJitTracerState *tracer;
+    _PyUOpInstruction *out_buffer;
 } JitOptContext;
 
 

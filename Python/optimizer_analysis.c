@@ -164,20 +164,20 @@ is_terminator_uop(const _PyUOpInstruction *uop)
     (INST)->oparg = ARG;            \
     (INST)->operand0 = OPERAND;
 
-#define ADD_OP(OP, ARG, OPERAND) add_op(ctx, this_instr, (OP), (ARG), (OPERAND))
+#define ADD_OP(OP, ARG, OPERAND) add_op(ctx, this_instr, &out_len, (OP), (ARG), (OPERAND))
 
 static inline void
-add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
+add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr, int *out_len,
        uint16_t opcode, uint16_t oparg, uintptr_t operand0)
 {
-    _PyUOpInstruction *out = &ctx->tracer->out_buffer[ctx->tracer->out_len];
+    _PyUOpInstruction *out = &ctx->out_buffer[*out_len];
     out->opcode = (opcode);
     out->format = this_instr->format;
     out->oparg = (oparg);
     out->target = this_instr->target;
     out->operand0 = (operand0);
     out->operand1 = this_instr->operand1;
-    ctx->tracer->out_len++;
+    (*out_len)++;
 }
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
@@ -242,12 +242,13 @@ static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
+    int *out_len,
     JitOptRef value,
     JitOptRef *result_ptr,
     bool insert_mode)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
-        ADD_OP(_NOP, 0, 0);
+        add_op(ctx, this_instr, out_len, _NOP, 0, 0);
         *result_ptr = value;
         return 1;
     }
@@ -257,7 +258,7 @@ optimize_to_bool(
         int opcode = insert_mode ?
             _INSERT_1_LOAD_CONST_INLINE_BORROW :
             _POP_TOP_LOAD_CONST_INLINE_BORROW;
-        ADD_OP(opcode, 0, (uintptr_t)load);
+        add_op(ctx, this_instr, out_len, opcode, 0, (uintptr_t)load);
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
@@ -265,9 +266,9 @@ optimize_to_bool(
 }
 
 static void
-eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit)
+eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, int *out_len, bool exit)
 {
-    ADD_OP(_POP_TOP, 0, 0);
+    add_op(ctx, this_instr, out_len, _POP_TOP, 0, 0);
     if (exit) {
         REPLACE_OP((this_instr+1), _EXIT_TRACE, 0, 0);
         this_instr[1].target = this_instr->target;
@@ -276,7 +277,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, JitOptContext *ctx, bool exit
 
 static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
-            PyTypeObject *type, PyObject *name, uint16_t immortal,
+            int *out_len, PyTypeObject *type, PyObject *name, uint16_t immortal,
             uint16_t mortal)
 {
     // The cached value may be dead, so we need to do the lookup again... :(
@@ -284,7 +285,7 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
             int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
-            ADD_OP(opcode, 0, (uintptr_t)lookup);
+            add_op(ctx, this_instr, out_len, opcode, 0, (uintptr_t)lookup);
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);
             return sym_new_const(ctx, lookup);
@@ -377,7 +378,7 @@ optimize_uops(
     JitOptContext *ctx = &tstate->jit_tracer_state->opt_context;
     uint32_t opcode = UINT16_MAX;
 
-    ctx->tracer = tstate->jit_tracer_state;
+    ctx->out_buffer = tstate->jit_tracer_state->out_buffer;
 
     // Make sure that watchers are set up
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -394,7 +395,7 @@ optimize_uops(
     frame->func = func;
     ctx->curr_frame_depth++;
     ctx->frame = frame;
-    ctx->tracer->out_len = 0;
+    int out_len = 0;
 
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
@@ -427,8 +428,8 @@ optimize_uops(
                 Py_UNREACHABLE();
         }
         // If no ADD_OP was called during this iteration, copy the original instruction
-        if (ctx->tracer->out_len == i) {
-            ctx->tracer->out_buffer[ctx->tracer->out_len++] = *this_instr;
+        if (out_len == i) {
+            ctx->out_buffer[out_len++] = *this_instr;
         }
         assert(ctx->frame != NULL);
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
@@ -459,12 +460,12 @@ optimize_uops(
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
     // Check that the trace ends with a proper terminator
-    if (ctx->tracer->out_len > 0) {
-        _PyUOpInstruction *last_uop = &ctx->tracer->out_buffer[ctx->tracer->out_len - 1];
+    if (out_len > 0) {
+        _PyUOpInstruction *last_uop = &ctx->out_buffer[out_len - 1];
         if (!is_terminator_uop(last_uop)) {
             // Copy remaining uops from original trace until we find a terminator
-            for (int i = ctx->tracer->out_len; i < trace_len; i++) {
-                ctx->tracer->out_buffer[ctx->tracer->out_len++] = trace[i];
+            for (int i = out_len; i < trace_len; i++) {
+                ctx->out_buffer[out_len++] = trace[i];
                 if (is_terminator_uop(&trace[i])) {
                     break;
                 }
@@ -472,7 +473,7 @@ optimize_uops(
         }
     }
 
-    return ctx->tracer->out_len;
+    return out_len;
 
 error:
     DPRINTF(3, "\n");

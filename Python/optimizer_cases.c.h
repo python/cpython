@@ -311,7 +311,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+            int already_bool = optimize_to_bool(this_instr, ctx, &out_len, value, &res, false);
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
             }
@@ -322,7 +322,7 @@
         case _TO_BOOL_BOOL: {
             JitOptRef value;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &value, false);
+            int already_bool = optimize_to_bool(this_instr, ctx, &out_len, value, &value, false);
             if (!already_bool) {
                 sym_set_type(value, &PyBool_Type);
             }
@@ -334,7 +334,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+            int already_bool = optimize_to_bool(this_instr, ctx, &out_len, value, &res, false);
             if (!already_bool) {
                 sym_set_type(value, &PyLong_Type);
                 res = sym_new_truthiness(ctx, value, true);
@@ -371,7 +371,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+            int already_bool = optimize_to_bool(this_instr, ctx, &out_len, value, &res, false);
             if (!already_bool) {
                 res = sym_new_type(ctx, &PyBool_Type);
             }
@@ -383,7 +383,7 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+            int already_bool = optimize_to_bool(this_instr, ctx, &out_len, value, &res, false);
             if (!already_bool) {
                 sym_set_const(value, Py_None);
                 res = sym_new_const(ctx, Py_False);
@@ -424,7 +424,7 @@
             JitOptRef res;
             JitOptRef v;
             value = stack_pointer[-1];
-            int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
+            int already_bool = optimize_to_bool(this_instr, ctx, &out_len, value, &res, true);
             v = value;
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
@@ -1520,7 +1520,7 @@
                         ctx->frame->globals_watched = true;
                     }
                     if (ctx->frame->globals_checked_version != version && this_instr[-1].opcode == _NOP) {
-                        REPLACE_OP(&ctx->tracer->out_buffer[ctx->tracer->out_len - 1], _GUARD_GLOBALS_VERSION, 0, version);
+                        REPLACE_OP(&ctx->out_buffer[out_len - 1], _GUARD_GLOBALS_VERSION, 0, version);
                         ctx->frame->globals_checked_version = version;
                     }
                     if (ctx->frame->globals_checked_version == version) {
@@ -1917,7 +1917,7 @@
             (void)descr;
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, &out_len, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2649,7 +2649,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, &out_len, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2670,7 +2670,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, &out_len, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2690,7 +2690,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, &out_len, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2705,7 +2705,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, &out_len, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2725,7 +2725,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, &out_len, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2779,7 +2779,7 @@
             if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
                 assert(PyFunction_Check(sym_get_const(ctx, callable)));
                 ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                ctx->tracer->out_buffer[ctx->tracer->out_len - 1].operand1 = (uintptr_t)sym_get_const(ctx, callable);
+                ctx->out_buffer[out_len - 1].operand1 = (uintptr_t)sym_get_const(ctx, callable);
             }
             sym_set_type(callable, &PyFunction_Type);
             break;
@@ -2797,7 +2797,7 @@
                 PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
                 assert(PyMethod_Check(method));
                 ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                ctx->tracer->out_buffer[ctx->tracer->out_len - 1].operand1 = (uintptr_t)method->im_func;
+                ctx->out_buffer[out_len - 1].operand1 = (uintptr_t)method->im_func;
             }
             sym_set_type(callable, &PyMethod_Type);
             break;
@@ -3636,7 +3636,7 @@
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
-                eliminate_pop_guard(this_instr, ctx, value != Py_True);
+                eliminate_pop_guard(this_instr, ctx, &out_len, value != Py_True);
             }
             sym_set_const(flag, Py_True);
             CHECK_STACK_BOUNDS(-1);
@@ -3651,7 +3651,7 @@
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
-                eliminate_pop_guard(this_instr, ctx, value != Py_False);
+                eliminate_pop_guard(this_instr, ctx, &out_len, value != Py_False);
             }
             sym_set_const(flag, Py_False);
             CHECK_STACK_BOUNDS(-1);
@@ -3666,11 +3666,11 @@
             if (sym_is_const(ctx, val)) {
                 PyObject *value = sym_get_const(ctx, val);
                 assert(value != NULL);
-                eliminate_pop_guard(this_instr, ctx, !Py_IsNone(value));
+                eliminate_pop_guard(this_instr, ctx, &out_len, !Py_IsNone(value));
             }
             else if (sym_has_type(val)) {
                 assert(!sym_matches_type(val, &_PyNone_Type));
-                eliminate_pop_guard(this_instr, ctx, true);
+                eliminate_pop_guard(this_instr, ctx, &out_len, true);
             }
             sym_set_const(val, Py_None);
             CHECK_STACK_BOUNDS(-1);
@@ -3685,11 +3685,11 @@
             if (sym_is_const(ctx, val)) {
                 PyObject *value = sym_get_const(ctx, val);
                 assert(value != NULL);
-                eliminate_pop_guard(this_instr, ctx, Py_IsNone(value));
+                eliminate_pop_guard(this_instr, ctx, &out_len, Py_IsNone(value));
             }
             else if (sym_has_type(val)) {
                 assert(!sym_matches_type(val, &_PyNone_Type));
-                eliminate_pop_guard(this_instr, ctx, false);
+                eliminate_pop_guard(this_instr, ctx, &out_len, false);
             }
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
