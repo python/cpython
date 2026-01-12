@@ -1700,7 +1700,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Subcommands
+Sub-commands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1708,61 +1708,47 @@ Subcommands
                                           [dest], [required], \
                                           [help], [metavar])
 
-   Many programs split up their functionality into a number of subcommands,
-   for example, the ``svn`` program can invoke subcommands like ``svn
+   Many programs split up their functionality into a number of sub-commands,
+   for example, the ``svn`` program can invoke sub-commands like ``svn
    checkout``, ``svn update``, and ``svn commit``.  Splitting up functionality
    this way can be a particularly good idea when a program performs several
    different functions which require different kinds of command-line arguments.
-   :class:`ArgumentParser` supports the creation of such subcommands with the
+   :class:`ArgumentParser` supports the creation of such sub-commands with the
    :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
-   has a single method:
+   has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
+   command name and any :class:`!ArgumentParser` constructor arguments, and
+   returns an :class:`!ArgumentParser` object that can be modified as usual.
 
-.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
+   Description of parameters:
 
-   Creates and returns a new :class:`!ArgumentParser` object for the
-   subcommand *name*.
+   * *title* - title for the sub-parser group in help output; by default
+      "subcommands" if description is provided, otherwise uses title for
+      positional arguments
 
-   The *name* argument is the name of the sub-command.
+   * *description* - description for the sub-parser group in help output, by
+      default ``None``
 
-   The *help* argument provides a short description for this sub-command.
-   If provided, it will be listed next to the command in the main parser’s
-   help message (e.g., ``PROG --help``).
    * *prog* - usage information that will be displayed with subcommand help,
-     by default the name of the program and any positional arguments before the
-     subparser argument
+      by default the name of the program and any positional arguments before the
+      subparser argument
 
-   The *aliases* argument allows providing alternative names for this
-   sub-command.
+   * *parser_class* - class which will be used to create sub-parser instances, by
+      default the class of the current parser (e.g. :class:`ArgumentParser`)
 
-   For example::
+   * action_ - the basic type of action to be taken when this argument is
+      encountered at the command line
 
-      >>> parser = argparse.ArgumentParser()
-      >>> subparsers = parser.add_subparsers()
-      >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
-      >>> checkout.add_argument('foo')
-      >>> parser.parse_args(['co', 'bar'])
-      Namespace(foo='bar')
-
-   The *deprecated* argument, if ``True``, marks the sub-command as
-   deprecated and will issue a warning when used.
-
-   .. versionadded:: 3.13
-
-   For example::
    * dest_ - name of the attribute under which subcommand name will be
-     stored; by default ``None`` and no value is stored
+      stored; by default ``None`` and no value is stored
 
-      >>> parser = argparse.ArgumentParser(prog='chicken.py')
-      >>> subparsers = parser.add_subparsers()
-      >>> fly = subparsers.add_parser('fly', deprecated=True)
-      >>> parser.parse_args(['fly'])  # doctest: +SKIP
-      chicken.py: warning: command 'fly' is deprecated
-      Namespace()
+   * required_ - Whether or not a subcommand must be provided, by default
+      ``False`` (added in 3.7)
 
+   * help_ - help for sub-parser group in help output, by default ``None``
 
-   All other keyword arguments are passed directly to the
-   :class:`!ArgumentParser` constructor.
+   * metavar_ - string presenting available subcommands in help; by default it
+      is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
 
    Some example usage::
 
@@ -1908,7 +1894,47 @@ Subcommands
    .. versionchanged:: 3.14
       Subparser's *prog* is no longer affected by a custom usage message in
       the main parser.
+      
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
 
+   Creates and returns a new :class:`!ArgumentParser` object for the
+   subcommand *name*.
+
+   The *name* argument is the name of the sub-command.
+
+   The *help* argument provides a short description for this sub-command.
+   If provided, it will be listed next to the command in the main parser’s
+   help message (e.g., ``PROG --help``).
+
+   The *aliases* argument allows providing alternative names for this
+   sub-command.
+
+   For example::
+
+      >>> parser = argparse.ArgumentParser()
+      >>> subparsers = parser.add_subparsers()
+      >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
+      >>> checkout.add_argument('foo')
+      >>> parser.parse_args(['co', 'bar'])
+      Namespace(foo='bar')
+
+   The *deprecated* argument, if ``True``, marks the sub-command as
+   deprecated and will issue a warning when used.
+
+   .. versionadded:: 3.13
+
+   For example::
+
+      >>> parser = argparse.ArgumentParser(prog='chicken.py')
+      >>> subparsers = parser.add_subparsers()
+      >>> fly = subparsers.add_parser('fly', deprecated=True)
+      >>> parser.parse_args(['fly'])  # doctest: +SKIP
+      chicken.py: warning: command 'fly' is deprecated
+      Namespace()
+
+
+   All other keyword arguments are passed directly to the
+   :class:`!ArgumentParser` constructor.
 
 FileType objects
 ^^^^^^^^^^^^^^^^
