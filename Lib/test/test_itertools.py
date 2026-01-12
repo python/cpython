@@ -733,6 +733,22 @@ class TestBasicOps(unittest.TestCase):
         keyfunc.skip = 1
         self.assertRaises(ExpectedError, gulp, [None, None], keyfunc)
 
+    def test_groupby_reentrant_eq_does_not_crash(self):
+
+        class Key(bytearray):
+            seen = False
+            def __eq__(self, other):
+                if not Key.seen:
+                    Key.seen = True
+                    next(g)
+                return False
+
+        data = [Key(b"a"), Key(b"b")]
+
+        g = itertools.groupby(data)
+        next(g)
+        next(g)  # must not segfault
+
     def test_filter(self):
         self.assertEqual(list(filter(isEven, range(6))), [0,2,4])
         self.assertEqual(list(filter(None, [0,1,0,2,0])), [1,2])

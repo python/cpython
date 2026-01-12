@@ -545,8 +545,17 @@ groupby_next(PyObject *op)
             break;
         else {
             int rcmp;
+            PyObject *tgtkey = gbo->tgtkey;
+            PyObject *currkey = gbo->currkey;
 
-            rcmp = PyObject_RichCompareBool(gbo->tgtkey, gbo->currkey, Py_EQ);
+            Py_INCREF(tgtkey);
+            Py_INCREF(currkey);
+
+            rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
+
+            Py_DECREF(tgtkey);
+            Py_DECREF(currkey);
+            
             if (rcmp == -1)
                 return NULL;
             else if (rcmp == 0)
