@@ -293,9 +293,9 @@ InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-T
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
-Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner
-Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner
-Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
+Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
+Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
 
 # Parser, Lexer, and Grammar
 Grammar/python.gram           @pablogsal @lysnikolaou
