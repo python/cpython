@@ -1056,9 +1056,9 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT;
+            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
@@ -1069,9 +1069,11 @@ dummy_func(
             if (rc == 0) {
                 _PyErr_SetKeyError(sub);
             }
-            DECREF_INPUTS();
+            INPUTS_DEAD();
             ERROR_IF(rc <= 0); // not found or error
             res = PyStackRef_FromPyObjectSteal(res_o);
+            ds = dict_st;
+            ss = sub_st;
         }
 
         op(_BINARY_OP_SUBSCR_CHECK_FUNC, (container, unused -- container, unused, getitem)) {
