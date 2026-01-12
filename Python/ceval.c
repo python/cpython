@@ -329,9 +329,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _Py_CODEUNIT *instr);
 
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
-static  _PyInterpreterFrame *
-_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
-    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -1072,6 +1069,65 @@ cleanup:
     return res;
 }
 
+PyObject*
+_Py_VectorCallInstrumentation_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef* arguments,
+    int total_args,
+    _PyStackRef kwnames,
+    bool call_instrumentation,
+    _PyInterpreterFrame* frame,
+    _Py_CODEUNIT* this_instr,
+    PyThreadState* tstate)
+{
+    PyObject* res;
+    STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
+    if (CONVERSION_FAILED(args_o)) {
+        res = NULL;
+        goto cleanup;
+    }
+    PyObject* callable_o = PyStackRef_AsPyObjectBorrow(callable);
+    PyObject* kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
+    int positional_args = total_args;
+    if (kwnames_o != NULL) {
+        positional_args -= (int)PyTuple_GET_SIZE(kwnames_o);
+    }
+    res = PyObject_Vectorcall(
+        callable_o, args_o,
+        positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames_o);
+    STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+    if (call_instrumentation) {
+        PyObject* arg = total_args == 0 ?
+            &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(arguments[0]);
+        if (res == NULL) {
+            _Py_call_instrumentation_exc2(
+                tstate, PY_MONITORING_EVENT_C_RAISE,
+                frame, this_instr, callable_o, arg);
+        }
+        else {
+            int err = _Py_call_instrumentation_2args(
+                tstate, PY_MONITORING_EVENT_C_RETURN,
+                frame, this_instr, callable_o, arg);
+            if (err < 0) {
+                Py_CLEAR(res);
+            }
+        }
+    }
+    assert((res != NULL) ^ (PyErr_Occurred() != NULL));
+cleanup:
+    PyStackRef_XCLOSE(kwnames);
+    // arguments is a pointer into the GC visible stack,
+    // so we must NULL out values as we clear them.
+    for (int i = total_args - 1; i >= 0; i--) {
+        _PyStackRef tmp = arguments[i];
+        arguments[i] = PyStackRef_NULL;
+        PyStackRef_CLOSE(tmp);
+    }
+    PyStackRef_CLOSE(callable);
+    return res;
+}
+
 PyObject *
 _Py_BuiltinCallFast_StackRefSteal(
     _PyStackRef callable,
@@ -1215,7 +1271,7 @@ _Py_CallBuiltinClass_StackRefSteal(
         goto cleanup;
     }
     PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(callable);
-    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
+    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
 cleanup:
@@ -1407,25 +1463,27 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     }
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // Deal with backoffs
-    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
+    _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+    assert(tracer != NULL);
+    _PyExitData *exit = tracer->initial_state.exit;
     if (exit == NULL) {
         // We hold a strong reference to the code object, so the instruction won't be freed.
         if (err <= 0) {
-            _Py_BackoffCounter counter = _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter;
-            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
+            _Py_BackoffCounter counter = tracer->initial_state.jump_backward_instr[1].counter;
+            tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter();
+            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
         }
     }
-    else {
+    else if (tracer->initial_state.executor->vm_data.valid) {
         // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
         // to be valid to access.
         if (err <= 0) {
             exit->temperature = restart_backoff_counter(exit->temperature);
         }
         else {
-            exit->temperature = initial_temperature_backoff_counter();
+            exit->temperature = initial_temperature_backoff_counter(&_tstate->policy);
         }
     }
     _PyJit_FinalizeTracing(tstate);
@@ -2377,7 +2435,7 @@ fail:
 /* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
    Steals references to func, callargs and kwargs.
 */
-static _PyInterpreterFrame *
+_PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous)
 {
