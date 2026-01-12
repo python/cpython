@@ -844,8 +844,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
-   from math import comb, prod, sumprod, isqrt
-   from operator import is_not, itemgetter, getitem, mul, neg
+   from math import comb, isqrt, prod, sumprod
+   from operator import getitem, is_not, itemgetter, mul, neg
 
    # ==== Basic one liners ====
 
@@ -904,8 +904,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def first_true(iterable, default=False, predicate=None):
        "Returns the first true value or the *default* if there is no true value."
-       # first_true([a,b,c], x) → a or b or c or x
-       # first_true([a,b], x, f) → a if f(a) else b if f(b) else x
+       # first_true([a, b, c], x) → a or b or c or x
+       # first_true([a, b], x, f) → a if f(a) else b if f(b) else x
        return next(filter(predicate, iterable), default)
 
    def all_equal(iterable, key=None):
@@ -913,7 +913,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # all_equal('4٤௪౪໔', key=int) → True
        return len(take(2, groupby(iterable, key))) <= 1
 
-   # ==== Data streams ====
+   # ==== Data pipelines ====
 
    def unique_justseen(iterable, key=None):
        "Yield unique elements, preserving order. Remember only the element just seen."
@@ -947,7 +947,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
-       # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
+       # sliding_window('ABCDEFG', 3) → ABC BCD CDE DEF EFG
        iterator = iter(iterable)
        window = deque(islice(iterator, n - 1), maxlen=n)
        for x in iterator:
@@ -956,7 +956,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks."
-       # grouper('ABCDEFG', 3, fillvalue='x') → ABC DEF Gxx
+       # grouper('ABCDEFG', 3, fillvalue='x')       → ABC DEF Gxx
        # grouper('ABCDEFG', 3, incomplete='strict') → ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') → ABC DEF
        iterators = [iter(iterable)] * n
@@ -1044,7 +1044,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def reshape(matrix, columns):
        "Reshape a 2-D matrix to have a given number of columns."
-       # reshape([(0, 1), (2, 3), (4, 5)], 3) →  (0, 1, 2), (3, 4, 5)
+       # reshape([(0, 1), (2, 3), (4, 5)], 3) →  (0, 1, 2) (3, 4, 5)
        return batched(chain.from_iterable(matrix), columns, strict=True)
 
    def transpose(matrix):
@@ -1054,9 +1054,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def matmul(m1, m2):
        "Multiply two matrices."
-       # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80), (41, 60)
+       # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80) (41, 60)
        n = len(m2[0])
        return batched(starmap(sumprod, product(m1, transpose(m2))), n)
+
+   # ==== Polynomial arithmetic ====
 
    def convolve(signal, kernel):
        """Discrete linear convolution of two iterables.
@@ -1078,8 +1080,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
        windowed_signal = sliding_window(padded_signal, n)
        return map(sumprod, repeat(kernel), windowed_signal)
-
-   # ==== Polynomial arithmetic ====
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
