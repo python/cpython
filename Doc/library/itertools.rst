@@ -819,7 +819,7 @@ well as with the built-in itertools such as ``map()``, ``filter()``,
 
 A secondary purpose of the recipes is to serve as an incubator.  The
 ``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
-recipes.  Currently, the ``sliding_window()``, ``iter_index()``, and ``sieve()``
+recipes.  Currently, the ``sliding_window()``, ``derangements()``, and ``sieve()``
 recipes are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
