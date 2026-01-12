@@ -158,6 +158,12 @@ parser.add_argument(
     dest='keep_sources',
     help="Keep original sources for debugging."
 )
+parser.add_argument(
+    '--tsan',
+    action='store_true',
+    dest='tsan',
+    help="Build with thread sanitizer. (Disables fips in OpenSSL 3.x)."
+)
 
 
 class AbstractBuilder(object):
@@ -312,6 +318,8 @@ class AbstractBuilder(object):
         """Now build openssl"""
         log.info("Running build in {}".format(self.build_dir))
         cwd = self.build_dir
+        if self.args.tsan:
+            config_args += ("-fsanitize=thread",)
         cmd = [
             "./config", *config_args,
             "shared", "--debug",

@@ -23,8 +23,17 @@ jobs:
         && ' (free-threading)'
         || ''
       }}
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+        openssl_ver: [3.5.4]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      OPENSSL_VER: ${{ matrix.openssl_ver }}
+      MULTISSL_DIR: ${{ github.workspace }}/multissl
+      OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -37,17 +46,16 @@ jobs:
         # Install clang
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-
-        if [ "${SANITIZER}" = "TSan" ]; then
-          sudo ./llvm.sh 17  # gh-121946: llvm-18 package is temporarily broken
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 100
-          sudo update-alternatives --set clang /usr/bin/clang-17
-          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-17 100
-          sudo update-alternatives --set clang++ /usr/bin/clang++-17
+        sudo ./llvm.sh 20
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
+        sudo update-alternatives --set clang /usr/bin/clang-20
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
+        sudo update-alternatives --set clang++ /usr/bin/clang++-20
+        sudo update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-20 100
+        sudo update-alternatives --set llvm-symbolizer /usr/bin/llvm-symbolizer-20
+        if [ "${{ inputs.sanitizer }}" = "TSan" ]; then
           # Reduce ASLR to avoid TSan crashing
           sudo sysctl -w vm.mmap_rnd_bits=28
-        else
-          sudo ./llvm.sh 20
         fi
 
     - name: Sanitizer option setup
@@ -69,6 +77,16 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: 'Restore OpenSSL build (TSan)'
+      id: cache-openssl
+      uses: actions/cache@v4
+      if: inputs.sanitizer == 'TSan'
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-tsan-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL (TSan)
+      if: steps.cache-openssl.outputs.cache-hit != 'true' && inputs.sanitizer == 'TSan'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux --tsan
     - name: Configure CPython
       run: >-
         ./configure
@@ -79,6 +97,7 @@ jobs:
           || '--with-undefined-behavior-sanitizer'
         }}
         --with-pydebug
+        ${{ inputs.sanitizer == 'TSan' && ' --with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython
       run: make -j4
