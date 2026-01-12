@@ -1,15 +1,39 @@
 #!/usr/bin/env python3
 
 import argparse
+import functools
 import os
 import pathlib
 import platform
+import subprocess
 import sys
 import tarfile
 import time
 import urllib.error
 import urllib.request
 import zipfile
+
+
+@functools.cache
+def trigger_automatic_root_certificate_update(url: str, timeout: int = 30) -> None:
+    escaped_url = url.replace("'", "''")
+    try:
+        subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                f"Invoke-WebRequest -Uri '{escaped_url}'"
+                f" -UseBasicParsing -Method HEAD -MaximumRedirection 0"
+                f" -TimeoutSec {timeout} -ErrorAction SilentlyContinue"
+                f" | Out-Null",
+            ],
+            check=True,
+            capture_output=True,
+            timeout=timeout + 5,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        pass
 
 
 def retrieve_with_retries(download_location, output_path, reporthook,
