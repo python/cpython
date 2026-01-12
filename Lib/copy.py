@@ -230,7 +230,7 @@ def _reconstruct(x, memo, func, args,
                  *, deepcopy=deepcopy):
     deep = memo is not None
     if deep and args:
-        args = (deepcopy(arg, memo) for arg in args)
+        args = [deepcopy(arg, memo) for arg in args]
     y = func(*args)
     if deep:
         memo[id(x)] = y

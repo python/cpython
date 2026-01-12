@@ -420,7 +420,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state.prev_state.code_curr_size == 2); \
+        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state->prev_state.code_curr_size == 2); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \
@@ -488,6 +488,8 @@ do {                                                   \
 #define SET_CURRENT_CACHED_VALUES(N) ((void)0)
 #define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
 #endif
+
+#define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL)
 
 static inline int
 check_periodics(PyThreadState *tstate) {
