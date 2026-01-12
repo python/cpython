@@ -7,7 +7,6 @@ import operator
 import unittest
 import struct
 import sys
-import warnings
 import weakref
 
 from test import support
@@ -578,9 +577,10 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         s = struct.Struct('i')
         with self.assertWarns(DeprecationWarning):
             s.__init__('ii')
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, s.__init__, 'ii')
+        self.assertEqual(s.format, 'ii')
+        packed = b'\x01\x00\x00\x00\x02\x00\x00\x00'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
