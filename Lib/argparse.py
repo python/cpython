@@ -688,11 +688,41 @@ class HelpFormatter(object):
                 params[name] = value.__name__
         if params.get('choices') is not None:
             params['choices'] = ', '.join(map(str, params['choices']))
-        # Before interpolating, wrap the values with color codes
+
         t = self._theme
-        for name, value in params.items():
-            params[name] = f"{t.interpolated_value}{value}{t.reset}"
-        return help_string % params
+
+        result = help_string % params
+
+        if not t.reset:
+            return result
+
+        # Match format specifiers like: %s, %d, %(key)s, etc.
+        fmt_spec = r'''
+            %
+            (?:
+                %                           # %% escape
+                |
+                (?:\((?P<key>[^)]*)\))?     # key
+                [-#0\ +]*                   # flags
+                (?:\*|\d+)?                 # width
+                (?:\.(?:\*|\d+))?           # precision
+                [hlL]?                      # length modifier
+                [diouxXeEfFgGcrsa]          # conversion type
+            )
+        '''
+
+        def colorize(match):
+            spec, key = match.group(0, 'key')
+            if spec == '%%':
+                return '%'
+            if key is not None:
+                # %(key)... - format and colorize
+                formatted = spec % {key: params[key]}
+                return f'{t.interpolated_value}{formatted}{t.reset}'
+            # bare %s etc. - format with full params dict, no colorization
+            return spec % params
+
+        return _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
 
     def _iter_indented_subactions(self, action):
         try:
