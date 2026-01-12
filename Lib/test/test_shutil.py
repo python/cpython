@@ -1121,15 +1121,16 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self._assert_are_the_same_file_is_raised(src_dir, target_dir)
 
     def _assert_are_the_same_file_is_raised(self, src_dir, target_dir):
-        try:
+        with self.assertRaises(Error) as cm:
             shutil.copytree(src_dir, target_dir, dirs_exist_ok=True)
-            self.fail("shutil.Error should have been raised")
-        except Error as error:
-            self.assertEqual(len(error.args[0]), 1)
-            if sys.platform == "win32":
-                self.assertIn("it is being used by another process", error.args[0][0][2])
-            else:
-                self.assertIn("are the same file", error.args[0][0][2])
+
+        self.assertEqual(len(cm.exception.args[0]), 1)
+        if sys.platform == "win32":
+            self.assertIn(
+                "it is being used by another process", cm.exception.args[0][0][2]
+            )
+        else:
+            self.assertIn("are the same file", cm.exception.args[0][0][2])
 
 
 class TestCopy(BaseTest, unittest.TestCase):

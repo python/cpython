@@ -76,7 +76,7 @@ class Error(OSError):
     pass
 
 class ErrorGroup(Error):
-    """Raised when multiple exceptions have been caught"""
+    """Raised when multiple exceptions have been caught."""
 
 class SameFileError(Error):
     """Raised when source and destination are the same file."""
