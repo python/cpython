@@ -1975,6 +1975,74 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertLessEqual(count_ops(ex, "_POP_TOP_INT"), 1)
 
+    def test_binary_op_subscr_dict(self):
+        def testfunc(n):
+            x = 0
+            d = {'a': 1, 'b': 2}
+            for _ in range(n):
+                v = d['a']  # _BINARY_OP_SUBSCR_DICT
+                if v == 1:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_DICT", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_contains_op(self):
+        def testfunc(n):
+            x = 0
+            items = [1, 2, 3]
+            for _ in range(n):
+                if 2 in items:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CONTAINS_OP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_contains_op_set(self):
+        def testfunc(n):
+            x = 0
+            s = {1, 2, 3}
+            for _ in range(n):
+                if 2 in s:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CONTAINS_OP_SET", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
+    def test_contains_op_dict(self):
+        def testfunc(n):
+            x = 0
+            d = {'a': 1, 'b': 2}
+            for _ in range(n):
+                if 'a' in d:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CONTAINS_OP_DICT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
     def test_call_type_1_guards_removed(self):
         def testfunc(n):
             x = 0
