@@ -1692,6 +1692,7 @@ _PyXI_ApplyCapturedException(_PyXI_session *session)
     assert(session->error != NULL);
     PyObject *res = _PyXI_ApplyError(session->error);
     assert((res == NULL) != (PyErr_Occurred() == NULL));
+    _PyXI_excinfo_Clear(&session->error->uncaught);
     session->error = NULL;
     return res;
 }
