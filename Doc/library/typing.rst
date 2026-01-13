@@ -2554,6 +2554,18 @@ types.
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
 
+   Runtime checkability of protocols is not inherited. A subclass of a runtime-checkable protocol
+   is only runtime-checkable if is explicitly marked as such, regardless of class hierarchy::
+
+      @runtime_checkable
+      class Iterable(Protocol):
+          def __iter__(self): ...
+
+      # Without @runtime_checkable, Reversible would no longer be runtime-checkable.
+      @runtime_checkable
+      class Reversible(Iterable, Protocol):
+          def __reversed__(self): ...
+
    This decorator raises :exc:`TypeError` when applied to a non-protocol class.
 
    .. note::
