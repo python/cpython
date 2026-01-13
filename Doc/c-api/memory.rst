@@ -293,17 +293,23 @@ The following type-oriented macros are provided for convenience.  Note  that
 
    Same as :c:func:`PyMem_Free`.
 
-In addition, the following macro sets are provided for calling the Python memory
-allocator directly, without involving the C API functions listed above. However,
-note that their use does not preserve binary compatibility across Python
-versions and is therefore deprecated in extension modules.
+.. c:macro:: PyMem_MALLOC(size)
+             PyMem_NEW(type, size)
+             PyMem_REALLOC(ptr, size)
+             PyMem_RESIZE(ptr, type, size)
+             PyMem_FREE(ptr)
+             PyMem_DEL(ptr)
 
-* ``PyMem_MALLOC(size)``
-* ``PyMem_NEW(type, size)``
-* ``PyMem_REALLOC(ptr, size)``
-* ``PyMem_RESIZE(ptr, type, size)``
-* ``PyMem_FREE(ptr)``
-* ``PyMem_DEL(ptr)``
+   These macros are :term:`soft deprecated` aliases for the APIs above,
+   provided for backwards compatibility.
+
+   .. versionchanged:: 3.4
+
+      The macros are now aliases of the corresponding mixed-case names.
+      Previously, their of the macros was the same, but their use did
+      not preserve binary compatibility across Python versions.
+
+   .. deprecated:: 2.0
 
 
 .. _objectinterface:
