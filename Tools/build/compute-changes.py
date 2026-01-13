@@ -94,6 +94,7 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Lib/xml/"),
     Path("Lib/_markupbase.py"),
     Path("Modules/expat/"),
+    Path("Modules/pyexpat.c"),
     # zipfile
     Path("Lib/zipfile/"),
 })

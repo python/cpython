@@ -25,7 +25,7 @@ on:  # yamllint disable-line rule:truthy
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
       run-ci-fuzz-stdlib:
         description: Whether to run the CIFuzz job for 'python3-libraries' fuzzer
-        value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
+        value: ${{ jobs.compute-changes.outputs.run-ci-fuzz-stdlib }}  # bool
       run-docs:
         description: Whether to build the docs
         value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool

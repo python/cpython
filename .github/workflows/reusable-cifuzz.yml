@@ -8,39 +8,40 @@ on:
         description: OSS-Fuzz project name
         required: true
         type: string
-
-permissions:
-  contents: read
-  security-events: write
+      sanitizer:
+        description: OSS-Fuzz sanitizer
+        required: true
+        type: string
+      timeout-minutes:
+        description: Timeout in minutes for the action
+        required: false
+        default: 60
+        type: number
 
 jobs:
   cifuzz:
     name: CIFuzz
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        sanitizer: [address, undefined, memory]
+    timeout-minutes: ${{ inputs.timeout-minutes }}
     steps:
-      - name: Build fuzzers (${{ matrix.sanitizer }})
+      - name: Build fuzzers (${{ inputs.sanitizer }})
         id: build
         uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
         with:
           oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
-          sanitizer: ${{ matrix.sanitizer }}
-      - name: Run fuzzers (${{ matrix.sanitizer }})
+          sanitizer: ${{ inputs.sanitizer }}
+      - name: Run fuzzers (${{ inputs.sanitizer }})
         uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
         with:
           fuzz-seconds: 600
           oss-fuzz-project-name: ${{ inputs.oss-fuzz-project-name }}
           output-sarif: true
-          sanitizer: ${{ matrix.sanitizer }}
+          sanitizer: ${{ inputs.sanitizer }}
       - name: Upload crash
         if: failure() && steps.build.outcome == 'success'
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ matrix.sanitizer }}-artifacts
+          name: ${{ inputs.sanitizer }}-artifacts
           path: ./out/artifacts
       - name: Upload SARIF
         if: always() && steps.build.outcome == 'success'

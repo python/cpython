@@ -642,17 +642,46 @@ jobs:
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
   cifuzz:
+    name: CIFuzz
     needs: build-context
-    if: needs.build-context.outputs.run-ci-fuzz == 'true'
+    if: >-
+      contains(
+        [
+          needs.build-context.outputs.run-ci-fuzz,
+          needs.build-context.outputs.run-ci-fuzz-stdlib
+        ],
+        'true'
+      )
+    permissions:
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer:
+        - address
+        - undefined
+        - memory
+        oss-fuzz-project-name:
+        - cpython3
+        - python3-libraries
+        exclude:
+        - oss-fuzz-project-name: >-
+            ${{
+              needs.build-context.outputs.run-ci-fuzz == 'true'
+              && ''
+              || 'cpython3'
+            }}
+        - oss-fuzz-project-name: >-
+            ${{
+              needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
+              && ''
+              || 'python3-libraries'
+            }}
     uses: ./.github/workflows/reusable-cifuzz.yml
     with:
-      oss-fuzz-project-name: cpython3
-  cifuzz-stdlib:
-    needs: build-context
-    if: needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
-    uses: ./.github/workflows/reusable-cifuzz.yml
-    with:
-      oss-fuzz-project-name: python3-libraries
+      oss-fuzz-project-name: ${{ matrix.oss-fuzz-project-name }}
+      sanitizer: ${{ matrix.sanitizer }}
+      timeout-minutes: 60
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
@@ -677,7 +706,6 @@ jobs:
     - build-san
     - cross-build-linux
     - cifuzz
-    - cifuzz-stdlib
     if: always()
 
     steps:
@@ -709,7 +737,7 @@ jobs:
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz) && 'cifuzz,' || '' }}
-          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz-stdlib) && 'cifuzz-stdlib,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz-stdlib) && 'cifuzz,' || '' }}
           ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
           ${{
             !fromJSON(needs.build-context.outputs.run-ubuntu)
