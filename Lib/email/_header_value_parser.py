@@ -1153,6 +1153,22 @@ def _validate_xtext(xtext):
         xtext.defects.append(errors.UndecodableBytesDefect(
             "Non-ASCII characters found in header token"))
 
+# _make_non_match_re is for use by the callers of _get_xtext.
+_make_non_match_re = lambda s: re.compile(rf'[^{re.escape(s)}]+')
+def _get_xtext(value, start, regex, terminal_class, token_type, err=None):
+    """Return text matching regex via _make_xtext, raise err if no match.
+
+    Use the regex 'match' to identify a substring.  If there is no match, raise
+    err.  If there is a match, pass it to _make_xtext to create a
+    terminal_class of terminal_type.  Return the terminal and the index of the
+    end of the match.
+
+    """
+    m = regex.match(value, start)
+    if m is None:
+        raise err
+    return _make_xtext(m.group(), terminal_class, token_type), m.end()
+
 def _get_ptext_to_endchars(value, endchars):
     """Scan printables/quoted-pairs until endchars and return unquoted ptext.
 
