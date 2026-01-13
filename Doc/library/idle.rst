@@ -178,9 +178,14 @@ Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Format Paragraph
-   Reformat the current blank-line-delimited paragraph in comment block or
-   multiline string or selected line in a string.  All lines in the
-   paragraph will be formatted to less than N columns, where N defaults to 72.
+   Rewrap the current 'paragraph'. A paragraph is a contiguous block of
+   equally indented non-blank comments containing the text cursor, a
+   similar block of non-comment lines (expected to be within a multiline
+   string), or a selection of a subset of either.  (Partial lines in a
+   selection expand to complete lines.)  The resulting lines have the
+   same indent as before but a max length of N columns (characters).
+   Change the default N of 72 on the Window tab of IDLE Settings.
+   Avoid rewrapping code lines.
 
 Indent Region
    Shift selected lines right by the indent width (default 4 spaces).
