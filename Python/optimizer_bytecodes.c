@@ -380,6 +380,12 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        res = sym_new_not_null(ctx);
+        ds = dict_st;
+        ss = sub_st;
+    }
+
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
@@ -394,19 +400,21 @@ dummy_func(void) {
         }
     }
 
-    op(_TO_BOOL_INT, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+    op(_TO_BOOL_INT, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
         if (!already_bool) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_truthiness(ctx, value, true);
         }
+        v = value;
     }
 
-    op(_TO_BOOL_LIST, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+    op(_TO_BOOL_LIST, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
         if (!already_bool) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
+        v = value;
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
@@ -519,17 +527,23 @@ dummy_func(void) {
         r = right;
     }
 
-    op(_CONTAINS_OP, (left, right -- b)) {
+    op(_CONTAINS_OP, (left, right -- b, l, r)) {
+        b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
-        b = sym_new_type(ctx, &PyBool_Type);
     }
 
-    op(_CONTAINS_OP_SET, (left, right -- b)) {
+    op(_CONTAINS_OP_SET, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
-    op(_CONTAINS_OP_DICT, (left, right -- b)) {
+    op(_CONTAINS_OP_DICT, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
     op(_LOAD_CONST, (-- value)) {

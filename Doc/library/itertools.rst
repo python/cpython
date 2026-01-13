@@ -819,7 +819,7 @@ well as with the built-in itertools such as ``map()``, ``filter()``,
 
 A secondary purpose of the recipes is to serve as an incubator.  The
 ``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
-recipes.  Currently, the ``sliding_window()``, ``iter_index()``, and ``sieve()``
+recipes.  Currently, the ``sliding_window()``, ``derangements()``, and ``sieve()``
 recipes are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
@@ -838,11 +838,16 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
+   from itertools import (accumulate, batched, chain, combinations, compress,
+        count, cycle, filterfalse, groupby, islice, permutations, product,
+        repeat, starmap, tee, zip_longest)
    from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
-   from math import comb, prod, sumprod, isqrt
-   from operator import is_not, itemgetter, getitem, mul, neg
+   from math import comb, isqrt, prod, sumprod
+   from operator import getitem, is_not, itemgetter, mul, neg
+
+   # ==== Basic one liners ====
 
    def take(n, iterable):
        "Return first n items of the iterable as a list."
@@ -899,14 +904,16 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def first_true(iterable, default=False, predicate=None):
        "Returns the first true value or the *default* if there is no true value."
-       # first_true([a,b,c], x) → a or b or c or x
-       # first_true([a,b], x, f) → a if f(a) else b if f(b) else x
+       # first_true([a, b, c], x) → a or b or c or x
+       # first_true([a, b], x, f) → a if f(a) else b if f(b) else x
        return next(filter(predicate, iterable), default)
 
    def all_equal(iterable, key=None):
        "Returns True if all the elements are equal to each other."
        # all_equal('4٤௪౪໔', key=int) → True
        return len(take(2, groupby(iterable, key))) <= 1
+
+   # ==== Data pipelines ====
 
    def unique_justseen(iterable, key=None):
        "Yield unique elements, preserving order. Remember only the element just seen."
@@ -940,7 +947,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
-       # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
+       # sliding_window('ABCDEFG', 3) → ABC BCD CDE DEF EFG
        iterator = iter(iterable)
        window = deque(islice(iterator, n - 1), maxlen=n)
        for x in iterator:
@@ -949,7 +956,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks."
-       # grouper('ABCDEFG', 3, fillvalue='x') → ABC DEF Gxx
+       # grouper('ABCDEFG', 3, fillvalue='x')       → ABC DEF Gxx
        # grouper('ABCDEFG', 3, incomplete='strict') → ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') → ABC DEF
        iterators = [iter(iterable)] * n
@@ -1014,10 +1021,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
            while True:
                yield function()
 
-
-The following recipes have a more mathematical flavor:
-
-.. testcode::
+   # ==== Mathematical operations ====
 
    def multinomial(*counts):
        "Number of distinct arrangements of a multiset."
@@ -1036,9 +1040,11 @@ The following recipes have a more mathematical flavor:
        # sum_of_squares([10, 20, 30]) → 1400
        return sumprod(*tee(iterable))
 
+   # ==== Matrix operations ====
+
    def reshape(matrix, columns):
        "Reshape a 2-D matrix to have a given number of columns."
-       # reshape([(0, 1), (2, 3), (4, 5)], 3) →  (0, 1, 2), (3, 4, 5)
+       # reshape([(0, 1), (2, 3), (4, 5)], 3) →  (0, 1, 2) (3, 4, 5)
        return batched(chain.from_iterable(matrix), columns, strict=True)
 
    def transpose(matrix):
@@ -1048,9 +1054,11 @@ The following recipes have a more mathematical flavor:
 
    def matmul(m1, m2):
        "Multiply two matrices."
-       # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80), (41, 60)
+       # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80) (41, 60)
        n = len(m2[0])
        return batched(starmap(sumprod, product(m1, transpose(m2))), n)
+
+   # ==== Polynomial arithmetic ====
 
    def convolve(signal, kernel):
        """Discrete linear convolution of two iterables.
@@ -1105,6 +1113,8 @@ The following recipes have a more mathematical flavor:
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(mul, coefficients, powers))
+
+   # ==== Number theory ====
 
    def sieve(n):
        "Primes less than n."
