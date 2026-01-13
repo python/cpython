@@ -119,13 +119,13 @@ trigger_backoff_counter(void)
 // Initial JUMP_BACKWARD counter.
 // Must be larger than ADAPTIVE_COOLDOWN_VALUE, otherwise when JIT code is
 // invalidated we may construct a new trace before the bytecode has properly
-// re-specialized:
-// Note: this should be a prime number-1. This increases the likelihood of
-// finding a "good" loop iteration to trace.
-// For example, 4095 does not work for the nqueens benchmark on pyperformance
-// as we always end up tracing the loop iteration's
-// exhaustion iteration. Which aborts our current tracer.
-#define JUMP_BACKWARD_INITIAL_VALUE 4000
+// re-specialized.
+// Note: this should be a prime number -1. This increases the likelihood
+// of finding a "good" loop iteration to trace.
+// Large initial values can cause excessive executor creation and overflow
+// MAX_EXECUTORS_SIZE in JIT builds. A smaller value keeps executor growth
+// bounded while still satisfying cooldown and tracing requirements.
+#define JUMP_BACKWARD_INITIAL_VALUE 63
 #define JUMP_BACKWARD_INITIAL_BACKOFF 6
 static inline _Py_BackoffCounter
 initial_jump_backoff_counter(_PyPolicy *policy)
@@ -136,10 +136,13 @@ initial_jump_backoff_counter(_PyPolicy *policy)
 }
 
 /* Initial exit temperature.
- * Must be larger than ADAPTIVE_COOLDOWN_VALUE,
- * otherwise when a side exit warms up we may construct
- * a new trace before the Tier 1 code has properly re-specialized. */
-#define SIDE_EXIT_INITIAL_VALUE 4000
+ * Must be larger than ADAPTIVE_COOLDOWN_VALUE, otherwise when a side exit
+ * warms up we may construct a new trace before the Tier 1 code has properly
+ * re-specialized.
+ * Large initial values can cause excessive executor creation and overflow
+ * MAX_EXECUTORS_SIZE in JIT builds. A smaller value keeps executor growth
+ * bounded while still satisfying cooldown requirements. */
+#define SIDE_EXIT_INITIAL_VALUE 63
 #define SIDE_EXIT_INITIAL_BACKOFF 6
 
 static inline _Py_BackoffCounter
