@@ -2072,7 +2072,7 @@ class AttributeErrorTests(unittest.TestCase):
                     # Provide no message.
                     raise AttributeError
 
-            A.bluch
+            A().bluch
 
         try:
             f()
@@ -2080,8 +2080,8 @@ class AttributeErrorTests(unittest.TestCase):
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        # 'bluch' should appear even when message was empty.
-        self.assertIn("'bluch'", err.getvalue())
+        # Should appear even when no message was provided.
+        self.assertIn("'A' object has no attribute 'bluch'", err.getvalue())
 
     # Note: name suggestion tests live in `test_traceback`.
 
