@@ -645,12 +645,9 @@ jobs:
     name: CIFuzz
     needs: build-context
     if: >-
-      contains(
-        [
-          needs.build-context.outputs.run-ci-fuzz,
-          needs.build-context.outputs.run-ci-fuzz-stdlib
-        ],
-        'true'
+      (
+        needs.build-context.outputs.run-ci-fuzz == 'true'
+        || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
       )
     permissions:
       security-events: write
