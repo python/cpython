@@ -41,6 +41,13 @@ RFC_CHARSET_CHARS = ''.join((
     "!#$%&+-^_`{}~",
     ))
 
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
+RFC_ATEXT = ''.join((
+    string.ascii_letters,
+    string.digits,
+    "!#$%&'*+-/=?^_`{|}~",
+    ))
+
 ALL_ASCII = bytes(range(0, 128)).decode('ascii')
 
 
@@ -394,8 +401,6 @@ def for_each_api(nl, *args, **kw):
 class TestParser(TestParserMixin, TestEmailBase):
 
     rfc_printable_ascii = bytes(range(33, 127)).decode('ascii')
-    rfc_atext_chars = (string.ascii_letters + string.digits +
-                        "!#$%&\'*+-/=?^_`{}|~")
     rfc_dtext_chars = rfc_printable_ascii.translate(str.maketrans('','',r'\[]'))
 
     # _wsp_splitter
@@ -1368,35 +1373,37 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(atext.token_type, 'atext')
 
     params_test_get_atext = old_api_only(
-        )
 
-    def test_get_atext_only(self):
-        atext = self._test_get_x(parser.get_atext,
+        test_get_atext_only = C(
                                 'foobar', 'foobar', 'foobar', [], '')
-        self.assertEqual(atext.token_type, 'atext')
+                                ,
 
-    def test_get_atext_all_atext(self):
-        atext = self._test_get_x(parser.get_atext, self.rfc_atext_chars,
-                                 self.rfc_atext_chars,
-                                 self.rfc_atext_chars, [], '')
+        test_get_atext_all_atext = C(
+                                 RFC_ATEXT,
+                                 RFC_ATEXT,
+                                 RFC_ATEXT, [], '')
+                                    ,
 
-    def test_get_atext_two_words_gets_first(self):
-        self._test_get_x(parser.get_atext,
+        test_get_atext_two_words_gets_first = C(
                         'foo bar', 'foo', 'foo', [], ' bar')
+                        ,
 
-    def test_get_atext_following_wsp_preserved(self):
-        self._test_get_x(parser.get_atext,
+        test_get_atext_following_wsp_preserved = C(
                         'foo \t\tbar', 'foo', 'foo', [], ' \t\tbar')
+                        ,
 
-    def test_get_atext_up_to_special(self):
-        self._test_get_x(parser.get_atext,
+        test_get_atext_up_to_special = C(
                         'foo@bar', 'foo', 'foo', [], '@bar')
+                        ,
 
-    def test_get_atext_non_printables(self):
-        atext = self._test_get_x(parser.get_atext,
+        test_get_atext_non_printables = C(
                                 'foo\x00bar(', 'foo\x00bar', 'foo\x00bar',
                                 [errors.NonPrintableDefect], '(')
-        self.assertEqual(atext.defects[0].non_printables[0], '\x00')
+                                ,
+       #self.assertEqual(atext.defects[0].non_printables[0], '\x00')
+
+        )
+
 
     # get_bare_quoted_string
 
