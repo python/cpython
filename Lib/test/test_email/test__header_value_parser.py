@@ -48,6 +48,9 @@ RFC_ATEXT = ''.join((
     "!#$%&'*+-/=?^_`{|}~",
     ))
 
+# https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
+RFC_SPECIALS = r'()<>[]:;@\,."'
+
 ALL_ASCII = bytes(range(0, 128)).decode('ascii')
 
 
@@ -1392,17 +1395,38 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder=' \t\tbar',
             ),
 
-        up_to_special = C(
-            'foo@bar',
-            remainder='@bar',
+        **for_each_character(RFC_SPECIALS)(
+            up_to_special = C(
+                RFC_ATEXT.
+                    replace('{', '{{').replace('}', '}}') + '{char}' + 'bar',
+                remainder='{char}bar',
+                ),
             ),
 
-        non_printables = C(
-            'foo\x00bar(',
-            defects=[errors.NonPrintableDefect],
-            remainder='(',
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printables = C(
+                'foo{char}bar(',
+                defects=[(nonprintable_defect, '{char}')],
+                remainder='(',
+                ),
             ),
-            #self.assertEqual(atext.defects[0].non_printables[0], '\x00')
+
+        **for_each_character(RFC_SPECIALS + RFC_WSP)(
+            no_atext_before_special_or_wsp = C(
+                '{char}foo',
+                exception=(errors.HeaderParseError, '{echar}foo'),
+                ),
+            ),
+
+        undecodable_characters = C(
+            'foo🎁bar'.encode().decode('us-ascii', errors='surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
+
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
 
         )
 
