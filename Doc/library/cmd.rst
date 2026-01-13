@@ -93,6 +93,18 @@ A :class:`Cmd` instance has the following methods:
    are the beginning and ending indexes of the prefix text, which could be used to
    provide different completion depending upon which position the argument is in.
 
+.. rubric:: Empty input behavior
+
+When the user enters an empty line in response to the prompt, ``Cmd`` does
+**not** ignore the input by default. Instead, it repeats the last non-empty
+command entered.
+
+This behavior is implemented by :meth:`Cmd.emptyline`. Subclasses that do not
+want empty input to repeat the previous command  should override
+:meth:`Cmd.emptyline` to do nothing::
+
+   def emptyline(self):
+       pass
 
 .. method:: Cmd.do_help(arg)
 
