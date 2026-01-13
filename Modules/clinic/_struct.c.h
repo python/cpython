@@ -10,7 +10,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(Struct___init____doc__,
-"Struct(format)\n"
+"Struct(format=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Create a compiled struct object.\n"
@@ -57,14 +57,19 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *format;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *format = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
     format = fastargs[0];
+skip_optional_pos:
     return_value = Struct___init___impl((PyStructObject *)self, format);
 
 exit:
@@ -458,4 +463,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=caa7f36443e91cb9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29bd81cd67adda38 input=a9049054013a1b77]*/

@@ -1818,7 +1818,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 /*[clinic input]
 Struct.__init__
 
-    format: object
+    format: object = NULL
 
 Create a compiled struct object.
 
@@ -1830,8 +1830,13 @@ See help(struct) for more on format strings.
 
 static int
 Struct___init___impl(PyStructObject *self, PyObject *format)
-/*[clinic end generated code: output=b8e80862444e92d0 input=192a4575a3dde802]*/
+/*[clinic end generated code: output=b8e80862444e92d0 input=14845875ad162992]*/
 {
+    if (!format && !self->s_codes) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Struct() missing required argument 'format' (pos 1)");
+        return -1;
+    }
     if (!self->init_called) {
         if (!self->s_codes && actual___init___impl(self, format)) {
             return -1;
