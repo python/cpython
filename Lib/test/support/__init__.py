@@ -1694,7 +1694,7 @@ def skip_if_unlimited_stack_size(test):
 
     See https://github.com/python/cpython/issues/143460.
     """
-    if is_wasi or os.name == "nt":
+    if is_emscripten or is_wasi or os.name == "nt":
         return test
 
     import resource
