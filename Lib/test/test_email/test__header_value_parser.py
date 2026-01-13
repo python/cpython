@@ -728,6 +728,67 @@ class TestParser(TestParserMixin, TestEmailBase):
     # XXX POSTDEP: ...to here.
 
 
+    # _get_xtext
+
+    @params
+    def test__get_xtext(
+            self,
+            s,
+            # DOTALL allows the LF in our first test set to pass...in the
+            # normal use of _get_xtext LF will terminate the matches we use,
+            # leaving the LF (which shouldn't normally happen) for later code.
+            regex=re.compile('.*', re.DOTALL),
+            terminal_class=parser.ValueTerminal,
+            token_type='test',
+            err=None,
+            **kw,
+        ):
+        vt = self._test_parse(
+            parser._get_xtext,
+            C(s, regex, terminal_class, token_type, err=err),
+            stringified=('' if terminal_class.__name__.startswith('EW')
+                            else None),
+            value=' ' if terminal_class.__name__.startswith('White') else None,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertEqual(vt.token_type, token_type)
+
+    params_test__get_xtext__regex = Params(
+
+        params_test__make_xtext,
+
+        raises_on_no_match = C(
+            'foo bar',
+            regex=re.compile(r'x'),
+            err=Exception('foo'),
+            exception=(Exception, 'foo'),
+            ),
+
+        returns_match = C(
+            'foo bar',
+            regex=re.compile(r'[^ ]+'),
+            remainder=' bar',
+            ),
+
+        ignores_non_printable_after_match = C(
+            'foobar\x00',
+            regex=re.compile(r'[^b]+'),
+            remainder='bar\x00',
+            ),
+
+        **for_each_character(RFC_WSP + '()')(
+            regex_from_make_non_match_re = C(
+                'foo{char}bar',
+                regex=parser._make_non_match_re(RFC_WSP + '()'),
+                remainder='{char}bar',
+                ),
+            ),
+
+        )
+
+
     # _get_ptext_to_endchars
 
     # As an internal method these tests are not API requirements; however, the
