@@ -308,7 +308,7 @@ Decompression objects support the following methods and attributes:
    :attr:`unconsumed_tail`. This bytestring must be passed to a subsequent call to
    :meth:`decompress` if decompression is to continue.  If *max_length* is zero
    then the whole input is decompressed, and :attr:`unconsumed_tail` is empty.
-   For example, the complete body could be read like::
+   For example, the full content could be read like::
 
      process_output(d.decompress(data, max_length))
      while d.unconsumed_tail:
