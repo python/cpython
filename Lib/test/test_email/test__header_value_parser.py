@@ -1359,6 +1359,17 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_atext
 
+    @params
+    def test_get_atext(self, s, *args, **kw):
+        atext = self._test_parse(parser.get_atext, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atext, parser.Terminal)
+        self.assertEqual(atext.token_type, 'atext')
+
+    params_test_get_atext = old_api_only(
+        )
+
     def test_get_atext_only(self):
         atext = self._test_get_x(parser.get_atext,
                                 'foobar', 'foobar', 'foobar', [], '')
