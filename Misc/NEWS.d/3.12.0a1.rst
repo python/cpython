@@ -223,7 +223,7 @@ chance to execute the GC periodically.
 .. date: 2022-10-05-00-37-27
 .. gh-issue: 65961
 .. nonce: z0Ys0y
-.. section: Library
+.. section: Core and Builtins
 
 When ``__package__`` is different than ``__spec__.parent``, raise a
 ``DeprecationWarning`` instead of ``ImportWarning``.
@@ -1723,15 +1723,6 @@ hosts and guests.
 
 Remove spurious "LINE" event when starting a generator or coroutine, visible
 tracing functions implemented in C.
-
-..
-
-.. date: 2022-05-11-09-16-54
-.. gh-issue: 91102
-.. nonce: lenv9h
-.. section: Library
-
-:meth:`!_warnings.warn_explicit` is ported to Argument Clinic.
 
 ..
 

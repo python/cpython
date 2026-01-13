@@ -315,7 +315,7 @@ Improve performance of ``list.pop`` for small lists.
 .. date: 2022-06-17-08-00-34
 .. gh-issue: 89051
 .. nonce: yP4Na0
-.. section: Core and Builtins
+.. section: Library
 
 Add :const:`ssl.OP_LEGACY_SERVER_CONNECT`
 

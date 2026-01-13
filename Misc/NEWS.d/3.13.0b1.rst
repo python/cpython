@@ -120,7 +120,7 @@ the GIL is always enabled.  In the free-threaded build, it may return
 .. date: 2024-05-02-15-57-07
 .. gh-issue: 118164
 .. nonce: AF6kwI
-.. section: Library
+.. section: Core and Builtins
 
 Break a loop between the Python implementation of the :mod:`decimal` module
 and the Python code for integer to string conversion. Also optimize integer
