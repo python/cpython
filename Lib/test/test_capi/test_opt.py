@@ -3534,6 +3534,40 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_is_true_narrows_to_constant(self):
+        def f(n):
+            hits = 0
+            for i in range(n):
+                v = True if i != TIER2_THRESHOLD else -1
+                if v is True:
+                    # Redundant after narrowing
+                    if v is True:
+                        hits += 1
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+
+        self.assertLessEqual(count_ops(ex, "_IS_OP"), 1)
+
+    def test_is_false_narrows_to_constant(self):
+        def f(n):
+            hits = 0
+            for i in range(n):
+                v = False if i != TIER2_THRESHOLD else -1
+                if v is False:
+                    # Redundant after narrowing
+                    if v is False:
+                        hits += 1
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+
+        self.assertLessEqual(count_ops(ex, "_IS_OP"), 1)
+
     def test_for_iter_gen_frame(self):
         def f(n):
             for i in range(n):
