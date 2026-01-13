@@ -1832,7 +1832,7 @@ static int
 insertdict(PyInterpreterState *interp, PyDictObject *mp,
            PyObject *key, Py_hash_t hash, PyObject *value)
 {
-    PyObject *old_value;
+    PyObject *old_value = NULL;
     Py_ssize_t ix;
 
     ASSERT_DICT_LOCKED(mp);
@@ -1856,11 +1856,14 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
 
     }
 
-    if (ix == DKIX_EMPTY) {
+    if (old_value == NULL) {
         // insert_combined_dict() will convert from non DICT_KEYS_GENERAL table
         // into DICT_KEYS_GENERAL table if key is not Unicode.
         // We don't convert it before _Py_dict_lookup because non-Unicode key
         // may change generic table into Unicode table.
+        //
+        // NOTE: ix may not be DKIX_EMPTY because split table may have key
+        // without value.
         if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
             goto Fail;
         }
