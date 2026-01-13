@@ -936,7 +936,6 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None, context=None):
-        assert context is not None
         self._read_ready_cb = None
         super().__init__(loop, sock, protocol, extra, server, context)
         self._eof = False
