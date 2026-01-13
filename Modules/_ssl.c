@@ -4623,7 +4623,7 @@ _ssl._SSLContext.load_cert_chain
 static PyObject *
 _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
                                       PyObject *keyfile, PyObject *password)
-/*[clinic end generated code: output=9480bc1c380e2095 input=6c7c5e8b73e4264b]*/
+/*[clinic end generated code: output=9480bc1c380e2095 input=30bc7e967ea01a58]*/
 {
     PyObject *certfile_bytes = NULL, *keyfile_bytes = NULL;
     _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
