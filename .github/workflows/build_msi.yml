@@ -44,8 +44,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build CPython installer
-      run: run: .\Tools\msi\buildrelease.bat -x64
- - name: Upload artifacts
+      run: .\Tools\msi\buildrelease.bat -x64
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
