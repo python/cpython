@@ -1,0 +1,2 @@
+Clarified the documentation of :mod:`cmd` regarding the default handling of
+empty input lines.
