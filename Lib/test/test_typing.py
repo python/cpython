@@ -4475,6 +4475,7 @@ class ProtocolTests(BaseTestCase):
         @runtime_checkable
         class RCProto2(InheritedRCProto1, Protocol):
             """Explicit RC -> inherited RC -> explicit RC."""
+            def spam(self): ...
 
         @runtime_checkable
         class RCProto3(BareProto, Protocol):
@@ -4482,6 +4483,7 @@ class ProtocolTests(BaseTestCase):
 
         class InheritedRCProto2(RCProto3, Protocol):
             """Not RC -> explicit RC -> inherited RC."""
+            def eggs(self): ...
 
         class InheritedRCProto3(RCProto2, Protocol):
             """Explicit RC -> inherited RC -> explicit RC -> inherited RC."""
