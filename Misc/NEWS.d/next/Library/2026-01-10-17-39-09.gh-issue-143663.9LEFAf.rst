@@ -1,1 +1,2 @@
-:mod:`tarfile`: :meth:`TarFile.extractall` now uses OS-specific separators to call lstat. This fixes a failure case with raw Win32 paths on Windows.
+:meth:`tarfile.TarFile.extractall` now uses OS-specific separators to call
+lstat.
