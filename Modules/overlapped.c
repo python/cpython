@@ -1794,7 +1794,7 @@ _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1868,7 +1868,7 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
     case ERROR_IO_PENDING:
         Py_RETURN_NONE;
     default:
-        self->type = TYPE_NOT_STARTED;
+        Overlapped_clear(self);
         return SetFromWindowsErr(err);
     }
 }
@@ -1935,7 +1935,7 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
     case ERROR_IO_PENDING:
         Py_RETURN_NONE;
     default:
-        self->type = TYPE_NOT_STARTED;
+        Overlapped_clear(self);
         return SetFromWindowsErr(err);
     }
 }
