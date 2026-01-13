@@ -3333,8 +3333,8 @@ Introspection helpers
    Return a dictionary containing type hints for a function, method, module
    or class object.
 
-   This is often the same as ``obj.__annotations__``, but this function makes
-   the following changes to the annotations dictionary:
+   This is often the same as :func:`annotationlib.get_annotations`, but this
+   function makes the following changes to the annotations dictionary:
 
    * Forward references encoded as string literals or :class:`ForwardRef`
      objects are handled by evaluating them in *globalns*, *localns*, and
@@ -3356,9 +3356,6 @@ Introspection helpers
      ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
-
-   See also :func:`annotationlib.get_annotations`, a lower-level function that
-   returns annotations more directly.
 
    .. caution::
 
