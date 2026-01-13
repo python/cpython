@@ -1376,50 +1376,31 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         only = C(
             'foobar',
-            'foobar',
-            'foobar',
-            [],
-            '',
             ),
 
         all_atext = C(
              RFC_ATEXT,
-             RFC_ATEXT,
-             RFC_ATEXT,
-             [],
-             '',
              ),
 
         two_words_gets_first = C(
             'foo bar',
-            'foo',
-            'foo',
-            [],
-            ' bar',
+            remainder=' bar',
             ),
 
         following_wsp_preserved = C(
             'foo \t\tbar',
-            'foo',
-            'foo',
-            [],
-            ' \t\tbar',
+            remainder=' \t\tbar',
             ),
 
         up_to_special = C(
             'foo@bar',
-            'foo',
-            'foo',
-            [],
-            '@bar',
+            remainder='@bar',
             ),
 
         non_printables = C(
             'foo\x00bar(',
-            'foo\x00bar',
-            'foo\x00bar',
-            [errors.NonPrintableDefect],
-            '(',
+            defects=[errors.NonPrintableDefect],
+            remainder='(',
             ),
             #self.assertEqual(atext.defects[0].non_printables[0], '\x00')
 
