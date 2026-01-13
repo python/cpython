@@ -4491,7 +4491,7 @@ class ProtocolTests(BaseTestCase):
         class Concrete1(BareProto):
             pass
 
-        class Concrete2(InheritedRCProto3):
+        class Concrete2(InheritedRCProto2):
             pass
 
         class Concrete3(InheritedRCProto3):
