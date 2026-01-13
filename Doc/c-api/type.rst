@@ -319,21 +319,25 @@ Type Objects
    * If not found, set *\*attr* to ``NULL`` and return ``0``.
    * On error, set an exception and return ``-1``.
 
-   Python pseudo-code (return :exc:`AttributeError` if not found instead of
-   raising an exception)::
+   Python pseudo-code::
 
        def PyType_Lookup(type, name):
            if not isinstance(name, str):
                raise TypeError
 
-           for klass in type.mro():
+           for superclass in type.mro():
+               superclass_dict = superclass.__dict__
                try:
-                   return klass.__dict__[name]
+                   return superclass_dict[name]
                except KeyError:
                    pass
 
            # not found
-           return AttributeError
+           return NULL
+
+   Note that this function uses :c:member:`~PyTypeObject.tp_dict` and
+   :c:member:`~PyTypeObject.tp_mro` directly; it does not look up 
+   ``__dict__`` and ``mro`` as Python attributes.
 
    .. versionadded:: next
 
