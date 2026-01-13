@@ -72,31 +72,32 @@ jobs:
             architecture: x86_64
             runner: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
       - name: Native Windows MSVC (release)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install visualstudio2026buildtools --no-progress -y --force --params "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64  --locale en-US --passive"
           $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\bin;$env:PATH"
-          ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }} "/p:PlatformToolset=v145"
+          $env:PlatformToolset = "v145"
+          ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
       - name: Emulated Windows Clang (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
-          set LLVMInstallDir=C:\Program Files\LLVM
+          $env:PlatformToolset = "clangcl"
+          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
+          $env:LLVMInstallDir = "C:\Program Files\LLVM"
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
       - name: Native macOS (release)

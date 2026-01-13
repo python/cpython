@@ -18,6 +18,7 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_uop_metadata.h"
 #include "pycore_long.h"
 #include "pycore_interpframe.h"  // _PyFrame_GetCode
@@ -214,7 +215,8 @@ optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
     JitOptRef value,
-    JitOptRef *result_ptr)
+    JitOptRef *result_ptr,
+    bool insert_mode)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -224,7 +226,10 @@ optimize_to_bool(
     int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
-        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        int opcode = insert_mode ?
+            _INSERT_1_LOAD_CONST_INLINE_BORROW :
+            _POP_TOP_LOAD_CONST_INLINE_BORROW;
+        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)load);
         *result_ptr = sym_new_const(ctx, load);
         return 1;
     }
@@ -330,7 +335,7 @@ _Py_opt_assert_within_stack_bounds(
 /* >0 (length) for success, 0 for not ready, clears all possible errors. */
 static int
 optimize_uops(
-    PyFunctionObject *func,
+    _PyThreadStateImpl *tstate,
     _PyUOpInstruction *trace,
     int trace_len,
     int curr_stacklen,
@@ -338,9 +343,10 @@ optimize_uops(
 )
 {
     assert(!PyErr_Occurred());
+    assert(tstate->jit_tracer_state != NULL);
+    PyFunctionObject *func = tstate->jit_tracer_state->initial_state.func;
 
-    JitOptContext context;
-    JitOptContext *ctx = &context;
+    JitOptContext *ctx = &tstate->jit_tracer_state->opt_context;
     uint32_t opcode = UINT16_MAX;
 
     // Make sure that watchers are set up
@@ -446,7 +452,9 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE,
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_TWO,
+    [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
@@ -458,6 +466,10 @@ const bool op_skip[MAX_UOP_ID + 1] = {
 
 const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP] = _NOP,
+    [_POP_TOP_NOP] = _NOP,
+    [_POP_TOP_INT] = _NOP,
+    [_POP_TOP_FLOAT] = _NOP,
+    [_POP_TOP_UNICODE] = _NOP,
     [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
     [_POP_TWO] = _POP_TOP,
@@ -564,7 +576,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 //  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
-    PyFunctionObject *func,
+    _PyThreadStateImpl *tstate,
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
@@ -574,7 +586,7 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         func, buffer,
+         tstate, buffer,
          length, curr_stacklen, dependencies);
 
     if (length == 0) {

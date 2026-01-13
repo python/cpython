@@ -1,8 +1,6 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error, skip_wasi_stack_overflow
-from test.support import import_helper
 import annotationlib
 import inspect
 import unittest
@@ -18,6 +16,12 @@ import test.typinganndata.ann_module as ann_module
 import typing
 from test.typinganndata import ann_module2
 import test
+from test.support import (
+    check_syntax_error,
+    import_helper,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow,
+)
 from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
     INVALID_UNDERSCORE_LITERALS,
@@ -250,6 +254,7 @@ the \'lazy\' dog.\n\
             self.assertIn("was never closed", str(cm.exception))
 
     @skip_wasi_stack_overflow()
+    @skip_emscripten_stack_overflow()
     def test_max_level(self):
         # Macro defined in Parser/lexer/state.h
         MAXLEVEL = 200

@@ -753,7 +753,7 @@ upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
-   >>> parser.parse_args(['--foo-bar', 'FOO-BAR']
+   >>> parser.parse_args(['--foo-bar', 'FOO-BAR'])
    Namespace(foo_bar='FOO-BAR')
    >>> parser.print_help()
    usage:  [-h] [--foo-bar FOO-BAR]
