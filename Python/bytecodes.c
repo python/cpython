@@ -5607,16 +5607,7 @@ dummy_func(
 #else
             assert(_PyErr_Occurred(tstate));
 #endif
-#if _Py_TIER2
-            if (IS_JIT_TRACING()) {
-                LEAVE_TRACING();
-                int res = stop_tracing_and_jit(tstate, frame);
-                (void)res;
-                // We shouldn't ven have compiled in the first place.
-                assert(res == 0);
-            }
-#endif
-
+            STOP_TRACING();
 
             /* Log traceback info. */
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -5631,6 +5622,7 @@ dummy_func(
         }
 
         spilled label(exception_unwind) {
+            STOP_TRACING();
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;

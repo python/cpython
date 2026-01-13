@@ -156,6 +156,19 @@
 #  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
+#if _Py_TIER2
+#define STOP_TRACING() \
+    do { \
+        if (IS_JIT_TRACING()) { \
+            LEAVE_TRACING(); \
+            _PyJit_FinalizeTracing(tstate, 0); \
+        } \
+    } while (0);
+#else
+#define STOP_TRACING() (void(0));
+#endif
+
+
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
