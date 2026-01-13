@@ -598,6 +598,24 @@ class BasicTest(BaseTest):
             self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
 
     @requireVenvCreate
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_broken_symlink_in_existing_venv(self):
+        """
+        Test creating a venv when a stale venv with broken symlinks exists.
+        """
+        bindir = os.path.join(self.env_dir, self.bindir)
+        os.makedirs(bindir)
+        python = os.path.join(bindir, 'python3')
+        os.symlink('/path/to/deleted/conda/env/bin/python3', python)
+        self.assertTrue(os.path.islink(python))
+        self.assertFalse(os.path.exists(python))
+
+        builder = venv.EnvBuilder(with_pip=False, symlinks=True)
+        self.run_with_capture(builder.create, self.env_dir)
+        self.assertTrue(os.path.islink(python))
+        self.assertTrue(os.path.exists(python))
+
+    @requireVenvCreate
     def test_multiprocessing(self):
         """
         Test that the multiprocessing is able to spawn.
