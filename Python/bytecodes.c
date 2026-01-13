@@ -5607,7 +5607,9 @@ dummy_func(
 #else
             assert(_PyErr_Occurred(tstate));
 #endif
+            SAVE_STACK();
             STOP_TRACING();
+            RELOAD_STACK();
 
             /* Log traceback info. */
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -5622,7 +5624,9 @@ dummy_func(
         }
 
         spilled label(exception_unwind) {
+            SAVE_STACK();
             STOP_TRACING();
+            RELOAD_STACK();
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;

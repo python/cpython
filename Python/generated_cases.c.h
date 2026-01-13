@@ -12323,7 +12323,9 @@ JUMP_TO_LABEL(error);
             #else
             assert(_PyErr_Occurred(tstate));
             #endif
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             STOP_TRACING();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             if (!_PyFrame_IsIncomplete(frame)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);

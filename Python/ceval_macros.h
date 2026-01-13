@@ -165,7 +165,7 @@
         } \
     } while (0);
 #else
-#define STOP_TRACING() (void(0));
+#define STOP_TRACING() ((void)(0));
 #endif
 
 
