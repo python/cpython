@@ -2003,6 +2003,25 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertRaises(NameError, f)
 
+    def test_gh_143811(self):
+        def f():
+            span = 42
+            try:
+                spam
+            except NameError as exc:
+                # Clear the message.
+                exc.args = ()
+                raise
+
+        try:
+            f()
+        except NameError:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        # 'spam' should appear even when message was empty.
+        self.assertIn("'spam'", err.getvalue())
+
     # Note: name suggestion tests live in `test_traceback`.
 
 
@@ -2045,6 +2064,24 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+
+    def test_gh_143811(self):
+        def f():
+            class A:
+                def __getattr__(self, attr):
+                    # Provide no message.
+                    raise AttributeError
+
+            A.bluch
+
+        try:
+            f()
+        except AttributeError:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        # 'bluch' should appear even when message was empty.
+        self.assertIn("'bluch'", err.getvalue())
 
     # Note: name suggestion tests live in `test_traceback`.
 

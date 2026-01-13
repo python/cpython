@@ -1125,9 +1125,15 @@ class TracebackException:
                     + "add the site-packages directory to sys.path "
                     + "or to enable your virtual environment?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
-                getattr(exc_value, "name", None) is not None:
-            wrong_name = getattr(exc_value, "name", None)
+                (wrong_name := getattr(exc_value, "name", None)) is not None:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if not self._str:
+                if issubclass(exc_type, AttributeError):
+                    if (obj_type := type(getattr(exc_value, "obj", None))) is not type(None):
+                        obj_type_name = object.__getattribute__(obj_type, "__name__")
+                        self._str = f"{obj_type_name!r} object has no attribute {wrong_name!r}"
+                else:  # NameError
+                    self._str = repr(wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
             if issubclass(exc_type, NameError):

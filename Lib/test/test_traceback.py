@@ -4259,6 +4259,7 @@ class GetattrSuggestionTests(BaseSuggestionTests):
                 raise AttributeError()
 
         actual = self.get_suggestion(A(), 'bluch')
+        self.assertIn("'A' object has no attribute 'bluch'.", actual)
         self.assertIn("blech", actual)
 
         class A:
@@ -4267,6 +4268,7 @@ class GetattrSuggestionTests(BaseSuggestionTests):
                 raise AttributeError
 
         actual = self.get_suggestion(A(), 'bluch')
+        self.assertIn("'A' object has no attribute 'bluch'.", actual)
         self.assertIn("blech", actual)
 
     def test_suggestions_invalid_args(self):
@@ -4930,6 +4932,18 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(func)
         self.assertIn("forget to import '_io'", actual)
 
+    def test_name_error_empty(self):
+        """See GH-143811."""
+        def func():
+            span = 42
+            try:
+                spam
+            except NameError as exc:
+                exc.args = ()
+                raise
+        actual = self.get_suggestion(func)
+        self.assertIn("'spam'", actual)
+        self.assertIn("'span'?", actual)
 
 
 class PurePythonSuggestionFormattingTests(
