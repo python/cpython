@@ -194,6 +194,14 @@ complete listing.
    Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
    be inlined.
 
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   On supported platforms, it ensures the symbol is not exported.
+
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("hidden")))``.
+
 .. c:macro:: Py_MAX(x, y)
 
    Return the maximum value between ``x`` and ``y``.
@@ -338,6 +346,38 @@ complete listing.
    This is roughly equivalent to::
 
       sizeof(array) / sizeof((array)[0])
+
+
+.. c:macro:: Py_EXPORTED_SYMBOL
+
+   Macro used to declare a symbol (function or data) as exported.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: Py_IMPORTED_SYMBOL
+
+   Macro used to declare a symbol as imported.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+
+.. c:macro:: PyAPI_DATA(type)
+
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
 
 
 .. _api-objects:
