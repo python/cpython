@@ -3348,9 +3348,10 @@ Introspection helpers
      annotations from ``C``'s base classes with those on ``C`` directly. This
      is done by traversing :attr:`C.__mro__ <type.__mro__>` and iteratively
      combining
-     :term:`annotations <variable annotation>` of each base class. Annotations on classes appearing
-     earlier in the :term:`method resolution order` always take precedence over
-     annotations on classes appearing later in the method resolution order.
+     :term:`annotations <variable annotation>` of each base class. Annotations
+     on classes appearing earlier in the :term:`method resolution order` always
+     take precedence over annotations on classes appearing later in the method
+     resolution order.
    * The function recursively replaces all occurrences of
      ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
