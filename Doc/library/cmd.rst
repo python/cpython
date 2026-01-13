@@ -99,9 +99,9 @@ When the user enters an empty line in response to the prompt, ``Cmd`` does
 **not** ignore the input by default. Instead, it repeats the last non-empty
 command entered.
 
-This behavior is implemented by :meth:`emptyline`. Subclasses that do not
+This behavior is implemented by :meth:`Cmd.emptyline`. Subclasses that do not
 want empty input to repeat the previous command  should override
-:meth:`emptyline` to do nothing::
+:meth:`Cmd.emptyline` to do nothing::
 
    def emptyline(self):
        pass
