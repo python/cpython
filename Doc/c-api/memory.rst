@@ -306,7 +306,7 @@ The following type-oriented macros are provided for convenience.  Note  that
    .. versionchanged:: 3.4
 
       The macros are now aliases of the corresponding mixed-case names.
-      Previously, their of the macros was the same, but their use did
+      Previously, their behavior was the same, but their use did
       not preserve binary compatibility across Python versions.
 
    .. deprecated:: 2.0
