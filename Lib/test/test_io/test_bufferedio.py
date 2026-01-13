@@ -10,8 +10,7 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
-from test.support import check_sanitizer
-from test.support import os_helper, threading_helper
+from test.support import check_sanitizer, os_helper, threading_helper
 from .utils import byteslike, CTestCase, PyTestCase
 
 
