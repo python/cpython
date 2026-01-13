@@ -18,7 +18,7 @@ jobs:
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.
@@ -28,7 +28,7 @@ jobs:
         version: ${{ env.WASMTIME_VERSION }}
     - name: "Restore WASI SDK"
       id: cache-wasi-sdk
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ env.WASI_SDK_PATH }}
         key: ${{ runner.os }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}
@@ -41,7 +41,7 @@ jobs:
     - name: "Add ccache to PATH"
       run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: "Install Python"
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.x'
     - name: "Runner image version"
