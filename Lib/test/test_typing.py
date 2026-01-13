@@ -4506,21 +4506,21 @@ class ProtocolTests(BaseTestCase):
 
         for inherited_runtime_proto in InheritedRCProto1, InheritedRCProto2, InheritedRCProto3:
             with self.assertWarnsRegex(DeprecationWarning, depr_message_re):
-                isinstance(object(), inherited_runtime_proto)
+                check_func(check_obj, inherited_runtime_proto)
 
         # Don't warn for explicitly checkable protocols and concrete implementations.
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
 
-            for explicit_runtime_proto in RCProto1, RCProto2, RCProto3, Concrete1, Concrete2, Concrete3:
-                isinstance(object(), explicit_runtime_proto)
+            for checkable in RCProto1, RCProto2, RCProto3, Concrete1, Concrete2, Concrete3:
+                check_func(check_obj, checkable)
 
         # Don't warn for uncheckable protocols.
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
 
             with self.assertRaises(TypeError):  # Self-test. Protocol below can't be runtime-checkable.
-                isinstance(object(), BareProto)
+                check_func(check_obj, BareProto)
 
     def test_super_call_init(self):
         class P(Protocol):
