@@ -225,6 +225,7 @@ class ComparisonTest(unittest.TestCase):
                 self.assertRaises(TypeError, op, z, v)
                 self.assertRaises(TypeError, op, v, z)
 
+
 class IndexMutationDuringNumericOpTest(unittest.TestCase):
     def test_index_mutates_lhs_type_during_operation(self):
         import array
