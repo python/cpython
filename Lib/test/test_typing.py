@@ -4470,7 +4470,7 @@ class ProtocolTests(BaseTestCase):
             """I am runtime-checkable."""
 
         class InheritedRCProto1(RCProto1, Protocol):
-            """Bare, but runtime-checkability is "inherited"."""
+            """I am accidentally runtime-checkable (by inheritance)."""
 
         @runtime_checkable
         class RCProto2(InheritedRCProto1, Protocol):
@@ -4478,10 +4478,10 @@ class ProtocolTests(BaseTestCase):
 
         @runtime_checkable
         class RCProto3(BareProto, Protocol):
-            """Bare -> explicit RC."""
+            """Not RC -> explicit RC."""
 
         class InheritedRCProto2(RCProto3, Protocol):
-            """Bare -> explicit RC -> inherited RC."""
+            """Not RC -> explicit RC -> inherited RC."""
 
         class InheritedRCProto3(RCProto2, Protocol):
             """Explicit RC -> inherited RC -> explicit RC -> inherited RC."""
