@@ -32,11 +32,11 @@ jobs:
     name: 'Docs'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Register Sphinx problem matcher
       run: echo "::add-matcher::.github/problem-matchers/sphinx.json"
     - name: 'Set up Python'
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: '3.12'
         cache: 'pip'
@@ -46,7 +46,7 @@ jobs:
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
     - name: 'Upload'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: doc-html
         path: Doc/build/html
@@ -58,10 +58,10 @@ jobs:
     name: 'Doctest'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Register Sphinx problem matcher
       run: echo "::add-matcher::.github/problem-matchers/sphinx.json"
-    - uses: actions/cache@v3
+    - uses: actions/cache@v5
       with:
         path: ~/.cache/pip
         key: ubuntu-doc-${{ hashFiles('Doc/requirements.txt') }}
