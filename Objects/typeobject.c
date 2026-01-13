@@ -9714,6 +9714,7 @@ wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
     ssizeargfunc func = (ssizeargfunc)wrapped;
     PyObject* o;
     Py_ssize_t i;
+    PyTypeObject *type_before = Py_TYPE(self);
 
     if (!check_num_args(args, 1))
         return NULL;
@@ -9721,6 +9722,11 @@ wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
     i = PyNumber_AsSsize_t(o, PyExc_OverflowError);
     if (i == -1 && PyErr_Occurred())
         return NULL;
+    if (Py_TYPE(self) != type_before) {
+        PyErr_SetString(PyExc_TypeError,
+                        "object mutated during numeric operation");
+        return NULL;
+    }
     return (*func)(self, i);
 }
 
