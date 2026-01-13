@@ -718,7 +718,7 @@ The :mod:`functools` module defines the following functions:
    The same pattern can be used for other similar decorators:
    :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
 
-   For every ``singledispatchmethod`` method defined in a class, the value
+   For every method decorated with ``@singledispatchmethod`` in a class, the value
    dispatched on by that method is *always* the first argument passed for the call.
    Therefore, dispatching to regular methods can only be sensibly performed by
    calling such a method from instances of the class, and not from the class object.
