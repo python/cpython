@@ -37,6 +37,11 @@ IDLE has the following features:
 
 * configuration, browsers, and other dialogs
 
+The IDLE application is implemented in the :mod:`idlelib` package.
+
+This is an optional module. If it is missing from your copy of CPython, look for documentation from your distributor (that is, whoever provided Python to you).
+If you are the distributor, see Requirements for optional modules.
+
 Menus
 -----
 

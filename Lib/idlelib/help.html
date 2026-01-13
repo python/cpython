@@ -16,6 +16,9 @@ through multiple files (grep)</p></li>
 of global and local namespaces</p></li>
 <li><p>configuration, browsers, and other dialogs</p></li>
 </ul>
+<p>The IDLE application is implemented in the <a class="reference internal" href="#module-idlelib" title="idlelib: Implementation package for the IDLE shell/editor."><code class="xref py py-mod docutils literal notranslate"><span class="pre">idlelib</span></code></a> package.</p>
+<p>This is an optional module. If it is missing from your copy of CPython, look for documentation from your distributor (that is, whoever provided Python to you).
+If you are the distributor, see Requirements for optional modules.</p>
 <section id="menus">
 <h2>Menus<a class="headerlink" href="#menus" title="Link to this heading">¶</a></h2>
 <p>IDLE has two main window types, the Shell window and the Editor window.  It is
@@ -516,7 +519,7 @@ looked for in the user’s home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE’s Python shell.</p>
 <section id="command-line-usage">
-<h3>Command line usage<a class="headerlink" href="#command-line-usage" title="Link to this heading">¶</a></h3>
+<span id="idlelib-cli"></span><h3>Command-line usage<a class="headerlink" href="#command-line-usage" title="Link to this heading">¶</a></h3>
 <p>IDLE can be invoked from the command line with various options. The general syntax is:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>idlelib<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="o">[</span>file<span class="w"> </span>...<span class="o">]</span>
 </pre></div>
