@@ -548,13 +548,15 @@ groupby_next(PyObject *op)
             PyObject *tgtkey = gbo->tgtkey;
             PyObject *currkey = gbo->currkey;
 
-            Py_INCREF(tgtkey);
-            Py_INCREF(currkey);
+            /* Hold strong references during comparison to prevent re-entrant __eq__
+            from advancing the iterator and invalidating borrowed references. */
+            Py_INCREF(gbo -> tgtkey);
+            Py_INCREF(gbo -> currkey);
 
             rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
 
-            Py_DECREF(tgtkey);
-            Py_DECREF(currkey);
+            Py_DECREF(gbo -> tgtkey);
+            Py_DECREF(gbo -> currkey);
 
             if (rcmp == -1)
                 return NULL;
