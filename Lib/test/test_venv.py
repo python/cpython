@@ -598,6 +598,7 @@ class BasicTest(BaseTest):
             self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
 
     @requireVenvCreate
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
     def test_broken_symlink_in_existing_venv(self):
         """
