@@ -9715,18 +9715,25 @@ wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
     PyObject* o;
     Py_ssize_t i;
     PyTypeObject *type_before = Py_TYPE(self);
+    Py_INCREF(type_before);
 
-    if (!check_num_args(args, 1))
+    if (!check_num_args(args, 1)){
+        Py_DECREF(type_before);
         return NULL;
+    }
     o = PyTuple_GET_ITEM(args, 0);
     i = PyNumber_AsSsize_t(o, PyExc_OverflowError);
-    if (i == -1 && PyErr_Occurred())
+    if (i == -1 && PyErr_Occurred()){
+        Py_DECREF(type_before);
         return NULL;
+    }
     if (Py_TYPE(self) != type_before) {
+        Py_DECREF(type_before);
         PyErr_SetString(PyExc_TypeError,
                         "object mutated during numeric operation");
         return NULL;
     }
+    Py_DECREF(type_before);
     return (*func)(self, i);
 }
 
