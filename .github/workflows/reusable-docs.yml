@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: 'Set up Python'
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3'
         cache: 'pip'
@@ -29,7 +29,7 @@ jobs:
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
     - name: 'Upload'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: doc-html
         path: Doc/build/html
@@ -40,9 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: 'Set up Python'
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'  # known to work with Sphinx 4.2
         cache: 'pip'
@@ -58,8 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/cache@v4
+    - uses: actions/checkout@v6
+    - uses: actions/cache@v5
       with:
         path: ~/.cache/pip
         key: ubuntu-doc-${{ hashFiles('Doc/requirements.txt') }}

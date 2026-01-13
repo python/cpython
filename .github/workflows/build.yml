@@ -32,7 +32,7 @@ jobs:
       run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
       config_hash: ${{ steps.config_hash.outputs.hash }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check for source changes
         id: check
         run: |
@@ -91,10 +91,10 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
       - name: Install dependencies
         run: |
             sudo ./.github/workflows/posix-deps-apt.sh
@@ -123,7 +123,7 @@ jobs:
         if: ${{ failure() && steps.check.conclusion == 'failure' }}
         run: |
           make regen-abidump
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         name: Publish updated ABI files
         if: ${{ failure() && steps.check.conclusion == 'failure' }}
         with:
@@ -139,16 +139,16 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
       - name: Runner image version
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
       - name: Restore config.cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: config.cache
           # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
@@ -243,13 +243,13 @@ jobs:
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: config.cache
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.check_source.outputs.config_hash }}
@@ -264,7 +264,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -298,13 +298,13 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: config.cache
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.check_source.outputs.config_hash }}
@@ -313,7 +313,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Set up GCC-10 for ASAN
-      uses: egor-tensin/setup-gcc@v1
+      uses: egor-tensin/setup-gcc@v2
       with:
         version: 10
     - name: Configure OpenSSL env vars
@@ -323,7 +323,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
