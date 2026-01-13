@@ -225,6 +225,29 @@ class ComparisonTest(unittest.TestCase):
                 self.assertRaises(TypeError, op, z, v)
                 self.assertRaises(TypeError, op, v, z)
 
+class IndexMutationDuringNumericOpTest(unittest.TestCase):
+    
+    def test_index_mutates_lhs_type_during_operation(self):
+        import array
 
+        class Good(array.array):
+            pass
+
+        class Hide(type):
+            def mro(cls):
+                return (cls, object)
+
+        class Bad(Good, metaclass=Hide):
+            pass
+
+        arr = Good('b', b'x')
+
+        class Count:
+            def __index__(self):
+                arr.__class__ = Bad
+                return 2
+
+        with self.assertRaises(TypeError):
+            arr * Count()
 if __name__ == '__main__':
     unittest.main()
