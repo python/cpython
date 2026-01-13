@@ -19,14 +19,16 @@ if TYPE_CHECKING:
     from collections.abc import Set
 
 GITHUB_DEFAULT_BRANCH = os.environ["GITHUB_DEFAULT_BRANCH"]
-GITHUB_CODEOWNERS_PATH = Path(".github/CODEOWNERS")
 GITHUB_WORKFLOWS_PATH = Path(".github/workflows")
 
-CONFIGURATION_FILE_NAMES = frozenset({
-    ".pre-commit-config.yaml",
-    ".ruff.toml",
-    "mypy.ini",
+RUN_TESTS_IGNORE = frozenset({
+    Path("Tools/check-c-api-docs/ignored_c_api.txt"),
+    Path(".github/CODEOWNERS"),
+    Path(".pre-commit-config.yaml"),
+    Path(".ruff.toml"),
+    Path("mypy.ini"),
 })
+
 UNIX_BUILD_SYSTEM_FILE_NAMES = frozenset({
     Path("aclocal.m4"),
     Path("config.guess"),
@@ -233,11 +235,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             if file.name == "reusable-wasi.yml":
                 platforms_changed.add("wasi")
 
-        if not (
-            doc_file
-            or file == GITHUB_CODEOWNERS_PATH
-            or file.name in CONFIGURATION_FILE_NAMES
-        ):
+        if not doc_file and file not in RUN_TESTS_IGNORE:
             run_tests = True
 
             platform = get_file_platform(file)
