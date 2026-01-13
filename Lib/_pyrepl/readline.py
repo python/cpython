@@ -252,6 +252,7 @@ def _get_first_indentation(buffer: list[str]) -> str | None:
             return ''.join(buffer[indented_line_start : i])
     return None
 
+
 def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     buffer_str = ''.join(buffer)
     colors = tuple(gen_colors(buffer_str))
