@@ -1374,33 +1374,54 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_atext = old_api_only(
 
-        test_get_atext_only = C(
-                                'foobar', 'foobar', 'foobar', [], '')
-                                ,
+        only = C(
+            'foobar',
+            'foobar',
+            'foobar',
+            [],
+            '',
+            ),
 
-        test_get_atext_all_atext = C(
-                                 RFC_ATEXT,
-                                 RFC_ATEXT,
-                                 RFC_ATEXT, [], '')
-                                    ,
+        all_atext = C(
+             RFC_ATEXT,
+             RFC_ATEXT,
+             RFC_ATEXT,
+             [],
+             '',
+             ),
 
-        test_get_atext_two_words_gets_first = C(
-                        'foo bar', 'foo', 'foo', [], ' bar')
-                        ,
+        two_words_gets_first = C(
+            'foo bar',
+            'foo',
+            'foo',
+            [],
+            ' bar',
+            ),
 
-        test_get_atext_following_wsp_preserved = C(
-                        'foo \t\tbar', 'foo', 'foo', [], ' \t\tbar')
-                        ,
+        following_wsp_preserved = C(
+            'foo \t\tbar',
+            'foo',
+            'foo',
+            [],
+            ' \t\tbar',
+            ),
 
-        test_get_atext_up_to_special = C(
-                        'foo@bar', 'foo', 'foo', [], '@bar')
-                        ,
+        up_to_special = C(
+            'foo@bar',
+            'foo',
+            'foo',
+            [],
+            '@bar',
+            ),
 
-        test_get_atext_non_printables = C(
-                                'foo\x00bar(', 'foo\x00bar', 'foo\x00bar',
-                                [errors.NonPrintableDefect], '(')
-                                ,
-       #self.assertEqual(atext.defects[0].non_printables[0], '\x00')
+        non_printables = C(
+            'foo\x00bar(',
+            'foo\x00bar',
+            'foo\x00bar',
+            [errors.NonPrintableDefect],
+            '(',
+            ),
+            #self.assertEqual(atext.defects[0].non_printables[0], '\x00')
 
         )
 
