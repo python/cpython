@@ -249,5 +249,7 @@ class IndexMutationDuringNumericOpTest(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             arr * Count()
+
+
 if __name__ == '__main__':
     unittest.main()
