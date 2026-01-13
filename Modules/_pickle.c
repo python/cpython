@@ -641,6 +641,7 @@ typedef struct PicklerObject {
     int fast_nesting;
     int fix_imports;            /* Indicate whether Pickler should fix
                                    the name of globals for Python 2.x. */
+    int running;                /* True when a method of Pickler is executing. */
     PyObject *fast_memo;
     PyObject *buffer_callback;  /* Callback for out-of-band buffers, or NULL */
 } PicklerObject;
@@ -685,6 +686,8 @@ typedef struct UnpicklerObject {
     int proto;                  /* Protocol of the pickle loaded. */
     int fix_imports;            /* Indicate whether Unpickler should fix
                                    the name of globals pickled by Python 2.x. */
+    int running;                /* True when a method of Unpickler is executing. */
+
 } UnpicklerObject;
 
 typedef struct {
@@ -701,6 +704,32 @@ typedef struct {
 #define UnpicklerObject_CAST(op)            ((UnpicklerObject *)(op))
 #define PicklerMemoProxyObject_CAST(op)     ((PicklerMemoProxyObject *)(op))
 #define UnpicklerMemoProxyObject_CAST(op)   ((UnpicklerMemoProxyObject *)(op))
+
+#define BEGIN_USING_PICKLER(SELF, RET) do {                                 \
+        if ((SELF)->running) {                                              \
+            PyErr_SetString(PyExc_RuntimeError,                             \
+                            "Pickler object is already used");              \
+            return (RET);                                                   \
+        }                                                                   \
+        (SELF)->running = 1;                                                \
+    } while (0)
+
+#define END_USING_PICKLER(SELF) do {                                        \
+        (SELF)->running = 0;                                                \
+    } while (0)
+
+#define BEGIN_USING_UNPICKLER(SELF, RET) do {                               \
+        if ((SELF)->running) {                                              \
+            PyErr_SetString(PyExc_RuntimeError,                             \
+                            "Unpickler object is already used");            \
+            return (RET);                                                   \
+        }                                                                   \
+        (SELF)->running = 1;                                                \
+    } while (0)
+
+#define END_USING_UNPICKLER(SELF) do {                                      \
+        (SELF)->running = 0;                                                \
+    } while (0)
 
 /* Forward declarations */
 static int save(PickleState *state, PicklerObject *, PyObject *, int);
@@ -1131,6 +1160,7 @@ _Pickler_New(PickleState *st)
     self->fast = 0;
     self->fast_nesting = 0;
     self->fix_imports = 0;
+    self->running = 0;
     self->fast_memo = NULL;
     self->buffer_callback = NULL;
 
@@ -1708,6 +1738,7 @@ _Unpickler_New(PyObject *module)
     self->marks_size = 0;
     self->proto = 0;
     self->fix_imports = 0;
+    self->running = 0;
 
     PyObject_GC_Track(self);
     return self;
@@ -2636,53 +2667,61 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
                         "PickleBuffer can only be pickled with protocol >= 5");
         return -1;
     }
-    const Py_buffer* view = PyPickleBuffer_GetBuffer(obj);
-    if (view == NULL) {
+    Py_buffer view;
+    if (PyObject_GetBuffer(obj, &view, PyBUF_FULL_RO) != 0) {
         return -1;
     }
-    if (view->suboffsets != NULL || !PyBuffer_IsContiguous(view, 'A')) {
+    if (view.suboffsets != NULL || !PyBuffer_IsContiguous(&view, 'A')) {
         PyErr_SetString(st->PicklingError,
                         "PickleBuffer can not be pickled when "
                         "pointing to a non-contiguous buffer");
-        return -1;
+        goto error;
     }
+
+    int rc = 0;
     int in_band = 1;
     if (self->buffer_callback != NULL) {
         PyObject *ret = PyObject_CallOneArg(self->buffer_callback, obj);
         if (ret == NULL) {
-            return -1;
+            goto error;
         }
         in_band = PyObject_IsTrue(ret);
         Py_DECREF(ret);
         if (in_band == -1) {
-            return -1;
+            goto error;
         }
     }
     if (in_band) {
         /* Write data in-band */
-        if (view->readonly) {
-            return _save_bytes_data(st, self, obj, (const char *)view->buf,
-                                    view->len);
+        if (view.readonly) {
+            rc = _save_bytes_data(st, self, obj, (const char *)view.buf,
+                                  view.len);
         }
         else {
-            return _save_bytearray_data(st, self, obj, (const char *)view->buf,
-                                        view->len);
+            rc = _save_bytearray_data(st, self, obj, (const char *)view.buf,
+                                      view.len);
         }
     }
     else {
         /* Write data out-of-band */
         const char next_buffer_op = NEXT_BUFFER;
         if (_Pickler_Write(self, &next_buffer_op, 1) < 0) {
-            return -1;
+            goto error;
         }
-        if (view->readonly) {
+        if (view.readonly) {
             const char readonly_buffer_op = READONLY_BUFFER;
             if (_Pickler_Write(self, &readonly_buffer_op, 1) < 0) {
-                return -1;
+                goto error;
             }
         }
     }
-    return 0;
+
+    PyBuffer_Release(&view);
+    return rc;
+
+error:
+    PyBuffer_Release(&view);
+    return -1;
 }
 
 /* A copy of PyUnicode_AsRawUnicodeEscapeString() that also translates
@@ -4756,17 +4795,23 @@ _pickle_Pickler_dump_impl(PicklerObject *self, PyTypeObject *cls,
                      Py_TYPE(self)->tp_name);
         return NULL;
     }
+    BEGIN_USING_PICKLER(self, NULL);
 
-    if (_Pickler_ClearBuffer(self) < 0)
-        return NULL;
-
-    if (dump(st, self, obj) < 0)
-        return NULL;
-
-    if (_Pickler_FlushToFile(self) < 0)
-        return NULL;
-
+    if (_Pickler_ClearBuffer(self) < 0) {
+        goto error;
+    }
+    if (dump(st, self, obj) < 0) {
+        goto error;
+    }
+    if (_Pickler_FlushToFile(self) < 0) {
+        goto error;
+    }
+    END_USING_PICKLER(self);
     Py_RETURN_NONE;
+
+error:
+    END_USING_PICKLER(self);
+    return NULL;
 }
 
 /*[clinic input]
@@ -4907,47 +4952,54 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *buffer_callback)
 /*[clinic end generated code: output=0abedc50590d259b input=cddc50f66b770002]*/
 {
+    BEGIN_USING_PICKLER(self, -1);
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
         (void)Pickler_clear((PyObject *)self);
 
-    if (_Pickler_SetProtocol(self, protocol, fix_imports) < 0)
-        return -1;
-
-    if (_Pickler_SetOutputStream(self, file) < 0)
-        return -1;
-
-    if (_Pickler_SetBufferCallback(self, buffer_callback) < 0)
-        return -1;
-
+    if (_Pickler_SetProtocol(self, protocol, fix_imports) < 0) {
+        goto error;
+    }
+    if (_Pickler_SetOutputStream(self, file) < 0) {
+        goto error;
+    }
+    if (_Pickler_SetBufferCallback(self, buffer_callback) < 0) {
+        goto error;
+    }
     /* memo and output_buffer may have already been created in _Pickler_New */
     if (self->memo == NULL) {
         self->memo = PyMemoTable_New();
-        if (self->memo == NULL)
-            return -1;
+        if (self->memo == NULL) {
+            goto error;
+        }
     }
     self->output_len = 0;
     if (self->output_buffer == NULL) {
         self->max_output_len = WRITE_BUF_SIZE;
         self->output_buffer = PyBytes_FromStringAndSize(NULL,
                                                         self->max_output_len);
-        if (self->output_buffer == NULL)
-            return -1;
+        if (self->output_buffer == NULL) {
+            goto error;
+        }
     }
 
     self->fast = 0;
     self->fast_nesting = 0;
     self->fast_memo = NULL;
 
-    if (self->dispatch_table != NULL) {
-        return 0;
-    }
-    if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(dispatch_table),
-                             &self->dispatch_table) < 0) {
-        return -1;
+    if (self->dispatch_table == NULL) {
+        if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(dispatch_table),
+                                &self->dispatch_table) < 0) {
+            goto error;
+        }
     }
 
+    END_USING_PICKLER(self);
     return 0;
+
+error:
+    END_USING_PICKLER(self);
+    return -1;
 }
 
 
@@ -7149,22 +7201,22 @@ static PyObject *
 _pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=cc88168f608e3007 input=f5d2f87e61d5f07f]*/
 {
-    UnpicklerObject *unpickler = (UnpicklerObject*)self;
-
     PickleState *st = _Pickle_GetStateByClass(cls);
 
     /* Check whether the Unpickler was initialized correctly. This prevents
        segfaulting if a subclass overridden __init__ with a function that does
        not call Unpickler.__init__(). Here, we simply ensure that self->read
        is not NULL. */
-    if (unpickler->read == NULL) {
+    if (self->read == NULL) {
         PyErr_Format(st->UnpicklingError,
                      "Unpickler.__init__() was not called by %s.__init__()",
-                     Py_TYPE(unpickler)->tp_name);
+                     Py_TYPE(self)->tp_name);
         return NULL;
     }
-
-    return load(st, unpickler);
+    BEGIN_USING_UNPICKLER(self, NULL);
+    PyObject *res = load(st, self);
+    END_USING_UNPICKLER(self);
+    return res;
 }
 
 /* The name of find_class() is misleading. In newer pickle protocols, this
@@ -7428,35 +7480,41 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
                                 const char *errors, PyObject *buffers)
 /*[clinic end generated code: output=09f0192649ea3f85 input=ca4c1faea9553121]*/
 {
+    BEGIN_USING_UNPICKLER(self, -1);
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->read != NULL)
         (void)Unpickler_clear((PyObject *)self);
 
-    if (_Unpickler_SetInputStream(self, file) < 0)
-        return -1;
-
-    if (_Unpickler_SetInputEncoding(self, encoding, errors) < 0)
-        return -1;
-
-    if (_Unpickler_SetBuffers(self, buffers) < 0)
-        return -1;
-
+    if (_Unpickler_SetInputStream(self, file) < 0) {
+        goto error;
+    }
+    if (_Unpickler_SetInputEncoding(self, encoding, errors) < 0) {
+        goto error;
+    }
+    if (_Unpickler_SetBuffers(self, buffers) < 0) {
+        goto error;
+    }
     self->fix_imports = fix_imports;
 
     PyTypeObject *tp = Py_TYPE(self);
     PickleState *state = _Pickle_FindStateByType(tp);
     self->stack = (Pdata *)Pdata_New(state);
-    if (self->stack == NULL)
-        return -1;
-
+    if (self->stack == NULL) {
+        goto error;
+    }
     self->memo_size = 32;
     self->memo = _Unpickler_NewMemo(self->memo_size);
-    if (self->memo == NULL)
-        return -1;
-
+    if (self->memo == NULL) {
+        goto error;
+    }
     self->proto = 0;
 
+    END_USING_UNPICKLER(self);
     return 0;
+
+error:
+    END_USING_UNPICKLER(self);
+    return -1;
 }
 
 

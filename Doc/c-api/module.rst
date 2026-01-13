@@ -571,7 +571,7 @@ A module's token -- and the *your_token* value to use in the above code -- is:
   of that slot;
 - For modules created from an ``PyModExport_*``
   :ref:`export hook <extension-export-hook>`: the slots array that the export
-  hook returned (unless overriden with :c:macro:`Py_mod_token`).
+  hook returned (unless overridden with :c:macro:`Py_mod_token`).
 
 .. c:macro:: Py_mod_token
 
@@ -820,15 +820,18 @@ struct:
    .. versionadded:: 3.5
 
 .. c:macro:: PYTHON_API_VERSION
+             PYTHON_API_STRING
 
-   The C API version. Defined for backwards compatibility.
+   The C API version, as an integer (``1013``) and string (``"1013"``), respectively.
+   Defined for backwards compatibility.
 
    Currently, this constant is not updated in new Python versions, and is not
    useful for versioning. This may change in the future.
 
 .. c:macro:: PYTHON_ABI_VERSION
+             PYTHON_ABI_STRING
 
-   Defined as ``3`` for backwards compatibility.
+   Defined as ``3`` and ``"3"``, respectively, for backwards compatibility.
 
    Currently, this constant is not updated in new Python versions, and is not
    useful for versioning. This may change in the future.

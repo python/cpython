@@ -142,9 +142,14 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
-      - name: Check for undocumented C APIs
-        run: make check-c-api-docs
 
+  check-c-api-docs:
+    name: C API Docs
+    needs: build-context
+    if: >-
+      needs.build-context.outputs.run-tests == 'true'
+      || needs.build-context.outputs.run-docs == 'true'
+    uses: ./.github/workflows/reusable-check-c-api-docs.yml
 
   build-windows:
     name: >-
@@ -685,13 +690,13 @@ jobs:
     - check-docs
     - check-autoconf-regen
     - check-generated-files
+    - check-c-api-docs
     - build-windows
     - build-windows-msi
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests-awslc
     - build-ubuntu-ssltests-openssl
-    - build-android
     - build-ios
     - build-wasi
     - test-hypothesis
@@ -706,6 +711,7 @@ jobs:
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
+          build-android,
           build-windows-msi,
           build-ubuntu-ssltests-awslc,
           build-ubuntu-ssltests-openssl,
@@ -719,6 +725,12 @@ jobs:
             check-autoconf-regen,
             check-generated-files,
             '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-tests)
+            && !fromJSON(needs.build-context.outputs.run-docs)
+            && 'check-c-api-docs,'
             || ''
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}

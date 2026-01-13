@@ -91,8 +91,8 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-void
-_PyGen_Finalize(PyObject *self)
+static void
+gen_finalize(PyObject *self)
 {
     PyGenObject *gen = (PyGenObject *)self;
 
@@ -158,6 +158,34 @@ gen_clear_frame(PyGenObject *gen)
     frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
+}
+
+int
+_PyGen_ClearFrame(PyGenObject *gen)
+{
+    int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
+    do {
+        if (FRAME_STATE_FINISHED(frame_state)) {
+            return 0;
+        }
+        else if (frame_state == FRAME_EXECUTING) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "cannot clear an executing frame");
+            return -1;
+        }
+        else if (FRAME_STATE_SUSPENDED(frame_state)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "cannot clear an suspended frame");
+            return -1;
+        }
+        assert(frame_state == FRAME_CREATED);
+    } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_CLEARED));
+
+    if (_PyGen_GetCode(gen)->co_flags & CO_COROUTINE) {
+        _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
+    }
+    gen_clear_frame(gen);
+    return 0;
 }
 
 static void
@@ -559,7 +587,7 @@ failed_throw:
 static PyObject *
 gen_throw_current_exception(PyGenObject *gen)
 {
-    assert(gen->gi_frame_state == FRAME_EXECUTING);
+    assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_EXECUTING);
 
     PyObject *result;
     if (gen_send_ex2(gen, Py_None, &result, 1) == PYGEN_RETURN) {
@@ -1006,7 +1034,7 @@ PyTypeObject PyGen_Type = {
     0,                                          /* tp_weaklist */
     0,                                          /* tp_del */
     0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    gen_finalize,                               /* tp_finalize */
 };
 
 static PyObject *
@@ -1336,7 +1364,7 @@ PyTypeObject PyCoro_Type = {
     0,                                          /* tp_weaklist */
     0,                                          /* tp_del */
     0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    gen_finalize,                               /* tp_finalize */
 };
 
 static void
@@ -1762,7 +1790,7 @@ PyTypeObject PyAsyncGen_Type = {
     0,                                          /* tp_weaklist */
     0,                                          /* tp_del */
     0,                                          /* tp_version_tag */
-    _PyGen_Finalize,                            /* tp_finalize */
+    gen_finalize,                               /* tp_finalize */
 };
 
 

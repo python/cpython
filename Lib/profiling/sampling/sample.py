@@ -1,4 +1,5 @@
 import _remote_debugging
+import contextlib
 import os
 import statistics
 import sys
@@ -6,6 +7,26 @@ import sysconfig
 import time
 from collections import deque
 from _colorize import ANSIColors
+
+from .pstats_collector import PstatsCollector
+from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .heatmap_collector import HeatmapCollector
+from .gecko_collector import GeckoCollector
+from .binary_collector import BinaryCollector
+
+
+@contextlib.contextmanager
+def _pause_threads(unwinder, blocking):
+    """Context manager to pause/resume threads around sampling if blocking is True."""
+    if blocking:
+        unwinder.pause_threads()
+        try:
+            yield
+        finally:
+            unwinder.resume_threads()
+    else:
+        yield
+
 
 from .constants import (
     PROFILING_MODE_WALL,
@@ -21,15 +42,18 @@ except ImportError:
     LiveStatsCollector = None
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-
+# Minimum number of samples required before showing the TUI
+# If fewer samples are collected, we skip the TUI and just print a message
+MIN_SAMPLES_FOR_TUI = 200
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
         self.collect_stats = collect_stats
+        self.blocking = blocking
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
@@ -54,19 +78,18 @@ class SampleProfiler:
             )
         return unwinder
 
-    def sample(self, collector, duration_sec=10, *, async_aware=False):
+    def sample(self, collector, duration_sec=None, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
-        running_time = 0
         num_samples = 0
         errors = 0
+        interrupted = False
+        running_time_sec = 0
         start_time = next_time = time.perf_counter()
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
-        interrupted = False
-
         try:
-            while running_time < duration_sec:
+            while duration_sec is None or running_time_sec < duration_sec:
                 # Check if live collector wants to stop
                 if hasattr(collector, 'running') and not collector.running:
                     break
@@ -74,15 +97,16 @@ class SampleProfiler:
                 current_time = time.perf_counter()
                 if next_time < current_time:
                     try:
-                        if async_aware == "all":
-                            stack_frames = self.unwinder.get_all_awaited_by()
-                        elif async_aware == "running":
-                            stack_frames = self.unwinder.get_async_stack_trace()
-                        else:
-                            stack_frames = self.unwinder.get_stack_trace()
-                        collector.collect(stack_frames)
-                    except ProcessLookupError:
-                        duration_sec = current_time - start_time
+                        with _pause_threads(self.unwinder, self.blocking):
+                            if async_aware == "all":
+                                stack_frames = self.unwinder.get_all_awaited_by()
+                            elif async_aware == "running":
+                                stack_frames = self.unwinder.get_async_stack_trace()
+                            else:
+                                stack_frames = self.unwinder.get_stack_trace()
+                            collector.collect(stack_frames)
+                    except ProcessLookupError as e:
+                        running_time_sec = current_time - start_time
                         break
                     except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
                         collector.collect_failed_sample()
@@ -113,25 +137,25 @@ class SampleProfiler:
                     num_samples += 1
                     next_time += sample_interval_sec
 
-                running_time = time.perf_counter() - start_time
+                running_time_sec = time.perf_counter() - start_time
         except KeyboardInterrupt:
             interrupted = True
-            running_time = time.perf_counter() - start_time
+            running_time_sec = time.perf_counter() - start_time
             print("Interrupted by user.")
 
         # Clear real-time stats line if it was being displayed
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
-        sample_rate = num_samples / running_time if running_time > 0 else 0
+        sample_rate = num_samples / running_time_sec if running_time_sec > 0 else 0
         error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
-        expected_samples = int(duration_sec / sample_interval_sec)
+        expected_samples = int(running_time_sec / sample_interval_sec)
         missed_samples = (expected_samples - num_samples) / expected_samples * 100 if expected_samples > 0 else 0
 
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time, 2)} seconds")
+            print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 
@@ -139,9 +163,12 @@ class SampleProfiler:
             if self.collect_stats:
                 self._print_unwinder_stats()
 
+            if isinstance(collector, BinaryCollector):
+                self._print_binary_stats(collector)
+
         # Pass stats to flamegraph collector if it's the right type
         if hasattr(collector, 'set_stats'):
-            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate, missed_samples, mode=self.mode)
+            collector.set_stats(self.sample_interval_usec, running_time_sec, sample_rate, error_rate, missed_samples, mode=self.mode)
 
         if num_samples < expected_samples and not is_live_mode and not interrupted:
             print(
@@ -264,6 +291,53 @@ class SampleProfiler:
         if stale_invalidations > 0:
             print(f"  {ANSIColors.YELLOW}Stale cache invalidations: {stale_invalidations}{ANSIColors.RESET}")
 
+    def _print_binary_stats(self, collector):
+        """Print binary I/O encoding statistics."""
+        try:
+            stats = collector.get_stats()
+        except (ValueError, RuntimeError):
+            return  # Collector closed or stats unavailable
+
+        print(f"  {ANSIColors.CYAN}Binary Encoding:{ANSIColors.RESET}")
+
+        repeat_records = stats.get('repeat_records', 0)
+        repeat_samples = stats.get('repeat_samples', 0)
+        full_records = stats.get('full_records', 0)
+        suffix_records = stats.get('suffix_records', 0)
+        pop_push_records = stats.get('pop_push_records', 0)
+        total_records = stats.get('total_records', 0)
+
+        if total_records > 0:
+            repeat_pct = repeat_records / total_records * 100
+            full_pct = full_records / total_records * 100
+            suffix_pct = suffix_records / total_records * 100
+            pop_push_pct = pop_push_records / total_records * 100
+        else:
+            repeat_pct = full_pct = suffix_pct = pop_push_pct = 0
+
+        print(f"    Records:          {total_records:,}")
+        print(f"      RLE repeat:     {repeat_records:,} ({ANSIColors.GREEN}{repeat_pct:.1f}%{ANSIColors.RESET}) [{repeat_samples:,} samples]")
+        print(f"      Full stack:     {full_records:,} ({full_pct:.1f}%)")
+        print(f"      Suffix match:   {suffix_records:,} ({suffix_pct:.1f}%)")
+        print(f"      Pop-push:       {pop_push_records:,} ({pop_push_pct:.1f}%)")
+
+        frames_written = stats.get('total_frames_written', 0)
+        frames_saved = stats.get('frames_saved', 0)
+        compression_pct = stats.get('frame_compression_pct', 0)
+
+        print(f"  {ANSIColors.CYAN}Frame Efficiency:{ANSIColors.RESET}")
+        print(f"    Frames written:   {frames_written:,}")
+        print(f"    Frames saved:     {frames_saved:,} ({ANSIColors.GREEN}{compression_pct:.1f}%{ANSIColors.RESET})")
+
+        bytes_written = stats.get('bytes_written', 0)
+        if bytes_written >= 1024 * 1024:
+            bytes_str = f"{bytes_written / (1024 * 1024):.1f} MB"
+        elif bytes_written >= 1024:
+            bytes_str = f"{bytes_written / 1024:.1f} KB"
+        else:
+            bytes_str = f"{bytes_written} B"
+        print(f"    Bytes (pre-zstd): {bytes_str}")
+
 
 def _is_process_running(pid):
     if pid <= 0:
@@ -291,7 +365,7 @@ def sample(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
@@ -299,13 +373,15 @@ def sample(
     native=False,
     gc=True,
     opcodes=False,
+    blocking=False,
 ):
     """Sample a process using the provided collector.
 
     Args:
         pid: Process ID to sample
         collector: Collector instance to use for gathering samples
-        duration_sec: How long to sample for (seconds)
+        duration_sec: How long to sample for (seconds), or None to run until
+            the process exits or interrupted
         all_threads: Whether to sample all threads
         realtime_stats: Whether to print real-time sampling statistics
         mode: Profiling mode - WALL (all samples), CPU (only when on CPU),
@@ -314,6 +390,7 @@ def sample(
         native: Whether to include native frames
         gc: Whether to include GC frames
         opcodes: Whether to include opcode information
+        blocking: Whether to stop all threads before sampling for consistent snapshots
 
     Returns:
         The collector with collected samples
@@ -339,6 +416,7 @@ def sample(
         opcodes=opcodes,
         skip_non_matching_threads=skip_non_matching_threads,
         collect_stats=realtime_stats,
+        blocking=blocking,
     )
     profiler.realtime_stats = realtime_stats
 
@@ -352,7 +430,7 @@ def sample_live(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
@@ -360,6 +438,7 @@ def sample_live(
     native=False,
     gc=True,
     opcodes=False,
+    blocking=False,
 ):
     """Sample a process in live/interactive mode with curses TUI.
 
@@ -375,11 +454,17 @@ def sample_live(
         native: Whether to include native frames
         gc: Whether to include GC frames
         opcodes: Whether to include opcode information
+        blocking: Whether to stop all threads before sampling for consistent snapshots
 
     Returns:
         The collector with collected samples
     """
     import curses
+
+    # Check if process is alive before doing any heavy initialization
+    if not _is_process_running(pid):
+        print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        return collector
 
     # Get sample interval from collector
     sample_interval_usec = collector.sample_interval_usec
@@ -400,6 +485,7 @@ def sample_live(
         opcodes=opcodes,
         skip_non_matching_threads=skip_non_matching_threads,
         collect_stats=realtime_stats,
+        blocking=blocking,
     )
     profiler.realtime_stats = realtime_stats
 
@@ -407,6 +493,12 @@ def sample_live(
         collector.init_curses(stdscr)
         try:
             profiler.sample(collector, duration_sec, async_aware=async_aware)
+            # If too few samples were collected, exit cleanly without showing TUI
+            if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+                # Clear screen before exiting to avoid visual artifacts
+                stdscr.clear()
+                stdscr.refresh()
+                return
             # Mark as finished and keep the TUI running until user presses 'q'
             collector.mark_finished()
             # Keep processing input until user quits
@@ -420,5 +512,12 @@ def sample_live(
         curses.wrapper(curses_wrapper_func)
     except KeyboardInterrupt:
         pass
+
+    # If too few samples were collected, print a message
+    if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+        if collector.successful_samples == 0:
+            print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        else:
+            print(f"Only {collector.successful_samples} sample(s) collected (minimum {MIN_SAMPLES_FOR_TUI} required for TUI) - process {pid} exited too quickly.", file=sys.stderr)
 
     return collector
