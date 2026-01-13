@@ -1,0 +1,1 @@
+Fix possible buffer leaks in Windows overlapped I/O on error handling.
