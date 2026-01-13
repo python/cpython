@@ -4463,7 +4463,7 @@ class ProtocolTests(BaseTestCase):
         """See GH-132604."""
 
         class BareProto(Protocol):
-            """I am runtime uncheckable."""
+            """I am not runtime-checkable."""
 
         @runtime_checkable
         class RCProto1(Protocol):
