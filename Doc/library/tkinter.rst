@@ -182,7 +182,7 @@ the modern themed widget set and API::
       as argument names; however, calling :meth:`winfo_parent` returns a
       string of the widget name whereas :attr:`master` returns the object.
       *parent*/*child* reflects the tree-like relationship while
-      *master*/*slave* reflects the container structure.
+      *container*/*child widget* reflects the geometry management structure.
 
    .. attribute:: children
 
@@ -644,8 +644,8 @@ used less commonly, and we do not cover here), the packer takes qualitative
 relationship specification - *above*, *to the left of*, *filling*, etc - and
 works everything out to determine the exact placement coordinates for you.
 
-The size of any *master* widget is determined by the size of the "slave widgets"
-inside.  The packer is used to control where slave widgets appear inside the
+The size of any *parent* widget is determined by the size of the "child widgets"
+inside.  The packer is used to control where child widgets appear inside the
 master into which they are packed.  You can pack widgets into frames, and frames
 into other frames, in order to achieve the kind of layout you desire.
 Additionally, the arrangement is dynamically adjusted to accommodate incremental
@@ -673,7 +673,7 @@ For more extensive information on the packer and the options that it can take,
 see the man pages and page 183 of John Ousterhout's book.
 
 anchor
-   Anchor type.  Denotes where the packer is to place each slave in its parcel.
+   Anchor type.  Denotes where the packer is to place each child widget in its parcel.
 
 expand
    Boolean, ``0`` or ``1``.
@@ -682,10 +682,10 @@ fill
    Legal values: ``'x'``, ``'y'``, ``'both'``, ``'none'``.
 
 ipadx and ipady
-   A distance - designating internal padding on each side of the slave widget.
+   A distance - designating internal padding on each side of the child widget.
 
 padx and pady
-   A distance - designating external padding on each side of the slave widget.
+   A distance - designating external padding on each side of the child widget.
 
 side
    Legal values are: ``'left'``, ``'right'``, ``'top'``, ``'bottom'``.
