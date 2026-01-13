@@ -46,6 +46,10 @@ and :func:`call_annotate_function`, as well as the
 :func:`call_evaluate_function` function for working with
 :term:`evaluate functions <evaluate function>`.
 
+.. caution::
+
+   Most functionality in this module can execute arbitrary code; see
+   :ref:`the security section <annotationlib-security>` for more information.
 
 .. seealso::
 
@@ -336,13 +340,28 @@ Functions
 
    * VALUE: :attr:`!object.__annotations__` is tried first; if that does not exist,
      the :attr:`!object.__annotate__` function is called if it exists.
+
    * FORWARDREF: If :attr:`!object.__annotations__` exists and can be evaluated successfully,
      it is used; otherwise, the :attr:`!object.__annotate__` function is called. If it
      does not exist either, :attr:`!object.__annotations__` is tried again and any error
      from accessing it is re-raised.
+
+     * When calling :attr:`!object.__annotate__` it is first called with :attr:`~Format.FORWARDREF`.
+       If this is not implemented, it will then check if :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`
+       is supported and use that in the fake globals environment.
+       If neither of these formats are supported, it will fall back to using :attr:`~Format.VALUE`.
+       If :attr:`~Format.VALUE` fails, the error from this call will be raised.
+
    * STRING: If :attr:`!object.__annotate__` exists, it is called first;
      otherwise, :attr:`!object.__annotations__` is used and stringified
      using :func:`annotations_to_string`.
+
+     * When calling :attr:`!object.__annotate__` it is first called with :attr:`~Format.STRING`.
+       If this is not implemented, it will then check if :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`
+       is supported and use that in the fake globals environment.
+       If neither of these formats are supported, it will fall back to using :attr:`~Format.VALUE`
+       with the result converted using :func:`annotations_to_string`.
+       If :attr:`~Format.VALUE` fails, the error from this call will be raised.
 
    Returns a dict. :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
@@ -604,3 +623,23 @@ Below are a few examples of the behavior with unsupported expressions:
    >>> def ifexp(x: 1 if y else 0): ...
    >>> get_annotations(ifexp, format=Format.STRING)
    {'x': '1'}
+
+.. _annotationlib-security:
+
+Security implications of introspecting annotations
+--------------------------------------------------
+
+Much of the functionality in this module involves executing code related to annotations,
+which can then do arbitrary things. For example,
+:func:`get_annotations` may call an arbitrary :term:`annotate function`, and
+:meth:`ForwardRef.evaluate` may call :func:`eval` on an arbitrary string. Code contained
+in an annotation might make arbitrary system calls, enter an infinite loop, or perform any
+other operation. This is also true for any access of the :attr:`~object.__annotations__` attribute,
+and for various functions in the :mod:`typing` module that work with annotations, such as
+:func:`typing.get_type_hints`.
+
+Any security issue arising from this also applies immediately after importing
+code that may contain untrusted annotations: importing code can always cause arbitrary operations
+to be performed. However, it is unsafe to accept strings or other input from an untrusted source and
+pass them to any of the APIs for introspecting annotations, for example by editing an
+``__annotations__`` dictionary or directly creating a :class:`ForwardRef` object.

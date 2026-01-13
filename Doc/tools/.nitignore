@@ -4,12 +4,9 @@
 
 Doc/c-api/descriptor.rst
 Doc/c-api/float.rst
-Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
-Doc/c-api/module.rst
 Doc/c-api/stable.rst
-Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
@@ -26,23 +23,16 @@ Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/pickletools.rst
-Doc/library/profile.rst
 Doc/library/pyexpat.rst
-Doc/library/resource.rst
 Doc/library/select.rst
-Doc/library/signal.rst
-Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
-Doc/library/stdtypes.rst
-Doc/library/subprocess.rst
 Doc/library/termios.rst
 Doc/library/test.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
 Doc/library/tkinter.ttk.rst
 Doc/library/unittest.mock.rst
-Doc/library/unittest.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
 Doc/library/wsgiref.rst
@@ -53,9 +43,6 @@ Doc/library/xml.sax.reader.rst
 Doc/library/xml.sax.rst
 Doc/library/xmlrpc.client.rst
 Doc/library/xmlrpc.server.rst
-Doc/library/zlib.rst
-Doc/reference/compound_stmts.rst
-Doc/reference/datamodel.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst

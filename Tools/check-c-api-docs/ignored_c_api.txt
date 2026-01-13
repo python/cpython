@@ -1,0 +1,139 @@
+# pydtrace_probes.h
+PyDTrace_AUDIT
+PyDTrace_FUNCTION_ENTRY
+PyDTrace_FUNCTION_RETURN
+PyDTrace_GC_DONE
+PyDTrace_GC_START
+PyDTrace_IMPORT_FIND_LOAD_DONE
+PyDTrace_IMPORT_FIND_LOAD_START
+PyDTrace_INSTANCE_DELETE_DONE
+PyDTrace_INSTANCE_DELETE_START
+PyDTrace_INSTANCE_NEW_DONE
+PyDTrace_INSTANCE_NEW_START
+PyDTrace_LINE
+# fileobject.h
+Py_FileSystemDefaultEncodeErrors
+Py_FileSystemDefaultEncoding
+Py_HasFileSystemDefaultEncoding
+Py_UTF8Mode
+# pyhash.h
+Py_HASH_EXTERNAL
+# exports.h
+PyAPI_DATA
+Py_EXPORTED_SYMBOL
+Py_IMPORTED_SYMBOL
+Py_LOCAL_SYMBOL
+# modsupport.h
+PyABIInfo_FREETHREADING_AGNOSTIC
+# moduleobject.h
+PyModuleDef_Type
+# object.h
+Py_INVALID_SIZE
+Py_TPFLAGS_HAVE_VERSION_TAG
+Py_TPFLAGS_INLINE_VALUES
+Py_TPFLAGS_IS_ABSTRACT
+# pyexpat.h
+PyExpat_CAPI_MAGIC
+PyExpat_CAPSULE_NAME
+# pyport.h
+Py_ALIGNED
+Py_ARITHMETIC_RIGHT_SHIFT
+Py_CAN_START_THREADS
+Py_FORCE_EXPANSION
+Py_GCC_ATTRIBUTE
+Py_LL
+Py_SAFE_DOWNCAST
+Py_ULL
+Py_VA_COPY
+PYLONG_BITS_IN_DIGIT
+PY_DWORD_MAX
+PY_FORMAT_SIZE_T
+PY_INT32_T
+PY_INT64_T
+PY_LITTLE_ENDIAN
+PY_LLONG_MAX
+PY_LLONG_MIN
+PY_LONG_LONG
+PY_SIZE_MAX
+PY_UINT32_T
+PY_UINT64_T
+PY_ULLONG_MAX
+# unicodeobject.h
+Py_UNICODE_SIZE
+# cpython/methodobject.h
+PyCFunction_GET_CLASS
+# cpython/compile.h
+PyCF_ALLOW_INCOMPLETE_INPUT
+PyCF_COMPILE_MASK
+PyCF_DONT_IMPLY_DEDENT
+PyCF_IGNORE_COOKIE
+PyCF_MASK
+PyCF_MASK_OBSOLETE
+PyCF_SOURCE_IS_UTF8
+# cpython/descrobject.h
+PyDescr_COMMON
+PyDescr_NAME
+PyDescr_TYPE
+PyWrapperFlag_KEYWORDS
+# cpython/fileobject.h
+PyFile_NewStdPrinter
+PyStdPrinter_Type
+Py_UniversalNewlineFgets
+# cpython/setobject.h
+PySet_MINSIZE
+# cpython/ceval.h
+PyUnstable_CopyPerfMapFile
+PyUnstable_PerfTrampoline_CompileCode
+PyUnstable_PerfTrampoline_SetPersistAfterFork
+# cpython/genobject.h
+PyAsyncGenASend_CheckExact
+# cpython/longintrepr.h
+PyLong_BASE
+PyLong_MASK
+PyLong_SHIFT
+# cpython/pyerrors.h
+PyException_HEAD
+# cpython/pyframe.h
+PyUnstable_EXECUTABLE_KINDS
+PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
+PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
+PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
+PyUnstable_EXECUTABLE_KIND_SKIP
+# cpython/pylifecycle.h
+Py_FrozenMain
+# pythonrun.h
+PyErr_Display
+# cpython/objimpl.h
+PyObject_GET_WEAKREFS_LISTPTR
+# cpython/pythonrun.h
+PyOS_Readline
+# cpython/warnings.h
+PyErr_Warn
+# fileobject.h
+PY_STDIOTEXTMODE
+# structmember.h
+PY_WRITE_RESTRICTED
+# pythread.h
+PY_TIMEOUT_T
+PY_TIMEOUT_MAX
+# cpython/pyctype.h
+PY_CTF_ALNUM
+PY_CTF_ALPHA
+PY_CTF_DIGIT
+PY_CTF_LOWER
+PY_CTF_SPACE
+PY_CTF_UPPER
+PY_CTF_XDIGIT
+# cpython/code.h
+PY_DEF_EVENT
+PY_FOREACH_CODE_EVENT
+# cpython/funcobject.h
+PY_DEF_EVENT
+PY_FOREACH_FUNC_EVENT
+# cpython/monitoring.h
+PY_MONITORING_EVENT_BRANCH
+# cpython/dictobject.h
+PY_DEF_EVENT
+PY_FOREACH_DICT_EVENT
+# cpython/pystats.h
+PYSTATS_MAX_UOP_ID

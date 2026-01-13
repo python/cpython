@@ -3892,6 +3892,12 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
     else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "tuple")) {
         const_oparg = CONSTANT_BUILTIN_TUPLE;
     }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "list")) {
+        const_oparg = CONSTANT_BUILTIN_LIST;
+    }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "set")) {
+        const_oparg = CONSTANT_BUILTIN_SET;
+    }
     if (const_oparg != -1) {
         ADDOP_I(c, loc, COPY, 1); // the function
         ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, const_oparg);
@@ -3899,8 +3905,10 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
         ADDOP(c, loc, POP_TOP);
 
-        if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
+        if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, BUILD_LIST, 0);
+        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+            ADDOP_I(c, loc, BUILD_SET, 0);
         }
         expr_ty generator_exp = asdl_seq_GET(args, 0);
         VISIT(c, expr, generator_exp);
@@ -3911,8 +3919,11 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP(c, loc, PUSH_NULL); // Push NULL index for loop
         USE_LABEL(c, loop);
         ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
-        if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
+        if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, LIST_APPEND, 3);
+            ADDOP_JUMP(c, loc, JUMP, loop);
+        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+            ADDOP_I(c, loc, SET_ADD, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
         }
         else {
@@ -3921,7 +3932,9 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         }
 
         ADDOP(c, NO_LOCATION, POP_ITER);
-        if (const_oparg != CONSTANT_BUILTIN_TUPLE) {
+        if (const_oparg != CONSTANT_BUILTIN_TUPLE &&
+            const_oparg != CONSTANT_BUILTIN_LIST &&
+            const_oparg != CONSTANT_BUILTIN_SET) {
             ADDOP_LOAD_CONST(c, loc, initial_res == Py_True ? Py_False : Py_True);
         }
         ADDOP_JUMP(c, loc, JUMP, end);
@@ -3931,6 +3944,10 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP(c, NO_LOCATION, POP_ITER);
         if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
+        } else if (const_oparg == CONSTANT_BUILTIN_LIST) {
+            // result is already a list
+        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+            // result is already a set
         }
         else {
             ADDOP_LOAD_CONST(c, loc, initial_res);
@@ -5415,23 +5432,6 @@ codegen_check_ann_expr(compiler *c, expr_ty e)
 }
 
 static int
-codegen_check_annotation(compiler *c, stmt_ty s)
-{
-    /* Annotations of complex targets does not produce anything
-       under annotations future */
-    if (FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) {
-        return SUCCESS;
-    }
-
-    /* Annotations are only evaluated in a module or class. */
-    if (SCOPE_TYPE(c) == COMPILE_SCOPE_MODULE ||
-        SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS) {
-        return codegen_check_ann_expr(c, s->v.AnnAssign.annotation);
-    }
-    return SUCCESS;
-}
-
-static int
 codegen_check_ann_subscr(compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
@@ -5494,10 +5494,12 @@ codegen_annassign(compiler *c, stmt_ty s)
                 RETURN_IF_ERROR(_PyCompile_AddDeferredAnnotation(
                     c, s, &conditional_annotation_index));
                 if (conditional_annotation_index != NULL) {
-                    ADDOP_NAME(
-                        c, loc,
-                        SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS ? LOAD_DEREF : LOAD_NAME,
-                        &_Py_ID(__conditional_annotations__), cellvars);
+                    if (SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS) {
+                        ADDOP_NAME(c, loc, LOAD_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
+                    }
+                    else {
+                        ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__conditional_annotations__), names);
+                    }
                     ADDOP_LOAD_CONST_NEW(c, loc, conditional_annotation_index);
                     ADDOP_I(c, loc, SET_ADD, 1);
                     ADDOP(c, loc, POP_TOP);
@@ -5522,10 +5524,6 @@ codegen_annassign(compiler *c, stmt_ty s)
         PyErr_Format(PyExc_SystemError,
                      "invalid node type (%d) for annotated assignment",
                      targ->kind);
-        return ERROR;
-    }
-    /* Annotation is evaluated last. */
-    if (future_annotations && !s->v.AnnAssign.simple && codegen_check_annotation(c, s) < 0) {
         return ERROR;
     }
     return SUCCESS;

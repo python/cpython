@@ -166,7 +166,7 @@ WHEEL_PKG_DIR=	@WHEEL_PKG_DIR@
 
 # Detailed destination directories
 BINLIBDEST=	@BINLIBDEST@
-LIBDEST=	$(SCRIPTDIR)/python$(VERSION)$(ABI_THREAD)
+LIBDEST=	@LIBDEST@
 INCLUDEPY=	$(INCLUDEDIR)/python$(LDVERSION)
 CONFINCLUDEPY=	$(CONFINCLUDEDIR)/python$(LDVERSION)
 
@@ -483,6 +483,7 @@ PYTHON_OBJS=	\
 		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
+		Python/pystats.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/qsbr.o \
@@ -501,7 +502,6 @@ PYTHON_OBJS=	\
 		Python/pystrtod.o \
 		Python/pystrhex.o \
 		Python/dtoa.o \
-		Python/formatter_unicode.o \
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
@@ -558,8 +558,11 @@ OBJECT_OBJS=	\
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
-		Objects/unicodeobject.o \
+		Objects/unicode_format.o \
+		Objects/unicode_formatter.o \
+		Objects/unicode_writer.o \
 		Objects/unicodectype.o \
+		Objects/unicodeobject.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
@@ -801,7 +804,7 @@ build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sh
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods
+		python-config checksharedmods build-details.json
 
 .PHONY: build_emscripten
 build_emscripten: build_wasm web_example web_example_pyrepl_jspi
@@ -834,7 +837,7 @@ check-app-store-compliance:
 
 # Profile generation build must start from a clean tree.
 profile-clean-stamp:
-	$(MAKE) clean
+	$(MAKE) clean-profile
 	touch $@
 
 # Compile with profile generation enabled.
@@ -1191,14 +1194,12 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
-		$(srcdir)/Include/pylock.h \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
-		$(srcdir)/Include/monitoring.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
@@ -1271,6 +1272,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylock.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
+		$(srcdir)/Include/cpython/marshal.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/modsupport.h \
@@ -1296,6 +1298,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/setobject.h \
+		$(srcdir)/Include/cpython/sliceobject.h \
+		$(srcdir)/Include/cpython/structseq.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tracemalloc.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
@@ -1374,6 +1378,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_memoryobject.h \
 		$(srcdir)/Include/internal/pycore_mimalloc.h \
+		$(srcdir)/Include/internal/pycore_mmap.h \
 		$(srcdir)/Include/internal/pycore_modsupport.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
@@ -1431,10 +1436,12 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
+		$(srcdir)/Include/internal/pycore_unicodectype.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject_generated.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
 		$(srcdir)/Include/internal/pycore_uniqueid.h \
+		$(srcdir)/Include/internal/pycore_uop.h \
 		$(srcdir)/Include/internal/pycore_uop_ids.h \
 		$(srcdir)/Include/internal/pycore_uop_metadata.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
@@ -1598,6 +1605,11 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 # dependency on BUILDPYTHON ensures that the target is run last
 .PHONY: checksharedmods
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
+	@if [ -n "@MISSING_STDLIB_CONFIG@" ]; then \
+		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
+	else \
+		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info; \
+	fi
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
 
 .PHONY: rundsymutil
@@ -1871,7 +1883,7 @@ regen-abidump: all
 
 .PHONY: check-abidump
 check-abidump: all
-	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms
+	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms --suppressions $(srcdir)/Misc/libabigail.abignore
 
 .PHONY: regen-limited-abi
 regen-limited-abi: all
@@ -2089,7 +2101,6 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/fastsearch.h \
 		$(srcdir)/Objects/stringlib/find.h \
 		$(srcdir)/Objects/stringlib/find_max_char.h \
-		$(srcdir)/Objects/stringlib/localeutil.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/replace.h \
 		$(srcdir)/Objects/stringlib/repr.h \
@@ -2104,6 +2115,7 @@ Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
+Objects/unicode_format.o: $(srcdir)/Objects/unicode_format.c $(UNICODE_DEPS)
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
@@ -2319,7 +2331,7 @@ testios:
 	fi
 
 	# Clone the testbed project into the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/iOS/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	$(PYTHON_FOR_BUILD) $(srcdir)/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
 	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W
@@ -2362,8 +2374,10 @@ multissltest: all
 # prevent race conditions with PGO builds. PGO builds use recursive make,
 # which can lead to two parallel `./python setup.py build` processes that
 # step on each others toes.
+# Only the main install gets a build-details.json.
 .PHONY: install
 install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
+	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
@@ -2566,6 +2580,13 @@ LIBSUBDIRS=	asyncio \
 		pathlib \
 		profile \
 		profiling profiling/sampling profiling/tracing \
+		profiling/sampling/_assets \
+		profiling/sampling/_heatmap_assets \
+		profiling/sampling/_flamegraph_assets \
+		profiling/sampling/_shared_assets \
+		profiling/sampling/live_collector \
+		profiling/sampling/_vendor/d3/7.8.5 \
+		profiling/sampling/_vendor/d3-flame-graph/4.1.3 \
 		pydoc_data \
 		re \
 		site-packages \
@@ -2590,6 +2611,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_ast \
 		test/test_ast/data \
 		test/archivetestdata \
+		test/audit_test_data \
 		test/audiodata \
 		test/certdata \
 		test/certdata/capath \
@@ -2648,6 +2670,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
+		test/test_importlib/namespace_pkgs/foo \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
@@ -2676,10 +2699,12 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
 		test/test_multiprocessing_spawn \
+		test/test_os \
 		test/test_pathlib \
 		test/test_pathlib/support \
 		test/test_peg_generator \
 		test/test_profiling \
+		test/test_profiling/test_sampling_profiler \
 		test/test_pydoc \
 		test/test_pyrepl \
 		test/test_string \
@@ -2805,7 +2830,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	done
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfig_vars_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).json $(DESTDIR)$(LIBDEST); \
-	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/_missing_stdlib_info.py $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
 	@ # If app store compliance has been configured, apply the patch to the
 	@ # installed library code. The patch has been previously validated against
@@ -3037,6 +3062,9 @@ frameworkinstallunversionedstructure:	$(LDLIBRARY)
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)
 	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBDIR)
+	$(LN) -fs "../$(LDLIBRARY)" "$(DESTDIR)$(prefix)/lib/libpython$(LDVERSION).dylib"
+	$(LN) -fs "../$(LDLIBRARY)" "$(DESTDIR)$(prefix)/lib/libpython$(VERSION).dylib"
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(BINDIR)
 	for file in $(srcdir)/$(RESSRCDIR)/bin/* ; do \
 		$(INSTALL) -m $(EXEMODE) $$file $(DESTDIR)$(BINDIR); \
@@ -3109,6 +3137,12 @@ config.status:	$(srcdir)/configure
 Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
+Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
+	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
+	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
+
+Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/wasm/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
@@ -3116,7 +3150,7 @@ JIT_DEPS = \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
-jit_stencils.h: $(JIT_DEPS)
+jit_stencils.h @JIT_STENCILS_H@: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
@@ -3217,14 +3251,13 @@ clean-retain-profile: pycremoval
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h
 	-rm -f Python/frozen_modules/MANIFEST
-	-rm -f jit_stencils.h
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/bin
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/lib
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/include
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/Python.framework
+	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/bin
+	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/lib
+	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/include
+	-rm -rf Apple/iOS/testbed/Python.xcframework/ios-*/Python.framework
 
 .PHONY: profile-removal
 profile-removal:
@@ -3236,12 +3269,20 @@ profile-removal:
 	rm -f profile-run-stamp
 	rm -f profile-bolt-stamp
 
-.PHONY: clean
-clean: clean-retain-profile clean-bolt
+.PHONY: clean-profile
+clean-profile: clean-retain-profile clean-bolt
 	@if test @DEF_MAKE_ALL_RULE@ = profile-opt -o @DEF_MAKE_ALL_RULE@ = bolt-opt; then \
 		rm -f profile-gen-stamp profile-clean-stamp; \
 		$(MAKE) profile-removal; \
 	fi
+
+# gh-141808: The JIT stencils are deliberately kept in clean-profile
+.PHONY: clean-jit-stencils
+clean-jit-stencils:
+	-rm -f jit_stencils*.h
+
+.PHONY: clean
+clean: clean-profile clean-jit-stencils
 
 .PHONY: clobber
 clobber: clean
@@ -3250,7 +3291,7 @@ clobber: clean
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
-	-rm -rf iOS/Frameworks
+	-rm -rf Apple/iOS/Frameworks
 	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build
@@ -3289,6 +3330,11 @@ check-c-globals:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/c-analyzer/check-c-globals.py \
 		--format summary \
 		--traceback
+
+# Check for undocumented C APIs.
+.PHONY: check-c-api-docs
+check-c-api-docs:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/check-c-api-docs/main.py
 
 # Find files with funny names
 .PHONY: funny
@@ -3362,6 +3408,7 @@ MODULE__DECIMAL_DEPS=@LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
+MODULE__REMOTE_DEBUGGING_DEPS=$(srcdir)/Modules/_remote_debugging/_remote_debugging.h
 
 # HACL*-based cryptographic primitives
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)

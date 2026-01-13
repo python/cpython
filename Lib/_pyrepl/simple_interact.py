@@ -31,7 +31,6 @@ import os
 import sys
 import code
 import warnings
-import errno
 
 from .readline import _get_reader, multiline_input, append_history_file
 
@@ -125,7 +124,7 @@ def run_multiline_interactive_console(
         command = REPL_COMMANDS[statement]
         if callable(command):
             # Make sure that history does not change because of commands
-            with reader.suspend_history():
+            with reader.suspend_history(), reader.suspend_colorization():
                 command()
             return True
         return False

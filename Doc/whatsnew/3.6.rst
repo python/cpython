@@ -1224,7 +1224,7 @@ generator expression scopes as if they were positional-only parameters called
 ``implicit0``. (Contributed by Jelle Zijlstra in :issue:`19611`.)
 
 To reduce code churn when upgrading from Python 2.7 and the legacy
-:func:`inspect.getargspec` API, the previously documented deprecation of
+:func:`!inspect.getargspec` API, the previously documented deprecation of
 :func:`inspect.getfullargspec` has been reversed. While this function is
 convenient for single/source Python 2/3 code bases, the richer
 :func:`inspect.signature` interface remains the recommended approach for new
@@ -2006,10 +2006,10 @@ deprecated.
 importlib
 ~~~~~~~~~
 
-The :meth:`importlib.machinery.SourceFileLoader.load_module` and
-:meth:`importlib.machinery.SourcelessFileLoader.load_module` methods
+The ``importlib.machinery.SourceFileLoader.load_module`` and
+``importlib.machinery.SourcelessFileLoader.load_module`` methods
 are now deprecated. They were the only remaining implementations of
-:meth:`importlib.abc.Loader.load_module` in :mod:`importlib` that had not
+``importlib.abc.Loader.load_module`` in :mod:`importlib` that had not
 been deprecated in previous versions of Python in favour of
 :meth:`importlib.abc.Loader.exec_module`.
 
