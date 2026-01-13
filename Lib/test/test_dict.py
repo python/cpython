@@ -1581,7 +1581,7 @@ class DictTest(unittest.TestCase):
         with check_unhashable_key():
             d.get(key)
 
-        # Only TypeError exception is overriden,
+        # Only TypeError exception is overridden,
         # other exceptions are left unchanged.
         class HashError:
             def __hash__(self):
@@ -1602,6 +1602,7 @@ class DictTest(unittest.TestCase):
             d.get(key2)
 
     def test_clear_at_lookup(self):
+        # gh-140551 dict crash if clear is called at lookup stage
         class X:
             def __hash__(self):
                 return 1
@@ -1622,12 +1623,30 @@ class DictTest(unittest.TestCase):
         self.assertEqual(len(d), 1)
 
     def test_split_table_update_with_str_subclass(self):
+        # gh-142218: inserting into a split table dictionary with a non str
+        # key that matches an existing key.
         class MyStr(str): pass
         class MyClass: pass
         obj = MyClass()
         obj.attr = 1
         obj.__dict__[MyStr('attr')] = 2
         self.assertEqual(obj.attr, 2)
+
+    def test_split_table_insert_with_str_subclass(self):
+        # gh-143189: inserting into split table dictionary with a non str
+        # key that matches an existing key in the shared table but not in
+        # the dict yet.
+
+        class MyStr(str): pass
+        class MyClass: pass
+
+        obj = MyClass()
+        obj.attr1 = 1
+
+        obj2 = MyClass()
+        d = obj2.__dict__
+        d[MyStr("attr1")] = 2
+        self.assertIsInstance(list(d)[0], MyStr)
 
 
 class CAPITest(unittest.TestCase):

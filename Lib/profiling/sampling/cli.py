@@ -10,6 +10,7 @@ import socket
 import subprocess
 import sys
 import time
+import webbrowser
 from contextlib import nullcontext
 
 from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
@@ -34,6 +35,12 @@ from .constants import (
     SORT_MODE_CUMUL_PCT,
     SORT_MODE_NSAMPLES_CUMUL,
 )
+
+try:
+    from ._child_monitor import ChildProcessMonitor
+except ImportError:
+    # _remote_debugging module not available on this platform (e.g., WASI)
+    ChildProcessMonitor = None
 
 try:
     from .live_collector import LiveStatsCollector
@@ -93,8 +100,6 @@ COLLECTOR_MAP = {
 }
 
 def _setup_child_monitor(args, parent_pid):
-    from ._child_monitor import ChildProcessMonitor
-
     # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
     child_cli_args = _build_child_profiler_args(args)
 
@@ -120,8 +125,8 @@ def _build_child_profiler_args(args):
     # Sampling options
     hz = MICROSECONDS_PER_SECOND // args.sample_interval_usec
     child_args.extend(["-r", str(hz)])
-    child_args.extend(["-d", str(args.duration)])
-
+    if args.duration is not None:
+        child_args.extend(["-d", str(args.duration)])
     if args.all_threads:
         child_args.append("-a")
     if args.realtime_stats:
@@ -272,11 +277,6 @@ def _run_with_sync(original_cmd, suppress_output=False):
 
         try:
             _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT_SEC)
-
-            # Close stderr pipe if we were capturing it
-            if process.stderr:
-                process.stderr.close()
-
         except socket.timeout:
             # If we timeout, kill the process and raise an error
             if process.poll() is None:
@@ -356,9 +356,9 @@ def _add_sampling_options(parser):
         "-d",
         "--duration",
         type=int,
-        default=10,
+        default=None,
         metavar="SECONDS",
-        help="Sampling duration",
+        help="Sampling duration (default: run to completion)",
     )
     sampling_group.add_argument(
         "-a",
@@ -489,8 +489,14 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "-o",
         "--output",
         dest="outfile",
-        help="Output path (default: stdout for pstats, auto-generated for others). "
-        "For heatmap: directory name (default: heatmap_PID)",
+        help="Output path (default: stdout for pstats text; with -o, pstats is binary). "
+        "Auto-generated for other formats. For heatmap: directory name (default: heatmap_PID)",
+    )
+    output_group.add_argument(
+        "--browser",
+        action="store_true",
+        help="Automatically open HTML output (flamegraph, heatmap) in browser. "
+        "When using --subprocesses, only the main process opens the browser",
     )
 
 
@@ -562,7 +568,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     if format_type == "binary":
         if output_file is None:
             raise ValueError("Binary format requires an output file")
-        return collector_class(output_file, interval, skip_idle=skip_idle,
+        return collector_class(output_file, sample_interval_usec, skip_idle=skip_idle,
                               compression=compression)
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
@@ -589,6 +595,32 @@ def _generate_output_filename(format_type, pid):
     if format_type == "heatmap":
         return f"heatmap_{pid}"
     return f"{format_type}_{pid}.{extension}"
+
+
+def _open_in_browser(path):
+    """Open a file or directory in the default web browser.
+
+    Args:
+        path: File path or directory path to open
+
+    For directories (heatmap), opens the index.html file inside.
+    """
+    abs_path = os.path.abspath(path)
+
+    # For heatmap directories, open the index.html file
+    if os.path.isdir(abs_path):
+        index_path = os.path.join(abs_path, 'index.html')
+        if os.path.exists(index_path):
+            abs_path = index_path
+        else:
+            print(f"Warning: Could not find index.html in {path}", file=sys.stderr)
+            return
+
+    file_url = f"file://{abs_path}"
+    try:
+        webbrowser.open(file_url)
+    except Exception as e:
+        print(f"Warning: Could not open browser: {e}", file=sys.stderr)
 
 
 def _handle_output(collector, args, pid, mode):
@@ -630,6 +662,10 @@ def _handle_output(collector, args, pid, mode):
             filename = args.outfile or _generate_output_filename(args.format, pid)
         collector.export(filename)
 
+        # Auto-open browser for HTML output if --browser flag is set
+        if args.format in ('flamegraph', 'heatmap') and getattr(args, 'browser', False):
+            _open_in_browser(filename)
+
 
 def _validate_args(args, parser):
     """Validate format-specific options and live mode requirements.
@@ -643,11 +679,11 @@ def _validate_args(args, parser):
         return
 
     # Warn about blocking mode with aggressive sampling intervals
-    if args.blocking and args.interval < 100:
+    if args.blocking and args.sample_interval_usec < 100:
         print(
-            f"Warning: --blocking with a {args.interval} µs interval will stop all threads "
-            f"{1_000_000 // args.interval} times per second. "
-            "Consider using --interval 1000 or higher to reduce overhead.",
+            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
+            f"{1_000_000 // args.sample_interval_usec} times per second. "
+            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
             file=sys.stderr
         )
 
@@ -659,6 +695,11 @@ def _validate_args(args, parser):
 
     # --subprocesses is incompatible with --live
     if hasattr(args, 'subprocesses') and args.subprocesses:
+        if ChildProcessMonitor is None:
+            parser.error(
+                "--subprocesses is not available on this platform "
+                "(requires _remote_debugging module)."
+            )
         if hasattr(args, 'live') and args.live:
             parser.error("--subprocesses is incompatible with --live mode.")
 
@@ -1103,20 +1144,31 @@ def _handle_live_run(args):
             blocking=args.blocking,
         )
     finally:
-        # Clean up the subprocess
-        if process.poll() is None:
+        # Clean up the subprocess and get any error output
+        returncode = process.poll()
+        if returncode is None:
+            # Process still running - terminate it
             process.terminate()
             try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
             except subprocess.TimeoutExpired:
                 process.kill()
-                process.wait()
+        # Ensure process is fully terminated
+        process.wait()
+        # Read any stderr output (tracebacks, errors, etc.)
+        if process.stderr:
+            with process.stderr:
+                try:
+                    stderr = process.stderr.read()
+                    if stderr:
+                        print(stderr.decode(), file=sys.stderr)
+                except (OSError, ValueError):
+                    # Ignore errors if pipe is already closed
+                    pass
 
 
 def _handle_replay(args):
     """Handle the 'replay' command - convert binary profile to another format."""
-    import os
-
     if not os.path.exists(args.input_file):
         sys.exit(f"Error: Input file not found: {args.input_file}")
 
@@ -1152,6 +1204,10 @@ def _handle_replay(args):
         else:
             filename = args.outfile or _generate_output_filename(args.format, os.getpid())
             collector.export(filename)
+
+            # Auto-open browser for HTML output if --browser flag is set
+            if args.format in ('flamegraph', 'heatmap') and getattr(args, 'browser', False):
+                _open_in_browser(filename)
 
         print(f"Replayed {count} samples")
 

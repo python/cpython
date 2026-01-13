@@ -241,8 +241,8 @@ is unaware it is being profiled.
 When profiling production systems, keep these guidelines in mind:
 
 Start with shorter durations (10-30 seconds) to get quick results, then extend
-if you need more statistical accuracy. The default 10-second duration is usually
-sufficient to identify major hotspots.
+if you need more statistical accuracy. By default, profiling runs until the
+target process completes, which is usually sufficient to identify major hotspots.
 
 If possible, profile during representative load rather than peak traffic.
 Profiles collected during normal operation are easier to interpret than those
@@ -329,7 +329,7 @@ The default configuration works well for most use cases:
    * - Default for ``--sampling-rate`` / ``-r``
      - 1 kHz
    * - Default for ``--duration`` / ``-d``
-     - 10 seconds
+     - Run to completion
    * - Default for ``--all-threads`` / ``-a``
      - Main thread only
    * - Default for ``--native``
@@ -363,15 +363,14 @@ cost of slightly higher profiler CPU usage. Lower rates reduce profiler
 overhead but may miss short-lived functions. For most applications, the
 default rate provides a good balance between accuracy and overhead.
 
-The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. The
-default is 10 seconds::
+The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. By
+default, profiling continues until the target process exits or is interrupted::
 
    python -m profiling.sampling run -d 60 script.py
 
-Longer durations collect more samples and produce more statistically reliable
-results, especially for code paths that execute infrequently. When profiling
-a program that runs for a fixed time, you may want to set the duration to
-match or exceed the expected runtime.
+Specifying a duration is useful when attaching to long-running processes or when
+you want to limit profiling to a specific time window. When profiling a script,
+the default behavior of running to completion is usually what you want.
 
 
 Thread selection
@@ -879,9 +878,9 @@ interesting functions that highlights:
 
 Use :option:`--no-summary` to suppress both the legend and summary sections.
 
-To save pstats output to a file instead of stdout::
+To save pstats output to a binary file instead of stdout::
 
-   python -m profiling.sampling run -o profile.txt script.py
+   python -m profiling.sampling run -o profile.pstats script.py
 
 The pstats format supports several options for controlling the display.
 The :option:`--sort` option determines the column used for ordering results::
@@ -1394,7 +1393,7 @@ Sampling options
 
 .. option:: -d <seconds>, --duration <seconds>
 
-   Profiling duration in seconds. Default: 10.
+   Profiling duration in seconds. Default: run to completion.
 
 .. option:: -a, --all-threads
 
@@ -1456,7 +1455,9 @@ Output options
 
 .. option:: --pstats
 
-   Generate text statistics output. This is the default.
+   Generate pstats statistics. This is the default.
+   When written to stdout, the output is a text table; with :option:`-o`,
+   it is a binary pstats file.
 
 .. option:: --collapsed
 
@@ -1487,9 +1488,17 @@ Output options
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   :option:`--pstats` writes to stdout, while other formats generate a file
-   named ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
+   :option:`--pstats` prints a text table to stdout, while ``-o`` writes a
+   binary pstats file. Other formats generate a file named
+   ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
    :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
+
+.. option:: --browser
+
+   Automatically open HTML output (:option:`--flamegraph` and
+   :option:`--heatmap`) in your default web browser after generation.
+   When profiling with :option:`--subprocesses`, only the main process
+   opens the browser; subprocess outputs are never auto-opened.
 
 
 pstats display options
