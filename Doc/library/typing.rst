@@ -2555,7 +2555,7 @@ types.
       assert isinstance(threading.Thread(name='Bob'), Named)
 
    Runtime checkability of protocols is not inherited. A subclass of a runtime-checkable protocol
-   is only runtime-checkable if is explicitly marked as such, regardless of class hierarchy::
+   is only runtime-checkable if it is explicitly marked as such, regardless of class hierarchy::
 
       @runtime_checkable
       class Iterable(Protocol):
