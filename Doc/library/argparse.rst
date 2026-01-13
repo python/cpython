@@ -1700,7 +1700,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Sub-commands
+Subcommands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1708,12 +1708,12 @@ Sub-commands
                                           [dest], [required], \
                                           [help], [metavar])
 
-   Many programs split up their functionality into a number of sub-commands,
-   for example, the ``svn`` program can invoke sub-commands like ``svn
+   Many programs split up their functionality into a number of subcommands,
+   for example, the ``svn`` program can invoke subcommands like ``svn
    checkout``, ``svn update``, and ``svn commit``.  Splitting up functionality
    this way can be a particularly good idea when a program performs several
    different functions which require different kinds of command-line arguments.
-   :class:`ArgumentParser` supports the creation of such sub-commands with the
+   :class:`ArgumentParser` supports the creation of such subcommands with the
    :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
