@@ -1825,8 +1825,8 @@ class _TypingEllipsis:
 
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
-    '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
-    '__non_callable_proto_members__', '__type_params__',
+    '_is_protocol', '_is_runtime_protocol', '_is_deprecated_inherited_runtime_protocol',
+    '__protocol_attrs__', '__non_callable_proto_members__', '__type_params__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -2015,6 +2015,16 @@ class _ProtocolMeta(ABCMeta):
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
                 )
+            if getattr(cls, '_is_deprecated_inherited_runtime_protocol', False):
+                # See GH-132604.
+                import warnings
+                depr_message = (
+                    f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
+                    "it is used in issubclass() or isinstance(). Instance and class "
+                    "checks can only be used with @runtime_checkable protocols. "
+                    "This may stop working in Python 3.20."
+                )
+                warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
             if (
                 # this attribute is set by @runtime_checkable:
                 cls.__non_callable_proto_members__
@@ -2043,6 +2053,18 @@ class _ProtocolMeta(ABCMeta):
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
+
+        if getattr(cls, '_is_deprecated_inherited_runtime_protocol', False):
+            # See GH-132604.
+            import warnings
+
+            depr_message = (
+                f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
+                "it is used in issubclass() or isinstance(). Instance and class "
+                "checks can only be used with @runtime_checkable protocols. "
+                "This may stop working in Python 3.20."
+            )
+            warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
 
         if _abc_instancecheck(cls, instance):
             return True
@@ -2135,6 +2157,10 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # Determine if this is a protocol or a concrete subclass.
         if not cls.__dict__.get('_is_protocol', False):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
+
+        # Mark inherited runtime checkability (deprecated). See GH-132604.
+        if cls._is_protocol and getattr(cls, '_is_runtime_protocol', False):
+            cls._is_deprecated_inherited_runtime_protocol = True
 
         # Set (or override) the protocol subclass hook.
         if '__subclasshook__' not in cls.__dict__:
@@ -2282,6 +2308,9 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
+    # See GH-132604.
+    if hasattr(cls, '_is_deprecated_inherited_runtime_protocol'):
+        cls._is_deprecated_inherited_runtime_protocol = False
     # PEP 544 prohibits using issubclass()
     # with protocols that have non-method members.
     # See gh-113320 for why we compute this attribute here,

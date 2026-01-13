@@ -2527,6 +2527,12 @@ types.
 
    .. versionadded:: 3.8
 
+   .. deprecated-removed:: 3.15 3.20
+      It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+      protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+      after subclassing runtime-checkable protocol classes. This will throw
+      a :exc:`TypeError` in Python 3.20.
+
 .. decorator:: runtime_checkable
 
    Mark a protocol class as a runtime protocol.
@@ -2588,6 +2594,11 @@ types.
       protocol. See :ref:`What's new in Python 3.12 <whatsnew-typing-py312>`
       for more details.
 
+   .. deprecated-removed:: 3.15 3.20
+      It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+      protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+      after subclassing runtime-checkable protocol classes. This will throw
+      a :exc:`TypeError` in Python 3.20.
 
 .. function:: TypedDict
 
