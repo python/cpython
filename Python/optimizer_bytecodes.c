@@ -335,6 +335,9 @@ dummy_func(void) {
             break;
         }
         _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+        if (f == NULL) {
+            break;
+        }
         f->locals[0] = container;
         f->locals[1] = sub;
         new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
@@ -767,6 +770,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
+        // + 1 for _SAVE_RETURN_OFFSET
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
         PyCodeObject *co = get_code_with_logging(this_instr + 2);
         if (co == NULL) {
@@ -774,6 +778,9 @@ dummy_func(void) {
             break;
         }
         _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+        if (f == NULL) {
+            break;
+        }
         f->locals[0] = owner;
         new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
     }

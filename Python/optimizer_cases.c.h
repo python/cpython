@@ -1114,6 +1114,9 @@
                 break;
             }
             _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+            if (f == NULL) {
+                break;
+            }
             f->locals[0] = container;
             f->locals[1] = sub;
             new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
@@ -1958,6 +1961,9 @@
                 break;
             }
             _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+            if (f == NULL) {
+                break;
+            }
             f->locals[0] = owner;
             new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
             stack_pointer[-1] = new_frame;
