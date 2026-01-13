@@ -1,0 +1,1 @@
+Speed up :func:`copy.deepcopy` by 1.04x.

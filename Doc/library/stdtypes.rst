@@ -46,8 +46,10 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 By default, an object is considered true unless its class defines either a
 :meth:`~object.__bool__` method that returns ``False`` or a
 :meth:`~object.__len__` method that
-returns zero, when called with the object. [1]_  Here are most of the built-in
-objects considered false:
+returns zero, when called with the object. [1]_ If one of the methods raises an
+exception when called, the exception is propagated and the object does
+not have a truth value (for example, :data:`NotImplemented`).
+Here are most of the built-in objects considered false:
 
 .. index::
    single: None (Built-in object)
@@ -164,7 +166,7 @@ This table summarizes the comparison operations:
    pair: object; numeric
    pair: objects; comparing
 
-Objects of different types, except different numeric types, never compare equal.
+Unless stated otherwise, objects of different types never compare equal.
 The ``==`` operator is always defined but for some object types (for example,
 class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
 operators are only defined where they make sense; for example, they raise a
@@ -1091,11 +1093,14 @@ Notes:
    still ``0``.
 
 (4)
-   The slice of *s* from *i* to *j* is defined as the sequence of items with index
-   *k* such that ``i <= k < j``.  If *i* or *j* is greater than ``len(s)``, use
-   ``len(s)``.  If *i* is omitted or ``None``, use ``0``.  If *j* is omitted or
-   ``None``, use ``len(s)``.  If *i* is greater than or equal to *j*, the slice is
-   empty.
+   The slice of *s* from *i* to *j* is defined as the sequence of items with
+   index *k* such that ``i <= k < j``.
+
+   * If *i* is omitted or ``None``, use ``0``.
+   * If *j* is omitted or ``None``, use ``len(s)``.
+   * If *i* or *j* is less than ``-len(s)``, use ``0``.
+   * If *i* or *j* is greater than ``len(s)``, use ``len(s)``.
+   * If *i* is greater than or equal to *j*, the slice is empty.
 
 (5)
    The slice of *s* from *i* to *j* with step *k* is defined as the sequence of
@@ -1435,6 +1440,109 @@ application).
          inspect, the list is undefined.  The C implementation of Python makes the
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
+
+.. admonition:: Thread safety
+
+   Reading a single element from a :class:`list` is
+   :term:`atomic <atomic operation>`:
+
+   .. code-block::
+      :class: green
+
+      lst[i]   # list.__getitem__
+
+   The following methods traverse the list and use :term:`atomic <atomic operation>`
+   reads of each item to perform their function. That means that they may
+   return results affected by concurrent modifications:
+
+   .. code-block::
+      :class: maybe
+
+      item in lst
+      lst.index(item)
+      lst.count(item)
+
+   All of the above methods/operations are also lock-free. They do not block
+   concurrent modifications. Other operations that hold a lock will not block
+   these from observing intermediate states.
+
+   All other operations from here on block using the per-object lock.
+
+   Writing a single item via ``lst[i] = x`` is safe to call from multiple
+   threads and will not corrupt the list.
+
+   The following operations return new objects and appear
+   :term:`atomic <atomic operation>` to other threads:
+
+   .. code-block::
+      :class: good
+
+      lst1 + lst2    # concatenates two lists into a new list
+      x * lst        # repeats lst x times into a new list
+      lst.copy()     # returns a shallow copy of the list
+
+   Methods that only operate on a single elements with no shifting required are
+   :term:`atomic <atomic operation>`:
+
+   .. code-block::
+      :class: good
+
+      lst.append(x)  # append to the end of the list, no shifting required
+      lst.pop()      # pop element from the end of the list, no shifting required
+
+   The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
+   Other threads cannot observe elements being removed.
+
+   The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
+   Other threads cannot observe intermediate states during sorting, but the
+   list appears empty for the duration of the sort.
+
+   The following operations may allow lock-free operations to observe
+   intermediate states since they modify multiple elements in place:
+
+   .. code-block::
+      :class: maybe
+
+      lst.insert(idx, item)  # shifts elements
+      lst.pop(idx)           # idx not at the end of the list, shifts elements
+      lst *= x               # copies elements in place
+
+   The :meth:`~list.remove` method may allow concurrent modifications since
+   element comparison may execute arbitrary Python code (via
+   :meth:`~object.__eq__`).
+
+   :meth:`~list.extend` is safe to call from multiple threads.  However, its
+   guarantees depend on the iterable passed to it. If it is a :class:`list`, a
+   :class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
+   :ref:`dictionary view object <dict-views>` (but not their subclasses), the
+   ``extend`` operation is safe from concurrent modifications to the iterable.
+   Otherwise, an iterator is created which can be concurrently modified by
+   another thread.  The same applies to inplace concatenation of a list with
+   other iterables when using ``lst += iterable``.
+
+   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
+   to call from multiple threads, but ``iterable`` is only locked when it is
+   also a :class:`list` (but not its subclasses).
+
+   Operations that involve multiple accesses, as well as iteration, are never
+   atomic. For example:
+
+   .. code-block::
+      :class: bad
+
+      # NOT atomic: read-modify-write
+      lst[i] = lst[i] + 1
+
+      # NOT atomic: check-then-act
+      if lst:
+          item = lst.pop()
+
+      # NOT thread-safe: iteration while modifying
+      for item in lst:
+          process(item)  # another thread may modify lst
+
+   Consider external synchronization when sharing :class:`list` instances
+   across threads.  See :ref:`freethreading-python-howto` for more information.
 
 
 .. _typesseq-tuple:
@@ -1842,6 +1950,14 @@ expression support in the :mod:`re` module).
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.lower()
+      'straße'
+      >>> 'straße'.casefold()
+      'strasse'
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
@@ -2043,7 +2159,18 @@ expression support in the :mod:`re` module).
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
-   not found.
+   not found. For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.index('eggs')
+      Traceback (most recent call last):
+        File "<python-input-0>", line 1, in <module>
+          'spam, spam, spam'.index('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`rindex`.
 
 
 .. method:: str.isalnum()
@@ -2155,6 +2282,21 @@ expression support in the :mod:`re` module).
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isnumeric()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      True
+      >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
+      True
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
+   a superset of decimal numbers.
 
 
 .. method:: str.isprintable()
@@ -2172,6 +2314,15 @@ expression support in the :mod:`re` module).
    Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
    Nonprintable characters are those in group Separator or Other (Z or C),
    except the ASCII space.
+
+   For example:
+
+   .. doctest::
+
+      >>> ''.isprintable(), ' '.isprintable()
+      (True, True)
+      >>> '\t'.isprintable(), '\n'.isprintable()
+      (False, False)
 
 
 .. method:: str.isspace()
@@ -2246,11 +2397,29 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.ljust(10)
+      'Python    '
+      >>> 'Python'.ljust(10, '.')
+      'Python....'
+      >>> 'Monty Python'.ljust(10, '.')
+      'Monty Python'
+
+   See also :meth:`rjust`.
+
 
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase.
+   lowercase. For example:
+
+   .. doctest::
+
+      >>> 'Lower Method Example'.lower()
+      'lower method example'
 
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
@@ -2306,7 +2475,9 @@ expression support in the :mod:`re` module).
 
    If the string starts with the *prefix* string, return
    ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
+   string:
+
+   .. doctest::
 
       >>> 'TestHook'.removeprefix('Test')
       'Hook'
@@ -2315,12 +2486,16 @@ expression support in the :mod:`re` module).
 
    .. versionadded:: 3.9
 
+   See also :meth:`removesuffix` and :meth:`startswith`.
+
 
 .. method:: str.removesuffix(suffix, /)
 
    If the string ends with the *suffix* string and that *suffix* is not empty,
    return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
+   original string:
+
+   .. doctest::
 
       >>> 'MiscTests'.removesuffix('Tests')
       'Misc'
@@ -2329,12 +2504,22 @@ expression support in the :mod:`re` module).
 
    .. versionadded:: 3.9
 
+   See also :meth:`removeprefix` and :meth:`endswith`.
+
 
 .. method:: str.replace(old, new, /, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
    *new*.  If *count* is given, only the first *count* occurrences are replaced.
    If *count* is not specified or ``-1``, then all occurrences are replaced.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.replace('spam', 'eggs')
+      'eggs, eggs, eggs'
+      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+      'eggs, spam, spam'
 
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
@@ -2345,6 +2530,16 @@ expression support in the :mod:`re` module).
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rfind('sp')
+      12
+      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+      6
+
+   See also :meth:`find` and :meth:`rindex`.
 
 
 .. method:: str.rindex(sub[, start[, end]])
@@ -5072,9 +5267,6 @@ can be used interchangeably to index the same dictionary entry.
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
 
-   Providing keyword arguments as in the first example only works for keys that
-   are valid Python identifiers.  Otherwise, any valid keys can be used.
-
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.  To illustrate dictionary creation and equality,
@@ -5460,9 +5652,11 @@ before the statement body is executed and exited when the statement ends:
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
    following the :keyword:`!with` statement. Otherwise the exception continues
-   propagating after this method has finished executing. Exceptions that occur
-   during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`!with` statement.
+   propagating after this method has finished executing.
+
+   If this method raises an exception while handling an earlier exception from the
+   :keyword:`with` block, the new exception is raised, and the original exception
+   is stored in its :attr:`~BaseException.__context__` attribute.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed

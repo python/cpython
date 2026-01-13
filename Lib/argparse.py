@@ -517,7 +517,27 @@ class HelpFormatter(object):
             text = text % dict(prog=self._prog)
         text_width = max(self._width - self._current_indent, 11)
         indent = ' ' * self._current_indent
-        return self._fill_text(text, text_width, indent) + '\n\n'
+        text = self._fill_text(text, text_width, indent)
+        text = self._apply_text_markup(text)
+        return text + '\n\n'
+
+    def _apply_text_markup(self, text):
+        """Apply color markup to text.
+
+        Supported markup:
+          `...` - inline code (rendered with prog_extra color)
+
+        When colors are disabled, backticks are preserved as-is.
+        """
+        t = self._theme
+        if not t.reset:
+            return text
+        text = _re.sub(
+            r'`([^`]+)`',
+            rf'{t.prog_extra}\1{t.reset}',
+            text,
+        )
+        return text
 
     def _format_action(self, action):
         # determine the required width and the entry label
@@ -668,7 +688,41 @@ class HelpFormatter(object):
                 params[name] = value.__name__
         if params.get('choices') is not None:
             params['choices'] = ', '.join(map(str, params['choices']))
-        return help_string % params
+
+        t = self._theme
+
+        result = help_string % params
+
+        if not t.reset:
+            return result
+
+        # Match format specifiers like: %s, %d, %(key)s, etc.
+        fmt_spec = r'''
+            %
+            (?:
+                %                           # %% escape
+                |
+                (?:\((?P<key>[^)]*)\))?     # key
+                [-#0\ +]*                   # flags
+                (?:\*|\d+)?                 # width
+                (?:\.(?:\*|\d+))?           # precision
+                [hlL]?                      # length modifier
+                [diouxXeEfFgGcrsa]          # conversion type
+            )
+        '''
+
+        def colorize(match):
+            spec, key = match.group(0, 'key')
+            if spec == '%%':
+                return '%'
+            if key is not None:
+                # %(key)... - format and colorize
+                formatted = spec % {key: params[key]}
+                return f'{t.interpolated_value}{formatted}{t.reset}'
+            # bare %s etc. - format with full params dict, no colorization
+            return spec % params
+
+        return _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
 
     def _iter_indented_subactions(self, action):
         try:
@@ -749,8 +803,8 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
                 default_str = _(" (default: %(default)s)")
                 prefix, suffix = default_str.split("%(default)s")
                 help += (
-                    f" {t.default}{prefix.lstrip()}"
-                    f"{t.default_value}%(default)s"
+                    f" {t.default}{prefix.lstrip()}{t.reset}"
+                    f"%(default)s"
                     f"{t.default}{suffix}{t.reset}"
                 )
         return help
