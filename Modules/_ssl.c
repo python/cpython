@@ -43,14 +43,17 @@
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
 
-#define PySSL_BEGIN_ALLOW_THREADS_S(save, mutex) \
-    do { (save) = PyEval_SaveThread(); PyMutex_Lock(mutex); } while(0)
-#define PySSL_END_ALLOW_THREADS_S(save, mutex) \
-    do { PyMutex_Unlock(mutex); PyEval_RestoreThread(save); _PySSL_FIX_ERRNO; } while(0)
+#define PySSL_BEGIN_ALLOW_THREADS_S(save) \
+    do { (save) = PyEval_SaveThread(); } while(0)
+#define PySSL_END_ALLOW_THREADS_S(save) \
+    do { PyEval_RestoreThread(save); _PySSL_FIX_ERRNO; } while(0)
 #define PySSL_BEGIN_ALLOW_THREADS(self) { \
             PyThreadState *_save = NULL;  \
-            PySSL_BEGIN_ALLOW_THREADS_S(_save, &self->tstate_mutex);
-#define PySSL_END_ALLOW_THREADS(self) PySSL_END_ALLOW_THREADS_S(_save, &self->tstate_mutex); }
+            PySSL_BEGIN_ALLOW_THREADS_S(_save); \
+            PyMutex_Lock(&(self)->tstate_mutex);
+#define PySSL_END_ALLOW_THREADS(self) \
+            PyMutex_Unlock(&(self)->tstate_mutex); \
+            PySSL_END_ALLOW_THREADS_S(_save); }
 
 #if defined(HAVE_POLL_H)
 #include <poll.h>
@@ -4543,8 +4546,73 @@ error:
     return -1;
 }
 
+static PyObject *
+load_cert_chain_lock_held(PySSLContext *self, _PySSLPasswordInfo *pw_info,
+                          PyObject *certfile_bytes, PyObject *keyfile_bytes)
+{
+    int r;
+    PyObject *ret = NULL;
+
+    pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
+    void *orig_passwd_userdata = SSL_CTX_get_default_passwd_cb_userdata(self->ctx);
+
+    SSL_CTX_set_default_passwd_cb(self->ctx, _password_callback);
+    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, pw_info);
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
+    r = SSL_CTX_use_certificate_chain_file(self->ctx,
+        PyBytes_AS_STRING(certfile_bytes));
+    PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+    if (r != 1) {
+        if (pw_info->error) {
+            ERR_clear_error();
+            /* the password callback has already set the error information */
+        }
+        else if (errno != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            ERR_clear_error();
+        }
+        else {
+            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        }
+        goto error;
+    }
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
+    r = SSL_CTX_use_PrivateKey_file(self->ctx,
+        PyBytes_AS_STRING(keyfile_bytes ? keyfile_bytes : certfile_bytes),
+        SSL_FILETYPE_PEM);
+    PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+    if (r != 1) {
+        if (pw_info->error) {
+            ERR_clear_error();
+            /* the password callback has already set the error information */
+        }
+        else if (errno != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            ERR_clear_error();
+        }
+        else {
+            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        }
+        goto error;
+    }
+
+    PySSL_BEGIN_ALLOW_THREADS_S(pw_info->thread_state);
+    r = SSL_CTX_check_private_key(self->ctx);
+    PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+    if (r != 1) {
+        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        goto error;
+    }
+    ret = Py_None;
+error:
+    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
+    return ret;
+}
+
 /*[clinic input]
-@critical_section
 _ssl._SSLContext.load_cert_chain
     certfile: object
     keyfile: object = None
@@ -4558,10 +4626,8 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
 /*[clinic end generated code: output=9480bc1c380e2095 input=6c7c5e8b73e4264b]*/
 {
     PyObject *certfile_bytes = NULL, *keyfile_bytes = NULL;
-    pem_password_cb *orig_passwd_cb = SSL_CTX_get_default_passwd_cb(self->ctx);
-    void *orig_passwd_userdata = SSL_CTX_get_default_passwd_cb_userdata(self->ctx);
     _PySSLPasswordInfo pw_info = { NULL, NULL, NULL, 0, 0 };
-    int r;
+    PyObject *ret = NULL;
 
     errno = 0;
     ERR_clear_error();
@@ -4579,76 +4645,26 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
             PyErr_SetString(PyExc_TypeError,
                             "keyfile should be a valid filesystem path");
         }
-        goto error;
+        goto done;
     }
     if (password != Py_None) {
         if (PyCallable_Check(password)) {
             pw_info.callable = password;
         } else if (!_pwinfo_set(&pw_info, password,
                                 "password should be a string or callable")) {
-            goto error;
+            goto done;
         }
-        SSL_CTX_set_default_passwd_cb(self->ctx, _password_callback);
-        SSL_CTX_set_default_passwd_cb_userdata(self->ctx, &pw_info);
     }
-    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    r = SSL_CTX_use_certificate_chain_file(self->ctx,
-        PyBytes_AS_STRING(certfile_bytes));
-    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    if (r != 1) {
-        if (pw_info.error) {
-            ERR_clear_error();
-            /* the password callback has already set the error information */
-        }
-        else if (errno != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            ERR_clear_error();
-        }
-        else {
-            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-        }
-        goto error;
-    }
-    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    r = SSL_CTX_use_PrivateKey_file(self->ctx,
-        PyBytes_AS_STRING(keyfile ? keyfile_bytes : certfile_bytes),
-        SSL_FILETYPE_PEM);
-    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    Py_CLEAR(keyfile_bytes);
-    Py_CLEAR(certfile_bytes);
-    if (r != 1) {
-        if (pw_info.error) {
-            ERR_clear_error();
-            /* the password callback has already set the error information */
-        }
-        else if (errno != 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            ERR_clear_error();
-        }
-        else {
-            _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-        }
-        goto error;
-    }
-    PySSL_BEGIN_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    r = SSL_CTX_check_private_key(self->ctx);
-    PySSL_END_ALLOW_THREADS_S(pw_info.thread_state, &self->tstate_mutex);
-    if (r != 1) {
-        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-        goto error;
-    }
-    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
-    PyMem_Free(pw_info.password);
-    Py_RETURN_NONE;
 
-error:
-    SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
+    PyMutex_Lock(&self->tstate_mutex);
+    ret = load_cert_chain_lock_held(self, &pw_info, certfile_bytes, keyfile_bytes);
+    PyMutex_Unlock(&self->tstate_mutex);
+
+done:
     PyMem_Free(pw_info.password);
     Py_XDECREF(keyfile_bytes);
     Py_XDECREF(certfile_bytes);
-    return NULL;
+    return ret;
 }
 
 /* internal helper function, returns -1 on error
