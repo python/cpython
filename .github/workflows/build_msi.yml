@@ -34,7 +34,7 @@ jobs:
     name: 'Windows (x86) Installer'
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build CPython installer
       run: .\Tools\msi\build.bat --doc -x86
 
@@ -42,6 +42,6 @@ jobs:
     name: 'Windows (x64) Installer'
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build CPython installer
       run: .\Tools\msi\build.bat --doc -x64
