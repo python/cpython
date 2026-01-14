@@ -1105,7 +1105,7 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
             tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
+            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&tstate->interp->opt_config);
         }
     }
     else if (tracer->initial_state.executor->vm_data.valid) {
@@ -1115,7 +1115,7 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
             exit->temperature = restart_backoff_counter(exit->temperature);
         }
         else {
-            exit->temperature = initial_temperature_backoff_counter(&_tstate->policy);
+            exit->temperature = initial_temperature_backoff_counter(&tstate->interp->opt_config);
         }
     }
     Py_CLEAR(tracer->initial_state.code);
