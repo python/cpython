@@ -293,23 +293,39 @@ The following type-oriented macros are provided for convenience.  Note  that
 
    Same as :c:func:`PyMem_Free`.
 
-.. c:macro:: PyMem_MALLOC(size)
-             PyMem_NEW(type, size)
-             PyMem_REALLOC(ptr, size)
-             PyMem_RESIZE(ptr, type, size)
-             PyMem_FREE(ptr)
-             PyMem_DEL(ptr)
 
-   These macros are :term:`soft deprecated` aliases for the APIs above,
-   provided for backwards compatibility.
+Deprecated aliases
+------------------
 
-   .. versionchanged:: 3.4
+These are :term:`soft deprecated` aliases to existing functions and macros.
+They exist solely for backwards compatibility.
 
-      The macros are now aliases of the corresponding mixed-case names.
-      Previously, their behavior was the same, but their use did
-      not preserve binary compatibility across Python versions.
+.. list-table::
+   :widths: auto
+   :header-rows: 1
 
-   .. deprecated:: 2.0
+   * * Deprecated alias
+     * Corresponding function or macro
+   * * .. c:macro:: PyMem_MALLOC(size)
+     * :c:func:`PyMem_Malloc`
+   * * .. c:macro:: PyMem_NEW(type, size)
+     * :c:macro:`PyMem_New`
+   * * .. c:macro:: PyMem_REALLOC(ptr, size)
+     * :c:func:`PyMem_Realloc`
+   * * .. c:macro:: PyMem_RESIZE(ptr, type, size)
+     * :c:macro:`PyMem_Resize`
+   * * .. c:macro:: PyMem_FREE(ptr)
+     * :c:func:`PyMem_Free`
+   * * .. c:macro:: PyMem_DEL(ptr)
+     * :c:func:`PyMem_Free`
+
+.. versionchanged:: 3.4
+
+   The macros are now aliases of the corresponding functions and macros.
+   Previously, their behavior was the same, but their use did not necessarily
+   preserve binary compatibility across Python versions.
+
+.. deprecated:: 2.0
 
 
 .. _objectinterface:
