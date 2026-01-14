@@ -524,7 +524,7 @@ is_env_enabled(const char *env_name)
 
 static inline void
 init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
-                long min_value, long max_value)
+            long min_value, long max_value)
 {
     *target = default_value;
     char *env = Py_GETENV(env_name);
