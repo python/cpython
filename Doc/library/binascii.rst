@@ -82,7 +82,7 @@ The :mod:`binascii` module defines the following functions:
    .. versionchanged:: 3.6
       Added the *newline* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *wrapcol* parameter.
 
 
