@@ -540,7 +540,7 @@ seconds have elapsed, but without preventing other tasks from running.
 
 |
 
-In the snippet below, showing the ``async_sleep`` coroutine functions
+In the snippet below, showing the ``async_sleep`` coroutine function's
 implementation, we use a future to enable custom control over when the
 coroutine will finish *and* to cede control back to the event loop.
 If :meth:`future.set_result() <asyncio.Future.set_result>` (the method
