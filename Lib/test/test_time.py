@@ -498,6 +498,8 @@ class TimeTestCase(unittest.TestCase):
         t1 = time.mktime(lt1)
         self.assertAlmostEqual(t1, t0, delta=0.2)
 
+    @unittest.skipIf(sys.platform == "win32",
+                     "mktime with negative values not supported on windows")
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
