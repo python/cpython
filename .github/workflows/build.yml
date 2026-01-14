@@ -661,16 +661,19 @@ jobs:
         - cpython3
         - python3-libraries
         exclude:
+        # Note that the 'no-exclude' sentinel below is to prevent
+        # an empty string value from excluding all jobs and causing
+        # GHA to create a 'default' matrix entry with all empty values.
         - oss-fuzz-project-name: >-
             ${{
               needs.build-context.outputs.run-ci-fuzz == 'true'
-              && 'dummy sentinel 🤪'
+              && 'no-exclude'
               || 'cpython3'
             }}
         - oss-fuzz-project-name: >-
             ${{
               needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
-              && 'dummy sentinel 🤪'
+              && 'no-exclude'
               || 'python3-libraries'
             }}
     uses: ./.github/workflows/reusable-cifuzz.yml
