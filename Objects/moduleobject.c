@@ -1126,6 +1126,13 @@ module_dealloc(PyObject *self)
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
+void
+_PyModule_ExactDealloc(PyObject *self)
+{
+    assert(PyModule_CheckExact(self));
+    module_dealloc(self);
+}
+
 static PyObject *
 module_repr(PyObject *self)
 {

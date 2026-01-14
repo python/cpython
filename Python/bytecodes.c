@@ -371,6 +371,11 @@ dummy_func(
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
         }
 
+        op(_POP_TOP_MODULE, (value --)) {
+            assert(PyModule_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyModule_ExactDealloc);
+        }
+
         tier2 op(_POP_TWO, (nos, tos --)) {
             PyStackRef_CLOSE(tos);
             PyStackRef_CLOSE(nos);
@@ -2446,7 +2451,7 @@ dummy_func(
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
-        op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
+        op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             DEOPT_IF(Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
@@ -2467,12 +2472,13 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            PyStackRef_CLOSE(owner);
+            DEAD(owner);
         }
 
         macro(LOAD_ATTR_MODULE) =
             unused/1 +
             _LOAD_ATTR_MODULE +
+            _POP_TOP_MODULE +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 

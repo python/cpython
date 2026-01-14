@@ -637,6 +637,12 @@ dummy_func(void) {
         }
     }
 
+    op(_POP_TOP_MODULE, (value --)) {
+        if (PyJitRef_IsBorrowed(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+    }
+
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
@@ -655,7 +661,7 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
+    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, owner)) {
         (void)dict_version;
         (void)index;
         attr = PyJitRef_NULL;

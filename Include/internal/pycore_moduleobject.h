@@ -13,6 +13,7 @@ extern "C" {
 
 extern void _PyModule_Clear(PyObject *);
 extern void _PyModule_ClearDict(PyObject *);
+extern void _PyModule_ExactDealloc(PyObject *);
 extern int _PyModuleSpec_IsInitializing(PyObject *);
 extern int _PyModuleSpec_GetFileOrigin(PyObject *, PyObject **);
 extern int _PyModule_IsPossiblyShadowing(PyObject *);
