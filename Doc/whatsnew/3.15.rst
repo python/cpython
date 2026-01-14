@@ -435,12 +435,22 @@ argparse
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
-base64 & binascii
------------------
+base64
+------
 
-* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
-  faster thanks to simple CPU pipelining optimizations.
-  (Contributed by Gregory P. Smith & Serhiy Storchaka in :gh:`143262`.)
+* Added the *pad* parameter in :func:`~base64.z85encode`.
+  (Contributed by Hauke Dämpfling in :gh:`143103`.)
+
+* Added the *wrapcol* parameter in :func:`~base64.b64encode`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+
+binascii
+--------
+
+* Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
 
 calendar
 --------
@@ -877,6 +887,13 @@ Optimizations
   This was made possible by a new feature introduced in MSVC 18.
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
+
+base64 & binascii
+-----------------
+
+* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
+  faster thanks to simple CPU pipelining optimizations.
+  (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
 
 csv
 ---
