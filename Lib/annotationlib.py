@@ -279,7 +279,8 @@ class ForwardRef:
             # because dictionaries are not hashable.
             and self.__globals__ is other.__globals__
             and self.__forward_is_class__ == other.__forward_is_class__
-            and self.__cell__ == other.__cell__
+            # Two separate cells are always considered unequal in forward refs.
+            and self.__cell__ is other.__cell__
             and self.__owner__ == other.__owner__
             and (
                 (tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None) ==
@@ -293,7 +294,10 @@ class ForwardRef:
             self.__forward_module__,
             id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__forward_is_class__,
-            tuple(sorted(self.__cell__.items())) if isinstance(self.__cell__, dict) else self.__cell__,
+            (  # cells are mutable and not hashable as well
+                tuple(sorted([(name, id(cell)) for name, cell in self.__cell__.items()]))
+                if isinstance(self.__cell__, dict) else id(self.__cell__),
+            ),
             self.__owner__,
             tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
         ))
