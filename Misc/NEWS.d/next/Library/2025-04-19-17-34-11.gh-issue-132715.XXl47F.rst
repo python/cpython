@@ -1,0 +1,1 @@
+Skip writing objects during marshalling once a failure has occurred.
