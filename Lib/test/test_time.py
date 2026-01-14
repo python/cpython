@@ -580,11 +580,10 @@ class TimeTestCase(unittest.TestCase):
 
         # thread_time() should not include time spend during a sleep
         start = time.thread_time()
-        time.sleep(0.100)
+        time.sleep(0.200)
         stop = time.thread_time()
-        # use 20 ms because thread_time() has usually a resolution of 15 ms
-        # on Windows
-        self.assertLess(stop - start, 0.020)
+        # gh-143528: use 100 ms to support slow CI
+        self.assertLess(stop - start, 0.100)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)

@@ -2146,6 +2146,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(width));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(withdata));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wrap));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wrapcol));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(writable));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write_through));

@@ -2144,6 +2144,7 @@ extern "C" {
     INIT_ID(width), \
     INIT_ID(withdata), \
     INIT_ID(wrap), \
+    INIT_ID(wrapcol), \
     INIT_ID(writable), \
     INIT_ID(write), \
     INIT_ID(write_through), \

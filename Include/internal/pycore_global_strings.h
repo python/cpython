@@ -869,6 +869,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(width)
         STRUCT_FOR_ID(withdata)
         STRUCT_FOR_ID(wrap)
+        STRUCT_FOR_ID(wrapcol)
         STRUCT_FOR_ID(writable)
         STRUCT_FOR_ID(write)
         STRUCT_FOR_ID(write_through)
