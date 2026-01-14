@@ -766,8 +766,8 @@ def makeunicodename(unicode, trace):
                (NAME_ALIASES_START + len(unicode.aliases)))
 
         fprint('static const unsigned int name_aliases[] = {')
-        for name, codepoint in unicode.aliases:
-            fprint('    0x%04X,' % codepoint)
+        for alias, aliased_codepoint in unicode.aliases:
+            fprint('    0x%04X,' % aliased_codepoint)
         fprint('};')
 
         # In Unicode 6.0.0, the sequences contain at most 4 BMP chars,
@@ -1091,11 +1091,11 @@ class UnicodeData:
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters
             pua_index = NAME_ALIASES_START
-            for char, name, abbrev in UcdFile(NAME_ALIASES, version):
-                char = int(char, 16)
-                self.aliases.append((name, char))
+            for aliased_codepoint, alias, alias_type in UcdFile(NAME_ALIASES, version):
+                aliased_codepoint = int(aliased_codepoint, 16)
+                self.aliases.append((alias, aliased_codepoint))
                 # also store the name in the PUA 1
-                self.table[pua_index].name = name
+                self.table[pua_index].name = alias
                 pua_index += 1
             assert pua_index - NAME_ALIASES_START == len(self.aliases)
 
