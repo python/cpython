@@ -152,19 +152,17 @@ class TestExecutorInvalidation(unittest.TestCase):
         f(0, TIER2_THRESHOLD, 1)
         f(1, TIER2_THRESHOLD + 1, 1.0)
 
+
 def get_bool_guard_ops():
-        d = id(True) ^ id(False)
-        bit = 0
-        for i in range(4, 8):
-            if d & (1 << i):
-                bit = i
-                break
-        if bit == 0:
-            return "_GUARD_IS_FALSE_POP", "_GUARD_IS_TRUE_POP"
-        if id(True) & (1 << bit):
-            return f"_GUARD_BIT_IS_UNSET_POP_{bit}", f"_GUARD_BIT_IS_SET_POP_{bit}"
-        else:
-            return f"_GUARD_BIT_IS_SET_POP_{bit}", f"_GUARD_BIT_IS_UNSET_POP_{bit}"
+    delta = id(True) ^ id(False)
+    for bit in range(4, 8):
+        if delta & (1 << bit):
+            if id(True) & (1 << bit):
+                return f"_GUARD_BIT_IS_UNSET_POP_{bit}", f"_GUARD_BIT_IS_SET_POP_{bit}"
+            else:
+                return f"_GUARD_BIT_IS_SET_POP_{bit}", f"_GUARD_BIT_IS_UNSET_POP_{bit}"
+    return "_GUARD_IS_FALSE_POP", "_GUARD_IS_TRUE_POP"
+
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
