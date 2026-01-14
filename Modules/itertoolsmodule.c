@@ -544,7 +544,6 @@ groupby_next(PyObject *op)
         else if (gbo->tgtkey == NULL)
             break;
         else {
-
             /* A user-defined __eq__ can re-enter groupby and advance the iterator,
                mutating gbo->tgtkey / gbo->currkey while we are comparing them.
                Take local snapshots and hold strong references so INCREF/DECREF
