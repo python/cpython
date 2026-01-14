@@ -22,8 +22,7 @@ jobs:
   cifuzz:
     name: >-
       ${{ inputs.oss-fuzz-project-name }}
-      /
-      ${{ inputs.sanitizer }}
+      (${{ inputs.sanitizer }})
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.timeout-minutes }}
     steps:
