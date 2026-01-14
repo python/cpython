@@ -13,16 +13,16 @@ outputs:
     name: python_abi
     version: ${{ version }}
   build:
-    string: "0_${{ variant }}_${{ abi_tag }}"
+    string: "0_${{ abi_tag }}"
   requirements:
     run_constraints:
-      - python ${{ version }}.* *_${{ variant }}_${{ abi_tag }}
+      - python ${{ version }}.* *_${{ abi_tag }}
 
 - package:
     name: python
     version: ${{ version }}
   build:
-    string: "0_${{ variant }}_${{ abi_tag }}"
+    string: "0_${{ abi_tag }}"
     files:
       exclude:
         - "*.o"
@@ -77,7 +77,7 @@ outputs:
       noarch:
         - python
       weak:
-        - python_abi ${{ version }}.* *_${{ variant }}_${{ abi_tag }}
+        - python_abi ${{ version }}.* *_${{ abi_tag }}
 
 about:
   homepage: https://www.python.org/

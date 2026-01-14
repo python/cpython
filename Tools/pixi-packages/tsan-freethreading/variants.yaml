@@ -1,6 +1,6 @@
 variant:
   - tsan-freethreading
 abi_tag:
-  - cp315t
+  - cp315t_tsan
 version:
   - 3.15
