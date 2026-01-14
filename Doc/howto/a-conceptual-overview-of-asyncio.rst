@@ -594,10 +594,11 @@ it'll pause once again and hand control back to the event loop.
 
 Once enough time has elapsed, ``_sleep_watcher(...)`` marks the future as
 done and completes by exiting its infinite ``while`` loop.
-In the process of marking the future as done, the future's list of callbacks,
-namely to resume the ``async_sleep(3)`` coroutine, are added to the event loop.
-Some time later, the event loop will resume that coroutine and the program will
-proceed in the ``main()`` coroutine.
+Marking the future as done adds its list of callbacks, namely to resume the
+``async_sleep(3)`` coroutine, to the event loop.
+Some time later, the event loop resumes that coroutine.
+Since there are no further instructions (the last one was ``await future``),
+it too finishes and returns to ``main()`` where the program proceeds.
 Given this helper task is only invoked once per cycle of the event loop,
 you'd be correct to note that this asynchronous sleep will sleep *at least*
 three seconds, rather than exactly three seconds.
