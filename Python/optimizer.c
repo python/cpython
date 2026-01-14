@@ -1408,9 +1408,9 @@ make_executor_from_uops(_PyThreadStateImpl *tstate, _PyUOpInstruction *buffer, i
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
-    // This is initialized to true so we can prevent the executor
+    // This is initialized to false so we can prevent the executor
     // from being immediately detected as cold and invalidated.
-    executor->vm_data.warm = true;
+    executor->vm_data.cold = false;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1698,9 +1698,9 @@ make_cold_executor(uint16_t opcode)
         Py_FatalError("Cannot allocate core JIT code");
     }
     ((_PyUOpInstruction *)cold->trace)->opcode = opcode;
-    // This is initialized to true so we can prevent the executor
+    // This is initialized to false so we can prevent the executor
     // from being immediately detected as cold and invalidated.
-    cold->vm_data.warm = true;
+    cold->vm_data.cold = false;
 #ifdef _Py_JIT
     cold->jit_code = NULL;
     cold->jit_size = 0;
@@ -1895,11 +1895,11 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
 
-        if (!exec->vm_data.warm && PyList_Append(invalidate, (PyObject *)exec) < 0) {
+        if (exec->vm_data.cold && PyList_Append(invalidate, (PyObject *)exec) < 0) {
             goto error;
         }
         else {
-            exec->vm_data.warm = false;
+            exec->vm_data.cold = true;
         }
 
         exec = next;
