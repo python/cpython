@@ -2770,6 +2770,16 @@ class TestAddSubparsers(TestCase):
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
 
+    def test_subparser_help_with_parent_required_optional(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--foo', required=True)
+        parser.add_argument('--bar')
+        subparsers = parser.add_subparsers()
+        parser_sub = subparsers.add_parser('sub')
+        parser_sub.add_argument('arg')
+        self.assertEqual(parser_sub.format_usage(),
+                         'usage: PROG --foo FOO sub [-h] arg\n')
+
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
                          'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
@@ -3388,12 +3398,11 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
 
-    def test_empty_group(self):
+    def test_usage_empty_group(self):
         # See issue 26952
-        parser = argparse.ArgumentParser()
+        parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group()
-        with self.assertRaises(ValueError):
-            parser.parse_args(['-h'])
+        self.assertEqual(parser.format_usage(), 'usage: PROG [-h]\n')
 
     def test_nested_mutex_groups(self):
         parser = argparse.ArgumentParser(prog='PROG')
@@ -3661,25 +3670,29 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
         group.add_argument('-b', action='store_true', help='b help')
         parser.add_argument('-y', action='store_true', help='y help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['-a -b', '-b -c', '-a -c', '-a -b -c']
     successes = [
-        ('-a', NS(a=True, b=False, c=False, x=False, y=False)),
-        ('-b', NS(a=False, b=True, c=False, x=False, y=False)),
-        ('-c', NS(a=False, b=False, c=True, x=False, y=False)),
-        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False)),
-        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True)),
-        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True)),
+        ('-a', NS(a=True, b=False, c=False, x=False, y=False, z=False)),
+        ('-b', NS(a=False, b=True, c=False, x=False, y=False, z=False)),
+        ('-c', NS(a=False, b=False, c=True, x=False, y=False, z=False)),
+        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False, z=False)),
+        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True, z=False)),
+        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('', NS(a=False, b=False, c=False, x=False, y=False)),
-        ('-x', NS(a=False, b=False, c=False, x=True, y=False)),
-        ('-y', NS(a=False, b=False, c=False, x=False, y=True)),
+        ('', NS(a=False, b=False, c=False, x=False, y=False, z=False)),
+        ('-x', NS(a=False, b=False, c=False, x=True, y=False, z=False)),
+        ('-y', NS(a=False, b=False, c=False, x=False, y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-x] [-a] [-b] [-y] [-c]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-x] [-a | -b | -c] [-y] [-z]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-x] (-a | -b | -c) [-y] [-z]
         '''
     help = '''\
 
@@ -3690,6 +3703,7 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
           -b          b help
           -y          y help
           -c          c help
+          -z          z help
         '''
 
 
@@ -3743,23 +3757,27 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
         group.add_argument('a', nargs='?', help='a help')
         group.add_argument('-b', action='store_true', help='b help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['X A -b', '-b -c', '-c X A']
     successes = [
-        ('X A', NS(a='A', b=False, c=False, x='X', y=False)),
-        ('X -b', NS(a=None, b=True, c=False, x='X', y=False)),
-        ('X -c', NS(a=None, b=False, c=True, x='X', y=False)),
-        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True)),
-        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True)),
+        ('X A', NS(a='A', b=False, c=False, x='X', y=False, z=False)),
+        ('X -b', NS(a=None, b=True, c=False, x='X', y=False, z=False)),
+        ('X -c', NS(a=None, b=False, c=True, x='X', y=False, z=False)),
+        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True, z=False)),
+        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('X', NS(a=None, b=False, c=False, x='X', y=False)),
-        ('X -y', NS(a=None, b=False, c=False, x='X', y=True)),
+        ('X', NS(a=None, b=False, c=False, x='X', y=False, z=False)),
+        ('X -y', NS(a=None, b=False, c=False, x='X', y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-y] [-b] [-c] x [a]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-y] [-z] x [-b | -c | a]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-y] [-z] x (-b | -c | a)
         '''
     help = '''\
 
@@ -3772,6 +3790,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -y          y help
           -b          b help
           -c          c help
+          -z          z help
         '''
 
 
@@ -4966,6 +4985,25 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
+    def test_mutex_groups_with_mixed_optionals_positionals_wrap(self):
+        # https://github.com/python/cpython/issues/75949
+        # Mutually exclusive groups containing both optionals and positionals
+        # should preserve pipe separators when the usage line wraps.
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument('-v', '--verbose', action='store_true')
+        g.add_argument('-q', '--quiet', action='store_true')
+        g.add_argument('-x', '--extra-long-option-name', nargs='?')
+        g.add_argument('-y', '--yet-another-long-option', nargs='?')
+        g.add_argument('positional', nargs='?')
+
+        usage = textwrap.dedent('''\
+        usage: PROG [-h]
+                    [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
+                    -y [YET_ANOTHER_LONG_OPTION] | positional]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
 
 class TestHelpVariableExpansion(HelpTestCase):
     """Test that variables are expanded properly in help messages"""
@@ -5381,6 +5419,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
     argument_signatures = [
         Sig('--foo', help='foo help - oh and by the way, %(default)s'),
         Sig('--bar', action='store_true', help='bar help'),
+        Sig('--required', required=True, help='some help'),
         Sig('--taz', action=argparse.BooleanOptionalAction,
             help='Whether to taz it', default=True),
         Sig('--corge', action=argparse.BooleanOptionalAction,
@@ -5394,8 +5433,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--corge | --no-corge]
-                    [--quux QUUX] [--baz BAZ]
+        usage: PROG [-h] [--foo FOO] [--bar] --required REQUIRED [--taz | --no-taz]
+                    [--corge | --no-corge] [--quux QUUX] [--baz BAZ]
                     spam [badger]
         '''
     help = usage + '''\
@@ -5410,6 +5449,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
           -h, --help           show this help message and exit
           --foo FOO            foo help - oh and by the way, None
           --bar                bar help (default: False)
+          --required REQUIRED  some help
           --taz, --no-taz      Whether to taz it (default: True)
           --corge, --no-corge  Whether to corge it
           --quux QUUX          Set the quux (default: 42)
@@ -5656,6 +5696,11 @@ class TestHelpCustomHelpFormatter(TestCase):
                 a-very-long-command  command that does something
         '''))
 
+    def test_direct_formatter_instantiation(self):
+        formatter = argparse.HelpFormatter(prog="program")
+        formatter.add_usage(usage=None, actions=[], groups=[])
+        help_text = formatter.format_help()
+        self.assertEqual(help_text, "usage: program\n")
 
 # =====================================
 # Optional/Positional constructor tests
@@ -7263,6 +7308,13 @@ class TestColorized(TestCase):
             choices=("Aaaaa", "Bbbbb", "Ccccc", "Ddddd"),
             help="pick one",
         )
+        parser.add_argument(
+            "--optional8",
+            default="A",
+            metavar="X",
+            choices=("A", "B", "C"),
+            help="among %(choices)s, default is %(default)s",
+        )
 
         parser.add_argument("+f")
         parser.add_argument("++bar")
@@ -7289,7 +7341,7 @@ class TestColorized(TestCase):
         label_b = self.theme.label
         pos_b = self.theme.action
         default = self.theme.default
-        default_value = self.theme.default_value
+        interp = self.theme.interpolated_value
         reset = self.theme.reset
 
         # Act
@@ -7302,8 +7354,8 @@ class TestColorized(TestCase):
                 f"""\
                 {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}-v{reset} | {short}-q{reset}] [{short}-o{reset}] [{long}--optional2 {label}OPTIONAL2{reset}] [{long}--optional3 {label}{{X,Y,Z}}{reset}]
                             [{long}--optional4 {label}{{X,Y,Z}}{reset}] [{long}--optional5 {label}{{X,Y,Z}}{reset}] [{long}--optional6 {label}{{X,Y,Z}}{reset}]
-                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}] [{long}-+baz {label}BAZ{reset}]
-                            [{short}-c {label}COUNT{reset}]
+                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{long}--optional8 {label}X{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}]
+                            [{long}-+baz {label}BAZ{reset}] [{short}-c {label}COUNT{reset}]
                             {pos}x{reset} {pos}y{reset} {pos}this_indeed_is_a_very_long_action_name{reset} {pos}{{sub1,sub2}} ...{reset}
 
                 Colorful help
@@ -7316,17 +7368,18 @@ class TestColorized(TestCase):
 
                 {heading}options:{reset}
                   {short_b}-h{reset}, {long_b}--help{reset}            show this help message and exit
-                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam {default}(default: {default_value}False{default}){reset}
-                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam {default}(default: {default_value}False{default}){reset}
+                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam {default}(default: {reset}{interp}False{reset}{default}){reset}
+                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam {default}(default: {reset}{interp}False{reset}{default}){reset}
                   {short_b}-o{reset}, {long_b}--optional1{reset}
                   {long_b}--optional2{reset} {label_b}OPTIONAL2{reset}
-                                        pick one {default}(default: {default_value}None{default}){reset}
+                                        pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
                   {long_b}--optional3{reset} {label_b}{{X,Y,Z}}{reset}
-                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
-                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
-                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
+                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
                   {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
-                                        pick one {default}(default: {default_value}None{default}){reset}
+                                        pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional8{reset} {label_b}X{reset}         among {interp}A, B, C{reset}, default is {interp}A{reset}
                   {short_b}+f{reset} {label_b}F{reset}
                   {long_b}++bar{reset} {label_b}BAR{reset}
                   {long_b}-+baz{reset} {label_b}BAZ{reset}
@@ -7342,7 +7395,28 @@ class TestColorized(TestCase):
             ),
         )
 
-    def test_argparse_color_usage(self):
+    def test_argparse_color_mutually_exclusive_group_usage(self):
+        parser = argparse.ArgumentParser(color=True, prog="PROG")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--foo', action='store_true', help='FOO')
+        group.add_argument('--spam', help='SPAM')
+        group.add_argument('badger', nargs='*', help='BADGER')
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        long = self.theme.summary_long_option
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        reset = self.theme.reset
+
+        self.assertEqual(parser.format_usage(),
+            f"{heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] "
+            f"[{long}--foo{reset} | "
+            f"{long}--spam {label}SPAM{reset} | "
+            f"{pos}badger ...{reset}]\n")
+
+    def test_argparse_color_custom_usage(self):
         # Arrange
         parser = argparse.ArgumentParser(
             add_help=False,
@@ -7493,6 +7567,167 @@ class TestColorized(TestCase):
         warn = stderr.getvalue()
         self.assertNotIn('\x1b[', warn)
         self.assertIn('warning:', warn)
+
+    def test_backtick_markup_in_epilog(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Example: `python -m myapp --verbose`',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'Example: {prog_extra}python -m myapp --verbose{reset}',
+                      help_text)
+        self.assertNotIn('`', help_text)
+
+    def test_backtick_markup_in_description(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            description='Run `python -m myapp` to start.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'Run {prog_extra}python -m myapp{reset} to start.',
+                      help_text)
+
+    def test_backtick_markup_multiple(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Try `app run` or `app test`.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}app run{reset}', help_text)
+        self.assertIn(f'{prog_extra}app test{reset}', help_text)
+
+    def test_backtick_markup_not_applied_when_color_disabled(self):
+        # When color is disabled, backticks are preserved as-is
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=False,
+            epilog='Example: `python -m myapp`',
+        )
+
+        help_text = parser.format_help()
+        self.assertIn('`python -m myapp`', help_text)
+        self.assertNotIn('\x1b[', help_text)
+
+    def test_backtick_markup_with_format_string(self):
+        parser = argparse.ArgumentParser(
+            prog='myapp',
+            color=True,
+            epilog='Run `%(prog)s --help` for more info.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}myapp --help{reset}', help_text)
+
+    def test_backtick_markup_in_subparser(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        subparsers = parser.add_subparsers()
+        sub = subparsers.add_parser(
+            'sub',
+            description='Run `PROG sub --foo` to start.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = sub.format_help()
+        self.assertIn(f'{prog_extra}PROG sub --foo{reset}', help_text)
+
+    def test_backtick_markup_special_regex_chars(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='`grep "foo.*bar" | sort`',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}grep "foo.*bar" | sort{reset}', help_text)
+
+    def test_help_with_format_specifiers(self):
+        # GH-142950: format specifiers like %x should work with color=True
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--hex', type=int, default=255,
+                            help='hex: %(default)x, alt: %(default)#x')
+        parser.add_argument('--zero', type=int, default=7,
+                            help='zero: %(default)05d')
+        parser.add_argument('--str', default='test',
+                            help='str: %(default)s')
+        parser.add_argument('--pct', type=int, default=50,
+                            help='pct: %(default)d%%')
+        parser.add_argument('--literal', help='literal: 100%%')
+        parser.add_argument('--prog', help='prog: %(prog)s')
+        parser.add_argument('--type', type=int, help='type: %(type)s')
+        parser.add_argument('--choices', choices=['a', 'b'],
+                            help='choices: %(choices)s')
+
+        help_text = parser.format_help()
+
+        interp = self.theme.interpolated_value
+        reset = self.theme.reset
+
+        self.assertIn(f'hex: {interp}ff{reset}', help_text)
+        self.assertIn(f'alt: {interp}0xff{reset}', help_text)
+        self.assertIn(f'zero: {interp}00007{reset}', help_text)
+        self.assertIn(f'str: {interp}test{reset}', help_text)
+        self.assertIn(f'pct: {interp}50{reset}%', help_text)
+        self.assertIn('literal: 100%', help_text)
+        self.assertIn(f'prog: {interp}PROG{reset}', help_text)
+        self.assertIn(f'type: {interp}int{reset}', help_text)
+        self.assertIn(f'choices: {interp}a, b{reset}', help_text)
+
+    def test_print_help_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_help(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
+
+    def test_print_usage_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_usage(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
 
 
 class TestModule(unittest.TestCase):
