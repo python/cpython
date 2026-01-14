@@ -2,16 +2,16 @@
 
 if [[ "${PYTHON_VARIANT}" == "freethreading" ]]; then
     echo "BUILD TYPE: FREE-THREADING"
-    BUILD_DIR="../build_free_threading"
+    BUILD_DIR="../build_freethreading"
     CONFIGURE_EXTRA="--disable-gil"
 elif [[ "${PYTHON_VARIANT}" == "asan" ]]; then
     echo "BUILD TYPE: ASAN"
     BUILD_DIR="../build_asan"
     CONFIGURE_EXTRA="--with-address-sanitizer"
     export ASAN_OPTIONS="strict_init_order=true"
-elif [[ "${PYTHON_VARIANT}" == "tsan_freethreading" ]]; then
+elif [[ "${PYTHON_VARIANT}" == "tsan-freethreading" ]]; then
     echo "BUILD TYPE: TSAN FREE-THREADING"
-    BUILD_DIR="../build_tsan_free_threading"
+    BUILD_DIR="../build_tsan-freethreading"
     CONFIGURE_EXTRA="--disable-gil --with-thread-sanitizer"
     export TSAN_OPTIONS="suppressions=${SRC_DIR}/Tools/tsan/suppressions_free_threading.txt"
 else
