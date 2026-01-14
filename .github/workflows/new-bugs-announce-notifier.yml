@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 14
       - run: npm install mailgun.js form-data
       - name: Send notification
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           MAILGUN_API_KEY: ${{ secrets.PSF_MAILGUN_KEY }}
         with:

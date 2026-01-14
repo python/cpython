@@ -36,7 +36,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build CPython installer
       run: .\Tools\msi\build.bat -x86
 
@@ -45,7 +45,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build CPython installer
       run: .\Tools\msi\build.bat -x64
 
@@ -54,6 +54,6 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build CPython installer
       run: .\Tools\msi\build.bat -arm64
