@@ -5065,6 +5065,16 @@
             assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
             int next_oparg;
             #if TIER_ONE
+            #if _Py_TIER2
+
+            if (next_instr->op.code != STORE_FAST) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = right;
+                _tos_cache0 = left;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #endif
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
             #else

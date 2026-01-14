@@ -413,6 +413,13 @@
                 assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
                 int next_oparg;
                 #if TIER_ONE
+                #if _Py_TIER2
+                if (next_instr->op.code != STORE_FAST) {
+                    UPDATE_MISS_STATS(BINARY_OP);
+                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
+                    JUMP_TO_PREDICTED(BINARY_OP);
+                }
+                #endif
                 assert(next_instr->op.code == STORE_FAST);
                 next_oparg = next_instr->op.arg;
                 #else

@@ -783,6 +783,11 @@ dummy_func(
 
             int next_oparg;
         #if TIER_ONE
+            #if _Py_TIER2
+            // In JIT builds, we might have inserted an executor after this instruction,
+            // which breaks this super instruction.
+            DEOPT_IF(next_instr->op.code != STORE_FAST);
+            #endif
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
         #else
