@@ -2114,19 +2114,20 @@ unicodedata_extended_pictographic_impl(PyObject *module, int chr)
 }
 
 
-/* XXX Add doc strings. */
-
 // List of functions used to define module functions *AND* unicodedata.UCD
 // methods. For module functions, self is the module. For UCD methods, self
 // is an UCD instance. The UCD_Check() macro is used to check if self is
 // an UCD instance.
 static PyMethodDef unicodedata_functions[] = {
+    // Module only functions.
     UNICODEDATA_GRAPHEME_CLUSTER_BREAK_METHODDEF
     UNICODEDATA_INDIC_CONJUNCT_BREAK_METHODDEF
     UNICODEDATA_EXTENDED_PICTOGRAPHIC_METHODDEF
     UNICODEDATA_ITER_GRAPHEMES_METHODDEF
-    // Update Py_tp_methods in ucd_type_slots if add more module-only
-    // functions.
+
+    // The following definitions are shared between the module
+    // and the UCD class.
+#define DB_methods (unicodedata_functions + 4)
 
     UNICODEDATA_UCD_DECIMAL_METHODDEF
     UNICODEDATA_UCD_DIGIT_METHODDEF
@@ -2159,7 +2160,7 @@ static PyType_Slot ucd_type_slots[] = {
     {Py_tp_dealloc, ucd_dealloc},
     {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_methods, unicodedata_functions + 4},
+    {Py_tp_methods, DB_methods},
     {Py_tp_members, DB_members},
     {0, 0}
 };
