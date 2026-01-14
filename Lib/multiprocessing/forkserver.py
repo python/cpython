@@ -172,6 +172,8 @@ class ForkServer(object):
                     main_kws['sys_path'] = data['sys_path']
                 if 'init_main_from_path' in data:
                     main_kws['main_path'] = data['init_main_from_path']
+                if 'sys_argv' in data:
+                    main_kws['sys_argv'] = data['sys_argv']
                 if self._preload_on_error != 'ignore':
                     main_kws['on_error'] = self._preload_on_error
 
@@ -218,18 +220,22 @@ class ForkServer(object):
 #
 #
 
-def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
+def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
+                    on_error='ignore'):
     """Handle module preloading with configurable error handling.
 
     Args:
         preload: List of module names to preload.
         main_path: Path to __main__ module if '__main__' is in preload.
         sys_path: sys.path to use for imports (None means use current).
+        sys_argv: sys.argv to use (None means use current).
         on_error: How to handle import errors ("ignore", "warn", or "fail").
     """
     if not preload:
         return
 
+    if sys_argv is not None:
+        sys.argv[:] = sys_argv
     if sys_path is not None:
         sys.path[:] = sys_path
 
@@ -279,7 +285,7 @@ def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
 
 
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, authkey_r=None, on_error='ignore'):
+         *, sys_argv=None, authkey_r=None, on_error='ignore'):
     """Run forkserver."""
     if authkey_r is not None:
         try:
@@ -290,7 +296,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
     else:
         authkey = b''
 
-    _handle_preload(preload, main_path, sys_path, on_error)
+    _handle_preload(preload, main_path, sys_path, sys_argv, on_error)
 
     util._close_stdin()
 
@@ -391,7 +397,6 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                                     len(fds)))
                         child_r, child_w, *fds = fds
                         s.close()
-                        util._flush_std_streams()
                         pid = os.fork()
                         if pid == 0:
                             # Child

@@ -87,16 +87,19 @@
 #   elif defined(_MSC_VER) && (_MSC_VER < 1950)
 #       error "You need at least VS 2026 / PlatformToolset v145 for tail calling."
 #   endif
-
-    // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
-#   define Py_MUSTTAIL [[clang::musttail]]
-#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
-    Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+#   if defined(_MSC_VER) && !defined(__clang__)
+#      define Py_MUSTTAIL [[msvc::musttail]]
+#      define Py_PRESERVE_NONE_CC __preserve_none
+#   else
+#       define Py_MUSTTAIL __attribute__((musttail))
+#       define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+#   endif
+    typedef PyObject *(Py_PRESERVE_NONE_CC *py_tail_call_funcptr)(TAIL_CALL_PARAMS);
 
 #   define DISPATCH_TABLE_VAR instruction_funcptr_table
 #   define DISPATCH_TABLE instruction_funcptr_handler_table
 #   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
-#   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   define TARGET(op) Py_NO_INLINE PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_##op(TAIL_CALL_PARAMS)
 
 #   define DISPATCH_GOTO() \
         do { \
@@ -250,6 +253,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define WITHIN_STACK_BOUNDS() \
    (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+// This allows temporary stack "overflows", provided it's all in the cache at any point of time.
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#else
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#endif
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -409,7 +420,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state.prev_state.code_curr_size == 2); \
+        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state->prev_state.code_curr_size == 2); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \
@@ -443,8 +454,12 @@ do {                                                   \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)
-#define CURRENT_OPERAND0() (next_uop[-1].operand0)
-#define CURRENT_OPERAND1() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_64() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_64() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_32() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_32() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_16() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_16() (next_uop[-1].operand1)
 #define CURRENT_TARGET()   (next_uop[-1].target)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
@@ -458,13 +473,23 @@ do {                                                   \
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp);
 
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+#define SET_CURRENT_CACHED_VALUES(N) current_cached_values = (N)
+#define CHECK_CURRENT_CACHED_VALUES(N) assert(current_cached_values == (N))
+#else
+#define SET_CURRENT_CACHED_VALUES(N) ((void)0)
+#define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
+#endif
+
+#define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL)
 
 static inline int
 check_periodics(PyThreadState *tstate) {
@@ -476,3 +501,28 @@ check_periodics(PyThreadState *tstate) {
     return 0;
 }
 
+// Mark the generator as executing. Returns true if the state was changed,
+// false if it was already executing or finished.
+static inline bool
+gen_try_set_executing(PyGenObject *gen)
+{
+#ifdef Py_GIL_DISABLED
+    if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
+        int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+        while (frame_state < FRAME_EXECUTING) {
+            if (_Py_atomic_compare_exchange_int8(&gen->gi_frame_state,
+                                                 &frame_state,
+                                                 FRAME_EXECUTING)) {
+                return true;
+            }
+        }
+    }
+#endif
+    // Use faster non-atomic modifications in the GIL-enabled build and when
+    // the object is uniquely referenced in the free-threaded build.
+    if (gen->gi_frame_state < FRAME_EXECUTING) {
+        gen->gi_frame_state = FRAME_EXECUTING;
+        return true;
+    }
+    return false;
+}

@@ -17,21 +17,36 @@ on:  # yamllint disable-line rule:truthy
       #        || 'falsy-branch'
       #   }}
       #
-      run-docs:
-        description: Whether to build the docs
-        value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
-      run-tests:
-        description: Whether to run the regular tests
-        value: ${{ jobs.compute-changes.outputs.run-tests  }}  # bool
-      run-windows-tests:
-        description: Whether to run the Windows tests
-        value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
-      run-windows-msi:
-        description: Whether to run the MSI installer smoke tests
-        value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
+      run-android:
+        description: Whether to run the Android tests
+        value: ${{ jobs.compute-changes.outputs.run-android }}  # bool
       run-ci-fuzz:
         description: Whether to run the CIFuzz job
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
+      run-docs:
+        description: Whether to build the docs
+        value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
+      run-ios:
+        description: Whether to run the iOS tests
+        value: ${{ jobs.compute-changes.outputs.run-ios }}  # bool
+      run-macos:
+        description: Whether to run the macOS tests
+        value: ${{ jobs.compute-changes.outputs.run-macos }}  # bool
+      run-tests:
+        description: Whether to run the regular tests
+        value: ${{ jobs.compute-changes.outputs.run-tests  }}  # bool
+      run-ubuntu:
+        description: Whether to run the Ubuntu tests
+        value: ${{ jobs.compute-changes.outputs.run-ubuntu }}  # bool
+      run-wasi:
+        description: Whether to run the WASI tests
+        value: ${{ jobs.compute-changes.outputs.run-wasi }}  # bool
+      run-windows-msi:
+        description: Whether to run the MSI installer smoke tests
+        value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
+      run-windows-tests:
+        description: Whether to run the Windows tests
+        value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
 
 jobs:
   compute-changes:
@@ -39,21 +54,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
+      run-android: ${{ steps.changes.outputs.run-android }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
+      run-ios: ${{ steps.changes.outputs.run-ios }}
+      run-macos: ${{ steps.changes.outputs.run-macos }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
+      run-ubuntu: ${{ steps.changes.outputs.run-ubuntu }}
+      run-wasi: ${{ steps.changes.outputs.run-wasi }}
       run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
       run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
     steps:
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "3"
 
     - run: >-
         echo '${{ github.event_name }}'
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
         ref: >-
