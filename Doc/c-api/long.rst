@@ -453,7 +453,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Otherwise, returns the number of bytes required to store the value.
    If this is equal to or less than *n_bytes*, the entire value was copied.
-   All *n_bytes* of the buffer are written: remaining bytes filled by copies of the sign bit.
+   All *n_bytes* of the buffer are written: remaining bytes filled by 
+   copies of the sign bit.
 
    If the returned value is greater than *n_bytes*, the value was
    truncated: as many of the lowest bits of the value as could fit are written,
