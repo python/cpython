@@ -220,6 +220,21 @@ class ForkServer(object):
 #
 #
 
+def _handle_import_error(on_error, modinfo, exc, *, warn_stacklevel):
+    """Handle an import error according to the on_error policy."""
+    match on_error:
+        case 'fail':
+            raise
+        case 'warn':
+            warnings.warn(
+                f"Failed to preload {modinfo}: {exc}",
+                ImportWarning,
+                stacklevel=warn_stacklevel + 1
+            )
+        case 'ignore':
+            pass
+
+
 def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
                     on_error='ignore'):
     """Handle module preloading with configurable error handling.
@@ -247,18 +262,9 @@ def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
             # Catch broad Exception because import_main_path() uses
             # runpy.run_path() which executes the script and can raise
             # any exception, not just ImportError
-            match on_error:
-                case 'fail':
-                    raise
-                case 'warn':
-                    import warnings
-                    warnings.warn(
-                        f"Failed to preload __main__ from {main_path!r}: {e}",
-                        ImportWarning,
-                        stacklevel=2
-                    )
-                case 'ignore':
-                    pass
+            _handle_import_error(
+                on_error, f"__main__ from {main_path!r}", e, warn_stacklevel=2
+            )
         finally:
             del process.current_process()._inheriting
 
@@ -266,18 +272,9 @@ def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
         try:
             __import__(modname)
         except ImportError as e:
-            match on_error:
-                case 'fail':
-                    raise
-                case 'warn':
-                    import warnings
-                    warnings.warn(
-                        f"Failed to preload module {modname!r}: {e}",
-                        ImportWarning,
-                        stacklevel=2
-                    )
-                case 'ignore':
-                    pass
+            _handle_import_error(
+                on_error, f"module {modname!r}", e, warn_stacklevel=2
+            )
 
     # gh-135335: flush stdout/stderr in case any of the preloaded modules
     # wrote to them, otherwise children might inherit buffered data
