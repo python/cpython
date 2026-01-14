@@ -547,9 +547,9 @@ groupby_next(PyObject *op)
             int rcmp;
 
             /* A user-defined __eq__ can re-enter groupby and advance the iterator,
-            mutating gbo->tgtkey / gbo->currkey while we are comparing them.
-            Take local snapshots and hold strong references so INCREF/DECREF
-            apply to the same objects even under re-entrancy. */
+               mutating gbo->tgtkey / gbo->currkey while we are comparing them.
+               Take local snapshots and hold strong references so INCREF/DECREF
+               apply to the same objects even under re-entrancy. */
             PyObject *tgtkey = gbo->tgtkey;
             PyObject *currkey = gbo->currkey;
 
