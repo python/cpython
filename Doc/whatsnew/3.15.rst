@@ -402,6 +402,9 @@ Other language changes
   :class:`tuple` (including classes created by :func:`collections.namedtuple`).
   (Contributed by Serhiy Storchaka in :gh:`41779`.)
 
+* The :class:`slice` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 New modules
 ===========
@@ -432,12 +435,22 @@ argparse
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
-base64 & binascii
------------------
+base64
+------
 
-* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
-  faster thanks to simple CPU pipelining optimizations.
-  (Contributed by Gregory P. Smith & Serhiy Storchaka in :gh:`143262`.)
+* Added the *pad* parameter in :func:`~base64.z85encode`.
+  (Contributed by Hauke Dämpfling in :gh:`143103`.)
+
+* Added the *wrapcol* parameter in :func:`~base64.b64encode`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+
+binascii
+--------
+
+* Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
 
 calendar
 --------
@@ -798,6 +811,16 @@ unicodedata
   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
   (Contributed by Stan Ulbrych in :gh:`129117`.)
 
+* Add the :func:`~unicodedata.iter_graphemes`
+  function to iterate over grapheme clusters according to rules defined in
+  `Unicode Standard Annex #29, "Unicode Text Segmentation"
+  <https://www.unicode.org/reports/tr29/>`_.
+  Add :func:`~unicodedata.grapheme_cluster_break`,
+  :func:`~unicodedata.indic_conjunct_break` and
+  :func:`~unicodedata.extended_pictographic` functions to get the properties
+  of the character which are related to the above algorithm.
+  (Contributed by Serhiy Storchaka and Guillaume Sanchez in :gh:`74902`.)
+
 
 unittest
 --------
@@ -875,6 +898,13 @@ Optimizations
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
 
+base64 & binascii
+-----------------
+
+* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
+  faster thanks to simple CPU pipelining optimizations.
+  (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
+
 csv
 ---
 
@@ -889,14 +919,14 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`__
+`4-5% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-vultr-x86_64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
 macOS, the JIT has a
-`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260103-3.15.0a3%2B-9609574-JIT/bm-20260103-macm4pro-arm64-python-9609574e7fd36edfaa8b-3.15.0a3%2B-9609574-vs-base.svg>`__
+`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-macm4pro-arm64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
 speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
 with all optimizations enabled. The speedups for JIT
-builds versus no JIT builds range from roughly 20% slowdown to over
+builds versus no JIT builds range from roughly 15% slowdown to over
 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
 x86-64 Linux and AArch64 macOS systems.
 
@@ -956,7 +986,7 @@ The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
 
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
-Noam Cohen, Tomas Roun, and PuQing in :gh:`134584`.)
+Reiden Ong, Noam Cohen, Tomas Roun, PuQing, and Cajetan Rodrigues in :gh:`134584`.)
 
 .. rubric:: Better machine code generation
 

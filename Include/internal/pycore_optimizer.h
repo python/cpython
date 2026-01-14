@@ -27,7 +27,7 @@ typedef struct {
     uint8_t oparg;
     uint8_t valid;
     uint8_t chain_depth;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
-    bool warm;
+    bool cold;
     uint8_t pending_deletion;
     int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
@@ -222,7 +222,7 @@ extern void _PyExecutor_Free(_PyExecutorObject *self);
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 #ifdef _Py_TIER2
-extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
+PyAPI_FUNC(void) _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 #endif
 
 int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
@@ -231,9 +231,9 @@ PyAPI_FUNC(int)
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
     _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
-    int oparg);
+    int oparg, _PyExecutorObject *current_executor);
 
-void _PyJit_FinalizeTracing(PyThreadState *tstate);
+void _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
 void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);

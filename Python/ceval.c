@@ -1460,6 +1460,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) {
         err = _PyOptimizer_Optimize(frame, tstate);
     }
+<<<<<<< HEAD
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // Deal with backoffs
     _PyJitTracerState *tracer = _tstate->jit_tracer_state;
@@ -1485,7 +1486,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
             exit->temperature = initial_temperature_backoff_counter(&tstate->interp->opt_config);
         }
     }
-    _PyJit_FinalizeTracing(tstate);
+    _PyJit_FinalizeTracing(tstate, err);
     return err;
 }
 #endif

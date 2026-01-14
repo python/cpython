@@ -867,7 +867,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     if (cold != NULL) {
         interp->cold_executor = NULL;
         assert(cold->vm_data.valid);
-        assert(cold->vm_data.warm);
+        assert(!cold->vm_data.cold);
         _PyExecutor_Free(cold);
     }
 
@@ -875,7 +875,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     if (cold_dynamic != NULL) {
         interp->cold_dynamic_executor = NULL;
         assert(cold_dynamic->vm_data.valid);
-        assert(cold_dynamic->vm_data.warm);
+        assert(!cold_dynamic->vm_data.cold);
         _PyExecutor_Free(cold_dynamic);
     }
     /* We don't clear sysdict and builtins until the end of this function.

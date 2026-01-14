@@ -327,9 +327,20 @@ dummy_func(void) {
         GETLOCAL(this_instr->operand0) = sym_new_null(ctx);
     }
 
-    op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame)) {
-        new_frame = PyJitRef_NULL;
-        ctx->done = true;
+    op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem -- new_frame)) {
+        assert((this_instr + 1)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging(this_instr + 1);
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+        if (f == NULL) {
+            break;
+        }
+        f->locals[0] = container;
+        f->locals[1] = sub;
+        new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
     }
 
     op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
@@ -380,6 +391,12 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        res = sym_new_not_null(ctx);
+        ds = dict_st;
+        ss = sub_st;
+    }
+
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
         if (!already_bool) {
@@ -394,19 +411,21 @@ dummy_func(void) {
         }
     }
 
-    op(_TO_BOOL_INT, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+    op(_TO_BOOL_INT, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
         if (!already_bool) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_truthiness(ctx, value, true);
         }
+        v = value;
     }
 
-    op(_TO_BOOL_LIST, (value -- res)) {
-        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, false);
+    op(_TO_BOOL_LIST, (value -- res, v)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res, true);
         if (!already_bool) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
+        v = value;
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
@@ -449,7 +468,8 @@ dummy_func(void) {
         res = sym_new_truthiness(ctx, value, false);
     }
 
-    op(_UNARY_NEGATIVE, (value -- res)) {
+    op(_UNARY_NEGATIVE, (value -- res, v)) {
+        v = value;
         REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
         if (sym_is_compact_int(value)) {
             res = sym_new_compact_int(ctx);
@@ -465,7 +485,8 @@ dummy_func(void) {
         }
     }
 
-    op(_UNARY_INVERT, (value -- res)) {
+    op(_UNARY_INVERT, (value -- res, v)) {
+        v = value;
         // Required to avoid a warning due to the deprecation of bitwise inversion of bools
         if (!sym_matches_type(value, &PyBool_Type)) {
             REPLACE_OPCODE_IF_EVALUATES_PURE(value, res);
@@ -517,17 +538,23 @@ dummy_func(void) {
         r = right;
     }
 
-    op(_CONTAINS_OP, (left, right -- b)) {
+    op(_CONTAINS_OP, (left, right -- b, l, r)) {
+        b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, b);
-        b = sym_new_type(ctx, &PyBool_Type);
     }
 
-    op(_CONTAINS_OP_SET, (left, right -- b)) {
+    op(_CONTAINS_OP_SET, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
-    op(_CONTAINS_OP_DICT, (left, right -- b)) {
+    op(_CONTAINS_OP_DICT, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
     op(_LOAD_CONST, (-- value)) {
@@ -745,9 +772,19 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
-        (void)fget;
-        new_frame = PyJitRef_NULL;
-        ctx->done = true;
+        // + 1 for _SAVE_RETURN_OFFSET
+        assert((this_instr + 2)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging(this_instr + 2);
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+        if (f == NULL) {
+            break;
+        }
+        f->locals[0] = owner;
+        new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
     }
 
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {

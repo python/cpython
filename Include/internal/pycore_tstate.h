@@ -31,6 +31,7 @@ typedef struct _PyJitTracerInitialState {
     struct _PyExitData *exit;
     PyCodeObject *code; // Strong
     PyFunctionObject *func; // Strong
+    struct _PyExecutorObject *executor; // Strong
     _Py_CODEUNIT *start_instr;
     _Py_CODEUNIT *close_loop_instr;
     _Py_CODEUNIT *jump_backward_instr;
@@ -53,6 +54,7 @@ typedef struct _PyJitTracerTranslatorState {
 } _PyJitTracerTranslatorState;
 
 typedef struct _PyJitTracerState {
+    bool is_tracing;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
     _PyJitTracerTranslatorState translator_state;
