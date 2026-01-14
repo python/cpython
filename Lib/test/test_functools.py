@@ -21,8 +21,10 @@ from weakref import proxy
 import contextlib
 from inspect import Signature
 
+from test.support import ALWAYS_EQ
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import cpython_only
 from test.support import EqualToForwardRef
 
 import functools
@@ -62,6 +64,14 @@ class BadTuple(tuple):
 
 class MyDict(dict):
     pass
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "functools", {"os", "weakref", "typing", "annotationlib", "warnings"}
+        )
 
 
 class TestPartial:
@@ -235,6 +245,13 @@ class TestPartial:
         actual_args, actual_kwds = p('x', 'y')
         self.assertEqual(actual_args, ('x', 0, 'y', 1))
         self.assertEqual(actual_kwds, {})
+        # Checks via `is` and not `eq`
+        # thus ALWAYS_EQ isn't treated as Placeholder
+        p = self.partial(capture, ALWAYS_EQ)
+        actual_args, actual_kwds = p()
+        self.assertEqual(len(actual_args), 1)
+        self.assertIs(actual_args[0], ALWAYS_EQ)
+        self.assertEqual(actual_kwds, {})
 
     def test_placeholders_optimization(self):
         PH = self.module.Placeholder
@@ -250,6 +267,17 @@ class TestPartial:
         p2 = self.partial(p)
         self.assertEqual(p2.args, (PH, 0))
         self.assertEqual(p2(1), ((1, 0), {}))
+
+    def test_placeholders_kw_restriction(self):
+        PH = self.module.Placeholder
+        with self.assertRaisesRegex(TypeError, "Placeholder"):
+            self.partial(capture, a=PH)
+        # Passes, as checks via `is` and not `eq`
+        p = self.partial(capture, a=ALWAYS_EQ)
+        actual_args, actual_kwds = p()
+        self.assertEqual(actual_args, ())
+        self.assertEqual(len(actual_kwds), 1)
+        self.assertIs(actual_kwds['a'], ALWAYS_EQ)
 
     def test_construct_placeholder_singleton(self):
         PH = self.module.Placeholder
@@ -378,6 +406,7 @@ class TestPartial:
 
     def test_setstate_errors(self):
         f = self.partial(signature)
+
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}))
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, {}, None))
         self.assertRaises(TypeError, f.__setstate__, [capture, (), {}, None])
@@ -385,6 +414,8 @@ class TestPartial:
         self.assertRaises(TypeError, f.__setstate__, (capture, None, {}, None))
         self.assertRaises(TypeError, f.__setstate__, (capture, [], {}, None))
         self.assertRaises(TypeError, f.__setstate__, (capture, (), [], None))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, ()))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, 'test'))
 
     def test_setstate_subclasses(self):
         f = self.partial(signature)
@@ -407,6 +438,7 @@ class TestPartial:
         self.assertIs(type(r[0]), tuple)
 
     @support.skip_if_sanitizer("thread sanitizer crashes in __tsan::FuncEntry", thread=True)
+    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
@@ -2108,6 +2140,7 @@ class TestLRU:
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
     @support.skip_if_sanitizer("requires deep stack", ub=True, thread=True)
+    @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 
@@ -2754,7 +2787,7 @@ class TestSingleDispatch(unittest.TestCase):
             @functools.singledispatchmethod
             @classmethod
             def go(cls, item, arg):
-                pass
+                return item - arg
 
             @go.register
             @classmethod
@@ -2763,7 +2796,9 @@ class TestSingleDispatch(unittest.TestCase):
 
         s = Slot()
         self.assertEqual(s.go(1, 1), 2)
+        self.assertEqual(s.go(1.5, 1), 0.5)
         self.assertEqual(Slot.go(1, 1), 2)
+        self.assertEqual(Slot.go(1.5, 1), 0.5)
 
     def test_staticmethod_slotted_class(self):
         class A:
@@ -2952,7 +2987,7 @@ class TestSingleDispatch(unittest.TestCase):
                 self.assertEqual(meth.__qualname__, prefix + meth.__name__)
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
-                                  if support.HAVE_DOCSTRINGS
+                                  if support.HAVE_PY_DOCSTRINGS
                                   else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
@@ -3107,7 +3142,7 @@ class TestSingleDispatch(unittest.TestCase):
             with self.subTest(meth=meth):
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
-                                  if support.HAVE_DOCSTRINGS
+                                  if support.HAVE_PY_DOCSTRINGS
                                   else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
@@ -3415,16 +3450,11 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_method_signatures(self):
         class A:
-            def m(self, item, arg: int) -> str:
-                return str(item)
-            @classmethod
-            def cm(cls, item, arg: int) -> str:
-                return str(item)
             @functools.singledispatchmethod
             def func(self, item, arg: int) -> str:
                 return str(item)
             @func.register
-            def _(self, item, arg: bytes) -> str:
+            def _(self, item: int, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
@@ -3433,7 +3463,7 @@ class TestSingleDispatch(unittest.TestCase):
                 return str(arg)
             @func.register
             @classmethod
-            def _(cls, item, arg: bytes) -> str:
+            def _(cls, item: int, arg: bytes) -> str:
                 return str(item)
 
             @functools.singledispatchmethod
@@ -3442,7 +3472,7 @@ class TestSingleDispatch(unittest.TestCase):
                 return str(arg)
             @func.register
             @staticmethod
-            def _(item, arg: bytes) -> str:
+            def _(item: int, arg: bytes) -> str:
                 return str(item)
 
         self.assertEqual(str(Signature.from_callable(A.func)),
@@ -3453,6 +3483,37 @@ class TestSingleDispatch(unittest.TestCase):
                          '(cls, item, arg: int) -> str')
         self.assertEqual(str(Signature.from_callable(A.static_func)),
                          '(item, arg: int) -> str')
+
+    def test_method_non_descriptor(self):
+        class Callable:
+            def __init__(self, value):
+                self.value = value
+            def __call__(self, arg):
+                return self.value, arg
+
+        class A:
+            t = functools.singledispatchmethod(Callable('general'))
+            t.register(int, Callable('special'))
+
+            @functools.singledispatchmethod
+            def u(self, arg):
+                return 'general', arg
+            u.register(int, Callable('special'))
+
+            v = functools.singledispatchmethod(Callable('general'))
+            @v.register(int)
+            def _(self, arg):
+                return 'special', arg
+
+        a = A()
+        self.assertEqual(a.t(0), ('special', 0))
+        self.assertEqual(a.t(2.5), ('general', 2.5))
+        self.assertEqual(A.t(0), ('special', 0))
+        self.assertEqual(A.t(2.5), ('general', 2.5))
+        self.assertEqual(a.u(0), ('special', 0))
+        self.assertEqual(a.u(2.5), ('general', 2.5))
+        self.assertEqual(a.v(0), ('special', 0))
+        self.assertEqual(a.v(2.5), ('general', 2.5))
 
 
 class CachedCostItem:
@@ -3584,7 +3645,7 @@ class TestCachedProperty(unittest.TestCase):
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__,
                          ("The cost of the item."
-                          if support.HAVE_DOCSTRINGS
+                          if support.HAVE_PY_DOCSTRINGS
                           else None))
 
     def test_module(self):

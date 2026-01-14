@@ -23,8 +23,8 @@
 #  define _Py_thread_local __thread
 #endif
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#  include "../_complex.h"        // csqrt()
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+#  include <complex.h>            // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
 #include <stdio.h>                // printf()
@@ -457,7 +457,7 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);
@@ -989,13 +989,10 @@ EXPORT(RECT) ReturnRect(int i, RECT ar, RECT* br, POINT cp, RECT dr,
     {
     case 0:
         return ar;
-        break;
     case 1:
         return dr;
-        break;
     case 2:
         return gr;
-        break;
 
     }
     return ar;

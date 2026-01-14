@@ -64,6 +64,7 @@ struct compiler_unit {
     long u_next_conditional_annotation_index;  /* index of the next conditional annotation */
 
     instr_sequence *u_instr_sequence; /* codegen output */
+    instr_sequence *u_stashed_instr_sequence; /* temporarily stashed parent instruction sequence */
 
     int u_nfblocks;
     int u_in_inlined_comp;
@@ -102,11 +103,14 @@ typedef struct _PyCompiler {
     bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
                                   * (including instructions for nested code objects)
                                   */
+    int c_disable_warning;
+    PyObject *c_module;
 } compiler;
 
 static int
 compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
-               PyCompilerFlags *flags, int optimize, PyArena *arena)
+               PyCompilerFlags *flags, int optimize, PyArena *arena,
+               PyObject *module)
 {
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
 
@@ -124,6 +128,7 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
+    c->c_module = Py_XNewRef(module);
     if (!flags) {
         flags = &local_flags;
     }
@@ -134,7 +139,9 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_save_nested_seqs = false;
 
-    if (!_PyAST_Optimize(mod, arena, filename, c->c_optimize, merged, 0)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, c->c_optimize, merged,
+                           0, 1, module))
+    {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
@@ -154,6 +161,7 @@ compiler_free(compiler *c)
         _PySymtable_Free(c->c_st);
     }
     Py_XDECREF(c->c_filename);
+    Py_XDECREF(c->c_module);
     Py_XDECREF(c->c_const_cache);
     Py_XDECREF(c->c_stack);
     PyMem_Free(c);
@@ -161,13 +169,13 @@ compiler_free(compiler *c)
 
 static compiler*
 new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
-             int optimize, PyArena *arena)
+             int optimize, PyArena *arena, PyObject *module)
 {
     compiler *c = PyMem_Calloc(1, sizeof(compiler));
     if (c == NULL) {
         return NULL;
     }
-    if (compiler_setup(c, mod, filename, pflags, optimize, arena) < 0) {
+    if (compiler_setup(c, mod, filename, pflags, optimize, arena, module) < 0) {
         compiler_free(c);
         return NULL;
     }
@@ -178,6 +186,7 @@ static void
 compiler_unit_free(struct compiler_unit *u)
 {
     Py_CLEAR(u->u_instr_sequence);
+    Py_CLEAR(u->u_stashed_instr_sequence);
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_metadata.u_name);
     Py_CLEAR(u->u_metadata.u_qualname);
@@ -625,7 +634,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         }
     }
     if (u->u_ste->ste_has_conditional_annotations) {
-        /* Cook up an implicit __conditional__annotations__ cell */
+        /* Cook up an implicit __conditional_annotations__ cell */
         Py_ssize_t res;
         assert(u->u_scope_type == COMPILE_SCOPE_CLASS || u->u_scope_type == COMPILE_SCOPE_MODULE);
         res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__conditional_annotations__));
@@ -681,6 +690,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         compiler_unit_free(u);
         return ERROR;
     }
+    u->u_stashed_instr_sequence = NULL;
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -762,6 +772,9 @@ _PyCompile_PushFBlock(compiler *c, location loc,
     f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
+    if (t == COMPILE_FBLOCK_FINALLY_END) {
+        c->c_disable_warning++;
+    }
     return SUCCESS;
 }
 
@@ -773,6 +786,9 @@ _PyCompile_PopFBlock(compiler *c, fblocktype t, jump_target_label block_label)
     u->u_nfblocks--;
     assert(u->u_fblock[u->u_nfblocks].fb_type == t);
     assert(SAME_JUMP_TARGET_LABEL(u->u_fblock[u->u_nfblocks].fb_block, block_label));
+    if (t == COMPILE_FBLOCK_FINALLY_END) {
+        c->c_disable_warning--;
+    }
 }
 
 fblockinfo *
@@ -1154,7 +1170,7 @@ _PyCompile_AddDeferredAnnotation(compiler *c, stmt_ty s,
     }
     Py_DECREF(ptr);
     PyObject *index;
-    if (c->u->u_in_conditional_block) {
+    if (c->u->u_scope_type == COMPILE_SCOPE_MODULE || c->u->u_in_conditional_block) {
         index = PyLong_FromLong(c->u->u_next_conditional_annotation_index);
         if (index == NULL) {
             return ERROR;
@@ -1200,6 +1216,9 @@ _PyCompile_Error(compiler *c, location loc, const char *format, ...)
 int
 _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
 {
+    if (c->c_disable_warning) {
+        return 0;
+    }
     va_list vargs;
     va_start(vargs, format);
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
@@ -1208,7 +1227,8 @@ _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
         return ERROR;
     }
     int ret = _PyErr_EmitSyntaxWarning(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
-                                       loc.end_lineno, loc.end_col_offset + 1);
+                                       loc.end_lineno, loc.end_col_offset + 1,
+                                       c->c_module);
     Py_DECREF(msg);
     return ret;
 }
@@ -1230,6 +1250,35 @@ _PyCompile_InstrSequence(compiler *c)
 {
     return c->u->u_instr_sequence;
 }
+
+int
+_PyCompile_StartAnnotationSetup(struct _PyCompiler *c)
+{
+    instr_sequence *new_seq = (instr_sequence *)_PyInstructionSequence_New();
+    if (new_seq == NULL) {
+        return ERROR;
+    }
+    assert(c->u->u_stashed_instr_sequence == NULL);
+    c->u->u_stashed_instr_sequence = c->u->u_instr_sequence;
+    c->u->u_instr_sequence = new_seq;
+    return SUCCESS;
+}
+
+int
+_PyCompile_EndAnnotationSetup(struct _PyCompiler *c)
+{
+    assert(c->u->u_stashed_instr_sequence != NULL);
+    instr_sequence *parent_seq = c->u->u_stashed_instr_sequence;
+    instr_sequence *anno_seq = c->u->u_instr_sequence;
+    c->u->u_stashed_instr_sequence = NULL;
+    c->u->u_instr_sequence = parent_seq;
+    if (_PyInstructionSequence_SetAnnotationsCode(parent_seq, anno_seq) == ERROR) {
+        Py_DECREF(anno_seq);
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
 
 int
 _PyCompile_FutureFeatures(compiler *c)
@@ -1434,10 +1483,10 @@ _PyCompile_OptimizeAndAssemble(compiler *c, int addNone)
 
 PyCodeObject *
 _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
-               int optimize, PyArena *arena)
+               int optimize, PyArena *arena, PyObject *module)
 {
     assert(!PyErr_Occurred());
-    compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
+    compiler *c = new_compiler(mod, filename, pflags, optimize, arena, module);
     if (c == NULL) {
         return NULL;
     }
@@ -1449,8 +1498,9 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 }
 
 int
-_PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
-                       int optimize, PyArena *arena, int no_const_folding)
+_PyCompile_AstPreprocess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
+                         int optimize, PyArena *arena, int no_const_folding,
+                         PyObject *module)
 {
     _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
@@ -1460,7 +1510,9 @@ _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
     if (optimize == -1) {
         optimize = _Py_GetConfig()->optimization_level;
     }
-    if (!_PyAST_Optimize(mod, arena, filename, optimize, flags, no_const_folding)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, optimize, flags,
+                           no_const_folding, 0, module))
+    {
         return -1;
     }
     return 0;
@@ -1585,7 +1637,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         return NULL;
     }
 
-    compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
+    compiler *c = new_compiler(mod, filename, pflags, optimize, arena, NULL);
     if (c == NULL) {
         _PyArena_Free(arena);
         return NULL;

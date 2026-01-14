@@ -12,6 +12,7 @@ extern "C" {
 #include <assert.h>
 #include <stdbool.h>
 #include "pycore_structs.h"       // _Py_BackoffCounter
+#include "pycore_tstate.h"        // _PyPolicy
 
 /* 16-bit countdown counters using exponential backoff.
 
@@ -22,33 +23,48 @@ extern "C" {
    Another use is for the Tier 2 optimizer to decide when to create
    a new Tier 2 trace (executor). Again, exponential backoff is used.
 
-   The 16-bit counter is structured as a 12-bit unsigned 'value'
-   and a 4-bit 'backoff' field. When resetting the counter, the
+   The 16-bit counter is structured as a 13-bit unsigned 'value'
+   and a 3-bit 'backoff' field. When resetting the counter, the
    backoff field is incremented (until it reaches a limit) and the
-   value is set to a bit mask representing the value 2**backoff - 1.
-   The maximum backoff is 12 (the number of bits in the value).
+   value is set to a bit mask representing some prime value - 1.
+   New values and backoffs for each backoff are calculated once
+   at compile time and saved to value_and_backoff_next table.
+   The maximum backoff is 6, since 7 is an UNREACHABLE_BACKOFF.
 
    There is an exceptional value which must not be updated, 0xFFFF.
 */
 
-#define BACKOFF_BITS 4
-#define MAX_BACKOFF 12
-#define UNREACHABLE_BACKOFF 15
+#define BACKOFF_BITS 3
+#define BACKOFF_MASK 7
+#define MAX_BACKOFF 6
+#define UNREACHABLE_BACKOFF 7
+#define MAX_VALUE 0x1FFF
 
-static inline bool
-is_unreachable_backoff_counter(_Py_BackoffCounter counter)
-{
-    return counter.value_and_backoff == UNREACHABLE_BACKOFF;
-}
+#define MAKE_VALUE_AND_BACKOFF(value, backoff) \
+    ((uint16_t)(((value) << BACKOFF_BITS) | (backoff)))
+
+// For previous backoff b we use value x such that
+// x + 1 is near to 2**(2*b+1) and x + 1 is prime.
+static const uint16_t value_and_backoff_next[] = {
+    MAKE_VALUE_AND_BACKOFF(1, 1),
+    MAKE_VALUE_AND_BACKOFF(6, 2),
+    MAKE_VALUE_AND_BACKOFF(30, 3),
+    MAKE_VALUE_AND_BACKOFF(126, 4),
+    MAKE_VALUE_AND_BACKOFF(508, 5),
+    MAKE_VALUE_AND_BACKOFF(2052, 6),
+    // We use the same backoff counter for all backoffs >= MAX_BACKOFF.
+    MAKE_VALUE_AND_BACKOFF(8190, 6),
+    MAKE_VALUE_AND_BACKOFF(8190, 6),
+};
 
 static inline _Py_BackoffCounter
 make_backoff_counter(uint16_t value, uint16_t backoff)
 {
-    assert(backoff <= 15);
-    assert(value <= 0xFFF);
-    _Py_BackoffCounter result;
-    result.value_and_backoff = (value << BACKOFF_BITS) | backoff;
-    return result;
+    assert(backoff <= UNREACHABLE_BACKOFF);
+    assert(value <= MAX_VALUE);
+    return ((_Py_BackoffCounter){
+        .value_and_backoff = MAKE_VALUE_AND_BACKOFF(value, backoff)
+    });
 }
 
 static inline _Py_BackoffCounter
@@ -62,14 +78,11 @@ forge_backoff_counter(uint16_t counter)
 static inline _Py_BackoffCounter
 restart_backoff_counter(_Py_BackoffCounter counter)
 {
-    assert(!is_unreachable_backoff_counter(counter));
-    int backoff = counter.value_and_backoff & 15;
-    if (backoff < MAX_BACKOFF) {
-        return make_backoff_counter((1 << (backoff + 1)) - 1, backoff + 1);
-    }
-    else {
-        return make_backoff_counter((1 << MAX_BACKOFF) - 1, MAX_BACKOFF);
-    }
+    uint16_t backoff = counter.value_and_backoff & BACKOFF_MASK;
+    assert(backoff <= MAX_BACKOFF);
+    return ((_Py_BackoffCounter){
+        .value_and_backoff = value_and_backoff_next[backoff]
+    });
 }
 
 static inline _Py_BackoffCounter
@@ -95,29 +108,46 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
     return counter.value_and_backoff < UNREACHABLE_BACKOFF;
 }
 
-/* Initial JUMP_BACKWARD counter.
- * This determines when we create a trace for a loop. */
-#define JUMP_BACKWARD_INITIAL_VALUE 4095
-#define JUMP_BACKWARD_INITIAL_BACKOFF 12
 static inline _Py_BackoffCounter
-initial_jump_backoff_counter(void)
+trigger_backoff_counter(void)
 {
-    return make_backoff_counter(JUMP_BACKWARD_INITIAL_VALUE,
-                                JUMP_BACKWARD_INITIAL_BACKOFF);
+    _Py_BackoffCounter result;
+    result.value_and_backoff = 0;
+    return result;
+}
+
+// Initial JUMP_BACKWARD counter.
+// Must be larger than ADAPTIVE_COOLDOWN_VALUE, otherwise when JIT code is
+// invalidated we may construct a new trace before the bytecode has properly
+// re-specialized:
+// Note: this should be a prime number-1. This increases the likelihood of
+// finding a "good" loop iteration to trace.
+// For example, 4095 does not work for the nqueens benchmark on pyperformance
+// as we always end up tracing the loop iteration's
+// exhaustion iteration. Which aborts our current tracer.
+#define JUMP_BACKWARD_INITIAL_VALUE 4000
+#define JUMP_BACKWARD_INITIAL_BACKOFF 6
+static inline _Py_BackoffCounter
+initial_jump_backoff_counter(_PyPolicy *policy)
+{
+    return make_backoff_counter(
+        policy->interp.jump_backward_initial_value,
+        policy->interp.jump_backward_initial_backoff);
 }
 
 /* Initial exit temperature.
  * Must be larger than ADAPTIVE_COOLDOWN_VALUE,
  * otherwise when a side exit warms up we may construct
  * a new trace before the Tier 1 code has properly re-specialized. */
-#define SIDE_EXIT_INITIAL_VALUE 4095
-#define SIDE_EXIT_INITIAL_BACKOFF 12
+#define SIDE_EXIT_INITIAL_VALUE 4000
+#define SIDE_EXIT_INITIAL_BACKOFF 6
 
 static inline _Py_BackoffCounter
-initial_temperature_backoff_counter(void)
+initial_temperature_backoff_counter(_PyPolicy *policy)
 {
-    return make_backoff_counter(SIDE_EXIT_INITIAL_VALUE,
-                                SIDE_EXIT_INITIAL_BACKOFF);
+    return make_backoff_counter(
+        policy->jit.side_exit_initial_value,
+        policy->jit.side_exit_initial_backoff);
 }
 
 /* Unreachable backoff counter. */

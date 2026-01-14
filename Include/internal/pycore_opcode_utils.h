@@ -54,6 +54,11 @@ extern "C" {
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
+#define IS_RETURN_OPCODE(opcode) \
+        (opcode == RETURN_VALUE)
+#define IS_RAISE_OPCODE(opcode) \
+        (opcode == RAISE_VARARGS || opcode == RERAISE)
+
 
 /* Flags used in the oparg for MAKE_FUNCTION */
 #define MAKE_FUNCTION_DEFAULTS    0x01
@@ -68,7 +73,9 @@ extern "C" {
 #define CONSTANT_BUILTIN_TUPLE 2
 #define CONSTANT_BUILTIN_ALL 3
 #define CONSTANT_BUILTIN_ANY 4
-#define NUM_COMMON_CONSTANTS 5
+#define CONSTANT_BUILTIN_LIST 5
+#define CONSTANT_BUILTIN_SET 6
+#define NUM_COMMON_CONSTANTS 7
 
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0

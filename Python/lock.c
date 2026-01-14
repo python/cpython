@@ -6,6 +6,7 @@
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
 #include "pycore_time.h"          // _PyTime_Add()
+#include "pycore_stats.h"         // FT_STAT_MUTEX_SLEEP_INC()
 
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
@@ -58,9 +59,11 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             return PY_LOCK_ACQUIRED;
         }
     }
-    else if (timeout == 0) {
+    if (timeout == 0) {
         return PY_LOCK_FAILURE;
     }
+
+    FT_STAT_MUTEX_SLEEP_INC();
 
     PyTime_t now;
     // silently ignore error: cannot report error to the caller
@@ -95,6 +98,18 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
         if (timeout == 0) {
             return PY_LOCK_FAILURE;
         }
+        if ((flags & _PY_LOCK_PYTHONLOCK) && Py_IsFinalizing()) {
+            // At this phase of runtime shutdown, only the finalization thread
+            // can have attached thread state; others hang if they try
+            // attaching. And since operations on this lock requires attached
+            // thread state (_PY_LOCK_PYTHONLOCK), the finalization thread is
+            // running this code, and no other thread can unlock.
+            // Raise rather than hang. (_PY_LOCK_PYTHONLOCK allows raising
+            // exceptons.)
+            PyErr_SetString(PyExc_PythonFinalizationError,
+                            "cannot acquire lock at interpreter finalization");
+            return PY_LOCK_FAILURE;
+        }
 
         uint8_t newv = v;
         if (!(v & _Py_HAS_PARKED)) {
@@ -109,8 +124,11 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
                                      &entry, (flags & _PY_LOCK_DETACH) != 0);
         if (ret == Py_PARK_OK) {
             if (entry.handed_off) {
-                // We own the lock now.
-                assert(_Py_atomic_load_uint8_relaxed(&m->_bits) & _Py_LOCKED);
+                // We own the lock now. thread.Lock allows other threads
+                // to concurrently release the lock so we cannot assert that
+                // it is locked if _PY_LOCK_PYTHONLOCK is set.
+                assert(_Py_atomic_load_uint8_relaxed(&m->_bits) & _Py_LOCKED ||
+                       (flags & _PY_LOCK_PYTHONLOCK) != 0);
                 return PY_LOCK_ACQUIRED;
             }
         }
@@ -118,6 +136,9 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             if (Py_MakePendingCalls() < 0) {
                 return PY_LOCK_INTR;
             }
+        }
+        else if (ret == Py_PARK_INTR && (flags & _PY_FAIL_IF_INTERRUPTED)) {
+            return PY_LOCK_INTR;
         }
         else if (ret == Py_PARK_TIMEOUT) {
             assert(timeout >= 0);
@@ -212,7 +233,7 @@ _PyRawMutex_LockSlow(_PyRawMutex *m)
 
         // Wait for us to be woken up. Note that we still have to lock the
         // mutex ourselves: it is NOT handed off to us.
-        _PySemaphore_Wait(&waiter.sema, -1, /*detach=*/0);
+        _PySemaphore_Wait(&waiter.sema, -1);
     }
 
     _PySemaphore_Destroy(&waiter.sema);
@@ -618,4 +639,12 @@ PyMutex_Unlock(PyMutex *m)
     if (_PyMutex_TryUnlock(m) < 0) {
         Py_FatalError("unlocking mutex that is not locked");
     }
+}
+
+
+#undef PyMutex_IsLocked
+int
+PyMutex_IsLocked(PyMutex *m)
+{
+    return _PyMutex_IsLocked(m);
 }

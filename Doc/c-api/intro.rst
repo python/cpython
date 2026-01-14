@@ -107,48 +107,70 @@ header files properly declare the entry points to be ``extern "C"``. As a result
 there is no need to do anything special to use the API from C++.
 
 
+.. _capi-system-includes:
+
+System includes
+---------------
+
+   :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   The implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.13 or newer:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.11 or newer:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
+
+.. note::
+
+   Since Python may define some pre-processor definitions which affect the standard
+   headers on some systems, you *must* include :file:`Python.h` before any standard
+   headers are included.
+
+
 Useful macros
 =============
 
 Several useful macros are defined in the Python header files.  Many are
-defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
+defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
+:c:macro:`PyMODINIT_FUNC`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
-
-.. c:macro:: PyMODINIT_FUNC
-
-   Declare an extension module ``PyInit`` initialization function. The function
-   return type is :c:expr:`PyObject*`. The macro declares any special linkage
-   declarations required by the platform, and for C++ declares the function as
-   ``extern "C"``.
-
-   The initialization function must be named :samp:`PyInit_{name}`, where
-   *name* is the name of the module, and should be the only non-\ ``static``
-   item defined in the module file. Example::
-
-       static struct PyModuleDef spam_module = {
-           PyModuleDef_HEAD_INIT,
-           .m_name = "spam",
-           ...
-       };
-
-       PyMODINIT_FUNC
-       PyInit_spam(void)
-       {
-           return PyModule_Create(&spam_module);
-       }
 
 
 .. c:macro:: Py_ABS(x)
 
    Return the absolute value of ``x``.
 
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
+
    .. versionadded:: 3.3
 
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
-   ignore it and decides to not inline the function.
+   ignore it and decide to not inline the function.
 
    It can be used to inline performance critical static inline functions when
    building Python in debug mode with function inlining disabled. For example,
@@ -189,6 +211,25 @@ complete listing.
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (see :c:member:`PyConfig.use_environment`).
 
+.. c:macro:: Py_LOCAL(type)
+
+   Declare a function returning the specified *type* using a fast-calling
+   qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to ``static type``.
+
+.. c:macro:: Py_LOCAL_INLINE(type)
+
+   Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
+   be inlined.
+
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   On supported platforms, it ensures the symbol is not exported.
+
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("hidden")))``.
+
 .. c:macro:: Py_MAX(x, y)
 
    Return the maximum value between ``x`` and ``y``.
@@ -200,6 +241,14 @@ complete listing.
    Return the size of a structure (``type``) ``member`` in bytes.
 
    .. versionadded:: 3.6
+
+.. c:macro:: Py_MEMCPY(dest, src, n)
+
+   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
+   Use :c:func:`!memcpy` directly instead.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
 
 .. c:macro:: Py_MIN(x, y)
 
@@ -255,9 +304,32 @@ complete listing.
 
    .. versionadded:: 3.4
 
+.. c:macro:: Py_BUILD_ASSERT(cond)
+
+   Asserts a compile-time condition *cond*, as a statement.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(int64_t));
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_BUILD_ASSERT_EXPR(cond)
+
+   Asserts a compile-time condition *cond*, as an expression that evaluates to ``0``.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      #define foo_to_char(foo) \
+          ((char *)(foo) + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+
+   .. versionadded:: 3.3
+
 .. c:macro:: PyDoc_STRVAR(name, str)
 
-   Creates a variable with name ``name`` that can be used in docstrings.
+   Creates a variable with name *name* that can be used in docstrings.
    If Python is built without docstrings, the value will be empty.
 
    Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
@@ -288,6 +360,60 @@ complete listing.
               PyDoc_STR("Returns the keys of the row.")},
           {NULL, NULL}
       };
+
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given name *name*.
+
+   For example::
+
+      PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
+                                        "to the tropics and subtropics of the Eastern Hemisphere.");
+
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length of a statically allocated C array at compile time.
+
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
+
+   This is roughly equivalent to::
+
+      sizeof(array) / sizeof((array)[0])
+
+
+.. c:macro:: Py_EXPORTED_SYMBOL
+
+   Macro used to declare a symbol (function or data) as exported.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: Py_IMPORTED_SYMBOL
+
+   Macro used to declare a symbol as imported.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+
+.. c:macro:: PyAPI_DATA(type)
+
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
 
 
 .. _api-objects:
@@ -779,20 +905,11 @@ found along :envvar:`PATH`.)  The user can override this behavior by setting the
 environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
-.. index::
-   single: Py_GetPath (C function)
-   single: Py_GetPrefix (C function)
-   single: Py_GetExecPrefix (C function)
-   single: Py_GetProgramFullPath (C function)
-
 The embedding application can steer the search by setting
 :c:member:`PyConfig.program_name` *before* calling
 :c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
-inserted in front of the standard path.  An application that requires total
-control has to provide its own implementation of :c:func:`Py_GetPath`,
-:c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`, and
-:c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
+inserted in front of the standard path.
 
 .. index:: single: Py_IsInitialized (C function)
 
@@ -826,14 +943,17 @@ frequently used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`!Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
-:c:macro:`!Py_DEBUG` is enabled in the Unix build by adding
-:option:`--with-pydebug` to the :file:`./configure` command.
-It is also implied by the presence of the
-not-Python-specific :c:macro:`!_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
-in the Unix build, compiler optimization is disabled.
+
+On Unix, :c:macro:`!Py_DEBUG` can be enabled by adding :option:`--with-pydebug`
+to the :file:`./configure` command. This will also disable compiler optimization.
+
+On Windows, selecting a debug build (e.g., by passing the :option:`-d` option to
+:file:`PCbuild/build.bat`) automatically enables :c:macro:`!Py_DEBUG`.
+Additionally, the presence of the not-Python-specific :c:macro:`!_DEBUG` macro,
+when defined by the compiler, will also implicitly enable :c:macro:`!Py_DEBUG`.
 
 In addition to the reference count debugging described below, extra checks are
-performed, see :ref:`Python Debug Build <debug-build>`.
+performed. See :ref:`Python Debug Build <debug-build>` for more details.
 
 Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
@@ -844,3 +964,41 @@ after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
+
+
+.. _c-api-tools:
+
+Recommended third party tools
+=============================
+
+The following third party tools offer both simpler and more sophisticated
+approaches to creating C, C++ and Rust extensions for Python:
+
+* `Cython <https://cython.org/>`_
+* `cffi <https://cffi.readthedocs.io>`_
+* `HPy <https://hpyproject.org/>`_
+* `nanobind <https://github.com/wjakob/nanobind>`_ (C++)
+* `Numba <https://numba.pydata.org/>`_
+* `pybind11 <https://pybind11.readthedocs.io/>`_ (C++)
+* `PyO3 <https://pyo3.rs/>`_ (Rust)
+* `SWIG <https://www.swig.org>`_
+
+Using tools such as these can help avoid writing code that is tightly bound to
+a particular version of CPython, avoid reference counting errors, and focus
+more on your own code than on using the CPython API. In general, new versions
+of Python can be supported by updating the tool, and your code will often use
+newer and more efficient APIs automatically. Some tools also support compiling
+for other implementations of Python from a single set of sources.
+
+These projects are not supported by the same people who maintain Python, and
+issues need to be raised with the projects directly. Remember to check that the
+project is still maintained and supported, as the list above may become
+outdated.
+
+.. seealso::
+
+   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/guides/packaging-binary-extensions/>`_
+      The Python Packaging User Guide not only covers several available
+      tools that simplify the creation of binary extensions, but also
+      discusses the various reasons why creating an extension module may be
+      desirable in the first place.

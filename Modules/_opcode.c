@@ -5,7 +5,7 @@
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"           // SPECIAL_MAX
 #include "pycore_code.h"
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"

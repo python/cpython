@@ -185,7 +185,7 @@ def _translate(pat, star, question_mark):
 
 def _join_translated_parts(parts, star_indices):
     if not star_indices:
-        return fr'(?s:{"".join(parts)})\Z'
+        return fr'(?s:{"".join(parts)})\z'
     iter_star_indices = iter(star_indices)
     j = next(iter_star_indices)
     buffer = parts[:j]  # fixed pieces at the start
@@ -206,4 +206,4 @@ def _join_translated_parts(parts, star_indices):
     append('.*')
     extend(parts[i:])
     res = ''.join(buffer)
-    return fr'(?s:{res})\Z'
+    return fr'(?s:{res})\z'

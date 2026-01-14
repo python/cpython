@@ -21,12 +21,12 @@ env:
 jobs:
   build:
     name: Build and test (${{ inputs.arch }})
-    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-latest' }}
+    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2022' }}
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Register MSVC problem matcher
