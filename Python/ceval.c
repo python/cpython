@@ -329,9 +329,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _Py_CODEUNIT *instr);
 
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
-static  _PyInterpreterFrame *
-_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
-    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -1273,7 +1270,7 @@ _Py_CallBuiltinClass_StackRefSteal(
         goto cleanup;
     }
     PyTypeObject *tp = (PyTypeObject *)PyStackRef_AsPyObjectBorrow(callable);
-    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
+    res = tp->tp_vectorcall((PyObject *)tp, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
     STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
     assert((res != NULL) ^ (PyErr_Occurred() != NULL));
 cleanup:
@@ -1463,30 +1460,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) {
         err = _PyOptimizer_Optimize(frame, tstate);
     }
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    // Deal with backoffs
-    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
-    if (exit == NULL) {
-        // We hold a strong reference to the code object, so the instruction won't be freed.
-        if (err <= 0) {
-            _Py_BackoffCounter counter = _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter;
-            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
-        }
-        else {
-            _tstate->jit_tracer_state.initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter();
-        }
-    }
-    else {
-        // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
-        // to be valid to access.
-        if (err <= 0) {
-            exit->temperature = restart_backoff_counter(exit->temperature);
-        }
-        else {
-            exit->temperature = initial_temperature_backoff_counter();
-        }
-    }
-    _PyJit_FinalizeTracing(tstate);
+    _PyJit_FinalizeTracing(tstate, err);
     return err;
 }
 #endif
@@ -2435,7 +2409,7 @@ fail:
 /* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
    Steals references to func, callargs and kwargs.
 */
-static _PyInterpreterFrame *
+_PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous)
 {

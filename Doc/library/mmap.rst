@@ -346,7 +346,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       .. availability:: Linux >= 5.17 (kernel built with ``CONFIG_ANON_VMA_NAME`` option)
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
    .. method:: size()
 
