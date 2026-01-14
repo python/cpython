@@ -2009,7 +2009,7 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
 #define BLACK "#000000"
 #define LOOP "#00c000"
 
-const char *COLORS[10] = {
+static const char *COLORS[10] = {
     "9",
     "8",
     "7",
