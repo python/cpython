@@ -5474,7 +5474,7 @@ dummy_func(
         }
 
         tier2 op(_MAKE_WARM, (--)) {
-            current_executor->vm_data.warm = true;
+            current_executor->vm_data.cold = false;
         }
 
         tier2 op(_FATAL_ERROR, (--)) {
