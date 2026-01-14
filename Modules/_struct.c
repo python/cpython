@@ -2686,27 +2686,12 @@ in the C struct.\n\
 \n\
 The optional first format char indicates byte order, size and alignment:\n\
   @: native order, size & alignment (default)\n\
-  =: native order, std. size & alignment\n\
-  <: little-endian, std. size & alignment\n\
-  >: big-endian, std. size & alignment\n\
+  =: native order, std. size, no alignment\n\
+  <: little-endian, std. size, no alignment\n\
+  >: big-endian, std. size, no alignment\n\
   !: same as >\n\
 \n\
-The remaining chars indicate types of args and must match exactly;\n\
-these can be preceded by a decimal repeat count:\n\
-  x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
-  ?: _Bool (requires C99; if not available, char is used instead)\n\
-  h:short; H:unsigned short; i:int; I:unsigned int;\n\
-  l:long; L:unsigned long; f:float; d:double; e:half-float.\n\
-Special cases (preceding decimal count indicates length):\n\
-  s:string (array of char); p: pascal string (with count byte).\n\
-Special cases (only available in native format):\n\
-  n:ssize_t; N:size_t;\n\
-  P:an integer type that is wide enough to hold a pointer.\n\
-Special case (not in native mode unless 'long long' in platform C):\n\
-  q:long long; Q:unsigned long long\n\
-Whitespace between formats is ignored.\n\
-\n\
-The variable struct.error is an exception raised on errors.\n");
+For more details, see the online documentation.\n");
 
 
 static int
