@@ -1133,7 +1133,7 @@ class TracebackException:
                         obj_type_name = object.__getattribute__(obj_type, "__name__")
                         self._str = f"{obj_type_name!r} object has no attribute {wrong_name!r}"
                 else:  # NameError
-                    self._str = repr(wrong_name)
+                    self._str = f"name {wrong_name!r} is not defined"
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
             if issubclass(exc_type, NameError):

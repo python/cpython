@@ -2020,7 +2020,7 @@ class NameErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
 
         # 'spam' should appear even when message was empty.
-        self.assertIn("'spam'", err.getvalue())
+        self.assertIn("name 'spam' is not defined", err.getvalue())
 
     # Note: name suggestion tests live in `test_traceback`.
 

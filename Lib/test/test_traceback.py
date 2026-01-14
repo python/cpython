@@ -4942,8 +4942,8 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
                 exc.args = ()
                 raise
         actual = self.get_suggestion(func)
-        self.assertIn("'spam'", actual)
-        self.assertIn("'span'?", actual)
+        self.assertIn("name 'spam' is not defined", actual)
+        self.assertIn("Did you mean: 'span'?", actual)
 
 
 class PurePythonSuggestionFormattingTests(
