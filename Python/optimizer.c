@@ -1030,11 +1030,11 @@ _PyJit_TryInitializeTracing(
             // Don't error, just go to next instruction.
             return 0;
         }
+        _tstate->jit_tracer_state->is_tracing = false;
     }
     _PyJitTracerState *tracer = _tstate->jit_tracer_state;
     // A recursive trace.
-    // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
-    if (tracer->prev_state.code_curr_size > CODE_SIZE_EMPTY) {
+    if (tracer->is_tracing) {
         return 0;
     }
     if (oparg > 0xFFFF) {
@@ -1086,20 +1086,45 @@ _PyJit_TryInitializeTracing(
         close_loop_instr[1].counter = trigger_backoff_counter();
     }
     _Py_BloomFilter_Init(&tracer->prev_state.dependencies);
+    tracer->is_tracing = true;
     return 1;
 }
 
 Py_NO_INLINE void
-_PyJit_FinalizeTracing(PyThreadState *tstate)
+_PyJit_FinalizeTracing(PyThreadState *tstate, int err)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+    // Deal with backoffs
+    assert(tracer != NULL);
+    _PyExitData *exit = tracer->initial_state.exit;
+    if (exit == NULL) {
+        // We hold a strong reference to the code object, so the instruction won't be freed.
+        if (err <= 0) {
+            _Py_BackoffCounter counter = tracer->initial_state.jump_backward_instr[1].counter;
+            tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
+        }
+        else {
+            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
+        }
+    }
+    else if (tracer->initial_state.executor->vm_data.valid) {
+        // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
+        // to be valid to access.
+        if (err <= 0) {
+            exit->temperature = restart_backoff_counter(exit->temperature);
+        }
+        else {
+            exit->temperature = initial_temperature_backoff_counter(&_tstate->policy);
+        }
+    }
     Py_CLEAR(tracer->initial_state.code);
     Py_CLEAR(tracer->initial_state.func);
     Py_CLEAR(tracer->initial_state.executor);
     Py_CLEAR(tracer->prev_state.instr_code);
     tracer->prev_state.code_curr_size = CODE_SIZE_EMPTY;
     tracer->prev_state.code_max_size = UOP_MAX_TRACE_LENGTH/2 - 1;
+    tracer->is_tracing = false;
 }
 
 void

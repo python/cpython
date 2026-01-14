@@ -54,6 +54,7 @@ typedef struct _PyJitTracerTranslatorState {
 } _PyJitTracerTranslatorState;
 
 typedef struct _PyJitTracerState {
+    bool is_tracing;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
     _PyJitTracerTranslatorState translator_state;
