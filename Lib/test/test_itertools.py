@@ -734,7 +734,6 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ExpectedError, gulp, [None, None], keyfunc)
 
     def test_groupby_reentrant_eq_does_not_crash(self):
-
         class Key(bytearray):
             seen = False
             def __eq__(self, other):
