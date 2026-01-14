@@ -1450,10 +1450,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         only = C(
             '"foo"',
-            '"foo"',
-            'foo',
-            [],
-            '',
+            value='foo',
             ),
 
         must_start_with_dquote_non_ws = C(
@@ -1468,103 +1465,79 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         only_quotes = C(
             '""',
-            '""',
-            '',
-            [],
-            '',
+            value='',
             ),
 
         missing_endquotes = C(
             '"',
-            '""',
-            '',
-            [errors.InvalidHeaderDefect],
-            '',
+            stringified='""',
+            value='',
+            defects=[errors.InvalidHeaderDefect],
             ),
 
         following_wsp_preserved = C(
             '"foo"\t bar',
-            '"foo"',
-            'foo',
-            [],
-            '\t bar',
+            value='foo',
+            remainder='\t bar',
             ),
 
         multiple_words = C(
             '"foo bar moo"',
-            '"foo bar moo"',
-            'foo bar moo',
-            [],
-            '',
+            value='foo bar moo',
             ),
 
         multiple_words_wsp_preserved = C(
             '" foo  moo\t"',
-            '" foo  moo\t"',
-            ' foo  moo\t',
-            [],
-            '',
+            value=' foo  moo\t',
             ),
 
         end_dquote_mid_word = C(
             '"foo"bar',
-            '"foo"',
-            'foo',
-            [],
-            'bar',
+            value='foo',
+            remainder='bar',
             ),
 
         quoted_dquote = C(
             r'"foo\"in"a',
-            r'"foo\"in"',
-            'foo"in',
-            [],
-            'a',
+            value='foo"in',
+            remainder='a',
             ),
 
         non_printables = C(
             '"a\x01a"',
-            '"a\x01a"',
-            'a\x01a',
-            [errors.NonPrintableDefect],
-            '',
+            value='a\x01a',
+            defects=[errors.NonPrintableDefect],
             ),
 
         no_end_dquote = C(
             '"foo',
-            '"foo"',
-            'foo',
-            [errors.InvalidHeaderDefect],
-            '',
+            stringified='"foo"',
+            value='foo',
+            defects=[errors.InvalidHeaderDefect],
             ),
 
         no_end_dquote_ws = C(
             '"foo ',
-            '"foo "',
-            'foo ',
-            [errors.InvalidHeaderDefect],
-            '',
+            stringified='"foo "',
+            value='foo ',
+            defects=[errors.InvalidHeaderDefect],
             ),
 
         empty_quotes = C(
             '""',
-            '""',
-            '',
-            [],
-            '',
+            value='',
             ),
 
         # Issue 16983: apply postel's law to some bad encoding.
         encoded_word_inside_quotes = C(
             '"=?utf-8?Q?not_really_valid?="',
-            '"not really valid"',
-            'not really valid',
-            [
+            stringified='"not really valid"',
+            value='not really valid',
+            defects=[
                 errors.InvalidHeaderDefect,
                 errors.InvalidHeaderDefect,
                 ],
-            '')
-            ,
+            ),
 
         )
 
