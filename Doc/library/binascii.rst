@@ -58,7 +58,7 @@ The :mod:`binascii` module defines the following functions:
 
    Valid base64:
 
-   * Conforms to :rfc:`3548`.
+   * Conforms to :rfc:`4648`.
    * Contains only characters from the base64 alphabet.
    * Contains no excess data after padding (including excess padding, newlines, etc.).
    * Does not start with a padding.
@@ -67,14 +67,23 @@ The :mod:`binascii` module defines the following functions:
       Added the *strict_mode* parameter.
 
 
-.. function:: b2a_base64(data, *, newline=True)
+.. function:: b2a_base64(data, *, wrapcol=0, newline=True)
 
-   Convert binary data to a line of ASCII characters in base64 coding. The return
-   value is the converted line, including a newline char if *newline* is
-   true.  The output of this function conforms to :rfc:`3548`.
+   Convert binary data to a line(s) of ASCII characters in base64 coding,
+   as specified in :rfc:`4648`.
+
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
+
+   If *newline* is true (default), a newline character will be added
+   at the end of the output.
 
    .. versionchanged:: 3.6
       Added the *newline* parameter.
+
+   .. versionchanged:: next
+      Added the *wrapcol* parameter.
 
 
 .. function:: a2b_qp(data, header=False)
