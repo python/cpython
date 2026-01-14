@@ -259,7 +259,7 @@ class BaseTest(unittest.TestCase):
 
         params = []
         params.append(Zap(params))
-        alias = type(list[int])(list, (params,))
+        alias = GenericAlias(list, (params,))
         repr_str = repr(alias)
         self.assertTrue(repr_str.startswith("list[["), repr_str)
 
@@ -277,9 +277,22 @@ class BaseTest(unittest.TestCase):
 
         params = []
         params.append(Zap(params))
-        alias = type(list[int])(list, (params,))
+        alias = GenericAlias(list, (params,))
         repr_str = repr(alias)
         self.assertTrue(repr_str.startswith("list[["), repr_str)
+
+    def test_evil_repr3(self):
+        # gh-143823
+        lst = []
+        class X:
+            def __repr__(self):
+                lst.clear()
+                return "x"
+
+        lst += [X(), 1]
+        ga = GenericAlias(int, lst)
+        with self.assertRaises(IndexError):
+            repr(ga)
 
     def test_exposed_type(self):
         import types
