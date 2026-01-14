@@ -1875,9 +1875,11 @@ typedef struct {
 static void
 Segment_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_DECREF(((SegmentObject *)self)->string);
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1949,9 +1951,11 @@ typedef struct {
 static void
 GBI_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_DECREF(((GraphemeBreakIterator *)self)->iter.str);
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
