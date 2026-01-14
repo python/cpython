@@ -1460,32 +1460,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) {
         err = _PyOptimizer_Optimize(frame, tstate);
     }
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    // Deal with backoffs
-    _PyJitTracerState *tracer = _tstate->jit_tracer_state;
-    assert(tracer != NULL);
-    _PyExitData *exit = tracer->initial_state.exit;
-    if (exit == NULL) {
-        // We hold a strong reference to the code object, so the instruction won't be freed.
-        if (err <= 0) {
-            _Py_BackoffCounter counter = tracer->initial_state.jump_backward_instr[1].counter;
-            tracer->initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
-        }
-        else {
-            tracer->initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter(&_tstate->policy);
-        }
-    }
-    else if (tracer->initial_state.executor->vm_data.valid) {
-        // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
-        // to be valid to access.
-        if (err <= 0) {
-            exit->temperature = restart_backoff_counter(exit->temperature);
-        }
-        else {
-            exit->temperature = initial_temperature_backoff_counter(&_tstate->policy);
-        }
-    }
-    _PyJit_FinalizeTracing(tstate);
+    _PyJit_FinalizeTracing(tstate, err);
     return err;
 }
 #endif

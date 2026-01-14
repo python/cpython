@@ -3747,6 +3747,51 @@ class TestUopsOptimization(unittest.TestCase):
         """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_143358(self):
+        # https://github.com/python/cpython/issues/143358
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        def f1():
+
+            class EvilIterator:
+
+                def __init__(self):
+                    self._items = [1, 2]
+                    self._index = 1
+
+                def __iter__(self):
+                    return self
+
+                def __next__(self):
+                    if not len(self._items) % 13:
+                        self._items.clear()
+
+                    for i_loop_9279 in range(10):
+                        self._items.extend([1, "", None])
+
+                    if not len(self._items) % 11:
+                        return 'unexpected_type_from_iterator'
+
+                    if self._index >= len(self._items):
+                        raise StopIteration
+
+                    item = self._items[self._index]
+                    self._index += 1
+                    return item
+
+            evil_iter = EvilIterator()
+
+            large_num = 2**31
+            for _ in range(400):
+                try:
+                    _ = [x + y for x in evil_iter for y in evil_iter if evil_iter._items.append(x) or large_num]
+                except TypeError:
+                    pass
+
+        f1()
+        """), PYTHON_JIT="1", PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE="64")
+        self.assertEqual(result[0].rc, 0, result)
+
 def global_identity(x):
     return x
 
