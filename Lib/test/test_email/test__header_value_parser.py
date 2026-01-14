@@ -1433,14 +1433,32 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_bare_quoted_string
 
+    @params
+    def test_get_bare_quoted_string(self, s, *args, **kw):
+        bqs = self._test_parse(
+            parser.get_bare_quoted_string,
+            C(s),
+            *args,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(bqs, parser.BareQuotedString)
+        self.assertEqual(bqs.token_type, 'bare-quoted-string')
+
+    params_test_get_bare_quoted_string = old_api_only(
+        )
+
     def test_get_bare_quoted_string_only(self):
         bqs = self._test_get_x(parser.get_bare_quoted_string,
                                '"foo"', '"foo"', 'foo', [], '')
         self.assertEqual(bqs.token_type, 'bare-quoted-string')
 
-    def test_get_bare_quoted_string_must_start_with_dquote(self):
+    def test_get_bare_quoted_string_must_start_with_dquote_non_ws(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_bare_quoted_string('foo"')
+
+    def test_get_bare_quoted_string_must_start_with_dquote_ws(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_bare_quoted_string('  "foo"')
 
@@ -1481,6 +1499,8 @@ class TestParser(TestParserMixin, TestEmailBase):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo', '"foo"', 'foo',
              [errors.InvalidHeaderDefect], '')
+
+    def test_get_bare_quoted_string_no_end_dquote_ws(self):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo ', '"foo "', 'foo ',
              [errors.InvalidHeaderDefect], '')
