@@ -1447,77 +1447,80 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(bqs.token_type, 'bare-quoted-string')
 
     params_test_get_bare_quoted_string = old_api_only(
-        )
 
-    def test_get_bare_quoted_string_only(self):
-        bqs = self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_only = C(
                                '"foo"', '"foo"', 'foo', [], '')
-        self.assertEqual(bqs.token_type, 'bare-quoted-string')
+                               ,
 
-    def test_get_bare_quoted_string_must_start_with_dquote_non_ws(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_bare_quoted_string('foo"')
+        test_get_bare_quoted_string_must_start_with_dquote_non_ws = C(
+                                          'foo"',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_bare_quoted_string_must_start_with_dquote_ws(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_bare_quoted_string('  "foo"')
+        test_get_bare_quoted_string_must_start_with_dquote_ws = C(
+                                          '  "foo"',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_bare_quoted_string_only_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_only_quotes = C(
                          '""', '""', '', [], '')
+                         ,
 
-    def test_get_bare_quoted_string_missing_endquotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_missing_endquotes = C(
                          '"', '""', '', [errors.InvalidHeaderDefect], '')
+                         ,
 
-    def test_get_bare_quoted_string_following_wsp_preserved(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_following_wsp_preserved = C(
              '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
+             ,
 
-    def test_get_bare_quoted_string_multiple_words(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_multiple_words = C(
              '"foo bar moo"', '"foo bar moo"', 'foo bar moo', [], '')
+             ,
 
-    def test_get_bare_quoted_string_multiple_words_wsp_preserved(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_multiple_words_wsp_preserved = C(
              '" foo  moo\t"', '" foo  moo\t"', ' foo  moo\t', [], '')
+             ,
 
-    def test_get_bare_quoted_string_end_dquote_mid_word(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_end_dquote_mid_word = C(
              '"foo"bar', '"foo"', 'foo', [], 'bar')
+             ,
 
-    def test_get_bare_quoted_string_quoted_dquote(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_quoted_dquote = C(
              r'"foo\"in"a', r'"foo\"in"', 'foo"in', [], 'a')
+             ,
 
-    def test_get_bare_quoted_string_non_printables(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_non_printables = C(
              '"a\x01a"', '"a\x01a"', 'a\x01a',
              [errors.NonPrintableDefect], '')
+             ,
 
-    def test_get_bare_quoted_string_no_end_dquote(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_no_end_dquote = C(
              '"foo', '"foo"', 'foo',
              [errors.InvalidHeaderDefect], '')
+             ,
 
-    def test_get_bare_quoted_string_no_end_dquote_ws(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_no_end_dquote_ws = C(
              '"foo ', '"foo "', 'foo ',
              [errors.InvalidHeaderDefect], '')
+             ,
 
-    def test_get_bare_quoted_string_empty_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_get_bare_quoted_string_empty_quotes = C(
             '""', '""', '', [], '')
+            ,
 
     # Issue 16983: apply postel's law to some bad encoding.
-    def test_encoded_word_inside_quotes(self):
-        self._test_get_x(parser.get_bare_quoted_string,
+        test_encoded_word_inside_quotes = C(
             '"=?utf-8?Q?not_really_valid?="',
             '"not really valid"',
             'not really valid',
             [errors.InvalidHeaderDefect,
              errors.InvalidHeaderDefect],
             '')
+            ,
+
+        )
+
 
     # get_comment
 
