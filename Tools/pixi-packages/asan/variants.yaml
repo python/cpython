@@ -1,6 +1,6 @@
 variant:
   - asan
 abi_tag:
-  - cp315_asan
+  - asan_cp315
 version:
   - 3.15
