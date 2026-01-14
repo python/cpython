@@ -37,15 +37,28 @@ class TestForkserverPreload(unittest.TestCase):
         conn.send(value)
 
     @contextlib.contextmanager
-    def suppress_forkserver_stderr(self):
-        """Suppress stderr in forkserver by preloading a module that redirects it."""
+    def capture_forkserver_stderr(self):
+        """Capture stderr from forkserver by preloading a module that redirects it.
+
+        Yields (module_name, capture_file_path). The capture file can be read
+        after the forkserver has processed preloads. This works because
+        forkserver.main() calls util._flush_std_streams() after preloading,
+        ensuring captured output is written before we read it.
+        """
         tmpdir = tempfile.mkdtemp()
-        suppress_file = os.path.join(tmpdir, '_suppress_stderr.py')
+        capture_module = os.path.join(tmpdir, '_capture_stderr.py')
+        capture_file = os.path.join(tmpdir, 'stderr.txt')
         try:
-            with open(suppress_file, 'w') as f:
-                f.write('import sys, os; sys.stderr = open(os.devnull, "w")\n')
+            with open(capture_module, 'w') as f:
+                # Use line buffering (buffering=1) to ensure warnings are written.
+                # Enable ImportWarning since it's ignored by default.
+                f.write(
+                    f'import sys, warnings; '
+                    f'sys.stderr = open({capture_file!r}, "w", buffering=1); '
+                    f'warnings.filterwarnings("always", category=ImportWarning)\n'
+                )
             sys.path.insert(0, tmpdir)
-            yield '_suppress_stderr'
+            yield '_capture_stderr', capture_file
         finally:
             sys.path.remove(tmpdir)
             shutil.rmtree(tmpdir, ignore_errors=True)
@@ -82,9 +95,9 @@ class TestForkserverPreload(unittest.TestCase):
 
     def test_preload_on_error_warn(self):
         """Test that invalid modules emit warnings with on_error='warn'."""
-        with self.suppress_forkserver_stderr() as suppress_mod:
+        with self.capture_forkserver_stderr() as (capture_mod, stderr_file):
             self.ctx.set_forkserver_preload(
-                [suppress_mod, 'nonexistent_module_xyz'], on_error='warn')
+                [capture_mod, 'nonexistent_module_xyz'], on_error='warn')
 
             r, w = self.ctx.Pipe(duplex=False)
             p = self.ctx.Process(target=self._send_value, args=(w, 123))
@@ -97,11 +110,16 @@ class TestForkserverPreload(unittest.TestCase):
             self.assertEqual(result, 123)
             self.assertEqual(p.exitcode, 0)
 
+            with open(stderr_file) as f:
+                stderr_output = f.read()
+            self.assertIn('nonexistent_module_xyz', stderr_output)
+            self.assertIn('ImportWarning', stderr_output)
+
     def test_preload_on_error_fail_breaks_context(self):
         """Test that invalid modules with on_error='fail' breaks the forkserver."""
-        with self.suppress_forkserver_stderr() as suppress_mod:
+        with self.capture_forkserver_stderr() as (capture_mod, stderr_file):
             self.ctx.set_forkserver_preload(
-                [suppress_mod, 'nonexistent_module_xyz'], on_error='fail')
+                [capture_mod, 'nonexistent_module_xyz'], on_error='fail')
 
             r, w = self.ctx.Pipe(duplex=False)
             try:
@@ -111,6 +129,11 @@ class TestForkserverPreload(unittest.TestCase):
                 notes = getattr(cm.exception, '__notes__', [])
                 self.assertTrue(notes, "Expected exception to have __notes__")
                 self.assertIn('Forkserver process may have crashed', notes[0])
+
+                with open(stderr_file) as f:
+                    stderr_output = f.read()
+                self.assertIn('nonexistent_module_xyz', stderr_output)
+                self.assertIn('ModuleNotFoundError', stderr_output)
             finally:
                 w.close()
                 r.close()
