@@ -642,13 +642,12 @@ jobs:
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
   cifuzz:
-    name: CIFuzz
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: CIFuzz${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
     if: >-
-      (
-        needs.build-context.outputs.run-ci-fuzz == 'true'
-        || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
-      )
+      needs.build-context.outputs.run-ci-fuzz == 'true'
+      || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
     permissions:
       security-events: write
     strategy:
@@ -665,13 +664,13 @@ jobs:
         - oss-fuzz-project-name: >-
             ${{
               needs.build-context.outputs.run-ci-fuzz == 'true'
-              && ''
+              && 'dummy sentinel 🤪'
               || 'cpython3'
             }}
         - oss-fuzz-project-name: >-
             ${{
               needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
-              && ''
+              && 'dummy sentinel 🤪'
               || 'python3-libraries'
             }}
     uses: ./.github/workflows/reusable-cifuzz.yml
