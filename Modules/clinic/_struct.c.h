@@ -15,8 +15,8 @@ PyDoc_STRVAR(Struct___init____doc__,
 "\n"
 "Create a compiled struct object.\n"
 "\n"
-"Return a new Struct object which writes and reads binary data according to\n"
-"the format string.\n"
+"Return a new Struct object which writes and reads binary data according\n"
+"to the format string.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -77,8 +77,8 @@ PyDoc_STRVAR(Struct_unpack__doc__,
 "\n"
 "Return a tuple containing unpacked values.\n"
 "\n"
-"Unpack according to the format string Struct.format. The buffer\'s size\n"
-"in bytes must be Struct.size.\n"
+"Unpack according to the format string Struct.format.  The buffer\'s\n"
+"size in bytes must be Struct.size.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -226,6 +226,105 @@ Struct_iter_unpack(PyObject *self, PyObject *buffer)
     return return_value;
 }
 
+PyDoc_STRVAR(Struct_pack__doc__,
+"pack($self, /, *values)\n"
+"--\n"
+"\n"
+"Pack values and return the packed bytes.\n"
+"\n"
+"Return a bytes object containing the provided values packed\n"
+"according to the format string Struct.format.\n"
+"\n"
+"See help(struct) for more on format strings.");
+
+#define STRUCT_PACK_METHODDEF    \
+    {"pack", _PyCFunction_CAST(Struct_pack), METH_FASTCALL, Struct_pack__doc__},
+
+static PyObject *
+Struct_pack_impl(PyStructObject *self, PyObject * const *values,
+                 Py_ssize_t values_length);
+
+static PyObject *
+Struct_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *values;
+    Py_ssize_t values_length;
+
+    values = args;
+    values_length = nargs;
+    return_value = Struct_pack_impl((PyStructObject *)self, values, values_length);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(Struct_pack_into__doc__,
+"pack_into($self, buffer, offset, /, *values)\n"
+"--\n"
+"\n"
+"Pack values and write the packed bytes into the buffer.\n"
+"\n"
+"Pack the provided values according to the format string\n"
+"Struct.format and write the packed bytes into the writable buffer\n"
+"starting at offset.  Note that the offset is a required argument.\n"
+"\n"
+"See help(struct) for more on format strings.");
+
+#define STRUCT_PACK_INTO_METHODDEF    \
+    {"pack_into", _PyCFunction_CAST(Struct_pack_into), METH_FASTCALL, Struct_pack_into__doc__},
+
+static PyObject *
+Struct_pack_into_impl(PyStructObject *self, Py_buffer *buffer,
+                      PyObject *offset_obj, PyObject * const *values,
+                      Py_ssize_t values_length);
+
+static PyObject *
+Struct_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_buffer buffer = {NULL, NULL};
+    PyObject *offset_obj;
+    PyObject * const *values;
+    Py_ssize_t values_length;
+
+    if (!_PyArg_CheckPositional("pack_into", nargs, 2, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("pack_into", "argument 1", "read-write bytes-like object", args[0]);
+        goto exit;
+    }
+    offset_obj = args[1];
+    values = args + 2;
+    values_length = nargs - 2;
+    return_value = Struct_pack_into_impl((PyStructObject *)self, &buffer, offset_obj, values, values_length);
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(Struct___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n");
+
+#define STRUCT___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)Struct___sizeof__, METH_NOARGS, Struct___sizeof____doc__},
+
+static PyObject *
+Struct___sizeof___impl(PyStructObject *self);
+
+static PyObject *
+Struct___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Struct___sizeof___impl((PyStructObject *)self);
+}
+
 PyDoc_STRVAR(_clearcache__doc__,
 "_clearcache($module, /)\n"
 "--\n"
@@ -275,6 +374,105 @@ calcsize(PyObject *module, PyObject *arg)
 exit:
     /* Cleanup for s_object */
     Py_XDECREF(s_object);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(pack__doc__,
+"pack($module, format, /, *values)\n"
+"--\n"
+"\n"
+"Pack values and return the packed bytes.\n"
+"\n"
+"Return a bytes object containing the provided values packed according\n"
+"to the format string.\n"
+"\n"
+"See help(struct) for more on format strings.");
+
+#define PACK_METHODDEF    \
+    {"pack", _PyCFunction_CAST(pack), METH_FASTCALL, pack__doc__},
+
+static PyObject *
+pack_impl(PyObject *module, PyStructObject *s_object,
+          PyObject * const *values, Py_ssize_t values_length);
+
+static PyObject *
+pack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyStructObject *s_object = NULL;
+    PyObject * const *values;
+    Py_ssize_t values_length;
+
+    if (!_PyArg_CheckPositional("pack", nargs, 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    if (!cache_struct_converter(module, args[0], &s_object)) {
+        goto exit;
+    }
+    values = args + 1;
+    values_length = nargs - 1;
+    return_value = pack_impl(module, s_object, values, values_length);
+
+exit:
+    /* Cleanup for s_object */
+    Py_XDECREF(s_object);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(pack_into__doc__,
+"pack_into($module, format, buffer, offset, /, *values)\n"
+"--\n"
+"\n"
+"Pack values and write the packed bytes into the buffer.\n"
+"\n"
+"Pack the provided values according to the format string and write the\n"
+"packed bytes into the writable buffer starting at offset.  Note that the\n"
+"offset is a required argument.\n"
+"\n"
+"See help(struct) for more on format strings.");
+
+#define PACK_INTO_METHODDEF    \
+    {"pack_into", _PyCFunction_CAST(pack_into), METH_FASTCALL, pack_into__doc__},
+
+static PyObject *
+pack_into_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer,
+               PyObject *offset_obj, PyObject * const *values,
+               Py_ssize_t values_length);
+
+static PyObject *
+pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyStructObject *s_object = NULL;
+    Py_buffer buffer = {NULL, NULL};
+    PyObject *offset_obj;
+    PyObject * const *values;
+    Py_ssize_t values_length;
+
+    if (!_PyArg_CheckPositional("pack_into", nargs, 3, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    if (!cache_struct_converter(module, args[0], &s_object)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("pack_into", "argument 2", "read-write bytes-like object", args[1]);
+        goto exit;
+    }
+    offset_obj = args[2];
+    values = args + 3;
+    values_length = nargs - 3;
+    return_value = pack_into_impl(module, s_object, &buffer, offset_obj, values, values_length);
+
+exit:
+    /* Cleanup for s_object */
+    Py_XDECREF(s_object);
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -458,4 +656,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=caa7f36443e91cb9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ee53e75360217fe input=a9049054013a1b77]*/
