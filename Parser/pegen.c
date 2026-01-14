@@ -948,7 +948,7 @@ _PyPegen_run_parser(Parser *p)
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
         }
-       // Make a second parser pass. In this pass we activate heavier and slower checks
+        // Make a second parser pass. In this pass we activate heavier and slower checks
         // to produce better error messages and more complete diagnostics. Extra "invalid_*"
         // rules will be active during parsing.
         Token *last_token = p->tokens[p->fill - 1];
