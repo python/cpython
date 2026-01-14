@@ -1,10 +1,13 @@
 """Tests for forkserver preload functionality."""
 
+import contextlib
 import multiprocessing
+import os
+import shutil
 import sys
 import tempfile
 import unittest
-from multiprocessing import forkserver
+from multiprocessing import forkserver, spawn
 
 
 class TestForkserverPreload(unittest.TestCase):
@@ -32,6 +35,20 @@ class TestForkserverPreload(unittest.TestCase):
     def _send_value(conn, value):
         """Send value through connection. Static method to be picklable as Process target."""
         conn.send(value)
+
+    @contextlib.contextmanager
+    def suppress_forkserver_stderr(self):
+        """Suppress stderr in forkserver by preloading a module that redirects it."""
+        tmpdir = tempfile.mkdtemp()
+        suppress_file = os.path.join(tmpdir, '_suppress_stderr.py')
+        try:
+            with open(suppress_file, 'w') as f:
+                f.write('import sys, os; sys.stderr = open(os.devnull, "w")\n')
+            sys.path.insert(0, tmpdir)
+            yield '_suppress_stderr'
+        finally:
+            sys.path.remove(tmpdir)
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     def test_preload_on_error_ignore_default(self):
         """Test that invalid modules are silently ignored by default."""
@@ -65,34 +82,38 @@ class TestForkserverPreload(unittest.TestCase):
 
     def test_preload_on_error_warn(self):
         """Test that invalid modules emit warnings with on_error='warn'."""
-        self.ctx.set_forkserver_preload(['nonexistent_module_xyz'], on_error='warn')
+        with self.suppress_forkserver_stderr() as suppress_mod:
+            self.ctx.set_forkserver_preload(
+                [suppress_mod, 'nonexistent_module_xyz'], on_error='warn')
 
-        r, w = self.ctx.Pipe(duplex=False)
-        p = self.ctx.Process(target=self._send_value, args=(w, 123))
-        p.start()
-        w.close()
-        result = r.recv()
-        r.close()
-        p.join()
+            r, w = self.ctx.Pipe(duplex=False)
+            p = self.ctx.Process(target=self._send_value, args=(w, 123))
+            p.start()
+            w.close()
+            result = r.recv()
+            r.close()
+            p.join()
 
-        self.assertEqual(result, 123)
-        self.assertEqual(p.exitcode, 0)
+            self.assertEqual(result, 123)
+            self.assertEqual(p.exitcode, 0)
 
     def test_preload_on_error_fail_breaks_context(self):
         """Test that invalid modules with on_error='fail' breaks the forkserver."""
-        self.ctx.set_forkserver_preload(['nonexistent_module_xyz'], on_error='fail')
+        with self.suppress_forkserver_stderr() as suppress_mod:
+            self.ctx.set_forkserver_preload(
+                [suppress_mod, 'nonexistent_module_xyz'], on_error='fail')
 
-        r, w = self.ctx.Pipe(duplex=False)
-        try:
-            p = self.ctx.Process(target=self._send_value, args=(w, 42))
-            with self.assertRaises((EOFError, ConnectionError, BrokenPipeError)) as cm:
-                p.start()
-            notes = getattr(cm.exception, '__notes__', [])
-            self.assertTrue(notes, "Expected exception to have __notes__")
-            self.assertIn('Forkserver process may have crashed', notes[0])
-        finally:
-            w.close()
-            r.close()
+            r, w = self.ctx.Pipe(duplex=False)
+            try:
+                p = self.ctx.Process(target=self._send_value, args=(w, 42))
+                with self.assertRaises((EOFError, ConnectionError, BrokenPipeError)) as cm:
+                    p.start()
+                notes = getattr(cm.exception, '__notes__', [])
+                self.assertTrue(notes, "Expected exception to have __notes__")
+                self.assertIn('Forkserver process may have crashed', notes[0])
+            finally:
+                w.close()
+                r.close()
 
     def test_preload_valid_modules_with_on_error_fail(self):
         """Test that valid modules work fine with on_error='fail'."""
@@ -118,6 +139,13 @@ class TestForkserverPreload(unittest.TestCase):
 
 class TestHandlePreload(unittest.TestCase):
     """Unit tests for _handle_preload() function."""
+
+    def setUp(self):
+        self._saved_main = sys.modules['__main__']
+
+    def tearDown(self):
+        spawn.old_main_modules.clear()
+        sys.modules['__main__'] = self._saved_main
 
     def test_handle_preload_main_on_error_fail(self):
         """Test that __main__ import failures raise with on_error='fail'."""
