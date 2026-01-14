@@ -274,8 +274,9 @@ _PyTime_AsCLong(PyTime_t t, long *t2)
     return 0;
 }
 
-// 369 years + 89 leap days
-#define SECS_BETWEEN_EPOCHS 11644473600LL /* Seconds between 1601-01-01 and 1970-01-01 */
+// Seconds between 1601-01-01 and 1970-01-01:
+// 369 years + 89 leap days.
+#define SECS_BETWEEN_EPOCHS 11644473600LL
 #define HUNDRED_NS_PER_SEC 10000000LL
 
 // Calculate day of year (0-365) from SYSTEMTIME
@@ -301,7 +302,7 @@ _PyTime_calc_yday(const SYSTEMTIME *st)
 }
 
 // Convert time_t to struct tm using Windows FILETIME API.
-// If is_local is true, convert to local time. */
+// If is_local is true, convert to local time.
 // Fallback for negative timestamps that localtime_s/gmtime_s cannot handle.
 // Return 0 on success. Return -1 on error.
 static int
