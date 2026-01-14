@@ -139,7 +139,7 @@ want empty input to repeat the previous command  should override
    Method called on an input line when the command prefix is not recognized. If
    this method is not overridden, it prints an error message and returns.
 
-   Note that if :meth:`emptyline` is not overridden, empty input may cause
+   Note that if :meth:`emptyline` is not overridden, empty input will cause
    the previous command to be repeated and passed again to this method.
 
 .. method:: Cmd.completedefault(text, line, begidx, endidx)
