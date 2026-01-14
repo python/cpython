@@ -1996,6 +1996,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    and minor version as the local process. If either the local or remote
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
+   The temporary script file is created with restrictive permissions (typically
+   ``0o600``). The target process must be able to read this file.
 
    .. audit-event:: sys.remote_exec pid script_path
 
@@ -2013,8 +2015,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This event is raised in the remote process, not the one
       that called :func:`sys.remote_exec`.
 
-   The temporary script file is created with restrictive permissions (typically
-   ``0o600``). The target process must be able to read this file.
    Callers should adjust permissions before calling, for example::
 
       import os
