@@ -179,10 +179,10 @@ the modern themed widget set and API::
       The widget object that contains this widget.  For :class:`Tk`, the
       *master* is :const:`None` because it is the main window.  The terms
       *master* and *parent* are similar and sometimes used interchangeably
-      as argument names; however, calling :meth:`winfo_parent` returns a
+      as argument names; however, calling ``winfo_parent`` returns a
       string of the widget name whereas :attr:`master` returns the object.
       *parent*/*child* reflects the tree-like relationship while
-      *container*/*child widget* reflects the geometry management structure.
+      *master*/*child widget* reflects the container structure.
 
    .. attribute:: children
 
@@ -673,7 +673,7 @@ For more extensive information on the packer and the options that it can take,
 see the man pages and page 183 of John Ousterhout's book.
 
 anchor
-   Anchor type.  Denotes where the packer is to place each child widget in its parcel.
+   Anchor type.  Denotes where the packer is to place each child in its parcel.
 
 expand
    Boolean, ``0`` or ``1``.
