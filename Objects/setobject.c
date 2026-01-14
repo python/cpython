@@ -308,6 +308,9 @@ set_add_entry_takeref(PySetObject *so, PyObject *key, Py_hash_t hash)
   found_unused_or_dummy:
     if (freeslot == NULL)
         goto found_unused;
+    if (freeslot->hash != -1) {
+        goto restart;
+    }
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
     FT_ATOMIC_STORE_SSIZE_RELAXED(freeslot->hash, hash);
     FT_ATOMIC_STORE_PTR_RELEASE(freeslot->key, key);
