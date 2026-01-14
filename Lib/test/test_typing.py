@@ -7204,6 +7204,13 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(TD.__annotations__, {'a': EqualToForwardRef('UniqueT', owner=TD, module=TD.__module__)})
         self.assertEqual(get_type_hints(TD), {'a': TD.__type_params__[0]})
 
+    def test_get_type_hints_order(self):
+        """Ensure that the order of function annotations matches the order they're defined"""
+        def f(positional: int, /, normal: str, *args: bytes, kwarg: list, **kwargs: bool) -> tuple:
+            pass
+
+        self.assertEqual(list(gth(f)), ["positional", "normal", "args", "kwarg", "kwargs", "return"])
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):

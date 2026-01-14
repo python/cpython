@@ -3236,6 +3236,21 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             A().t(a=1)
 
+    def test_positional_only_argument(self):
+        @functools.singledispatch
+        def f(arg, /, extra):
+            return "base"
+        @f.register
+        def f_int(arg: int, /, extra: str):
+            return "int"
+        @f.register
+        def f_str(arg: str, /, extra: int):
+            return "str"
+
+        self.assertEqual(f(None, "extra"), "base")
+        self.assertEqual(f(1, "extra"), "int")
+        self.assertEqual(f("s", "extra"), "str")
+
     def test_union(self):
         @functools.singledispatch
         def f(arg):
