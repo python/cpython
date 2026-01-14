@@ -298,22 +298,22 @@ class BaseXYTestCase(unittest.TestCase):
 
     def test_b64decode_invalid_chars(self):
         # issue 1466065: Test some invalid characters.
-        tests = ((b'%3d==', b'\xdd'),
-                 (b'$3d==', b'\xdd'),
-                 (b'[==', b''),
-                 (b'YW]3=', b'am'),
-                 (b'3{d==', b'\xdd'),
-                 (b'3d}==', b'\xdd'),
-                 (b'@@', b''),
-                 (b'!', b''),
-                 (b"YWJj\n", b"abc"),
-                 (b'YWJj\nYWI=', b'abcab'))
+        tests = ((b'%3d==', b'\xdd', b'%$'),
+                 (b'$3d==', b'\xdd', b'%$'),
+                 (b'[==', b'', None),
+                 (b'YW]3=', b'am', b']'),
+                 (b'3{d==', b'\xdd', b'{}'),
+                 (b'3d}==', b'\xdd', b'{}'),
+                 (b'@@', b'', b'@!'),
+                 (b'!', b'', b'@!'),
+                 (b"YWJj\n", b"abc", b'\n'),
+                 (b'YWJj\nYWI=', b'abcab', b'\n'))
         funcs = (
             base64.b64decode,
             base64.standard_b64decode,
             base64.urlsafe_b64decode,
         )
-        for bstr, res in tests:
+        for bstr, res, ignorechars in tests:
             for func in funcs:
                 with self.subTest(bstr=bstr, func=func):
                     self.assertEqual(func(bstr), res)
@@ -322,6 +322,21 @@ class BaseXYTestCase(unittest.TestCase):
                 base64.b64decode(bstr, validate=True)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
+            with self.assertRaises(binascii.Error):
+                base64.b64decode(bstr, ignorechars=b'')
+            if ignorechars is not None:
+                self.assertEqual(
+                    base64.b64decode(bstr, ignorechars=ignorechars),
+                                 res)
+
+        with self.assertRaises(TypeError):
+            base64.b64decode(b'', ignorechars=bytearray())
+        with self.assertRaises(TypeError):
+            base64.b64decode(b'', ignorechars='')
+        with self.assertRaises(TypeError):
+            base64.b64decode(b'', ignorechars=[])
+        with self.assertRaises(TypeError):
+            base64.b64decode(b'', ignorechars=None)
 
         # Normal alphabet characters not discarded when alternative given
         res = b'\xfb\xef\xff'

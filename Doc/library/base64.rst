@@ -73,6 +73,7 @@ POST request.
 
 
 .. function:: b64decode(s, altchars=None, validate=False)
+              b64decode(s, altchars=None, validate=True, *, ignorechars)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -84,15 +85,23 @@ POST request.
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *validate* is ``False`` (the default), characters that are neither
+   If *ignorechars* is specified, it should be a byte string containing
+   characters to ignore from the input, and *validate* is ``True`` by default.
+   Otherwise *validate* is ``False`` by default.
+
+   If *validate* is false, characters that are neither
    in the normal base-64 alphabet nor the alternative alphabet are
-   discarded prior to the padding check.  If *validate* is ``True``,
-   these non-alphabet characters in the input result in a
-   :exc:`binascii.Error`.
+   discarded prior to the padding check.
+   If *validate* is true, these non-alphabet characters in the input
+   result in a :exc:`binascii.Error`.
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
+
 
 .. function:: standard_b64encode(s)
 

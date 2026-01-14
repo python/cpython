@@ -26,6 +26,8 @@ __all__ = [
     ]
 
 
+_NOT_SPECIFIED = ['NOT SPECIFIED']
+
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
 
 def _bytes_from_decode_data(s):
@@ -62,7 +64,7 @@ def b64encode(s, altchars=None, *, wrapcol=0):
     return encoded
 
 
-def b64decode(s, altchars=None, validate=False):
+def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPECIFIED):
     """Decode the Base64 encoded bytes-like object or ASCII string s.
 
     Optional altchars must be a bytes-like object or ASCII string of length 2
@@ -72,10 +74,14 @@ def b64decode(s, altchars=None, validate=False):
     The result is returned as a bytes object.  A binascii.Error is raised if
     s is incorrectly padded.
 
-    If validate is False (the default), characters that are neither in the
-    normal base-64 alphabet nor the alternative alphabet are discarded prior
-    to the padding check.  If validate is True, these non-alphabet characters
-    in the input result in a binascii.Error.
+    If ignorechars is specified, it should be a byte string containing
+    characters to ignore from the input, and validate is True by default.
+    Otherwise validate is False by default.
+
+    If validate is false, characters that are neither in the normal base-64
+    alphabet nor the alternative alphabet are discarded prior to the
+    padding check.  If validate is true, these non-alphabet characters in
+    the input result in a binascii.Error if they are not in ignorechars.
     For more information about the strict base64 check, see:
 
     https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
@@ -85,7 +91,12 @@ def b64decode(s, altchars=None, validate=False):
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    return binascii.a2b_base64(s, strict_mode=validate)
+    if validate is _NOT_SPECIFIED:
+        validate = ignorechars is not _NOT_SPECIFIED
+    if ignorechars is _NOT_SPECIFIED:
+        ignorechars = b''
+    return binascii.a2b_base64(s, strict_mode=validate,
+                               ignorechars=ignorechars)
 
 
 def standard_b64encode(s):

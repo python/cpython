@@ -49,9 +49,15 @@ The :mod:`binascii` module defines the following functions:
 
 
 .. function:: a2b_base64(string, /, *, strict_mode=False)
+              a2b_base64(string, /, *, strict_mode=True, ignorechars)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
+
+   If *ignorechars* is specified, it should be a byte string containing
+   characters to ignore from the input when *strict_mode* is true.
+   *strict_mode* is ``True`` by default, if *ignorechars* is specified,
+   ``False`` otherwise.
 
    If *strict_mode* is true, only valid base64 data will be converted. Invalid base64
    data will raise :exc:`binascii.Error`.
@@ -65,6 +71,9 @@ The :mod:`binascii` module defines the following functions:
 
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
 
 .. function:: b2a_base64(data, *, wrapcol=0, newline=True)
