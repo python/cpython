@@ -948,6 +948,19 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(ValueError, base64.a85decode, b'aaaay',
                           foldspaces=True)
 
+        self.assertEqual(base64.a85decode(b"a b\nc", ignorechars=b" \n"),
+                         b'\xc9\x89')
+        with self.assertRaises(ValueError):
+            base64.a85decode(b"a b\nc", ignorechars=b"")
+        with self.assertRaises(ValueError):
+            base64.a85decode(b"a b\nc", ignorechars=b" ")
+        with self.assertRaises(ValueError):
+            base64.a85decode(b"a b\nc", ignorechars=b"\n")
+        with self.assertRaises(TypeError):
+            base64.a85decode(b"a b\nc", ignorechars=" \n")
+        with self.assertRaises(TypeError):
+            base64.a85decode(b"a b\nc", ignorechars=None)
+
     def test_b85decode_errors(self):
         illegal = list(range(33)) + \
                   list(b'"\',./:[\\]') + \
