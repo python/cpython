@@ -188,14 +188,14 @@ following functions:
 
    Returns the Grapheme_Cluster_Break property assigned to the character.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: indic_conjunct_break(chr, /)
 
    Returns the Indic_Conjunct_Break property assigned to the character.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: extended_pictographic(chr, /)
@@ -203,7 +203,7 @@ following functions:
    Returns ``True`` if the character has the Extended_Pictographic property,
    ``False`` otherwise.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: normalize(form, unistr, /)
@@ -262,7 +262,7 @@ following functions:
    Standard Annex #29, `"Unicode Text Segmentation"
    <https://www.unicode.org/reports/tr29/>`_.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 In addition, the module exposes the following constant:
