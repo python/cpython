@@ -1,1 +1,0 @@
-Fixed a possible reference leak in ctypes when constructing results with multiple output parameters on error.
