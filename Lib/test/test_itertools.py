@@ -742,9 +742,7 @@ class TestBasicOps(unittest.TestCase):
                     next(g)
                 return False
 
-        data = [Key(b"a"), Key(b"b")]
-
-        g = itertools.groupby(data)
+        g = itertools.groupby([Key(b"a"), Key(b"b")])
         next(g)
         next(g)  # must not segfault
 
