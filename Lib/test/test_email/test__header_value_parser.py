@@ -1448,74 +1448,121 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_bare_quoted_string = old_api_only(
 
-        test_get_bare_quoted_string_only = C(
-                               '"foo"', '"foo"', 'foo', [], '')
-                               ,
-
-        test_get_bare_quoted_string_must_start_with_dquote_non_ws = C(
-                                          'foo"',
-                    exception=(errors.HeaderParseError, '.*'),
+        only = C(
+            '"foo"',
+            '"foo"',
+            'foo',
+            [],
+            '',
             ),
 
-        test_get_bare_quoted_string_must_start_with_dquote_ws = C(
-                                          '  "foo"',
-                    exception=(errors.HeaderParseError, '.*'),
+        must_start_with_dquote_non_ws = C(
+            'foo"',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_bare_quoted_string_only_quotes = C(
-                         '""', '""', '', [], '')
-                         ,
+        must_start_with_dquote_ws = C(
+            '  "foo"',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-        test_get_bare_quoted_string_missing_endquotes = C(
-                         '"', '""', '', [errors.InvalidHeaderDefect], '')
-                         ,
+        only_quotes = C(
+            '""',
+            '""',
+            '',
+            [],
+            '',
+            ),
 
-        test_get_bare_quoted_string_following_wsp_preserved = C(
-             '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
-             ,
+        missing_endquotes = C(
+            '"',
+            '""',
+            '',
+            [errors.InvalidHeaderDefect],
+            '',
+            ),
 
-        test_get_bare_quoted_string_multiple_words = C(
-             '"foo bar moo"', '"foo bar moo"', 'foo bar moo', [], '')
-             ,
+        following_wsp_preserved = C(
+            '"foo"\t bar',
+            '"foo"',
+            'foo',
+            [],
+            '\t bar',
+            ),
 
-        test_get_bare_quoted_string_multiple_words_wsp_preserved = C(
-             '" foo  moo\t"', '" foo  moo\t"', ' foo  moo\t', [], '')
-             ,
+        multiple_words = C(
+            '"foo bar moo"',
+            '"foo bar moo"',
+            'foo bar moo',
+            [],
+            '',
+            ),
 
-        test_get_bare_quoted_string_end_dquote_mid_word = C(
-             '"foo"bar', '"foo"', 'foo', [], 'bar')
-             ,
+        multiple_words_wsp_preserved = C(
+            '" foo  moo\t"',
+            '" foo  moo\t"',
+            ' foo  moo\t',
+            [],
+            '',
+            ),
 
-        test_get_bare_quoted_string_quoted_dquote = C(
-             r'"foo\"in"a', r'"foo\"in"', 'foo"in', [], 'a')
-             ,
+        end_dquote_mid_word = C(
+            '"foo"bar',
+            '"foo"',
+            'foo',
+            [],
+            'bar',
+            ),
 
-        test_get_bare_quoted_string_non_printables = C(
-             '"a\x01a"', '"a\x01a"', 'a\x01a',
-             [errors.NonPrintableDefect], '')
-             ,
+        quoted_dquote = C(
+            r'"foo\"in"a',
+            r'"foo\"in"',
+            'foo"in',
+            [],
+            'a',
+            ),
 
-        test_get_bare_quoted_string_no_end_dquote = C(
-             '"foo', '"foo"', 'foo',
-             [errors.InvalidHeaderDefect], '')
-             ,
+        non_printables = C(
+            '"a\x01a"',
+            '"a\x01a"',
+            'a\x01a',
+            [errors.NonPrintableDefect],
+            '',
+            ),
 
-        test_get_bare_quoted_string_no_end_dquote_ws = C(
-             '"foo ', '"foo "', 'foo ',
-             [errors.InvalidHeaderDefect], '')
-             ,
+        no_end_dquote = C(
+            '"foo',
+            '"foo"',
+            'foo',
+            [errors.InvalidHeaderDefect],
+            '',
+            ),
 
-        test_get_bare_quoted_string_empty_quotes = C(
-            '""', '""', '', [], '')
-            ,
+        no_end_dquote_ws = C(
+            '"foo ',
+            '"foo "',
+            'foo ',
+            [errors.InvalidHeaderDefect],
+            '',
+            ),
 
-    # Issue 16983: apply postel's law to some bad encoding.
-        test_encoded_word_inside_quotes = C(
+        empty_quotes = C(
+            '""',
+            '""',
+            '',
+            [],
+            '',
+            ),
+
+        # Issue 16983: apply postel's law to some bad encoding.
+        encoded_word_inside_quotes = C(
             '"=?utf-8?Q?not_really_valid?="',
             '"not really valid"',
             'not really valid',
-            [errors.InvalidHeaderDefect,
-             errors.InvalidHeaderDefect],
+            [
+                errors.InvalidHeaderDefect,
+                errors.InvalidHeaderDefect,
+                ],
             '')
             ,
 
