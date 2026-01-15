@@ -2142,7 +2142,7 @@ Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
  *
  */
 static int
-s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
+s_pack_internal(PyStructObject *soself, PyObject *const *args,
                 char* buf, _structmodulestate *state)
 {
     formatcode *code;
@@ -2151,7 +2151,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
     Py_ssize_t i;
 
     memset(buf, '\0', soself->s_size);
-    i = offset;
+    i = 0;
     for (code = soself->s_codes; code->fmtdef != NULL; code++) {
         const formatdef *e = code->fmtdef;
         char *res = buf + code->offset;
@@ -2260,7 +2260,7 @@ s_pack_impl(PyStructObject *self, PyObject * const *args,
     char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
-    if ( s_pack_internal(self, args, 0, buf, state) != 0 ) {
+    if (s_pack_internal(self, args, buf, state) != 0) {
         PyBytesWriter_Discard(writer);
         return NULL;
     }
@@ -2344,8 +2344,7 @@ s_pack_into_impl(PyStructObject *self, Py_buffer *buffer, Py_ssize_t offset,
     }
 
     /* Call the guts */
-    if (s_pack_internal(self, args, 0,
-                        (char*)buffer->buf + offset, state) != 0)
+    if (s_pack_internal(self, args, (char*)buffer->buf + offset, state) != 0)
     {
         PyBuffer_Release(buffer);
         return NULL;
