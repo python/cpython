@@ -128,7 +128,7 @@ end_inside_quoted_string_defect = (
 
 ew_inside_quoted_string_defect = (
     errors.InvalidHeaderDefect,
-    'encoded word inside quoted string',
+    'encoded-word inside quoted string',
     )
 
 end_inside_comment_defect = (
@@ -2255,7 +2255,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(bqs.token_type, 'bare-quoted-string')
         self.verify_terminal_types(bqs, 'ptext', 'fws')
 
-    params_test_get_bare_quoted_string = old_api_only(
+    params_test_get_bare_quoted_string = for_each_api(
 
         non_ws = C(
             '"foo"',
@@ -2351,22 +2351,21 @@ class TestParser(TestParserMixin, TestEmailBase):
             '"=?utf-8?Q?not_really_valid?="',
             stringified='"not really valid"',
             value='not really valid',
-            defects=[
-                ew_inside_quoted_string_defect,
-                missing_whitespace_after_ew_defect,
-                ],
+            defects=[ew_inside_quoted_string_defect],
+            ew_indexes=[1],
             ),
 
-        # XXX XXX The decode failure here will be fixed in the refactor.
         mixed_encoded_words_and_regular_text = C(
             '"This has=?utf-8?Q?multiple?= =?utf-8?q?errors?=in it',
-            stringified='"This has=?utf-8?Q?multiple?= errorsin it"',
-            value='This has=?utf-8?Q?multiple?= errorsin it',
+            stringified='"This hasmultipleerrorsin it"',
+            value='This hasmultipleerrorsin it',
             defects=[
-                ew_inside_quoted_string_defect,
+                *[ew_inside_quoted_string_defect]*2,
                 missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
                 end_inside_quoted_string_defect,
                 ],
+            ew_indexes=[9, 30],
             ),
 
         encoded_word_after_dquote_with_no_ws = C(
@@ -2383,6 +2382,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ew_inside_quoted_string_defect,
                 charset_defect('foo'),
                 ],
+            ew_indexes=[1],
             ),
 
         empty = C(
@@ -3595,9 +3595,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects=[
                 # XXX XXX After refactoring there should be one 'after' defect
                 missing_whitespace_after_ew_defect,
-                missing_whitespace_after_ew_defect,
                 ew_inside_quoted_string_defect,
                 ],
+            # XXX XXX this will change during refactoring.  Currently only
+            # get_bare_quoted_string is adding indexes.
+            ew_indexes=[1],
             ),
 
         ew_after_quoted_string_missing_space = C(
@@ -3606,9 +3608,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             value='disjointed',
             defects=[
                 # XXX XXX After refactoring 'after' should become 'before'
-                missing_whitespace_after_ew_defect,
+                #missing_whitespace_after_ew_defect,
                 ew_inside_quoted_string_defect,
                 ],
+            # XXX XXX this will change during refactoring.  Currently only
+            # get_bare_quoted_string is adding indexes.
+            ew_indexes=[1],
             ),
 
         **for_each_character(RFC_SPECIALS, skip=CFWS_LEADER + '."')(
@@ -3849,10 +3854,13 @@ class TestParser(TestParserMixin, TestEmailBase):
                 # XXX XXX There should be exactly one ew whitespace defect
                 # here, but the number generated will change during refactor,
                 # until it is fixed when get_obs_local_part is refactored.
-                *[missing_whitespace_after_ew_defect]*2,
+                missing_whitespace_after_ew_defect,
                 missing_dot_in_local_part_defect,
                 ew_inside_quoted_string_defect,
                 ],
+            # XXX XXX this will change during refactoring.  Currently only
+            # get_bare_quoted_string is adding indexes.
+            ew_indexes=[1],
             ),
 
         less_invalid_ew_atoms = C(
@@ -3928,8 +3936,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             kw['local_part'] = kw.pop('content')
         yield '', C(*args, **kw)
 
-    @params_map
+    # XXX XXX revert to no with_namelist when get_local_part is refactored
+    @params_map(with_namelist=True)
     def adapt_get_obs_local_part_tests_for_get_local_part(
+            nl,
             *args,
             defects=[],
             **kw,
@@ -3947,6 +3957,9 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects.append(not_even_obs_local_part_defect)
         else:
             defects.append(non_dot_atom_local_part_obs_defect)
+        # XXX XXX delete this fixup when get_local_part is refactored.
+        if 'invalid_ew_atoms' in nl:
+            kw.pop('ew_indexes')
         yield '', C(*args, defects=defects, **kw)
 
     params_test_get_local_part = old_api_only(

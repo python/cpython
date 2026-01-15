@@ -1576,47 +1576,61 @@ def get_atext(value):
     _validate_xtext(atext)
     return atext, value
 
-def get_bare_quoted_string(value):
+_get_bare_quoted_string_content = content_getter(
+    BareQuotedString,
+    'ptext',
+    end_chars='"',
+    qp=True,
+    )
+@_deprecate_old_api
+def get_bare_quoted_string(value, start):
     """bare-quoted-string = DQUOTE *([FWS] qcontent) [FWS] DQUOTE
 
-    A quoted-string without the leading or trailing white space.  Its
-    value is the text between the quote marks, with whitespace
-    preserved and quoted pairs decoded.
+    This is a subset of the RFC 5322 quoted-string: the quoted string without
+    any of the CFWS that might come before or after the '"'s.
+
+    If start does not point to a double quote in value, raise an error.
+    Otherwise return a (possibly empty) BareQuotedString incorporating all
+    characters up to the next unquoted double quote (or the end of value if
+    there is no double quote) and the index of the character after the double
+    quote (or the len of value), unquoting any quoted pairs.  The returned
+    BareQuotedString should not contain any ValueTerminals for the double quote
+    marks, but when stringified the quotes should be added, whether the
+    trailing quote was present in value or not.  If the trailing quote is not
+    present register a defect.
+
+    If the content after quoted pair decoding contains any RFC 2047 encoded
+    words, decode them, whether they are correctly bracketed by whitespace
+    or not, and whether they contain internal whitespace or not.  Register
+    a defect for the presence of any such word, as well as defects for
+    any whitespace issues.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
-    if not value or value[0] != '"':
+    # This implementation bypasses the RFC qcontent BNF element in favor of
+    # using our generic content_getter to decode (RFC invalid) encoded words.
+    vlen = len(value)
+    if start >= vlen or value[start] != '"':
         raise errors.HeaderParseError(
-            "expected '\"' but found '{}'".format(value))
-    bare_quoted_string = BareQuotedString()
-    value = value[1:]
-    if value and value[0] == '"':
-        return bare_quoted_string, value[1:]
-    while value and value[0] != '"':
-        if value[0] in WSP:
-            token, value = get_fws(value)
-        elif value[:2] == '=?':
-            valid_ew = False
-            try:
-                token, value = get_encoded_word(value, terminal_type='ptext')
-                bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
-                    "encoded word inside quoted string"))
-                valid_ew = True
-            except errors.HeaderParseError:
-                token, value = get_qcontent(value)
-            # Collapse the whitespace between two encoded words that occur in a
-            # bare-quoted-string.
-            if valid_ew and len(bare_quoted_string) > 1:
-                if (bare_quoted_string[-1].token_type == 'fws' and
-                        bare_quoted_string[-2].token_type == 'encoded-word'):
-                    bare_quoted_string[-1] = EWWhiteSpaceTerminal(
-                        bare_quoted_string[-1], 'fws')
-        else:
-            token, value = get_qcontent(value)
-        bare_quoted_string.append(token)
-    if not value:
-        bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
-            "end of header inside quoted string"))
-        return bare_quoted_string, value
-    return bare_quoted_string, value[1:]
+            f"expected '\"' but found {value[start:]!r}"
+            )
+    start += 1
+    bare_quoted_string, start = _get_bare_quoted_string_content(value, start)
+    if bare_quoted_string.ew_indexes:
+        # XXX some day we'll put each index into its own defect.
+        bare_quoted_string.defects.extend(
+            [
+                errors.InvalidHeaderDefect('encoded-word inside quoted string'),
+                ] * len(bare_quoted_string.ew_indexes)
+            )
+    if start < vlen:
+        return bare_quoted_string, start + 1
+    bare_quoted_string.defects.append(
+        errors.InvalidHeaderDefect("end of header inside quoted string"),
+        )
+    return bare_quoted_string, start
 
 def get_comment(value):
     """comment = "(" *([FWS] ccontent) [FWS] ")"
