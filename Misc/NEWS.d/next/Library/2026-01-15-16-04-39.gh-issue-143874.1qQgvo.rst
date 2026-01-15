@@ -1,0 +1,1 @@
+Fixed an issue in pdb where results of expressions evaluated via the closure execution path could be written to sys.stdout instead of the debugger output stream.
