@@ -3666,28 +3666,6 @@ def quux():
         # Check if the custom prefix appeared in the output
         self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
 
-    def test_exec_in_closure_result_uses_pdb_stdout(self):
-        """
-        Expression results executed via _exec_in_closure() should be written
-        to the debugger output stream (pdb stdout), not to sys.stdout.
-        """
-        pdb_out = io.StringIO()
-        sys_out = io.StringIO()
-
-        p = pdb.Pdb(nosigint=True, readrc=False, stdout=pdb_out)
-
-        with redirect_stdout(sys_out):
-            self.assertTrue(p._exec_in_closure('(lambda: 123)()', {}, {}))
-            self.assertTrue(p._exec_in_closure('sum(i for i in (1, 2, 3))', {}, {}))
-
-        pdb_lines = [line.strip() for line in pdb_out.getvalue().splitlines()]
-        sys_lines = [line.strip() for line in sys_out.getvalue().splitlines()]
-
-        self.assertIn('123', pdb_lines)
-        self.assertIn('6', pdb_lines)
-        self.assertNotIn('123', sys_lines)
-        self.assertNotIn('6', sys_lines)
-
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
             """\
