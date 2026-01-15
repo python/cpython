@@ -1,2 +1,0 @@
-Adjusted the built-in :func:`help` function so that empty inputs are ignored in
-interactive mode.
