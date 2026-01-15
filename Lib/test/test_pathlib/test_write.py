@@ -71,6 +71,11 @@ class WriteTestBase:
         self.assertRaises(TypeError, p.write_bytes, 'somestr')
         self.assertEqual(self.ground.readbytes(p), b'abcdefg')
 
+    def test_write_bytes_return(self):
+        p = self.root / 'fileA'
+        data = b'some bytes'
+        self.assertEqual(len(data), p.write_bytes(data))
+
     def test_write_text(self):
         p = self.root / 'fileA'
         p.write_text('äbcdefg', encoding='latin-1')
@@ -112,6 +117,11 @@ class WriteTestBase:
         self.assertEqual(self.ground.readbytes(p),
                          b'abcde' + os_linesep_byte +
                          b'fghlk' + os_linesep_byte + b'\rmnopq')
+
+    def test_write_text_return(self):
+        p = self.root / 'fileA'
+        data = 'some text'
+        self.assertEqual(len(data), p.write_text(data))
 
     def test_mkdir(self):
         p = self.root / 'newdirA'
