@@ -228,6 +228,12 @@
     <ClInclude Include="..\Include\sliceobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\slots.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\slots_generated.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\stats.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -1570,6 +1576,12 @@
     </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
       <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\slots.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\slots_generated.c">
+      <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\structmember.c">
       <Filter>Python</Filter>

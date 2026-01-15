@@ -1,0 +1,155 @@
+id, name, kind, dtype
+
+#, The syntax of this file is what currently works best for editing;
+#, it can change at any time. Run `typeslots.py --jsonl` to get the info
+#, in a more stable format.
+
+#, This file is a superset of CSV; readable with
+#, csv.DictReader but also hopefully human-readable and -editable.
+#, Perhaps CSV shouldn't be used this way; sue me.
+#,
+#, Comment lines start with '#' and a comma; that is they have '#' in the first
+#, field. Completely blank lines should be ignored too.
+#, Avoid commas in comments; you can use semicolons.
+#,
+#, Each non-comment line has these mandatory columns:
+#,   - id: the slot's unique number (or '#' for comments)
+#,   - name: the slot's name without "Py_"
+#,   - dtype: basic data type
+#,     - 'func'; 'ptr'; 'size'; 'uint64'; 'int64': the field of the union
+#,     - 'void': value is ignored
+#,   - kind:
+#,     - 'type' is for PyTypeObject slots
+#,     - 'mod' is for module slots
+#,     - 'slot' works for any kind; handled by the slot system itself
+#,     - 'compat' reserved for backwards compatibility
+#,
+#, After these there can be 0 or more "named" columns whose contents start with
+#, with '<name>='; everything after that is the value. No spaces around '='.
+#,
+#, For all types:
+#,   - 'added': Python version that added the slot *to the limited API*
+#,   - 'compat': slot number before 3.14
+#,   - 'subslots=true': contains an array of slots to be merged in
+#, For pointers:
+#,   - 'PyObject=true': This is a Python object (or NULL)
+#,   - 'null': Behavior for NULL values:
+#,      - 'reject': NULLs not allowed
+#,      - 'allow': NULLs allowed
+#,      - default is that NULL is deprecated
+#, For type slots:
+#,   - 'table': Slot table like 'nb' or 'tp'. If not specified: use the first
+#,     part of the name
+#,   - 'virtual=true': Does not directly correspond to a PyTypeObject (sub)field
+
+0, "slot_end", slot, void, added=3.14
+1, "bf_getbuffer/mod_create", compat, void
+2, "bf_releasebuffer/mod_exec", compat, void
+3, "mp_ass_subscript/mod_multiple_interpreters", compat, void
+4, "mp_length/mod_gil", compat, void
+5, "mp_subscript", type, func
+6, "nb_absolute", type, func
+7, "nb_add", type, func
+8, "nb_and", type, func
+9, "nb_bool", type, func
+10, "nb_divmod", type, func
+11, "nb_float", type, func
+12, "nb_floor_divide", type, func
+13, "nb_index", type, func
+14, "nb_inplace_add", type, func
+15, "nb_inplace_and", type, func
+16, "nb_inplace_floor_divide", type, func
+17, "nb_inplace_lshift", type, func
+18, "nb_inplace_multiply", type, func
+19, "nb_inplace_or", type, func
+20, "nb_inplace_power", type, func
+21, "nb_inplace_remainder", type, func
+22, "nb_inplace_rshift", type, func
+23, "nb_inplace_subtract", type, func
+24, "nb_inplace_true_divide", type, func
+25, "nb_inplace_xor", type, func
+26, "nb_int", type, func
+27, "nb_invert", type, func
+28, "nb_lshift", type, func
+29, "nb_multiply", type, func
+30, "nb_negative", type, func
+31, "nb_or", type, func
+32, "nb_positive", type, func
+33, "nb_power", type, func
+34, "nb_remainder", type, func
+35, "nb_rshift", type, func
+36, "nb_subtract", type, func
+37, "nb_true_divide", type, func
+38, "nb_xor", type, func
+39, "sq_ass_item", type, func
+40, "sq_concat", type, func
+41, "sq_contains", type, func
+42, "sq_inplace_concat", type, func
+43, "sq_inplace_repeat", type, func
+44, "sq_item", type, func
+45, "sq_length", type, func
+46, "sq_repeat", type, func
+47, "tp_alloc", type, func
+48, "tp_base", type, ptr, PyObject=true
+49, "tp_bases", type, ptr, PyObject=true
+50, "tp_call", type, func
+51, "tp_clear", type, func
+52, "tp_dealloc", type, func
+53, "tp_del", type, func
+54, "tp_descr_get", type, func
+55, "tp_descr_set", type, func
+56, "tp_doc", type, ptr, null=allow, duplicates=no
+57, "tp_getattr", type, func
+58, "tp_getattro", type, func
+59, "tp_hash", type, func
+60, "tp_init", type, func
+61, "tp_is_gc", type, func
+62, "tp_iter", type, func
+63, "tp_iternext", type, func
+64, "tp_methods", type, ptr, duplicates=no
+65, "tp_new", type, func
+66, "tp_repr", type, func
+67, "tp_richcompare", type, func
+68, "tp_setattr", type, func
+69, "tp_setattro", type, func
+70, "tp_str", type, func
+71, "tp_traverse", type, func
+72, "tp_members", type, ptr, duplicates=no
+73, "tp_getset", type, ptr, duplicates=no
+74, "tp_free", type, func
+75, "nb_matrix_multiply", type, func
+76, "nb_inplace_matrix_multiply", type, func
+77, "am_await", type, func
+78, "am_aiter", type, func
+79, "am_anext", type, func
+80, "tp_finalize", type, func, added=3.5
+81, "am_send", type, func, added=3.10
+82, "tp_vectorcall", type, func, added=3.14
+83, "tp_token", type, ptr, added=3.14, table=ht, field=ht_token, null=allow, duplicates=no
+84, "mod_create", mod, func, compat=1, duplicates=no
+85, "mod_exec", mod, func, compat=2, duplicates=yes
+86, "mod_multiple_interpreters", mod, uint64, compat=3, added=3.12, duplicates=no
+87, "mod_gil", mod, uint64, compat=4, added=3.13, duplicates=no
+88, "bf_getbuffer", type, func, compat=1, added=3.14
+89, "bf_releasebuffer", type, func, compat=2, added=3.14
+90, "mp_ass_subscript", type, func, compat=3, added=3.14
+91, "mp_length", type, func, compat=4, added=3.14
+92, "slot_subslots", slot, ptr, added=3.14, subslots=true, null=allow
+93, "tp_slots", type, ptr, virtual=true, added=3.14, subslots=true, null=allow
+94, "mod_slots", mod, ptr, added=3.14, subslots=true, null=allow
+95, "tp_name", type, ptr, virtual=true, added=3.14, null=reject, duplicates=no, is_name=true
+96, "tp_basicsize", type, size, added=3.14, duplicates=no
+97, "tp_extra_basicsize", type, size, virtual=true, added=3.14, duplicates=no
+98, "tp_itemsize", type, size, added=3.14, duplicates=no
+99, "tp_flags", type, uint64, added=3.14, duplicates=no
+100, "mod_name", mod, ptr, added=3.14, null=reject, duplicates=no, is_name=true
+101, "mod_doc", mod, ptr, added=3.14, null=allow, duplicates=no
+102, "mod_state_size", mod, size, added=3.14, duplicates=no
+103, "mod_methods", mod, ptr, added=3.14, null=reject, duplicates=no
+104, "mod_state_traverse", mod, func, added=3.14, null=reject, duplicates=no
+105, "mod_state_clear", mod, func, added=3.14, null=reject, duplicates=no
+106, "mod_state_free", mod, func, added=3.14, null=reject, duplicates=no
+107, "tp_metaclass", type, ptr, virtual=true, PyObject=true, added=3.14, null=reject, duplicates=no
+108, "tp_module", type, ptr, virtual=true, PyObject=true, added=3.14, null=reject, duplicates=no
+109, "mod_abi", mod, ptr, added=3.15, null=reject, duplicates=no
+110, "mod_token", mod, ptr, added=3.15, null=reject, duplicates=no

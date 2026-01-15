@@ -73,27 +73,6 @@ struct PyModuleDef_Slot {
     void *value;
 };
 
-#define Py_mod_create 1
-#define Py_mod_exec 2
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000
-#  define Py_mod_multiple_interpreters 3
-#endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
-#  define Py_mod_gil 4
-#endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
-#  define Py_mod_abi 5
-#  define Py_mod_name 6
-#  define Py_mod_doc 7
-#  define Py_mod_state_size 8
-#  define Py_mod_methods 9
-#  define Py_mod_state_traverse 10
-#  define Py_mod_state_clear 11
-#  define Py_mod_state_free 12
-#  define Py_mod_token 13
-#endif
-
-
 #ifndef Py_LIMITED_API
 #define _Py_mod_LAST_SLOT 13
 #endif
