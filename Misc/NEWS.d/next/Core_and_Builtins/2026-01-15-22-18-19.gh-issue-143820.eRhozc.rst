@@ -1,0 +1,1 @@
+Fix a bug in JIT builds where executors can be inserted after certain super instructions.
