@@ -258,6 +258,7 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
             sym->cls.version = 0;
             sym->cls.type = typ;
             return;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             if (typ != &PyBool_Type) {
                 sym_set_bottom(ctx, sym);
@@ -319,6 +320,7 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
             sym->tag = JIT_SYM_TYPE_VERSION_TAG;
             sym->version.version = version;
             return true;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             if (version != PyBool_Type.tp_version_tag) {
                 sym_set_bottom(ctx, sym);
@@ -383,6 +385,16 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             return;
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
+            make_const(sym, const_val);
+            return;
+        case JIT_SYM_PREDICATE_TAG:
+            if (!PyBool_Check(const_val) ||
+                (_Py_uop_sym_is_const(ctx, ref) &&
+                _Py_uop_sym_get_const(ctx, ref) != const_val))
+            {
+                sym_set_bottom(ctx, sym);
+                return;
+            }
             make_const(sym, const_val);
             return;
         case JIT_SYM_TRUTHINESS_TAG:
@@ -538,6 +550,7 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return _PyType_LookupByVersion(sym->version.version);
         case JIT_SYM_TUPLE_TAG:
             return &PyTuple_Type;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             return &PyBool_Type;
         case JIT_SYM_COMPACT_INT:
@@ -566,6 +579,7 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
             return Py_TYPE(sym->value.value)->tp_version_tag;
         case JIT_SYM_TUPLE_TAG:
             return PyTuple_Type.tp_version_tag;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             return PyBool_Type.tp_version_tag;
         case JIT_SYM_COMPACT_INT:
@@ -759,6 +773,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
             }
             return;
         case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             sym_set_bottom(ctx, sym);
             return;
@@ -769,6 +784,64 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_UNKNOWN_TAG:
             sym->tag = JIT_SYM_COMPACT_INT;
             return;
+    }
+}
+
+JitOptRef
+_Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef subject_ref, JitOptRef constant_ref, JitOptPredicateKind kind, bool invert)
+{
+    assert(_Py_uop_sym_is_const(ctx, constant_ref));
+
+    JitOptSymbol *subject = PyJitRef_Unwrap(subject_ref);
+    JitOptSymbol *constant = PyJitRef_Unwrap(constant_ref);
+
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space_ref(ctx);
+    }
+
+    res->tag = JIT_SYM_PREDICATE_TAG;
+    res->predicate.invert = invert;
+    res->predicate.kind = kind;
+    res->predicate.subject = (uint16_t)(subject - allocation_base(ctx));
+    res->predicate.constant = (uint16_t)(constant - allocation_base(ctx));
+
+    return PyJitRef_Wrap(res);
+}
+
+bool
+_Py_uop_sym_is_known_singleton(JitOptContext *ctx, JitOptRef ref)
+{
+    if (_Py_uop_sym_is_safe_const(ctx, ref)) {
+        PyObject *value = _Py_uop_sym_get_const(ctx, ref);
+        return value == Py_None || value == Py_True || value == Py_False;
+    }
+    return false;
+}
+
+void
+_Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool branch_is_true)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag != JIT_SYM_PREDICATE_TAG) {
+        return;
+    }
+
+    JitOptPredicate pred = sym->predicate;
+    bool narrow = (branch_is_true && !pred.invert) || (!branch_is_true && pred.invert);
+    if (!narrow) {
+        return;
+    }
+
+    if (pred.kind == JIT_PRED_IS) {
+        JitOptRef subject_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.subject);
+        JitOptRef constant_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.constant);
+        PyObject *const_val = _Py_uop_sym_get_const(ctx, constant_ref);
+        if (const_val == NULL) {
+            return;
+        }
+        _Py_uop_sym_set_const(ctx, subject_ref, const_val);
+        assert(_Py_uop_sym_is_safe_const(ctx, subject_ref));
     }
 }
 

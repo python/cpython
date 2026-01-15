@@ -38,6 +38,9 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_predicate _Py_uop_sym_new_predicate
+#define sym_is_known_singleton _Py_uop_sym_is_known_singleton
+#define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
 extern int
 optimize_to_bool(
@@ -533,7 +536,16 @@ dummy_func(void) {
     }
 
     op(_IS_OP, (left, right -- b, l, r)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        bool invert = (oparg != 0);
+        if (sym_is_known_singleton(ctx, left)) {
+            b = sym_new_predicate(ctx, right, left, JIT_PRED_IS ,invert);
+        }
+        else if (sym_is_known_singleton(ctx, right)) {
+            b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, invert);
+        }
+        else {
+            b = sym_new_type(ctx, &PyBool_Type);
+        }
         l = left;
         r = right;
     }
@@ -1142,6 +1154,7 @@ dummy_func(void) {
             assert(value != NULL);
             eliminate_pop_guard(this_instr, value != Py_True);
         }
+        sym_apply_predicate_narrowing(ctx, flag, true);
         sym_set_const(flag, Py_True);
     }
 
@@ -1187,6 +1200,7 @@ dummy_func(void) {
             assert(value != NULL);
             eliminate_pop_guard(this_instr, value != Py_False);
         }
+        sym_apply_predicate_narrowing(ctx, flag, false);
         sym_set_const(flag, Py_False);
     }
 

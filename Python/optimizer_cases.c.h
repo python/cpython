@@ -2293,7 +2293,16 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            b = sym_new_type(ctx, &PyBool_Type);
+            bool invert = (oparg != 0);
+            if (sym_is_known_singleton(ctx, left)) {
+                b = sym_new_predicate(ctx, right, left, JIT_PRED_IS ,invert);
+            }
+            else if (sym_is_known_singleton(ctx, right)) {
+                b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, invert);
+            }
+            else {
+                b = sym_new_type(ctx, &PyBool_Type);
+            }
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
@@ -3720,6 +3729,7 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, value != Py_True);
             }
+            sym_apply_predicate_narrowing(ctx, flag, true);
             sym_set_const(flag, Py_True);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
@@ -3735,6 +3745,7 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, value != Py_False);
             }
+            sym_apply_predicate_narrowing(ctx, flag, false);
             sym_set_const(flag, Py_False);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
