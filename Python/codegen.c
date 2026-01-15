@@ -231,21 +231,21 @@ typedef enum {
     ITERABLE_IN_LOCAL = 0,
     ITERABLE_ON_STACK = 1,
     ITERATOR_ON_STACK = 2,
-} IterStackState;
+} IterStackPosition;
 
 static int codegen_sync_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackState iter_on_stack);
+                                      IterStackPosition iter_pos);
 
 static int codegen_async_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackState iter_on_stack);
+                                      IterStackPosition iter_pos);
 
 static int codegen_pattern(compiler *, pattern_ty, pattern_context *);
 static int codegen_match(compiler *, stmt_ty);
@@ -4424,18 +4424,18 @@ codegen_comprehension_generator(compiler *c, location loc,
                                 asdl_comprehension_seq *generators, int gen_index,
                                 int depth,
                                 expr_ty elt, expr_ty val, int type,
-                                IterStackState iter_on_stack)
+                                IterStackPosition iter_pos)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return codegen_async_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            iter_on_stack);
+            iter_pos);
     } else {
         return codegen_sync_comprehension_generator(
             c, loc, generators, gen_index, depth, elt, val, type,
-            iter_on_stack);
+            iter_pos);
     }
 }
 
@@ -4444,7 +4444,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                                      asdl_comprehension_seq *generators,
                                      int gen_index, int depth,
                                      expr_ty elt, expr_ty val, int type,
-                                     IterStackState iter_on_stack)
+                                     IterStackPosition iter_pos)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
@@ -4456,7 +4456,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (iter_on_stack == ITERABLE_IN_LOCAL) {
+    if (iter_pos == ITERABLE_IN_LOCAL) {
         if (gen_index == 0) {
             assert(METADATA(c)->u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -4491,7 +4491,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
     }
 
     if (IS_JUMP_TARGET_LABEL(start)) {
-        if (iter_on_stack != ITERATOR_ON_STACK) {
+        if (iter_pos != ITERATOR_ON_STACK) {
             ADDOP(c, LOC(gen->iter), GET_ITER);
             depth += 1;
         }
@@ -4571,7 +4571,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
-                                      IterStackState iter_on_stack)
+                                      IterStackPosition iter_pos)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, send);
@@ -4581,7 +4581,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
                                                           gen_index);
 
-    if (iter_on_stack == ITERABLE_IN_LOCAL) {
+    if (iter_pos == ITERABLE_IN_LOCAL) {
         if (gen_index == 0) {
             assert(METADATA(c)->u_argcount == 1);
             ADDOP_I(c, loc, LOAD_FAST, 0);
@@ -4591,7 +4591,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             VISIT(c, expr, gen->iter);
         }
     }
-    if (iter_on_stack != ITERATOR_ON_STACK) {
+    if (iter_pos != ITERATOR_ON_STACK) {
         ADDOP(c, LOC(gen->iter), GET_AITER);
     }
 
@@ -4823,7 +4823,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     location loc = LOC(e);
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
-    IterStackState iter_state;
+    IterStackPosition iter_state;
     if (is_inlined) {
         VISIT(c, expr, outermost->iter);
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
