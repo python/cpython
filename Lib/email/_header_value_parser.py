@@ -1260,7 +1260,7 @@ def get_bare_quoted_string(value):
         elif value[:2] == '=?':
             valid_ew = False
             try:
-                token, value = get_encoded_word(value)
+                token, value = get_encoded_word(value, terminal_type='ptext')
                 bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
                     "encoded word inside quoted string"))
                 valid_ew = True

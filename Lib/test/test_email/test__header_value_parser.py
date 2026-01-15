@@ -1445,6 +1445,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             return
         self.assertIsInstance(bqs, parser.BareQuotedString)
         self.assertEqual(bqs.token_type, 'bare-quoted-string')
+        self.verify_terminal_types(bqs, 'ptext', 'fws')
 
     params_test_get_bare_quoted_string = old_api_only(
 
@@ -1455,12 +1456,12 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         no_leading_dquote_before_non_ws = C(
             'foo"',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(errors.HeaderParseError, 'expected.*foo'),
             ),
 
         no_leading_dquote_before_ws = C(
             '  "foo"',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(errors.HeaderParseError, 'expected.*"foo"'),
             ),
 
         only_quotes = C(
@@ -1472,7 +1473,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '"',
             stringified='""',
             value='',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_quoted_string_defect],
             ),
 
         following_wsp_preserved = C(
@@ -1503,24 +1504,38 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='a',
             ),
 
-        non_printables = C(
-            '"a\x01a"',
-            value='a\x01a',
-            defects=[errors.NonPrintableDefect],
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printables = C(
+                 '"a{char}a"',
+                 value='a{char}a',
+                 defects=[(nonprintable_defect, '{char}')],
+                 ),
+            ),
+
+        all_printables_allowed = C(
+            f'"{RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"')}"',
+            value=RFC_PRINTABLES,
+            ),
+
+        any_printable_may_be_escaped = C(
+            f'"{''.join(rf'\{c}' for c in RFC_PRINTABLES)}"',
+            stringified=
+                f'"{RFC_PRINTABLES.replace('\\', r'\\').replace('"', r'\"')}"',
+            value=RFC_PRINTABLES,
             ),
 
         no_end_dquote_after_non_ws = C(
             '"foo',
             stringified='"foo"',
             value='foo',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_quoted_string_defect],
             ),
 
         no_end_dquote_after_ws = C(
             '"foo ',
             stringified='"foo "',
             value='foo ',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_quoted_string_defect],
             ),
 
         # Issue 16983: apply postel's law to some bad encoding.
@@ -1529,9 +1544,42 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified='"not really valid"',
             value='not really valid',
             defects=[
-                errors.InvalidHeaderDefect,
-                errors.InvalidHeaderDefect,
+                ew_inside_quoted_string_defect,
+                missing_whitespace_after_ew_defect,
                 ],
+            ),
+
+        # XXX XXX The decode failure here will be fixed in the refactor.
+        mixed_encoded_words_and_regular_text = C(
+            '"This has=?utf-8?Q?multiple?= =?utf-8?q?errors?=in it',
+            stringified='"This has=?utf-8?Q?multiple?= errorsin it"',
+            value='This has=?utf-8?Q?multiple?= errorsin it',
+            defects=[
+                ew_inside_quoted_string_defect,
+                missing_whitespace_after_ew_defect,
+                end_inside_quoted_string_defect,
+                ],
+            ),
+
+        encoded_word_after_dquote_with_no_ws = C(
+            '"test"of=?UTF-8?q?bad?=data',
+            value='test',
+            remainder='of=?UTF-8?q?bad?=data',
+            ),
+
+        invalid_charset = C(
+            '"=?foo?Q?not_really_valid?= at all"',
+            stringified='"not really valid at all"',
+            value='not really valid at all',
+            defects=[
+                ew_inside_quoted_string_defect,
+                charset_defect('foo'),
+                ],
+            ),
+
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
             ),
 
         )
