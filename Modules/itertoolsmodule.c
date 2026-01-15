@@ -553,9 +553,7 @@ groupby_next(PyObject *op)
 
             Py_INCREF(tgtkey);
             Py_INCREF(currkey);
-
             int rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
-
             Py_DECREF(tgtkey);
             Py_DECREF(currkey);
 
