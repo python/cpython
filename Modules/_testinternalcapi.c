@@ -708,13 +708,17 @@ get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
     PyObject *resumes = PyLong_FromLong(Test_EvalFrame_Resumes);
     if (resumes == NULL || PyDict_SetItemString(res, "resumes", resumes) < 0) {
         Py_XDECREF(resumes);
+        Py_DECREF(res);
         return NULL;
     }
+    Py_DECREF(resumes);
     PyObject *loads = PyLong_FromLong(Test_EvalFrame_Loads);
     if (loads == NULL || PyDict_SetItemString(res, "loads", loads) < 0) {
         Py_XDECREF(loads);
+        Py_DECREF(res);
         return NULL;
     }
+    Py_DECREF(loads);
     Test_EvalFrame_Resumes = Test_EvalFrame_Loads = 0;
     return res;
 }
