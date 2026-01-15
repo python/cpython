@@ -1,3 +1,3 @@
 Reorder function annotations so positional-only arguments are returned
-before other arguments. This fixes how :func:`functools.singledispatch``
+before other arguments. This fixes how :func:`functools.singledispatch`
 registers functions with positional-only arguments.
