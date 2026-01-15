@@ -3789,7 +3789,7 @@ class TestUopsOptimization(unittest.TestCase):
                     pass
 
         f1()
-        """), PYTHON_JIT="1", PYTHON_JIT_JUMP_BACKWARD_INITIAL_VALUE="64")
+        """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
 def global_identity(x):

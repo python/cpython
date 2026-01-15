@@ -48,8 +48,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     _Py_BackoffCounter jump_counter, adaptive_counter;
     if (enable_counters) {
         PyThreadState *tstate = _PyThreadState_GET();
-        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-        jump_counter = initial_jump_backoff_counter(&tstate_impl->policy);
+        PyInterpreterState *interp = tstate->interp;
+        jump_counter = initial_jump_backoff_counter(&interp->opt_config);
         adaptive_counter = adaptive_counter_warmup();
     }
     else {
