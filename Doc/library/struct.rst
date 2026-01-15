@@ -280,6 +280,10 @@ platform-dependent.
 .. versionchanged:: 3.14
    Added support for the ``'F'`` and ``'D'`` formats.
 
+Complex numbers may also be represented using two consecutive floating-point
+format characters. In this case, the real part is stored first, followed by
+the imaginary part. The format characters ``f`` and ``d`` determine the type
+used for each component.
 
 Notes:
 
