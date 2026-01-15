@@ -2554,6 +2554,19 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+      >>> 'Monty Python'.rjust(10, '.')
+      'Monty Python'
+
+   See also :meth:`ljust` and :meth:`zfill`.
+
 
 .. method:: str.rpartition(sep, /)
 
