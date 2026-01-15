@@ -70,9 +70,7 @@ class WriteTestBase:
         # Check that trying to write str does not truncate the file.
         self.assertRaises(TypeError, p.write_bytes, 'somestr')
         self.assertEqual(self.ground.readbytes(p), b'abcdefg')
-
-    def test_write_bytes_return(self):
-        p = self.root / 'fileA'
+        # check the return value
         data = b'some bytes'
         self.assertEqual(len(data), p.write_bytes(data))
 
@@ -83,6 +81,9 @@ class WriteTestBase:
         # Check that trying to write bytes does not truncate the file.
         self.assertRaises(TypeError, p.write_text, b'somebytes', encoding='utf-8')
         self.assertEqual(self.ground.readbytes(p), b'\xe4bcdefg')
+        # check the return value
+        data = 'some text'
+        self.assertEqual(len(data), p.write_text(data))
 
     @unittest.skipIf(
         not getattr(sys.flags, 'warn_default_encoding', 0),
@@ -117,11 +118,6 @@ class WriteTestBase:
         self.assertEqual(self.ground.readbytes(p),
                          b'abcde' + os_linesep_byte +
                          b'fghlk' + os_linesep_byte + b'\rmnopq')
-
-    def test_write_text_return(self):
-        p = self.root / 'fileA'
-        data = 'some text'
-        self.assertEqual(len(data), p.write_text(data))
 
     def test_mkdir(self):
         p = self.root / 'newdirA'
