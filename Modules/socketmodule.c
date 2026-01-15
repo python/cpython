@@ -5001,15 +5001,27 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     controllen = controllen_last = 0;
     while (ncmsgbufs < ncmsgs) {
         size_t bufsize, space;
+        PyObject *item;
 
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(cmsg_fast, ncmsgbufs),
+        item = PySequence_Fast_GET_ITEM(cmsg_fast, ncmsgbufs);
+        Py_INCREF(item);
+
+        if (!PyArg_Parse(item,
                          "(iiy*):[sendmsg() ancillary data items]",
                          &cmsgs[ncmsgbufs].level,
                          &cmsgs[ncmsgbufs].type,
                          &cmsgs[ncmsgbufs].data))
+            Py_DECREF(item);
             goto finally;
+        Py_DECREF(item);
         bufsize = cmsgs[ncmsgbufs++].data.len;
-
+        space=CMSG_SPACE(bufsize);
+        if(space>maxcmsgslen){
+            PyErr_SetString(PyExc_OSError, "ancillary data item too large");
+            goto finally;
+        }
+        maxcmsgslen+=space;
+    }
 #ifdef CMSG_SPACE
         if (!get_CMSG_SPACE(bufsize, &space)) {
 #else
