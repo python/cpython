@@ -307,7 +307,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         twenty_thirty_eight_pyc = make_pyc(test_co, 2**32 - 1, len(test_src))
         files = {TESTMOD + ".py": test_src,
                  TESTMOD + pyc_ext: twenty_thirty_eight_pyc}
-        self.doTest(".py", files, TESTMOD)
+        self.doTest(".pyc", files, TESTMOD)
 
     def testPackage(self):
         packdir = TESTPACK + os.sep
