@@ -130,6 +130,8 @@ The following functions provide locale-independent string to number conversions.
 
    *flags* can be zero or more of the following values or-ed together:
 
+   .. c:namespace:: NULL
+
    .. c:macro:: Py_DTSF_SIGN
 
       Always precede the returned string with a sign
@@ -151,9 +153,21 @@ The following functions provide locale-independent string to number conversions.
 
       .. versionadded:: 3.11
 
-   If *ptype* is non-``NULL``, then the value it points to will be set to one of
-   ``Py_DTST_FINITE``, ``Py_DTST_INFINITE``, or ``Py_DTST_NAN``, signifying that
-   *val* is a finite number, an infinite number, or not a number, respectively.
+   If *ptype* is non-``NULL``, then the value it points to will be set to one
+   of the following constants depending on the type of *val*:
+
+   .. list-table::
+      :header-rows: 1
+      :align: left
+
+      * - *\*ptype*
+        - type of *val*
+      * - .. c:macro:: Py_DTST_FINITE
+        - finite number
+      * - .. c:macro:: Py_DTST_INFINITE
+        - infinite number
+      * - .. c:macro:: Py_DTST_NAN
+        - not a number
 
    The return value is a pointer to *buffer* with the converted string or
    ``NULL`` if the conversion failed. The caller is responsible for freeing the
