@@ -3596,7 +3596,7 @@ class SendmsgStreamTests(SendmsgTests):
         left, right = socket.socketpair()
         self.addCleanup(left.close)
         self.addCleanup(right.close)
-        
+
         with self.assertRaises(Exception):
             left.sendmsg([b'x'], seq)
 

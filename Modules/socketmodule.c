@@ -5007,30 +5007,22 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
         Py_INCREF(item);
 
         if (!PyArg_Parse(item,
-                         "(iiy*):[sendmsg() ancillary data items]",
-                         &cmsgs[ncmsgbufs].level,
-                         &cmsgs[ncmsgbufs].type,
-                         &cmsgs[ncmsgbufs].data))
+                        "(iiy*):[sendmsg() ancillary data items]",
+                        &cmsgs[ncmsgbufs].level,
+                        &cmsgs[ncmsgbufs].type,
+                        &cmsgs[ncmsgbufs].data)){
             Py_DECREF(item);
             goto finally;
+        }
         Py_DECREF(item);
+
         bufsize = cmsgs[ncmsgbufs++].data.len;
-        space=CMSG_SPACE(bufsize);
-        if(space>maxcmsgslen){
+
+        if(!get_CMSG_SPACE(bufsize, &space)){
             PyErr_SetString(PyExc_OSError, "ancillary data item too large");
             goto finally;
         }
-        maxcmsgslen+=space;
-    }
-#ifdef CMSG_SPACE
-        if (!get_CMSG_SPACE(bufsize, &space)) {
-#else
-        if (!get_CMSG_LEN(bufsize, &space)) {
-#endif
-            PyErr_SetString(PyExc_OSError, "ancillary data item too large");
-            goto finally;
-        }
-        controllen += space;
+        controllen+=space;
         if (controllen > SOCKLEN_T_LIMIT || controllen < controllen_last) {
             PyErr_SetString(PyExc_OSError, "too much ancillary data");
             goto finally;
