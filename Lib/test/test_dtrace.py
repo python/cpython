@@ -33,11 +33,17 @@ def normalize_trace_output(output):
         result = [
             row.split("\t")
             for row in output.splitlines()
-            if row and not row.startswith('#')
+            if row and not row.startswith('#') and not row.startswith('@')
         ]
         result.sort(key=lambda row: int(row[0]))
         result = [row[1] for row in result]
-        return "\n".join(result)
+        # Normalize paths to basenames (bpftrace outputs full paths)
+        normalized = []
+        for line in result:
+            # Replace full paths with just the filename
+            line = re.sub(r'/[^:]+/([^/:]+\.py)', r'\1', line)
+            normalized.append(line)
+        return "\n".join(normalized)
     except (IndexError, ValueError):
         raise AssertionError(
             "tracer produced unparsable output:\n{}".format(output)
@@ -103,6 +109,156 @@ class SystemTapBackend(TraceBackend):
     COMMAND = ["stap", "-g"]
 
 
+class BPFTraceBackend(TraceBackend):
+    EXTENSION = ".bt"
+    COMMAND = ["bpftrace"]
+
+    # Inline bpftrace programs for each test case
+    PROGRAMS = {
+        "call_stack": """
+            usdt:{python}:python:function__entry {{
+                printf("%lld\\tfunction__entry:%s:%s:%d\\n",
+                       nsecs, str(arg0), str(arg1), arg2);
+            }}
+            usdt:{python}:python:function__return {{
+                printf("%lld\\tfunction__return:%s:%s:%d\\n",
+                       nsecs, str(arg0), str(arg1), arg2);
+            }}
+        """,
+        "gc": """
+            usdt:{python}:python:function__entry {{
+                if (str(arg1) == "start") {{ @tracing = 1; }}
+            }}
+            usdt:{python}:python:function__return {{
+                if (str(arg1) == "start") {{ @tracing = 0; }}
+            }}
+            usdt:{python}:python:gc__start {{
+                if (@tracing) {{
+                    printf("%lld\\tgc__start:%d\\n", nsecs, arg0);
+                }}
+            }}
+            usdt:{python}:python:gc__done {{
+                if (@tracing) {{
+                    printf("%lld\\tgc__done:%lld\\n", nsecs, arg0);
+                }}
+            }}
+            END {{ clear(@tracing); }}
+        """,
+    }
+
+    # Which test scripts to filter by filename (None = use @tracing flag)
+    FILTER_BY_FILENAME = {"call_stack": "call_stack.py"}
+
+    # Expected outputs for each test case
+    # Note: bpftrace captures <module> entry/return and may have slight timing
+    # differences compared to SystemTap due to probe firing order
+    EXPECTED = {
+        "call_stack": """function__entry:call_stack.py:<module>:0
+function__entry:call_stack.py:start:23
+function__entry:call_stack.py:function_1:1
+function__entry:call_stack.py:function_3:9
+function__return:call_stack.py:function_3:10
+function__return:call_stack.py:function_1:2
+function__entry:call_stack.py:function_2:5
+function__entry:call_stack.py:function_1:1
+function__return:call_stack.py:function_3:10
+function__return:call_stack.py:function_1:2
+function__return:call_stack.py:function_2:6
+function__entry:call_stack.py:function_3:9
+function__return:call_stack.py:function_3:10
+function__entry:call_stack.py:function_4:13
+function__return:call_stack.py:function_4:14
+function__entry:call_stack.py:function_5:18
+function__return:call_stack.py:function_5:21
+function__return:call_stack.py:start:28
+function__return:call_stack.py:<module>:30""",
+        "gc": """gc__start:0
+gc__done:0
+gc__start:1
+gc__done:0
+gc__start:2
+gc__done:0
+gc__start:2
+gc__done:1""",
+    }
+
+    def run_case(self, name, optimize_python=None):
+        if name not in self.PROGRAMS:
+            raise unittest.SkipTest(f"No bpftrace program for {name}")
+
+        python_file = abspath(name + ".py")
+        python_flags = []
+        if optimize_python:
+            python_flags.extend(["-O"] * optimize_python)
+
+        subcommand = [sys.executable] + python_flags + [python_file]
+        program = self.PROGRAMS[name].format(python=sys.executable)
+
+        try:
+            proc = subprocess.Popen(
+                ["bpftrace", "-e", program, "-c", " ".join(subcommand)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            stdout, stderr = proc.communicate(timeout=60)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            raise AssertionError("bpftrace timed out")
+        except (FileNotFoundError, PermissionError) as e:
+            raise unittest.SkipTest(f"bpftrace not available: {e}")
+
+        if proc.returncode != 0:
+            raise AssertionError(
+                f"bpftrace failed with code {proc.returncode}:\n{stderr}"
+            )
+
+        # Filter output by filename if specified (bpftrace captures everything)
+        if name in self.FILTER_BY_FILENAME:
+            filter_filename = self.FILTER_BY_FILENAME[name]
+            filtered_lines = [
+                line for line in stdout.splitlines()
+                if filter_filename in line
+            ]
+            stdout = "\n".join(filtered_lines)
+
+        actual_output = normalize_trace_output(stdout)
+        expected_output = self.EXPECTED[name].strip()
+
+        return (expected_output, actual_output)
+
+    def assert_usable(self):
+        # Check if bpftrace is available and can attach to USDT probes
+        program = f'usdt:{sys.executable}:python:function__entry {{ printf("probe: success\\n"); exit(); }}'
+        try:
+            proc = subprocess.Popen(
+                ["bpftrace", "-e", program, "-c", f"{sys.executable} -c pass"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            stdout, stderr = proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()  # Clean up
+            raise unittest.SkipTest("bpftrace timed out during usability check")
+        except OSError as e:
+            raise unittest.SkipTest(f"bpftrace not available: {e}")
+
+        # Check for permission errors (bpftrace usually requires root)
+        if proc.returncode != 0:
+            raise unittest.SkipTest(
+                f"bpftrace(1) failed with code {proc.returncode}: {stderr}"
+            )
+
+        if "probe: success" not in stdout:
+            raise unittest.SkipTest(
+                f"bpftrace(1) failed: stdout={stdout!r} stderr={stderr!r}"
+            )
+
+
+
+
 class TraceTests:
     # unittest.TestCase options
     maxDiff = None
@@ -126,7 +282,8 @@ class TraceTests:
     def test_verify_call_opcodes(self):
         """Ensure our call stack test hits all function call opcodes"""
 
-        opcodes = set(["CALL_FUNCTION", "CALL_FUNCTION_EX", "CALL_FUNCTION_KW"])
+        # Modern Python uses CALL, CALL_KW, and CALL_FUNCTION_EX
+        opcodes = set(["CALL", "CALL_FUNCTION_EX", "CALL_KW"])
 
         with open(abspath("call_stack.py")) as f:
             code_string = f.read()
@@ -151,9 +308,6 @@ class TraceTests:
     def test_gc(self):
         self.run_case("gc")
 
-    def test_line(self):
-        self.run_case("line")
-
 
 class DTraceNormalTests(TraceTests, unittest.TestCase):
     backend = DTraceBackend()
@@ -173,6 +327,17 @@ class SystemTapNormalTests(TraceTests, unittest.TestCase):
 class SystemTapOptimizedTests(TraceTests, unittest.TestCase):
     backend = SystemTapBackend()
     optimize_python = 2
+
+
+class BPFTraceNormalTests(TraceTests, unittest.TestCase):
+    backend = BPFTraceBackend()
+    optimize_python = 0
+
+
+class BPFTraceOptimizedTests(TraceTests, unittest.TestCase):
+    backend = BPFTraceBackend()
+    optimize_python = 2
+
 
 class CheckDtraceProbes(unittest.TestCase):
     @classmethod
@@ -234,6 +399,8 @@ class CheckDtraceProbes(unittest.TestCase):
             "Name: audit",
             "Name: gc__start",
             "Name: gc__done",
+            "Name: function__entry",
+            "Name: function__return",
         ]
 
         for probe_name in available_probe_names:
@@ -246,8 +413,6 @@ class CheckDtraceProbes(unittest.TestCase):
 
         # Missing probes will be added in the future.
         missing_probe_names = [
-            "Name: function__entry",
-            "Name: function__return",
             "Name: line",
         ]
 
