@@ -19842,6 +19842,12 @@ then :
   printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_addchdir_np" "ac_cv_func_posix_spawn_file_actions_addchdir_np"
+if test "x$ac_cv_func_posix_spawn_file_actions_addchdir_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_addclosefrom_np" "ac_cv_func_posix_spawn_file_actions_addclosefrom_np"
 if test "x$ac_cv_func_posix_spawn_file_actions_addclosefrom_np" = xyes
 then :

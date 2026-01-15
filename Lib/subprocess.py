@@ -751,6 +751,7 @@ def _use_posix_spawn():
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
+_HAVE_POSIX_SPAWN_CHDIR = hasattr(os, 'POSIX_SPAWN_CHDIR')
 _HAVE_POSIX_SPAWN_CLOSEFROM = hasattr(os, 'POSIX_SPAWN_CLOSEFROM')
 
 
@@ -1781,7 +1782,7 @@ class Popen:
                     errread, errwrite)
 
 
-        def _posix_spawn(self, args, executable, env, restore_signals, close_fds,
+        def _posix_spawn(self, args, executable, env, restore_signals, close_fds, cwd,
                          p2cread, p2cwrite,
                          c2pread, c2pwrite,
                          errread, errwrite):
@@ -1807,6 +1808,9 @@ class Popen:
             ):
                 if fd != -1:
                     file_actions.append((os.POSIX_SPAWN_DUP2, fd, fd2))
+
+            if cwd is not None:
+                file_actions.append((os.POSIX_SPAWN_CHDIR, cwd))
 
             if close_fds:
                 file_actions.append((os.POSIX_SPAWN_CLOSEFROM, 3))
@@ -1860,7 +1864,7 @@ class Popen:
                     and preexec_fn is None
                     and (not close_fds or _HAVE_POSIX_SPAWN_CLOSEFROM)
                     and not pass_fds
-                    and cwd is None
+                    and (cwd is None or _HAVE_POSIX_SPAWN_CHDIR)
                     and (p2cread == -1 or p2cread > 2)
                     and (c2pwrite == -1 or c2pwrite > 2)
                     and (errwrite == -1 or errwrite > 2)
@@ -1870,7 +1874,8 @@ class Popen:
                     and gids is None
                     and uid is None
                     and umask < 0):
-                self._posix_spawn(args, executable, env, restore_signals, close_fds,
+                self._posix_spawn(args, executable, env, restore_signals,
+                                  close_fds, cwd,
                                   p2cread, p2cwrite,
                                   c2pread, c2pwrite,
                                   errread, errwrite)
