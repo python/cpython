@@ -973,6 +973,16 @@ using ``[]``.
               case _:
                   never_call_me(arg)  # OK, arg is of type Never (or NoReturn)
 
+   Or to define an empty container that must remain empty::
+
+      from typing import Never
+
+      empty_list: list[Never] = []
+      empty_list.append(1)  # type checker error
+
+      empty_dict: dict[Never, Never] = {}
+      empty_dict['key'] = 'value'  # type checker error
+
    :data:`!Never` and :data:`!NoReturn` have the same meaning in the type system
    and static type checkers treat both equivalently.
 
