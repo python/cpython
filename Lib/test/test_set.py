@@ -19,6 +19,14 @@ def check_pass_thru():
     raise PassThru
     yield 1
 
+class CustomHash:
+    def __init__(self, hash):
+        self.hash = hash
+    def __hash__(self):
+        return self.hash
+    def __repr__(self):
+        return f'<CustomHash {self.hash} at {id(self):#x}>'
+
 class BadCmp:
     def __hash__(self):
         return 1
@@ -634,6 +642,38 @@ class TestSet(TestJointOps, unittest.TestCase):
         myobj = TestRichSetCompare()
         myset >= myobj
         self.assertTrue(myobj.le_called)
+
+    def test_set_membership(self):
+        myfrozenset = frozenset(range(3))
+        myset = {myfrozenset, "abc", 1}
+        self.assertIn(set(range(3)), myset)
+        self.assertNotIn(set(range(1)), myset)
+        myset.discard(set(range(3)))
+        self.assertEqual(myset, {"abc", 1})
+        self.assertRaises(KeyError, myset.remove, set(range(1)))
+        self.assertRaises(KeyError, myset.remove, set(range(3)))
+
+    def test_hash_collision_remove_add(self):
+        self.maxDiff = None
+        # There should be enough space, so all elements with unique hash
+        # will be placed in corresponding cells without collision.
+        n = 64
+        elems = [CustomHash(h) for h in range(n)]
+        # Elements with hash collision.
+        a = CustomHash(n)
+        b = CustomHash(n)
+        elems += [a, b]
+        s = self.thetype(elems)
+        self.assertEqual(len(s), len(elems), s)
+        s.remove(a)
+        # "a" has been replaced with a dummy.
+        del elems[n]
+        self.assertEqual(len(s), len(elems), s)
+        self.assertEqual(s, set(elems))
+        s.add(b)
+        # "b" should not replace the dummy.
+        self.assertEqual(len(s), len(elems), s)
+        self.assertEqual(s, set(elems))
 
 
 class SetSubclass(set):
