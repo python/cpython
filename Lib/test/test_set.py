@@ -1813,6 +1813,7 @@ class TestWeirdBugs(unittest.TestCase):
         list(si)
 
     def test_merge_and_mutate(self):
+        # gh-141805
         class X:
             def __hash__(self):
                 return hash(0)
@@ -1824,6 +1825,33 @@ class TestWeirdBugs(unittest.TestCase):
         other = {X() for i in range(10)}
         s = {0}
         s.update(other)
+
+    def test_hash_collision_concurrent_add(self):
+        class X:
+            def __hash__(self):
+                return 0
+        class Y:
+            flag = False
+            def __hash__(self):
+                return 0
+            def __eq__(self, other):
+                if not self.flag:
+                    self.flag = True
+                    s.add(X())
+                return self is other
+
+        a = X()
+        s = set()
+        s.add(a)
+        s.add(X())
+        s.remove(a)
+        # Now the set contains a dummy entry followed by an entry
+        # for an object with hash 0.
+        s.add(Y())
+        # The following operations should not crash.
+        repr(s)
+        list(s)
+        set() | s
 
 
 class TestOperationsMutating:
