@@ -7,28 +7,34 @@
 
 #include <stdbool.h>
 
-#define _PySlot_TYPE_VOID 1
-#define _PySlot_TYPE_FUNC 2
-#define _PySlot_TYPE_PTR 3
-#define _PySlot_TYPE_SIZE 4
-#define _PySlot_TYPE_INT64 5
-#define _PySlot_TYPE_UINT64 6
+typedef enum _PySlot_TYPE {
+    _PySlot_TYPE_VOID,
+    _PySlot_TYPE_FUNC,
+    _PySlot_TYPE_PTR,
+    _PySlot_TYPE_SIZE,
+    _PySlot_TYPE_INT64,
+    _PySlot_TYPE_UINT64,
+}_PySlot_TYPE;
 
-#define _PySlot_KIND_TYPE 1
-#define _PySlot_KIND_MOD 2
-#define _PySlot_KIND_COMPAT 0x10
-#define _PySlot_KIND_SLOT 0x20
+typedef enum _PySlot_KIND {
+    _PySlot_KIND_TYPE,
+    _PySlot_KIND_MOD,
+    _PySlot_KIND_COMPAT,
+    _PySlot_KIND_SLOT,
+} _PySlot_KIND;
 
-#define _PySlot_NULL_DEPRECATED 0
-#define _PySlot_NULL_REJECT 1
-#define _PySlot_NULL_ALLOW  2
+typedef enum _PySlot_NULL_HANDLING {
+    _PySlot_NULL_DEPRECATED,
+    _PySlot_NULL_REJECT,
+    _PySlot_NULL_ALLOW,
+} _PySlot_NULL_HANDLING;
 
 /* Internal information about a slot */
 typedef struct _PySlot_Info {
-    const char *name;
-    uint8_t dtype; /* _PySlot_TYPE_* */
-    uint8_t kind; /* _PySlot_KIND */
-    uint8_t null_handling;  // for pointers (incl. functions)
+    const char *name; /* without the Py_ prefix */
+    _PySlot_TYPE dtype;
+    _PySlot_KIND kind;
+    _PySlot_NULL_HANDLING null_handling;
     bool is_subslots :1;
     bool is_name :1;
     bool reject_duplicates :1;
@@ -74,8 +80,9 @@ typedef struct _PySlotIterator_state {
         PySlot *slot;               // with _PySlot_KIND_SLOT
         PyType_Slot *tp_slot;       // with _PySlot_KIND_TYPE
         PyModuleDef_Slot *mod_slot; // with _PySlot_KIND_MOD
+        void *any_slot;
     };
-    uint8_t slot_struct_kind;
+    _PySlot_KIND slot_struct_kind;
     bool ignoring_fallbacks :1;
 } _PySlotIterator_state;
 
@@ -83,43 +90,60 @@ typedef struct _PySlotIterator_state {
 typedef struct {
     _PySlotIterator_state *state;
     _PySlotIterator_state states[_PySlot_MAX_NESTING];
-    uint8_t kind;
+    _PySlot_KIND kind;
     uint8_t recursion_level;
     unsigned int seen[_Py_slot_COUNT / sizeof(unsigned int) + 1];
+    bool is_at_end :1;
+    bool is_first_run :1;
 
     /* Output information: */
-
-    const _PySlot_Info *info;
 
     // The slot. Always a copy; may be modified by caller of the iterator.
     PySlot current;
 
+    // Information about the slot
+    const _PySlot_Info *info;
+
     // Name of the object (type/module) being defined, NULL if unknown.
     // Set by _PySlotIterator_Next as soon as it sees a tp_name/mod_name slot;
-    // used for error messages but available to the caller too.
+    // used for internal error messages but available to the caller too.
     // This points to the slot; must be copied for longer usage.
+    // The name is not reset by rewinding.
     char *name;
 } _PySlotIterator;
 
-PyAPI_FUNC(int) _PySlotIterator_InitWithKind(
+/* Initialize a iterator. Currently cannot fail. */
+PyAPI_FUNC(void) _PySlotIterator_InitWithKind(
     _PySlotIterator *, void*,
-    int result_kind, int slot_struct_kind);
+    _PySlot_KIND result_kind, _PySlot_KIND slot_struct_kind);
 
-static inline int
-_PySlotIterator_Init(_PySlotIterator *it, PySlot *slots, int result_kind)
+static inline void
+_PySlotIterator_Init(_PySlotIterator *it, PySlot *slots,
+                     _PySlot_KIND result_kind)
 {
     return _PySlotIterator_InitWithKind(it, slots, result_kind,
                                         _PySlot_KIND_SLOT);
 }
 
-/* Iteration function */
-PyAPI_FUNC(int) _PySlotIterator_Next(_PySlotIterator *);
-/* Additional validation (like rejecting duplicates); must be called after each
- * _PySlotIterator_Next during the *first* time a particular slots array
- * is iterated over. */
-PyAPI_FUNC(int) _PySlotIterator_ValidateCurrentSlot(_PySlotIterator *);
+/* Reset a *successfully exhausted* iterator to the beginning.
+ * The *slots* must be the same as for the previous
+ * `_PySlotIterator_InitWithKind` call.
+ * (Subsequent iterations skip some validation.)
+ */
+PyAPI_FUNC(void) _PySlotIterator_Rewind(_PySlotIterator *it, void *slots);
 
-/* Return 1 if given slot was "seen" by an earlier ValidateCurrentSlot call. */
+/* Iteration function.
+ *
+ * Return false at the end (when successfully exhausted).
+ * Otherwise (even on error), fill output information in `it` and return true.
+ *
+ * On error, set an exception and set `it->current.sl_id` to `Py_slot_invalid`.
+ */
+PyAPI_FUNC(bool) _PySlotIterator_Next(_PySlotIterator *it);
+
+/* Return 1 if given slot was "seen" by an earlier _PySlotIterator_Next call.
+ * (This state is not reset by rewiding.)
+ */
 PyAPI_FUNC(bool) _PySlotIterator_SawSlot(_PySlotIterator *, int);
 
 static inline bool
