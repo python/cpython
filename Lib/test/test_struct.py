@@ -461,6 +461,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises((TypeError, struct.error), struct.pack_into, b'', sb,
                           None)
 
+        # Just a wrong buf.
+        self.assertRaises(TypeError, s.pack_into, "ЫЫЫ", 0, b'gravitsappa')
+
     def test_pack_into_fn(self):
         test_string = b'Reykjavik rocks, eow!'
         writable_buf = array.array('b', b' '*100)
@@ -483,6 +486,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                           test_string)
         self.assertRaises((ValueError, struct.error), pack_into, small_buf, 2,
                           test_string)
+
+        # Just a wrong buf.
+        self.assertRaises(TypeError, pack_into, "ЫЫЫ", 0, b'pepelats')
 
     def test_unpack_with_buffer(self):
         # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
