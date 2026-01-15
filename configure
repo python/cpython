@@ -23966,6 +23966,9 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 
 fi
 
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
+if test "$ac_cv_libc" != musl
+then :
 
 ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
                #include <sys/prctl.h>
@@ -23986,6 +23989,7 @@ printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 fi
 
 
+fi
 # check for openpty, login_tty, and forkpty
 
 
