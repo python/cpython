@@ -1,8 +1,0 @@
-Add the :func:`~unicodedata.iter_graphemes` function in the
-:mod:`unicodedata` module to iterate over grapheme clusters according to
-rules defined in `Unicode Standard Annex #29, "Unicode Text Segmentation"
-<https://www.unicode.org/reports/tr29/>`_. Add
-:func:`~unicodedata.grapheme_cluster_break`,
-:func:`~unicodedata.indic_conjunct_break` and
-:func:`~unicodedata.extended_pictographic` functions to get the properties
-of the character which are related to the above algorithm.

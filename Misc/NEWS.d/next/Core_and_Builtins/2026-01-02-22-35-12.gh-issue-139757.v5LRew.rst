@@ -1,2 +1,0 @@
-Fix unintended bytecode specialization for non-ascii string.
-Patch by Donghee Na, Ken Jin and Chris Eibl.
