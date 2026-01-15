@@ -3536,37 +3536,43 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_is_true_narrows_to_constant(self):
         def f(n):
+            def return_true():
+                return True
+
             hits = 0
+            v = return_true()
             for i in range(n):
-                v = True if i != TIER2_THRESHOLD else -1
                 if v is True:
-                    # Redundant after narrowing
-                    if v is True:
-                        hits += 1
+                    hits += v + 1
             return hits
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
         self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
 
-        self.assertLessEqual(count_ops(ex, "_IS_OP"), 1)
+        # v + 1 should be constant folded
+        self.assertNotIn("_BINARY_OP", uops)
 
     def test_is_false_narrows_to_constant(self):
         def f(n):
+            def return_false():
+                return False
+
             hits = 0
+            v = return_false()
             for i in range(n):
-                v = False if i != TIER2_THRESHOLD else -1
                 if v is False:
-                    # Redundant after narrowing
-                    if v is False:
-                        hits += 1
+                    hits += v + 1
             return hits
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
 
-        self.assertLessEqual(count_ops(ex, "_IS_OP"), 1)
+        # v + 1 should be constant folded
+        self.assertNotIn("_BINARY_OP", uops)
 
     def test_for_iter_gen_frame(self):
         def f(n):
