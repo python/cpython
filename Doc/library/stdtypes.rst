@@ -2588,13 +2588,7 @@ expression support in the :mod:`re` module).
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
-   See :meth:`str.removesuffix` for a method that will remove a single suffix
-   string rather than all of a set of characters.  For example::
-
-      >>> 'Monty Python'.rstrip(' Python')
-      'M'
-      >>> 'Monty Python'.removesuffix(' Python')
-      'Monty'
+   See also :meth:`strip` and :meth:`removesuffix`.
 
 
 .. method:: str.split(sep=None, maxsplit=-1)
