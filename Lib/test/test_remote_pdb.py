@@ -1007,6 +1007,28 @@ class RemotePdbTestCase(unittest.TestCase):
             prompts = [o for o in outputs if 'prompt' in o]
             self.assertEqual(len(prompts), 2)  # Should have sent 2 prompts
 
+    def test_expression_evaluation_output(self):
+        """Test that expression evaluation results are sent through the socket, not to debuggee stdout."""
+        # Test lambda expression
+        self.pdb.default("(lambda: 123)()")
+        
+        outputs = self.sockfile.get_output()
+        # Should have a message with the result
+        messages = [o for o in outputs if 'message' in o]
+        self.assertTrue(any('123' in o.get('message', '') for o in messages),
+                        f"Expected '123' in output messages, got: {messages}")
+
+    def test_expression_evaluation_sum(self):
+        """Test that sum expression evaluation results are sent through the socket."""
+        # Test sum expression
+        self.pdb.default("sum(i for i in (1, 2, 3))")
+        
+        outputs = self.sockfile.get_output()
+        # Should have a message with the result
+        messages = [o for o in outputs if 'message' in o]
+        self.assertTrue(any('6' in o.get('message', '') for o in messages),
+                        f"Expected '6' in output messages, got: {messages}")
+
 
 @requires_subprocess()
 @unittest.skipIf(is_wasi, "WASI does not support TCP sockets")
