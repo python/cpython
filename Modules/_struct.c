@@ -2440,17 +2440,12 @@ static PyGetSetDef s_getsetlist[] = {
     {NULL} /* sentinel */
 };
 
-PyDoc_STRVAR(s__doc__,
-"Struct(fmt) --> compiled struct object\n"
-"\n"
-);
-
 static PyType_Slot PyStructType_slots[] = {
     {Py_tp_dealloc, s_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_repr, s_repr},
-    {Py_tp_doc, (void*)s__doc__},
+    {Py_tp_doc, (void*)Struct___init____doc__},
     {Py_tp_traverse, s_traverse},
     {Py_tp_clear, s_clear},
     {Py_tp_methods, s_methods},
