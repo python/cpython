@@ -2228,9 +2228,9 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args,
 /*[clinic input]
 Struct.pack as s_pack
 
-    *args: array
+    *values as args: array
 
-Return a bytes object with args, packed according the format self.
+Return a bytes object with values, packed according the format self.
 
 See help(struct) for more on format strings.
 [clinic start generated code]*/
@@ -2238,7 +2238,7 @@ See help(struct) for more on format strings.
 static PyObject *
 s_pack_impl(PyStructObject *self, PyObject * const *args,
             Py_ssize_t args_length)
-/*[clinic end generated code: output=dc06e32695719fce input=24c5c3c677d4d7e2]*/
+/*[clinic end generated code: output=dc06e32695719fce input=ef2ef79bdfff3584]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
 
@@ -2271,12 +2271,12 @@ s_pack_impl(PyStructObject *self, PyObject * const *args,
 /*[clinic input]
 Struct.pack_into as s_pack_into
 
-    buffer: Py_buffer
+    buffer: Py_buffer(accept={rwbuffer})
     offset: Py_ssize_t
     /
-    *args: array
+    *values as args: array
 
-Pack args to the writtable buffer according to the format self.
+Pack values to the writtable buffer according to the format self.
 
 The packed bytes written starting at offset.  See help(struct) for more
 on format strings.
@@ -2285,7 +2285,7 @@ on format strings.
 static PyObject *
 s_pack_into_impl(PyStructObject *self, Py_buffer *buffer, Py_ssize_t offset,
                  PyObject * const *args, Py_ssize_t args_length)
-/*[clinic end generated code: output=40e08ea63f1d57bd input=687fd92ef694b362]*/
+/*[clinic end generated code: output=40e08ea63f1d57bd input=c6540e61893bb142]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
 
@@ -2539,9 +2539,9 @@ pack
 
     format as s_object: cache_struct
     /
-    *args: array
+    *values as args: array
 
-Return a bytes object with args, packed according the format string.
+Return a bytes object with values, packed according the format string.
 
 See help(struct) for more on format strings.
 [clinic start generated code]*/
@@ -2549,7 +2549,7 @@ See help(struct) for more on format strings.
 static PyObject *
 pack_impl(PyObject *module, PyStructObject *s_object, PyObject * const *args,
           Py_ssize_t args_length)
-/*[clinic end generated code: output=3c490d3313013a77 input=7ad2023f64935c39]*/
+/*[clinic end generated code: output=3c490d3313013a77 input=ca22c200fceadd40]*/
 {
     return s_pack_impl(s_object, args, args_length);
 }
@@ -2558,12 +2558,12 @@ pack_impl(PyObject *module, PyStructObject *s_object, PyObject * const *args,
 pack_into
 
     format as s_object: cache_struct
-    buffer: Py_buffer
+    buffer: Py_buffer(accept={rwbuffer})
     offset: Py_ssize_t
     /
-    *args: array
+    *values as args: array
 
-Pack args to the writtable buffer according to the format string.
+Pack values to the writtable buffer according to the format string.
 
 The packed bytes written starting at offset.  See help(struct) for more
 on format strings.
@@ -2573,7 +2573,7 @@ static PyObject *
 pack_into_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer,
                Py_ssize_t offset, PyObject * const *args,
                Py_ssize_t args_length)
-/*[clinic end generated code: output=86bd2d8d0628b540 input=4ace36b845e3167e]*/
+/*[clinic end generated code: output=86bd2d8d0628b540 input=4b6c16fe7a0b81be]*/
 {
     return s_pack_into_impl(s_object, buffer, offset, args, args_length);
 }

@@ -219,10 +219,10 @@ Struct_iter_unpack(PyObject *self, PyObject *buffer)
 }
 
 PyDoc_STRVAR(s_pack__doc__,
-"pack($self, /, *args)\n"
+"pack($self, /, *values)\n"
 "--\n"
 "\n"
-"Return a bytes object with args, packed according the format self.\n"
+"Return a bytes object with values, packed according the format self.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -248,10 +248,10 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,
-"pack_into($self, buffer, offset, /, *args)\n"
+"pack_into($self, buffer, offset, /, *values)\n"
 "--\n"
 "\n"
-"Pack args to the writtable buffer according to the format self.\n"
+"Pack values to the writtable buffer according to the format self.\n"
 "\n"
 "The packed bytes written starting at offset.  See help(struct) for more\n"
 "on format strings.");
@@ -275,7 +275,8 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("pack_into", nargs, 2, PY_SSIZE_T_MAX)) {
         goto exit;
     }
-    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
+    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("pack_into", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
     {
@@ -427,10 +428,10 @@ exit:
 }
 
 PyDoc_STRVAR(pack__doc__,
-"pack($module, format, /, *args)\n"
+"pack($module, format, /, *values)\n"
 "--\n"
 "\n"
-"Return a bytes object with args, packed according the format string.\n"
+"Return a bytes object with values, packed according the format string.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -467,10 +468,10 @@ exit:
 }
 
 PyDoc_STRVAR(pack_into__doc__,
-"pack_into($module, format, buffer, offset, /, *args)\n"
+"pack_into($module, format, buffer, offset, /, *values)\n"
 "--\n"
 "\n"
-"Pack args to the writtable buffer according to the format string.\n"
+"Pack values to the writtable buffer according to the format string.\n"
 "\n"
 "The packed bytes written starting at offset.  See help(struct) for more\n"
 "on format strings.");
@@ -499,7 +500,8 @@ pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!cache_struct_converter(module, args[0], &s_object)) {
         goto exit;
     }
-    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("pack_into", "argument 2", "read-write bytes-like object", args[1]);
         goto exit;
     }
     {
@@ -706,4 +708,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ab8ff8415c7556a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86e67d1398bd81b8 input=a9049054013a1b77]*/
