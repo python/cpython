@@ -190,7 +190,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     // --- Init-only options -----------
 
     SPEC(_config_init, UINT, INIT_ONLY, NO_SYS),
-    SPEC(_init_main, BOOL, INIT_ONLY, NO_SYS),
+    SPEC(init_main, BOOL, INIT_ONLY, NO_SYS),
     SPEC(_install_importlib, BOOL, INIT_ONLY, NO_SYS),
     SPEC(_is_python_build, BOOL, INIT_ONLY, NO_SYS),
     SPEC(module_search_paths_set, BOOL, INIT_ONLY, NO_SYS),
@@ -1036,7 +1036,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_install_importlib = 1;
     config->check_hash_pycs_mode = NULL;
     config->pathconfig_warnings = -1;
-    config->_init_main = 1;
+    config->init_main = 1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif

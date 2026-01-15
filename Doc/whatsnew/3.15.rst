@@ -1220,6 +1220,11 @@ C API changes
 New features
 ------------
 
+* Add :c:func:`Py_InitializeMain` function to move to the "Main" initialization
+  phase, finish the Python initialization. Rename also
+  :c:member:`!PyConfig._init_main` to :c:member:`PyConfig.init_main`.
+  (Contributed by Victor Stinner in :gh:`142417`.)
+
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.
