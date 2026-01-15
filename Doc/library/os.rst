@@ -1556,6 +1556,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.15
 
 
+.. data:: RWF_ATOMIC
+
+   Write data atomically. Requires alignment to the device's atomic write unit.
+
+   .. availability:: Linux >= 6.11
+
+   .. versionadded:: 3.15
+
+
 .. function:: ptsname(fd, /)
 
    Return the name of the slave pseudo-terminal device associated with the
@@ -1598,6 +1607,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
+   - :data:`RWF_ATOMIC`
 
    Return the total number of bytes actually written.
 
@@ -1969,7 +1979,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program, other file descriptors are inherited.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout

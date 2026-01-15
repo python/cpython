@@ -2142,6 +2142,7 @@ extern "C" {
     INIT_ID(which), \
     INIT_ID(who), \
     INIT_ID(withdata), \
+    INIT_ID(wrapcol), \
     INIT_ID(writable), \
     INIT_ID(write), \
     INIT_ID(write_through), \

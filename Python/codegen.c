@@ -3941,6 +3941,12 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
     else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "tuple")) {
         const_oparg = CONSTANT_BUILTIN_TUPLE;
     }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "list")) {
+        const_oparg = CONSTANT_BUILTIN_LIST;
+    }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "set")) {
+        const_oparg = CONSTANT_BUILTIN_SET;
+    }
     if (const_oparg != -1) {
         ADDOP_I(c, loc, COPY, 1); // the function
         ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, const_oparg);
@@ -3948,8 +3954,10 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
         ADDOP(c, loc, POP_TOP);
 
-        if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
+        if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, BUILD_LIST, 0);
+        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+            ADDOP_I(c, loc, BUILD_SET, 0);
         }
         expr_ty generator_exp = asdl_seq_GET(args, 0);
         VISIT(c, expr, generator_exp);
@@ -3960,8 +3968,11 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP(c, loc, PUSH_NULL); // Push NULL index for loop
         USE_LABEL(c, loop);
         ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
-        if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
+        if (const_oparg == CONSTANT_BUILTIN_TUPLE || const_oparg == CONSTANT_BUILTIN_LIST) {
             ADDOP_I(c, loc, LIST_APPEND, 3);
+            ADDOP_JUMP(c, loc, JUMP, loop);
+        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+            ADDOP_I(c, loc, SET_ADD, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
         }
         else {
@@ -3970,7 +3981,9 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         }
 
         ADDOP(c, NO_LOCATION, POP_ITER);
-        if (const_oparg != CONSTANT_BUILTIN_TUPLE) {
+        if (const_oparg != CONSTANT_BUILTIN_TUPLE &&
+            const_oparg != CONSTANT_BUILTIN_LIST &&
+            const_oparg != CONSTANT_BUILTIN_SET) {
             ADDOP_LOAD_CONST(c, loc, initial_res == Py_True ? Py_False : Py_True);
         }
         ADDOP_JUMP(c, loc, JUMP, end);
@@ -3980,6 +3993,10 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP(c, NO_LOCATION, POP_ITER);
         if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
+        } else if (const_oparg == CONSTANT_BUILTIN_LIST) {
+            // result is already a list
+        } else if (const_oparg == CONSTANT_BUILTIN_SET) {
+            // result is already a set
         }
         else {
             ADDOP_LOAD_CONST(c, loc, initial_res);

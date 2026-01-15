@@ -7,6 +7,8 @@ import os
 import tempfile
 import unittest
 
+from test.support import is_emscripten
+
 try:
     import _remote_debugging  # noqa: F401
     from profiling.sampling.pstats_collector import PstatsCollector
@@ -599,6 +601,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertGreater(stack_table["length"], 0)
         self.assertGreater(len(stack_table["frame"]), 0)
 
+    @unittest.skipIf(is_emscripten, "threads not available")
     def test_gecko_collector_export(self):
         """Test Gecko profile export functionality."""
         gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)

@@ -1,0 +1,25 @@
+name: Reusable C API Docs Check
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  check-c-api-docs:
+    name: 'Check if all C APIs are documented'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check for undocumented C APIs
+        run: python Tools/check-c-api-docs/main.py
