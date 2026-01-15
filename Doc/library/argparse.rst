@@ -1491,7 +1491,7 @@ The parse_args() method
    created and how they are assigned. See the documentation for
    :meth:`!add_argument` for details.
 
-   * args_ - List of strings to parse, in the order they appear.  The default is taken from
+   * args_ - List of strings to parse, in normal iteration order.  The default is taken from
      :data:`sys.argv`.
 
    * namespace_ - An object to take the attributes.  The default is a new empty
