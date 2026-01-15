@@ -1,14 +1,16 @@
 # CPython Pixi packages
 
-This directory contains definitions for [Pixi packages](https://pixi.sh/latest/reference/pixi_manifest/#the-package-section)
-which can be built from the CPython source code.
+This directory contains definitions for [Pixi
+packages](https://pixi.sh/latest/reference/pixi_manifest/#the-package-section) which can
+be built from the CPython source code.
 
-Downstream developers can make use of these packages by adding them as Git dependencies in a
-[Pixi workspace](https://pixi.sh/latest/first_workspace/), like:
+Downstream developers can make use of these packages by adding them as Git dependencies
+in a [Pixi workspace](https://pixi.sh/latest/first_workspace/), like:
 
 ```toml
 [dependencies]
-python = { git = "https://github.com/python/cpython", subdirectory = "Tools/pixi-packages/asan" }
+python.git = "https://github.com/python/cpython"
+python.subdirectory = "Tools/pixi-packages/asan"
 ```
 
 This is particularly useful when developers need to build CPython from source
@@ -22,19 +24,24 @@ Each package definition is contained in a subdirectory, but they share the build
 - `default`
 - `freethreading`
 - `asan`: ASan-instrumented build
-- `tsan_freethreading`: TSan-instrumented free-threading build
+- `tsan-freethreading`: TSan-instrumented free-threading build
 
 ## Maintenance
 
-- Keep the `abi_tag` and `version` fields in each `pixi.toml` up to date with the Python version
+- Keep the `abi_tag` and `version` fields in each `variants.yaml` up to date with the
+  Python version
 - Update `build.sh` for any breaking changes in the `configure` and `make` workflow
 
 ## Opportunities for future improvement
 
 - More package variants (such as UBSan)
 - Support for Windows
-- Using a single `pixi.toml` and `recipe.yaml` for all package variants is blocked on https://github.com/prefix-dev/pixi/issues/4599
-- A workaround can be removed from the build script once https://github.com/prefix-dev/rattler-build/issues/2012 is resolved
+- Using a single `pixi.toml` and `recipe.yaml` for all package variants is blocked on
+  [pixi-build-backends#532](https://github.com/prefix-dev/pixi-build-backends/pull/532)
+  and [pixi#5248](https://github.com/prefix-dev/pixi/issues/5248)
+- A workaround can be removed from the build script once
+  [rattler-build#2012](https://github.com/prefix-dev/rattler-build/issues/2012) is
+  resolved
 
 ## Troubleshooting
 
