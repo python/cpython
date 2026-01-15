@@ -1722,23 +1722,33 @@ Subcommands
 
    Description of parameters:
 
-   * *title* - title for the sub-parser group in help output; by default "subcommands" if description is provided, otherwise uses title for positional arguments
+   * *title* - title for the sub-parser group in help output; by default
+     "subcommands" if description is provided, otherwise uses title for
+     positional arguments
 
-   * *description* - description for the sub-parser group in help output, by default ``None``
+   * *description* - description for the sub-parser group in help output, by
+     default ``None``
 
-   * *prog* - usage information that will be displayed with subcommand help, by default the name of the program and any positional arguments before the subparser argument
+   * *prog* - usage information that will be displayed with subcommand help,
+     by default the name of the program and any positional arguments before the
+     subparser argument
 
-   * *parser_class* - class which will be used to create sub-parser instances, by default the class of the current parser (e.g. :class:`ArgumentParser`)
+   * *parser_class* - class which will be used to create sub-parser instances, by
+     default the class of the current parser (e.g. :class:`ArgumentParser`)
 
-   * action_ - the basic type of action to be taken when this argument is encountered at the command line
+   * action_ - the basic type of action to be taken when this argument is
+     encountered at the command line
 
-   * dest_ - name of the attribute under which subcommand name will be stored; by default ``None`` and no value is stored
+   * dest_ - name of the attribute under which subcommand name will be
+     stored; by default ``None`` and no value is stored
 
-   * required_ - Whether or not a subcommand must be provided, by default ``False`` (added in 3.7)
+   * required_ - Whether or not a subcommand must be provided, by default
+     ``False`` (added in 3.7)
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available subcommands in help; by default it is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+   * metavar_ - string presenting available subcommands in help; by default it
+     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
 
    Some example usage::
 
@@ -1887,7 +1897,10 @@ Subcommands
 
 
 .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None,
-                                           deprecated=False, **kwargs)
+                                         deprecated=False, **kwargs)
+
+   .. versionadded:: 3.13
+      Added the *deprecated* parameter.
 
    Creates and returns a new :class:`!ArgumentParser` object for the
    subcommand *name*.
@@ -1921,9 +1934,6 @@ Subcommands
       >>> parser.parse_args(['fly'])  # doctest: +SKIP
       chicken.py: warning: command 'fly' is deprecated
       Namespace()
-
-   .. versionadded:: 3.13
-      Added the *deprecated* parameter.
 
 
    All other keyword arguments are passed directly to the
