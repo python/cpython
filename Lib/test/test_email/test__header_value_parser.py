@@ -1448,17 +1448,17 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_bare_quoted_string = old_api_only(
 
-        only = C(
+        non_ws = C(
             '"foo"',
             value='foo',
             ),
 
-        must_start_with_dquote_non_ws = C(
+        no_leading_dquote_before_non_ws = C(
             'foo"',
             exception=(errors.HeaderParseError, '.*'),
             ),
 
-        must_start_with_dquote_ws = C(
+        no_leading_dquote_before_ws = C(
             '  "foo"',
             exception=(errors.HeaderParseError, '.*'),
             ),
@@ -1468,7 +1468,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             value='',
             ),
 
-        missing_endquotes = C(
+        missing_endquote = C(
             '"',
             stringified='""',
             value='',
@@ -1509,23 +1509,18 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects=[errors.NonPrintableDefect],
             ),
 
-        no_end_dquote = C(
+        no_end_dquote_after_non_ws = C(
             '"foo',
             stringified='"foo"',
             value='foo',
             defects=[errors.InvalidHeaderDefect],
             ),
 
-        no_end_dquote_ws = C(
+        no_end_dquote_after_ws = C(
             '"foo ',
             stringified='"foo "',
             value='foo ',
             defects=[errors.InvalidHeaderDefect],
-            ),
-
-        empty_quotes = C(
-            '""',
-            value='',
             ),
 
         # Issue 16983: apply postel's law to some bad encoding.
