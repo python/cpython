@@ -920,7 +920,7 @@ class TestContentDisposition(TestHeaderBase):
             '               =?UTF-8?Q?pdf?="',
             'attachment',
             {'filename': 'Schulbesuchsbestättigung.pdf'},
-            [errors.InvalidHeaderDefect]*3,
+            [errors.InvalidHeaderDefect]*2,
             ('attachment; filename="Schulbesuchsbestättigung.pdf"'),
             ('Content-Disposition: attachment;\n'
              ' filename*=utf-8\'\'Schulbesuchsbest%C3%A4ttigung.pdf\n'),
@@ -1242,8 +1242,7 @@ class TestAddressHeader(TestHeaderBase):
 
         'rfc2047_atom_in_quoted_string_is_decoded':
             ('"=?utf-8?q?=C3=89ric?=" <foo@example.com>',
-            [errors.InvalidHeaderDefect,
-            errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect],
             'Éric <foo@example.com>',
             'Éric',
             'foo@example.com',
