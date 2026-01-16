@@ -1,1 +1,1 @@
-Fixed an issue in pdb where results of expressions evaluated via the closure execution path could be written to sys.stdout instead of the debugger output stream.
+Fixed a bug in pdb where expression results were written to sys.stdout instead of pdb.stdout.
