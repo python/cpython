@@ -390,6 +390,10 @@ func,PyList_Size,3.2,,
 func,PyList_Sort,3.2,,
 data,PyList_Type,3.2,,
 type,PyLongExport,3.15,,members
+member,PyLongExport.value,3.15,,
+member,PyLongExport.negative,3.15,,
+member,PyLongExport.ndigits,3.15,,
+member,PyLongExport.digits,3.15,,
 type,PyLongLayout,3.15,,full-abi
 type,PyLongObject,3.2,,opaque
 data,PyLongRangeIter_Type,3.2,,
