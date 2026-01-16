@@ -32,10 +32,10 @@ kind_name(_PySlot_KIND kind)
     return "<thing>";
 }
 
-void
-_PySlotIterator_InitWithKind(_PySlotIterator *it, void *slots,
-                             _PySlot_KIND result_kind,
-                             _PySlot_KIND slot_struct_kind)
+static void
+init_with_kind(_PySlotIterator *it, void *slots,
+               _PySlot_KIND result_kind,
+               _PySlot_KIND slot_struct_kind)
 {
     MSG("");
     MSG("init (%s slot iterator)", kind_name(result_kind));
@@ -50,6 +50,19 @@ _PySlotIterator_InitWithKind(_PySlotIterator *it, void *slots,
     it->is_first_run = true;
     it->current.sl_id = 0;
     memset(it->seen, 0, sizeof(it->seen));
+}
+
+void
+_PySlotIterator_Init(_PySlotIterator *it, PySlot *slots,
+                     _PySlot_KIND result_kind)
+{
+    init_with_kind(it, slots, result_kind, _PySlot_KIND_SLOT);
+}
+
+void
+_PySlotIterator_InitLegacy(_PySlotIterator *it, void *slots, _PySlot_KIND kind)
+{
+    init_with_kind(it, slots, kind, kind);
 }
 
 void

@@ -111,18 +111,15 @@ typedef struct {
     char *name;
 } _PySlotIterator;
 
-/* Initialize a iterator. Currently cannot fail. */
-PyAPI_FUNC(void) _PySlotIterator_InitWithKind(
-    _PySlotIterator *, void*,
-    _PySlot_KIND result_kind, _PySlot_KIND slot_struct_kind);
-
-static inline void
+/* Initialize an iterator using a Py_Slot array */
+PyAPI_FUNC(void)
 _PySlotIterator_Init(_PySlotIterator *it, PySlot *slots,
-                     _PySlot_KIND result_kind)
-{
-    return _PySlotIterator_InitWithKind(it, slots, result_kind,
-                                        _PySlot_KIND_SLOT);
-}
+                     _PySlot_KIND result_kind);
+
+/* Initialize an iterator using a legacy slot array */
+PyAPI_FUNC(void)
+_PySlotIterator_InitLegacy(_PySlotIterator *it, void *slots,
+                           _PySlot_KIND kind);
 
 /* Reset a *successfully exhausted* iterator to the beginning.
  * The *slots* must be the same as for the previous

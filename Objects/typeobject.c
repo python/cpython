@@ -5285,8 +5285,7 @@ PyType_FromMetaclass(
     char *res_start;
 
     _PySlotIterator it;
-    _PySlotIterator_InitWithKind(&it, spec->slots,
-                                 _PySlot_KIND_TYPE, _PySlot_KIND_TYPE);
+    _PySlotIterator_InitLegacy(&it, spec->slots, _PySlot_KIND_TYPE);
     while (_PySlotIterator_Next(&it)) {
         switch (it.current.sl_id) {
         case Py_slot_invalid:
