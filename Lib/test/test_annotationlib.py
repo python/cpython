@@ -1862,6 +1862,29 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertNotEqual(hash(c3), hash(c4))
         self.assertEqual(hash(c3), hash(ForwardRef("int", module=__name__)))
 
+    def test_forward_equality_and_hash_with_cells(self):
+        """Regression test for GH-143831."""
+
+        class C[T]:
+            def one(self) -> C:  # one cell: C
+                pass
+
+            one_f = ForwardRef("C", owner=one)
+            one_f_ga = get_annotations(one, format=Format.FORWARDREF)["return"]
+
+            def two(self) -> C[T]:  # two cells: C, T
+                pass
+
+            two_f_ga1 = get_annotations(two, format=Format.FORWARDREF)["return"]
+            two_f_ga2 = get_annotations(two, format=Format.FORWARDREF)["return"]
+
+        self.assertNotEqual(C.one_f, C.one_f_ga)
+        self.assertNotEqual(hash(C.one_f), hash(C.one_f_ga))
+
+        self.assertIsNot(C.two_f_ga1, C.two_f_ga2)  # self-test
+        self.assertEqual(C.two_f_ga1, C.two_f_ga2)  # same cell
+        self.assertEqual(hash(C.two_f_ga1), hash(C.two_f_ga2))
+
     def test_forward_equality_namespace(self):
         def namespace1():
             a = ForwardRef("A")
