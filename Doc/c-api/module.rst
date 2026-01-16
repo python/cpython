@@ -415,7 +415,7 @@ functions to avoid reference leaks.
 
 To retrieve the state from a given module, use the following functions:
 
-.. c:function:: void* PyModule_GetState(PyObject *module)
+.. c:function:: void* PyModule_GetState(PyObject *mod)
 
    Return the "state" of the module, that is, a pointer to the block of memory
    allocated at module creation time, or ``NULL``.  See
@@ -426,10 +426,10 @@ To retrieve the state from a given module, use the following functions:
    module state.
 
 
-.. c:function:: int PyModule_GetStateSize(PyObject *, Py_ssize_t *result)
+.. c:function:: int PyModule_GetStateSize(PyObject *mod, Py_ssize_t *result)
 
-   Set *\*result* to the size of the module's state, as specified using
-   :c:macro:`Py_mod_state_size` (or :c:member:`PyModuleDef.m_size`),
+   Set *\*result* to the size of the state for the module *mod*, as specified
+   using :c:macro:`Py_mod_state_size` (or :c:member:`PyModuleDef.m_size`),
    and return 0.
 
    On error, set *\*result* to -1, and return -1 with an exception set.
@@ -549,10 +549,10 @@ This means that if you have a module object, but you are not sure if it
 
 .. code-block:: c
 
-   PyObject *module = <the module in question>
+   PyObject *mod = <the module in question>
 
    void *module_token;
-   if (PyModule_GetToken(module, &module_token) < 0) {
+   if (PyModule_GetToken(mod, &module_token) < 0) {
        return NULL;
    }
    if (module_token != your_token) {
@@ -595,9 +595,9 @@ A module's token -- and the *your_token* value to use in the above code -- is:
 
    .. versionadded:: 3.15
 
-.. c:function:: int PyModule_GetToken(PyObject *module, void** result)
+.. c:function:: int PyModule_GetToken(PyObject *mod, void** result)
 
-   Set *\*result* to the module's token and return 0.
+   Set *\*result* to the module token for the module *mod* and return 0.
 
    On error, set *\*result* to NULL, and return -1 with an exception set.
 
@@ -643,14 +643,14 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
 
    .. versionadded:: 3.15
 
-.. c:function:: int PyModule_Exec(PyObject *module)
+.. c:function:: int PyModule_Exec(PyObject *mod)
 
-   Execute the :c:data:`Py_mod_exec` slot(s) of the given *module*.
+   Execute the :c:data:`Py_mod_exec` slot(s) of the given module, *mod*.
 
    On success, return 0.
    On error, return -1 with an exception set.
 
-   For clarity: If *module* has no slots, for example if it uses
+   For clarity: If *mod* has no slots, for example if it uses
    :ref:`legacy single-phase initialization <single-phase-initialization>`,
    this function does nothing and returns 0.
 
