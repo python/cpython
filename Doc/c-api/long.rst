@@ -687,7 +687,7 @@ Export API
 
 .. versionadded:: 3.14
 
-.. c:struct:: PyLongLayout
+.. c:type:: PyLongLayout
 
    Layout of an array of "digits" ("limbs" in the GMP terminology), used to
    represent absolute value for arbitrary precision integers.
@@ -727,7 +727,7 @@ Export API
 
    Get the native layout of Python :class:`int` objects.
 
-   See the :c:struct:`PyLongLayout` structure.
+   See the :c:type:`PyLongLayout` structure.
 
    The function must not be called before Python initialization nor after
    Python finalization. The returned layout is valid until Python is
@@ -799,7 +799,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
 .. versionadded:: 3.14
 
-.. c:struct:: PyLongWriter
+.. c:type:: PyLongWriter
 
    A Python :class:`int` writer instance.
 
@@ -827,7 +827,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    The layout of *digits* is described by :c:func:`PyLong_GetNativeLayout`.
 
    Digits must be in the range [``0``; ``(1 << bits_per_digit) - 1``]
-   (where the :c:struct:`~PyLongLayout.bits_per_digit` is the number of bits
+   (where the :c:type:`~PyLongLayout.bits_per_digit` is the number of bits
    per digit).
    Any unused most significant digits must be set to ``0``.
 
