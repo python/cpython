@@ -10890,7 +10890,6 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -1;
             #endif
-
             PyTypeObject *tp = PyStackRef_TYPE(iterable);
             if (tp == &PyTuple_Type || tp == &PyList_Type) {
                 iter = iterable;
@@ -16238,7 +16237,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            assert(STACK_LEVEL() == 0);
+            assert(STACK_LEVEL() <= 2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
