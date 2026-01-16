@@ -102,6 +102,14 @@ class ArrayTestCase(unittest.TestCase):
         # cannot delete items
         with self.assertRaises(TypeError):
             del ca[0]
+    
+    def test_ctypes_array_class_assignment_incompatible(self):
+        A = c_long * 3
+        B = c_long * 5
+        x = A(1, 2, 3)
+        
+        with self.assertRaises(TypeError):
+            x.__class__ = B
 
     def test_step_overflow(self):
         a = (c_int * 5)()

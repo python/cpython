@@ -1097,6 +1097,28 @@ CDataType_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         return Py_NewRef(value);
     }
     ctypes_state *st = get_module_state_by_class(cls);
+
+    /* Disallow incompatible ctypes array __class__ reassignment */
+    StgInfo *old_info = NULL;
+    StgInfo *new_info = NULL;
+    if (PyStgInfo_FromObject(st, value, &old_info) == 0 &&
+        PyStgInfo_FromType(st, type, &new_info) == 0 &&
+        old_info != NULL &&
+        new_info != NULL &&
+        old_info->length >= 0 &&
+        new_info->length >= 0)
+    {
+        if (old_info->length != new_info->length ||
+            old_info->size != new_info->size ||
+            old_info->proto != new_info->proto)
+        {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "cannot assign incompatible ctypes array type"
+            );
+            return NULL;
+        }
+    }
     if (PyCArg_CheckExact(st, value)) {
         PyCArgObject *p = (PyCArgObject *)value;
         PyObject *ob = p->obj;
@@ -4992,6 +5014,41 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
     return 0;
 }
 
+static int
+PyCArray_setattro(PyObject *self, PyObject *key, PyObject *value)
+{
+    if (PyUnicode_Check(key) &&
+        PyUnicode_CompareWithASCIIString(key, "__class__") == 0)
+    {
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
+        StgInfo *old_info;
+        StgInfo *new_info;
+
+        if (PyStgInfo_FromObject(st, self, &old_info) < 0) {
+            return -1;
+        }
+        if (PyStgInfo_FromType(st, value, &new_info) < 0) {
+            return -1;
+        }
+
+        /* Only care about array → array */
+        if (old_info->length >= 0 && new_info->length >= 0) {
+            if (old_info->length != new_info->length ||
+                old_info->size != new_info->size ||
+                old_info->proto != new_info->proto)
+            {
+                PyErr_SetString(
+                    PyExc_TypeError,
+                    "cannot assign incompatible ctypes array type"
+                );
+                return -1;
+            }
+        }
+    }
+
+    return PyObject_GenericSetAttr(self, key, value);
+}
+
 static PyObject *
 Array_item_lock_held(PyObject *myself, Py_ssize_t index)
 {
@@ -5310,6 +5367,7 @@ static PyType_Slot pycarray_slots[] = {
     {Py_mp_length, Array_length},
     {Py_mp_subscript, Array_subscript},
     {Py_mp_ass_subscript, Array_ass_subscript},
+    {Py_tp_setattro, PyCArray_setattro},
     {0, NULL},
 };
 
