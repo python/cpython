@@ -639,7 +639,6 @@ class MorselTests(unittest.TestCase):
                 cookie.output()
 
 
-
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(cookies))
     return tests
