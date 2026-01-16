@@ -788,12 +788,10 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
 }
 
 JitOptRef
-_Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef subject_ref, JitOptRef constant_ref, JitOptPredicateKind kind, bool invert)
+_Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind, bool invert)
 {
-    assert(_Py_uop_sym_is_const(ctx, constant_ref));
-
-    JitOptSymbol *subject = PyJitRef_Unwrap(subject_ref);
-    JitOptSymbol *constant = PyJitRef_Unwrap(constant_ref);
+    JitOptSymbol *lhs = PyJitRef_Unwrap(lhs_ref);
+    JitOptSymbol *rhs = PyJitRef_Unwrap(rhs_ref);
 
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
@@ -803,20 +801,10 @@ _Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef subject_ref, JitOptRef c
     res->tag = JIT_SYM_PREDICATE_TAG;
     res->predicate.invert = invert;
     res->predicate.kind = kind;
-    res->predicate.subject = (uint16_t)(subject - allocation_base(ctx));
-    res->predicate.constant = (uint16_t)(constant - allocation_base(ctx));
+    res->predicate.lhs = (uint16_t)(lhs - allocation_base(ctx));
+    res->predicate.rhs = (uint16_t)(rhs - allocation_base(ctx));
 
     return PyJitRef_Wrap(res);
-}
-
-bool
-_Py_uop_sym_is_known_singleton(JitOptContext *ctx, JitOptRef ref)
-{
-    if (_Py_uop_sym_is_safe_const(ctx, ref)) {
-        PyObject *value = _Py_uop_sym_get_const(ctx, ref);
-        return value == Py_None || value == Py_True || value == Py_False;
-    }
-    return false;
 }
 
 void
@@ -833,10 +821,17 @@ _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool br
         return;
     }
 
-    if (pred.kind == JIT_PRED_IS) {
-        JitOptRef subject_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.subject);
-        JitOptRef constant_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.constant);
-        PyObject *const_val = _Py_uop_sym_get_const(ctx, constant_ref);
+    JitOptRef lhs_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.lhs);
+    JitOptRef rhs_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.rhs);
+
+    bool lhs_is_const = _Py_uop_sym_is_safe_const(ctx, lhs_ref);
+    bool rhs_is_const = _Py_uop_sym_is_safe_const(ctx, rhs_ref);
+
+    if (pred.kind == JIT_PRED_IS && (lhs_is_const || rhs_is_const)) {
+        JitOptRef subject_ref = lhs_is_const ? rhs_ref : lhs_ref;
+        JitOptRef const_ref = lhs_is_const ? lhs_ref : rhs_ref;
+
+        PyObject *const_val = _Py_uop_sym_get_const(ctx, const_ref);
         if (const_val == NULL) {
             return;
         }

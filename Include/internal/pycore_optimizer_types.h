@@ -80,8 +80,8 @@ typedef struct {
     uint8_t tag;
     uint8_t kind;
     bool invert;
-    uint16_t subject;
-    uint16_t constant;
+    uint16_t lhs;
+    uint16_t rhs;
 } JitOptPredicate;
 
 typedef struct {

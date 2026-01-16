@@ -2293,16 +2293,7 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            bool invert = (oparg != 0);
-            if (sym_is_known_singleton(ctx, left)) {
-                b = sym_new_predicate(ctx, right, left, JIT_PRED_IS ,invert);
-            }
-            else if (sym_is_known_singleton(ctx, right)) {
-                b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, invert);
-            }
-            else {
-                b = sym_new_type(ctx, &PyBool_Type);
-            }
+            b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, oparg != 0);
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);

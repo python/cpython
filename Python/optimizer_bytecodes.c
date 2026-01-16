@@ -39,7 +39,6 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
 #define sym_new_predicate _Py_uop_sym_new_predicate
-#define sym_is_known_singleton _Py_uop_sym_is_known_singleton
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
 extern int
@@ -536,16 +535,7 @@ dummy_func(void) {
     }
 
     op(_IS_OP, (left, right -- b, l, r)) {
-        bool invert = (oparg != 0);
-        if (sym_is_known_singleton(ctx, left)) {
-            b = sym_new_predicate(ctx, right, left, JIT_PRED_IS ,invert);
-        }
-        else if (sym_is_known_singleton(ctx, right)) {
-            b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, invert);
-        }
-        else {
-            b = sym_new_type(ctx, &PyBool_Type);
-        }
+        b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, oparg != 0);
         l = left;
         r = right;
     }
