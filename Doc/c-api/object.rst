@@ -85,7 +85,7 @@ Object Protocol
    instead of the :func:`repr`.
 
 
-.. c:function:: void PyUnstable_Object_Dump(PyObject *op)
+.. c:function:: void PyObject_Dump(PyObject *op)
 
    Dump an object *op* to ``stderr``. This should only be used for debugging.
 
