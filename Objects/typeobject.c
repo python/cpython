@@ -5312,12 +5312,6 @@ PyType_FromMetaclass(
         case Py_slot_invalid:
             goto finally;
         case Py_tp_members:
-            if (nmembers != 0) {
-                PyErr_SetString(
-                    PyExc_SystemError,
-                    "Multiple Py_tp_members slots are not supported.");
-                goto finally;
-            }
             for (const PyMemberDef *memb = it.current.sl_ptr; memb->name != NULL; memb++) {
                 nmembers++;
                 if (memb->flags & Py_RELATIVE_OFFSET) {
@@ -5584,7 +5578,12 @@ PyType_FromMetaclass(
             break;
         case Py_tp_token:
             {
-                res->ht_token = it.current.sl_ptr == Py_TP_USE_SPEC ? spec : it.current.sl_ptr;
+                if (it.current.sl_ptr == Py_TP_USE_SPEC) {
+                    res->ht_token = spec;
+                }
+                else {
+                    res->ht_token = it.current.sl_ptr;
+                }
             }
             break;
         default:
