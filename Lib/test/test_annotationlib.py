@@ -8,6 +8,7 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template, Interpolation
+import types
 import typing
 import sys
 import unittest
@@ -1864,26 +1865,39 @@ class TestForwardRefClass(unittest.TestCase):
 
     def test_forward_equality_and_hash_with_cells(self):
         """Regression test for GH-143831."""
-
-        class C[T]:
-            def one(self) -> C:  # one cell: C
-                pass
+        class A:
+            def one(_) -> C1:
+                """One cell."""
 
             one_f = ForwardRef("C", owner=one)
-            one_f_ga = get_annotations(one, format=Format.FORWARDREF)["return"]
+            one_f_ga1 = get_annotations(one, format=Format.FORWARDREF)["return"]
+            one_f_ga2 = get_annotations(one, format=Format.FORWARDREF)["return"]
 
-            def two(self) -> C[T]:  # two cells: C, T
-                pass
+            def two(_) -> C1 | C2:
+                """Two cells."""
 
             two_f_ga1 = get_annotations(two, format=Format.FORWARDREF)["return"]
             two_f_ga2 = get_annotations(two, format=Format.FORWARDREF)["return"]
 
-        self.assertNotEqual(C.one_f, C.one_f_ga)
-        self.assertNotEqual(hash(C.one_f), hash(C.one_f_ga))
+        type C1 = None
+        type C2 = None
 
-        self.assertIsNot(C.two_f_ga1, C.two_f_ga2)  # self-test
-        self.assertEqual(C.two_f_ga1, C.two_f_ga2)  # same cell
-        self.assertEqual(hash(C.two_f_ga1), hash(C.two_f_ga2))
+        self.assertNotEqual(A.one_f, A.one_f_ga1)
+        self.assertNotEqual(hash(A.one_f), hash(A.one_f_ga1))
+
+        self.assertIs(A.one_f_ga1.__cell__, A.one_f_ga1.__cell__)
+        self.assertIsInstance(A.one_f_ga1.__cell__, types.CellType)
+        self.assertIsInstance(A.one_f_ga1.__cell__, types.CellType)
+
+        self.assertEqual(A.one_f_ga1, A.one_f_ga2)
+        self.assertEqual(hash(A.one_f_ga1), hash(A.one_f_ga2))
+
+        self.assertIsNot(A.two_f_ga1.__cell__, A.two_f_ga2.__cell__)
+        self.assertIsInstance(A.two_f_ga1.__cell__, dict)
+        self.assertIsInstance(A.two_f_ga1.__cell__, dict)
+
+        self.assertEqual(A.two_f_ga1, A.two_f_ga2)
+        self.assertEqual(hash(A.two_f_ga1), hash(A.two_f_ga2))
 
     def test_forward_equality_namespace(self):
         def namespace1():
