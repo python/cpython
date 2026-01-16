@@ -44,7 +44,7 @@
 // Include test definitions from _testinternalcapi/
 #include "_testinternalcapi/parts.h"
 
-#ifdef HAVE_DLFCN_H
+#if defined(HAVE_DLADDR) && !defined(__wasi__)
 #  include <dlfcn.h>
 #endif
 #ifdef MS_WINDOWS
@@ -178,7 +178,18 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
 #endif
     return "other";
 }
-#elif defined(HAVE_DLFCN_H)
+#elif defined(__wasi__)
+static const char *
+classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
+{
+#ifdef _Py_JIT
+    if (jit_enabled && _PyJIT_AddressInJitCode(interp, addr)) {
+        return "jit";
+    }
+#endif
+    return "other";
+}
+#elif defined(HAVE_DLADDR) && !defined(__wasi__)
 static const char *
 classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
 {

@@ -27,17 +27,27 @@ def _frame_pointers_expected(machine):
     )
     if "no-omit-frame-pointer" in cflags:
         return True
-    if machine in {"aarch64", "arm64"}:
-        return "-fomit-frame-pointer" not in cflags
-    if machine == "x86_64":
+    if "omit-frame-pointer" in cflags:
         return False
-    # MSVC ignores /Oy and /Oy- on x64/ARM64.
-    if sys.platform == "win32" and machine == "arm64":
-        # Windows ARM64 guidelines recommend frame pointers (x29) for stack walking.
+    if sys.platform == "darwin":
+        # macOS x86_64/ARM64 always have frame pointer by default.
         return True
-    if sys.platform == "win32" and machine == "x86_64":
-        # Windows x64 uses unwind metadata; frame pointers are not required.
-        return None
+    if sys.platform == "linux":
+        if machine in {"aarch64", "arm64"}:
+            # 32-bit Linux is not supported
+            if sys.maxsize < 2**32:
+                return None
+            return True
+        if machine == "x86_64":
+            return False
+    if sys.platform == "win32":
+        # MSVC ignores /Oy and /Oy- on x64/ARM64.
+        if machine == "arm64":
+            # Windows ARM64 guidelines recommend frame pointers (x29) for stack walking.
+            return True
+        elif machine == "x86_64":
+            # Windows x64 uses unwind metadata; frame pointers are not required.
+            return None
     return None
 
 
@@ -139,6 +149,7 @@ def _manual_unwind_length(**env):
         ) from exc
 
 
+@unittest.skipIf(support.is_wasi, "test not supported on WASI")
 class FramePointerUnwindTests(unittest.TestCase):
 
     def setUp(self):
