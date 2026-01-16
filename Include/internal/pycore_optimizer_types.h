@@ -74,7 +74,6 @@ typedef struct {
 
 typedef enum {
     JIT_PRED_IS,
-    // JIT_PRED_EQ,
 } JitOptPredicateKind;
 
 typedef struct {
