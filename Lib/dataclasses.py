@@ -2,7 +2,6 @@ import re
 import sys
 import copy
 import types
-import inspect
 import keyword
 import itertools
 import annotationlib
@@ -431,6 +430,38 @@ def _tuple_str(obj_name, fields):
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
+
+# NOTE: This is a vendored copy of `inspect.unwrap` to speed up import time
+def _unwrap(func, *, stop=None):
+    """Get the object wrapped by *func*.
+
+   Follows the chain of :attr:`__wrapped__` attributes returning the last
+   object in the chain.
+
+   *stop* is an optional callback accepting an object in the wrapper chain
+   as its sole argument that allows the unwrapping to be terminated early if
+   the callback returns a true value. If the callback never returns a true
+   value, the last object in the chain is returned as usual. For example,
+   :func:`signature` uses this to stop unwrapping if any object in the
+   chain has a ``__signature__`` attribute defined.
+
+   :exc:`ValueError` is raised if a cycle is encountered.
+
+    """
+    f = func  # remember the original func for error reporting
+    # Memoise by id to tolerate non-hashable objects, but store objects to
+    # ensure they aren't destroyed, which would allow their IDs to be reused.
+    memo = {id(f): f}
+    recursion_limit = sys.getrecursionlimit()
+    while not isinstance(func, type) and hasattr(func, '__wrapped__'):
+        if stop is not None and stop(func):
+            break
+        func = func.__wrapped__
+        id_func = id(func)
+        if (id_func in memo) or (len(memo) >= recursion_limit):
+            raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
+        memo[id_func] = func
+    return func
 
 
 class _FuncBuilder:
@@ -982,6 +1013,28 @@ _hash_action = {(False, False, False, False): None,
 # See https://bugs.python.org/issue32929#msg312829 for an if-statement
 # version of this table.
 
+class AutoDocstring:
+    """A non-data descriptor to autogenerate class docstring
+    from the signature of its __init__ method.
+    """
+
+    def __get__(self, _obj, cls):
+        import inspect
+
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(
+                 cls,
+                 annotation_format=annotationlib.Format.FORWARDREF,
+            )).replace(' -> None', '')
+        except (TypeError, ValueError):
+            text_sig = ''
+
+        doc = cls.__name__ + text_sig
+        setattr(cls, '__doc__', doc)
+        return doc
+
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                    match_args, kw_only, slots, weakref_slot):
@@ -1209,23 +1262,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if hash_action:
         cls.__hash__ = hash_action(cls, field_list, func_builder)
 
-    # Generate the methods and add them to the class.  This needs to be done
-    # before the __doc__ logic below, since inspect will look at the __init__
-    # signature.
+    # Generate the methods and add them to the class.
     func_builder.add_fns_to_class(cls)
 
     if not getattr(cls, '__doc__'):
-        # Create a class doc-string.
-        try:
-            # In some cases fetching a signature is not possible.
-            # But, we surely should not fail in this case.
-            text_sig = str(inspect.signature(
-                cls,
-                annotation_format=annotationlib.Format.FORWARDREF,
-            )).replace(' -> None', '')
-        except (TypeError, ValueError):
-            text_sig = ''
-        cls.__doc__ = (cls.__name__ + text_sig)
+        # Create a class doc-string lazily via descriptor protocol
+        # to avoid importing `inspect` module.
+        cls.__doc__ = AutoDocstring()
 
     if match_args:
         # I could probably compute this once.
@@ -1378,7 +1421,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # given cell.
     for member in newcls.__dict__.values():
         # If this is a wrapped function, unwrap it.
-        member = inspect.unwrap(member)
+        member = _unwrap(member)
 
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):

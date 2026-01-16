@@ -2295,6 +2295,13 @@ class TestDocString(unittest.TestCase):
 
         self.assertDocStrEqual(C.__doc__, "C()")
 
+    def test_docstring_slotted(self):
+        @dataclass(slots=True)
+        class C:
+            x: int
+
+        self.assertDocStrEqual(C.__doc__, "C(x:int)")
+
     def test_docstring_one_field(self):
         @dataclass
         class C:
