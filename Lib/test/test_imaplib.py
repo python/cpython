@@ -14,7 +14,8 @@ import calendar
 import inspect
 
 from test.support import (reap_threads, verbose, transient_internet,
-                          run_with_tz, run_with_locale, cpython_only)
+                          run_with_tz, run_with_locale, cpython_only,
+                          control_characters_c0)
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -487,6 +488,12 @@ class NewIMAPTestsMixin():
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = imaplib.IMAP4
     server_class = socketserver.TCPServer
+
+    def test_control_characters(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        for c0 in control_characters_c0():
+            with self.assertRaises(ValueError):
+                client.login(f'user{c0}', 'pass')
 
 
 @unittest.skipUnless(ssl, "SSL not available")

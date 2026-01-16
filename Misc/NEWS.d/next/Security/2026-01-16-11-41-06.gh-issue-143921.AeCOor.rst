@@ -1,0 +1,1 @@
+Reject control characters in IMAP commands.
