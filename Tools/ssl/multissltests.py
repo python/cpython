@@ -586,19 +586,19 @@ def main():
         assert len(libs) == 1
         cls = libs.pop()
         if args.ssl_versions:
-            versions += [(cls, v) for v in args.ssl_versions]
+            versions.extend((cls, v) for v in args.ssl_versions])
         else:
-            versions += [(cls, v) for v in cls.recent_versions.fget()]
+            versions.extend([(cls, v) for v in cls.recent_versions.fget()])
             if not args.disable_ancient:
-                versions += [(cls, v) for v in cls.old_versions.fget()]
+                versions.extend([(cls, v) for v in cls.old_versions.fget()])
     else:
         if args.ssl_versions:
             print("ERROR: SSL versions specified without specifying library")
             exit(1)
         for cls in ssl_libs:
-            versions += [(cls, v) for v in cls.recent_versions.fget()]
+            versions.extend([(cls, v) for v in cls.recent_versions.fget()])
             if not args.disable_ancient:
-                versions += [(cls, v) for v in cls.old_versions.fget()]
+                versions.extend([(cls, v) for v in cls.old_versions.fget()])
 
     builds = []
     for build_class, version in versions:
