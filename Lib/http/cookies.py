@@ -304,7 +304,7 @@ class Morsel(dict):
         if not K in self._reserved:
             raise CookieError("Invalid attribute %r" % (K,))
         if _has_control_character(K, V):
-            raise CookieError("Control characters are not allowed in cookies %r %r" % (K, V,))
+            raise CookieError(f"Control characters are not allowed in cookies {K!r} {V!r}")
         dict.__setitem__(self, K, V)
 
     def setdefault(self, key, val=None):
