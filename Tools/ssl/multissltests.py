@@ -25,8 +25,7 @@ versions.
 """
 from __future__ import print_function
 
-from abc import abstractmethod
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 import argparse
 from datetime import datetime
 import logging
@@ -57,7 +56,6 @@ parser = argparse.ArgumentParser(
         "Run CPython tests with multiple cryptography libraries/versions."
     ),
 )
-parser.color = True
 parser.add_argument(
     '--debug',
     action='store_true',
@@ -70,7 +68,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--ssl',
-    choices=['openssl', 'awslc', 'libressl'],
+    choices=('openssl', 'awslc', 'libressl'),
     default=None,
     help="Which SSL lib to test. If not specified, all are tested.",
 )
@@ -78,7 +76,7 @@ parser.add_argument(
     '--ssl-versions',
     nargs='+',
     default=None,
-    help="SSL lib version(s), default depends on value passed to --ssl",
+    help="SSL lib versions, default depends on libs passed to --ssl",
 )
 parser.add_argument(
     '--tests',
