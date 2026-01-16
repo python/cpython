@@ -16,9 +16,7 @@ PyDoc_STRVAR(Struct___init____doc__,
 "Create a compiled struct object.\n"
 "\n"
 "Return a new Struct object which writes and reads binary data according\n"
-"to the format string.\n"
-"\n"
-"See help(struct) for more on format strings.");
+"to the format string.  See help(struct) for more on format strings.");
 
 static int
 Struct___init___impl(PyStructObject *self, PyObject *format);
@@ -77,10 +75,9 @@ PyDoc_STRVAR(Struct_unpack__doc__,
 "\n"
 "Return a tuple containing unpacked values.\n"
 "\n"
-"Unpack according to the format string Struct.format.  The buffer\'s\n"
-"size in bytes must be Struct.size.\n"
-"\n"
-"See help(struct) for more on format strings.");
+"Unpack according to the struct format string.  The buffer\'s\n"
+"size in bytes must be the struct size.  See help(struct) for more on\n"
+"format strings.");
 
 #define STRUCT_UNPACK_METHODDEF    \
     {"unpack", (PyCFunction)Struct_unpack, METH_O, Struct_unpack__doc__},
@@ -114,12 +111,10 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "\n"
 "Return a tuple containing unpacked values.\n"
 "\n"
-"Values are unpacked according to the format string Struct.format.\n"
-"\n"
-"The buffer\'s size in bytes, starting at position offset, must be\n"
-"at least Struct.size.\n"
-"\n"
-"See help(struct) for more on format strings.");
+"Values are unpacked according to the struct format string.  The\n"
+"buffer\'s size in bytes, starting at position offset, must be at\n"
+"least the struct size.  See help(struct) for more on format\n"
+"strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
     {"unpack_from", _PyCFunction_CAST(Struct_unpack_from), METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
@@ -206,9 +201,8 @@ PyDoc_STRVAR(Struct_iter_unpack__doc__,
 "Return an iterator yielding tuples.\n"
 "\n"
 "Tuples are unpacked from the given bytes source, like a repeated\n"
-"invocation of unpack_from().\n"
-"\n"
-"Requires that the bytes length be a multiple of the struct size.");
+"invocation of unpack_from().  Requires that the bytes length be\n"
+"a multiple of the struct size.");
 
 #define STRUCT_ITER_UNPACK_METHODDEF    \
     {"iter_unpack", (PyCFunction)Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
@@ -233,9 +227,8 @@ PyDoc_STRVAR(Struct_pack__doc__,
 "Pack values and return the packed bytes.\n"
 "\n"
 "Return a bytes object containing the provided values packed\n"
-"according to the format string Struct.format.\n"
-"\n"
-"See help(struct) for more on format strings.");
+"according to the struct format string.  See help(struct) for more on\n"
+"format strings.");
 
 #define STRUCT_PACK_METHODDEF    \
     {"pack", _PyCFunction_CAST(Struct_pack), METH_FASTCALL, Struct_pack__doc__},
@@ -264,11 +257,10 @@ PyDoc_STRVAR(Struct_pack_into__doc__,
 "\n"
 "Pack values and write the packed bytes into the buffer.\n"
 "\n"
-"Pack the provided values according to the format string\n"
-"Struct.format and write the packed bytes into the writable buffer\n"
-"starting at offset.  Note that the offset is a required argument.\n"
-"\n"
-"See help(struct) for more on format strings.");
+"Pack the provided values according to the struct format string\n"
+"and write the packed bytes into the writable buffer starting at\n"
+"offset.  Note that the offset is a required argument.  See\n"
+"help(struct) for more on format strings.");
 
 #define STRUCT_PACK_INTO_METHODDEF    \
     {"pack_into", _PyCFunction_CAST(Struct_pack_into), METH_FASTCALL, Struct_pack_into__doc__},
@@ -385,9 +377,7 @@ PyDoc_STRVAR(pack__doc__,
 "Pack values and return the packed bytes.\n"
 "\n"
 "Return a bytes object containing the provided values packed according\n"
-"to the format string.\n"
-"\n"
-"See help(struct) for more on format strings.");
+"to the format string.  See help(struct) for more on format strings.");
 
 #define PACK_METHODDEF    \
     {"pack", _PyCFunction_CAST(pack), METH_FASTCALL, pack__doc__},
@@ -429,9 +419,8 @@ PyDoc_STRVAR(pack_into__doc__,
 "\n"
 "Pack the provided values according to the format string and write the\n"
 "packed bytes into the writable buffer starting at offset.  Note that the\n"
-"offset is a required argument.\n"
-"\n"
-"See help(struct) for more on format strings.");
+"offset is a required argument.  See help(struct) for more on format\n"
+"strings.");
 
 #define PACK_INTO_METHODDEF    \
     {"pack_into", _PyCFunction_CAST(pack_into), METH_FASTCALL, pack_into__doc__},
@@ -483,9 +472,8 @@ PyDoc_STRVAR(unpack__doc__,
 "\n"
 "Return a tuple containing values unpacked according to the format string.\n"
 "\n"
-"The buffer\'s size in bytes must be calcsize(format).\n"
-"\n"
-"See help(struct) for more on format strings.");
+"The buffer\'s size in bytes must be calcsize(format).  See help(struct)\n"
+"for more on format strings.");
 
 #define UNPACK_METHODDEF    \
     {"unpack", _PyCFunction_CAST(unpack), METH_FASTCALL, unpack__doc__},
@@ -528,9 +516,8 @@ PyDoc_STRVAR(unpack_from__doc__,
 "\n"
 "Return a tuple containing values unpacked according to the format string.\n"
 "\n"
-"The buffer\'s size, minus offset, must be at least calcsize(format).\n"
-"\n"
-"See help(struct) for more on format strings.");
+"The buffer\'s size, minus offset, must be at least calcsize(format).  See\n"
+"help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
     {"unpack_from", _PyCFunction_CAST(unpack_from), METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
@@ -622,10 +609,9 @@ PyDoc_STRVAR(iter_unpack__doc__,
 "\n"
 "Return an iterator yielding tuples unpacked from the given bytes.\n"
 "\n"
-"The bytes are unpacked according to the format string, like\n"
-"a repeated invocation of unpack_from().\n"
-"\n"
-"Requires that the bytes length be a multiple of the format struct size.");
+"The bytes are unpacked according to the format string, like a repeated\n"
+"invocation of unpack_from().  Requires that the bytes length be\n"
+"a multiple of calcsize(format).");
 
 #define ITER_UNPACK_METHODDEF    \
     {"iter_unpack", _PyCFunction_CAST(iter_unpack), METH_FASTCALL, iter_unpack__doc__},
@@ -656,4 +642,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9ee53e75360217fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc4f86c77ab3b1c9 input=a9049054013a1b77]*/
