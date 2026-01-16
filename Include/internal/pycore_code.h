@@ -563,7 +563,7 @@ _PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 
 // Return a pointer to the thread-local bytecode for the current thread,
 // creating it if necessary.
-extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
+PyAPI_FUNC(_Py_CODEUNIT *) _PyCode_GetTLBC(PyCodeObject *co);
 
 // Reserve an index for the current thread into thread-local bytecode
 // arrays
