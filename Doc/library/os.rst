@@ -2774,8 +2774,14 @@ features:
 
 .. function:: rename(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
-   Rename the file or directory *src* to *dst*. If *dst* exists, the operation
-   will fail with an :exc:`OSError` subclass in a number of cases:
+   Rename the file or directory *src* to *dst*. If *dst* exists,
+   the operation overwrites it **atomically relative to the
+   filesystem namespace** (dst path guaranteed to point to src or not exist
+   after the call, per POSIX rename(2)).  **Not atomic for content replacement:
+   old dst contents may remain briefly accessible on Unix (new dst appears first,
+   old unlinked after).**  On Windows, dst is silently overwritten if permitted;
+   otherwise :exc:`PermissionError` is raised.
+
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
    The operation may fail if *src* and *dst* are on different filesystems. Use
