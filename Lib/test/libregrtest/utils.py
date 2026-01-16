@@ -42,7 +42,7 @@ ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
 #   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle')
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle', 'wantobjects')
 
 
 # Types for types hints

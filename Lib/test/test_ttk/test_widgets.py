@@ -5,6 +5,7 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
     simulate_mouse_click, AbstractDefaultRootTest)
