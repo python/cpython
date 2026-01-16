@@ -1939,6 +1939,7 @@ Subcommands
    All other keyword arguments are passed directly to the
    :class:`!ArgumentParser` constructor.
 
+
 FileType objects
 ^^^^^^^^^^^^^^^^
 
