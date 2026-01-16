@@ -1,2 +1,0 @@
-Sanitize the ``prefix`` and ``suffix`` arguments to the functions: :func:`tempfile.mkdtemp`, :func:`tempfile.mkstemp` and :func:`tempfile.NamedTemporaryFile`.
-If the value of ``prefix`` or ``suffix`` contain a directory separator then the basename of the value is used.
