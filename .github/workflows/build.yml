@@ -298,7 +298,12 @@ jobs:
     - name: Install SSL
       if: steps.cache-ssl.outputs.cache-hit != 'true'
       run: |
-        python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --system Linux --ssl ${{ matrix.ssl }} --ssl-versions ${{ matrix.ssl_ver }}
+        python3 Tools/ssl/multissltests.py \
+          --steps=library \
+          --base-directory "$MULTISSL_DIR" \
+          --ssl ${{ matrix.ssl }} \
+          --ssl-versions ${{ matrix.ssl_ver }} \
+          --system Linux
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
