@@ -21,8 +21,11 @@ on:  # yamllint disable-line rule:truthy
         description: Whether to run the Android tests
         value: ${{ jobs.compute-changes.outputs.run-android }}  # bool
       run-ci-fuzz:
-        description: Whether to run the CIFuzz job
+        description: Whether to run the CIFuzz job for 'cpython' fuzzer
         value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
+      run-ci-fuzz-stdlib:
+        description: Whether to run the CIFuzz job for 'python3-libraries' fuzzer
+        value: ${{ jobs.compute-changes.outputs.run-ci-fuzz-stdlib }}  # bool
       run-docs:
         description: Whether to build the docs
         value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
@@ -53,6 +56,7 @@ jobs:
     outputs:
       run-android: ${{ steps.changes.outputs.run-android }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
+      run-ci-fuzz-stdlib: ${{ steps.changes.outputs.run-ci-fuzz-stdlib }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-macos: ${{ steps.changes.outputs.run-macos }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
