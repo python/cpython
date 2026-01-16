@@ -547,7 +547,7 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
     }
 
     /* Disable checks during Python finalization. For example, it allows to
-     * call PyUnstable_Object_Dump() during finalization for debugging purpose.
+     * call PyObject_Dump() during finalization for debugging purpose.
      */
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         return 0;
