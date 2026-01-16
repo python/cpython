@@ -340,6 +340,11 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
                 goto exit;
             }
             length = ival;
+            if (length < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "length cannot be negative");
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -485,4 +490,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=d23f8ce5bdf08a30 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e68f4e23ead3f649 input=a9049054013a1b77]*/

@@ -54,8 +54,7 @@ MULTISSL_DIR = os.path.abspath(os.path.join(PYTHONROOT, '..', 'multissl'))
 parser = argparse.ArgumentParser(
     prog='multissl',
     description=(
-        "Run CPython tests with multiple cryptography libraries"
-        "versions."
+        "Run CPython tests with multiple cryptography libraries/versions."
     ),
 )
 parser.color = True
@@ -298,7 +297,7 @@ class AbstractBuilder(object, metaclass=ABCMeta):
                 raise ValueError(member.name, base)
             member.name = member.name[len(base):].lstrip('/')
         log.info("Unpacking files to {}".format(self.build_dir))
-        tf.extractall(self.build_dir, members)
+        tf.extractall(self.build_dir, members, filter='data')
 
     def _build_src(self, config_args=()):
         """Now build openssl"""
@@ -429,17 +428,20 @@ class BuildOpenSSL(AbstractBuilder):
     @property
     def recent_versions():
         return [
-            "3.0.16",
-            "3.1.8",
-            "3.2.4",
-            "3.3.3",
-            "3.4.1",
+            "3.0.18",
+            "3.2.6",
+            "3.3.5",
+            "3.4.4",
+            "3.5.4",
             # See make_ssl_data.py for notes on adding a new version.
         ]
 
     @property
     def old_versions():
-        return [ "1.1.1w" ]
+        return [
+            "1.1.1w",
+            "3.1.8",
+        ]
 
     def _post_install(self):
         if self.version.startswith("3."):

@@ -27,32 +27,28 @@ from test.support import threading_helper
 from http.client import HTTPException
 
 
-default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+default_builtin_hashes = {'md5', 'sha1', 'sha2', 'sha3', 'blake2'}
 # --with-builtin-hashlib-hashes override
 builtin_hashes = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
 if builtin_hashes is None:
     builtin_hashes = default_builtin_hashes
 else:
-    builtin_hashes = {
-        m.strip() for m in builtin_hashes.strip('"').lower().split(",")
-    }
+    builtin_hash_names = builtin_hashes.strip('"').lower().split(",")
+    builtin_hashes = set(map(str.strip, builtin_hash_names))
 
-# hashlib with and without OpenSSL backend for PBKDF2
-# only import builtin_hashlib when all builtin hashes are available.
-# Otherwise import prints noise on stderr
+# Public 'hashlib' module with OpenSSL backend for PBKDF2.
 openssl_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
-if builtin_hashes == default_builtin_hashes:
-    builtin_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
-else:
-    builtin_hashlib = None
 
 try:
-    from _hashlib import HASH, HASHXOF, openssl_md_meth_names, get_fips_mode
+    import _hashlib
 except ImportError:
-    HASH = None
-    HASHXOF = None
-    openssl_md_meth_names = frozenset()
-
+    _hashlib = None
+# The extension module may exist but only define some of these. gh-141907
+HASH = getattr(_hashlib, 'HASH', None)
+HASHXOF = getattr(_hashlib, 'HASHXOF', None)
+openssl_md_meth_names = getattr(_hashlib, 'openssl_md_meth_names', frozenset())
+get_fips_mode = getattr(_hashlib, 'get_fips_mode', None)
+if not get_fips_mode:
     def get_fips_mode():
         return 0
 
@@ -343,7 +339,9 @@ class HashLibTestCase(unittest.TestCase):
 
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
-        self.assertRaises(TypeError, hashlib.new, 1)
+        # ensure that the exception message remains consistent
+        err = re.escape("new() argument 'name' must be str, not int")
+        self.assertRaisesRegex(TypeError, err, hashlib.new, 1)
 
     def test_new_upper_to_lower(self):
         self.assertEqual(hashlib.new("SHA256").name, "sha256")
@@ -370,7 +368,9 @@ class HashLibTestCase(unittest.TestCase):
                 sys.modules['_md5'] = _md5
             else:
                 del sys.modules['_md5']
-        self.assertRaises(TypeError, get_builtin_constructor, 3)
+        # ensure that the exception message remains consistent
+        err = re.escape("new() argument 'name' must be str, not int")
+        self.assertRaises(TypeError, err, get_builtin_constructor, 3)
         constructor = get_builtin_constructor('md5')
         self.assertIs(constructor, _md5.md5)
         self.assertEqual(sorted(builtin_constructor_cache), ['MD5', 'md5'])
@@ -541,13 +541,17 @@ class HashLibTestCase(unittest.TestCase):
 
     def check_file_digest(self, name, data, hexdigest):
         hexdigest = hexdigest.lower()
-        try:
-            hashlib.new(name)
-        except ValueError:
-            # skip, algorithm is blocked by security policy.
-            return
-        digests = [name]
-        digests.extend(self.constructors_to_test[name])
+        digests = []
+        for digest in [name, *self.constructors_to_test[name]]:
+            try:
+                if callable(digest):
+                    digest(b"")
+                else:
+                    hashlib.new(digest)
+            except ValueError:
+                # skip, algorithm is blocked by security policy.
+                continue
+            digests.append(digest)
 
         with tempfile.TemporaryFile() as f:
             f.write(data)
@@ -630,9 +634,14 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
             m = hash_object_constructor()
-            if HASH is not None and isinstance(m, HASH):
-                # _hashopenssl's variant does not have extra SHA3 attributes
-                continue
+            if name.startswith('shake_'):
+                if HASHXOF is not None and isinstance(m, HASHXOF):
+                    # _hashopenssl's variant does not have extra SHA3 attributes
+                    continue
+            else:
+                if HASH is not None and isinstance(m, HASH):
+                    # _hashopenssl's variant does not have extra SHA3 attributes
+                    continue
             self.assertEqual(capacity + rate, 1600)
             self.assertEqual(m._capacity_bits, capacity)
             self.assertEqual(m._rate_bits, rate)
@@ -1155,7 +1164,8 @@ class HashLibTestCase(unittest.TestCase):
     def test_hash_disallow_instantiation(self):
         # internal types like _hashlib.HASH are not constructable
         support.check_disallow_instantiation(self, HASH)
-        support.check_disallow_instantiation(self, HASHXOF)
+        if HASHXOF is not None:
+            support.check_disallow_instantiation(self, HASHXOF)
 
     def test_readonly_types(self):
         for algorithm, constructors in self.constructors_to_test.items():

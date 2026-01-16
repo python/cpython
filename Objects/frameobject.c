@@ -260,7 +260,10 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             return -1;
         }
 
-        _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
+#if _Py_TIER2
+        _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), co, 1);
+        _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), co);
+#endif
 
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
         _PyStackRef oldvalue = fast[i];
@@ -913,6 +916,15 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {NULL, NULL}   /* sentinel */
 };
 
+PyDoc_STRVAR(framelocalsproxy_doc,
+"FrameLocalsProxy($frame)\n"
+"--\n"
+"\n"
+"Create a write-through view of the locals dictionary for a frame.\n"
+"\n"
+"  frame\n"
+"    the frame object to wrap.");
+
 PyTypeObject PyFrameLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "FrameLocalsProxy",
@@ -933,6 +945,7 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_new = framelocalsproxy_new,
     .tp_free = PyObject_GC_Del,
+    .tp_doc = framelocalsproxy_doc,
 };
 
 PyObject *
@@ -1675,6 +1688,8 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
         case PY_MONITORING_EVENT_PY_RESUME:
         case PY_MONITORING_EVENT_JUMP:
         case PY_MONITORING_EVENT_BRANCH:
+        case PY_MONITORING_EVENT_BRANCH_LEFT:
+        case PY_MONITORING_EVENT_BRANCH_RIGHT:
         case PY_MONITORING_EVENT_LINE:
         case PY_MONITORING_EVENT_PY_YIELD:
             /* Setting f_lineno is allowed for the above events */
@@ -1837,6 +1852,7 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 @getter
 frame.f_trace as frame_trace
@@ -1846,7 +1862,7 @@ Return the trace function for this frame, or None if no trace function is set.
 
 static PyObject *
 frame_trace_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=5475cbfce07826cd input=f382612525829773]*/
+/*[clinic end generated code: output=5475cbfce07826cd input=e4eacf2c68cac577]*/
 {
     PyObject* trace = self->f_trace;
     if (trace == NULL) {
@@ -1856,6 +1872,7 @@ frame_trace_get_impl(PyFrameObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 @setter
 frame.f_trace as frame_trace
@@ -1863,7 +1880,7 @@ frame.f_trace as frame_trace
 
 static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=d6fe08335cf76ae4 input=d96a18bda085707f]*/
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=e57380734815dac5]*/
 {
     if (value == Py_None) {
         value = NULL;
@@ -1998,30 +2015,20 @@ frame_clear_impl(PyFrameObject *self)
 {
     if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(self->f_frame);
-        if (gen->gi_frame_state == FRAME_EXECUTING) {
-            goto running;
+        if (_PyGen_ClearFrame(gen) < 0) {
+            return NULL;
         }
-        if (FRAME_STATE_SUSPENDED(gen->gi_frame_state)) {
-            goto suspended;
-        }
-        _PyGen_Finalize((PyObject *)gen);
     }
     else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD) {
-        goto running;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot clear an executing frame");
+        return NULL;
     }
     else {
         assert(self->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
         (void)frame_tp_clear((PyObject *)self);
     }
     Py_RETURN_NONE;
-running:
-    PyErr_SetString(PyExc_RuntimeError,
-                    "cannot clear an executing frame");
-    return NULL;
-suspended:
-    PyErr_SetString(PyExc_RuntimeError,
-                    "cannot clear a suspended frame");
-    return NULL;
 }
 
 /*[clinic input]

@@ -713,7 +713,7 @@ _PyObject_IsFreed(PyObject *op)
 
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
 void
-_PyObject_Dump(PyObject* op)
+PyUnstable_Object_Dump(PyObject* op)
 {
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
@@ -784,8 +784,7 @@ PyObject_Repr(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "__repr__ returned non-string (type %.200s)",
-                      Py_TYPE(res)->tp_name);
+                      "%T.__repr__() must return a str, not %T", v, res);
         Py_DECREF(res);
         return NULL;
     }
@@ -827,8 +826,7 @@ PyObject_Str(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "__str__ returned non-string (type %.200s)",
-                      Py_TYPE(res)->tp_name);
+                      "%T.__str__() must return a str, not %T", v, res);
         Py_DECREF(res);
         return NULL;
     }
@@ -883,8 +881,8 @@ PyObject_Bytes(PyObject *v)
             return NULL;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "__bytes__ returned non-bytes (type %.200s)",
-                         Py_TYPE(result)->tp_name);
+                         "%T.__bytes__() must return a bytes, not %T",
+                         v, result);
             Py_DECREF(result);
             return NULL;
         }
@@ -947,6 +945,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->bytes_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
     clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
@@ -1264,7 +1263,10 @@ PyObject *
 _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 {
     PyObject *result;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+_Py_COMP_DIAG_POP
     if (!oname)
         return NULL;
     result = PyObject_GetAttr(v, oname);
@@ -1753,20 +1755,15 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         }
     }
     if (dict != NULL) {
-        // TODO: use _Py_dict_lookup_threadsafe_stackref
-        Py_INCREF(dict);
-        PyObject *value;
-        if (PyDict_GetItemRef(dict, name, &value) != 0) {
-            // found or error
-            Py_DECREF(dict);
-            PyStackRef_CLEAR(*method);
-            if (value != NULL) {
-                *method = PyStackRef_FromPyObjectSteal(value);
-            }
+        assert(PyUnicode_CheckExact(name));
+        int found = _PyDict_GetMethodStackRef((PyDictObject *)dict, name, method);
+        if (found < 0) {
+            assert(PyStackRef_IsNull(*method));
+            return -1;
+        }
+        else if (found) {
             return 0;
         }
-        // not found
-        Py_DECREF(dict);
     }
 
     if (meth_found) {
@@ -2765,8 +2762,12 @@ PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
     _PyStackRef *stackpointer = frame->stackpointer;
     while (stackpointer > base) {
         stackpointer--;
-        if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
-            return PyStackRef_IsHeapSafe(*stackpointer);
+        _PyStackRef ref = *stackpointer;
+        if (PyStackRef_IsTaggedInt(ref)) {
+            continue;
+        }
+        if (op == PyStackRef_AsPyObjectBorrow(ref)) {
+            return PyStackRef_IsHeapSafe(ref);
         }
     }
     return 0;
@@ -3057,7 +3058,7 @@ finally:
 
 /* Trashcan support. */
 
-/* Add op to the gcstate->trash_delete_later list.  Called when the current
+/* Add op to the tstate->delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a gc'ed object, with refcount 0.
  *  Py_DECREF must already have been called on it.
  */
@@ -3083,7 +3084,7 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
     tstate->delete_later = op;
 }
 
-/* Deallocate all the objects in the gcstate->trash_delete_later list.
+/* Deallocate all the objects in the tstate->delete_later list.
  * Called when the call-stack unwinds again. */
 void
 _PyTrash_thread_destroy_chain(PyThreadState *tstate)
@@ -3156,7 +3157,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
-        _PyObject_Dump(obj);
+        PyUnstable_Object_Dump(obj);
 
         fprintf(stderr, "\n");
         fflush(stderr);
@@ -3293,8 +3294,18 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
     _Py_AssertHoldsTstate();
+
+    _PyEval_StopTheWorldAll(&_PyRuntime);
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        _PyReftracerTrack(NULL, PyRefTracer_TRACKER_REMOVED);
+        if (PyErr_Occurred()) {
+            _PyEval_StartTheWorldAll(&_PyRuntime);
+            return -1;
+        }
+    }
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
+    _PyEval_StartTheWorldAll(&_PyRuntime);
     return 0;
 }
 
@@ -3357,24 +3368,6 @@ Py_GetConstantBorrowed(unsigned int constant_id)
     return Py_GetConstant(constant_id);
 }
 
-
-// Py_TYPE() implementation for the stable ABI
-#undef Py_TYPE
-PyTypeObject*
-Py_TYPE(PyObject *ob)
-{
-    return _Py_TYPE(ob);
-}
-
-
-// Py_REFCNT() implementation for the stable ABI
-#undef Py_REFCNT
-Py_ssize_t
-Py_REFCNT(PyObject *ob)
-{
-    return _Py_REFCNT(ob);
-}
-
 int
 PyUnstable_IsImmortal(PyObject *op)
 {
@@ -3391,3 +3384,26 @@ PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
     assert(op != NULL);
     return _PyObject_IsUniquelyReferenced(op);
 }
+
+int
+_PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
+{
+    assert(op != NULL);
+    PyTypeObject *tp = Py_TYPE(op);
+    _PyObject_ASSERT((PyObject *)tp, PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+    Py_VISIT(tp);
+    return 0;
+}
+
+// Implementations for the stable ABI
+// Keep these at the end.
+#undef Py_TYPE
+#undef Py_REFCNT
+#undef Py_SIZE
+#undef Py_IS_TYPE
+#undef Py_SET_SIZE
+PyTypeObject* Py_TYPE(PyObject *ob) { return _Py_TYPE_impl(ob); }
+Py_ssize_t Py_REFCNT(PyObject *ob) { return _Py_REFCNT(ob); }
+Py_ssize_t Py_SIZE(PyObject *o) { return _Py_SIZE_impl(o); }
+int Py_IS_TYPE(PyObject *o, PyTypeObject *t) { return _Py_IS_TYPE_impl(o, t); }
+void Py_SET_SIZE(PyVarObject *o, Py_ssize_t s) { _Py_SET_SIZE_impl(o, s); }

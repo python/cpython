@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_suggestions__generate_suggestions__doc__,
@@ -33,9 +34,11 @@ _suggestions__generate_suggestions(PyObject *module, PyObject *const *args, Py_s
         goto exit;
     }
     item = args[1];
+    Py_BEGIN_CRITICAL_SECTION(candidates);
     return_value = _suggestions__generate_suggestions_impl(module, candidates, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d8e963cdae30b13 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1690dd15a464d19c input=a9049054013a1b77]*/

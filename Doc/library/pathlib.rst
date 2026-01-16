@@ -311,7 +311,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.parser
 
    The implementation of the :mod:`os.path` module used for low-level path
-   parsing and joining: either :mod:`posixpath` or :mod:`ntpath`.
+   parsing and joining: either :mod:`!posixpath` or :mod:`!ntpath`.
 
    .. versionadded:: 3.13
 
@@ -541,20 +541,6 @@ Pure paths provide the following methods and properties:
 
       Passing additional arguments is deprecated; if supplied, they are joined
       with *other*.
-
-.. method:: PurePath.is_reserved()
-
-   With :class:`PureWindowsPath`, return ``True`` if the path is considered
-   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
-   ``False`` is always returned.
-
-   .. versionchanged:: 3.13
-      Windows path names that contain a colon, or end with a dot or a space,
-      are considered reserved. UNC paths may be reserved.
-
-   .. deprecated-removed:: 3.13 3.15
-      This method is deprecated; use :func:`os.path.isreserved` to detect
-      reserved paths on Windows.
 
 .. method:: PurePath.joinpath(*pathsegments)
 
@@ -1345,6 +1331,10 @@ Reading directories
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
+
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
@@ -1378,6 +1368,10 @@ Reading directories
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
 
    .. seealso::
       :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.

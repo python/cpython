@@ -94,10 +94,12 @@ func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMA
 # GENERAL STATEMENTS
 # ==================
 
-statements[asdl_stmt_seq*]: a=statement+ { _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a)) }
+statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
 
 statement[asdl_stmt_seq*]:
-    | a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
+    | a=compound_stmt { _PyPegen_register_stmts(p ,
+                           (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a)
+                        ) }
     | a[asdl_stmt_seq*]=simple_stmts { a }
 
 single_compound_stmt[asdl_stmt_seq*]:
@@ -210,7 +212,9 @@ del_stmt[stmt_ty]:
 
 yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
-assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
+assert_stmt[stmt_ty]:
+    | invalid_assert_stmt
+    | 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
 import_stmt[stmt_ty]:
     | invalid_import
@@ -622,6 +626,7 @@ mapping_pattern[pattern_ty]:
             CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, items)),
             NULL,
             EXTRA) }
+    | invalid_mapping_pattern
 
 items_pattern[asdl_seq*]:
     | ','.key_value_pattern+
@@ -987,7 +992,10 @@ tstring[expr_ty] (memo):
             _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c)) }
 
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
-strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string|tstring)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
+strings[expr_ty] (memo):
+    | invalid_string_tstring_concat
+    | a[asdl_expr_seq*]=(fstring|string)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
+    | a[asdl_expr_seq*]=tstring+ { _PyPegen_concatenate_tstrings(p, a, EXTRA) }
 
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }
@@ -1243,8 +1251,7 @@ invalid_expression:
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
-        _PyPegen_check_legacy_stmt(p, a) ? NULL : p->tokens[p->mark-1]->level == 0 ? NULL :
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
+        _PyPegen_raise_error_for_missing_comma(p, a, b) }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
    | a=disjunction 'if' b=disjunction 'else' !expression {
         RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("expected expression after 'else', but statement is given") }
@@ -1297,6 +1304,25 @@ invalid_raise_stmt:
 invalid_del_stmt:
     | 'del' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
+invalid_assert_stmt:
+    | 'assert' a=expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+            _PyPegen_get_expr_name(a)) }
+    | 'assert' expression ',' a=expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+            _PyPegen_get_expr_name(a)) }
+    | 'assert' a=expression ':=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot use named expression without parentheses here") }
+    | 'assert' expression ',' a=expression ':=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot use named expression without parentheses here") }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
@@ -1389,11 +1415,11 @@ invalid_import:
     | 'import' token=NEWLINE {
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 invalid_dotted_as_name:
-    | dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) a=expression {
+    | dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 invalid_import_from_as_name:
-    | NAME 'as' !(NAME (',' | ')' | NEWLINE)) a=expression {
+    | NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 
@@ -1450,6 +1476,10 @@ invalid_match_stmt:
     | "match" subject_expr NEWLINE { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
     | a="match" subject=subject_expr ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
+    | a="case" patterns guard? b=':' block {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "case statement must be inside match statement") }
 invalid_case_block:
     | "case" patterns guard? NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a="case" patterns guard? ':' NEWLINE !INDENT {
@@ -1464,6 +1494,10 @@ invalid_class_pattern:
         PyPegen_first_item(a, pattern_ty),
         PyPegen_last_item(a, pattern_ty),
         "positional patterns follow keyword patterns") }
+invalid_mapping_pattern:
+    | '{' (items_pattern ',')? rest=double_star_pattern ',' items_pattern ','? '}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+        rest,
+        "double star pattern must be the last (right-most) subpattern in the mapping pattern") }
 invalid_class_argument_pattern[asdl_pattern_seq*]:
     | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
 invalid_if_stmt:
@@ -1552,6 +1586,12 @@ invalid_tstring_replacement_field:
 invalid_tstring_conversion_character:
     | '!' &(':' | '}') { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: missing conversion character") }
     | '!' !NAME { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: invalid conversion character") }
+
+invalid_string_tstring_concat:
+    | a=(fstring|string)+ b[expr_ty]=tstring {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-string literals with string or bytes literals") }
+    | a=tstring+ b[expr_ty]=(fstring|string) {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-string literals with string or bytes literals") }
 
 invalid_arithmetic:
     | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }

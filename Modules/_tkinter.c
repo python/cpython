@@ -82,33 +82,10 @@ typedef int Tcl_Size;
 
 #ifdef HAVE_CREATEFILEHANDLER
 
-/* This bit is to ensure that TCL_UNIX_FD is defined and doesn't interfere
-   with the proper calculation of FHANDLETYPE == TCL_UNIX_FD below. */
-#ifndef TCL_UNIX_FD
-#  ifdef TCL_WIN_SOCKET
-#    define TCL_UNIX_FD (! TCL_WIN_SOCKET)
-#  else
-#    define TCL_UNIX_FD 1
-#  endif
-#endif
-
-/* Tcl_CreateFileHandler() changed several times; these macros deal with the
-   messiness.  In Tcl 8.0 and later, it is not available on Windows (and on
-   Unix, only because Jack added it back); when available on Windows, it only
-   applies to sockets. */
-
-#ifdef MS_WINDOWS
-#define FHANDLETYPE TCL_WIN_SOCKET
-#else
-#define FHANDLETYPE TCL_UNIX_FD
-#endif
-
 /* If Tcl can wait for a Unix file descriptor, define the EventHook() routine
    which uses this to handle Tcl events while the user is typing commands. */
 
-#if FHANDLETYPE == TCL_UNIX_FD
 #define WAIT_FOR_STDIN
-#endif
 
 #endif /* HAVE_CREATEFILEHANDLER */
 
@@ -598,8 +575,12 @@ Tkapp_New(const char *screenName, const char *className,
 
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
+#if TCL_MAJOR_VERSION >= 9
+    v->threaded = 1;
+#else
     v->threaded = Tcl_GetVar2Ex(v->interp, "tcl_platform", "threaded",
                                 TCL_GLOBAL_ONLY) != NULL;
+#endif
     v->thread_id = Tcl_GetCurrentThread();
     v->dispatching = 0;
     v->trace = NULL;
@@ -906,11 +887,14 @@ static PyType_Slot PyTclObject_Type_slots[] = {
 };
 
 static PyType_Spec PyTclObject_Type_spec = {
-    "_tkinter.Tcl_Obj",
-    sizeof(PyTclObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    PyTclObject_Type_slots,
+    .name = "_tkinter.Tcl_Obj",
+    .basicsize = sizeof(PyTclObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = PyTclObject_Type_slots,
 };
 
 
@@ -963,6 +947,40 @@ asBignumObj(PyObject *value)
     return result;
 }
 
+static Tcl_Obj* AsObj(PyObject *value);
+
+static Tcl_Obj*
+TupleAsObj(PyObject *value, int wrapped)
+{
+    Tcl_Obj *result = NULL;
+    Py_ssize_t size = PyTuple_GET_SIZE(value);
+    if (size == 0) {
+        return Tcl_NewListObj(0, NULL);
+    }
+    if (!CHECK_SIZE(size, sizeof(Tcl_Obj *))) {
+        PyErr_SetString(PyExc_OverflowError,
+                        wrapped ? "list is too long" : "tuple is too long");
+        return NULL;
+    }
+    Tcl_Obj **argv = (Tcl_Obj **)PyMem_Malloc(((size_t)size) * sizeof(Tcl_Obj *));
+    if (argv == NULL) {
+      PyErr_NoMemory();
+      return NULL;
+    }
+    for (Py_ssize_t i = 0; i < size; i++) {
+        Tcl_Obj *item = AsObj(PyTuple_GET_ITEM(value, i));
+        if (item == NULL) {
+            goto exit;
+        }
+        argv[i] = item;
+    }
+    result = Tcl_NewListObj((int)size, argv);
+
+exit:
+    PyMem_Free(argv);
+    return result;
+}
+
 static Tcl_Obj*
 AsObj(PyObject *value)
 {
@@ -1009,28 +1027,17 @@ AsObj(PyObject *value)
     if (PyFloat_Check(value))
         return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
 
-    if (PyTuple_Check(value) || PyList_Check(value)) {
-        Tcl_Obj **argv;
-        Py_ssize_t size, i;
+    if (PyTuple_Check(value)) {
+        return TupleAsObj(value, false);
+    }
 
-        size = PySequence_Fast_GET_SIZE(value);
-        if (size == 0)
-            return Tcl_NewListObj(0, NULL);
-        if (!CHECK_SIZE(size, sizeof(Tcl_Obj *))) {
-            PyErr_SetString(PyExc_OverflowError,
-                            PyTuple_Check(value) ? "tuple is too long" :
-                                                   "list is too long");
+    if (PyList_Check(value)) {
+        PyObject *value_as_tuple = PyList_AsTuple(value);
+        if (value_as_tuple == NULL) {
             return NULL;
         }
-        argv = (Tcl_Obj **) PyMem_Malloc(((size_t)size) * sizeof(Tcl_Obj *));
-        if (!argv) {
-          PyErr_NoMemory();
-          return NULL;
-        }
-        for (i = 0; i < size; i++)
-          argv[i] = AsObj(PySequence_Fast_GET_ITEM(value,i));
-        result = Tcl_NewListObj((int)size, argv);
-        PyMem_Free(argv);
+        result = TupleAsObj(value_as_tuple, true);
+        Py_DECREF(value_as_tuple);
         return result;
     }
 
@@ -3212,6 +3219,8 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _tkinter.setbusywaitinterval
 
     new_val: int
@@ -3224,7 +3233,7 @@ It should be set to a divisor of the maximum time between frames in an animation
 
 static PyObject *
 _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
-/*[clinic end generated code: output=42bf7757dc2d0ab6 input=deca1d6f9e6dae47]*/
+/*[clinic end generated code: output=42bf7757dc2d0ab6 input=07b82a04b56625e1]*/
 {
     if (new_val < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -3236,6 +3245,7 @@ _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
 }
 
 /*[clinic input]
+@permit_long_summary
 _tkinter.getbusywaitinterval -> int
 
 Return the current busy-wait interval between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.
@@ -3243,7 +3253,7 @@ Return the current busy-wait interval between successive calls to Tcl_DoOneEvent
 
 static int
 _tkinter_getbusywaitinterval_impl(PyObject *module)
-/*[clinic end generated code: output=23b72d552001f5c7 input=a695878d2d576a84]*/
+/*[clinic end generated code: output=23b72d552001f5c7 input=62d5b36ddab3976b]*/
 {
     return Tkinter_busywaitinterval;
 }
@@ -3264,11 +3274,14 @@ static PyType_Slot Tktt_Type_slots[] = {
 };
 
 static PyType_Spec Tktt_Type_spec = {
-    "_tkinter.tktimertoken",
-    sizeof(TkttObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tktt_Type_slots,
+    .name = "_tkinter.tktimertoken",
+    .basicsize = sizeof(TkttObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Tktt_Type_slots,
 };
 
 
@@ -3320,11 +3333,14 @@ static PyType_Slot Tkapp_Type_slots[] = {
 
 
 static PyType_Spec Tkapp_Type_spec = {
-    "_tkinter.tkapp",
-    sizeof(TkappObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tkapp_Type_slots,
+    .name = "_tkinter.tkapp",
+    .basicsize = sizeof(TkappObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Tkapp_Type_slots,
 };
 
 static PyMethodDef moduleMethods[] =

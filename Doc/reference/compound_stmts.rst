@@ -335,15 +335,29 @@ stored in the :mod:`sys` module is reset to its previous value::
 :keyword:`!except*` clause
 --------------------------
 
-The :keyword:`!except*` clause(s) are used for handling
-:exc:`ExceptionGroup`\s. The exception type for matching is interpreted as in
-the case of :keyword:`except`, but in the case of exception groups we can have
-partial matches when the type matches some of the exceptions in the group.
-This means that multiple :keyword:`!except*` clauses can execute,
-each handling part of the exception group.
-Each clause executes at most once and handles an exception group
-of all matching exceptions.  Each exception in the group is handled by at most
-one :keyword:`!except*` clause, the first that matches it. ::
+The :keyword:`!except*` clause(s) specify one or more handlers for groups of
+exceptions (:exc:`BaseExceptionGroup` instances). A :keyword:`try` statement
+can have either :keyword:`except` or :keyword:`!except*` clauses, but not both.
+The exception type for matching is mandatory in the case of :keyword:`!except*`,
+so ``except*:`` is a syntax error. The type is interpreted as in the case of
+:keyword:`!except`, but matching is performed on the exceptions contained in the
+group that is being handled. An :exc:`TypeError` is raised if a matching
+type is a subclass of :exc:`!BaseExceptionGroup`, because that would have
+ambiguous semantics.
+
+When an exception group is raised in the try block, each :keyword:`!except*`
+clause splits (see :meth:`~BaseExceptionGroup.split`) it into the subgroups
+of matching and non-matching exceptions. If the matching subgroup is not empty,
+it becomes the handled exception (the value returned from :func:`sys.exception`)
+and assigned to the target of the :keyword:`!except*` clause (if there is one).
+Then, the body of the :keyword:`!except*` clause executes. If the non-matching
+subgroup is not empty, it is processed by the next :keyword:`!except*` in the
+same manner. This continues until all exceptions in the group have been matched,
+or the last :keyword:`!except*` clause has run.
+
+After all :keyword:`!except*` clauses execute, the group of unhandled exceptions
+is merged with any exceptions that were raised or re-raised from within
+:keyword:`!except*` clauses. This merged exception group propagates on.::
 
    >>> try:
    ...     raise ExceptionGroup("eg",
@@ -356,36 +370,26 @@ one :keyword:`!except*` clause, the first that matches it. ::
    caught <class 'ExceptionGroup'> with nested (TypeError(2),)
    caught <class 'ExceptionGroup'> with nested (OSError(3), OSError(4))
      + Exception Group Traceback (most recent call last):
-     |   File "<stdin>", line 2, in <module>
-     | ExceptionGroup: eg
+     |   File "<doctest default[0]>", line 2, in <module>
+     |     raise ExceptionGroup("eg",
+     |         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+     | ExceptionGroup: eg (1 sub-exception)
      +-+---------------- 1 ----------------
        | ValueError: 1
        +------------------------------------
 
-
-Any remaining exceptions that were not handled by any :keyword:`!except*`
-clause are re-raised at the end, along with all exceptions that were
-raised from within the :keyword:`!except*` clauses. If this list contains
-more than one exception to reraise, they are combined into an exception
-group.
-
-If the raised exception is not an exception group and its type matches
-one of the :keyword:`!except*` clauses, it is caught and wrapped by an
-exception group with an empty message string. ::
+If the exception raised from the :keyword:`try` block is not an exception group
+and its type matches one of the :keyword:`!except*` clauses, it is caught and
+wrapped by an exception group with an empty message string. This ensures that the
+type of the target ``e`` is consistently :exc:`BaseExceptionGroup`::
 
    >>> try:
    ...     raise BlockingIOError
    ... except* BlockingIOError as e:
    ...     print(repr(e))
    ...
-   ExceptionGroup('', (BlockingIOError()))
+   ExceptionGroup('', (BlockingIOError(),))
 
-An :keyword:`!except*` clause must have a matching expression; it cannot be ``except*:``.
-Furthermore, this expression cannot contain exception group types, because that would
-have ambiguous semantics.
-
-It is not possible to mix :keyword:`except` and :keyword:`!except*`
-in the same :keyword:`try`.
 :keyword:`break`, :keyword:`continue` and :keyword:`return`
 cannot appear in an :keyword:`!except*` clause.
 
@@ -416,12 +420,14 @@ clauses.
 --------------------------
 
 If :keyword:`!finally` is present, it specifies a 'cleanup' handler.  The
-:keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
-not handled, the exception is temporarily saved. The :keyword:`!finally` clause
-is executed.  If there is a saved exception it is re-raised at the end of the
-:keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
-exception, the saved exception is set as the context of the new exception.
+:keyword:`try` clause is executed, including any :keyword:`except`
+and :keyword:`else <except_else>` clauses.
+If an exception occurs in any of the clauses and is not handled,
+the exception is temporarily saved.
+The :keyword:`!finally` clause is executed.  If there is a saved exception
+it is re-raised at the end of the :keyword:`!finally` clause.
+If the :keyword:`!finally` clause raises another exception, the saved exception
+is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
 or :keyword:`continue` statement, the saved exception is discarded. For example,
 this function returns 42.
@@ -588,6 +594,7 @@ the items are surrounded by parentheses. For example::
       statement.
 
 .. _match:
+.. _case:
 
 The :keyword:`!match` statement
 ===============================
@@ -608,9 +615,9 @@ The match statement is used for pattern matching.  Syntax:
 
 .. productionlist:: python-grammar
    match_stmt: 'match' `subject_expr` ":" NEWLINE INDENT `case_block`+ DEDENT
-   subject_expr: `star_named_expression` "," `star_named_expressions`?
-               : | `named_expression`
-   case_block: 'case' `patterns` [`guard`] ":" `block`
+   subject_expr: `!star_named_expression` "," `!star_named_expressions`?
+               : | `!named_expression`
+   case_block: 'case' `patterns` [`guard`] ":" `!block`
 
 .. note::
    This section uses single quotes to denote
@@ -699,7 +706,7 @@ Guards
 .. index:: ! guard
 
 .. productionlist:: python-grammar
-   guard: "if" `named_expression`
+   guard: "if" `!named_expression`
 
 A ``guard`` (which is part of the ``case``) must succeed for code inside
 the ``case`` block to execute.  It takes the form: :keyword:`if` followed by an
@@ -852,8 +859,8 @@ A literal pattern corresponds to most
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
-supported.  Raw strings and byte strings are supported.  :ref:`f-strings` are
-not supported.
+supported.  Raw strings and byte strings are supported.  :ref:`f-strings`
+and :ref:`t-strings` are not supported.
 
 The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
 for expressing :ref:`complex numbers <imaginary>`; they require a real number
@@ -1013,8 +1020,8 @@ subject value:
       items, as for a fixed-length sequence.
 
    .. note:: The length of the subject sequence is obtained via
-      :func:`len` (i.e. via the :meth:`__len__` protocol).  This length may be
-      cached by the interpreter in a similar manner as
+      :func:`len` (i.e. via the :meth:`~object.__len__` protocol).
+      This length may be cached by the interpreter in a similar manner as
       :ref:`value patterns <value-patterns>`.
 
 
@@ -1065,8 +1072,8 @@ subject value:
 
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
-   in the mapping, and not created on-the-fly via :meth:`__missing__` or
-   :meth:`~object.__getitem__`.
+   in the mapping, and not created on-the-fly via :meth:`~object.__missing__`
+   or :meth:`~object.__getitem__`.
 
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:
@@ -1421,6 +1428,9 @@ is equivalent to ::
    class Foo(object):
        pass
 
+There may be one or more base classes; see :ref:`multiple-inheritance` below for more
+information.
+
 The class's suite is then executed in a new execution frame (see :ref:`naming`),
 using a newly created local namespace and the original global namespace.
 (Usually, the suite contains mostly function definitions.)  When the class's
@@ -1489,6 +1499,119 @@ can be used to create instance variables with different implementation details.
       The proposal that added class decorators.  Function and method decorators
       were introduced in :pep:`318`.
 
+
+.. _multiple-inheritance:
+
+Multiple inheritance
+--------------------
+
+Python classes may have multiple base classes, a technique known as
+*multiple inheritance*.  The base classes are specified in the class definition
+by listing them in parentheses after the class name, separated by commas.
+For example, the following class definition:
+
+.. doctest::
+
+   >>> class A: pass
+   >>> class B: pass
+   >>> class C(A, B): pass
+
+defines a class ``C`` that inherits from classes ``A`` and ``B``.
+
+The :term:`method resolution order` (MRO) is the order in which base classes are
+searched when looking up an attribute on a class. See :ref:`python_2.3_mro` for a
+description of how Python determines the MRO for a class.
+
+Multiple inheritance is not always allowed. Attempting to define a class with multiple
+inheritance will raise an error if one of the bases does not allow subclassing, if a consistent MRO
+cannot be created, if no valid metaclass can be determined, or if there is an instance
+layout conflict. We'll discuss each of these in turn.
+
+First, all base classes must allow subclassing. While most classes allow subclassing,
+some built-in classes do not, such as :class:`bool`:
+
+.. doctest::
+
+   >>> class SubBool(bool):  # TypeError
+   ...    pass
+   Traceback (most recent call last):
+      ...
+   TypeError: type 'bool' is not an acceptable base type
+
+In the resolved MRO of a class, the class's bases appear in the order they were
+specified in the class's bases list. Additionally, the MRO always lists a child
+class before any of its bases. A class definition will fail if it is impossible to
+resolve a consistent MRO that satisfies these rules from the list of bases provided:
+
+.. doctest::
+
+   >>> class Base: pass
+   >>> class Child(Base): pass
+   >>> class Grandchild(Base, Child): pass  # TypeError
+   Traceback (most recent call last):
+      ...
+   TypeError: Cannot create a consistent method resolution order (MRO) for bases Base, Child
+
+In the MRO of ``Grandchild``, ``Base`` must appear before ``Child`` because it is first
+in the base class list, but it must also appear after ``Child`` because it is a parent of
+``Child``. This is a contradiction, so the class cannot be defined.
+
+If some of the bases have a custom :term:`metaclass`, the metaclass of the resulting class
+is chosen among the metaclasses of the bases and the explicitly specified metaclass of the
+child class. It must be a metaclass that is a subclass of
+all other candidate metaclasses. If no such metaclass exists among the candidates,
+the class cannot be created, as explained in :ref:`metaclass-determination`.
+
+Finally, the instance layouts of the bases must be compatible. This means that it must be
+possible to compute a *solid base* for the class. Exactly which classes are solid bases
+depends on the Python implementation.
+
+.. impl-detail::
+
+   In CPython, a class is a solid base if it has a
+   nonempty :attr:`~object.__slots__` definition.
+   Many but not all classes defined in C are also solid bases, including most
+   builtins (such as :class:`int` or :class:`BaseException`)
+   but excluding most concrete :class:`Exception` classes. Generally, a C class
+   is a solid base if its underlying struct is different in size from its base class.
+
+Every class has a solid base. :class:`object`, the base class, has itself as its solid base.
+If there is a single base, the child class's solid base is that class if it is a solid base,
+or else the base class's solid base. If there are multiple bases, we first find the solid base
+for each base class to produce a list of candidate solid bases. If there is a unique solid base
+that is a subclass of all others, then that class is the solid base. Otherwise, class creation
+fails.
+
+Example:
+
+.. doctest::
+
+   >>> class Solid1:
+   ...    __slots__ = ("solid1",)
+   >>>
+   >>> class Solid2:
+   ...    __slots__ = ("solid2",)
+   >>>
+   >>> class SolidChild(Solid1):
+   ...    __slots__ = ("solid_child",)
+   >>>
+   >>> class C1:  # solid base is `object`
+   ...    pass
+   >>>
+   >>> # OK: solid bases are `Solid1` and `object`, and `Solid1` is a subclass of `object`.
+   >>> class C2(Solid1, C1):  # solid base is `Solid1`
+   ...    pass
+   >>>
+   >>> # OK: solid bases are `SolidChild` and `Solid1`, and `SolidChild` is a subclass of `Solid1`.
+   >>> class C3(SolidChild, Solid1):  # solid base is `SolidChild`
+   ...    pass
+   >>>
+   >>> # Error: solid bases are `Solid1` and `Solid2`, but neither is a subclass of the other.
+   >>> class C4(Solid1, Solid2):  # error: no single solid base
+   ...    pass
+   Traceback (most recent call last):
+     ...
+   TypeError: multiple bases have instance lay-out conflict
 
 .. _async:
 

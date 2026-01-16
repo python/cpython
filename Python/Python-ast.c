@@ -5293,7 +5293,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "Field '%U' is missing from %.400s._field_types. "
+                        "Field %R is missing from %.400s._field_types. "
                         "This will become an error in Python 3.15.",
                         name, Py_TYPE(self)->tp_name
                     ) < 0) {
@@ -5328,7 +5328,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
+                    "%.400s.__init__ missing 1 required positional argument: %R. "
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
@@ -6813,7 +6813,7 @@ init_types(void *arg)
         return -1;
     state->arguments_type = make_type(state, "arguments", state->AST_type,
                                       arguments_fields, 7,
-        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
+        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr?* kw_defaults, arg? kwarg, expr* defaults)");
     if (!state->arguments_type) return -1;
     if (add_attributes(state, state->arguments_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)
