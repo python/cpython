@@ -176,7 +176,7 @@ Tools/wasm/config.site-wasm32-emscripten  @freakboy3742 @emmatyping
 Tools/wasm/emscripten                     @freakboy3742 @emmatyping
 
 # WebAssembly (WASI)
-platforms/ WASI               @brettcannon @emmatyping @savannahostrowski
+Platforms/WASI                @brettcannon @emmatyping @savannahostrowski
 Tools/wasm/wasi-env           @brettcannon @emmatyping @savannahostrowski
 Tools/wasm/wasi.py            @brettcannon @emmatyping @savannahostrowski
 Tools/wasm/wasi               @brettcannon @emmatyping @savannahostrowski
