@@ -1872,12 +1872,17 @@ class TestForwardRefClass(unittest.TestCase):
             one_f = ForwardRef("C", owner=one)
             one_f_ga1 = get_annotations(one, format=Format.FORWARDREF)["return"]
             one_f_ga2 = get_annotations(one, format=Format.FORWARDREF)["return"]
+            self.assertIsInstance(one_f_ga1.__cell__, types.CellType)
+            self.assertIs(one_f_ga1.__cell__, one_f_ga2.__cell__)
 
             def two(_) -> C1 | C2:
                 """Two cells."""
 
             two_f_ga1 = get_annotations(two, format=Format.FORWARDREF)["return"]
             two_f_ga2 = get_annotations(two, format=Format.FORWARDREF)["return"]
+            self.assertIsNot(two_f_ga1.__cell__, two_f_ga2.__cell__)
+            self.assertIsInstance(two_f_ga1.__cell__, dict)
+            self.assertIsInstance(two_f_ga2.__cell__, dict)
 
         type C1 = None
         type C2 = None
@@ -1885,15 +1890,8 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertNotEqual(A.one_f, A.one_f_ga1)
         self.assertNotEqual(hash(A.one_f), hash(A.one_f_ga1))
 
-        self.assertIsInstance(A.one_f_ga1.__cell__, types.CellType)
-        self.assertIs(A.one_f_ga1.__cell__, A.one_f_ga2.__cell__)
-
         self.assertEqual(A.one_f_ga1, A.one_f_ga2)
         self.assertEqual(hash(A.one_f_ga1), hash(A.one_f_ga2))
-
-        self.assertIsNot(A.two_f_ga1.__cell__, A.two_f_ga2.__cell__)
-        self.assertIsInstance(A.two_f_ga1.__cell__, dict)
-        self.assertIsInstance(A.two_f_ga2.__cell__, dict)
 
         self.assertEqual(A.two_f_ga1, A.two_f_ga2)
         self.assertEqual(hash(A.two_f_ga1), hash(A.two_f_ga2))
