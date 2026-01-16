@@ -2159,6 +2159,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
 
         # Mark inherited runtime checkability (deprecated). See GH-132604.
+        # This is overwritten to False when @runtime_checkable is applied.
         if cls._is_protocol and getattr(cls, '_is_runtime_protocol', False):
             cls._is_deprecated_inherited_runtime_protocol = True
 
