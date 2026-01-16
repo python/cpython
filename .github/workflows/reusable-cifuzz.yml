@@ -12,19 +12,12 @@ on:
         description: OSS-Fuzz sanitizer
         required: true
         type: string
-      timeout-minutes:
-        description: Timeout in minutes for the action
-        required: false
-        default: 60
-        type: number
 
 jobs:
   cifuzz:
-    name: >-
-      ${{ inputs.oss-fuzz-project-name }}
-      (${{ inputs.sanitizer }})
+    name: ${{ inputs.oss-fuzz-project-name }} (${{ inputs.sanitizer }})
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.timeout-minutes }}
+    timeout-minutes: 60
     steps:
       - name: Build fuzzers (${{ inputs.sanitizer }})
         id: build

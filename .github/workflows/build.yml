@@ -680,7 +680,6 @@ jobs:
     with:
       oss-fuzz-project-name: ${{ matrix.oss-fuzz-project-name }}
       sanitizer: ${{ matrix.sanitizer }}
-      timeout-minutes: 60
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
@@ -736,10 +735,8 @@ jobs:
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
           ${{
-            (
-              !fromJSON(needs.build-context.outputs.run-ci-fuzz)
-              && !fromJSON(needs.build-context.outputs.run-ci-fuzz-stdlib)
-            )
+            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
+            && !fromJSON(needs.build-context.outputs.run-ci-fuzz-stdlib)
             && 'cifuzz,' ||
             ''
           }}

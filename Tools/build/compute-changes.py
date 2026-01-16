@@ -145,9 +145,9 @@ def compute_changes() -> None:
         print("Branch too old for CIFuzz tests; or no C files were changed")
 
     if outputs.run_ci_fuzz_stdlib:
-        print("Run CIFuzz tests for libraries")
+        print("Run CIFuzz tests for stdlib")
     else:
-        print("Branch too old for CIFuzz tests; or no library files were changed")
+        print("Branch too old for CIFuzz tests; or no stdlib files were changed")
 
     if outputs.run_docs:
         print("Build documentation")
@@ -224,7 +224,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         doc_file = file.suffix in SUFFIXES_DOCUMENTATION or doc_or_misc
 
         if file.parent == GITHUB_WORKFLOWS_PATH:
-            if file.name == "build.yml" or file.name == "reusable-cifuzz.yml":
+            if file.name in ("build.yml", "reusable-cifuzz.yml"):
                 run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = True
                 has_platform_specific_change = False
             if file.name == "reusable-docs.yml":
