@@ -1587,14 +1587,33 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_comment
 
+    @params
+    def test_get_comment(self, s, *args, **kw):
+        cmt = self._test_parse(
+            parser.get_comment,
+            C(s),
+            *args,
+            **kw,
+            )
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(cmt, parser.Comment)
+        self.assertEqual(cmt.token_type, 'comment')
+        self.verify_terminals_type(cmt, 'vtext')
+
+    params_test_get_comment = old_api_only(
+        )
+
     def test_get_comment_only(self):
         comment = self._test_get_x(parser.get_comment,
             '(comment)', '(comment)', ' ', [], '', ['comment'])
         self.assertEqual(comment.token_type, 'comment')
 
-    def test_get_comment_must_start_with_paren(self):
+    def test_get_comment_must_start_with_paren_no_ws(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_comment('foo"')
+
+    def test_get_comment_must_start_with_paren_ws(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_comment('  (foo"')
 
@@ -1624,10 +1643,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             '(foo\x7Fbar)', '(foo\x7Fbar)', ' ',
             [errors.NonPrintableDefect], '', ['foo\x7Fbar'])
 
-    def test_get_comment_no_end_paren(self):
+    def test_get_comment_no_end_paren_after_non_ws(self):
         self._test_get_x(parser.get_comment,
             '(foo bar', '(foo bar)', ' ',
             [errors.InvalidHeaderDefect], '', ['foo bar'])
+
+    def test_get_comment_no_end_paren_after_ws(self):
         self._test_get_x(parser.get_comment,
             '(foo bar  ', '(foo bar  )', ' ',
             [errors.InvalidHeaderDefect], '', ['foo bar  '])
