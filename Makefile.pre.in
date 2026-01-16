@@ -1251,7 +1251,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/sysmodule.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tupleobject.h \
-		$(srcdir)/Include/typeslots.h \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \

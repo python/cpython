@@ -100,7 +100,6 @@ Lib/token.py                                        generated
 Misc/sbom.spdx.json                                 generated
 Modules/_testinternalcapi/test_cases.c.h            generated
 Modules/_testinternalcapi/test_targets.h            generated
-Objects/typeslots.inc                               generated
 PC/python3dll.c                                     generated
 Parser/parser.c                                     generated
 Parser/token.c                                      generated
