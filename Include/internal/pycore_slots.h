@@ -23,22 +23,21 @@ typedef enum _PySlot_KIND {
     _PySlot_KIND_SLOT,
 } _PySlot_KIND;
 
-typedef enum _PySlot_NULL_HANDLING {
-    _PySlot_NULL_DEPRECATED,
-    _PySlot_NULL_REJECT,
-    _PySlot_NULL_ALLOW,
-} _PySlot_NULL_HANDLING;
+typedef enum _PySlot_PROBLEM_HANDLING {
+    _PySlot_PROBLEM_ALLOW = 0,
+    _PySlot_PROBLEM_DEPRECATED,
+    _PySlot_PROBLEM_REJECT,
+} _PySlot_PROBLEM_HANDLING;
 
 /* Internal information about a slot */
 typedef struct _PySlot_Info {
     const char *name; /* without the Py_ prefix */
     _PySlot_TYPE dtype;
     _PySlot_KIND kind;
-    _PySlot_NULL_HANDLING null_handling;
+    _PySlot_PROBLEM_HANDLING null_handling;
+    _PySlot_PROBLEM_HANDLING duplicate_handling;
     bool is_subslots :1;
     bool is_name :1;
-    bool reject_duplicates :1;
-    bool deprecate_duplicates :1;
     union {
         struct {
             /* For type slots (_PySlot_KIND_TYPE):

@@ -302,7 +302,7 @@ validate_current_slot(_PySlotIterator *it)
         return -1;
     }
 
-    if (it->info->null_handling != _PySlot_NULL_ALLOW) {
+    if (it->info->null_handling != _PySlot_PROBLEM_ALLOW) {
         bool is_null = false;
         switch (it->info->dtype) {
             case _PySlot_TYPE_PTR: {
@@ -316,29 +316,30 @@ validate_current_slot(_PySlotIterator *it)
             } break;
         }
         if (is_null) {
-            if (it->info->null_handling == _PySlot_NULL_DEPRECATED) {
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning,
-                    1,
-                    "NULL value in slot Py_%s is deprecated",
-                    it->info->name) < 0)
-                {
-                    return -1;
-                }
-            }
-            else {
+            MSG("slot is NULL but shouldn't");
+            if (it->info->null_handling == _PySlot_PROBLEM_REJECT) {
+                MSG("error (NULL rejected)");
                 PyErr_Format(PyExc_SystemError,
                              "NULL not allowed for slot %s",
                              it->info->name);
                 return -1;
             }
+            MSG("deprecated NULL");
+            if (PyErr_WarnFormat(
+                PyExc_DeprecationWarning,
+                1,
+                "NULL value in slot Py_%s is deprecated",
+                it->info->name) < 0)
+            {
+                return -1;
+            }
         }
     }
 
-    if (info->reject_duplicates || info->deprecate_duplicates) {
+    if (info->duplicate_handling != _PySlot_PROBLEM_ALLOW) {
         if (_PySlotIterator_SawSlot(it, id)) {
-            MSG("slot was seen before");
-            if (info->reject_duplicates) {
+            MSG("slot was seen before but shouldn't be duplicated");
+            if (info->duplicate_handling == _PySlot_PROBLEM_REJECT) {
                 MSG("error (duplicate rejected)");
                 PyErr_Format(
                     PyExc_SystemError,

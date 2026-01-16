@@ -71,10 +71,10 @@ class SlotInfo:
     def initializers_for_duplicates(self):
         match self.get('duplicates'):
             case 'no':
-                return {'reject_duplicates': 'true'}
+                return {'duplicate_handling': '_PySlot_PROBLEM_REJECT'}
             case 'yes':
                 return {}
-        return {'deprecate_duplicates': 'true'}
+        return {'duplicate_handling': '_PySlot_PROBLEM_DEPRECATED'}
 
 
 def parse_slots(lines):
@@ -180,9 +180,9 @@ def write_c(f, slots):
                 initializers['is_subslots'] = 'true'
             match slot.get('null'):
                 case 'reject':
-                    initializers['null_handling'] = '_PySlot_NULL_REJECT'
+                    initializers['null_handling'] = '_PySlot_PROBLEM_REJECT'
                 case 'allow':
-                    initializers['null_handling'] = '_PySlot_NULL_ALLOW'
+                    initializers['null_handling'] = '_PySlot_PROBLEM_ALLOW'
                 case None:
                     if slot.dtype in {'func', 'ptr'}:
                         if slot.id > 92:
@@ -190,9 +190,7 @@ def write_c(f, slots):
                                 f'slot {slot.name} needs explicit NULL '
                                 + 'handling specification')
                         initializers['null_handling'] = (
-                            '_PySlot_NULL_DEPRECATED')
-                    else:
-                        initializers['null_handling'] = '_PySlot_NULL_ALLOW'
+                            '_PySlot_PROBLEM_DEPRECATED')
             initializers.update(slot.initializers_for_duplicates)
             if slot.get_bool('is_name'):
                 initializers['is_name'] = 'true'
