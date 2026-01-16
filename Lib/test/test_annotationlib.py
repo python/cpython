@@ -1869,7 +1869,7 @@ class TestForwardRefClass(unittest.TestCase):
             def one(_) -> C1:
                 """One cell."""
 
-            one_f = ForwardRef("C", owner=one)
+            one_f = ForwardRef("C1", owner=one)
             one_f_ga1 = get_annotations(one, format=Format.FORWARDREF)["return"]
             one_f_ga2 = get_annotations(one, format=Format.FORWARDREF)["return"]
             self.assertIsInstance(one_f_ga1.__cell__, types.CellType)
