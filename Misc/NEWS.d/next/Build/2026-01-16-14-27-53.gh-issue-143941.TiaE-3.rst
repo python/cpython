@@ -1,0 +1,2 @@
+Move WASI-related files to Platforms/WASI. Along the way, leave a deprecated
+Tools/wasm/wasi/__main__.py behind for backwards-compatibility.

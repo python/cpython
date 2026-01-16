@@ -47,14 +47,14 @@ jobs:
     - name: "Runner image version"
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: "Configure build Python"
-      run: python3 Tools/wasm/wasi configure-build-python -- --config-cache --with-pydebug
+      run: python3 Platforms/WASI configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
-      run: python3 Tools/wasm/wasi make-build-python
+      run: python3 Platforms/WASI make-build-python
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
-      run: python3 Tools/wasm/wasi configure-host -- --config-cache
+      run: python3 Platforms/WASI configure-host -- --config-cache
     - name: "Make host"
-      run: python3 Tools/wasm/wasi make-host
+      run: python3 Platforms/WASI make-host
     - name: "Display build info"
       run: make --directory "${CROSS_BUILD_WASI}" pythoninfo
     - name: "Test"
