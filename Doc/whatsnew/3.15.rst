@@ -1261,6 +1261,10 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
+* Add :c:func:`PyUnstable_InterpreterFrame_GetFrameObject` to get a frame
+  object from an interpreter frame.
+  (Contributed by Victor Stinner in :gh:`141518`.)
+
 * Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)

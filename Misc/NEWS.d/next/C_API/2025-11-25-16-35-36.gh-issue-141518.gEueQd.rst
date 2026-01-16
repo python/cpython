@@ -1,0 +1,2 @@
+Add :c:func:`PyUnstable_InterpreterFrame_GetFrameObject` to get a frame
+object from an interpreter frame. Patch by Victor Stinner.

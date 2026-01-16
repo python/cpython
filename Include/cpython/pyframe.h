@@ -23,18 +23,26 @@ PyAPI_FUNC(PyObject*) PyFrame_GetVarString(PyFrameObject *frame, const char *nam
  * implementing custom frame evaluators with PEP 523. */
 
 struct _PyInterpreterFrame;
+typedef struct _PyInterpreterFrame PyUnstable_InterpreterFrame;
 
 /* Returns the code object of the frame (strong reference).
  * Does not raise an exception. */
-PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetCode(
+    PyUnstable_InterpreterFrame *frame);
 
 /* Returns a byte offset into the last executed instruction.
  * Does not raise an exception. */
-PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(
+    PyUnstable_InterpreterFrame *frame);
 
 /* Returns the currently executing line number, or -1 if there is no line number.
  * Does not raise an exception. */
-PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(
+    PyUnstable_InterpreterFrame *frame);
+
+/* Get a frame object from an interpreter frame. */
+PyAPI_FUNC(PyFrameObject*) PyUnstable_InterpreterFrame_GetFrameObject(
+    PyUnstable_InterpreterFrame *frame);
 
 #define PyUnstable_EXECUTABLE_KIND_SKIP 0
 #define PyUnstable_EXECUTABLE_KIND_PY_FUNCTION 1

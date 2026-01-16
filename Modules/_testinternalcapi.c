@@ -960,6 +960,17 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+iframe_getframeobject(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return (PyObject*)PyUnstable_InterpreterFrame_GetFrameObject(f);
+}
+
+static PyObject *
 code_returns_only_none(PyObject *self, PyObject *arg)
 {
     if (!PyCode_Check(arg)) {
@@ -2560,6 +2571,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"iframe_getframeobject", iframe_getframeobject, METH_O, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},

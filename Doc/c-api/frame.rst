@@ -223,30 +223,44 @@ Internal Frames
 
 Unless using :pep:`523`, you will not need this.
 
-.. c:struct:: _PyInterpreterFrame
+.. c:struct:: PyUnstable_InterpreterFrame
 
    The interpreter's internal frame representation.
 
-   .. versionadded:: 3.11
+   The structure is intentionally opaque, and there are currently no plans to
+   stabilize it. Debuggers and profilers can use the internal C API to access
+   the structure members.
 
-.. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+   .. versionadded:: 3.11
+   .. versionchanged:: next
+      Renamed to ``PyUnstable_InterpreterFrame``.
+
+.. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(PyUnstable_InterpreterFrame *frame);
 
     Return a :term:`strong reference` to the code object for the frame.
 
    .. versionadded:: 3.12
 
 
-.. c:function:: int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+.. c:function:: PyFrameObject* PyUnstable_InterpreterFrame_GetFrameObject(PyUnstable_InterpreterFrame *frame)
+
+   Get a frame object from an interpreter frame.
+
+   Return a new :term:`strong reference` on success, or set an exception and
+   return ``NULL`` on error.
+
+   .. versionadded:: next
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLasti(PyUnstable_InterpreterFrame *frame);
 
    Return the byte offset into the last executed instruction.
 
    .. versionadded:: 3.12
 
 
-.. c:function:: int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+.. c:function:: int PyUnstable_InterpreterFrame_GetLine(PyUnstable_InterpreterFrame *frame);
 
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
-
-
