@@ -322,6 +322,30 @@ General Options
 
    .. versionadded:: 3.11
 
+.. option:: --with-missing-stdlib-config=FILE
+
+   Path to a `JSON <https://www.json.org/json-en.html>`_ configuration file
+   containing custom error messages for missing :term:`standard library` modules.
+
+   This option is intended for Python distributors who wish to provide
+   distribution-specific guidance when users encounter standard library
+   modules that are missing or packaged separately.
+
+   The JSON file should map missing module names to custom error message strings.
+   For example, if your distribution packages :mod:`tkinter` and
+   :mod:`_tkinter` separately and excludes :mod:`!_gdbm` for legal reasons,
+   the configuration could contain:
+
+   .. code-block:: json
+
+      {
+          "_gdbm": "The '_gdbm' module is not available in this distribution",
+          "tkinter": "Install the python-tk package to use tkinter",
+          "_tkinter": "Install the python-tk package to use tkinter",
+      }
+
+   .. versionadded:: 3.15
+
 .. option:: --enable-pystats
 
    Turn on internal Python performance statistics gathering.

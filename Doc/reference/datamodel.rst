@@ -449,7 +449,7 @@ Sets
 
    These represent a mutable set. They are created by the built-in :func:`set`
    constructor and can be modified afterwards by several methods, such as
-   :meth:`add <frozenset.add>`.
+   :meth:`~set.add`.
 
 
 Frozen sets
@@ -895,7 +895,6 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __loader__ (module attribute)
    single: __path__ (module attribute)
    single: __file__ (module attribute)
-   single: __cached__ (module attribute)
    single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
@@ -1044,42 +1043,27 @@ this approach.
    instead of :attr:`!module.__path__`.
 
 .. attribute:: module.__file__
-.. attribute:: module.__cached__
 
-   :attr:`!__file__` and :attr:`!__cached__` are both optional attributes that
+   :attr:`!__file__` is an optional attribute that
    may or may not be set. Both attributes should be a :class:`str` when they
    are available.
 
-   :attr:`!__file__` indicates the pathname of the file from which the module
-   was loaded (if loaded from a file), or the pathname of the shared library
-   file for extension modules loaded dynamically from a shared library.
-   It might be missing for certain types of modules, such as C modules that are
-   statically linked into the interpreter, and the
+   An optional attribute, :attr:`!__file__` indicates the pathname of the file
+   from which the module was loaded (if loaded from a file), or the pathname of
+   the shared library file for extension modules loaded dynamically from a
+   shared library. It might be missing for certain types of modules, such as C
+   modules that are statically linked into the interpreter, and the
    :ref:`import system <importsystem>` may opt to leave it unset if it
    has no semantic meaning (for example, a module loaded from a database).
 
-   If :attr:`!__file__` is set then the :attr:`!__cached__` attribute might
-   also be set,  which is the path to any compiled version of
-   the code (for example, a byte-compiled file). The file does not need to exist
-   to set this attribute; the path can simply point to where the
-   compiled file *would* exist (see :pep:`3147`).
-
-   Note that :attr:`!__cached__` may be set even if :attr:`!__file__` is not
-   set.  However, that scenario is quite atypical.  Ultimately, the
-   :term:`loader` is what makes use of the module spec provided by the
-   :term:`finder` (from which :attr:`!__file__` and :attr:`!__cached__` are
-   derived).  So if a loader can load from a cached module but otherwise does
-   not load from a file, that atypical scenario may be appropriate.
-
-   It is **strongly** recommended that you use
-   :attr:`module.__spec__.cached <importlib.machinery.ModuleSpec.cached>`
-   instead of :attr:`!module.__cached__`.
-
    .. deprecated-removed:: 3.13 3.15
-      Setting :attr:`!__cached__` on a module while failing to set
+      Setting ``__cached__`` on a module while failing to set
       :attr:`!__spec__.cached` is deprecated. In Python 3.15,
-      :attr:`!__cached__` will cease to be set or taken into consideration by
+      ``__cached__`` will cease to be set or taken into consideration by
       the import system or standard library.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` is no longer set.
 
 Other writable attributes on module objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1834,6 +1818,12 @@ Slice objects
 Slice objects are used to represent slices for
 :meth:`~object.__getitem__`
 methods.  They are also created by the built-in :func:`slice` function.
+
+.. versionadded:: 3.15
+
+   The :func:`slice` type now supports :ref:`subscription <subscriptions>`. For
+   example, ``slice[float]`` may be used in type annotations to indicate a slice
+   containing :type:`float` objects.
 
 .. index::
    single: start (slice object attribute)
@@ -2633,7 +2623,7 @@ Notes on using *__slots__*:
 * :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
   *__weakref__* are defined for a class derived from a
   :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
-  :class:`int`, :class:`bytes`, and :class:`tuple`.
+  :class:`int`, :class:`bytes`, and :class:`type`, except :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
@@ -2656,8 +2646,9 @@ Notes on using *__slots__*:
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+   Allowed defining any *__slots__* for a class derived from :class:`tuple`.
 
 
 .. _class-customization:
