@@ -735,7 +735,7 @@ Export API
    in a process, and so it can be cached.
 
 
-.. c:struct:: PyLongExport
+.. c:type:: PyLongExport
 
    Export of a Python :class:`int` object.
 
@@ -769,7 +769,7 @@ Export API
 
    Export a Python :class:`int` object.
 
-   *export_long* must point to a :c:struct:`PyLongExport` structure allocated
+   *export_long* must point to a :c:type:`PyLongExport` structure allocated
    by the caller. It must not be ``NULL``.
 
    On success, fill in *\*export_long* and return ``0``.

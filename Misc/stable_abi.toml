@@ -2664,6 +2664,9 @@
 [function.Py_SET_SIZE]
     # Before 3.15, this was a macro that accessed the PyObject member
     added = '3.15'
+
+# PEP 757 import/export API.
+
 [function.PyLong_GetNativeLayout]
     added = '3.15'
 [function.PyLong_Export]
@@ -2685,3 +2688,4 @@
 [struct.PyLongExport]
     added = '3.15'
     struct_abi_kind = 'members'
+    members = ['value', 'negative', 'ndigits', 'digits']
