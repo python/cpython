@@ -335,23 +335,23 @@ class FormatTest(unittest.TestCase):
         test_exc_common('%.*r', (-2**1000, 1), OverflowError,
                         "format argument 1: too big for precision")
         test_exc_common('%d', '1', TypeError,
-                        "%d requires a real number, not str")
+                        "format argument: %d requires a real number, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "%d requires a real number, not bytes")
+                        "format argument: %d requires a real number, not bytes")
         test_exc_common('%d', ('1',), TypeError,
                         "format argument 1: %d requires a real number, not str")
         test_exc_common('%x', '1', TypeError,
-                        "%x requires an integer, not str")
+                        "format argument: %x requires an integer, not str")
         test_exc_common('%x', 3.14, TypeError,
-                        "%x requires an integer, not float")
+                        "format argument: %x requires an integer, not float")
         test_exc_common('%x', ('1',), TypeError,
                         "format argument 1: %x requires an integer, not str")
         test_exc_common('%i', '1', TypeError,
-                        "%i requires a real number, not str")
+                        "format argument: %i requires a real number, not str")
         test_exc_common('%i', b'1', TypeError,
-                        "%i requires a real number, not bytes")
+                        "format argument: %i requires a real number, not bytes")
         test_exc_common('%g', '1', TypeError,
-                        "%g requires a real number, not str")
+                        "format argument: %g requires a real number, not str")
         test_exc_common('%g', ('1',), TypeError,
                         "format argument 1: %g requires a real number, not str")
 
@@ -395,29 +395,30 @@ class FormatTest(unittest.TestCase):
                  "format argument 'x': %x requires an integer, not str")
         test_exc('%(x)g', {'x': '1'}, TypeError,
                  "format argument 'x': %g requires a real number, not str")
-        test_exc('%c', -1, OverflowError, "%c argument not in range(0x110000)")
+        test_exc('%c', -1, OverflowError,
+                 "format argument: %c argument not in range(0x110000)")
         test_exc('%c', (-1,), OverflowError,
                  "format argument 1: %c argument not in range(0x110000)")
         test_exc('%(x)c', {'x': -1}, OverflowError,
                  "format argument 'x': %c argument not in range(0x110000)")
         test_exc('%c', sys.maxunicode+1, OverflowError,
-                 "%c argument not in range(0x110000)")
+                 "format argument: %c argument not in range(0x110000)")
         test_exc('%c', 2**128, OverflowError,
-                 "%c argument not in range(0x110000)")
+                 "format argument: %c argument not in range(0x110000)")
         test_exc('%c', 3.14, TypeError,
-                 "%c requires an integer or a unicode character, not float")
+                 "format argument: %c requires an integer or a unicode character, not float")
         test_exc('%c', (3.14,), TypeError,
                  "format argument 1: %c requires an integer or a unicode character, not float")
         test_exc('%(x)c', {'x': 3.14}, TypeError,
                  "format argument 'x': %c requires an integer or a unicode character, not float")
         test_exc('%c', 'ab', TypeError,
-                 "%c requires an integer or a unicode character, not a string of length 2")
+                 "format argument: %c requires an integer or a unicode character, not a string of length 2")
         test_exc('%c', ('ab',), TypeError,
                  "format argument 1: %c requires an integer or a unicode character, not a string of length 2")
         test_exc('%(x)c', {'x': 'ab'}, TypeError,
                  "format argument 'x': %c requires an integer or a unicode character, not a string of length 2")
         test_exc('%c', b'x', TypeError,
-                 "%c requires an integer or a unicode character, not bytes")
+                 "format argument: %c requires an integer or a unicode character, not bytes")
 
         if maxsize == 2**31-1:
             # crashes 2.2.1 and earlier:
@@ -498,37 +499,37 @@ class FormatTest(unittest.TestCase):
         test_exc(b'%(x)g', {b'x': '1'}, TypeError,
                  "format argument b'x': %g requires a real number, not str")
         test_exc(b"%c", -1, OverflowError,
-                "%c argument not in range(256)")
+                "format argument: %c argument not in range(256)")
         test_exc(b"%c", (-1,), OverflowError,
                 "format argument 1: %c argument not in range(256)")
         test_exc(b"%(x)c", {b'x': -1}, OverflowError,
                 "format argument b'x': %c argument not in range(256)")
         test_exc(b"%c", 256, OverflowError,
-                "%c argument not in range(256)")
+                "format argument: %c argument not in range(256)")
         test_exc(b"%c", 2**128, OverflowError,
-                "%c argument not in range(256)")
+                "format argument: %c argument not in range(256)")
         test_exc(b"%c", b"Za", TypeError,
-                "%c requires an integer in range(256) or a single byte, not a bytes object of length 2")
+                "format argument: %c requires an integer in range(256) or a single byte, not a bytes object of length 2")
         test_exc(b"%c", (b"Za",), TypeError,
                 "format argument 1: %c requires an integer in range(256) or a single byte, not a bytes object of length 2")
         test_exc(b"%(x)c", {b'x': b"Za"}, TypeError,
                 "format argument b'x': %c requires an integer in range(256) or a single byte, not a bytes object of length 2")
         test_exc(b"%c", bytearray(b"Za"), TypeError,
-                "%c requires an integer in range(256) or a single byte, not a bytearray object of length 2")
+                "format argument: %c requires an integer in range(256) or a single byte, not a bytearray object of length 2")
         test_exc(b"%c", (bytearray(b"Za"),), TypeError,
                 "format argument 1: %c requires an integer in range(256) or a single byte, not a bytearray object of length 2")
         test_exc(b"%(x)c", {b'x': bytearray(b"Za")}, TypeError,
                 "format argument b'x': %c requires an integer in range(256) or a single byte, not a bytearray object of length 2")
         test_exc(b"%c", "Y", TypeError,
-                "%c requires an integer in range(256) or a single byte, not str")
+                "format argument: %c requires an integer in range(256) or a single byte, not str")
         test_exc(b"%c", 3.14, TypeError,
-                "%c requires an integer in range(256) or a single byte, not float")
+                "format argument: %c requires an integer in range(256) or a single byte, not float")
         test_exc(b"%c", (3.14,), TypeError,
                 "format argument 1: %c requires an integer in range(256) or a single byte, not float")
         test_exc(b"%(x)c", {b'x': 3.14}, TypeError,
                 "format argument b'x': %c requires an integer in range(256) or a single byte, not float")
         test_exc(b"%b", "Xc", TypeError,
-                "%b requires a bytes-like object, "
+                "format argument: %b requires a bytes-like object, "
                  "or an object that implements __bytes__, not str")
         test_exc(b"%b", ("Xc",), TypeError,
                 "format argument 1: %b requires a bytes-like object, "
@@ -537,7 +538,7 @@ class FormatTest(unittest.TestCase):
                 "format argument b'x': %b requires a bytes-like object, "
                  "or an object that implements __bytes__, not str")
         test_exc(b"%s", "Wd", TypeError,
-                "%b requires a bytes-like object, "
+                "format argument: %b requires a bytes-like object, "
                  "or an object that implements __bytes__, not str")
 
         if maxsize == 2**31-1:

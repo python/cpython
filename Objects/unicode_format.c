@@ -87,7 +87,7 @@ struct unicode_format_arg_t {
                      ctx->argidx, __VA_ARGS__);                             \
     }                                                                       \
     else {                                                                  \
-        PyErr_Format((EXC), FMT, __VA_ARGS__);                              \
+        PyErr_Format((EXC), "format argument: " FMT, __VA_ARGS__);          \
     }                                                                       \
 } while (0)
 

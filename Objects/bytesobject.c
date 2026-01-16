@@ -414,7 +414,7 @@ PyBytes_FromFormat(const char *format, ...)
                      argidx, __VA_ARGS__);                                  \
     }                                                                       \
     else {                                                                  \
-        PyErr_Format((EXC), FMT, __VA_ARGS__);                              \
+        PyErr_Format((EXC), "format argument: " FMT, __VA_ARGS__);          \
     }                                                                       \
 } while (0)
 
