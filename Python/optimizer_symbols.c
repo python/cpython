@@ -388,10 +388,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             make_const(sym, const_val);
             return;
         case JIT_SYM_PREDICATE_TAG:
-            if (!PyBool_Check(const_val) ||
-                (_Py_uop_sym_is_const(ctx, ref) &&
-                _Py_uop_sym_get_const(ctx, ref) != const_val))
-            {
+            if (!PyBool_Check(const_val)) {
                 sym_set_bottom(ctx, sym);
                 return;
             }
