@@ -1,3 +1,0 @@
-:mod:`importlib.metadata`: Use :meth:`str.translate` to improve performance of
-:meth:`!importlib.metadata.Prepared.normalize`. Patch by Hugo van Kemenade and
-Henry Schreiner.

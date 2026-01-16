@@ -1,2 +1,0 @@
-Fixed socket operations such as recvfrom() and sendto() for FreeBSD
-divert(4) socket.

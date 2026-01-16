@@ -1,1 +1,0 @@
-Fix concurrent and reentrant call of :func:`atexit.unregister`.

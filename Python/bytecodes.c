@@ -5474,7 +5474,7 @@ dummy_func(
         }
 
         tier2 op(_MAKE_WARM, (--)) {
-            current_executor->vm_data.warm = true;
+            current_executor->vm_data.cold = false;
         }
 
         tier2 op(_FATAL_ERROR, (--)) {
@@ -5620,6 +5620,9 @@ dummy_func(
 #else
             assert(_PyErr_Occurred(tstate));
 #endif
+            SAVE_STACK();
+            STOP_TRACING();
+            RELOAD_STACK();
 
             /* Log traceback info. */
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -5634,6 +5637,9 @@ dummy_func(
         }
 
         spilled label(exception_unwind) {
+            SAVE_STACK();
+            STOP_TRACING();
+            RELOAD_STACK();
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
