@@ -12,6 +12,7 @@ import errno
 
 from unittest import TestCase, skipUnless
 from test import support as test_support
+from test.support import control_characters_c0
 threading = test_support.import_module('threading')
 
 HOST = test_support.HOST
@@ -348,6 +349,13 @@ class TestPOP3Class(TestCase):
         self.assertTrue(resp)
         self.assertIsNone(self.client.sock)
         self.assertIsNone(self.client.file)
+
+    def test_control_characters(self):
+        for c0 in control_characters_c0():
+            with self.assertRaises(ValueError):
+                self.client.user(f'user{c0}')
+            with self.assertRaises(ValueError):
+                self.client.pass_(f'{c0}pass')
 
     @requires_ssl
     def test_stls_capa(self):
