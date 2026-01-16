@@ -3392,6 +3392,7 @@ class _TestMyManager(BaseTestCase):
     ALLOWED_TYPES = ('manager',)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3404,6 +3405,7 @@ class _TestMyManager(BaseTestCase):
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager_context(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         with manager:
@@ -3414,6 +3416,7 @@ class _TestMyManager(BaseTestCase):
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager_context_prestarted(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3485,6 +3488,7 @@ class _TestRemoteManager(BaseTestCase):
         queue.put(tuple(cls.values))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_remote(self):
         authkey = os.urandom(32)
 
@@ -3527,6 +3531,7 @@ class _TestManagerRestart(BaseTestCase):
         queue.put('hello world')
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer("TSan: leaks threads", thread=True)
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
@@ -7080,6 +7085,26 @@ class MiscTestCase(unittest.TestCase):
         # The trailing empty string comes from split() on output ending with \n
         out = out.decode().split("\n")
         self.assertEqual(out, ['__main__', '__mp_main__', 'f', 'f', ''])
+
+    def test_preload_main_sys_argv(self):
+        # gh-143706: Check that sys.argv is set before __main__ is pre-loaded
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_sysargv.py')
+        _, out, err = test.support.script_helper.assert_python_ok(
+            name, 'foo', 'bar')
+        self.assertEqual(err, b'')
+
+        out = out.decode().split("\n")
+        expected_argv = "['foo', 'bar']"
+        self.assertEqual(out, [
+            f"module:{expected_argv}",
+            f"fun:{expected_argv}",
+            f"module:{expected_argv}",
+            f"fun:{expected_argv}",
+            '',
+        ])
 
 #
 # Mixins

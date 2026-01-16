@@ -27,7 +27,7 @@ int _PyCfg_OptimizeCodeUnit(struct _PyCfgBuilder *g, PyObject *consts, PyObject 
 struct _PyCfgBuilder* _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq);
 int _PyCfg_ToInstructionSequence(struct _PyCfgBuilder *g, _PyInstructionSequence *seq);
 int _PyCfg_OptimizedCfgToInstructionSequence(struct _PyCfgBuilder *g, _PyCompile_CodeUnitMetadata *umd,
-                                             int code_flags, int *stackdepth, int *nlocalsplus,
+                                             int *stackdepth, int *nlocalsplus,
                                              _PyInstructionSequence *seq);
 
 PyCodeObject *

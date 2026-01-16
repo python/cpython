@@ -398,6 +398,13 @@ Other language changes
   for any class.
   (Contributed by Serhiy Storchaka in :gh:`41779`.)
 
+* Allowed defining any :ref:`__slots__ <slots>` for a class derived from
+  :class:`tuple` (including classes created by :func:`collections.namedtuple`).
+  (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
+* The :class:`slice` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 New modules
 ===========
@@ -427,6 +434,23 @@ argparse
 * Added backtick markup support in description and epilog text to highlight
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
+
+base64
+------
+
+* Added the *pad* parameter in :func:`~base64.z85encode`.
+  (Contributed by Hauke Dämpfling in :gh:`143103`.)
+
+* Added the *wrapcol* parameter in :func:`~base64.b64encode`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+
+binascii
+--------
+
+* Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
 
 calendar
 --------
@@ -787,6 +811,16 @@ unicodedata
   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
   (Contributed by Stan Ulbrych in :gh:`129117`.)
 
+* Add the :func:`~unicodedata.iter_graphemes`
+  function to iterate over grapheme clusters according to rules defined in
+  `Unicode Standard Annex #29, "Unicode Text Segmentation"
+  <https://www.unicode.org/reports/tr29/>`_.
+  Add :func:`~unicodedata.grapheme_cluster_break`,
+  :func:`~unicodedata.indic_conjunct_break` and
+  :func:`~unicodedata.extended_pictographic` functions to get the properties
+  of the character which are related to the above algorithm.
+  (Contributed by Serhiy Storchaka and Guillaume Sanchez in :gh:`74902`.)
+
 
 unittest
 --------
@@ -854,13 +888,22 @@ Optimizations
 
 * Builds using Visual Studio 2026 (MSVC 18) may now use the new
   :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  Results on an early experimental MSVC compiler reported roughly 15% speedup
-  on the geometric mean of pyperformance on Windows x86-64 over
-  the switch-case interpreter. We have
-  observed speedups ranging from 15% for large pure-Python libraries
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
   to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18.
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
+
+base64 & binascii
+-----------------
+
+* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
+  faster thanks to simple CPU pipelining optimizations.
+  (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
 
 csv
 ---
@@ -876,10 +919,14 @@ Upgraded JIT compiler
 
 Results from the `pyperformance <https://github.com/python/pyperformance>`__
 benchmark suite report
-`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`__
+`4-5% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-vultr-x86_64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
 geometric mean performance improvement for the JIT over the standard CPython
-interpreter built with all optimizations enabled. The speedups for JIT
-builds versus no JIT builds range from roughly 20% slowdown to over
+interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
+macOS, the JIT has a
+`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-macm4pro-arm64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
+with all optimizations enabled. The speedups for JIT
+builds versus no JIT builds range from roughly 15% slowdown to over
 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
 x86-64 Linux and AArch64 macOS systems.
 
@@ -939,7 +986,7 @@ The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
 
 (Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
-Noam Cohen, Tomas Roun, and PuQing in :gh:`134584`.)
+Reiden Ong, Noam Cohen, Tomas Roun, PuQing, and Cajetan Rodrigues in :gh:`134584`.)
 
 .. rubric:: Better machine code generation
 
@@ -1158,6 +1205,8 @@ New deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
 
+.. include:: ../deprecations/pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
@@ -1212,7 +1261,7 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
-* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+* Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
 
@@ -1403,7 +1452,7 @@ that may require changes to your code.
   :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`137044`.)
 
-* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
+* :meth:`mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
 
 * A resource warning is now emitted for an unclosed

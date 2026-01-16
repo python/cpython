@@ -112,6 +112,10 @@
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) Tools\cases_generator\uop_metadata_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\target_generator.py -o Modules\_testinternalcapi\test_targets.h Python\bytecodes.c Modules\_testinternalcapi\testbytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\tier1_generator.py -o Modules\_testinternalcapi\test_cases.c.h Python\bytecodes.c Modules\_testinternalcapi\testbytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
   </Target>
 
   <Target Name="_RegenJIT"

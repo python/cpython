@@ -713,7 +713,7 @@ _PyObject_IsFreed(PyObject *op)
 
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
 void
-PyUnstable_Object_Dump(PyObject* op)
+PyObject_Dump(PyObject* op)
 {
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
@@ -3157,7 +3157,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
-        PyUnstable_Object_Dump(obj);
+        PyObject_Dump(obj);
 
         fprintf(stderr, "\n");
         fflush(stderr);
