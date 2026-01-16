@@ -357,21 +357,25 @@ class ModifyUnderlyingIterableTest(unittest.TestCase):
                 yield x
         return gen(range(10))
 
-    def process_tests(self, get_generator):
-        for obj in self.iterables:
-            g_obj = get_generator(obj)
-            with self.subTest(g_obj=g_obj, obj=obj):
-                self.assertListEqual(list(g_obj), list(obj))
+    def process_tests(self, get_generator, changes_iterable):
+        if changes_iterable:
+            for obj in self.iterables:
+                g_obj = get_generator(obj)
+                with self.subTest(g_obj=g_obj, obj=obj):
+                    self.assertListEqual(list(g_obj), list(obj))
 
-            g_iter = get_generator(iter(obj))
-            with self.subTest(g_iter=g_iter, obj=obj):
-                self.assertListEqual(list(g_iter), list(obj))
+                g_iter = get_generator(iter(obj))
+                with self.subTest(g_iter=g_iter, obj=obj):
+                    self.assertListEqual(list(g_iter), list(obj))
 
         err_regex = "'.*' object is not iterable"
         for obj in self.non_iterables:
             g_obj = get_generator(obj)
             with self.subTest(g_obj=g_obj):
-                self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
+                if changes_iterable:
+                    self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
+                else:
+                    next(g_obj)
 
     def test_modify_f_locals(self):
         def modify_f_locals(g, local, obj):
@@ -384,22 +388,22 @@ class ModifyUnderlyingIterableTest(unittest.TestCase):
         def get_generator_genfunc(obj):
             return modify_f_locals(self.genfunc(), 'it', obj)
 
-        self.process_tests(get_generator_genexpr)
-        self.process_tests(get_generator_genfunc)
+        self.process_tests(get_generator_genexpr, False)
+        self.process_tests(get_generator_genfunc, True)
 
     def test_new_gen_from_gi_code(self):
         def new_gen_from_gi_code(g, obj):
             generator_func = types.FunctionType(g.gi_code, {})
             return generator_func(obj)
 
-        def get_generator_genexpr(obj):
-            return new_gen_from_gi_code(self.genexpr(), obj)
+        for obj in self.non_iterables:
+            with self.assertRaises(TypeError):
+                new_gen_from_gi_code(self.genexpr(), obj)
 
         def get_generator_genfunc(obj):
             return new_gen_from_gi_code(self.genfunc(), obj)
 
-        self.process_tests(get_generator_genexpr)
-        self.process_tests(get_generator_genfunc)
+        self.process_tests(get_generator_genfunc, True)
 
 
 class ExceptionTest(unittest.TestCase):
