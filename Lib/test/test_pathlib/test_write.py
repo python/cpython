@@ -76,14 +76,12 @@ class WriteTestBase:
 
     def test_write_text(self):
         p = self.root / 'fileA'
-        p.write_text('äbcdefg', encoding='latin-1')
+        data = 'äbcdefg'
+        self.assertEqual(len(data), p.write_text(data, encoding='latin-1'))
         self.assertEqual(self.ground.readbytes(p), b'\xe4bcdefg')
         # Check that trying to write bytes does not truncate the file.
         self.assertRaises(TypeError, p.write_text, b'somebytes', encoding='utf-8')
         self.assertEqual(self.ground.readbytes(p), b'\xe4bcdefg')
-        # check the return value
-        data = 'some text'
-        self.assertEqual(len(data), p.write_text(data))
 
     @unittest.skipIf(
         not getattr(sys.flags, 'warn_default_encoding', 0),
