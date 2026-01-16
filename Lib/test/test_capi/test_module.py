@@ -150,7 +150,9 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                 with self.assertRaises(SystemError) as cm:
                     _testcapi.module_from_slots_repeat_slot(spec)
                 self.assertIn(name, str(cm.exception))
-                self.assertIn("more than one", str(cm.exception))
+                self.assertRegex(
+                    str(cm.exception),
+                    rf"^module( [_\w]+)? has multiple {name}( \(\d+\))? slots$")
 
     def test_null_def_slot(self):
         """Slots that replace PyModuleDef fields can't be NULL"""

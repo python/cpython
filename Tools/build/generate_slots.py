@@ -105,7 +105,7 @@ def write_header(f, slots):
     out(f'#define _PY_HAVE_SLOTS_GENERATED_H')
     out()
     out(f'#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)')
-    out(f'#define _Py_SLOT_COMPAT_VALUE(OLD, NEW) OLD')
+    out(f'#define _Py_SLOT_COMPAT_VALUE(OLD, NEW) NEW')
     out(f'#else')
     out(f'#define _Py_SLOT_COMPAT_VALUE(OLD, NEW) OLD')
     out(f'#endif')
@@ -138,7 +138,7 @@ def write_c(f, slots):
         try:
             out(f"    [{slot.id}] = {{")
             initializers = {
-                "name": f'"{slot.name}"',
+                "name": f'"Py_{slot.name}"',
                 "dtype": f'_PySlot_TYPE_{slot.dtype.upper()}',
                 "kind": f'_PySlot_KIND_{slot.kind.upper()}',
             }

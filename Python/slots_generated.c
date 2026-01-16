@@ -7,13 +7,13 @@
 
 _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
     [0] = {
-        .name = "slot_end",
+        .name = "Py_slot_end",
         .dtype = _PySlot_TYPE_VOID,
         .kind = _PySlot_KIND_SLOT,
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [1] = {
-        .name = "bf_getbuffer/mod_create",
+        .name = "Py_bf_getbuffer/mod_create",
         .dtype = _PySlot_TYPE_VOID,
         .kind = _PySlot_KIND_COMPAT,
         .compat_info.mod_id = 84,
@@ -21,7 +21,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [2] = {
-        .name = "bf_releasebuffer/mod_exec",
+        .name = "Py_bf_releasebuffer/mod_exec",
         .dtype = _PySlot_TYPE_VOID,
         .kind = _PySlot_KIND_COMPAT,
         .compat_info.mod_id = 85,
@@ -29,7 +29,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [3] = {
-        .name = "mp_ass_subscript/mod_multiple_interpreters",
+        .name = "Py_mp_ass_subscript/mod_multiple_interpreters",
         .dtype = _PySlot_TYPE_VOID,
         .kind = _PySlot_KIND_COMPAT,
         .compat_info.mod_id = 86,
@@ -37,7 +37,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [4] = {
-        .name = "mp_length/mod_gil",
+        .name = "Py_mp_length/mod_gil",
         .dtype = _PySlot_TYPE_VOID,
         .kind = _PySlot_KIND_COMPAT,
         .compat_info.mod_id = 87,
@@ -45,7 +45,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [5] = {
-        .name = "mp_subscript",
+        .name = "Py_mp_subscript",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_mapping),
@@ -54,7 +54,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [6] = {
-        .name = "nb_absolute",
+        .name = "Py_nb_absolute",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -63,7 +63,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [7] = {
-        .name = "nb_add",
+        .name = "Py_nb_add",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -72,7 +72,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [8] = {
-        .name = "nb_and",
+        .name = "Py_nb_and",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -81,7 +81,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [9] = {
-        .name = "nb_bool",
+        .name = "Py_nb_bool",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -90,7 +90,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [10] = {
-        .name = "nb_divmod",
+        .name = "Py_nb_divmod",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -99,7 +99,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [11] = {
-        .name = "nb_float",
+        .name = "Py_nb_float",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -108,7 +108,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [12] = {
-        .name = "nb_floor_divide",
+        .name = "Py_nb_floor_divide",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -117,7 +117,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [13] = {
-        .name = "nb_index",
+        .name = "Py_nb_index",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -126,7 +126,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [14] = {
-        .name = "nb_inplace_add",
+        .name = "Py_nb_inplace_add",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -135,7 +135,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [15] = {
-        .name = "nb_inplace_and",
+        .name = "Py_nb_inplace_and",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -144,7 +144,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [16] = {
-        .name = "nb_inplace_floor_divide",
+        .name = "Py_nb_inplace_floor_divide",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -153,7 +153,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [17] = {
-        .name = "nb_inplace_lshift",
+        .name = "Py_nb_inplace_lshift",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -162,7 +162,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [18] = {
-        .name = "nb_inplace_multiply",
+        .name = "Py_nb_inplace_multiply",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -171,7 +171,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [19] = {
-        .name = "nb_inplace_or",
+        .name = "Py_nb_inplace_or",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -180,7 +180,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [20] = {
-        .name = "nb_inplace_power",
+        .name = "Py_nb_inplace_power",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -189,7 +189,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [21] = {
-        .name = "nb_inplace_remainder",
+        .name = "Py_nb_inplace_remainder",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -198,7 +198,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [22] = {
-        .name = "nb_inplace_rshift",
+        .name = "Py_nb_inplace_rshift",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -207,7 +207,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [23] = {
-        .name = "nb_inplace_subtract",
+        .name = "Py_nb_inplace_subtract",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -216,7 +216,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [24] = {
-        .name = "nb_inplace_true_divide",
+        .name = "Py_nb_inplace_true_divide",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -225,7 +225,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [25] = {
-        .name = "nb_inplace_xor",
+        .name = "Py_nb_inplace_xor",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -234,7 +234,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [26] = {
-        .name = "nb_int",
+        .name = "Py_nb_int",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -243,7 +243,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [27] = {
-        .name = "nb_invert",
+        .name = "Py_nb_invert",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -252,7 +252,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [28] = {
-        .name = "nb_lshift",
+        .name = "Py_nb_lshift",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -261,7 +261,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [29] = {
-        .name = "nb_multiply",
+        .name = "Py_nb_multiply",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -270,7 +270,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [30] = {
-        .name = "nb_negative",
+        .name = "Py_nb_negative",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -279,7 +279,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [31] = {
-        .name = "nb_or",
+        .name = "Py_nb_or",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -288,7 +288,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [32] = {
-        .name = "nb_positive",
+        .name = "Py_nb_positive",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -297,7 +297,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [33] = {
-        .name = "nb_power",
+        .name = "Py_nb_power",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -306,7 +306,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [34] = {
-        .name = "nb_remainder",
+        .name = "Py_nb_remainder",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -315,7 +315,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [35] = {
-        .name = "nb_rshift",
+        .name = "Py_nb_rshift",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -324,7 +324,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [36] = {
-        .name = "nb_subtract",
+        .name = "Py_nb_subtract",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -333,7 +333,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [37] = {
-        .name = "nb_true_divide",
+        .name = "Py_nb_true_divide",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -342,7 +342,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [38] = {
-        .name = "nb_xor",
+        .name = "Py_nb_xor",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -351,7 +351,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [39] = {
-        .name = "sq_ass_item",
+        .name = "Py_sq_ass_item",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -360,7 +360,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [40] = {
-        .name = "sq_concat",
+        .name = "Py_sq_concat",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -369,7 +369,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [41] = {
-        .name = "sq_contains",
+        .name = "Py_sq_contains",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -378,7 +378,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [42] = {
-        .name = "sq_inplace_concat",
+        .name = "Py_sq_inplace_concat",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -387,7 +387,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [43] = {
-        .name = "sq_inplace_repeat",
+        .name = "Py_sq_inplace_repeat",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -396,7 +396,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [44] = {
-        .name = "sq_item",
+        .name = "Py_sq_item",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -405,7 +405,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [45] = {
-        .name = "sq_length",
+        .name = "Py_sq_length",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -414,7 +414,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [46] = {
-        .name = "sq_repeat",
+        .name = "Py_sq_repeat",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_sequence),
@@ -423,7 +423,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [47] = {
-        .name = "tp_alloc",
+        .name = "Py_tp_alloc",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_alloc),
@@ -432,7 +432,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [48] = {
-        .name = "tp_base",
+        .name = "Py_tp_base",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_base),
@@ -441,7 +441,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [49] = {
-        .name = "tp_bases",
+        .name = "Py_tp_bases",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_bases),
@@ -450,7 +450,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [50] = {
-        .name = "tp_call",
+        .name = "Py_tp_call",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_call),
@@ -459,7 +459,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [51] = {
-        .name = "tp_clear",
+        .name = "Py_tp_clear",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_clear),
@@ -468,7 +468,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [52] = {
-        .name = "tp_dealloc",
+        .name = "Py_tp_dealloc",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_dealloc),
@@ -477,7 +477,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [53] = {
-        .name = "tp_del",
+        .name = "Py_tp_del",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_del),
@@ -486,7 +486,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [54] = {
-        .name = "tp_descr_get",
+        .name = "Py_tp_descr_get",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_descr_get),
@@ -495,7 +495,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [55] = {
-        .name = "tp_descr_set",
+        .name = "Py_tp_descr_set",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_descr_set),
@@ -504,7 +504,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [56] = {
-        .name = "tp_doc",
+        .name = "Py_tp_doc",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_doc),
@@ -513,7 +513,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [57] = {
-        .name = "tp_getattr",
+        .name = "Py_tp_getattr",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_getattr),
@@ -522,7 +522,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [58] = {
-        .name = "tp_getattro",
+        .name = "Py_tp_getattro",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_getattro),
@@ -531,7 +531,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [59] = {
-        .name = "tp_hash",
+        .name = "Py_tp_hash",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_hash),
@@ -540,7 +540,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [60] = {
-        .name = "tp_init",
+        .name = "Py_tp_init",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_init),
@@ -549,7 +549,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [61] = {
-        .name = "tp_is_gc",
+        .name = "Py_tp_is_gc",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_is_gc),
@@ -558,7 +558,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [62] = {
-        .name = "tp_iter",
+        .name = "Py_tp_iter",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_iter),
@@ -567,7 +567,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [63] = {
-        .name = "tp_iternext",
+        .name = "Py_tp_iternext",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_iternext),
@@ -576,7 +576,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [64] = {
-        .name = "tp_methods",
+        .name = "Py_tp_methods",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_methods),
@@ -585,7 +585,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [65] = {
-        .name = "tp_new",
+        .name = "Py_tp_new",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_new),
@@ -594,7 +594,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [66] = {
-        .name = "tp_repr",
+        .name = "Py_tp_repr",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_repr),
@@ -603,7 +603,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [67] = {
-        .name = "tp_richcompare",
+        .name = "Py_tp_richcompare",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_richcompare),
@@ -612,7 +612,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [68] = {
-        .name = "tp_setattr",
+        .name = "Py_tp_setattr",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_setattr),
@@ -621,7 +621,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [69] = {
-        .name = "tp_setattro",
+        .name = "Py_tp_setattro",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_setattro),
@@ -630,7 +630,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [70] = {
-        .name = "tp_str",
+        .name = "Py_tp_str",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_str),
@@ -639,7 +639,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [71] = {
-        .name = "tp_traverse",
+        .name = "Py_tp_traverse",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_traverse),
@@ -648,7 +648,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [72] = {
-        .name = "tp_members",
+        .name = "Py_tp_members",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_members),
@@ -657,7 +657,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [73] = {
-        .name = "tp_getset",
+        .name = "Py_tp_getset",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_getset),
@@ -666,7 +666,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [74] = {
-        .name = "tp_free",
+        .name = "Py_tp_free",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_free),
@@ -675,7 +675,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [75] = {
-        .name = "nb_matrix_multiply",
+        .name = "Py_nb_matrix_multiply",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -684,7 +684,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [76] = {
-        .name = "nb_inplace_matrix_multiply",
+        .name = "Py_nb_inplace_matrix_multiply",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_number),
@@ -693,7 +693,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [77] = {
-        .name = "am_await",
+        .name = "Py_am_await",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_async),
@@ -702,7 +702,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [78] = {
-        .name = "am_aiter",
+        .name = "Py_am_aiter",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_async),
@@ -711,7 +711,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [79] = {
-        .name = "am_anext",
+        .name = "Py_am_anext",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_async),
@@ -720,7 +720,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [80] = {
-        .name = "tp_finalize",
+        .name = "Py_tp_finalize",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_finalize),
@@ -729,7 +729,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [81] = {
-        .name = "am_send",
+        .name = "Py_am_send",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_async),
@@ -738,7 +738,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [82] = {
-        .name = "tp_vectorcall",
+        .name = "Py_tp_vectorcall",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_vectorcall),
@@ -747,7 +747,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [83] = {
-        .name = "tp_token",
+        .name = "Py_tp_token",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyHeapTypeObject, ht_token),
@@ -756,32 +756,32 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [84] = {
-        .name = "mod_create",
+        .name = "Py_mod_create",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_DEPRECATED,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [85] = {
-        .name = "mod_exec",
+        .name = "Py_mod_exec",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [86] = {
-        .name = "mod_multiple_interpreters",
+        .name = "Py_mod_multiple_interpreters",
         .dtype = _PySlot_TYPE_UINT64,
         .kind = _PySlot_KIND_MOD,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [87] = {
-        .name = "mod_gil",
+        .name = "Py_mod_gil",
         .dtype = _PySlot_TYPE_UINT64,
         .kind = _PySlot_KIND_MOD,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [88] = {
-        .name = "bf_getbuffer",
+        .name = "Py_bf_getbuffer",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_buffer),
@@ -790,7 +790,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [89] = {
-        .name = "bf_releasebuffer",
+        .name = "Py_bf_releasebuffer",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_buffer),
@@ -799,7 +799,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [90] = {
-        .name = "mp_ass_subscript",
+        .name = "Py_mp_ass_subscript",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_mapping),
@@ -808,7 +808,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [91] = {
-        .name = "mp_length",
+        .name = "Py_mp_length",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_as_mapping),
@@ -817,7 +817,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [92] = {
-        .name = "slot_subslots",
+        .name = "Py_slot_subslots",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_SLOT,
         .is_subslots = true,
@@ -825,7 +825,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [93] = {
-        .name = "tp_slots",
+        .name = "Py_tp_slots",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .is_subslots = true,
@@ -833,7 +833,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [94] = {
-        .name = "mod_slots",
+        .name = "Py_mod_slots",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_MOD,
         .is_subslots = true,
@@ -841,7 +841,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_DEPRECATED,
     },
     [95] = {
-        .name = "tp_name",
+        .name = "Py_tp_name",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .null_handling = _PySlot_PROBLEM_REJECT,
@@ -849,7 +849,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .is_name = true,
     },
     [96] = {
-        .name = "tp_basicsize",
+        .name = "Py_tp_basicsize",
         .dtype = _PySlot_TYPE_SIZE,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_basicsize),
@@ -857,13 +857,13 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [97] = {
-        .name = "tp_extra_basicsize",
+        .name = "Py_tp_extra_basicsize",
         .dtype = _PySlot_TYPE_SIZE,
         .kind = _PySlot_KIND_TYPE,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [98] = {
-        .name = "tp_itemsize",
+        .name = "Py_tp_itemsize",
         .dtype = _PySlot_TYPE_SIZE,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_itemsize),
@@ -871,7 +871,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [99] = {
-        .name = "tp_flags",
+        .name = "Py_tp_flags",
         .dtype = _PySlot_TYPE_UINT64,
         .kind = _PySlot_KIND_TYPE,
         .type_info.slot_offset = offsetof(PyTypeObject, tp_flags),
@@ -879,7 +879,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [100] = {
-        .name = "mod_name",
+        .name = "Py_mod_name",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_REJECT,
@@ -887,69 +887,68 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .is_name = true,
     },
     [101] = {
-        .name = "mod_doc",
+        .name = "Py_mod_doc",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_ALLOW,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [102] = {
-        .name = "mod_state_size",
+        .name = "Py_mod_state_size",
         .dtype = _PySlot_TYPE_SIZE,
         .kind = _PySlot_KIND_MOD,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [103] = {
-        .name = "mod_methods",
+        .name = "Py_mod_methods",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_REJECT,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [104] = {
-        .name = "mod_state_traverse",
+        .name = "Py_mod_state_traverse",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_REJECT,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [105] = {
-        .name = "mod_state_clear",
+        .name = "Py_mod_state_clear",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_REJECT,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [106] = {
-        .name = "mod_state_free",
+        .name = "Py_mod_state_free",
         .dtype = _PySlot_TYPE_FUNC,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_REJECT,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [107] = {
-        .name = "tp_metaclass",
+        .name = "Py_tp_metaclass",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .null_handling = _PySlot_PROBLEM_REJECT,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [108] = {
-        .name = "tp_module",
+        .name = "Py_tp_module",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_TYPE,
         .null_handling = _PySlot_PROBLEM_REJECT,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [109] = {
-        .name = "mod_abi",
+        .name = "Py_mod_abi",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_REJECT,
-        .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [110] = {
-        .name = "mod_token",
+        .name = "Py_mod_token",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_MOD,
         .null_handling = _PySlot_PROBLEM_REJECT,

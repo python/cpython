@@ -603,7 +603,7 @@ PyInit__testmultiphase_null_slots(void)
 /**** Problematic modules ****/
 
 static PyModuleDef_Slot slots_bad_large[] = {
-    {_Py_mod_LAST_SLOT + 1, NULL},
+    {Py_slot_invalid, NULL},
     {0, NULL},
 };
 

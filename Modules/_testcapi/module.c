@@ -244,7 +244,7 @@ module_from_slots_repeat_slot(PyObject *self, PyObject *spec)
     PyModuleDef_Slot slots[] = {
         {Py_mod_abi, &abi_info},
         {slot_id, "anything"},
-        {slot_id, "anything else"},
+        {slot_id, "anything_else"},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},

@@ -151,5 +151,5 @@ id, name, kind, dtype
 106, "mod_state_free", mod, func, added=3.14, null=reject, duplicates=no
 107, "tp_metaclass", type, ptr, virtual=true, PyObject=true, added=3.14, null=reject, duplicates=no
 108, "tp_module", type, ptr, virtual=true, PyObject=true, added=3.14, null=reject, duplicates=no
-109, "mod_abi", mod, ptr, added=3.15, null=reject, duplicates=no
+109, "mod_abi", mod, ptr, added=3.15, null=reject, duplicates=yes
 110, "mod_token", mod, ptr, added=3.15, null=reject, duplicates=no

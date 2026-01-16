@@ -141,7 +141,7 @@ PyAPI_FUNC(void) _PySlotIterator_Rewind(_PySlotIterator *it, void *slots);
 PyAPI_FUNC(bool) _PySlotIterator_Next(_PySlotIterator *it);
 
 /* Return 1 if given slot was "seen" by an earlier _PySlotIterator_Next call.
- * (This state is not reset by rewiding.)
+ * (This state is not reset by rewinding.)
  */
 PyAPI_FUNC(bool) _PySlotIterator_SawSlot(_PySlotIterator *, int);
 

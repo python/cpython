@@ -4,7 +4,7 @@
 #define _PY_HAVE_SLOTS_GENERATED_H
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
-#define _Py_SLOT_COMPAT_VALUE(OLD, NEW) OLD
+#define _Py_SLOT_COMPAT_VALUE(OLD, NEW) NEW
 #else
 #define _Py_SLOT_COMPAT_VALUE(OLD, NEW) OLD
 #endif

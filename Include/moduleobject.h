@@ -73,10 +73,6 @@ struct PyModuleDef_Slot {
     void *value;
 };
 
-#ifndef Py_LIMITED_API
-#define _Py_mod_LAST_SLOT 13
-#endif
-
 #endif /* New in 3.5 */
 
 /* for Py_mod_multiple_interpreters: */

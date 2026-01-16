@@ -106,6 +106,7 @@ _PySlotIterator_Next(_PySlotIterator *it)
     MSG("next");
     assert(it);
     assert(!it->is_at_end);
+    assert(!PyErr_Occurred());
 
     it->current.sl_id = -1;
 
@@ -235,7 +236,7 @@ _PySlotIterator_Next(_PySlotIterator *it)
             if (it->recursion_level >= _PySlot_MAX_NESTING) {
                 MSG("error (too much nesting)");
                 PyErr_Format(PyExc_SystemError,
-                            "Py_%s (slot %d): too many levels of nested slots",
+                            "%s (slot %d): too many levels of nested slots",
                             orig_info->name, orig_id);
                 goto error;
             }
@@ -273,6 +274,7 @@ _PySlotIterator_Next(_PySlotIterator *it)
         advance(it);
         MSG("result: %d (%s)", (int)result->sl_id, it->info->name);
         assert (result->sl_id > 0);
+        assert (result->sl_id <= _Py_slot_COUNT);
         assert (result->sl_id <= INT_MAX);
         if (it->is_first_run && validate_current_slot(it) < 0) {
             goto error;
@@ -295,7 +297,7 @@ validate_current_slot(_PySlotIterator *it)
     if (it->info->kind != it->kind) {
         MSG("error (bad slot kind)");
         PyErr_Format(PyExc_SystemError,
-                        "Py_%s (slot %d) is not compatible with %ss",
+                        "%s (slot %d) is not compatible with %ss",
                         info->name,
                         id,
                         kind_name(it->kind));
@@ -328,7 +330,7 @@ validate_current_slot(_PySlotIterator *it)
             if (PyErr_WarnFormat(
                 PyExc_DeprecationWarning,
                 1,
-                "NULL value in slot Py_%s is deprecated",
+                "NULL value in slot %s is deprecated",
                 it->info->name) < 0)
             {
                 return -1;
@@ -343,7 +345,7 @@ validate_current_slot(_PySlotIterator *it)
                 MSG("error (duplicate rejected)");
                 PyErr_Format(
                     PyExc_SystemError,
-                    "%s%s%s has multiple Py_%s (%d) slots",
+                    "%s%s%s has multiple %s (%d) slots",
                     kind_name(it->kind),
                     it->name ? " " : "",
                     it->name ? it->name : "",
@@ -355,7 +357,7 @@ validate_current_slot(_PySlotIterator *it)
             if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning,
                     0,
-                    "%s%s%s has multiple Py_%s (%d) slots. This is deprecated.",
+                    "%s%s%s has multiple %s (%d) slots. This is deprecated.",
                     kind_name(it->kind),
                     it->name ? " " : "",
                     it->name ? it->name : "",
