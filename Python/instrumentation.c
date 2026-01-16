@@ -1101,7 +1101,7 @@ get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i,
                 event == PY_MONITORING_EVENT_C_RETURN);
         event = PY_MONITORING_EVENT_CALL;
     }
-    if (PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
+    if (PY_MONITORING_IS_LOCAL_EVENT(event)) {
         CHECK(debug_check_sanity(interp, code));
         if (code->_co_monitoring->tools) {
             tools = code->_co_monitoring->tools[i];

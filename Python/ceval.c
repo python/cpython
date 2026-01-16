@@ -2972,7 +2972,7 @@ monitor_unwind(PyThreadState *tstate,
                _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
