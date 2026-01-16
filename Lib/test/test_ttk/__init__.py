@@ -20,6 +20,10 @@ from tkinter import ttk
 
 
 def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
     root = None
     try:
         root = tkinter.Tk()

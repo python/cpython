@@ -124,6 +124,9 @@ resources to test.  Currently only the following are defined:
                 and 3.9 to test backwards compatibility. These tests
                 may take very long to complete.
 
+    wantobjects -    Allows to run Tkinter tests with the specified value of
+                     tkinter.wantobjects.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
