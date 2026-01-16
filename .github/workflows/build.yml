@@ -617,45 +617,45 @@ jobs:
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
-  # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
-    name: CIFuzz
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: CIFuzz${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
-    if: needs.build-context.outputs.run-ci-fuzz == 'true'
+    if: >-
+      needs.build-context.outputs.run-ci-fuzz == 'true'
+      || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
     permissions:
       security-events: write
     strategy:
       fail-fast: false
       matrix:
-        sanitizer: [address, undefined, memory]
-    steps:
-      - name: Build fuzzers (${{ matrix.sanitizer }})
-        id: build
-        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
-        with:
-          oss-fuzz-project-name: cpython3
-          sanitizer: ${{ matrix.sanitizer }}
-      - name: Run fuzzers (${{ matrix.sanitizer }})
-        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
-        with:
-          fuzz-seconds: 600
-          oss-fuzz-project-name: cpython3
-          output-sarif: true
-          sanitizer: ${{ matrix.sanitizer }}
-      - name: Upload crash
-        if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ matrix.sanitizer }}-artifacts
-          path: ./out/artifacts
-      - name: Upload SARIF
-        if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: cifuzz-sarif/results.sarif
-          checkout_path: cifuzz-sarif
+        sanitizer:
+          - address
+          - undefined
+          - memory
+        oss-fuzz-project-name:
+          - cpython3
+          - python3-libraries
+        exclude:
+          # Note that the 'no-exclude' sentinel below is to prevent
+          # an empty string value from excluding all jobs and causing
+          # GHA to create a 'default' matrix entry with all empty values.
+          - oss-fuzz-project-name: >-
+              ${{
+                needs.build-context.outputs.run-ci-fuzz == 'true'
+                && 'no-exclude'
+                || 'cpython3'
+              }}
+          - oss-fuzz-project-name: >-
+              ${{
+                needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
+                && 'no-exclude'
+                || 'python3-libraries'
+              }}
+    uses: ./.github/workflows/reusable-cifuzz.yml
+    with:
+      oss-fuzz-project-name: ${{ matrix.oss-fuzz-project-name }}
+      sanitizer: ${{ matrix.sanitizer }}
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
@@ -701,7 +701,12 @@ jobs:
             || ''
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
-          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz) && 'cifuzz,' || '' }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
+            && !fromJSON(needs.build-context.outputs.run-ci-fuzz-stdlib)
+            && 'cifuzz,' ||
+            ''
+          }}
           ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
           ${{
             !fromJSON(needs.build-context.outputs.run-ubuntu)
