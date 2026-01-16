@@ -650,9 +650,7 @@ class TestMkstemp(BaseTestCase):
         self.do_create(pre="aa", suf=".txt")
         self.do_create(dir=".")
         self.do_create(pre=f"{os.sep}myhome")
-        self.do_create(pre=os.fsencode(f"{os.sep}home"))
         self.do_create(suf=f"{os.sep}home")
-        self.do_create(suf=os.fsencode(f"{os.sep}home"))
 
     def test_basic_with_bytes_names(self):
         # mkstemp can create files when given name parts all
@@ -663,6 +661,8 @@ class TestMkstemp(BaseTestCase):
         self.do_create(dir=d, suf=b"b")
         self.do_create(dir=d, pre=b"a", suf=b"b")
         self.do_create(dir=d, pre=b"aa", suf=b".txt")
+        self.do_create(dir=d, pre=os.fsencode(f"{os.sep}home"))
+        self.do_create(dir=d, suf=os.fsencode(f"{os.sep}home"))
         self.do_create(dir=b".")
         with self.assertRaises(TypeError):
             self.do_create(dir=".", pre=b"aa", suf=b".txt")
@@ -749,9 +749,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         os.rmdir(self.do_create(pre="a", suf="b"))
         os.rmdir(self.do_create(pre="aa", suf=".txt"))
         os.rmdir(self.do_create(pre=f"{os.sep}home"))
-        os.rmdir(self.do_create(pre=os.fsencode(f"{os.sep}home")))
         os.rmdir(self.do_create(suf=f"{os.sep}home"))
-        os.rmdir(self.do_create(suf=os.fsencode(f"{os.sep}home")))
 
     def test_basic_with_bytes_names(self):
         # mkdtemp can create directories when given all binary parts
@@ -761,6 +759,8 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         os.rmdir(self.do_create(dir=d, suf=b"b"))
         os.rmdir(self.do_create(dir=d, pre=b"a", suf=b"b"))
         os.rmdir(self.do_create(dir=d, pre=b"aa", suf=b".txt"))
+        os.rmdir(self.do_create(dir=d, pre=os.fsencode(f"{os.sep}home")))
+        os.rmdir(self.do_create(dir=d, suf=os.fsencode(f"{os.sep}home")))
         with self.assertRaises(TypeError):
             os.rmdir(self.do_create(dir=d, pre="aa", suf=b".txt"))
         with self.assertRaises(TypeError):
