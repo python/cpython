@@ -1885,9 +1885,8 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertNotEqual(A.one_f, A.one_f_ga1)
         self.assertNotEqual(hash(A.one_f), hash(A.one_f_ga1))
 
+        self.assertIsInstance(A.one_f_ga1.__cell__, types.CellType)
         self.assertIs(A.one_f_ga1.__cell__, A.one_f_ga1.__cell__)
-        self.assertIsInstance(A.one_f_ga1.__cell__, types.CellType)
-        self.assertIsInstance(A.one_f_ga1.__cell__, types.CellType)
 
         self.assertEqual(A.one_f_ga1, A.one_f_ga2)
         self.assertEqual(hash(A.one_f_ga1), hash(A.one_f_ga2))
