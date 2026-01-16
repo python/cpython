@@ -36,7 +36,7 @@ extern int _PyDict_DelItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
 
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
-extern void _PyDict_ClearKeysVersion(PyObject *mp);
+extern void _PyDict_ClearKeysVersionLockHeld(PyObject *mp);
 
 extern int _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);

@@ -290,7 +290,7 @@ Known values:
     Python 3.15a4 3657 (Add BINARY_OP_SUBSCR_USTR_INT)
     Python 3.15a4 3658 (Optimize bytecode for list/set called on genexp)
     Python 3.15a4 3659 (Add CALL_FUNCTION_EX specialization)
-    Python 3.15a4 3658 (Lazy imports IMPORT_NAME opcode changes)
+    Python 3.15a4 3660 (Lazy imports IMPORT_NAME opcode changes)
 
 
     Python 3.16 will start with 3700

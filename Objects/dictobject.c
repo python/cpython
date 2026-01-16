@@ -4678,7 +4678,7 @@ _PyDict_SizeOf_LockHeld(PyDictObject *mp)
 }
 
 void
-_PyDict_ClearKeysVersion(PyObject *mp)
+_PyDict_ClearKeysVersionLockHeld(PyObject *mp)
 {
     ASSERT_DICT_LOCKED(mp);
 

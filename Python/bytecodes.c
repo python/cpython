@@ -1865,19 +1865,6 @@ dummy_func(
             _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
 
             ERROR_IF(PyStackRef_IsNull(*res));
-
-            PyObject *res_o = PyStackRef_AsPyObjectBorrow(*res);
-            if (PyLazyImport_CheckExact(res_o)) {
-                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
-                PyStackRef_CLOSE(res[0]);
-                ERROR_IF(l_v == NULL);
-                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
-                if (err < 0) {
-                    Py_DECREF(l_v);
-                    ERROR_IF(true);
-                }
-                *res = PyStackRef_FromPyObjectSteal(l_v);
-            }
         }
 
         op(_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {

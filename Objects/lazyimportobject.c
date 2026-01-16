@@ -109,24 +109,6 @@ lazy_import_repr(PyObject *op)
     return res;
 }
 
-static PyObject *
-lazy_import_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    if (!_PyArg_NoKeywords("lazy_import", kwds)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    if (!_PyArg_CheckPositional("lazy_import", nargs, 2, 3)) {
-        return NULL;
-    }
-
-    PyObject *builtins = PyTuple_GET_ITEM(args, 0);
-    PyObject *name = PyTuple_GET_ITEM(args, 1);
-    PyObject *fromlist = nargs == 3 ? PyTuple_GET_ITEM(args, 2) : NULL;
-    return _PyLazyImport_New(builtins, name, fromlist);
-}
-
 PyObject *
 _PyLazyImport_GetName(PyObject *op)
 {
@@ -172,6 +154,5 @@ PyTypeObject PyLazyImport_Type = {
     .tp_clear = lazy_import_clear,
     .tp_methods = lazy_import_methods,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_new = lazy_import_new,
     .tp_free = PyObject_GC_Del,
 };

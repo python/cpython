@@ -1269,14 +1269,14 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
 int
 _PyModule_ReplaceLazyValue(PyObject *dict, PyObject *name, PyObject *value)
 {
-    // The adaptive interpreter uses the dictionary version to return the
+    // The adaptive interpreter uses the dictionary keys version to return the
     // slot at a given index from the module. When replacing a value the
     // version number doesn't change, so we need to atomically clear the
     // version before replacing so that it doesn't return a lazy value.
     int err;
     Py_BEGIN_CRITICAL_SECTION(dict);
 
-    _PyDict_ClearKeysVersion(dict);
+    _PyDict_ClearKeysVersionLockHeld(dict);
     err = _PyDict_SetItem_LockHeld((PyDictObject *)dict, name, value);
 
     Py_END_CRITICAL_SECTION();

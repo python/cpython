@@ -4176,6 +4176,24 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
         }
         *writeto = PyStackRef_FromPyObjectSteal(res);
     }
+
+    PyObject *res_o = PyStackRef_AsPyObjectBorrow(*writeto);
+    if (PyLazyImport_CheckExact(res_o)) {
+        PyObject *l_v = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), res_o);
+        PyStackRef_CLOSE(writeto[0]);
+        if (l_v == NULL) {
+            assert(PyErr_Occurred());
+            *writeto = PyStackRef_NULL;
+            return;
+        }
+        int err = _PyModule_ReplaceLazyValue(globals, name, l_v);
+        if (err < 0) {
+            Py_DECREF(l_v);
+            *writeto = PyStackRef_NULL;
+            return;
+        }
+        *writeto = PyStackRef_FromPyObjectSteal(l_v);
+    }
 }
 
 PyObject *

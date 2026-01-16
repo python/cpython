@@ -9252,26 +9252,6 @@
                 if (PyStackRef_IsNull(*res)) {
                     JUMP_TO_LABEL(error);
                 }
-                PyObject *res_o = PyStackRef_AsPyObjectBorrow(*res);
-                if (PyLazyImport_CheckExact(res_o)) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
-                    PyStackRef_CLOSE(res[0]);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (l_v == NULL) {
-                        JUMP_TO_LABEL(error);
-                    }
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err < 0) {
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
-                        Py_DECREF(l_v);
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
-                        JUMP_TO_LABEL(error);
-                    }
-                    *res = PyStackRef_FromPyObjectSteal(l_v);
-                }
             }
             // _PUSH_NULL_CONDITIONAL
             {
