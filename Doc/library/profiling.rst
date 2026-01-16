@@ -1,4 +1,4 @@
-.. highlight:: shell-session
+.. highlight:: sh
 
 .. _profiling-module:
 
