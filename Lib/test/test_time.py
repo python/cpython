@@ -187,6 +187,38 @@ class TimeTestCase(unittest.TestCase):
         # Only test the date and time, ignore other gmtime() members
         self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
 
+    def test_gmtime(self):
+        # expected format:
+        # (tm_year, tm_mon, tm_mday,
+        #  tm_hour, tm_min, tm_sec,
+        #  tm_wday, tm_yday)
+        tests = [
+            (-13262400, (1969, 7, 31, 12, 0, 0, 3, 212)),
+            (-6177600, (1969, 10, 21, 12, 0, 0, 1, 294)),
+            # leap years (pre epoch)
+            (-2077660800, (1904, 3, 1, 0, 0, 0, 1, 61)),
+            (-2077833600, (1904, 2, 28, 0, 0, 0, 6, 59)),
+        ]
+
+        try:
+            from _testinternalcapi import SIZEOF_TIME_T
+        except ImportError:
+            pass
+        else:
+            if SIZEOF_TIME_T >= 8:
+                tests.extend((
+                    # non-leap years (pre epoch)
+                    (-2203891200, (1900, 3, 1, 0, 0, 0, 3, 60)),
+                    (-2203977600, (1900, 2, 28, 0, 0, 0, 2, 59)),
+                    (-5359564800, (1800, 3, 1, 0, 0, 0, 5, 60)),
+                    (-5359651200, (1800, 2, 28, 0, 0, 0, 4, 59)),
+                ))
+
+        for t, expected in tests:
+            with self.subTest(t=t, expected=expected):
+                res = time.gmtime(t)
+                self.assertEqual(tuple(res)[:8], expected, res)
+
     def test_strftime(self):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
@@ -501,12 +533,13 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
+            t_struct = time.localtime(t)
             try:
-                tt = time.localtime(t)
+                t1 = time.mktime(t_struct)
             except (OverflowError, OSError):
                 pass
             else:
-                self.assertEqual(time.mktime(tt), t)
+                self.assertEqual(t1, t)
 
     # Issue #13309: passing extreme values to mktime() or localtime()
     # borks the glibc's internal timezone data.

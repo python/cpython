@@ -1,2 +1,0 @@
-:mod:`sqlite3`: fix use-after-free crashes when the connection's callbacks
-are mutated during a callback execution. Patch by Bénédikt Tran.
