@@ -515,7 +515,7 @@ Directory and files operations
 
 .. exception:: Error
 
-   This exception collects exceptions that are raised during a multi-file
+   Subclass of :exc:`OSError` collecting exceptions raised during a multi-file
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
