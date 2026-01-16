@@ -387,13 +387,11 @@ class AbstractBuilder(object, metaclass=ABCMeta):
                 os.path.join(PYTHONROOT, 'Lib/test/ssltests.py'),
                 '-j0'
             ]
-        elif sys.version_info < (3, 3):
-            cmd = [sys.executable, '-m', 'test.regrtest']
         else:
             cmd = [sys.executable, '-m', 'test', '-j0']
         if network:
-            cmd.extend(['-u', 'network', '-u', 'urlfetch'])
-        cmd.extend(['-w', '-r'])
+            cmd.extend(['--use', 'network', '--use', 'urlfetch'])
+        cmd.extend(['--rerun', '--randomize'])
         cmd.extend(tests)
         self._subprocess_call(cmd, stdout=None)
 
