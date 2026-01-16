@@ -1899,9 +1899,6 @@ Subcommands
 .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None,
                                          deprecated=False, **kwargs)
 
-   .. versionadded:: 3.13
-      Added the *deprecated* parameter.
-
    Creates and returns a new :class:`!ArgumentParser` object for the
    subcommand *name*.
 
@@ -1935,9 +1932,11 @@ Subcommands
       chicken.py: warning: command 'fly' is deprecated
       Namespace()
 
-
    All other keyword arguments are passed directly to the
    :class:`!ArgumentParser` constructor.
+
+   .. versionadded:: 3.13
+      Added the *deprecated* parameter.
 
 
 FileType objects
