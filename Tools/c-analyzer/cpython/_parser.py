@@ -83,6 +83,7 @@ EXCLUDED = format_conf_lines([
     'Python/opcode_targets.h',
     'Modules/_testinternalcapi/test_targets.h',
     'Modules/_testinternalcapi/test_cases.c.h',
+    'Modules/_testinternalcapi/interpreter.c',
     # XXX: Throws errors if PY_VERSION_HEX is not mocked out
     'Modules/clinic/_testclinic_depr.c.h',
 
