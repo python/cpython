@@ -705,10 +705,6 @@ class TestLiveCollectorFilterInput(unittest.TestCase):
         self.assertTrue(self.display.contains_text("myfilter"))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TestLiveCollectorThreadNavigation(unittest.TestCase):
     """Tests for thread navigation functionality."""
 

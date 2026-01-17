@@ -173,6 +173,8 @@ class OptimizerEmitter(Emitter):
             if token.kind == "SEMI":
                 break
 
+        output_identifier = input_identifiers.pop()
+
         if len(input_identifiers) == 0:
             raise analysis_error(
                 "To evaluate an operation as pure, it must have at least 1 input",
@@ -225,36 +227,52 @@ class OptimizerEmitter(Emitter):
         emitter.emit_tokens(self.original_uop, storage, inst=None, emit_braces=False)
         self.out.start_line()
         emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
-        # Finally, assign back the output stackrefs to symbolics.
         for outp in self.original_uop.stack.outputs:
-            # All new stackrefs are created from new references.
-            # That's how the stackref contract works.
-            if not outp.peek:
-                emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
+            if not outp.name == output_identifier.text:
+                emitter.emit(f"(void){outp.name}_stackref;\n")
+
+        # Output stackref is created from new reference.
+        emitter.emit(f"{output_identifier.text} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({output_identifier.text}_stackref));\n")
+
+        if self.original_uop.name.startswith('_'):
+            # Map input count to output index (from TOS) and the appropriate constant-loading uop
+            input_count_to_uop = {
+                1: {
+                    # (a -- a), usually for unary ops
+                    0: "_POP_TOP_LOAD_CONST_INLINE_BORROW",
+                    # (left -- res, left)
+                    # usually for unary ops with passthrough references
+                    1: "_INSERT_1_LOAD_CONST_INLINE_BORROW",
+                },
+                2: {
+                    # (a. b -- res), usually for binary ops
+                    0: "_POP_TWO_LOAD_CONST_INLINE_BORROW",
+                    # (left, right -- res, left, right)
+                    # usually for binary ops with passthrough references
+                    2: "_INSERT_2_LOAD_CONST_INLINE_BORROW",
+                },
+            }
+
+            output_index = -1
+            for idx, outp in enumerate(reversed(uop.stack.outputs)):
+                if outp.name == output_identifier.text:
+                    output_index =  idx
+                    break
             else:
-                emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
-        if len(self.original_uop.stack.outputs) == 1:
-            outp = self.original_uop.stack.outputs[0]
-            if not outp.peek:
-                if self.original_uop.name.startswith('_'):
-                    # Map input count to the appropriate constant-loading uop
-                    input_count_to_uop = {
-                        1: "_POP_TOP_LOAD_CONST_INLINE_BORROW",
-                        2: "_POP_TWO_LOAD_CONST_INLINE_BORROW"
-                    }
+                raise analysis_error(f"Could not find output {output_identifier.text} in uop.", output_identifier)
+            assert output_index >= 0
+            input_count = len(used_stack_inputs)
+            if input_count in input_count_to_uop and output_index in input_count_to_uop[input_count]:
+                replacement_uop = input_count_to_uop[input_count][output_index]
+                input_desc = "one input" if input_count == 1 else "two inputs"
 
-                    input_count = len(used_stack_inputs)
-                    if input_count in input_count_to_uop:
-                        replacement_uop = input_count_to_uop[input_count]
-                        input_desc = "one input" if input_count == 1 else "two inputs"
-
-                        emitter.emit(f"if (sym_is_const(ctx, {outp.name})) {{\n")
-                        emitter.emit(f"PyObject *result = sym_get_const(ctx, {outp.name});\n")
-                        emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
-                        emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal result\n")
-                        emitter.emit(f"REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);\n")
-                        emitter.emit("}\n")
-                        emitter.emit("}\n")
+                emitter.emit(f"if (sym_is_const(ctx, {output_identifier.text})) {{\n")
+                emitter.emit(f"PyObject *result = sym_get_const(ctx, {output_identifier.text});\n")
+                emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
+                emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal result\n")
+                emitter.emit(f"ADD_OP({replacement_uop}, 0, (uintptr_t)result);\n")
+                emitter.emit("}\n")
+                emitter.emit("}\n")
 
         storage.flush(self.out)
         emitter.emit("break;\n")
