@@ -188,7 +188,7 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
 }
 
 
-static const unsigned char table_a2b_base85[] = {
+static const unsigned char table_a2b_base85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,62,-1,63, 64,65,66,-1, 67,68,69,70, -1,71,-1,-1,
@@ -208,7 +208,7 @@ static const unsigned char table_a2b_base85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_a2b_base85_a85[] = {
+static const unsigned char table_a2b_base85_a85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
@@ -228,7 +228,7 @@ static const unsigned char table_a2b_base85_a85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_a2b_base85_z85[] = {
+static const unsigned char table_a2b_base85_z85[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,68,-1,84, 83,82,72,-1, 75,76,70,65, -1,63,62,69,
@@ -248,15 +248,15 @@ static const unsigned char table_a2b_base85_z85[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
 };
 
-static const unsigned char table_b2a_base85[] =
+static const unsigned char table_b2a_base85[] Py_ALIGNED(64) =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
     "abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
 
-static const unsigned char table_b2a_base85_a85[] =
+static const unsigned char table_b2a_base85_a85[] Py_ALIGNED(64) =
     "!\"#$%&\'()*+,-./0123456789:;<=>?@" \
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu";
 
-static const unsigned char table_b2a_base85_z85[] =
+static const unsigned char table_b2a_base85_z85[] Py_ALIGNED(64) =
     "0123456789abcdefghijklmnopqrstuvwxyz" \
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/\x2a?&<>()[]{}@%$#"; /* clinic doesn't like '/' followed by '*' */
 
@@ -857,7 +857,8 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
         ascii_len -= 2;
         if (ascii_len >= 2
             && ascii_data[0] == BASE85_A85_PREFIX
-            && ascii_data[1] == BASE85_A85_AFFIX) {
+            && ascii_data[1] == BASE85_A85_AFFIX)
+        {
             ascii_data += 2;
             ascii_len -= 2;
         }
@@ -995,9 +996,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
         width = 2;
     }
 
-    /* Allocate output buffer.
-       XXX: Do a pre-pass above some threshold estimate (cf. 'yz')?
-    */
+    /* Allocate output buffer. */
     Py_ssize_t out_len = 5 * ((bin_len + 3) / 4);
     if (wrap) {
         out_len += 4;
