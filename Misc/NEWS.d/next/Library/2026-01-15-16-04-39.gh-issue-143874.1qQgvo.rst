@@ -1,1 +1,1 @@
-Fixed a bug in pdb where expression results were written to sys.stdout instead of pdb.stdout.
+Fixed a bug in :mod:`pdb` where expression results were not sent back to remote client.
