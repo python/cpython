@@ -1,3 +1,2 @@
 Fixed :mod:`asyncio` debugging tools to work with new remote debugging API.
-The ``python -m asyncio ps`` and ``python -m asyncio pstree`` commands are
-now working again. Patch by Bartosz Sławecki.
+Patch by Bartosz Sławecki.
