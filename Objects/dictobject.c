@@ -2349,10 +2349,9 @@ dict_unhashable_type(PyObject *key)
 }
 
 Py_ssize_t
-_PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
+_PyDict_LookupIndexAndValue(PyDictObject *mp, PyObject *key, PyObject **value)
 {
     // TODO: Thread safety
-    PyObject *value;
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
 
@@ -2362,7 +2361,14 @@ _PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
         return -1;
     }
 
-    return _Py_dict_lookup(mp, key, hash, &value);
+    return _Py_dict_lookup(mp, key, hash, value);
+}
+
+Py_ssize_t
+_PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
+{
+    PyObject *value; // discarded
+    return _PyDict_LookupIndexAndValue(mp, key, &value);
 }
 
 /* Same as PyDict_GetItemWithError() but with hash supplied by caller.
