@@ -577,6 +577,17 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_fws
 
+    @params
+    def test_get_fws(self, s, *args, **kw):
+        fws = self._test_parse(parser.get_fws, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(fws, parser.WhiteSpaceTerminal)
+        self.assertEqual(fws.token_type, 'fws')
+
+    params_test_get_fws = old_api_only(
+        )
+
     def test_get_fws_only(self):
         fws = self._test_get_x(parser.get_fws, ' \t  ', ' \t  ', ' ', [], '')
         self.assertEqual(fws.token_type, 'fws')
@@ -586,6 +597,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     def test_get_fws_ws_run(self):
         self._test_get_x(parser.get_fws, ' \t foo ', ' \t ', ' ', [], 'foo ')
+
 
     # get_encoded_word
 
