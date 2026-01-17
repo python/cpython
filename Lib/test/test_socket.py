@@ -3577,7 +3577,7 @@ class SendmsgStreamTests(SendmsgTests):
                      "sendmsg not supported")
     def test_sendmsg_reentrant_ancillary_mutation(self):
         self._test_sendmsg_reentrant_ancillary_mutation()
-
+        
     def _test_sendmsg_reentrant_ancillary_mutation(self):
         import socket
 
@@ -3601,8 +3601,12 @@ class SendmsgStreamTests(SendmsgTests):
         self.addCleanup(left.close)
         self.addCleanup(right.close)
 
-        with self.assertRaises(Exception):
-            left.sendmsg([b'x'], seq)
+        self.assertRaises(
+            (TypeError, OSError),
+            left.sendmsg,
+            [b'x'],
+            seq,
+        )
 
     def testSendmsgExplicitNoneAddr(self):
         # Check that peer address can be specified as None.
