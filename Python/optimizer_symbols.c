@@ -79,7 +79,7 @@ _PyUOpSymPrint(JitOptRef ref)
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     switch (sym->tag) {
         case JIT_SYM_UNKNOWN_TAG:
-            printf("<UNKNOWN at %p>", (void *)sym);
+            printf("<? at %p>", (void *)sym);
             break;
         case JIT_SYM_NULL_TAG:
             printf("<NULL at %p>", (void *)sym);
