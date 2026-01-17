@@ -1,0 +1,1 @@
+Specialize :opcode:`SEND` for non-generator coroutines
