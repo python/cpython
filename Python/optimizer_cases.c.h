@@ -177,6 +177,18 @@
             break;
         }
 
+        case _POP_TOP_MODULE: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (PyJitRef_IsBorrowed(value)) {
+                REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+            }
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _POP_TWO: {
             CHECK_STACK_BOUNDS(-2);
             stack_pointer += -2;
@@ -1864,6 +1876,7 @@
         case _LOAD_ATTR_MODULE: {
             JitOptRef owner;
             JitOptRef attr;
+            JitOptRef o;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
             uint16_t index = (uint16_t)this_instr->operand0;
@@ -1892,7 +1905,12 @@
             if (PyJitRef_IsNull(attr)) {
                 attr = sym_new_not_null(ctx);
             }
+            o = owner;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
+            stack_pointer[0] = o;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

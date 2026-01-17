@@ -661,7 +661,7 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, owner)) {
+    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, o)) {
         (void)dict_version;
         (void)index;
         attr = PyJitRef_NULL;
@@ -688,6 +688,7 @@ dummy_func(void) {
             /* No conversion made. We don't know what `attr` is. */
             attr = sym_new_not_null(ctx);
         }
+        o = owner;
     }
 
     op (_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {

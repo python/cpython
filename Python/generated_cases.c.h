@@ -8374,6 +8374,8 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
+            _PyStackRef o;
+            _PyStackRef value;
             _PyStackRef *null;
             /* Skip 1 cache entry */
             // _LOAD_ATTR_MODULE
@@ -8417,10 +8419,13 @@
                 attr = PyStackRef_FromPyObjectNew(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
-                stack_pointer[-1] = attr;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(owner);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                o = owner;
+            }
+            // _POP_TOP_MODULE
+            {
+                value = o;
+                assert(PyModule_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyModule_ExactDealloc);
             }
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
@@ -8430,6 +8435,7 @@
                     null[0] = PyStackRef_NULL;
                 }
             }
+            stack_pointer[-1] = attr;
             stack_pointer += (oparg & 1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
