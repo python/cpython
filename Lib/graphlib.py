@@ -227,7 +227,7 @@ class TopologicalSorter:
                 while stack:
                     try:
                         node = itstack[-1]()
-                        break # resume at top ot "while True:"
+                        break # resume at top of "while True:"
                     except StopIteration:
                         # no more successors; pop the stack
                         # and continue looking up
