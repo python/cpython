@@ -1174,6 +1174,15 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
         }
     }
 
+    /* Acquire lock to protect against concurrent fini() */
+    PyThread_acquire_lock(perf_jit_map_state.map_lock, WAIT_LOCK);
+
+    /* Double-check in case fini() closed it while we were waiting */
+    if (perf_jit_map_state.perf_map == NULL) {
+        PyThread_release_lock(perf_jit_map_state.map_lock);
+        return;
+    }
+
     /*
      * Extract function information from Python code object
      *
@@ -1315,6 +1324,7 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
 
     /* Clean up allocated memory */
     PyMem_RawFree(perf_map_entry);
+    PyThread_release_lock(perf_jit_map_state.map_lock);
 }
 
 // =============================================================================
@@ -1346,12 +1356,12 @@ static int perf_map_jit_fini(void* state) {
      */
     if (perf_jit_map_state.perf_map != NULL) {
         PyThread_acquire_lock(perf_jit_map_state.map_lock, 1);
-        fclose(perf_jit_map_state.perf_map);  // This also flushes buffers
+        fclose(perf_jit_map_state.perf_map);
+        perf_jit_map_state.perf_map = NULL;  // Move inside lock
         PyThread_release_lock(perf_jit_map_state.map_lock);
 
         /* Clean up synchronization primitive */
         PyThread_free_lock(perf_jit_map_state.map_lock);
-        perf_jit_map_state.perf_map = NULL;
     }
 
     /*
