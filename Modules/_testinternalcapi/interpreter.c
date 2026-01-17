@@ -11,6 +11,18 @@
 
 int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
 
+#ifdef _Py_TIER2
+static int
+stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    (void)(tstate);
+    (void)(frame);
+    return 0;
+}
+#endif
+
+_PyJitEntryFuncPtr _Py_jit_entry;
+
 #if _Py_TAIL_CALL_INTERP
 #include "test_targets.h"
 #include "test_cases.c.h"
@@ -78,12 +90,6 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
     frame->previous = &entry.frame;
     tstate->current_frame = frame;
     entry.frame.localsplus[0] = PyStackRef_NULL;
-#ifdef _Py_TIER2
-    if (tstate->current_executor != NULL) {
-        entry.frame.localsplus[0] = PyStackRef_FromPyObjectNew(tstate->current_executor);
-        tstate->current_executor = NULL;
-    }
-#endif
 
     /* support for generator.throw() */
     if (throwflag) {
@@ -119,11 +125,6 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 #endif
     }
 
-    #if defined(_Py_TIER2) && !defined(_Py_JIT)
-    /* Tier 2 interpreter state */
-    _PyExecutorObject *current_executor = NULL;
-    const _PyUOpInstruction *next_uop = NULL;
-#endif
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
         return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0, lastopcode);
@@ -135,108 +136,6 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 #include "test_cases.c.h"
 #endif
 
-
-#ifdef _Py_TIER2
-
-// Tier 2 is also here!
-enter_tier_two:
-
-#ifdef _Py_JIT
-    assert(0);
-#else
-
-#undef LOAD_IP
-#define LOAD_IP(UNUSED) (void)0
-
-#ifdef Py_STATS
-// Disable these macros that apply to Tier 1 stats when we are in Tier 2
-#undef STAT_INC
-#define STAT_INC(opname, name) ((void)0)
-#undef STAT_DEC
-#define STAT_DEC(opname, name) ((void)0)
-#endif
-
-#undef ENABLE_SPECIALIZATION
-#define ENABLE_SPECIALIZATION 0
-#undef ENABLE_SPECIALIZATION_FT
-#define ENABLE_SPECIALIZATION_FT 0
-
-    ; // dummy statement after a label, before a declaration
-    uint16_t uopcode;
-#ifdef Py_STATS
-    int lastuop = 0;
-    uint64_t trace_uop_execution_counter = 0;
-#endif
-
-    assert(next_uop->opcode == _START_EXECUTOR);
-tier2_dispatch:
-    for (;;) {
-        uopcode = next_uop->opcode;
-#ifdef Py_DEBUG
-        if (frame->lltrace >= 3) {
-            dump_stack(frame, stack_pointer);
-            if (next_uop->opcode == _START_EXECUTOR) {
-                printf("%4d uop: ", 0);
-            }
-            else {
-                printf("%4d uop: ", (int)(next_uop - current_executor->trace));
-            }
-            _PyUOpPrint(next_uop);
-            printf("\n");
-        }
-#endif
-        next_uop++;
-        OPT_STAT_INC(uops_executed);
-        UOP_STAT_INC(uopcode, execution_count);
-        UOP_PAIR_INC(uopcode, lastuop);
-#ifdef Py_STATS
-        trace_uop_execution_counter++;
-        ((_PyUOpInstruction  *)next_uop)[-1].execution_count++;
-#endif
-
-        switch (uopcode) {
-
-#include "executor_cases.c.h"
-
-            default:
-#ifdef Py_DEBUG
-            {
-                printf("Unknown uop: ");
-                _PyUOpPrint(&next_uop[-1]);
-                printf(" @ %d\n", (int)(next_uop - current_executor->trace - 1));
-                Py_FatalError("Unknown uop");
-            }
-#else
-            Py_UNREACHABLE();
-#endif
-
-        }
-    }
-
-jump_to_error_target:
-#ifdef Py_DEBUG
-    if (frame->lltrace >= 2) {
-        printf("Error: [UOp ");
-        _PyUOpPrint(&next_uop[-1]);
-        printf(" @ %d -> %s]\n",
-               (int)(next_uop - current_executor->trace - 1),
-               _PyOpcode_OpName[frame->instr_ptr->op.code]);
-    }
-#endif
-    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
-    uint16_t target = uop_get_error_target(&next_uop[-1]);
-    next_uop = current_executor->trace + target;
-    goto tier2_dispatch;
-
-jump_to_jump_target:
-    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
-    target = uop_get_jump_target(&next_uop[-1]);
-    next_uop = current_executor->trace + target;
-    goto tier2_dispatch;
-
-#endif  // _Py_JIT
-
-#endif // _Py_TIER2
 
 early_exit:
     assert(_PyErr_Occurred(tstate));
