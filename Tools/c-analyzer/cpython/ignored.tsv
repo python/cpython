@@ -347,7 +347,7 @@ Objects/obmalloc.c	-	obmalloc_state_main	-
 Objects/obmalloc.c	-	obmalloc_state_initialized	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
-# It initialized only once when main interpeter starts
+# It initialized only once when main interpreter starts
 Objects/typeobject.c	-	slotdefs_name_counts	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
