@@ -1,0 +1,2 @@
+Fixed a crash in frozen slotted dataclasses where assigning to an attribute
+could raise an internal TypeError instead of failing cleanly.
