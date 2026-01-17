@@ -17,6 +17,7 @@ import _imp  # for check_hash_based_pycs
 import _io  # for open
 import marshal  # for loads
 import time  # for mktime
+import calendar
 
 __all__ = ['ZipImportError', 'zipimporter']
 
@@ -749,7 +750,7 @@ def _compile_source(pathname, source, module):
 # Convert the date/time values found in the Zip archive to a value
 # that's compatible with the time stamp stored in .pyc files.
 def _parse_dostime(d, t):
-    return time.mktime((
+    return calendar.timegm((
         (d >> 9) + 1980,    # bits 9..15: year
         (d >> 5) & 0xF,     # bits 5..8: month
         d & 0x1F,           # bits 0..4: day
