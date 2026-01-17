@@ -1997,6 +1997,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
+   .. note::
+
+      You can disable remote debugging support in a Python interpreter by (1) setting the
+      ``PYTHON_DISABLE_REMOTE_DEBUG`` environment variable to any value before starting
+      the interpreter, (2) using the ``-X disable-remote-debug`` command-line option, or
+      (3) compiling Python with the ``--without-remote-debug`` build flag.
+
    .. audit-event:: sys.remote_exec pid script_path
 
       When the code is executed in the remote process, an
