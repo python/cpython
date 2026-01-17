@@ -174,15 +174,15 @@ if not is_pypi:
             import os
             if not hasattr(os, 'mkfifo'):
                 self.skipTest('os.mkfifo() required')
-            
+
             source = self.source_root / 'test.fifo'
             try:
                 os.mkfifo(source)
             except OSError:
                 self.skipTest("cannot create fifo")
-                
+
             target = self.target_root / 'copy_fifo'
-            with self.assertRaises(io.UnsupportedOperation): 
+            with self.assertRaises(io.UnsupportedOperation):
                 source.copy(target)
 
         def test_copy_char_device(self):
@@ -192,7 +192,7 @@ if not is_pypi:
             source = Path('/dev/null')
             if not source.exists() or not source.is_char_device():
                 self.skipTest('/dev/null required')
-            
+
             target = self.target_root / 'copy_null'
             # This should fail immediately with UnsupportedOperation
             # If it were buggy, it might loop infinitely or copy empty file depending on implementation
