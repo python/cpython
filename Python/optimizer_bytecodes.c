@@ -340,7 +340,7 @@ dummy_func(void) {
         }
         f->locals[0] = container;
         f->locals[1] = sub;
-        new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
+        new_frame = PyJitRef_WrapInvalid(f);
     }
 
     op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
@@ -784,7 +784,7 @@ dummy_func(void) {
             break;
         }
         f->locals[0] = owner;
-        new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
+        new_frame = PyJitRef_WrapInvalid(f);
     }
 
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -848,9 +848,9 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args, argcount));
+            new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, args, argcount));
         } else {
-            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+            new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
         }
     }
 
@@ -868,7 +868,7 @@ dummy_func(void) {
             break;
         }
 
-        new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+        new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
@@ -879,7 +879,7 @@ dummy_func(void) {
             break;
         }
 
-        new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+        new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
     }
 
     op(_PY_FRAME_EX, (func_st, null, callargs_st, kwargs_st -- ex_frame)) {
@@ -890,7 +890,7 @@ dummy_func(void) {
             break;
         }
 
-        ex_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+        ex_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -914,7 +914,7 @@ dummy_func(void) {
         ctx->curr_frame_depth++;
         assert((this_instr + 1)->opcode == _PUSH_FRAME);
         PyCodeObject *co = get_code_with_logging((this_instr + 1));
-        init_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args-1, oparg+1));
+        init_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, args-1, oparg+1));
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
@@ -1007,7 +1007,7 @@ dummy_func(void) {
             break;
         }
         new_frame->stack[0] = sym_new_const(ctx, Py_None);
-        gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
+        gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
     op(_SEND_GEN_FRAME, (unused, v -- unused, gen_frame)) {
@@ -1023,7 +1023,7 @@ dummy_func(void) {
             break;
         }
         new_frame->stack[0] = PyJitRef_StripReferenceInfo(v);
-        gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
+        gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
     op(_CHECK_STACK_SPACE, (unused, unused, unused[oparg] -- unused, unused, unused[oparg])) {

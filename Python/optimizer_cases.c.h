@@ -1131,7 +1131,7 @@
             }
             f->locals[0] = container;
             f->locals[1] = sub;
-            new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
+            new_frame = PyJitRef_WrapInvalid(f);
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = new_frame;
             stack_pointer += -2;
@@ -1295,7 +1295,7 @@
                 break;
             }
             new_frame->stack[0] = PyJitRef_StripReferenceInfo(v);
-            gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
+            gen_frame = PyJitRef_WrapInvalid(new_frame);
             stack_pointer[-1] = gen_frame;
             break;
         }
@@ -1977,7 +1977,7 @@
                 break;
             }
             f->locals[0] = owner;
-            new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
+            new_frame = PyJitRef_WrapInvalid(f);
             stack_pointer[-1] = new_frame;
             break;
         }
@@ -2662,7 +2662,7 @@
                 break;
             }
             new_frame->stack[0] = sym_new_const(ctx, Py_None);
-            gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
+            gen_frame = PyJitRef_WrapInvalid(new_frame);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = gen_frame;
             stack_pointer += 1;
@@ -2846,7 +2846,7 @@
                 ctx->done = true;
                 break;
             }
-            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+            new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
             CHECK_STACK_BOUNDS(-1 - oparg);
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
@@ -2978,9 +2978,9 @@
                 argcount++;
             }
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args, argcount));
+                new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, args, argcount));
             } else {
-                new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+                new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
             }
             CHECK_STACK_BOUNDS(-1 - oparg);
             stack_pointer[-2 - oparg] = new_frame;
@@ -3175,7 +3175,7 @@
             ctx->curr_frame_depth++;
             assert((this_instr + 1)->opcode == _PUSH_FRAME);
             PyCodeObject *co = get_code_with_logging((this_instr + 1));
-            init_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args-1, oparg+1));
+            init_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, args-1, oparg+1));
             CHECK_STACK_BOUNDS(-1 - oparg);
             stack_pointer[-2 - oparg] = init_frame;
             stack_pointer += -1 - oparg;
@@ -3441,7 +3441,7 @@
                 ctx->done = true;
                 break;
             }
-            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+            new_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
             CHECK_STACK_BOUNDS(-2 - oparg);
             stack_pointer[-3 - oparg] = new_frame;
             stack_pointer += -2 - oparg;
@@ -3493,7 +3493,7 @@
                 ctx->done = true;
                 break;
             }
-            ex_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
+            ex_frame = PyJitRef_WrapInvalid(frame_new(ctx, co, 0, NULL, 0));
             CHECK_STACK_BOUNDS(-3);
             stack_pointer[-4] = ex_frame;
             stack_pointer += -3;
