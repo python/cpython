@@ -812,6 +812,11 @@ default).
        The operating system includes this entry once by default, after other
        user paths. If removed, shortcuts will not be found.
 
+   * -
+     - If you are sure your :envvar:`PATH` variable works right, reopen the
+       terminal you're using. Perhaps :envvar:`PATH` was modified when the terminal
+       was still running, and the terminal has not got it updated. 
+
    * - ``py`` gives me a "command not found" error when I type it in my terminal.
      - Did you :ref:`install the Python install manager <pymanager>`?
 
@@ -827,6 +832,11 @@ default).
        ``%UserProfile%\AppData\Local\Microsoft\WindowsApps``.
        The operating system includes this entry once by default, after other
        user paths. If removed, shortcuts will not be found.
+
+   * -
+     - If you are sure your :envvar:`PATH` variable works right, reopen the
+       terminal you're using. Perhaps :envvar:`PATH` was modified when the terminal
+       was still running, and the terminal has not got it updated. 
 
    * - ``py`` gives me a "can't open file" error when I type commands in my
        terminal.
@@ -876,6 +886,11 @@ default).
        add to :envvar:`PATH`.
        These scripts are separated for each runtime, and so you may need to
        add multiple paths.
+
+   * -
+     - If you are sure your :envvar:`PATH` variable works right, reopen the
+       terminal you're using. Perhaps :envvar:`PATH` was modified when the terminal
+       was still running, and the terminal has not got it updated. 
 
    * - Typing ``script-name.py`` in the terminal opens in a new window.
      - This is a known limitation of the operating system. Either specify ``py``
