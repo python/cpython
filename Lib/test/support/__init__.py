@@ -113,7 +113,7 @@ __all__ = [
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
-    "fails_with_expat_2_6_0", "is_expat_2_6_0"
+    "fails_with_expat_2_6_0", "is_expat_2_6_0", "control_characters_c0",
     ]
 
 class Error(Exception):
@@ -2894,3 +2894,10 @@ is_expat_2_6_0 = _is_expat_2_6_0()
 fails_with_expat_2_6_0 = (unittest.expectedFailure
                           if is_expat_2_6_0
                           else lambda test: test)
+
+
+def control_characters_c0():
+    """Returns a list of C0 control characters as strings.
+    C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
+    """
+    return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
