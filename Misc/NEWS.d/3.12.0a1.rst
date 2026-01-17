@@ -1729,7 +1729,7 @@ tracing functions implemented in C.
 .. date: 2022-05-11-09-16-54
 .. gh-issue: 91102
 .. nonce: lenv9h
-.. section: Core and Builtins
+.. section: Library
 
 :meth:`!_warnings.warn_explicit` is ported to Argument Clinic.
 
