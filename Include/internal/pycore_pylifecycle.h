@@ -129,6 +129,7 @@ PyAPI_FUNC(int) _PyInterpreterConfig_UpdateFromDict(
     PyInterpreterConfig *,
     PyObject *);
 
+extern void _PyInterpreter_SetJitWithEnvVar(const PyConfig *config, PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

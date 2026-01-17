@@ -115,7 +115,7 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
     if (res == NULL) {
         return NULL;
     }
-    if (_Py_IsImmortal(res)) {
+    if (_Py_IsImmortal(res) || _PyObject_HasDeferredRefcount(res)) {
         inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
     }
     else {
@@ -248,14 +248,14 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 
 static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
-            PyTypeObject *type, PyObject *name, uint16_t immortal,
+            PyTypeObject *type, PyObject *name, uint16_t deferred_refcount,
             uint16_t mortal)
 {
     // The cached value may be dead, so we need to do the lookup again... :(
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
-            int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
+            int opcode = _Py_IsImmortal(lookup) || _PyObject_HasDeferredRefcount(lookup) ? deferred_refcount : mortal;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
             PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
             _Py_BloomFilter_Add(dependencies, type);

@@ -1194,6 +1194,34 @@ run_presite(PyThreadState *tstate)
 }
 #endif
 
+void
+_PyInterpreter_SetJitWithEnvVar(const PyConfig *config, PyInterpreterState *interp)
+{
+    int enabled = 1;
+#if _Py_TIER2 & 2
+    enabled = 0;
+#endif
+    char *env = Py_GETENV("PYTHON_JIT");
+    if (env && *env != '\0') {
+        // PYTHON_JIT=0|1 overrides the default
+        enabled = *env != '0';
+    }
+    if (enabled) {
+#ifdef _Py_JIT
+        // perf profiler works fine with tier 2 interpreter, so
+        // only checking for a "real JIT".
+        if (config->perf_profiling > 0) {
+            (void)PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "JIT deactivated as perf profiling support is active",
+                0);
+        } else
+#endif
+        {
+            FT_ATOMIC_STORE_UINT8(interp->jit, 1);
+        }
+    }
+}
 
 static PyStatus
 init_interp_main(PyThreadState *tstate)
@@ -1345,30 +1373,7 @@ init_interp_main(PyThreadState *tstate)
     // This is also needed when the JIT is enabled
 #ifdef _Py_TIER2
     if (is_main_interp) {
-        int enabled = 1;
-#if _Py_TIER2 & 2
-        enabled = 0;
-#endif
-        char *env = Py_GETENV("PYTHON_JIT");
-        if (env && *env != '\0') {
-            // PYTHON_JIT=0|1 overrides the default
-            enabled = *env != '0';
-        }
-        if (enabled) {
-#ifdef _Py_JIT
-            // perf profiler works fine with tier 2 interpreter, so
-            // only checking for a "real JIT".
-            if (config->perf_profiling > 0) {
-                (void)PyErr_WarnEx(
-                    PyExc_RuntimeWarning,
-                    "JIT deactivated as perf profiling support is active",
-                    0);
-            } else
-#endif
-            {
-                interp->jit = true;
-            }
-        }
+        _PyInterpreter_SetJitWithEnvVar(config, interp);
     }
 #endif
 
@@ -1723,7 +1728,7 @@ finalize_modules(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
 
     // Invalidate all executors and turn off JIT:
-    interp->jit = false;
+    FT_ATOMIC_STORE_UINT8(interp->jit, 0);
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);

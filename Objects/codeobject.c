@@ -2434,6 +2434,7 @@ code_dealloc(PyObject *self)
     }
 #ifdef _Py_TIER2
     _PyJit_Tracer_InvalidateDependency(tstate, self);
+    _Py_Executors_InvalidateDependency(tstate->interp, self, 1);
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
@@ -3364,8 +3365,12 @@ deopt_code_unit(PyCodeObject *code, int i)
         inst.op.code = _PyOpcode_Deopt[opcode];
         assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
     }
-    // JIT should not be enabled with free-threading
-    assert(inst.op.code != ENTER_EXECUTOR);
+    if (inst.op.code == ENTER_EXECUTOR) {
+        _PyExecutorObject *exec = code->co_executors->executors[inst.op.arg];
+        assert(exec != NULL);
+        inst.op.code = exec->vm_data.opcode;
+        inst.op.arg = exec->vm_data.oparg;
+    }
     return inst;
 }
 

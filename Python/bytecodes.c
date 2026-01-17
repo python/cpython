@@ -2990,9 +2990,9 @@ dummy_func(
         };
 
         specializing tier1 op(_SPECIALIZE_JUMP_BACKWARD, (--)) {
-        #if ENABLE_SPECIALIZATION
+        #if ENABLE_SPECIALIZATION_FT
             if (this_instr->op.code == JUMP_BACKWARD) {
-                uint8_t desired = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                uint8_t desired = FT_ATOMIC_LOAD_UINT8(tstate->interp->jit) ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
                 FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                 // Need to re-dispatch so the warmup counter isn't off by one:
                 next_instr = this_instr;
@@ -3336,11 +3336,9 @@ dummy_func(
 
         // Only used by Tier 2
         op(_GUARD_NOT_EXHAUSTED_LIST, (iter, null_or_index -- iter, null_or_index)) {
-#ifndef Py_GIL_DISABLED
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(list_o) == &PyList_Type);
             EXIT_IF((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o));
-#endif
         }
 
         replaced op(_ITER_NEXT_LIST, (iter, null_or_index -- iter, null_or_index, next)) {
@@ -5350,6 +5348,19 @@ dummy_func(
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
+            // For FT:
+            // This doesn't need atomics (for now) as there is only a single time
+            // where a write from another thread is possible:
+            // when a new thread is spawned and it invalidates all current
+            // executors.
+            // The new thread can only be created by an executing uop prior to the
+            // _CHECK_VALIDITY check. New thread creation is synchronized by
+            // locking of the runtime, and the current thread is naturally
+            // paused/waiting for the new thread to be created. Thus,
+            // there is a strict happens-before relation between that
+            // uop's invalidation of validity and this check.
+            // So for now, while the JIT does not run on multiple threads,
+            // it is safe for this to be non-atomic.
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 

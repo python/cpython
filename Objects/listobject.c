@@ -79,7 +79,9 @@ ensure_shared_on_resize(PyListObject *self)
     // We can't use _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED here because
     // the `CALL_LIST_APPEND` bytecode handler may lock the list without
     // a critical section.
-    assert(Py_REFCNT(self) == 1 || PyMutex_IsLocked(&_PyObject_CAST(self)->ob_mutex));
+    assert(Py_REFCNT(self) == 1 ||
+        (_Py_IsOwnedByCurrentThread((PyObject *)self) && !_PyObject_GC_IS_SHARED(self)) ||
+        PyMutex_IsLocked(&_PyObject_CAST(self)->ob_mutex));
 
     // Ensure that the list array is freed using QSBR if we are not the
     // owning thread.

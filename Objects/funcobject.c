@@ -298,7 +298,7 @@ functions is running.
 
 */
 
-#ifndef Py_GIL_DISABLED
+#if _Py_TIER2
 static inline struct _func_version_cache_item *
 get_cache_item(PyInterpreterState *interp, uint32_t version)
 {
@@ -315,11 +315,13 @@ _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
     // This should only be called from MAKE_FUNCTION. No code is specialized
     // based on the version, so we do not need to stop the world to set it.
     func->func_version = version;
-#ifndef Py_GIL_DISABLED
+#if _Py_TIER2
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_MUTEX_LOCK(&interp->func_state.mutex);
     struct _func_version_cache_item *slot = get_cache_item(interp, version);
     slot->func = func;
     slot->code = func->func_code;
+    FT_MUTEX_UNLOCK(&interp->func_state.mutex);
 #endif
 }
 
@@ -330,13 +332,15 @@ func_clear_version(PyInterpreterState *interp, PyFunctionObject *func)
         // Version was never set or has already been cleared.
         return;
     }
-#ifndef Py_GIL_DISABLED
+#if _Py_TIER2
+    FT_MUTEX_LOCK(&interp->func_state.mutex);
     struct _func_version_cache_item *slot =
         get_cache_item(interp, func->func_version);
     if (slot->func == func) {
         slot->func = NULL;
         // Leave slot->code alone, there may be use for it.
     }
+    FT_MUTEX_UNLOCK(&interp->func_state.mutex);
 #endif
     func->func_version = FUNC_VERSION_CLEARED;
 }
@@ -358,8 +362,9 @@ _PyFunction_ClearVersion(PyFunctionObject *func)
 void
 _PyFunction_ClearCodeByVersion(uint32_t version)
 {
-#ifndef Py_GIL_DISABLED
+#if _Py_TIER2
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_MUTEX_LOCK(&interp->func_state.mutex);
     struct _func_version_cache_item *slot = get_cache_item(interp, version);
     if (slot->code) {
         assert(PyCode_Check(slot->code));
@@ -369,15 +374,19 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
             slot->func = NULL;
         }
     }
+    FT_MUTEX_UNLOCK(&interp->func_state.mutex);
 #endif
 }
 
 PyFunctionObject *
 _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 {
-#ifdef Py_GIL_DISABLED
+#ifndef _Py_TIER2
     return NULL;
 #else
+    // This function does not need locking/atomics as it can only be
+    // called from the optimizer, which is currently disabled
+    // when there are multiple threads.
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _func_version_cache_item *slot = get_cache_item(interp, version);
     if (slot->code) {
@@ -401,6 +410,10 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
+    // This function does not need locking/atomics as it can only be
+    // called from the specializing interpreter or optimizer.
+    // The specializing interpreter holds a strong reference to the function.
+    // The optimizer is currently disabled when there are multiple threads.
     return func->func_version;
 }
 
