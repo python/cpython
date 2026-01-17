@@ -1087,7 +1087,7 @@ struct opcode_metadata {
     uint32_t flags;
 };
 
-extern const struct opcode_metadata _PyOpcode_opcode_metadata[267];
+PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[267];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [BINARY_OP] = { true, INSTR_FMT_IBC0000, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1304,7 +1304,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [TO_BOOL] = { true, INSTR_FMT_IXC00, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [TO_BOOL_ALWAYS_TRUE] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [TO_BOOL_BOOL] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG },
-    [TO_BOOL_INT] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [TO_BOOL_INT] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG },
     [TO_BOOL_LIST] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [TO_BOOL_NONE] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG },
     [TO_BOOL_STR] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG },
@@ -1517,8 +1517,8 @@ _PyOpcode_macro_expansion[256] = {
     [TO_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL, OPARG_SIMPLE, 2 } } },
     [TO_BOOL_ALWAYS_TRUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _REPLACE_WITH_TRUE, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL_BOOL, OPARG_SIMPLE, 3 } } },
-    [TO_BOOL_INT] = { .nuops = 1, .uops = { { _TO_BOOL_INT, OPARG_SIMPLE, 3 } } },
-    [TO_BOOL_LIST] = { .nuops = 2, .uops = { { _GUARD_TOS_LIST, OPARG_SIMPLE, 0 }, { _TO_BOOL_LIST, OPARG_SIMPLE, 3 } } },
+    [TO_BOOL_INT] = { .nuops = 3, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _TO_BOOL_INT, OPARG_SIMPLE, 3 }, { _POP_TOP_INT, OPARG_SIMPLE, 3 } } },
+    [TO_BOOL_LIST] = { .nuops = 3, .uops = { { _GUARD_TOS_LIST, OPARG_SIMPLE, 0 }, { _TO_BOOL_LIST, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_NONE] = { .nuops = 1, .uops = { { _TO_BOOL_NONE, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_STR] = { .nuops = 3, .uops = { { _GUARD_TOS_UNICODE, OPARG_SIMPLE, 0 }, { _TO_BOOL_STR, OPARG_SIMPLE, 3 }, { _POP_TOP_UNICODE, OPARG_SIMPLE, 3 } } },
     [UNARY_INVERT] = { .nuops = 2, .uops = { { _UNARY_INVERT, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
@@ -1534,7 +1534,7 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
-extern const char *_PyOpcode_OpName[267];
+PyAPI_DATA(const char) *_PyOpcode_OpName[267];
 #ifdef NEED_OPCODE_METADATA
 const char *_PyOpcode_OpName[267] = {
     [ANNOTATIONS_PLACEHOLDER] = "ANNOTATIONS_PLACEHOLDER",
@@ -1780,7 +1780,7 @@ const char *_PyOpcode_OpName[267] = {
 };
 #endif
 
-extern const uint8_t _PyOpcode_Caches[256];
+PyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
     [TO_BOOL] = 3,
@@ -1806,7 +1806,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 };
 #endif
 
-extern const uint8_t _PyOpcode_Deopt[256];
+PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
     [121] = 121,
