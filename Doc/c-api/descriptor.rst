@@ -10,11 +10,6 @@ found in the dictionary of type objects.
 
 .. XXX document these!
 
-.. c:var:: PyTypeObject PyProperty_Type
-
-   The type object for the built-in descriptor types.
-
-
 .. c:function:: PyObject* PyDescr_NewGetSet(PyTypeObject *type, struct PyGetSetDef *getset)
 
 
@@ -74,8 +69,25 @@ found in the dictionary of type objects.
 .. c:function:: PyObject* PyWrapper_New(PyObject *, PyObject *)
 
 
+.. c:macro:: PyDescr_COMMON
+
+   This is a :term:`soft deprecated` macro including the common fields for a
+   descriptor object.
+
+   This was included in Python's C API by mistake; do not use it in extensions.
+   For creating custom descriptor objects, create a class implementing the
+   descriptor protocol (:c:member:`~PyTypeObject.tp_descr_get` and
+   :c:member:`~PyTypeObject.tp_descr_set`).
+
+
 Built-in descriptors
 ^^^^^^^^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyProperty_Type
+
+   The type object for property objects. This is the same object as
+   :class:`property` in the Python layer.
+
 
 .. c:var:: PyTypeObject PySuper_Type
 
