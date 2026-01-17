@@ -1,2 +1,0 @@
-Fix a memory leak in the experimental Tier 2 optimizer when creating
-executors. Patched by Shamil Abdulaev.

@@ -1,1 +1,0 @@
-Specialize :opcode:`CALL_FUNCTION_EX` for Python and non-Python callables.

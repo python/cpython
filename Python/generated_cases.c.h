@@ -6226,7 +6226,6 @@
             _Py_GatherStats_GetIter(iterable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             #endif
-
             PyTypeObject *tp = PyStackRef_TYPE(iterable);
             if (tp == &PyTuple_Type || tp == &PyList_Type) {
                 iter = iterable;
@@ -10424,7 +10423,7 @@
             if (gen == NULL) {
                 JUMP_TO_LABEL(error);
             }
-            assert(STACK_LEVEL() == 0);
+            assert(STACK_LEVEL() <= 2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
@@ -12368,7 +12367,9 @@ JUMP_TO_LABEL(error);
             #else
             assert(_PyErr_Occurred(tstate));
             #endif
-
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            STOP_TRACING();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             if (!_PyFrame_IsIncomplete(frame)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -12387,6 +12388,7 @@ JUMP_TO_LABEL(error);
 
         LABEL(exception_unwind)
         {
+            STOP_TRACING();
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
             int handled = get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti);

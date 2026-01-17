@@ -1114,9 +1114,24 @@
         }
 
         case _BINARY_OP_SUBSCR_INIT_CALL: {
+            JitOptRef sub;
+            JitOptRef container;
             JitOptRef new_frame;
-            new_frame = PyJitRef_NULL;
-            ctx->done = true;
+            sub = stack_pointer[-2];
+            container = stack_pointer[-3];
+            assert((this_instr + 1)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging(this_instr + 1);
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+            if (f == NULL) {
+                break;
+            }
+            f->locals[0] = container;
+            f->locals[1] = sub;
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = new_frame;
             stack_pointer += -2;
@@ -1947,11 +1962,22 @@
         }
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
+            JitOptRef owner;
             JitOptRef new_frame;
+            owner = stack_pointer[-1];
             PyObject *fget = (PyObject *)this_instr->operand0;
-            (void)fget;
-            new_frame = PyJitRef_NULL;
-            ctx->done = true;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging(this_instr + 2);
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            _Py_UOpsAbstractFrame *f = frame_new(ctx, co, 0, NULL, 0);
+            if (f == NULL) {
+                break;
+            }
+            f->locals[0] = owner;
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)f);
             stack_pointer[-1] = new_frame;
             break;
         }

@@ -129,19 +129,6 @@ def _finalize_set(msg, disposition, filename, cid, params):
             msg.set_param(key, value)
 
 
-# XXX: This is a cleaned-up version of base64mime.body_encode (including a bug
-# fix in the calculation of unencoded_bytes_per_line).  It would be nice to
-# drop both this and quoprimime.body_encode in favor of enhanced binascii
-# routines that accepted a max_line_length parameter.
-def _encode_base64(data, max_line_length):
-    encoded_lines = []
-    unencoded_bytes_per_line = max_line_length // 4 * 3
-    for i in range(0, len(data), unencoded_bytes_per_line):
-        thisline = data[i:i+unencoded_bytes_per_line]
-        encoded_lines.append(binascii.b2a_base64(thisline).decode('ascii'))
-    return ''.join(encoded_lines)
-
-
 def _encode_text(string, charset, cte, policy):
     # If max_line_length is 0 or None, there is no limit.
     maxlen = policy.max_line_length or sys.maxsize
@@ -176,7 +163,7 @@ def _encode_text(string, charset, cte, policy):
         data = quoprimime.body_encode(normal_body(lines).decode('latin-1'),
                                       maxlen)
     elif cte == 'base64':
-        data = _encode_base64(embedded_body(lines), maxlen)
+        data = binascii.b2a_base64(embedded_body(lines), wrapcol=maxlen).decode('ascii')
     else:
         raise ValueError("Unknown content transfer encoding {}".format(cte))
     return cte, data
@@ -234,7 +221,8 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
                      params=None, headers=None):
     _prepare_set(msg, maintype, subtype, headers)
     if cte == 'base64':
-        data = _encode_base64(data, max_line_length=msg.policy.max_line_length)
+        data = binascii.b2a_base64(data, wrapcol=msg.policy.max_line_length)
+        data = data.decode('ascii')
     elif cte == 'quoted-printable':
         # XXX: quoprimime.body_encode won't encode newline characters in data,
         # so we can't use it.  This means max_line_length is ignored.  Another
