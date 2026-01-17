@@ -115,8 +115,10 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 
 #define REF_IS_BORROWED 1
+#define REF_IS_INVALID  2
+#define REF_TAG_BITS    3
 
-#define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_IS_BORROWED)))
+#define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_TAG_BITS)))
 
 static inline JitOptSymbol *
 PyJitRef_Unwrap(JitOptRef ref)
@@ -131,6 +133,18 @@ static inline JitOptRef
 PyJitRef_Wrap(JitOptSymbol *sym)
 {
     return (JitOptRef){.bits=(uintptr_t)sym};
+}
+
+static inline JitOptRef
+PyJitRef_WrapInvalid(void *ptr)
+{
+    return (JitOptRef){.bits=(uintptr_t)ptr | REF_IS_INVALID};
+}
+
+static inline bool
+PyJitRef_IsInvalid(JitOptRef ref)
+{
+    return (ref.bits & REF_IS_INVALID) == REF_IS_INVALID;
 }
 
 static inline JitOptRef
@@ -225,7 +239,7 @@ PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 PyAPI_FUNC(void) _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 #endif
 
-int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
+PyAPI_FUNC(int) _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
 
 PyAPI_FUNC(int)
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
@@ -233,7 +247,7 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
     int oparg, _PyExecutorObject *current_executor);
 
-void _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
+PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
 void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
