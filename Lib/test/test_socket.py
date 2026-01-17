@@ -3577,7 +3577,7 @@ class SendmsgStreamTests(SendmsgTests):
                      "sendmsg not supported")
     def test_sendmsg_reentrant_ancillary_mutation(self):
         self._test_sendmsg_reentrant_ancillary_mutation()
-        
+
     def _test_sendmsg_reentrant_ancillary_mutation(self):
         import socket
 
