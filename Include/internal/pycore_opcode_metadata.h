@@ -434,6 +434,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case SEND_GEN:
             return 2;
+        case SEND_NON_GEN:
+            return 2;
         case SETUP_ANNOTATIONS:
             return 0;
         case SETUP_CLEANUP:
@@ -925,6 +927,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 2;
         case SEND_GEN:
             return 1;
+        case SEND_NON_GEN:
+            return 2;
         case SETUP_ANNOTATIONS:
             return 0;
         case SETUP_CLEANUP:
@@ -1282,6 +1286,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [RETURN_VALUE] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
     [SEND] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
     [SEND_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
+    [SEND_NON_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
     [SETUP_ANNOTATIONS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [SET_ADD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [SET_FUNCTION_ATTRIBUTE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1736,6 +1741,7 @@ const char *_PyOpcode_OpName[267] = {
     [RETURN_VALUE] = "RETURN_VALUE",
     [SEND] = "SEND",
     [SEND_GEN] = "SEND_GEN",
+    [SEND_NON_GEN] = "SEND_NON_GEN",
     [SETUP_ANNOTATIONS] = "SETUP_ANNOTATIONS",
     [SETUP_CLEANUP] = "SETUP_CLEANUP",
     [SETUP_FINALLY] = "SETUP_FINALLY",
@@ -1816,7 +1822,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [125] = 125,
     [126] = 126,
     [127] = 127,
-    [213] = 213,
     [214] = 214,
     [215] = 215,
     [216] = 216,
@@ -2028,6 +2033,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [RETURN_VALUE] = RETURN_VALUE,
     [SEND] = SEND,
     [SEND_GEN] = SEND,
+    [SEND_NON_GEN] = SEND,
     [SETUP_ANNOTATIONS] = SETUP_ANNOTATIONS,
     [SET_ADD] = SET_ADD,
     [SET_FUNCTION_ATTRIBUTE] = SET_FUNCTION_ATTRIBUTE,
@@ -2077,7 +2083,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 125: \
     case 126: \
     case 127: \
-    case 213: \
     case 214: \
     case 215: \
     case 216: \

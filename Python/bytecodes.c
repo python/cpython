@@ -1342,6 +1342,7 @@ dummy_func(
 
         family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
             SEND_GEN,
+            SEND_NON_GEN,
         };
 
         specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
@@ -1427,6 +1428,49 @@ dummy_func(
             _CHECK_PEP_523 +
             _SEND_GEN_FRAME +
             _PUSH_FRAME;
+
+        op(_CHECK_IS_NOT_GEN_OR_CORO, (receiver, unused -- receiver, unused)) {
+            PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
+            EXIT_IF(Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type);
+        }
+
+        op(_SEND_NON_GEN, (receiver, v -- receiver, retval)) {
+            PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
+            PyObject *retval_o;
+
+            STAT_INC(SEND, hit);
+
+            if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
+                retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
+            }
+            else {
+                retval_o = PyObject_CallMethodOneArg(receiver_o,
+                                                     &_Py_ID(send),
+                                                     PyStackRef_AsPyObjectBorrow(v));
+            }
+            if (retval_o == NULL) {
+                int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
+                if (matches) {
+                    _PyEval_MonitorRaise(tstate, frame, this_instr);
+                }
+                int err = _PyGen_FetchStopIterationValue(&retval_o);
+                if (err == 0) {
+                    assert(retval_o != NULL);
+                    JUMPBY(oparg);
+                }
+                else {
+                    PyStackRef_CLOSE(v);
+                    ERROR_NO_POP();
+                }
+            }
+            PyStackRef_CLOSE(v);
+            retval = PyStackRef_FromPyObjectSteal(retval_o);
+        }
+
+        macro(SEND_NON_GEN) =
+            unused/1 +
+            _CHECK_IS_NOT_GEN_OR_CORO +
+            _SEND_NON_GEN;
 
         inst(YIELD_VALUE, (retval -- value)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!

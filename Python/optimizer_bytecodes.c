@@ -1026,6 +1026,14 @@ dummy_func(void) {
         gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
+    op(_CHECK_IS_NOT_GEN_OR_CORO, (receiver, unused -- receiver, unused)) {
+    }
+
+    op(_SEND_NON_GEN, (receiver, v -- receiver, retval)) {
+        (void)v;
+        retval = sym_new_unknown(ctx);
+    }
+
     op(_CHECK_STACK_SPACE, (unused, unused, unused[oparg] -- unused, unused, unused[oparg])) {
     }
 

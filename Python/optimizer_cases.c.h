@@ -1300,6 +1300,12 @@
             break;
         }
 
+        case _CHECK_IS_NOT_GEN_OR_CORO: {
+            break;
+        }
+
+        /* _SEND_NON_GEN is not a viable micro-op for tier 2 */
+
         case _YIELD_VALUE: {
             JitOptRef retval;
             JitOptRef value;
