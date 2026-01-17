@@ -103,7 +103,7 @@ Context Variables
    the value of the variable to what it was before the corresponding
    *set*. A single token cannot reset a context variable more than once.
 
-   The token supports :ref:`context manager protocol <context-managers>`
+   Tokens support :ref:`context manager protocol <context-managers>`
    to restore the corresponding context variable value at the exit from
    :keyword:`with` block::
 
