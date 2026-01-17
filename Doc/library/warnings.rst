@@ -480,13 +480,27 @@ Available Functions
 .. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)
 
    This is a low-level interface to the functionality of :func:`warn`, passing in
-   explicitly the message, category, filename and line number, and optionally the
-   module name and the registry (which should be the ``__warningregistry__``
-   dictionary of the module).  The module name defaults to the filename with
-   ``.py`` stripped; if no registry is passed, the warning is never suppressed.
+   explicitly the message, category, filename and line number, and optionally
+   other arguments.
    *message* must be a string and *category* a subclass of :exc:`Warning` or
    *message* may be a :exc:`Warning` instance, in which case *category* will be
    ignored.
+
+   *module*, if supplied, should be the module name.
+   If no module is passed, the module regular expression in
+   :ref:`warnings filter <warning-filter>` will be tested against the module
+   names constructed from the path components starting from all parent
+   directories (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw``
+   stripped) and against the filename with ``.py`` stripped.
+   For example, when the filename is ``'/path/to/package/module.py'``, it will
+   be tested against  ``'path.to.package.module'``, ``'to.package.module'``
+   ``'package.module'``, ``'module'``, and ``'/path/to/package/module'``.
+
+   *registry*, if supplied, should be the ``__warningregistry__`` dictionary
+   of the module.
+   If no registry is passed, each warning is treated as the first occurrence,
+   that is, filter actions ``"default"``, ``"module"`` and ``"once"`` are
+   handled as ``"always"``.
 
    *module_globals*, if supplied, should be the global namespace in use by the code
    for which the warning is issued.  (This argument is used to support displaying
@@ -498,6 +512,10 @@ Available Functions
 
    .. versionchanged:: 3.6
       Add the *source* parameter.
+
+   .. versionchanged:: 3.15
+      If no module is passed, test the filter regular expression against
+      module names created from the path, not only the path itself.
 
 
 .. function:: showwarning(message, category, filename, lineno, file=None, line=None)
@@ -590,7 +608,7 @@ Available Functions
    The deprecation message passed to the decorator is saved in the
    ``__deprecated__`` attribute on the decorated object.
    If applied to an overload, the decorator
-   must be after the :func:`@overload <typing.overload>` decorator
+   must be after the :deco:`~typing.overload` decorator
    for the attribute to exist on the overload as returned by
    :func:`typing.get_overloads`.
 

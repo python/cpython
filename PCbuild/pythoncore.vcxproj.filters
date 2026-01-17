@@ -120,9 +120,6 @@
     <ClInclude Include="..\Include\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pylock.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -489,7 +486,13 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\structseq.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\tupleobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\sliceobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\traceback.h">
@@ -524,6 +527,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_unicodectype.h">
+      <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h">
       <Filter>Include\internal</Filter>
@@ -727,6 +733,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_long.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_mmap.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_modsupport.h">
@@ -1064,6 +1073,9 @@
     <ClCompile Include="..\Modules\main.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\mathintegermodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\mathmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -1268,7 +1280,16 @@
     <ClCompile Include="..\Objects\typeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_format.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodectype.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_formatter.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_writer.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c">
@@ -1377,9 +1398,6 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\flowgraph.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\formatter_unicode.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\frozen.c">

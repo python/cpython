@@ -18,8 +18,9 @@
 This module provides access to Transport Layer Security (often known as "Secure
 Sockets Layer") encryption and peer authentication facilities for network
 sockets, both client-side and server-side.  This module uses the OpenSSL
-library. It is available on all modern Unix systems, Windows, macOS, and
-probably additional platforms, as long as OpenSSL is installed on that platform.
+library.
+
+.. include:: ../includes/optional-module.rst
 
 .. note::
 
@@ -232,7 +233,7 @@ Signature algorithms
    :meth:`SSLContext.set_client_sigalgs` and
    :meth:`SSLContext.set_server_sigalgs` methods.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Exceptions
@@ -354,9 +355,8 @@ Random generation
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
-   with 'enough' randomness, and ``False`` otherwise.  You can use
-   :func:`ssl.RAND_egd` and :func:`ssl.RAND_add` to increase the randomness of
-   the pseudo-random number generator.
+   with 'enough' randomness, and ``False`` otherwise.  Use :func:`ssl.RAND_add`
+   to increase the randomness of the pseudo-random number generator.
 
 .. function:: RAND_add(bytes, entropy, /)
 
@@ -959,7 +959,7 @@ Constants
    Whether the OpenSSL library has built-in support for External PSKs in TLS
    1.3 as described in :rfc:`9258`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: HAS_PHA
 
@@ -1134,7 +1134,7 @@ SSL Sockets
       functions support reading and writing of data larger than 2 GB. Writing
       zero-length data no longer fails with a protocol violation error.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Python now uses ``SSL_sendfile`` internally when possible. The
       function sends a file more efficiently because it performs TLS encryption
       in the kernel to avoid additional context switches.
@@ -1318,7 +1318,7 @@ SSL sockets also have the following additional methods and attributes:
    Return the group used for doing key agreement on this connection. If no
    connection has been established, returns ``None``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLSocket.client_sigalg()
 
@@ -1326,7 +1326,7 @@ SSL sockets also have the following additional methods and attributes:
    authentication on this connection, or ``None`` if no connection has been
    established or client authentication didn't occur.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLSocket.server_sigalg()
 
@@ -1334,7 +1334,7 @@ SSL sockets also have the following additional methods and attributes:
    handshake on this connection, or ``None`` if no connection has been
    established or the cipher suite has no signature.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLSocket.compression()
 
@@ -1710,7 +1710,7 @@ to speed up repeated connections from the same clients.
    :const:`True` this method will also return any associated aliases such as
    the ECDH curve names supported in older versions of OpenSSL.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_default_verify_paths()
 
@@ -1749,7 +1749,7 @@ to speed up repeated connections from the same clients.
       When connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       return details about the negotiated cipher.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_groups(groups, /)
 
@@ -1762,7 +1762,7 @@ to speed up repeated connections from the same clients.
       When connected, the :meth:`SSLSocket.group` method of SSL sockets will
       return the group used for key agreement on that connection.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_client_sigalgs(sigalgs, /)
 
@@ -1777,7 +1777,7 @@ to speed up repeated connections from the same clients.
       sockets will return the signature algorithm used for performing
       certificate-based client authentication on that connection.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_server_sigalgs(sigalgs, /)
 
@@ -1791,7 +1791,7 @@ to speed up repeated connections from the same clients.
       sockets will return the signature algorithm used by the server to
       complete the TLS handshake on that connection.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_alpn_protocols(alpn_protocols)
 
@@ -2959,16 +2959,16 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
        Steve Kent
 
    :rfc:`RFC 4086: Randomness Requirements for Security <4086>`
-       Donald E., Jeffrey I. Schiller
+       Donald E. Eastlake, Jeffrey I. Schiller, Steve Crocker
 
    :rfc:`RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <5280>`
-       D. Cooper
+       David Cooper et al.
 
    :rfc:`RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <5246>`
-       T. Dierks et. al.
+       Tim Dierks and Eric Rescorla.
 
    :rfc:`RFC 6066: Transport Layer Security (TLS) Extensions <6066>`
-       D. Eastlake
+       Donald E. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA

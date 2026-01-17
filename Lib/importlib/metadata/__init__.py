@@ -457,7 +457,7 @@ class Distribution(metaclass=abc.ABCMeta):
         try:
             return next(iter(cls._prefer_valid(cls.discover(name=name))))
         except StopIteration:
-            raise PackageNotFoundError(name)
+            raise PackageNotFoundError(name) from None
 
     @classmethod
     def discover(
@@ -890,6 +890,14 @@ class Lookup:
         return itertools.chain(infos, eggs)
 
 
+# Translation table for Prepared.normalize: lowercase and
+# replace "-" (hyphen) and "." (dot) with "_" (underscore).
+_normalize_table = str.maketrans(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ-.",
+    "abcdefghijklmnopqrstuvwxyz__",
+)
+
+
 class Prepared:
     """
     A prepared search query for metadata on a possibly-named package.
@@ -925,7 +933,13 @@ class Prepared:
         """
         PEP 503 normalization plus dashes as underscores.
         """
-        return re.sub(r"[-_.]+", "-", name).lower().replace('-', '_')
+        # Emulates ``re.sub(r"[-_.]+", "-", name).lower()`` from PEP 503
+        # About 3x faster, safe since packages only support alphanumeric characters
+        value = name.translate(_normalize_table)
+        # Condense repeats (faster than regex)
+        while "__" in value:
+            value = value.replace("__", "_")
+        return value
 
     @staticmethod
     def legacy_normalize(name):

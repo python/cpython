@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Build tier two interpreter
@@ -68,7 +68,7 @@ jobs:
           - true
           - false
         llvm:
-          - 19
+          - 21
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
@@ -92,10 +92,10 @@ jobs:
             architecture: aarch64
             runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -138,12 +138,12 @@ jobs:
       fail-fast: false
       matrix:
         llvm:
-          - 19
+          - 21
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Build with JIT enabled and GIL disabled
@@ -166,12 +166,12 @@ jobs:
       fail-fast: false
       matrix:
         llvm:
-          - 19
+          - 21
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Build with JIT
@@ -183,3 +183,27 @@ jobs:
       - name: Run tests without optimizations
         run: |
           PYTHON_UOPS_OPTIMIZE=0 ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  tail-call-jit:
+    name: JIT with tail calling interpreter
+    needs: interpreter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm:
+          - 21
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Build with JIT and tailcall
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          CC=clang-${{ matrix.llvm }} ./configure --enable-experimental-jit --with-tail-call-interp --with-pydebug
+          make all --jobs 4

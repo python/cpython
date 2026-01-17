@@ -1,2 +1,0 @@
-Restore skipped test and add janky workaround to prevent select buildbots
-from failing with a ResourceWarning.
