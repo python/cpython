@@ -849,7 +849,7 @@ class TestCase(object):
         context = _AssertNotWarnsContext(expected_warning, self)
         return context.handle('_assertNotWarns', args, kwargs)
 
-    def assertLogs(self, logger=None, level=None, formatter=None):
+    def assertLogs(self, logger=None, level=None, formatter=None, keep_handlers=False):
         """Fail unless a log message of level *level* or higher is emitted
         on *logger_name* or its children.  If omitted, *level* defaults to
         INFO and *logger* defaults to the root logger.
@@ -863,6 +863,11 @@ class TestCase(object):
 
         Optionally supply `formatter` to control how messages are formatted.
 
+        Optionally supply `keep_handlers` to control whether to preserve existing handlers.
+        Note that the logger's level will still be temporarily set to the requested level,
+        which may cause existing handlers to process more messages than usual
+        during the context manager.
+
         Example::
 
             with self.assertLogs('foo', level='INFO') as cm:
@@ -873,7 +878,7 @@ class TestCase(object):
         """
         # Lazy import to avoid importing logging if it is not needed.
         from ._log import _AssertLogsContext
-        return _AssertLogsContext(self, logger, level, no_logs=False, formatter=formatter)
+        return _AssertLogsContext(self, logger, level, no_logs=False, formatter=formatter, keep_handlers=keep_handlers)
 
     def assertNoLogs(self, logger=None, level=None):
         """ Fail unless no log messages of level *level* or higher are emitted
