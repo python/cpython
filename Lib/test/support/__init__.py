@@ -2157,3 +2157,10 @@ def adjust_int_max_str_digits(max_digits):
         yield
     finally:
         sys.set_int_max_str_digits(current)
+
+
+def control_characters_c0() -> list[str]:
+    """Returns a list of C0 control characters as strings.
+    C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
+    """
+    return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
