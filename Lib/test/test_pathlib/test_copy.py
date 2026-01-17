@@ -187,7 +187,6 @@ if not is_pypi:
 
         def test_copy_char_device(self):
             import io
-            import os
             # /dev/null is a character device on POSIX
             source = Path('/dev/null')
             if not source.exists() or not source.is_char_device():
