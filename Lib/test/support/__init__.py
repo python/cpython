@@ -2856,3 +2856,10 @@ def linked_to_musl():
     except (OSError, subprocess.CalledProcessError):
         return False
     return ('musl' in stdout)
+
+
+def control_characters_c0() -> list[str]:
+    """Returns a list of C0 control characters as strings.
+    C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
+    """
+    return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
