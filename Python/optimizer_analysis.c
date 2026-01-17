@@ -414,12 +414,12 @@ optimize_uops(
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
+            printf("%4d abs: ", (int)(this_instr - trace));
+            _PyUOpPrint(this_instr);
+            printf(" \n");
             if (get_lltrace() >= 5 && !CURRENT_FRAME_IS_INIT_SHIM()) {
                 dump_abstract_stack(ctx->frame, stack_pointer);
             }
-            printf("%4d abs: ", (int)(this_instr - trace));
-            _PyUOpPrint(this_instr);
-            printf(" ");
         }
 #endif
 
