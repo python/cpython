@@ -199,6 +199,7 @@ class TopologicalSorter:
                     self._ready_nodes.append(successor)
             self._nfinished += 1
 
+    # See note "On Finding Cycles" at the bottom.
     def _find_cycle(self):
         n2i = self._node2info
         stack = []
@@ -212,8 +213,6 @@ class TopologicalSorter:
 
             while True:
                 if node in seen:
-                    # If we have seen already the node and is in the
-                    # current stack we have found a cycle.
                     if node in node2stacki:
                         return stack[node2stacki[node] :] + [node]
                     # else go on to get next successor
@@ -228,11 +227,15 @@ class TopologicalSorter:
                 while stack:
                     try:
                         node = itstack[-1]()
-                        break
+                        break # resume at top ot "while Tree:"
                     except StopIteration:
+                        # no more successors; pop the stack
+                        # and continue looking up
                         del node2stacki[stack.pop()]
                         itstack.pop()
                 else:
+                    # stack is empty; look for a fresh node to
+                    # start over from (a node not yet in seen)
                     break
         return None
 
@@ -252,3 +255,53 @@ class TopologicalSorter:
             self.done(*node_group)
 
     __class_getitem__ = classmethod(GenericAlias)
+
+# On Finding Cycles
+# -----------------
+# There is a (at least one) total order if and only if the graph is
+# acyclic.
+#
+# When it is cyclic, "there's a cycle - somewhere!" isn't very helpful.
+# In theory, it would be most helpful to partition the graph into
+# strongly connected components (SCCs) and display those with more than
+# one node. Then all cycles could easily be identified "by eyeball".
+#
+# That's a lot of work, though, and we can get most of the benefit much
+# more easily just by showing a single specific cycle.
+#
+# Finding a cycle is most natural via a breadth first search, which can
+# easily be arranged to find a shortest-possible cycle. But memory
+# burden can be high, because every path-in-progress has to keep its own
+# idea of what "the path" is so far.
+#
+# Depth first search (DFS) is much easier on RAM, only requiring keeping
+# track of _the_ path from the starting node to the current node at the
+# current recursion level. But there may be any number of nodes, and so
+# there's no bound on recursion depth short of the total number of
+# nodes.
+#
+# So we use an iterative version of DFS, keeping an exploit list
+# (`stack`) of the path so far. A parallel stack (`itstack`) holds the
+# `__next__` method of an iterator over the current level's node's
+# successors, so when backtracking to a shallower level we can just call
+# that to get the node's next successor. This is state that a recursive
+# version would implicitly store in a `for` loop's internals.
+#
+# `seen()` is a set recording which nodes have already been, at some
+# time, pushed on the stack. If a node has been pushed on the stack, DFS
+# will find any cycle it's part of, so there's no need to ever look at
+# it again.
+#
+# Finally, `node2stacki` maps a node to its index on the current stack,
+# for and only for nodes currently _on_ the stack. If a successor to be
+# pushed on the stack is in that dict, the node is already on the path,
+# at that index. The cycle is then `stack[that_index :] + [node]`.
+#
+# As is often the case when removing recursion, the control flow looks a
+# bit off. The "while True:" loop here rarely actually loops - it's only
+# looking to go "up the stack" until finding a level that has another
+# successor to consider, emulating a chain of returns in a recursive
+# version.
+#
+# Worst case time is linear in the number of nodes plus the number of
+# edges. Worst case memory burden is linear in the number of nodes.
