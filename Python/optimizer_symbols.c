@@ -76,6 +76,10 @@ _PyUOpSymPrint(JitOptRef ref)
         printf("<JitRef NULL>");
         return;
     }
+    if (PyJitRef_IsInvalid(ref)) {
+        printf("<INVALID frame at %p>", (void *)PyJitRef_Unwrap(ref));
+        return;
+    }
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     switch (sym->tag) {
         case JIT_SYM_UNKNOWN_TAG:
@@ -108,9 +112,6 @@ _PyUOpSymPrint(JitOptRef ref)
             break;
         case JIT_SYM_COMPACT_INT:
             printf("<compact_int at %p>", (void *)sym);
-            break;
-        case JIT_SYM_INVALID_TAG:
-            printf("<INVALID frame at %p>", (void *)sym);
             break;
         default:
             printf("<tag=%d at %p>", sym->tag, (void *)sym);
@@ -874,7 +875,6 @@ _Py_uop_frame_new(
         return NULL;
     }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
-    frame->tag = JIT_SYM_INVALID_TAG;
     frame->code = co;
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;
