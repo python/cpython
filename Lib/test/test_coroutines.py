@@ -2265,6 +2265,22 @@ class CoroutineTest(unittest.TestCase):
         # before fixing, visible stack from throw would be shorter than from send.
         self.assertEqual(len_send, len_throw)
 
+    def test_call_generator_in_frame_clear(self):
+        # gh-143939: Running a generator while clearing the coroutine's frame
+        # should not be misinterpreted as a yield.
+        class CallGeneratorOnDealloc:
+            def __del__(self):
+                def gen():
+                    yield 1
+                next(gen())
+
+        async def coro():
+            obj = CallGeneratorOnDealloc()
+            return 42
+
+        yielded, result = run_async(coro())
+        self.assertEqual(yielded, [])
+        self.assertEqual(result, 42)
 
 @unittest.skipIf(
     support.is_emscripten or support.is_wasi,
