@@ -1,2 +1,1 @@
-Added ``pathlib.Path`` support for :func:`shutil.make_archive` with updated
-documentation and lightweight tests.
+Added :term:`path-like object` support for :func:`shutil.make_archive`.

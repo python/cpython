@@ -619,8 +619,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Create an archive file (such as zip or tar) and return its name.
 
-   *base_name* is the :term:`path-like object` specifying the name of the file
-   to create, including the path, minus any format-specific extension.
+   *base_name* is a string or :term:`path-like object` specifying the name of
+   the file to create, including the path, minus any format-specific extension.
 
    *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
@@ -628,14 +628,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), "xztar" (if the :mod:`lzma` module is available), or "zstdtar"
    (if the :mod:`compression.zstd` module is available).
 
-   *root_dir* is the :term:`path-like object` specifying a directory that will
-   be the root directory of the archive, all paths in the archive will be
-   relative to it; for example, we typically chdir into *root_dir* before
-   creating the archive.
+   *root_dir* is a string or :term:`path-like object` specifying a directory
+   that will be the root directory of the archive, all paths in the archive
+   will be relative to it; for example, we typically chdir into *root_dir*
+   before creating the archive.
 
-   *base_dir* is the :term:`path-like object` specifying a directory where we
-   start archiving from; i.e. *base_dir* will be the common prefix of all files
-   and directories in the archive.  *base_dir* must be given relative
+   *base_dir* is a string or :term:`path-like object` specifying a directory
+   where we start archiving from; i.e. *base_dir* will be the common prefix of
+   all files and directories in the archive.  *base_dir* must be given relative
    to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
    use *base_dir* and *root_dir* together.
 
@@ -670,8 +670,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
 
-   .. versionchanged:: 3.15
-      Accepts a :term:`path-like object` for *base_name*.
+   .. versionchanged:: next
+      Accepts a :term:`path-like object` for *base_name*, *root_dir* and
+      *base_dir*.
 
 .. function:: get_archive_formats()
 
@@ -818,10 +819,10 @@ Archiving example
 In this example, we create a gzip'ed tar-file archive containing all files
 found in the :file:`.ssh` directory of the user::
 
-    >>> from pathlib import Path
     >>> from shutil import make_archive
-    >>> archive_name = Path.home() / 'myarchive'
-    >>> root_dir = Path.home() / '.ssh'
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
+    >>> root_dir = os.path.expanduser(os.path.join('~', '.ssh'))
     >>> make_archive(archive_name, 'gztar', root_dir)
     '/Users/tarek/myarchive.tar.gz'
 
@@ -862,9 +863,9 @@ we show how to use :func:`make_archive`, but this time with the usage of
 In the final archive, :file:`please_add.txt` should be included, but
 :file:`do_not_add.txt` should not.  Therefore we use the following::
 
-    >>> from pathlib import Path
     >>> from shutil import make_archive
-    >>> archive_name = Path.home() / 'myarchive'
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
     >>> make_archive(
     ...     archive_name,
     ...     'tar',
