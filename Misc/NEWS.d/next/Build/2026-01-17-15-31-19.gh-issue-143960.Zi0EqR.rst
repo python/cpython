@@ -1,0 +1,1 @@
+Add support for OpenSSL 3.5, drop EOL 3.2. Patch by Hugo van Kemenade.
