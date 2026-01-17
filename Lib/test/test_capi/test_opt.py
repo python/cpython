@@ -2774,6 +2774,24 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_load_attr_module(self):
+        import platform
+        # Use default argument to capture module as local variable
+        def testfunc(n, mod=platform):
+            x = 0
+            for _ in range(n):
+                # Access module attribute multiple times
+                x = mod.python_version
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_ATTR_MODULE", uops)
+        # _POP_TOP_MODULE should be optimized to _POP_TOP_NOP for borrowed refs
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
     def test_int_add_op_refcount_elimination(self):
         def testfunc(n):
             c = 1
