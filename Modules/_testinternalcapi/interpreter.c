@@ -11,6 +11,7 @@
 
 int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
 
+#ifdef _Py_TIER2
 static int
 stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
@@ -18,6 +19,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     (void)(frame);
     return 0;
 }
+#endif
 
 _PyJitEntryFuncPtr _Py_jit_entry;
 
