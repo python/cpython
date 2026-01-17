@@ -699,7 +699,6 @@ jobs:
             && '
             build-ubuntu,
             build-ubuntu-ssltests,
-            build-wasi,
             test-hypothesis,
             build-asan,
             build-san,

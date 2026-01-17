@@ -584,9 +584,9 @@ def main():
         assert len(libs) == 1
         cls = libs.pop()
         if args.ssl_versions:
-            versions.extend((cls, v) for v in args.ssl_versions])
+            versions.extend((cls, v) for v in args.ssl_versions)
         else:
-            versions.extend([(cls, v) for v in cls.recent_versions.fget()])
+            versions.extend((cls, v) for v in cls.recent_versions.fget())
             if not args.disable_ancient:
                 versions.extend([(cls, v) for v in cls.old_versions.fget()])
     else:
