@@ -3572,8 +3572,12 @@ class SendmsgTests(SendrecvmsgServerTimeoutBase):
 class SendmsgStreamTests(SendmsgTests):
     # Tests for sendmsg() which require a stream socket and do not
     # involve recvmsg() or recvmsg_into().
+    
     @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
                      "sendmsg not supported")
+    def test_sendmsg_reentrant_ancillary_mutation(self):
+        self._test_sendmsg_reentrant_ancillary_mutation()
+        
     def _test_sendmsg_reentrant_ancillary_mutation(self):
         import socket
 
