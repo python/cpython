@@ -39,6 +39,8 @@ typedef enum _JitSymType {
     JIT_SYM_TUPLE_TAG = 8,
     JIT_SYM_TRUTHINESS_TAG = 9,
     JIT_SYM_COMPACT_INT = 10,
+ 
+    JIT_SYM_INVALID_TAG = 255, // for non-symbol values on abstract stack
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -91,6 +93,7 @@ typedef union {
 } JitOptRef;
 
 typedef struct _Py_UOpsAbstractFrame {
+    uint8_t tag;
     bool globals_watched;
     // The version number of the globals dicts, once checked. 0 if unchecked.
     uint32_t globals_checked_version;

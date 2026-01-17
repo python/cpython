@@ -109,6 +109,9 @@ _PyUOpSymPrint(JitOptRef ref)
         case JIT_SYM_COMPACT_INT:
             printf("<compact_int at %p>", (void *)sym);
             break;
+        case JIT_SYM_INVALID_TAG:
+            printf("<INVALID frame at %p>", (void *)sym);
+            break;
         default:
             printf("<tag=%d at %p>", sym->tag, (void *)sym);
             break;
@@ -871,6 +874,7 @@ _Py_uop_frame_new(
         return NULL;
     }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
+    frame->tag = JIT_SYM_INVALID_TAG;
     frame->code = co;
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;
