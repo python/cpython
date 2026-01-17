@@ -5253,7 +5253,7 @@ AC_CHECK_FUNCS([ \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
-  pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
+  pipe2 plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
@@ -5595,14 +5595,15 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
+AS_IF([test "$ac_cv_libc" != musl], [
 AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
               [AC_DEFINE([HAVE_PR_SET_VMA_ANON_NAME], [1],
                          [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
               [],
               [@%:@include <linux/prctl.h>
                @%:@include <sys/prctl.h>])
-
+])
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],

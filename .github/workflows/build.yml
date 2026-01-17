@@ -64,7 +64,7 @@ jobs:
         run: |
           apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -101,10 +101,10 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
       - name: Runner image version
@@ -142,9 +142,14 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
-      - name: Check for undocumented C APIs
-        run: make check-c-api-docs
 
+  check-c-api-docs:
+    name: C API Docs
+    needs: build-context
+    if: >-
+      needs.build-context.outputs.run-tests == 'true'
+      || needs.build-context.outputs.run-docs == 'true'
+    uses: ./.github/workflows/reusable-check-c-api-docs.yml
 
   build-windows:
     name: >-
@@ -264,7 +269,7 @@ jobs:
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Runner image version
@@ -280,7 +285,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -316,7 +321,7 @@ jobs:
       OPENSSL_DIR: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}/lib
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Runner image version
@@ -332,7 +337,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore AWS-LC build'
       id: cache-aws-lc
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ./multissl/aws-lc/${{ matrix.awslc_ver }}
         key: ${{ matrix.os }}-multissl-aws-lc-${{ matrix.awslc_ver }}
@@ -381,7 +386,7 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Build and test
@@ -394,7 +399,7 @@ jobs:
     timeout-minutes: 60
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -426,7 +431,7 @@ jobs:
       OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Register gcc problem matcher
@@ -440,7 +445,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -490,7 +495,7 @@ jobs:
         ./python -m venv "$VENV_LOC" && "$VENV_PYTHON" -m pip install -r "${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt"
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
@@ -517,7 +522,7 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       if: always()
       with:
         name: hypothesis-example-db
@@ -538,7 +543,7 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Runner image version
@@ -548,7 +553,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Set up GCC-10 for ASAN
-      uses: egor-tensin/setup-gcc@v1
+      uses: egor-tensin/setup-gcc@v2
       with:
         version: 10
     - name: Configure OpenSSL env vars
@@ -558,7 +563,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -608,7 +613,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Runner image version
@@ -636,45 +641,45 @@ jobs:
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
-  # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
-    name: CIFuzz
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: CIFuzz${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
-    if: needs.build-context.outputs.run-ci-fuzz == 'true'
+    if: >-
+      needs.build-context.outputs.run-ci-fuzz == 'true'
+      || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
     permissions:
       security-events: write
     strategy:
       fail-fast: false
       matrix:
-        sanitizer: [address, undefined, memory]
-    steps:
-      - name: Build fuzzers (${{ matrix.sanitizer }})
-        id: build
-        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
-        with:
-          oss-fuzz-project-name: cpython3
-          sanitizer: ${{ matrix.sanitizer }}
-      - name: Run fuzzers (${{ matrix.sanitizer }})
-        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
-        with:
-          fuzz-seconds: 600
-          oss-fuzz-project-name: cpython3
-          output-sarif: true
-          sanitizer: ${{ matrix.sanitizer }}
-      - name: Upload crash
-        if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.sanitizer }}-artifacts
-          path: ./out/artifacts
-      - name: Upload SARIF
-        if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: cifuzz-sarif/results.sarif
-          checkout_path: cifuzz-sarif
+        sanitizer:
+        - address
+        - undefined
+        - memory
+        oss-fuzz-project-name:
+        - cpython3
+        - python3-libraries
+        exclude:
+        # Note that the 'no-exclude' sentinel below is to prevent
+        # an empty string value from excluding all jobs and causing
+        # GHA to create a 'default' matrix entry with all empty values.
+        - oss-fuzz-project-name: >-
+            ${{
+              needs.build-context.outputs.run-ci-fuzz == 'true'
+              && 'no-exclude'
+              || 'cpython3'
+            }}
+        - oss-fuzz-project-name: >-
+            ${{
+              needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
+              && 'no-exclude'
+              || 'python3-libraries'
+            }}
+    uses: ./.github/workflows/reusable-cifuzz.yml
+    with:
+      oss-fuzz-project-name: ${{ matrix.oss-fuzz-project-name }}
+      sanitizer: ${{ matrix.sanitizer }}
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
@@ -685,6 +690,7 @@ jobs:
     - check-docs
     - check-autoconf-regen
     - check-generated-files
+    - check-c-api-docs
     - build-windows
     - build-windows-msi
     - build-macos
@@ -721,8 +727,19 @@ jobs:
             '
             || ''
           }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-tests)
+            && !fromJSON(needs.build-context.outputs.run-docs)
+            && 'check-c-api-docs,'
+            || ''
+          }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
-          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz) && 'cifuzz,' || '' }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
+            && !fromJSON(needs.build-context.outputs.run-ci-fuzz-stdlib)
+            && 'cifuzz,' ||
+            ''
+          }}
           ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
           ${{
             !fromJSON(needs.build-context.outputs.run-ubuntu)
