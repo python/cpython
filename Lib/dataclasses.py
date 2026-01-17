@@ -732,20 +732,29 @@ def _frozen_get_del_attr(cls, fields, func_builder):
     if fields:
         condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
 
-    func_builder.add_fn('__setattr__',
-                        ('self', 'name', 'value'),
-                        (f'  if {condition}:',
-                          '   raise FrozenInstanceError(f"cannot assign to field {name!r}")',
-                         f'  super(cls, self).__setattr__(name, value)'),
-                        locals=locals,
-                        overwrite_error=True)
-    func_builder.add_fn('__delattr__',
-                        ('self', 'name'),
-                        (f'  if {condition}:',
-                          '   raise FrozenInstanceError(f"cannot delete field {name!r}")',
-                         f'  super(cls, self).__delattr__(name)'),
-                        locals=locals,
-                        overwrite_error=True)
+    func_builder.add_fn(
+        '__setattr__',
+        ('self', 'name', 'value'),
+        (
+            f'  if {condition}:',
+            '   raise FrozenInstanceError(f"cannot assign to field {name!r}")',
+            '  object.__setattr__(self, name, value)',
+        ),
+        locals=locals,
+        overwrite_error=True,
+    )
+
+    func_builder.add_fn(
+        '__delattr__',
+        ('self', 'name'),
+        (
+            f'  if {condition}:',
+            '   raise FrozenInstanceError(f"cannot delete field {name!r}")',
+            '  object.__delattr__(self, name)',
+        ),
+        locals=locals,
+        overwrite_error=True,
+    )
 
 
 def _is_classvar(a_type, typing):
