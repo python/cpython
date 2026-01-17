@@ -5022,7 +5022,7 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
             PyErr_SetString(PyExc_OSError, "ancillary data item too large");
             goto finally;
         }
-        controllen+=space;
+        controllen += space;
         if (controllen > SOCKLEN_T_LIMIT || controllen < controllen_last) {
             PyErr_SetString(PyExc_OSError, "too much ancillary data");
             goto finally;
