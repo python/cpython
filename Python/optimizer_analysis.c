@@ -39,6 +39,7 @@
 #ifdef Py_DEBUG
     extern const char *_PyUOpName(int index);
     extern void _PyUOpPrint(const _PyUOpInstruction *uop);
+    extern void _PyUOpSymPrint(JitOptRef ref);
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
@@ -50,6 +51,38 @@
     }
     #define DPRINTF(level, ...) \
     if (get_lltrace() >= (level)) { printf(__VA_ARGS__); }
+
+
+
+static void
+dump_abstract_stack(_Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer)
+{
+    JitOptRef *stack_base = frame->stack;
+    JitOptRef *locals_base = frame->locals;
+    printf("    locals=[");
+    for (JitOptRef *ptr = locals_base; ptr < stack_base; ptr++) {
+        if (ptr != locals_base) {
+            printf(", ");
+        }
+        _PyUOpSymPrint(*ptr);
+    }
+    printf("]\n");
+    if (stack_pointer < stack_base) {
+        printf("    stack=%d\n", (int)(stack_pointer - stack_base));
+    }
+    else {
+        printf("    stack=[");
+        for (JitOptRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
+            if (ptr != stack_base) {
+                printf(", ");
+            }
+            _PyUOpSymPrint(*ptr);
+        }
+        printf("]\n");
+    }
+    fflush(stdout);
+}
+
 #else
     #define DPRINTF(level, ...)
 #endif
@@ -381,6 +414,9 @@ optimize_uops(
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
+            if (get_lltrace() >= 5 && !CURRENT_FRAME_IS_INIT_SHIM()) {
+                dump_abstract_stack(ctx->frame, stack_pointer);
+            }
             printf("%4d abs: ", (int)(this_instr - trace));
             _PyUOpPrint(this_instr);
             printf(" ");

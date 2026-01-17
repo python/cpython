@@ -68,6 +68,53 @@ static inline int get_lltrace(void) {
 }
 #define DPRINTF(level, ...) \
     if (get_lltrace() >= (level)) { printf(__VA_ARGS__); }
+
+void
+_PyUOpSymPrint(JitOptRef ref)
+{
+    if (PyJitRef_IsNull(ref)) {
+        printf("<JitRef NULL>");
+        return;
+    }
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    switch (sym->tag) {
+        case JIT_SYM_UNKNOWN_TAG:
+            printf("<UNKNOWN at %p>", (void *)sym);
+            break;
+        case JIT_SYM_NULL_TAG:
+            printf("<NULL at %p>", (void *)sym);
+            break;
+        case JIT_SYM_NON_NULL_TAG:
+            printf("<!NULL at %p>", (void *)sym);
+            break;
+        case JIT_SYM_BOTTOM_TAG:
+            printf("<BOTTOM at %p>", (void *)sym);
+            break;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            printf("<v%u at %p>", sym->version.version, (void *)sym);
+            break;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            printf("<%s at %p>", sym->cls.type->tp_name, (void *)sym);
+            break;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            printf("<%s val=%p at %p>", Py_TYPE(sym->value.value)->tp_name,
+                   (void *)sym->value.value, (void *)sym);
+            break;
+        case JIT_SYM_TUPLE_TAG:
+            printf("<tuple[%d] at %p>", sym->tuple.length, (void *)sym);
+            break;
+        case JIT_SYM_TRUTHINESS_TAG:
+            printf("<truthiness%s at %p>", sym->truthiness.invert ? "!" : "", (void *)sym);
+            break;
+        case JIT_SYM_COMPACT_INT:
+            printf("<compact_int at %p>", (void *)sym);
+            break;
+        default:
+            printf("<tag=%d at %p>", sym->tag, (void *)sym);
+            break;
+    }
+}
+
 #else
 #define DPRINTF(level, ...)
 #endif
