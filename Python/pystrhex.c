@@ -4,129 +4,86 @@
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 
-/* SIMD optimization for hexlify.
-   x86-64: SSE2 (always available, part of x86-64 baseline)
-   ARM64: NEON (always available on AArch64) */
-#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
-#  define PY_HEXLIFY_CAN_COMPILE_SSE2 1
-#  include <emmintrin.h>
+/* Portable SIMD optimization for hexlify using GCC/Clang vector extensions.
+   Uses __builtin_shufflevector for portable interleave that compiles to
+   native SIMD instructions (SSE2 punpcklbw/punpckhbw on x86-64,
+   NEON zip1/zip2 on ARM64).
+
+   Requirements:
+   - GCC 12+ or Clang 3.0+ (for __builtin_shufflevector)
+   - x86-64 or ARM64 architecture */
+#if (defined(__x86_64__) || defined(__aarch64__)) && \
+    (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 12))
+#  define PY_HEXLIFY_CAN_COMPILE_SIMD 1
 #else
-#  define PY_HEXLIFY_CAN_COMPILE_SSE2 0
+#  define PY_HEXLIFY_CAN_COMPILE_SIMD 0
 #endif
 
-#if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
-#  define PY_HEXLIFY_CAN_COMPILE_NEON 1
-#  include <arm_neon.h>
-#else
-#  define PY_HEXLIFY_CAN_COMPILE_NEON 0
-#endif
+#if PY_HEXLIFY_CAN_COMPILE_SIMD
 
-#if PY_HEXLIFY_CAN_COMPILE_SSE2
+/* 128-bit vector of 16 unsigned bytes */
+typedef unsigned char v16u8 __attribute__((vector_size(16)));
 
-/* SSE2-accelerated hexlify: converts 16 bytes to 32 hex chars per iteration.
-   SSE2 is always available on x86-64 (part of AMD64 baseline). */
-static void
-_Py_hexlify_sse2(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
+/* Splat a byte value across all 16 lanes */
+static inline v16u8
+v16u8_splat(unsigned char x)
 {
-    const __m128i mask_0f = _mm_set1_epi8(0x0f);
-    const __m128i ascii_0 = _mm_set1_epi8('0');
-    const __m128i offset = _mm_set1_epi8('a' - '0' - 10);  /* 0x27 */
-    const __m128i nine = _mm_set1_epi8(9);
+    return (v16u8){x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x};
+}
+
+/* Portable SIMD hexlify: converts 16 bytes to 32 hex chars per iteration.
+   Compiles to native SSE2 on x86-64, NEON on ARM64. */
+static void
+_Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
+{
+    const v16u8 mask_0f = v16u8_splat(0x0f);
+    const v16u8 ascii_0 = v16u8_splat('0');
+    const v16u8 offset = v16u8_splat('a' - '0' - 10);  /* 0x27 */
+    const v16u8 nine = v16u8_splat(9);
 
     Py_ssize_t i = 0;
 
     /* Process 16 bytes at a time */
     for (; i + 16 <= len; i += 16, dst += 32) {
-        /* Load 16 input bytes */
-        __m128i data = _mm_loadu_si128((const __m128i *)(src + i));
+        /* Load 16 bytes (memcpy for safe unaligned access) */
+        v16u8 data;
+        memcpy(&data, src + i, 16);
 
-        /* Extract high and low nibbles */
-        __m128i hi = _mm_and_si128(_mm_srli_epi16(data, 4), mask_0f);
-        __m128i lo = _mm_and_si128(data, mask_0f);
+        /* Extract high and low nibbles using vector operators */
+        v16u8 hi = (data >> 4) & mask_0f;
+        v16u8 lo = data & mask_0f;
 
-        /* Convert nibbles to hex: add '0', then add 0x27 where nibble > 9 */
-        __m128i hi_gt9 = _mm_cmpgt_epi8(hi, nine);
-        __m128i lo_gt9 = _mm_cmpgt_epi8(lo, nine);
+        /* Compare > 9 produces all-ones mask where true */
+        v16u8 hi_gt9 = hi > nine;
+        v16u8 lo_gt9 = lo > nine;
 
-        hi = _mm_add_epi8(hi, ascii_0);
-        lo = _mm_add_epi8(lo, ascii_0);
-        hi = _mm_add_epi8(hi, _mm_and_si128(hi_gt9, offset));
-        lo = _mm_add_epi8(lo, _mm_and_si128(lo_gt9, offset));
+        /* Convert nibbles to hex ASCII */
+        hi = hi + ascii_0 + (hi_gt9 & offset);
+        lo = lo + ascii_0 + (lo_gt9 & offset);
 
-        /* Interleave hi/lo nibbles to get correct output order */
-        __m128i result0 = _mm_unpacklo_epi8(hi, lo);  /* First 16 hex chars */
-        __m128i result1 = _mm_unpackhi_epi8(hi, lo);  /* Second 16 hex chars */
+        /* Interleave hi/lo nibbles using portable shufflevector.
+           This compiles to punpcklbw/punpckhbw on x86-64, zip1/zip2 on ARM64. */
+        v16u8 result0 = __builtin_shufflevector(hi, lo,
+            0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
+        v16u8 result1 = __builtin_shufflevector(hi, lo,
+            8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31);
 
         /* Store 32 hex characters */
-        _mm_storeu_si128((__m128i *)dst, result0);
-        _mm_storeu_si128((__m128i *)(dst + 16), result1);
+        memcpy(dst, &result0, 16);
+        memcpy(dst + 16, &result1, 16);
     }
 
     /* Scalar fallback for remaining 0-15 bytes */
     for (; i < len; i++, dst += 2) {
         unsigned int c = src[i];
-        unsigned int hi = c >> 4;
-        unsigned int lo = c & 0x0f;
-        dst[0] = (Py_UCS1)(hi + '0' + (hi > 9) * ('a' - '0' - 10));
-        dst[1] = (Py_UCS1)(lo + '0' + (lo > 9) * ('a' - '0' - 10));
+        unsigned int h = c >> 4;
+        unsigned int l = c & 0x0f;
+        dst[0] = (Py_UCS1)(h + '0' + (h > 9) * ('a' - '0' - 10));
+        dst[1] = (Py_UCS1)(l + '0' + (l > 9) * ('a' - '0' - 10));
     }
 }
 
-#endif /* PY_HEXLIFY_CAN_COMPILE_SSE2 */
-
-#if PY_HEXLIFY_CAN_COMPILE_NEON
-
-/* ARM NEON accelerated hexlify: converts 16 bytes to 32 hex chars per iteration.
-   NEON is always available on AArch64, no runtime detection needed. */
-static void
-_Py_hexlify_neon(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
-{
-    const uint8x16_t mask_0f = vdupq_n_u8(0x0f);
-    const uint8x16_t ascii_0 = vdupq_n_u8('0');
-    const uint8x16_t offset = vdupq_n_u8('a' - '0' - 10);  /* 0x27 */
-    const uint8x16_t nine = vdupq_n_u8(9);
-
-    Py_ssize_t i = 0;
-
-    /* Process 16 bytes at a time */
-    for (; i + 16 <= len; i += 16, dst += 32) {
-        /* Load 16 input bytes */
-        uint8x16_t data = vld1q_u8(src + i);
-
-        /* Extract high and low nibbles */
-        uint8x16_t hi = vandq_u8(vshrq_n_u8(data, 4), mask_0f);
-        uint8x16_t lo = vandq_u8(data, mask_0f);
-
-        /* Convert nibbles to hex: add '0', then add 0x27 where nibble > 9 */
-        uint8x16_t hi_gt9 = vcgtq_u8(hi, nine);
-        uint8x16_t lo_gt9 = vcgtq_u8(lo, nine);
-
-        hi = vaddq_u8(hi, ascii_0);
-        lo = vaddq_u8(lo, ascii_0);
-        hi = vaddq_u8(hi, vandq_u8(hi_gt9, offset));
-        lo = vaddq_u8(lo, vandq_u8(lo_gt9, offset));
-
-        /* Interleave hi/lo nibbles to get correct output order.
-           vzip1/vzip2 interleave the low/high halves respectively. */
-        uint8x16_t result0 = vzip1q_u8(hi, lo);  /* First 16 hex chars */
-        uint8x16_t result1 = vzip2q_u8(hi, lo);  /* Second 16 hex chars */
-
-        /* Store 32 hex characters */
-        vst1q_u8(dst, result0);
-        vst1q_u8(dst + 16, result1);
-    }
-
-    /* Scalar fallback for remaining 0-15 bytes */
-    for (; i < len; i++, dst += 2) {
-        unsigned int c = src[i];
-        unsigned int hi = c >> 4;
-        unsigned int lo = c & 0x0f;
-        dst[0] = (Py_UCS1)(hi + '0' + (hi > 9) * ('a' - '0' - 10));
-        dst[1] = (Py_UCS1)(lo + '0' + (lo > 9) * ('a' - '0' - 10));
-    }
-}
-
-#endif /* PY_HEXLIFY_CAN_COMPILE_NEON */
+#endif /* PY_HEXLIFY_CAN_COMPILE_SIMD */
 
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  PyObject* sep, int bytes_per_sep_group,
@@ -206,16 +163,10 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     unsigned char c;
 
     if (bytes_per_sep_group == 0) {
-#if PY_HEXLIFY_CAN_COMPILE_SSE2
-        /* Use SSE2 for inputs >= 16 bytes (always available on x86-64) */
+#if PY_HEXLIFY_CAN_COMPILE_SIMD
+        /* Use portable SIMD for inputs >= 16 bytes */
         if (arglen >= 16) {
-            _Py_hexlify_sse2((const unsigned char *)argbuf, retbuf, arglen);
-        }
-        else
-#elif PY_HEXLIFY_CAN_COMPILE_NEON
-        /* Use NEON for inputs >= 16 bytes (always available on AArch64) */
-        if (arglen >= 16) {
-            _Py_hexlify_neon((const unsigned char *)argbuf, retbuf, arglen);
+            _Py_hexlify_simd((const unsigned char *)argbuf, retbuf, arglen);
         }
         else
 #endif
