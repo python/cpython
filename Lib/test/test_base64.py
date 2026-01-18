@@ -331,6 +331,47 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(base64.urlsafe_b64decode(b'++//'), res)
         self.assertEqual(base64.urlsafe_b64decode(b'--__'), res)
 
+    def test_b64decode_ignorechars(self):
+        # gh-144001: Test ignorechars parameter
+        eq = self.assertEqual
+
+        # Basic functionality: ignore whitespace characters
+        eq(base64.b64decode(b'YWJj\n', ignorechars=b'\n'), b'abc')
+        eq(base64.b64decode(b'YWJj\r\n', ignorechars=b'\r\n'), b'abc')
+        eq(base64.b64decode(b'YWJj \t\n', ignorechars=b' \t\n'), b'abc')
+
+        # Multiple whitespace characters in data
+        eq(base64.b64decode(b'YW Jj\nYW I=', ignorechars=b' \n'), b'abcab')
+
+        # ignorechars=b'' should reject all non-base64 characters
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'YWJj\n', ignorechars=b'')
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'YWJj ', ignorechars=b'')
+
+        # Characters not in ignorechars should raise error
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'YWJj!', ignorechars=b'\n')
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'YWJj@', ignorechars=b' \t\n')
+
+        # ignorechars with custom characters
+        eq(base64.b64decode(b'YW|Jj', ignorechars=b'|'), b'abc')
+        eq(base64.b64decode(b'YW#Jj', ignorechars=b'#'), b'abc')
+
+        # Valid base64 with ignorechars=None (default) should work
+        eq(base64.b64decode(b'YWJj\n', ignorechars=None), b'abc')
+        eq(base64.b64decode(b'YWJj!', ignorechars=None), b'abc')
+
+        # Test with altchars and ignorechars together
+        eq(base64.b64decode(b'YW-j\n', altchars=b'-_', ignorechars=b'\n'), b'ao\xa3')
+
+        # Test string input
+        eq(base64.b64decode('YWJj\n', ignorechars=b'\n'), b'abc')
+
+        # Test that ignorechars accepts various bytes-like objects
+        eq(base64.b64decode(b'YWJj\n', ignorechars=bytearray(b'\n')), b'abc')
+
     def _altchars_strategy():
         """Generate 'altchars' for base64 encoding."""
         reserved_chars = (string.digits + string.ascii_letters + "=").encode()

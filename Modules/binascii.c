@@ -477,17 +477,24 @@ binascii.a2b_base64
     /
     *
     strict_mode: bool = False
+    ignorechars: object = None
 
 Decode a line of base64 data.
 
   strict_mode
     When set to True, bytes that are not part of the base64 standard are not allowed.
     The same applies to excess data after padding (= / ==).
+  ignorechars
+    A bytes-like object specifying characters to ignore during decoding.
+    When provided, only characters in this set will be silently ignored;
+    other non-base64 characters will cause an error. When None (the default),
+    all non-base64 characters are silently ignored (unless strict_mode is True).
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
-/*[clinic end generated code: output=5409557788d4f975 input=13c797187acc9c40]*/
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
+                         PyObject *ignorechars)
+/*[clinic end generated code: output=7d2b92b6f1de3ccc input=485946ff2e8960c6]*/
 {
     assert(data->len >= 0);
 
@@ -496,10 +503,30 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     binascii_state *state = NULL;
     char padding_started = 0;
 
+    /* Handle ignorechars parameter */
+    Py_buffer ignorechars_buf = {0};
+    int has_ignorechars = 0;
+    unsigned char ignorechars_table[256] = {0};  /* Lookup table for ignored chars */
+
+    if (ignorechars != Py_None) {
+        if (PyObject_GetBuffer(ignorechars, &ignorechars_buf, PyBUF_SIMPLE) < 0) {
+            return NULL;
+        }
+        has_ignorechars = 1;
+        /* Build lookup table for O(1) character checking */
+        const unsigned char *ic = (const unsigned char *)ignorechars_buf.buf;
+        for (Py_ssize_t j = 0; j < ignorechars_buf.len; j++) {
+            ignorechars_table[ic[j]] = 1;
+        }
+    }
+
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
+        if (has_ignorechars) {
+            PyBuffer_Release(&ignorechars_buf);
+        }
         return NULL;
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
@@ -517,8 +544,9 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     /* Fast path: use optimized decoder for complete quads.
      * This works for both strict and non-strict mode for valid input.
      * The fast path stops at padding, invalid chars, or incomplete groups.
+     * Skip fast path when ignorechars is provided, as we need to check each char.
      */
-    if (ascii_len >= 4) {
+    if (ascii_len >= 4 && !has_ignorechars) {
         Py_ssize_t fast_chars = base64_decode_fast(ascii_data, (Py_ssize_t)ascii_len,
                                                    bin_data, table_a2b_base64);
         if (fast_chars > 0) {
@@ -533,6 +561,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     int pads = 0;
     for (; i < ascii_len; i++) {
         unsigned char this_ch = ascii_data[i];
+        unsigned char orig_ch = this_ch;  /* Save original for ignorechars check */
 
         /* Check for pad sequences and ignore
         ** the invalid ones.
@@ -567,7 +596,20 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
 
         this_ch = table_a2b_base64[this_ch];
         if (this_ch >= 64) {
-            if (strict_mode) {
+            /* Non-base64 character found */
+            if (has_ignorechars) {
+                /* When ignorechars is provided, only skip if char is in the set */
+                if (ignorechars_table[orig_ch]) {
+                    continue;  /* Character is in ignorechars, skip it */
+                }
+                /* Character not in ignorechars, raise error */
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error, "Only base64 data is allowed");
+                }
+                goto error_end;
+            }
+            else if (strict_mode) {
                 state = get_binascii_state(module);
                 if (state) {
                     PyErr_SetString(state->Error, "Only base64 data is allowed");
@@ -634,9 +676,15 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     }
 
 done:
+    if (has_ignorechars) {
+        PyBuffer_Release(&ignorechars_buf);
+    }
     return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error_end:
+    if (has_ignorechars) {
+        PyBuffer_Release(&ignorechars_buf);
+    }
     PyBytesWriter_Discard(writer);
     return NULL;
 }

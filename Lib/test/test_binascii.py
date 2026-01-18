@@ -176,6 +176,45 @@ class BinASCIITest(unittest.TestCase):
         assertExcessPadding(b'abcd====', b'i\xb7\x1d')
         assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
 
+    def test_base64_ignorechars(self):
+        # gh-144001: Test ignorechars parameter for a2b_base64
+        a2b = binascii.a2b_base64
+        type2test = self.type2test
+
+        # Basic functionality: ignore specified characters
+        self.assertEqual(a2b(type2test(b'YWJj\n'), ignorechars=b'\n'), b'abc')
+        self.assertEqual(a2b(type2test(b'YWJj\r\n'), ignorechars=b'\r\n'), b'abc')
+        self.assertEqual(a2b(type2test(b'YWJj \t\n'), ignorechars=b' \t\n'), b'abc')
+
+        # Multiple ignored characters in data
+        self.assertEqual(a2b(type2test(b'YW Jj\nYW I='), ignorechars=b' \n'), b'abcab')
+
+        # ignorechars=b'' should reject all non-base64 characters
+        with self.assertRaisesRegex(binascii.Error, r'(?i)Only base64 data'):
+            a2b(type2test(b'YWJj\n'), ignorechars=b'')
+        with self.assertRaisesRegex(binascii.Error, r'(?i)Only base64 data'):
+            a2b(type2test(b'YWJj '), ignorechars=b'')
+
+        # Characters not in ignorechars should raise error
+        with self.assertRaisesRegex(binascii.Error, r'(?i)Only base64 data'):
+            a2b(type2test(b'YWJj!'), ignorechars=b'\n')
+        with self.assertRaisesRegex(binascii.Error, r'(?i)Only base64 data'):
+            a2b(type2test(b'YWJj@'), ignorechars=b' \t\n')
+
+        # ignorechars with custom characters
+        self.assertEqual(a2b(type2test(b'YW|Jj'), ignorechars=b'|'), b'abc')
+        self.assertEqual(a2b(type2test(b'YW#Jj'), ignorechars=b'#'), b'abc')
+
+        # ignorechars=None should use default behavior (ignore all non-base64)
+        self.assertEqual(a2b(type2test(b'YWJj\n'), ignorechars=None), b'abc')
+        self.assertEqual(a2b(type2test(b'YWJj!'), ignorechars=None), b'abc')
+
+        # Test interaction with strict_mode
+        # When both are used, ignorechars takes precedence for character filtering
+        self.assertEqual(a2b(type2test(b'YWJj\n'), ignorechars=b'\n', strict_mode=False), b'abc')
+
+        # Test that ignorechars accepts various bytes-like objects
+        self.assertEqual(a2b(type2test(b'YWJj\n'), ignorechars=bytearray(b'\n')), b'abc')
 
     def test_base64errors(self):
         # Test base64 with invalid padding

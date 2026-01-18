@@ -62,7 +62,7 @@ def b64encode(s, altchars=None, *, wrapcol=0):
     return encoded
 
 
-def b64decode(s, altchars=None, validate=False):
+def b64decode(s, altchars=None, validate=False, *, ignorechars=None):
     """Decode the Base64 encoded bytes-like object or ASCII string s.
 
     Optional altchars must be a bytes-like object or ASCII string of length 2
@@ -79,13 +79,18 @@ def b64decode(s, altchars=None, validate=False):
     For more information about the strict base64 check, see:
 
     https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
+
+    Optional ignorechars must be a bytes-like object specifying characters to
+    ignore during decoding. When provided, only characters in this set will be
+    silently ignored; other non-base64 characters will cause a binascii.Error.
+    When None (the default), the behavior is controlled by the validate parameter.
     """
     s = _bytes_from_decode_data(s)
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    return binascii.a2b_base64(s, strict_mode=validate)
+    return binascii.a2b_base64(s, strict_mode=validate, ignorechars=ignorechars)
 
 
 def standard_b64encode(s):
