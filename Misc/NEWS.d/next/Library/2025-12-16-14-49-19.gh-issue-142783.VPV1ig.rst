@@ -1,3 +1,0 @@
-:mod:`zoneinfo`: fix a use-after-free crash when instantiating
-:class:`~zoneinfo.ZoneInfo` objects with an invalid ``_weak_cache``
-descriptor.

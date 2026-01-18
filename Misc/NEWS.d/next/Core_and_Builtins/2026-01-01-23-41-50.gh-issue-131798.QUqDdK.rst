@@ -1,1 +1,0 @@
-The JIT optimizer now understands more generator instructions.

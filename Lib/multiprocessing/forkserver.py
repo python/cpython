@@ -152,6 +152,8 @@ class ForkServer(object):
                     main_kws['sys_path'] = data['sys_path']
                 if 'init_main_from_path' in data:
                     main_kws['main_path'] = data['init_main_from_path']
+                if 'sys_argv' in data:
+                    main_kws['sys_argv'] = data['sys_argv']
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -197,7 +199,7 @@ class ForkServer(object):
 #
 
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, authkey_r=None):
+         *, sys_argv=None, authkey_r=None):
     """Run forkserver."""
     if authkey_r is not None:
         try:
@@ -209,6 +211,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
         authkey = b''
 
     if preload:
+        if sys_argv is not None:
+            sys.argv[:] = sys_argv
         if sys_path is not None:
             sys.path[:] = sys_path
         if '__main__' in preload and main_path is not None:
