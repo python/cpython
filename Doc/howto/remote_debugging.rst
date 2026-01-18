@@ -320,6 +320,19 @@ Note that accessing another process's memory on Windows typically requires
 appropriate privileges - either administrative access or the ``SeDebugPrivilege``
 privilege granted to the debugging process.
 
+.. important::
+
+   The Python process being attached to must itself have permission to
+   read the injected script file. Running the debugging tool with elevated
+   privileges (for example, using ``sudo`` or Administrator) is not sufficient
+   if the target process cannot access the file path provided to
+   ``sys.remote_exec()``.
+
+   In practice, this means the injected ``.py`` file must be readable by the
+   user account under which the target Python process is running.
+   Otherwise, the target process may raise ``PermissionError``.
+
+
 
 Reading _Py_DebugOffsets
 ========================
