@@ -1258,37 +1258,30 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
         return -1;
     }
     Py_XSETREF(stginfo->proto, Py_NewRef(proto));
+
+    // Set the format string for the pointer type based on element type.
+    // If info->format is NULL, this is a pointer to an incomplete type.
+    // We create a generic format string 'pointer to bytes' in this case.
+    char *new_format = NULL;
     STGINFO_LOCK(info);
     if (info->pointer_type == NULL) {
         Py_XSETREF(info->pointer_type, Py_NewRef(self));
     }
-    STGINFO_UNLOCK();
-    return 0;
-}
-
-// Set the format string for a pointer type based on its element type.
-static int
-PyCPointerType_SetFormat(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
-{
-    StgInfo *iteminfo;
-    if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
-        return -1;
-    }
-    assert(iteminfo);  // PyCPointerType_SetProto already verified this
-
-    const char *current_format = iteminfo->format ? iteminfo->format : "B";
-    char *new_format;
-    if (iteminfo->shape != NULL) {
+    const char *current_format = info->format ? info->format : "B";
+    if (info->shape != NULL) {
+        // pointer to an array: the shape needs to be prefixed
         new_format = _ctypes_alloc_format_string_with_shape(
-            iteminfo->ndim, iteminfo->shape, "&", current_format);
+            info->ndim, info->shape, "&", current_format);
     } else {
         new_format = _ctypes_alloc_format_string("&", current_format);
     }
+    PyMem_Free(stginfo->format);
+    stginfo->format = new_format;
+    STGINFO_UNLOCK();
+
     if (new_format == NULL) {
         return -1;
     }
-    PyMem_Free(stginfo->format);
-    stginfo->format = new_format;
     return 0;
 }
 
@@ -1344,10 +1337,6 @@ PyCPointerType_init(PyObject *self, PyObject *args, PyObject *kwds)
             Py_DECREF(proto);
             return -1;
         }
-        if (PyCPointerType_SetFormat(st, stginfo, proto) < 0) {
-            Py_DECREF(proto);
-            return -1;
-        }
         Py_DECREF(proto);
     }
 
@@ -1380,9 +1369,6 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
     }
 
     if (PyCPointerType_SetProto(st, (PyObject *)self, info, type) < 0) {
-        return NULL;
-    }
-    if (PyCPointerType_SetFormat(st, info, type) < 0) {
         return NULL;
     }
     if (PyObject_SetAttr((PyObject *)self, &_Py_ID(_type_), type) < 0) {
