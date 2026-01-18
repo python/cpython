@@ -19,12 +19,13 @@ _Py_hexlify_scalar(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
 /* Portable SIMD optimization for hexlify using GCC/Clang vector extensions.
    Uses __builtin_shufflevector for portable interleave that compiles to
    native SIMD instructions (SSE2 punpcklbw/punpckhbw on x86-64,
-   NEON zip1/zip2 on ARM64).
+   NEON zip1/zip2 on ARM64, vzip on ARM32).
 
    Requirements:
    - GCC 12+ or Clang 3.0+ (for __builtin_shufflevector)
-   - x86-64 or ARM64 architecture */
-#if (defined(__x86_64__) || defined(__aarch64__)) && \
+   - x86-64, ARM64, or ARM32 with NEON */
+#if (defined(__x86_64__) || defined(__aarch64__) || \
+     (defined(__arm__) && defined(__ARM_NEON))) && \
     (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 12))
 #  define PY_HEXLIFY_CAN_COMPILE_SIMD 1
 #else
