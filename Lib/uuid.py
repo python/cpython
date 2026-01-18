@@ -323,7 +323,7 @@ class UUID:
         return self.int
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, str(self))
+        return f'{self.__class__.__name__}({str(self)!r})'
 
     def __setattr__(self, name, value):
         raise TypeError('UUID objects are immutable')
@@ -611,7 +611,7 @@ def _arp_getnode():
         return mac
 
     # This works on Linux, FreeBSD and NetBSD
-    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
+    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode(f'({ip_addr})')],
                     lambda i: i+2)
     # Return None instead of 0.
     if mac:
@@ -718,7 +718,7 @@ def getnode():
             continue
         if (_node is not None) and (0 <= _node < (1 << 48)):
             return _node
-    assert False, '_random_getnode() returned invalid value: {}'.format(_node)
+    assert False, f'_random_getnode() returned invalid value: {_node}'
 
 
 _last_timestamp = None
