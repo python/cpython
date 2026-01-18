@@ -494,7 +494,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertIs(f, f2)
         self.assertIsNone(sys._getframemodulename(i))
 
-    # sys._current_frames() is a CPython-only gimmick.
+    @support.cpython_only  # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_current_frames(self):
