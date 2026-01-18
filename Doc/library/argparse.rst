@@ -1909,9 +1909,7 @@ Subcommands
    help message (for example, ``PROG --help``).
 
    The *aliases* argument allows providing alternative names for this
-   sub-command.
-
-   For example::
+   sub-command. For example::
 
       >>> parser = argparse.ArgumentParser()
       >>> subparsers = parser.add_subparsers()
