@@ -68,6 +68,55 @@ _Py_hexlify_get_simd_level(void)
     return _Py_hexlify_simd_level;
 }
 
+/* SSE2-accelerated hexlify: converts 16 bytes to 32 hex chars per iteration.
+   SSE2 is always available on x86-64 (part of AMD64 baseline). */
+static void
+_Py_hexlify_sse2(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
+{
+    const __m128i mask_0f = _mm_set1_epi8(0x0f);
+    const __m128i ascii_0 = _mm_set1_epi8('0');
+    const __m128i offset = _mm_set1_epi8('a' - '0' - 10);  /* 0x27 */
+    const __m128i nine = _mm_set1_epi8(9);
+
+    Py_ssize_t i = 0;
+
+    /* Process 16 bytes at a time */
+    for (; i + 16 <= len; i += 16, dst += 32) {
+        /* Load 16 input bytes */
+        __m128i data = _mm_loadu_si128((const __m128i *)(src + i));
+
+        /* Extract high and low nibbles */
+        __m128i hi = _mm_and_si128(_mm_srli_epi16(data, 4), mask_0f);
+        __m128i lo = _mm_and_si128(data, mask_0f);
+
+        /* Convert nibbles to hex: add '0', then add 0x27 where nibble > 9 */
+        __m128i hi_gt9 = _mm_cmpgt_epi8(hi, nine);
+        __m128i lo_gt9 = _mm_cmpgt_epi8(lo, nine);
+
+        hi = _mm_add_epi8(hi, ascii_0);
+        lo = _mm_add_epi8(lo, ascii_0);
+        hi = _mm_add_epi8(hi, _mm_and_si128(hi_gt9, offset));
+        lo = _mm_add_epi8(lo, _mm_and_si128(lo_gt9, offset));
+
+        /* Interleave hi/lo nibbles to get correct output order */
+        __m128i result0 = _mm_unpacklo_epi8(hi, lo);  /* First 16 hex chars */
+        __m128i result1 = _mm_unpackhi_epi8(hi, lo);  /* Second 16 hex chars */
+
+        /* Store 32 hex characters */
+        _mm_storeu_si128((__m128i *)dst, result0);
+        _mm_storeu_si128((__m128i *)(dst + 16), result1);
+    }
+
+    /* Scalar fallback for remaining 0-15 bytes */
+    for (; i < len; i++, dst += 2) {
+        unsigned int c = src[i];
+        unsigned int hi = c >> 4;
+        unsigned int lo = c & 0x0f;
+        dst[0] = (Py_UCS1)(hi + '0' + (hi > 9) * ('a' - '0' - 10));
+        dst[1] = (Py_UCS1)(lo + '0' + (lo > 9) * ('a' - '0' - 10));
+    }
+}
+
 /* AVX2-accelerated hexlify: converts 32 bytes to 64 hex chars per iteration.
    Uses arithmetic nibble-to-hex conversion instead of table lookup. */
 __attribute__((target("avx2")))
@@ -367,12 +416,16 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     if (bytes_per_sep_group == 0) {
 #if PY_HEXLIFY_CAN_COMPILE_X86_SIMD
         int simd_level = _Py_hexlify_get_simd_level();
-        /* Use AVX-512 for inputs >= 64 bytes, AVX2 for >= 32 bytes */
+        /* Use AVX-512 for inputs >= 64 bytes, AVX2 for >= 32 bytes,
+           SSE2 for >= 16 bytes (SSE2 always available on x86-64) */
         if (arglen >= 64 && simd_level >= PY_HEXLIFY_SIMD_AVX512) {
             _Py_hexlify_avx512((const unsigned char *)argbuf, retbuf, arglen);
         }
         else if (arglen >= 32 && simd_level >= PY_HEXLIFY_SIMD_AVX2) {
             _Py_hexlify_avx2((const unsigned char *)argbuf, retbuf, arglen);
+        }
+        else if (arglen >= 16) {
+            _Py_hexlify_sse2((const unsigned char *)argbuf, retbuf, arglen);
         }
         else
 #elif PY_HEXLIFY_CAN_COMPILE_NEON
