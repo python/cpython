@@ -4,6 +4,18 @@
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 
+/* Scalar hexlify: convert len bytes to 2*len hex characters.
+   Uses table lookup via Py_hexdigits for the conversion. */
+static inline void
+_Py_hexlify_scalar(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
+{
+    for (Py_ssize_t i = 0; i < len; i++) {
+        unsigned char c = src[i];
+        *dst++ = Py_hexdigits[c >> 4];
+        *dst++ = Py_hexdigits[c & 0x0f];
+    }
+}
+
 /* Portable SIMD optimization for hexlify using GCC/Clang vector extensions.
    Uses __builtin_shufflevector for portable interleave that compiles to
    native SIMD instructions (SSE2 punpcklbw/punpckhbw on x86-64,
@@ -87,13 +99,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     }
 
     /* Scalar fallback for remaining 0-15 bytes */
-    for (; i < len; i++, dst += 2) {
-        unsigned int c = src[i];
-        unsigned int h = c >> 4;
-        unsigned int l = c & 0x0f;
-        dst[0] = (Py_UCS1)(h + '0' + (h > 9) * ('a' - '0' - 10));
-        dst[1] = (Py_UCS1)(l + '0' + (l > 9) * ('a' - '0' - 10));
-    }
+    _Py_hexlify_scalar(src + i, dst, len - i);
 }
 
 #endif /* PY_HEXLIFY_CAN_COMPILE_SIMD */
@@ -184,11 +190,7 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
         else
 #endif
         {
-            for (i = j = 0; i < arglen; ++i) {
-                c = argbuf[i];
-                retbuf[j++] = Py_hexdigits[c >> 4];
-                retbuf[j++] = Py_hexdigits[c & 0x0f];
-            }
+            _Py_hexlify_scalar((const unsigned char *)argbuf, retbuf, arglen);
         }
     }
     else {
