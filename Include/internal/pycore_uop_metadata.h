@@ -2919,7 +2919,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 3, 2, _BINARY_OP_r23 },
+            { 1, 2, _BINARY_OP_r21 },
             { -1, -1, -1 },
         },
     },
@@ -3929,7 +3929,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_COPY_3_r23] = _COPY_3,
     [_COPY_3_r33] = _COPY_3,
     [_COPY_r01] = _COPY,
-    [_BINARY_OP_r23] = _BINARY_OP,
+    [_BINARY_OP_r21] = _BINARY_OP,
     [_SWAP_2_r02] = _SWAP_2,
     [_SWAP_2_r12] = _SWAP_2,
     [_SWAP_2_r22] = _SWAP_2,
@@ -4083,7 +4083,7 @@ const uint16_t _PyUop_SpillsAndReloads[4][4] = {
 
 const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP] = "_BINARY_OP",
-    [_BINARY_OP_r23] = "_BINARY_OP_r23",
+    [_BINARY_OP_r21] = "_BINARY_OP_r21",
     [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
     [_BINARY_OP_ADD_FLOAT_r03] = "_BINARY_OP_ADD_FLOAT_r03",
     [_BINARY_OP_ADD_FLOAT_r13] = "_BINARY_OP_ADD_FLOAT_r13",
