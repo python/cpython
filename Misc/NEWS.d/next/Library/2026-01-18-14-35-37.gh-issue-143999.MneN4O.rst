@@ -1,0 +1,1 @@
+Fix an issue where ``inspect.getgeneratorstate()`` and ``inspect.getcoroutinestate()`` could fail for generators wrapped by ``types.coroutine`` in the suspended state.
