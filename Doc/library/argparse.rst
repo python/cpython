@@ -1905,8 +1905,6 @@ Subcommands
    The *name* argument is the name of the sub-command.
 
    The *help* argument provides a short description for this sub-command.
-   If provided, it will be listed next to the command in the main parser’s
-   help message (for example, ``PROG --help``).
 
    The *aliases* argument allows providing alternative names for this
    sub-command. For example::
