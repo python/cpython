@@ -1917,9 +1917,7 @@ Subcommands
       Namespace(foo='bar')
 
    The *deprecated* argument, if ``True``, marks the sub-command as
-   deprecated and will issue a warning when used.
-
-   For example::
+   deprecated and will issue a warning when used. For example::
 
       >>> parser = argparse.ArgumentParser(prog='chicken.py')
       >>> subparsers = parser.add_subparsers()
