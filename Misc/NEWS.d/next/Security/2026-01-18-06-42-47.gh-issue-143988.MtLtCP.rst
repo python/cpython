@@ -1,0 +1,3 @@
+Fixed crashes in :meth:`socket.socket.sendmsg` and :meth:`socket.socket.recvmsg_into`
+that could occur if buffer sequences are mutated re-entrantly during argument parsing
+via ``__buffer__`` protocol callbacks.

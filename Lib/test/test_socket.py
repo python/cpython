@@ -7491,6 +7491,78 @@ class FreeThreadingTests(unittest.TestCase):
             pass
 
 
+class ReentrantMutationTests(unittest.TestCase):
+    """Regression tests for re-entrant mutation vulnerabilities in sendmsg/recvmsg_into.
+
+    These tests verify that mutating sequences during argument parsing
+    via __buffer__ protocol does not cause crashes.
+
+    See: https://github.com/python/cpython/issues/143988
+    """
+
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
+                         "sendmsg not supported")
+    def test_sendmsg_reentrant_data_mutation(self):
+        # Test that sendmsg() handles re-entrant mutation of data buffers
+        # via __buffer__ protocol.
+        # See: https://github.com/python/cpython/issues/143988
+        seq = []
+
+        class MutBuffer:
+            def __init__(self):
+                self.tripped = False
+
+            def __buffer__(self, flags):
+                if not self.tripped:
+                    self.tripped = True
+                    seq.clear()
+                return memoryview(b'Hello')
+
+        seq = [MutBuffer(), b'World', b'Test']
+
+        left, right = socket.socketpair()
+        self.addCleanup(left.close)
+        self.addCleanup(right.close)
+        # Should not crash. With the fix, the call succeeds;
+        # without the fix, it would crash (SIGSEGV).
+        try:
+            left.sendmsg(seq)
+        except (TypeError, OSError):
+            pass  # Also acceptable
+
+    @unittest.skipUnless(hasattr(socket.socket, "recvmsg_into"),
+                         "recvmsg_into not supported")
+    def test_recvmsg_into_reentrant_buffer_mutation(self):
+        # Test that recvmsg_into() handles re-entrant mutation of buffers
+        # via __buffer__ protocol.
+        # See: https://github.com/python/cpython/issues/143988
+        seq = []
+
+        class MutBuffer:
+            def __init__(self, data):
+                self._data = bytearray(data)
+                self.tripped = False
+
+            def __buffer__(self, flags):
+                if not self.tripped:
+                    self.tripped = True
+                    seq.clear()
+                return memoryview(self._data)
+
+        seq = [MutBuffer(b'x' * 100), bytearray(100), bytearray(100)]
+
+        left, right = socket.socketpair()
+        self.addCleanup(left.close)
+        self.addCleanup(right.close)
+        left.send(b'Hello World!')
+        # Should not crash. With the fix, the call succeeds;
+        # without the fix, it would crash (SIGSEGV).
+        try:
+            right.recvmsg_into(seq)
+        except (TypeError, OSError):
+            pass  # Also acceptable
+
+
 def setUpModule():
     thread_info = threading_helper.threading_setup()
     unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
