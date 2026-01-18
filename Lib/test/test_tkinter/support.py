@@ -1,5 +1,14 @@
 import functools
 import tkinter
+import unittest
+from test import support
+
+
+def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
 
 class AbstractTkTest:
 
@@ -10,6 +19,8 @@ class AbstractTkTest:
         tkinter.NoDefaultRoot()
         cls.root = tkinter.Tk()
         cls.wantobjects = cls.root.wantobjects()
+        if support.is_resource_enabled('wantobjects'):
+            assert cls.wantobjects == int(support.get_resource_value('wantobjects'))
         # De-maximize main window.
         # Some window managers can maximize new windows.
         cls.root.wm_state('normal')
