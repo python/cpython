@@ -2748,13 +2748,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        for uop in uops:
-            print(uop)
-        return
-
-        self.assertIn("_LOAD_ATTR_MODULE", uops)
-        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 3)
-        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertIn(("_LOAD_ATTR_MODULE", "_POP_TOP_NOP"), itertools.pairwise(uops))
 
     def test_load_attr_with_hint(self):
         def testfunc(n):
