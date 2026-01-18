@@ -1,2 +1,0 @@
-Speed up :meth:`int.from_bytes` when passed object supports :ref:`buffer
-protocol <bufferobjects>`, like :class:`bytearray` by ~1.2x.

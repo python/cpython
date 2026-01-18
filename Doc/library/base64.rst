@@ -68,7 +68,7 @@ POST request.
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *wrapcol* parameter.
 
 
@@ -285,7 +285,7 @@ Refer to the documentation of the individual functions for more information.
 
    .. versionadded:: 3.13
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The *pad* parameter was added.
 
 

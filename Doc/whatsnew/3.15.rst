@@ -811,6 +811,16 @@ unicodedata
   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
   (Contributed by Stan Ulbrych in :gh:`129117`.)
 
+* Add the :func:`~unicodedata.iter_graphemes`
+  function to iterate over grapheme clusters according to rules defined in
+  `Unicode Standard Annex #29, "Unicode Text Segmentation"
+  <https://www.unicode.org/reports/tr29/>`_.
+  Add :func:`~unicodedata.grapheme_cluster_break`,
+  :func:`~unicodedata.indic_conjunct_break` and
+  :func:`~unicodedata.extended_pictographic` functions to get the properties
+  of the character which are related to the above algorithm.
+  (Contributed by Serhiy Storchaka and Guillaume Sanchez in :gh:`74902`.)
+
 
 unittest
 --------
@@ -1251,7 +1261,7 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
-* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+* Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
 
