@@ -5,16 +5,24 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 
 /* SIMD optimization for hexlify.
-   Only available on x86-64 with GCC/Clang. */
+   x86-64: AVX2/AVX-512 with runtime detection
+   ARM64: NEON (always available on AArch64) */
 #if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
-#  define PY_HEXLIFY_CAN_COMPILE_SIMD 1
+#  define PY_HEXLIFY_CAN_COMPILE_X86_SIMD 1
 #  include <cpuid.h>
 #  include <immintrin.h>
 #else
-#  define PY_HEXLIFY_CAN_COMPILE_SIMD 0
+#  define PY_HEXLIFY_CAN_COMPILE_X86_SIMD 0
 #endif
 
-#if PY_HEXLIFY_CAN_COMPILE_SIMD
+#if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
+#  define PY_HEXLIFY_CAN_COMPILE_NEON 1
+#  include <arm_neon.h>
+#else
+#  define PY_HEXLIFY_CAN_COMPILE_NEON 0
+#endif
+
+#if PY_HEXLIFY_CAN_COMPILE_X86_SIMD
 
 /* Runtime CPU feature detection (lazy initialization)
    -1 = not checked, 0 = no SIMD, 1 = AVX2, 2 = AVX-512 */
@@ -223,7 +231,61 @@ _Py_hexlify_avx512(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     }
 }
 
-#endif /* PY_HEXLIFY_CAN_COMPILE_SIMD */
+#endif /* PY_HEXLIFY_CAN_COMPILE_X86_SIMD */
+
+#if PY_HEXLIFY_CAN_COMPILE_NEON
+
+/* ARM NEON accelerated hexlify: converts 16 bytes to 32 hex chars per iteration.
+   NEON is always available on AArch64, no runtime detection needed. */
+static void
+_Py_hexlify_neon(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
+{
+    const uint8x16_t mask_0f = vdupq_n_u8(0x0f);
+    const uint8x16_t ascii_0 = vdupq_n_u8('0');
+    const uint8x16_t offset = vdupq_n_u8('a' - '0' - 10);  /* 0x27 */
+    const uint8x16_t nine = vdupq_n_u8(9);
+
+    Py_ssize_t i = 0;
+
+    /* Process 16 bytes at a time */
+    for (; i + 16 <= len; i += 16, dst += 32) {
+        /* Load 16 input bytes */
+        uint8x16_t data = vld1q_u8(src + i);
+
+        /* Extract high and low nibbles */
+        uint8x16_t hi = vandq_u8(vshrq_n_u8(data, 4), mask_0f);
+        uint8x16_t lo = vandq_u8(data, mask_0f);
+
+        /* Convert nibbles to hex: add '0', then add 0x27 where nibble > 9 */
+        uint8x16_t hi_gt9 = vcgtq_u8(hi, nine);
+        uint8x16_t lo_gt9 = vcgtq_u8(lo, nine);
+
+        hi = vaddq_u8(hi, ascii_0);
+        lo = vaddq_u8(lo, ascii_0);
+        hi = vaddq_u8(hi, vandq_u8(hi_gt9, offset));
+        lo = vaddq_u8(lo, vandq_u8(lo_gt9, offset));
+
+        /* Interleave hi/lo nibbles to get correct output order.
+           vzip1/vzip2 interleave the low/high halves respectively. */
+        uint8x16_t result0 = vzip1q_u8(hi, lo);  /* First 16 hex chars */
+        uint8x16_t result1 = vzip2q_u8(hi, lo);  /* Second 16 hex chars */
+
+        /* Store 32 hex characters */
+        vst1q_u8(dst, result0);
+        vst1q_u8(dst + 16, result1);
+    }
+
+    /* Scalar fallback for remaining 0-15 bytes */
+    for (; i < len; i++, dst += 2) {
+        unsigned int c = src[i];
+        unsigned int hi = c >> 4;
+        unsigned int lo = c & 0x0f;
+        dst[0] = (Py_UCS1)(hi + '0' + (hi > 9) * ('a' - '0' - 10));
+        dst[1] = (Py_UCS1)(lo + '0' + (lo > 9) * ('a' - '0' - 10));
+    }
+}
+
+#endif /* PY_HEXLIFY_CAN_COMPILE_NEON */
 
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  PyObject* sep, int bytes_per_sep_group,
@@ -303,7 +365,7 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     unsigned char c;
 
     if (bytes_per_sep_group == 0) {
-#if PY_HEXLIFY_CAN_COMPILE_SIMD
+#if PY_HEXLIFY_CAN_COMPILE_X86_SIMD
         int simd_level = _Py_hexlify_get_simd_level();
         /* Use AVX-512 for inputs >= 64 bytes, AVX2 for >= 32 bytes */
         if (arglen >= 64 && simd_level >= PY_HEXLIFY_SIMD_AVX512) {
@@ -311,6 +373,12 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
         }
         else if (arglen >= 32 && simd_level >= PY_HEXLIFY_SIMD_AVX2) {
             _Py_hexlify_avx2((const unsigned char *)argbuf, retbuf, arglen);
+        }
+        else
+#elif PY_HEXLIFY_CAN_COMPILE_NEON
+        /* Use NEON for inputs >= 16 bytes (always available on AArch64) */
+        if (arglen >= 16) {
+            _Py_hexlify_neon((const unsigned char *)argbuf, retbuf, arglen);
         }
         else
 #endif
