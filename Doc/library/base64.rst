@@ -51,7 +51,7 @@ The :rfc:`4648` encodings are suitable for encoding binary data so that it can b
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.
 
-.. function:: b64encode(s, altchars=None)
+.. function:: b64encode(s, altchars=None, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base64 and return the encoded
    :class:`bytes`.
@@ -61,8 +61,15 @@ POST request.
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
+
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
+
+   .. versionchanged:: 3.15
+      Added the *wrapcol* parameter.
 
 
 .. function:: b64decode(s, altchars=None, validate=True)
@@ -229,9 +236,9 @@ Refer to the documentation of the individual functions for more information.
    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
    feature is not supported by the "standard" Ascii85 encoding.
 
-   *wrapcol* controls whether the output should have newline (``b'\n'``)
-   characters added to it. If this is non-zero, each output line will be
-   at most this many characters long, excluding the trailing newline.
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
 
    *pad* controls whether the input is padded to a multiple of 4
    before encoding. Note that the ``btoa`` implementation always pads.
@@ -282,13 +289,19 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.4
 
 
-.. function:: z85encode(s)
+.. function:: z85encode(s, pad=False)
 
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
    and return the encoded :class:`bytes`.  See `Z85  specification
    <https://rfc.zeromq.org/spec/32/>`_ for more information.
 
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.15
+      The *pad* parameter was added.
 
 
 .. function:: z85decode(s)

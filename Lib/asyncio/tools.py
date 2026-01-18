@@ -1,6 +1,6 @@
 """Tools to analyze tasks running in asyncio programs."""
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from itertools import count
 from enum import Enum
 import sys
@@ -27,10 +27,10 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: str|FrameInfo) -> str:
     if not isinstance(elem, str):
-        if elem.lineno == 0 and elem.filename == "":
+        if elem.location.lineno == 0 and elem.filename == "":
             return f"{elem.funcname}"
         else:
-            return f"{elem.funcname} {elem.filename}:{elem.lineno}"
+            return f"{elem.funcname} {elem.filename}:{elem.location.lineno}"
     return elem
 
 
@@ -244,7 +244,7 @@ def _get_awaited_by_tasks(pid: int) -> list:
             e = e.__context__
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
-    except PermissionError as e:
+    except PermissionError:
         exit_with_permission_help_text()
 
 

@@ -228,6 +228,10 @@
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
 
+/* Define to 1 if you have the declaration of 'PR_SET_VMA_ANON_NAME', and to 0
+   if you don't. */
+#undef HAVE_DECL_PR_SET_VMA_ANON_NAME
+
 /* Define to 1 if you have the declaration of 'RTLD_DEEPBIND', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_DEEPBIND
@@ -975,6 +979,9 @@
    function. */
 #undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
 
+/* Define to 1 if you have the 'ppoll' function. */
+#undef HAVE_PPOLL
+
 /* Define to 1 if you have the 'pread' function. */
 #undef HAVE_PREAD
 
@@ -995,6 +1002,9 @@
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
+
+/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
+#undef HAVE_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if you have the 'pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
