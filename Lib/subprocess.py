@@ -2068,6 +2068,7 @@ class Popen:
                 pidfd = os.pidfd_open(self.pid, 0)
             except OSError:
                 return False
+
             try:
                 poller = select.poll()
                 poller.register(pidfd, select.POLLIN)
@@ -2082,14 +2083,10 @@ class Popen:
             """Wait for PID to terminate using kqueue(). macOS and BSD only."""
             if not _can_use_kqueue():
                 return False
-
             try:
                 kq = select.kqueue()
             except OSError as err:
-                # too many open files
-                if err.errno in {errno.EMFILE, errno.ENFILE}:
-                    return False
-                raise
+                return False
 
             try:
                 kev = select.kevent(
@@ -2101,13 +2098,10 @@ class Popen:
                 try:
                     events = kq.control([kev], 1, timeout)  # wait
                 except OSError as err:
-                    if err.errno in {errno.EACCES, errno.EPERM, errno.ESRCH}:
-                        return False
-                    raise
-                else:
-                    if not events:
-                        raise TimeoutExpired(timeout)
-                    return True
+                    return False
+                if not events:
+                    raise TimeoutExpired(timeout)
+                return True
             finally:
                 kq.close()
 
