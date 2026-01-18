@@ -4,6 +4,100 @@
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "pycore_unicodeobject.h" // _PyUnicode_CheckConsistency()
 
+/* AVX2 SIMD optimization for hexlify.
+   Only available on x86-64 with GCC/Clang. */
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+#  define PY_HEXLIFY_CAN_COMPILE_AVX2 1
+#  include <cpuid.h>
+#  include <immintrin.h>
+#else
+#  define PY_HEXLIFY_CAN_COMPILE_AVX2 0
+#endif
+
+#if PY_HEXLIFY_CAN_COMPILE_AVX2
+
+/* Runtime CPU feature detection (lazy initialization) */
+static int _Py_hexlify_avx2_available = -1;  /* -1 = not checked yet */
+
+static void
+_Py_hexlify_detect_cpu_features(void)
+{
+    unsigned int eax, ebx, ecx, edx;
+
+    /* Check for AVX2 support: CPUID.7H:EBX bit 5 */
+    if (__get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx)) {
+        _Py_hexlify_avx2_available = (ebx & (1 << 5)) != 0;
+    } else {
+        _Py_hexlify_avx2_available = 0;
+    }
+}
+
+static inline int
+_Py_hexlify_can_use_avx2(void)
+{
+    if (_Py_hexlify_avx2_available < 0) {
+        _Py_hexlify_detect_cpu_features();
+    }
+    return _Py_hexlify_avx2_available;
+}
+
+/* AVX2-accelerated hexlify: converts 32 bytes to 64 hex chars per iteration.
+   Uses arithmetic nibble-to-hex conversion instead of table lookup. */
+__attribute__((target("avx2")))
+static void
+_Py_hexlify_avx2(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
+{
+    const __m256i mask_0f = _mm256_set1_epi8(0x0f);
+    const __m256i ascii_0 = _mm256_set1_epi8('0');
+    const __m256i offset = _mm256_set1_epi8('a' - '0' - 10);  /* 0x27 */
+    const __m256i nine = _mm256_set1_epi8(9);
+
+    Py_ssize_t i = 0;
+
+    /* Process 32 bytes at a time */
+    for (; i + 32 <= len; i += 32, dst += 64) {
+        /* Load 32 input bytes */
+        __m256i data = _mm256_loadu_si256((const __m256i *)(src + i));
+
+        /* Extract high and low nibbles */
+        __m256i hi = _mm256_and_si256(_mm256_srli_epi16(data, 4), mask_0f);
+        __m256i lo = _mm256_and_si256(data, mask_0f);
+
+        /* Convert nibbles to hex: add '0', then add 0x27 where nibble > 9 */
+        __m256i hi_gt9 = _mm256_cmpgt_epi8(hi, nine);
+        __m256i lo_gt9 = _mm256_cmpgt_epi8(lo, nine);
+
+        hi = _mm256_add_epi8(hi, ascii_0);
+        lo = _mm256_add_epi8(lo, ascii_0);
+        hi = _mm256_add_epi8(hi, _mm256_and_si256(hi_gt9, offset));
+        lo = _mm256_add_epi8(lo, _mm256_and_si256(lo_gt9, offset));
+
+        /* Interleave hi/lo nibbles to get correct output order.
+           unpacklo/hi work within 128-bit lanes, so we need permute to fix. */
+        __m256i mixed_lo = _mm256_unpacklo_epi8(hi, lo);
+        __m256i mixed_hi = _mm256_unpackhi_epi8(hi, lo);
+
+        /* Fix cross-lane ordering */
+        __m256i result0 = _mm256_permute2x128_si256(mixed_lo, mixed_hi, 0x20);
+        __m256i result1 = _mm256_permute2x128_si256(mixed_lo, mixed_hi, 0x31);
+
+        /* Store 64 hex characters */
+        _mm256_storeu_si256((__m256i *)dst, result0);
+        _mm256_storeu_si256((__m256i *)(dst + 32), result1);
+    }
+
+    /* Scalar fallback for remaining 0-31 bytes */
+    for (; i < len; i++, dst += 2) {
+        unsigned int c = src[i];
+        unsigned int hi = c >> 4;
+        unsigned int lo = c & 0x0f;
+        dst[0] = (Py_UCS1)(hi + '0' + (hi > 9) * ('a' - '0' - 10));
+        dst[1] = (Py_UCS1)(lo + '0' + (lo > 9) * ('a' - '0' - 10));
+    }
+}
+
+#endif /* PY_HEXLIFY_CAN_COMPILE_AVX2 */
+
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  PyObject* sep, int bytes_per_sep_group,
                                  const int return_bytes)
@@ -82,13 +176,20 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     unsigned char c;
 
     if (bytes_per_sep_group == 0) {
-        for (i = j = 0; i < arglen; ++i) {
-            assert((j + 1) < resultlen);
-            c = argbuf[i];
-            retbuf[j++] = Py_hexdigits[c >> 4];
-            retbuf[j++] = Py_hexdigits[c & 0x0f];
+#if PY_HEXLIFY_CAN_COMPILE_AVX2
+        /* Use AVX2 for inputs >= 32 bytes when available */
+        if (arglen >= 32 && _Py_hexlify_can_use_avx2()) {
+            _Py_hexlify_avx2((const unsigned char *)argbuf, retbuf, arglen);
         }
-        assert(j == resultlen);
+        else
+#endif
+        {
+            for (i = j = 0; i < arglen; ++i) {
+                c = argbuf[i];
+                retbuf[j++] = Py_hexdigits[c >> 4];
+                retbuf[j++] = Py_hexdigits[c & 0x0f];
+            }
+        }
     }
     else {
         /* The number of complete chunk+sep periods */
