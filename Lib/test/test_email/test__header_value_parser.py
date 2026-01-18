@@ -1603,87 +1603,157 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_comment = old_api_only(
 
-        test_get_comment_only = C(
-            '(comment)', '(comment)', ' ', [], '', ['comment'])
-            ,
+        only = C(
+            '(comment)',
+            '(comment)',
+            ' ',
+            [],
+            '',
+            ['comment'],
+            ),
 
-        test_get_comment_must_start_with_paren_no_ws = C(
-                               'foo"',
-                      exception=(errors.HeaderParseError, '.*'),
-                      ),
+        must_start_with_paren_no_ws = C(
+            'foo"',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-        test_get_comment_must_start_with_paren_ws = C(
-                               '  (foo"',
-                      exception=(errors.HeaderParseError, '.*'),
-                      ),
+        must_start_with_paren_ws = C(
+            '  (foo"',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-        test_get_comment_following_wsp_preserved = C(
-            '(comment)  \t', '(comment)', ' ', [], '  \t', ['comment'])
-            ,
+        following_wsp_preserved = C(
+            '(comment)  \t',
+            '(comment)',
+            ' ',
+            [],
+            '  \t',
+            ['comment'],
+            ),
 
-        test_get_comment_multiple_words = C(
-            '(foo bar)  \t', '(foo bar)', ' ', [], '  \t', ['foo bar'])
-            ,
+        multiple_words = C(
+            '(foo bar)  \t',
+            '(foo bar)',
+            ' ',
+            [],
+            '  \t',
+            ['foo bar'],
+            ),
 
-        test_get_comment_multiple_words_wsp_preserved = C(
-            '( foo  bar\t )  \t', '( foo  bar\t )', ' ', [], '  \t',
-                [' foo  bar\t '])
-                ,
+        multiple_words_wsp_preserved = C(
+            '( foo  bar\t )  \t',
+            '( foo  bar\t )',
+            ' ',
+            [],
+            '  \t',
+            [' foo  bar\t '],
+            ),
 
-        test_get_comment_end_paren_mid_word = C(
-            '(foo)bar', '(foo)', ' ', [], 'bar', ['foo'])
-            ,
+        end_paren_mid_word = C(
+            '(foo)bar',
+            '(foo)',
+            ' ',
+            [],
+            'bar',
+            ['foo'],
+            ),
 
-        test_get_comment_quoted_parens = C(
-            r'(foo\) \(\)bar)', r'(foo\) \(\)bar)', ' ', [], '', ['foo) ()bar'])
-            ,
+        quoted_parens = C(
+            r'(foo\) \(\)bar)',
+            r'(foo\) \(\)bar)',
+            ' ',
+            [],
+            '',
+            ['foo) ()bar'],
+            ),
 
-        test_get_comment_non_printable = C(
-            '(foo\x7Fbar)', '(foo\x7Fbar)', ' ',
-            [errors.NonPrintableDefect], '', ['foo\x7Fbar'])
-            ,
+        non_printable = C(
+            '(foo\x7Fbar)',
+            '(foo\x7Fbar)',
+            ' ',
+            [errors.NonPrintableDefect],
+            '',
+            ['foo\x7Fbar'],
+            ),
 
-        test_get_comment_no_end_paren_after_non_ws = C(
-            '(foo bar', '(foo bar)', ' ',
-            [errors.InvalidHeaderDefect], '', ['foo bar'])
-            ,
+        no_end_paren_after_non_ws = C(
+            '(foo bar',
+            '(foo bar)',
+            ' ',
+            [errors.InvalidHeaderDefect],
+            '',
+            ['foo bar'],
+            ),
 
-        test_get_comment_no_end_paren_after_ws = C(
-            '(foo bar  ', '(foo bar  )', ' ',
-            [errors.InvalidHeaderDefect], '', ['foo bar  '])
-            ,
+        no_end_paren_after_ws = C(
+            '(foo bar  ',
+            '(foo bar  )',
+            ' ',
+            [errors.InvalidHeaderDefect],
+            '',
+            ['foo bar  '],
+            ),
 
-        test_get_comment_nested_comment = C(
-            '(foo(bar))', '(foo(bar))', ' ', [], '', ['foo(bar)'])
-            ,
-        #self.assertEqual(comment[1].content, 'bar')
+        nested_comment = C(
+            '(foo(bar))',
+            '(foo(bar))',
+            ' ',
+            [],
+            '',
+            ['foo(bar)'],
+            ),
+            #self.assertEqual(comment[1].content, 'bar')
 
-        test_get_comment_nested_comment_wsp = C(
-            '(foo ( bar ) )', '(foo ( bar ) )', ' ', [], '', ['foo ( bar ) '])
-            ,
-        #self.assertEqual(comment[2].content, ' bar ')
+        nested_comment_wsp = C(
+            '(foo ( bar ) )',
+            '(foo ( bar ) )',
+            ' ',
+            [],
+            '',
+            ['foo ( bar ) '],
+            ),
+            #self.assertEqual(comment[2].content, ' bar ')
 
-        test_get_comment_empty_comment = C(
-            '()', '()', ' ', [], '', [''])
-            ,
+        empty_comment = C(
+            '()',
+            '()',
+            ' ',
+            [],
+            '',
+            [''],
+            ),
 
-        test_get_comment_multiple_nesting = C(
-            '(((((foo)))))', '(((((foo)))))', ' ', [], '', ['((((foo))))'])
-            ,
-        #for i in range(4, 0, -1):
-        #    self.assertEqual(comment[0].content, '('*(i-1)+'foo'+')'*(i-1))
-        #    comment = comment[0]
-        #self.assertEqual(comment.content, 'foo')
+        multiple_nesting = C(
+            '(((((foo)))))',
+            '(((((foo)))))',
+            ' ',
+            [],
+            '',
+            ['((((foo))))'],
+            ),
+            #for i in range(4, 0, -1):
+            #    self.assertEqual(comment[0].content, '('*(i-1)+'foo'+')'*(i-1))
+            #    comment = comment[0]
+            #self.assertEqual(comment.content, 'foo')
 
-        test_get_comment_missing_end_of_nesting = C(
-            '(((((foo)))', '(((((foo)))))', ' ',
-            [errors.InvalidHeaderDefect]*2, '', ['((((foo))))'])
-            ,
+        missing_end_of_nesting = C(
+            '(((((foo)))',
+            '(((((foo)))))',
+            ' ',
+            [errors.InvalidHeaderDefect]*2,
+            '',
+            ['((((foo))))'],
+            ),
 
-        test_get_comment_qs_in_nested_comment = C(
-            r'(foo (b\)))', r'(foo (b\)))', ' ', [], '', [r'foo (b\))'])
-            ,
-        #self.assertEqual(comment[2].content, 'b)')
+        qs_in_nested_comment = C(
+            r'(foo (b\)))',
+            r'(foo (b\)))',
+            ' ',
+            [],
+            '',
+            [r'foo (b\))']
+            ),
+            #self.assertEqual(comment[2].content, 'b)')
 
         )
 
