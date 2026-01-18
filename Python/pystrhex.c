@@ -23,12 +23,22 @@
 
 /* 128-bit vector of 16 unsigned bytes */
 typedef unsigned char v16u8 __attribute__((vector_size(16)));
+/* 128-bit vector of 16 signed bytes - for efficient comparison.
+   Using signed comparison generates pcmpgtb on x86-64 instead of
+   the slower psubusb+pcmpeqb sequence from unsigned comparison. */
+typedef signed char v16s8 __attribute__((vector_size(16)));
 
 /* Splat a byte value across all 16 lanes */
 static inline v16u8
 v16u8_splat(unsigned char x)
 {
     return (v16u8){x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x};
+}
+
+static inline v16s8
+v16s8_splat(signed char x)
+{
+    return (v16s8){x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x};
 }
 
 /* Portable SIMD hexlify: converts 16 bytes to 32 hex chars per iteration.
@@ -39,7 +49,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     const v16u8 mask_0f = v16u8_splat(0x0f);
     const v16u8 ascii_0 = v16u8_splat('0');
     const v16u8 offset = v16u8_splat('a' - '0' - 10);  /* 0x27 */
-    const v16u8 nine = v16u8_splat(9);
+    const v16s8 nine = v16s8_splat(9);
 
     Py_ssize_t i = 0;
 
@@ -53,9 +63,12 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
         v16u8 hi = (data >> 4) & mask_0f;
         v16u8 lo = data & mask_0f;
 
-        /* Compare > 9 produces all-ones mask where true */
-        v16u8 hi_gt9 = hi > nine;
-        v16u8 lo_gt9 = lo > nine;
+        /* Compare > 9 using signed comparison for efficient codegen.
+           Nibble values 0-15 are safely in signed byte range.
+           This generates pcmpgtb on x86-64, avoiding the slower
+           psubusb+pcmpeqb sequence from unsigned comparison. */
+        v16u8 hi_gt9 = (v16u8)((v16s8)hi > nine);
+        v16u8 lo_gt9 = (v16u8)((v16s8)lo > nine);
 
         /* Convert nibbles to hex ASCII */
         hi = hi + ascii_0 + (hi_gt9 & offset);
