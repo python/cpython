@@ -2109,7 +2109,7 @@ class Popen:
                 except OSError as err:
                     return False
                 if not events:
-                    raise TimeoutExpired(timeout)
+                    raise TimeoutExpired(self.args, timeout)
                 return True
             finally:
                 kq.close()
