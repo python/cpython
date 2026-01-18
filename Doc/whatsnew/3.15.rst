@@ -1467,18 +1467,3 @@ that may require changes to your code.
   *dest* is now ``'foo'`` instead of ``'f'``.
   Pass an explicit *dest* argument to preserve the old behavior.
   (Contributed by Serhiy Storchaka in :gh:`138697`.)
-
-* :func:`base64.b64decode` now rejects all characters not in the base 64
-  alphabet by default.
-  You can pass the ``validate=False`` argument to get the old behavior.
-  If *validate* is false, :exc:`FutureWarning` is now emitted if the ``+`` or
-  ``/`` characters which are not in the alternative alphabet occur in the input.
-  To get rid of the potential warnings, either replace these characters with
-  the corresponding alternative characters (to keep the old behavior),
-  or remove them from the input (to get the future behavior).
-
-  In :func:`base64.b64decode` and :func:`base64.b64decode`, non-alphabet
-  characters in the input now result in a :exc:`binascii.Error`.
-  You can use :func:`base64.b64decode` with ``validate=False`` and optionally
-  the corresponding *altchars* argument to get the old behavior.
-  (Contributed by Serhiy Storchaka in :gh:`125346`.)

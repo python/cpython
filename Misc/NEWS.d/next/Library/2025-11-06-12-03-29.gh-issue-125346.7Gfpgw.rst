@@ -1,6 +1,0 @@
-In :func:`base64.b64decode`, characters not in the base 64 alphabet now
-result in a :exc:`binascii.Error` by default.
-If *validate* is false, :exc:`FutureWarning` is now emitted if the ``+`` or
-``/`` characters which are not in the alternative alphabet occur in the input.
-In :func:`base64.standard_b64decode` and :func:`base64.urlsafe_b64decode`,
-non-alphabet characters in the input now result in a :exc:`binascii.Error`.
