@@ -1289,6 +1289,21 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (None)");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == Py_None, "predicate narrowing did not narrow subject to None");
 
+    // Test narrowing subject to numerical constant
+    subject = _Py_uop_sym_new_unknown(ctx);
+    PyObject *one_obj = PyLong_FromLong(1);
+    JitOptRef const_one = _Py_uop_sym_new_const(ctx, one_obj);
+    if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_one)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_IS, false);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (1)");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == one_obj, "predicate narrowing did not narrow subject to 1");
+
     val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
     if (val_big == NULL) {
         goto fail;
