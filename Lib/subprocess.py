@@ -2104,7 +2104,12 @@ class Popen:
                 return self.returncode
 
             if timeout is not None:
-                self._busy_wait(timeout)
+                if timeout < 0:
+                    raise TimeoutExpired(self.args, timeout)
+                if self._wait_pidfd(timeout):
+                    self._blocking_wait()
+                else:
+                    self._busy_wait(timeout)
             else:
                 self._blocking_wait()
             return self.returncode
