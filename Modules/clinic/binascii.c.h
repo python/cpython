@@ -405,7 +405,7 @@ PyDoc_STRVAR(binascii_b2a_ascii85__doc__,
 
 static PyObject *
 binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
-                          int wrap, unsigned int width, int pad);
+                          int wrap, size_t width, int pad);
 
 static PyObject *
 binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -443,7 +443,7 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     Py_buffer data = {NULL, NULL};
     int fold_spaces = 0;
     int wrap = 0;
-    unsigned int width = 0;
+    size_t width = 0;
     int pad = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -476,21 +476,8 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         }
     }
     if (args[3]) {
-        {
-            Py_ssize_t _bytes = PyLong_AsNativeBytes(args[3], &width, sizeof(unsigned int),
-                    Py_ASNATIVEBYTES_NATIVE_ENDIAN |
-                    Py_ASNATIVEBYTES_ALLOW_INDEX |
-                    Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
-            if (_bytes < 0) {
-                goto exit;
-            }
-            if ((size_t)_bytes > sizeof(unsigned int)) {
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                    "integer value out of range", 1) < 0)
-                {
-                    goto exit;
-                }
-            }
+        if (!_PyLong_Size_t_Converter(args[3], &width)) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -1395,4 +1382,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d6ec5071f15d2aad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d562b40957d97cb input=a9049054013a1b77]*/

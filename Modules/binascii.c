@@ -974,7 +974,7 @@ binascii.b2a_ascii85
         Emit 'y' as a short form encoding four spaces.
     wrap: bool = False
         Wrap result in '<~' and '~>' as in Adobe Ascii85.
-    width: unsigned_int(bitwise=True) = 0
+    width: size_t = 0
         Split result into lines of provided width.
     pad: bool = False
         Pad input to a multiple of 4 before encoding.
@@ -984,8 +984,8 @@ Ascii85-encode data.
 
 static PyObject *
 binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
-                          int wrap, unsigned int width, int pad)
-/*[clinic end generated code: output=78426392ad3fc75b input=d5122dbab4dbb9f2]*/
+                          int wrap, size_t width, int pad)
+/*[clinic end generated code: output=ed9758c1273a1bc3 input=7b0644a4b6a586bd]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
@@ -997,7 +997,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     }
 
     /* Allocate output buffer. */
-    Py_ssize_t out_len = 5 * ((bin_len + 3) / 4);
+    size_t out_len = ((size_t)bin_len + 3) / 4 * 5;
     if (wrap) {
         out_len += 4;
     }
@@ -1006,6 +1006,14 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     }
     if (width && out_len) {
         out_len += (out_len - 1) / width;
+    }
+    if (out_len > PY_SSIZE_T_MAX) {
+        binascii_state *state = get_binascii_state(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Error, "Too much data for Ascii85");
+        return NULL;
     }
 
     PyBytesWriter *writer = PyBytesWriter_Create(out_len);
@@ -1166,7 +1174,7 @@ error:
 
 static PyObject *
 internal_b2a_base85(PyObject *module, Py_buffer *data, int pad, int newline,
-                    const unsigned char table_b2a[])
+                    const unsigned char table_b2a[], const char *name)
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
@@ -1174,12 +1182,20 @@ internal_b2a_base85(PyObject *module, Py_buffer *data, int pad, int newline,
     assert(bin_len >= 0);
 
     /* Allocate output buffer. */
-    Py_ssize_t out_len = 5 * ((bin_len + 3) / 4);
+    size_t out_len = ((size_t)bin_len + 3) / 4 * 5;
     if (!pad && (bin_len % 4)) {
         out_len -= 4 - (bin_len % 4);
     }
     if (newline) {
         out_len++;
+    }
+    if (out_len > PY_SSIZE_T_MAX) {
+        binascii_state *state = get_binascii_state(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_Format(state->Error, "Too much data for %s", name);
+        return NULL;
     }
 
     PyBytesWriter *writer = PyBytesWriter_Create(out_len);
@@ -1272,7 +1288,8 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
                          int newline)
 /*[clinic end generated code: output=56936eb231e15dc0 input=3899d4f5c3a589a0]*/
 {
-    return internal_b2a_base85(module, data, pad, newline, table_b2a_base85);
+    return internal_b2a_base85(module, data, pad, newline,
+                               table_b2a_base85, "Base85");
 }
 
 /*[clinic input]
@@ -1316,7 +1333,7 @@ binascii_b2a_z85_impl(PyObject *module, Py_buffer *data, int pad,
 /*[clinic end generated code: output=a61636b3f618fc1d input=f71c473209eb8f41]*/
 {
     return internal_b2a_base85(module, data, pad, newline,
-                               table_b2a_base85_z85);
+                               table_b2a_base85_z85, "Z85");
 }
 
 /*[clinic input]
