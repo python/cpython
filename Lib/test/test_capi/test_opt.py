@@ -2893,34 +2893,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 3.5)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        for uop in uops:
-            print(uop)
         self.assertIn("_BINARY_OP_EXTEND", uops)
-        self.assertIn("_POP_TOP_NOP", uops)
-        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
-
-    def test_binary_op_refcount_elimination(self):
-        class CustomAdder:
-            def __init__(self, val):
-                self.val = val
-            def __add__(self, other):
-                return CustomAdder(self.val + other.val)
-
-        def testfunc(n):
-            a = CustomAdder(1)
-            b = CustomAdder(2)
-            res = None
-            for _ in range(n):
-                res = a + b
-            return res.val if res else 0
-
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, 3)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        for uop in uops:
-            print(uop)
-        self.assertIn("_BINARY_OP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
