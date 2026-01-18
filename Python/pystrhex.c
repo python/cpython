@@ -185,11 +185,11 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
         unsigned int k;
 
 #if PY_HEXLIFY_CAN_COMPILE_SIMD
-        /* SIMD path for large separator groups (>= 16 bytes per group).
+        /* SIMD path for separator groups >= 8 bytes.
            SIMD hexlify to output buffer, then shuffle in-place to insert
            separators. Working backwards avoids overlap issues since we're
            expanding (destination index >= source index). */
-        if (abs_bytes_per_sep >= 16 && arglen >= 16) {
+        if (abs_bytes_per_sep >= 8 && arglen >= 16) {
             /* SIMD hexlify all bytes to start of output buffer */
             _Py_hexlify_simd((const unsigned char *)argbuf, retbuf, arglen);
 
