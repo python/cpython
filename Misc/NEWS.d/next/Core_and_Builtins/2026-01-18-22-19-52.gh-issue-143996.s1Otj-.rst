@@ -1,0 +1,1 @@
+Eliminate redundant refcounting from ``LOAD_ATTR_MODULE``.
