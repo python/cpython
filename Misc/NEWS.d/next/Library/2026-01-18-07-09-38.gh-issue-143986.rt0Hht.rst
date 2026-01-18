@@ -1,0 +1,1 @@
+Modernize the :mod:`uuid` module to use f-strings.
