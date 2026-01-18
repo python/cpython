@@ -11,9 +11,10 @@ Most platforms require elevated privileges to attach to another Python process.
 .. note::
 
    You can disable remote debugging support in a Python interpreter by (1) setting the
-   ``PYTHON_DISABLE_REMOTE_DEBUG`` environment variable to any value before starting
-   the interpreter, (2) using the ``-X disable-remote-debug`` command-line option, or
-   (3) compiling Python with the ``--without-remote-debug`` build flag.
+   :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable to any value before
+   starting the interpreter, (2) using the :option:`-X disable_remote_debug`
+   command-line option, or (3) compiling Python with the :option:`--without-remote-debug`
+   build flag.
 
 .. _permission-requirements:
 
