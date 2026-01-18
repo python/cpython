@@ -3609,6 +3609,8 @@
             JitOptRef r;
             rhs = stack_pointer[-1];
             lhs = stack_pointer[-2];
+            l = lhs;
+            r = rhs;
             if (
                 sym_is_safe_const(ctx, lhs) &&
                 sym_is_safe_const(ctx, rhs)
@@ -3650,8 +3652,6 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 break;
             }
-            l = lhs;
-            r = rhs;
             bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
             bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
             bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
