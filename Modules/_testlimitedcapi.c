@@ -56,6 +56,9 @@ PyInit__testlimitedcapi(void)
     if (_PyTestLimitedCAPI_Init_HeaptypeRelative(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Import(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_List(mod) < 0) {
         return NULL;
     }
@@ -81,6 +84,12 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_VectorcallLimited(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Version(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_File(mod) < 0) {
         return NULL;
     }
     return mod;

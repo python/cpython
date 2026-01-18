@@ -11,10 +11,6 @@ extern "C" {
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 
 
-/* Trace memory blocks allocated by PyMem_RawMalloc() */
-#define TRACE_RAW_MALLOC
-
-
 struct _PyTraceMalloc_Config {
     /* Module initialized?
        Variable protected by the GIL */
@@ -25,7 +21,10 @@ struct _PyTraceMalloc_Config {
     } initialized;
 
     /* Is tracemalloc tracing memory allocations?
-       Variable protected by the GIL */
+       Variable protected by the TABLES_LOCK() and stored atomically.
+       Atomic store is used so that it can read without locking for the
+       general case of checking if tracemalloc is enabled.
+       */
     int tracing;
 
     /* limit of the number of frames in a traceback, 1 by default.
@@ -34,8 +33,8 @@ struct _PyTraceMalloc_Config {
 };
 
 
-/* Pack the frame_t structure to reduce the memory footprint on 64-bit
-   architectures: 12 bytes instead of 16. */
+/* Pack the tracemalloc_frame and tracemalloc_traceback structures to reduce
+   the memory footprint on 64-bit architectures: 12 bytes instead of 16. */
 #if defined(_MSC_VER)
 #pragma pack(push, 4)
 #endif
@@ -50,18 +49,22 @@ tracemalloc_frame {
     PyObject *filename;
     unsigned int lineno;
 };
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
 
-struct tracemalloc_traceback {
+struct
+#ifdef __GNUC__
+__attribute__((packed))
+#endif
+tracemalloc_traceback {
     Py_uhash_t hash;
     /* Number of frames stored */
     uint16_t nframe;
     /* Total number of frames the traceback had */
     uint16_t total_nframe;
-    struct tracemalloc_frame frames[1];
+    struct tracemalloc_frame frames[];
 };
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 
 struct _tracemalloc_runtime_state {
@@ -74,9 +77,7 @@ struct _tracemalloc_runtime_state {
         PyMemAllocatorEx obj;
     } allocators;
 
-#if defined(TRACE_RAW_MALLOC)
-    PyThread_type_lock tables_lock;
-#endif
+    PyMutex tables_lock;
     /* Size in bytes of currently traced memory.
        Protected by TABLES_LOCK(). */
     size_t traced_memory;
@@ -85,14 +86,14 @@ struct _tracemalloc_runtime_state {
     size_t peak_traced_memory;
     /* Hash table used as a set to intern filenames:
        PyObject* => PyObject*.
-       Protected by the GIL */
+       Protected by the TABLES_LOCK(). */
     _Py_hashtable_t *filenames;
     /* Buffer to store a new traceback in traceback_new().
-       Protected by the GIL. */
+       Protected by the TABLES_LOCK(). */
     struct tracemalloc_traceback *traceback;
     /* Hash table used as a set to intern tracebacks:
        traceback_t* => traceback_t*
-       Protected by the GIL */
+       Protected by the TABLES_LOCK(). */
     _Py_hashtable_t *tracebacks;
     /* pointer (void*) => trace (trace_t*).
        Protected by TABLES_LOCK(). */
@@ -101,7 +102,7 @@ struct _tracemalloc_runtime_state {
        Protected by TABLES_LOCK(). */
     _Py_hashtable_t *domains;
 
-    struct tracemalloc_traceback empty_traceback;
+    struct tracemalloc_traceback *empty_traceback;
 
     Py_tss_t reentrant_key;
 };
@@ -144,7 +145,7 @@ extern PyObject* _PyTraceMalloc_GetTraces(void);
 extern PyObject* _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
 
 /* Initialize tracemalloc */
-extern int _PyTraceMalloc_Init(void);
+extern PyStatus _PyTraceMalloc_Init(void);
 
 /* Start tracemalloc */
 extern int _PyTraceMalloc_Start(int max_nframe);

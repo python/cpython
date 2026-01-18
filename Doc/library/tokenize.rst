@@ -91,11 +91,10 @@ write back the modified script.
     sequences with at least two elements, the token type and the token string.
     Any additional sequence elements are ignored.
 
-    The reconstructed script is returned as a single string.  The result is
-    guaranteed to tokenize back to match the input so that the conversion is
-    lossless and round-trips are assured.  The guarantee applies only to the
-    token type and token string as the spacing between tokens (column
-    positions) may change.
+    The result is guaranteed to tokenize back to match the input so that the
+    conversion is lossless and round-trips are assured.  The guarantee applies
+    only to the token type and token string as the spacing between tokens
+    (column positions) may change.
 
     It returns bytes, encoded using the :data:`~token.ENCODING` token, which
     is the first token sequence output by :func:`.tokenize`. If there is no

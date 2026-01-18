@@ -1,4 +1,4 @@
-# Copyright (C) 2003-2013 Python Software Foundation
+# Copyright (C) 2003 Python Software Foundation
 import copy
 import operator
 import pickle
@@ -509,6 +509,69 @@ class TestPlistlib(unittest.TestCase):
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
 
+    def test_bytes_indent(self):
+        header = (
+            b'<?xml version="1.0" encoding="UTF-8"?>\n'
+            b'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+            b'<plist version="1.0">\n')
+        data = [{'bytes': bytes(range(50))}]
+        pl = plistlib.dumps(data)
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b'\t<dict>\n'
+            b'\t\t<key>bytes</key>\n'
+            b'\t\t<data>\n'
+            b'\t\tAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss\n'
+            b'\t\tLS4vMDE=\n'
+            b'\t\t</data>\n'
+            b'\t</dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
+        def dumps_with_indent(data, indent):
+            fp = BytesIO()
+            writer = plistlib._PlistWriter(fp, indent=indent)
+            writer.write(data)
+            return fp.getvalue()
+
+        pl = dumps_with_indent(data, b' ')
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b' <dict>\n'
+            b'  <key>bytes</key>\n'
+            b'  <data>\n'
+            b'  AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDE=\n'
+            b'  </data>\n'
+            b' </dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
+        pl = dumps_with_indent(data, b' \t')
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b' \t<dict>\n'
+            b' \t \t<key>bytes</key>\n'
+            b' \t \t<data>\n'
+            b' \t \tAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss\n'
+            b' \t \tLS4vMDE=\n'
+            b' \t \t</data>\n'
+            b' \t</dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
+        pl = dumps_with_indent(data, b'\t   ')
+        self.assertEqual(pl, header +
+            b'<array>\n'
+            b'\t   <dict>\n'
+            b'\t   \t   <key>bytes</key>\n'
+            b'\t   \t   <data>\n'
+            b'\t   \t   AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygp\n'
+            b'\t   \t   KissLS4vMDE=\n'
+            b'\t   \t   </data>\n'
+            b'\t   </dict>\n'
+            b'</array>\n'
+            b'</plist>\n')
+
     def test_loads_str_with_xml_fmt(self):
         pl = self._create()
         b = plistlib.dumps(pl)
@@ -580,7 +643,6 @@ class TestPlistlib(unittest.TestCase):
                 data = plistlib.dumps(pl, fmt=fmt)
                 self.assertEqual(data, TESTDATA[fmt],
                     "generated data was not identical to Apple's output")
-
 
     def test_appleformattingfromliteral(self):
         self.maxDiff = None
@@ -903,8 +965,7 @@ class TestPlistlib(unittest.TestCase):
 
 class TestBinaryPlistlib(unittest.TestCase):
 
-    @staticmethod
-    def decode(*objects, offset_size=1, ref_size=1):
+    def build(self, *objects, offset_size=1, ref_size=1):
         data = [b'bplist00']
         offset = 8
         offsets = []
@@ -916,7 +977,11 @@ class TestBinaryPlistlib(unittest.TestCase):
                            len(objects), 0, offset)
         data.extend(offsets)
         data.append(tail)
-        return plistlib.loads(b''.join(data), fmt=plistlib.FMT_BINARY)
+        return b''.join(data)
+
+    def decode(self, *objects, offset_size=1, ref_size=1):
+        data = self.build(*objects, offset_size=offset_size, ref_size=ref_size)
+        return plistlib.loads(data, fmt=plistlib.FMT_BINARY)
 
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
@@ -1023,6 +1088,34 @@ class TestBinaryPlistlib(unittest.TestCase):
             with self.subTest(name):
                 with self.assertRaises(plistlib.InvalidFileException):
                     plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
+
+    def test_truncated_large_data(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        def check(data):
+            with open(os_helper.TESTFN, 'wb') as f:
+                f.write(data)
+            # buffered file
+            with open(os_helper.TESTFN, 'rb') as f:
+                with self.assertRaises(plistlib.InvalidFileException):
+                    plistlib.load(f, fmt=plistlib.FMT_BINARY)
+            # unbuffered file
+            with open(os_helper.TESTFN, 'rb', buffering=0) as f:
+                with self.assertRaises(plistlib.InvalidFileException):
+                    plistlib.load(f, fmt=plistlib.FMT_BINARY)
+        for w in range(20, 64):
+            s = 1 << w
+            # data
+            check(self.build(b'\x4f\x13' + s.to_bytes(8, 'big')))
+            # ascii string
+            check(self.build(b'\x5f\x13' + s.to_bytes(8, 'big')))
+            # unicode string
+            check(self.build(b'\x6f\x13' + s.to_bytes(8, 'big')))
+            # array
+            check(self.build(b'\xaf\x13' + s.to_bytes(8, 'big')))
+            # dict
+            check(self.build(b'\xdf\x13' + s.to_bytes(8, 'big')))
+            # number of objects
+            check(b'bplist00' + struct.pack('>6xBBQQQ', 1, 1, s, 0, 8))
 
     def test_load_aware_datetime(self):
         data = (b'bplist003B\x04>\xd0d\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00'

@@ -9,6 +9,7 @@ __all__ = ["cmp_op", "stack_effect", "hascompare", "opname", "opmap",
            "HAVE_ARGUMENT", "EXTENDED_ARG", "hasarg", "hasconst", "hasname",
            "hasjump", "hasjrel", "hasjabs", "hasfree", "haslocal", "hasexc"]
 
+import builtins
 import _opcode
 from _opcode import stack_effect
 
@@ -17,8 +18,9 @@ from _opcode_metadata import (_specializations, _specialized_opmap, opmap,  # no
 EXTENDED_ARG = opmap['EXTENDED_ARG']
 
 opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
-for op, i in opmap.items():
-    opname[i] = op
+for m in (opmap, _specialized_opmap):
+    for op, i in m.items():
+        opname[i] = op
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
@@ -37,7 +39,9 @@ hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
 _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
 _special_method_names = _opcode.get_special_method_names()
-_common_constants = [AssertionError, NotImplementedError]
+_common_constants = [builtins.AssertionError, builtins.NotImplementedError,
+                     builtins.tuple, builtins.all, builtins.any, builtins.list,
+                     builtins.set]
 _nb_ops = _opcode.get_nb_ops()
 
 hascompare = [opmap["COMPARE_OP"]]
@@ -51,6 +55,7 @@ _cache_format = {
     },
     "BINARY_OP": {
         "counter": 1,
+        "descr": 4,
     },
     "UNPACK_SEQUENCE": {
         "counter": 1,
@@ -59,9 +64,6 @@ _cache_format = {
         "counter": 1,
     },
     "CONTAINS_OP": {
-        "counter": 1,
-    },
-    "BINARY_SUBSCR": {
         "counter": 1,
     },
     "FOR_ITER": {
@@ -88,6 +90,9 @@ _cache_format = {
     "CALL_KW": {
         "counter": 1,
         "func_version": 2,
+    },
+    "CALL_FUNCTION_EX": {
+        "counter": 1,
     },
     "STORE_SUBSCR": {
         "counter": 1,

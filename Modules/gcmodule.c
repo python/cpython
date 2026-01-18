@@ -8,7 +8,6 @@
 #include "pycore_gc.h"
 #include "pycore_object.h"      // _PyObject_IS_GC()
 #include "pycore_pystate.h"     // _PyInterpreterState_GET()
-#include "pycore_tuple.h"       // _PyTuple_FromArray()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -216,31 +215,21 @@ gc_get_count_impl(PyObject *module)
 /*[clinic input]
 gc.get_referrers
 
-    *objs as args: object
+    *objs: tuple
 
 Return the list of objects that directly refer to any of 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, Py_ssize_t nargs,
-                      PyObject *const *args)
-/*[clinic end generated code: output=1d44a7695ea25c40 input=bae96961b14a0922]*/
+gc_get_referrers_impl(PyObject *module, PyObject *objs)
+/*[clinic end generated code: output=929d6dff26f609b9 input=9102be7ebee69ee3]*/
 {
-    PyObject *varargs = _PyTuple_FromArray(args, nargs);
-
-    if (!varargs) {
-        return NULL;
-    }
-    if (PySys_Audit("gc.get_referrers", "(O)", varargs) < 0) {
-        Py_DECREF(varargs);
+    if (PySys_Audit("gc.get_referrers", "(O)", objs) < 0) {
         return NULL;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *result = _PyGC_GetReferrers(interp, varargs);
-
-    Py_DECREF(varargs);
-    return result;
+    return _PyGC_GetReferrers(interp, objs);
 }
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
@@ -274,47 +263,39 @@ append_referrents(PyObject *result, PyObject *args)
 /*[clinic input]
 gc.get_referents
 
-    *objs as args: object
+    *objs: tuple
 
 Return the list of objects that are directly referred to by 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, Py_ssize_t nargs,
-                      PyObject *const *args)
-/*[clinic end generated code: output=e459f3e8c0d19311 input=b3ceab0c34038cbf]*/
+gc_get_referents_impl(PyObject *module, PyObject *objs)
+/*[clinic end generated code: output=6dfde40cd1588e1d input=55c078a6d0248fe0]*/
 {
-    PyObject *varargs = _PyTuple_FromArray(args, nargs);
-
-    if (!varargs) {
-        return NULL;
-    }
-    if (PySys_Audit("gc.get_referents", "(O)", varargs) < 0) {
-        Py_DECREF(varargs);
+    if (PySys_Audit("gc.get_referents", "(O)", objs) < 0) {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
     if (result == NULL) {
-        Py_DECREF(varargs);
         return NULL;
     }
 
     // NOTE: stop the world is a no-op in default build
     _PyEval_StopTheWorld(interp);
-    int err = append_referrents(result, varargs);
+    int err = append_referrents(result, objs);
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
         Py_CLEAR(result);
     }
 
-    Py_DECREF(varargs);
     return result;
 }
 
 /*[clinic input]
+@permit_long_summary
 gc.get_objects
     generation: Py_ssize_t(accept={int, NoneType}, c_default="-1") = None
         Generation to extract the objects from.
@@ -327,7 +308,7 @@ that are in that generation.
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
-/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=a887f1d9924be7cf]*/
 {
     if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
         return NULL;
@@ -377,10 +358,12 @@ gc_get_stats_impl(PyObject *module)
     for (i = 0; i < NUM_GENERATIONS; i++) {
         PyObject *dict;
         st = &stats[i];
-        dict = Py_BuildValue("{snsnsn}",
+        dict = Py_BuildValue("{snsnsnsnsd}",
                              "collections", st->collections,
                              "collected", st->collected,
-                             "uncollectable", st->uncollectable
+                             "uncollectable", st->uncollectable,
+                             "candidates", st->candidates,
+                             "duration", st->duration
                             );
         if (dict == NULL)
             goto error;
@@ -433,6 +416,7 @@ gc_is_finalized_impl(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
@@ -444,7 +428,7 @@ which can cause copy-on-write.
 
 static PyObject *
 gc_freeze_impl(PyObject *module)
-/*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
+/*[clinic end generated code: output=502159d9cdc4c139 input=11fb59b0a75dcf3d]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyGC_Freeze(interp);
@@ -495,7 +479,7 @@ PyDoc_STRVAR(gc__doc__,
 "set_debug() -- Set debugging flags.\n"
 "get_debug() -- Get debugging flags.\n"
 "set_threshold() -- Set the collection thresholds.\n"
-"get_threshold() -- Return the current the collection thresholds.\n"
+"get_threshold() -- Return the current collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
 "is_finalized() -- Returns true if a given object has been already finalized.\n"

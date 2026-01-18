@@ -626,6 +626,19 @@ which, when run, will produce:
    of each message with the handler's level, and only passes a message to a
    handler if it's appropriate to do so.
 
+.. versionchanged:: 3.14
+   The :class:`QueueListener` can be started (and stopped) via the
+   :keyword:`with` statement. For example:
+
+   .. code-block:: python
+
+      with QueueListener(que, handler) as listener:
+          # The queue listener automatically starts
+          # when the 'with' block is entered.
+          pass
+      # The queue listener automatically stops once
+      # the 'with' block is exited.
+
 .. _network-logging:
 
 Sending and receiving logging events across a network
@@ -825,15 +838,28 @@ To test these files, do the following in a POSIX environment:
    which will lead to records being written to the log.
 
 #. Inspect the log files in the :file:`run` subdirectory. You should see the
-   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
-   any particular order, since they have been handled concurrently by different
-   worker processes in a non-deterministic way.
+   most recent log lines in files matching the pattern :file:`app.log*`. They
+   won't be in any particular order, since they have been handled concurrently
+   by different worker processes in a non-deterministic way.
 
 #. You can shut down the listener and the web application by running
    ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
 
 You may need to tweak the configuration files in the unlikely event that the
 configured ports clash with something else in your test environment.
+
+The default configuration uses a TCP socket on port 9020. You can use a Unix
+Domain socket instead of a TCP socket by doing the following:
+
+#. In :file:`listener.json`, add a ``socket`` key with the path to the domain
+   socket you want to use. If this key is present, the listener listens on the
+   corresponding domain socket and not on a TCP socket (the ``port`` key is
+   ignored).
+
+#. In :file:`webapp.json`, change the socket handler configuration dictionary
+   so that the ``host`` value is the path to the domain socket, and set the
+   ``port`` value to ``null``.
+
 
 .. currentmodule:: logging
 
@@ -1267,11 +1293,8 @@ to adapt in your own applications.
 
 You could also write your own handler which uses the :class:`~multiprocessing.Lock`
 class from the :mod:`multiprocessing` module to serialize access to the
-file from your processes. The existing :class:`FileHandler` and subclasses do
-not make use of :mod:`multiprocessing` at present, though they may do so in the
-future. Note that at present, the :mod:`multiprocessing` module does not provide
-working lock functionality on all platforms (see
-https://bugs.python.org/issue3770).
+file from your processes. The stdlib :class:`FileHandler` and subclasses do
+not make use of :mod:`multiprocessing`.
 
 .. currentmodule:: logging.handlers
 
@@ -4055,6 +4078,104 @@ lines. With this approach, you get better output:
     WARNING:demo:    1/0
     WARNING:demo:ZeroDivisionError: division by zero
 
+How to uniformly handle newlines in logging output
+--------------------------------------------------
+
+Usually, messages that are logged (say to console or file) consist of a single
+line of text. However, sometimes there is a need to handle messages with
+multiple lines - whether because a logging format string contains newlines, or
+logged data contains newlines. If you want to handle such messages uniformly, so
+that each line in the logged message appears uniformly formatted as if it was
+logged separately, you can do this using a handler mixin, as in the following
+snippet:
+
+.. code-block:: python
+
+    # Assume this is in a module mymixins.py
+    import copy
+
+    class MultilineMixin:
+        def emit(self, record):
+            s = record.getMessage()
+            if '\n' not in s:
+                super().emit(record)
+            else:
+                lines = s.splitlines()
+                rec = copy.copy(record)
+                rec.args = None
+                for line in lines:
+                    rec.msg = line
+                    super().emit(rec)
+
+You can use the mixin as in the following script:
+
+.. code-block:: python
+
+    import logging
+
+    from mymixins import MultilineMixin
+
+    logger = logging.getLogger(__name__)
+
+    class StreamHandler(MultilineMixin, logging.StreamHandler):
+        pass
+
+    if __name__ == '__main__':
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-9s %(message)s',
+                            handlers = [StreamHandler()])
+        logger.debug('Single line')
+        logger.debug('Multiple lines:\nfool me once ...')
+        logger.debug('Another single line')
+        logger.debug('Multiple lines:\n%s', 'fool me ...\ncan\'t get fooled again')
+
+The script, when run, prints something like:
+
+.. code-block:: text
+
+    2025-07-02 13:54:47,234 DEBUG     Single line
+    2025-07-02 13:54:47,234 DEBUG     Multiple lines:
+    2025-07-02 13:54:47,234 DEBUG     fool me once ...
+    2025-07-02 13:54:47,234 DEBUG     Another single line
+    2025-07-02 13:54:47,234 DEBUG     Multiple lines:
+    2025-07-02 13:54:47,234 DEBUG     fool me ...
+    2025-07-02 13:54:47,234 DEBUG     can't get fooled again
+
+If, on the other hand, you are concerned about `log injection
+<https://owasp.org/www-community/attacks/Log_Injection>`_, you can use a
+formatter which escapes newlines, as per the following example:
+
+.. code-block:: python
+
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    class EscapingFormatter(logging.Formatter):
+        def format(self, record):
+            s = super().format(record)
+            return s.replace('\n', r'\n')
+
+    if __name__ == '__main__':
+        h = logging.StreamHandler()
+        h.setFormatter(EscapingFormatter('%(asctime)s %(levelname)-9s %(message)s'))
+        logging.basicConfig(level=logging.DEBUG, handlers = [h])
+        logger.debug('Single line')
+        logger.debug('Multiple lines:\nfool me once ...')
+        logger.debug('Another single line')
+        logger.debug('Multiple lines:\n%s', 'fool me ...\ncan\'t get fooled again')
+
+You can, of course, use whatever escaping scheme makes the most sense for you.
+The script, when run, should produce output like this:
+
+.. code-block:: text
+
+    2025-07-09 06:47:33,783 DEBUG     Single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me once ...
+    2025-07-09 06:47:33,783 DEBUG     Another single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me ...\ncan't get fooled again
+
+Escaping behaviour can't be the stdlib default , as it would break backwards
+compatibility.
 
 .. patterns-to-avoid:
 

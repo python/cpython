@@ -67,13 +67,15 @@ def copy(x):
 
     cls = type(x)
 
-    copier = _copy_dispatch.get(cls)
-    if copier:
-        return copier(x)
+    if cls in _copy_atomic_types:
+        return x
+    if cls in _copy_builtin_containers:
+        return cls.copy(x)
+
 
     if issubclass(cls, type):
         # treat it as a regular class:
-        return _copy_immutable(x)
+        return x
 
     copier = getattr(cls, "__copy__", None)
     if copier is not None:
@@ -98,25 +100,14 @@ def copy(x):
     return _reconstruct(x, None, *rv)
 
 
-_copy_dispatch = d = {}
-
-def _copy_immutable(x):
-    return x
-for t in (types.NoneType, int, float, bool, complex, str, tuple,
+_copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
-          weakref.ref, super):
-    d[t] = _copy_immutable
+          weakref.ref, super})
+_copy_builtin_containers = frozenset({list, dict, set, bytearray})
 
-d[list] = list.copy
-d[dict] = dict.copy
-d[set] = set.copy
-d[bytearray] = bytearray.copy
-
-del d, t
-
-def deepcopy(x, memo=None, _nil=[]):
+def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
 
     See the module's __doc__ string for more info.
@@ -131,8 +122,8 @@ def deepcopy(x, memo=None, _nil=[]):
     if memo is None:
         memo = {}
     else:
-        y = memo.get(d, _nil)
-        if y is not _nil:
+        y = memo.get(d, None)
+        if y is not None:
             return y
 
     copier = _deepcopy_dispatch.get(cls)
@@ -171,9 +162,9 @@ def deepcopy(x, memo=None, _nil=[]):
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
-_atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
+_atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplementedType,
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
-          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property}
+          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
 
 _deepcopy_dispatch = d = {}
 
@@ -239,7 +230,7 @@ def _reconstruct(x, memo, func, args,
                  *, deepcopy=deepcopy):
     deep = memo is not None
     if deep and args:
-        args = (deepcopy(arg, memo) for arg in args)
+        args = [deepcopy(arg, memo) for arg in args]
     y = func(*args)
     if deep:
         memo[id(x)] = y

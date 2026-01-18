@@ -536,7 +536,7 @@ Other Language Changes
   element is a callable with a ``(obj, state)`` signature.  This allows the
   direct control over the state-updating behavior of a specific object.  If
   not *None*, this callable will have priority over the object's
-  :meth:`~__setstate__` method.
+  :meth:`~object.__setstate__` method.
   (Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
 
 New Modules
@@ -936,7 +936,7 @@ Add option ``--json-lines`` to parse every input line as a separate JSON object.
 logging
 -------
 
-Added a *force* keyword argument to :func:`logging.basicConfig`
+Added a *force* keyword argument to :func:`logging.basicConfig`.
 When set to true, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.
@@ -1035,9 +1035,9 @@ symlinks and directory junctions) has been delegated to the operating system.
 Specifically, :func:`os.stat` will now traverse anything supported by the
 operating system, while :func:`os.lstat` will only open reparse points that
 identify as "name surrogates" while others are opened as for :func:`os.stat`.
-In all cases, :attr:`stat_result.st_mode` will only have ``S_IFLNK`` set for
+In all cases, :attr:`os.stat_result.st_mode` will only have ``S_IFLNK`` set for
 symbolic links and not other kinds of reparse points. To identify other kinds
-of reparse point, check the new :attr:`stat_result.st_reparse_tag` attribute.
+of reparse point, check the new :attr:`os.stat_result.st_reparse_tag` attribute.
 
 On Windows, :func:`os.readlink` is now able to read directory junctions. Note
 that :func:`~os.path.islink` will return ``False`` for directory junctions,
@@ -1285,20 +1285,20 @@ now matches what the C tokenizer does internally.
 tkinter
 -------
 
-Added methods :meth:`~tkinter.Spinbox.selection_from`,
-:meth:`~tkinter.Spinbox.selection_present`,
-:meth:`~tkinter.Spinbox.selection_range` and
-:meth:`~tkinter.Spinbox.selection_to`
-in the :class:`tkinter.Spinbox` class.
+Added methods :meth:`!selection_from`,
+:meth:`!selection_present`,
+:meth:`!selection_range` and
+:meth:`!selection_to`
+in the :class:`!tkinter.Spinbox` class.
 (Contributed by Juliette Monsel in :issue:`34829`.)
 
-Added method :meth:`~tkinter.Canvas.moveto`
-in the :class:`tkinter.Canvas` class.
+Added method :meth:`!moveto`
+in the :class:`!tkinter.Canvas` class.
 (Contributed by Juliette Monsel in :issue:`23831`.)
 
-The :class:`tkinter.PhotoImage` class now has
-:meth:`~tkinter.PhotoImage.transparency_get` and
-:meth:`~tkinter.PhotoImage.transparency_set` methods.  (Contributed by
+The :class:`!tkinter.PhotoImage` class now has
+:meth:`!transparency_get` and
+:meth:`!transparency_set` methods.  (Contributed by
 Zackery Spytz in :issue:`25451`.)
 
 
@@ -1432,7 +1432,7 @@ and ``{namespace}*`` which returns all tags in the given namespace.
 (Contributed by Stefan Behnel in :issue:`28238`.)
 
 The :mod:`xml.etree.ElementTree` module provides a new function
-:func:`–xml.etree.ElementTree.canonicalize` that implements C14N 2.0.
+:func:`~xml.etree.ElementTree.canonicalize` that implements C14N 2.0.
 (Contributed by Stefan Behnel in :issue:`13611`.)
 
 The target object of :class:`xml.etree.ElementTree.XMLParser` can
@@ -1573,7 +1573,7 @@ Build and C API Changes
 
   * :c:func:`Py_INCREF`, :c:func:`Py_DECREF`
   * :c:func:`Py_XINCREF`, :c:func:`Py_XDECREF`
-  * :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`
+  * :c:macro:`!PyObject_INIT`, :c:macro:`!PyObject_INIT_VAR`
   * Private functions: :c:func:`!_PyObject_GC_TRACK`,
     :c:func:`!_PyObject_GC_UNTRACK`, :c:func:`!_Py_Dealloc`
 
@@ -1629,8 +1629,8 @@ Build and C API Changes
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
 * :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
-  path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
-  (:c:func:`Py_GetProgramName`).
+  path (:c:func:`!Py_GetProgramFullPath`) rather than to the program name
+  (:c:func:`!Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
 
 
@@ -1677,7 +1677,7 @@ Deprecated
   constant nodes.
   (Contributed by Serhiy Storchaka in :issue:`36917`.)
 
-* The :func:`asyncio.coroutine` :term:`decorator` is deprecated and will be
+* The :deco:`!asyncio.coroutine` :term:`decorator` is deprecated and will be
   removed in version 3.10.  Instead of ``@asyncio.coroutine``, use
   :keyword:`async def` instead.
   (Contributed by Andrew Svetlov in :issue:`36921`.)
@@ -1697,22 +1697,22 @@ Deprecated
   (Contributed by Yury Selivanov in :issue:`34790`.)
 
 * The following functions and methods are deprecated in the :mod:`gettext`
-  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
-  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
+  module: :func:`!lgettext`, :func:`!ldgettext`,
+  :func:`!lngettext` and :func:`!ldngettext`.
   They return encoded bytes, and it's possible that you will get unexpected
   Unicode-related exceptions if there are encoding problems with the
   translated strings. It's much better to use alternatives which return
   Unicode strings in Python 3. These functions have been broken for a long time.
 
-  Function :func:`~gettext.bind_textdomain_codeset`, methods
-  :meth:`~gettext.NullTranslations.output_charset` and
-  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
+  Function :func:`!bind_textdomain_codeset`, methods
+  :meth:`!NullTranslations.output_charset` and
+  :meth:`!NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
-* The :meth:`~threading.Thread.isAlive` method of :class:`threading.Thread`
+* The :meth:`!isAlive` method of :class:`threading.Thread`
   has been deprecated.
   (Contributed by Donghee Na in :issue:`35283`.)
 
@@ -1727,7 +1727,7 @@ Deprecated
 * Deprecated passing the following arguments as keyword arguments:
 
   - *func* in :func:`functools.partialmethod`, :func:`weakref.finalize`,
-    :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
+    :meth:`profile.Profile.runcall`, :meth:`!cProfile.Profile.runcall`,
     :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
     :func:`curses.wrapper`.
   - *function* in :meth:`unittest.TestCase.addCleanup`.
@@ -1735,11 +1735,11 @@ Deprecated
     :class:`concurrent.futures.ThreadPoolExecutor` and
     :class:`concurrent.futures.ProcessPoolExecutor`.
   - *callback* in :meth:`contextlib.ExitStack.callback`,
-    :meth:`contextlib.AsyncExitStack.callback` and
+    :meth:`!contextlib.AsyncExitStack.callback` and
     :meth:`contextlib.AsyncExitStack.push_async_callback`.
-  - *c* and *typeid* in the :meth:`~multiprocessing.managers.Server.create`
-    method of :class:`multiprocessing.managers.Server` and
-    :class:`multiprocessing.managers.SharedMemoryServer`.
+  - *c* and *typeid* in the :meth:`!create`
+    method of :class:`!multiprocessing.managers.Server` and
+    :class:`!multiprocessing.managers.SharedMemoryServer`.
   - *obj* in :func:`weakref.finalize`.
 
   In future releases of Python, they will be :ref:`positional-only
@@ -1757,14 +1757,14 @@ The following features and APIs have been removed from Python 3.8:
    able to import from collections was marked for removal in 3.8, but has been
    delayed to 3.9. (See :gh:`81134`.)
 
-* The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
+* The :mod:`!macpath` module, deprecated in Python 3.7, has been removed.
   (Contributed by Victor Stinner in :issue:`35471`.)
 
-* The function :func:`platform.popen` has been removed, after having been
+* The function :func:`!platform.popen` has been removed, after having been
   deprecated since Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
-* The function :func:`time.clock` has been removed, after having been
+* The function :func:`!time.clock` has been removed, after having been
   deprecated since Python 3.3: use :func:`time.perf_counter` or
   :func:`time.process_time` instead, depending
   on your requirements, to have well-defined behavior.
@@ -1800,8 +1800,8 @@ The following features and APIs have been removed from Python 3.8:
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
   has been removed. :issue:`36952` (Contributed by Matthias Bussonnier.)
 
-* The functions :func:`sys.set_coroutine_wrapper` and
-  :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
+* The functions :func:`!sys.set_coroutine_wrapper` and
+  :func:`!sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
   :issue:`36933` (Contributed by Matthias Bussonnier.)
 
 
@@ -1864,9 +1864,10 @@ Changes in the Python API
 
 * :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
   for better performance. On Windows Subsystem for Linux and QEMU User
-  Emulation, the :class:`Popen` constructor using :func:`os.posix_spawn` no longer raises an
-  exception on errors like "missing program".  Instead the child process fails with a
-  non-zero :attr:`~Popen.returncode`.
+  Emulation, the :class:`~subprocess.Popen` constructor using
+  :func:`os.posix_spawn` no longer raises an exception on errors like
+  "missing program".  Instead the child process fails with a
+  non-zero :attr:`~subprocess.Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
 
 * The *preexec_fn* argument of * :class:`subprocess.Popen` is no longer
@@ -1875,11 +1876,11 @@ Changes in the Python API
   (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
   in :issue:`37951`.)
 
-* The :meth:`imap.IMAP4.logout` method no longer silently ignores arbitrary
+* The :meth:`imaplib.IMAP4.logout` method no longer silently ignores arbitrary
   exceptions.
   (Contributed by Victor Stinner in :issue:`36348`.)
 
-* The function :func:`platform.popen` has been removed, after having been deprecated since
+* The function :func:`!platform.popen` has been removed, after having been deprecated since
   Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
@@ -1894,9 +1895,11 @@ Changes in the Python API
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
 
-* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of
-  :mod:`xml.dom.minidom`, and the :meth:`write` method of :mod:`xml.etree`,
-  now preserve the attribute order specified by the user.
+* The :meth:`~xml.dom.minidom.Node.writexml`, :meth:`~xml.dom.minidom.Node.toxml`
+  and :meth:`~xml.dom.minidom.Node.toprettyxml` methods of
+  :mod:`xml.dom.minidom` and the :meth:`~xml.etree.ElementTree.ElementTree.write`
+  method of :mod:`xml.etree.ElementTree` now preserve the attribute order
+  specified by the user.
   (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
@@ -1916,8 +1919,8 @@ Changes in the Python API
   ``type.__new__``.  A :exc:`DeprecationWarning` was emitted in Python
   3.6--3.7.  (Contributed by Serhiy Storchaka in :issue:`23722`.)
 
-* The :class:`cProfile.Profile` class can now be used as a context
-  manager. (Contributed by Scott Sanderson in :issue:`29235`.)
+* The :class:`cProfile.Profile <profile.Profile>` class can now be used as
+  a context manager. (Contributed by Scott Sanderson in :issue:`29235`.)
 
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
@@ -1952,7 +1955,7 @@ Changes in the Python API
   (Contributed by Christian Heimes in :issue:`17239`.)
 
 * Deleting a key from a read-only :mod:`dbm` database (:mod:`dbm.dumb`,
-  :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
+  :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`!error` (:exc:`dbm.dumb.error`,
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
 
@@ -2044,7 +2047,7 @@ Changes in the C API
   :c:func:`PyType_FromSpec`) hold a reference to their type object.
   Increasing the reference count of these type objects has been moved from
   :c:func:`PyType_GenericAlloc` to the more low-level functions,
-  :c:func:`PyObject_Init` and :c:func:`PyObject_INIT`.
+  :c:func:`PyObject_Init` and :c:macro:`!PyObject_INIT`.
   This makes types created through :c:func:`PyType_FromSpec` behave like
   other classes in managed code.
 
@@ -2064,7 +2067,7 @@ Changes in the C API
     This may happen after calling :c:macro:`PyObject_New`,
     :c:macro:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
     :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
-    :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
+    :c:func:`PyObject_Init` or :c:macro:`!PyObject_INIT`.
 
     Example:
 
@@ -2152,11 +2155,11 @@ CPython bytecode changes
   cleaning-up code for :keyword:`break`, :keyword:`continue` and
   :keyword:`return`.
 
-  Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
-  :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
-  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY`, :opcode:`CALL_FINALLY` and
-  :opcode:`POP_FINALLY`.  Changed the behavior of :opcode:`END_FINALLY`
-  and :opcode:`WITH_CLEANUP_START`.
+  Removed opcodes :opcode:`!BREAK_LOOP`, :opcode:`!CONTINUE_LOOP`,
+  :opcode:`!SETUP_LOOP` and :opcode:`!SETUP_EXCEPT`.  Added new opcodes
+  :opcode:`!ROT_FOUR`, :opcode:`!BEGIN_FINALLY`, :opcode:`!CALL_FINALLY` and
+  :opcode:`!POP_FINALLY`.  Changed the behavior of :opcode:`!END_FINALLY`
+  and :opcode:`!WITH_CLEANUP_START`.
 
   (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
   :issue:`17611`.)

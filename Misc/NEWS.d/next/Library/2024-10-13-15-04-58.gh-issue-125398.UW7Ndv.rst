@@ -1,1 +1,0 @@
-Fix the conversion of the :envvar:`!VIRTUAL_ENV` path in the activate script in :mod:`venv` when running in Git Bash for Windows.

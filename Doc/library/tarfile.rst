@@ -18,8 +18,16 @@ higher-level functions in :ref:`shutil <archiving-operations>`.
 
 Some facts and figures:
 
-* reads and writes :mod:`gzip`, :mod:`bz2` and :mod:`lzma` compressed archives
-  if the respective modules are available.
+* reads and writes :mod:`gzip`, :mod:`bz2`, :mod:`compression.zstd`, and
+  :mod:`lzma` compressed archives if the respective modules are available.
+
+  ..
+     The following paragraph should be similar to ../includes/optional-module.rst
+
+  If any of these :term:`optional modules <optional module>` are missing from
+  your copy of CPython, look for documentation from your distributor (that is,
+  whoever provided Python to you).
+  If you are the distributor, see :ref:`optional-module-requirements`.
 
 * read/write support for the POSIX.1-1988 (ustar) format.
 
@@ -47,6 +55,10 @@ Some facts and figures:
    or paths outside of the destination. Previously, the filter strategy
    was equivalent to :func:`fully_trusted <fully_trusted_filter>`.
 
+.. versionchanged:: 3.14
+
+   Added support for Zstandard compression using :mod:`compression.zstd`.
+
 .. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
    Return a :class:`TarFile` object for the pathname *name*. For detailed
@@ -59,8 +71,8 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | mode             | action                                      |
    +==================+=============================================+
-   | ``'r' or 'r:*'`` | Open for reading with transparent           |
-   |                  | compression (recommended).                  |
+   | ``'r'`` or       | Open for reading with transparent           |
+   | ``'r:*'``        | compression (recommended).                  |
    +------------------+---------------------------------------------+
    | ``'r:'``         | Open for reading exclusively without        |
    |                  | compression.                                |
@@ -70,6 +82,8 @@ Some facts and figures:
    | ``'r:bz2'``      | Open for reading with bzip2 compression.    |
    +------------------+---------------------------------------------+
    | ``'r:xz'``       | Open for reading with lzma compression.     |
+   +------------------+---------------------------------------------+
+   | ``'r:zst'``      | Open for reading with Zstandard compression.|
    +------------------+---------------------------------------------+
    | ``'x'`` or       | Create a tarfile exclusively without        |
    | ``'x:'``         | compression.                                |
@@ -88,16 +102,23 @@ Some facts and figures:
    |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
-   | ``'a' or 'a:'``  | Open for appending with no compression. The |
-   |                  | file is created if it does not exist.       |
+   | ``'x:zst'``      | Create a tarfile with Zstandard compression.|
+   |                  | Raise a :exc:`FileExistsError` exception    |
+   |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
-   | ``'w' or 'w:'``  | Open for uncompressed writing.              |
+   | ``'a'`` or       | Open for appending with no compression. The |
+   | ``'a:'``         | file is created if it does not exist.       |
+   +------------------+---------------------------------------------+
+   | ``'w'`` or       | Open for uncompressed writing.              |
+   | ``'w:'``         |                                             |
    +------------------+---------------------------------------------+
    | ``'w:gz'``       | Open for gzip compressed writing.           |
    +------------------+---------------------------------------------+
    | ``'w:bz2'``      | Open for bzip2 compressed writing.          |
    +------------------+---------------------------------------------+
    | ``'w:xz'``       | Open for lzma compressed writing.           |
+   +------------------+---------------------------------------------+
+   | ``'w:zst'``      | Open for Zstandard compressed writing.      |
    +------------------+---------------------------------------------+
 
    Note that ``'a:gz'``, ``'a:bz2'`` or ``'a:xz'`` is not possible. If *mode*
@@ -110,10 +131,19 @@ Some facts and figures:
 
    For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
    ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
-   *compresslevel* (default ``9``) to specify the compression level of the file.
+   *compresslevel* (default ``6``) to specify the compression level of the file.
 
-   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   For modes ``'w:xz'``, ``'x:xz'`` and ``'w|xz'``, :func:`tarfile.open` accepts the
    keyword argument *preset* to specify the compression level of the file.
+
+   For modes ``'w:zst'``, ``'x:zst'`` and ``'w|zst'``, :func:`tarfile.open`
+   accepts the keyword argument *level* to specify the compression level of
+   the file. The keyword argument *options* may also be passed, providing
+   advanced Zstandard compression parameters described by
+   :class:`~compression.zstd.CompressionParameter`. The keyword argument
+   *zstd_dict* can be passed to provide a :class:`~compression.zstd.ZstdDict`,
+   a Zstandard dictionary used to improve compression of smaller amounts of
+   data.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
@@ -146,6 +176,9 @@ Some facts and figures:
    | ``'r|xz'``  | Open an lzma compressed *stream* for       |
    |             | reading.                                   |
    +-------------+--------------------------------------------+
+   | ``'r|zst'`` | Open a Zstandard compressed *stream* for   |
+   |             | reading.                                   |
+   +-------------+--------------------------------------------+
    | ``'w|'``    | Open an uncompressed *stream* for writing. |
    +-------------+--------------------------------------------+
    | ``'w|gz'``  | Open a gzip compressed *stream* for        |
@@ -155,6 +188,9 @@ Some facts and figures:
    |             | writing.                                   |
    +-------------+--------------------------------------------+
    | ``'w|xz'``  | Open an lzma compressed *stream* for       |
+   |             | writing.                                   |
+   +-------------+--------------------------------------------+
+   | ``'w|zst'`` | Open a Zstandard compressed *stream* for   |
    |             | writing.                                   |
    +-------------+--------------------------------------------+
 
@@ -167,6 +203,13 @@ Some facts and figures:
    .. versionchanged:: 3.12
       The *compresslevel* keyword argument also works for streams.
 
+   .. versionchanged:: 3.14
+      The *preset* keyword argument also works for streams.
+
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. class:: TarFile
    :noindex:
@@ -251,6 +294,15 @@ The :mod:`tarfile` module defines the following exceptions:
 
    Raised to refuse extracting a symbolic link pointing outside the destination
    directory.
+
+.. exception:: LinkFallbackError
+
+   Raised to refuse emulating a link (hard or symbolic) by extracting another
+   archive member, when that member would be rejected by the filter location.
+   The exception that was raised to reject the replacement member is available
+   as :attr:`!BaseException.__context__`.
+
+   .. versionadded:: 3.15
 
 
 The following constants are available at the module level:
@@ -1065,6 +1117,12 @@ reused in custom filters:
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
 
+  - Normalize link targets (:attr:`TarInfo.linkname`) using
+    :func:`os.path.normpath`.
+    Note that this removes internal ``..`` components, which may change the
+    meaning of the link if the path in :attr:`!TarInfo.linkname` traverses
+    symbolic links.
+
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
     that link to absolute paths, or ones that link outside the destination.
 
@@ -1096,6 +1154,10 @@ reused in custom filters:
   Note that this filter does not block *all* dangerous archive features.
   See :ref:`tarfile-further-verification`  for details.
 
+  .. versionchanged:: 3.15
+
+     Link targets are now normalized.
+
 
 .. _tarfile-extraction-refuse:
 
@@ -1124,6 +1186,7 @@ Here is an incomplete list of things to consider:
 * Extract to a :func:`new temporary directory <tempfile.mkdtemp>`
   to prevent e.g. exploiting pre-existing links, and to make it easier to
   clean up after a failed extraction.
+* Disallow symbolic links if you do not need the functionality.
 * When working with untrusted data, use external (e.g. OS-level) limits on
   disk, memory and CPU usage.
 * Check filenames against an allow-list of characters
@@ -1302,6 +1365,9 @@ Command-line options
 Examples
 --------
 
+Reading examples
+~~~~~~~~~~~~~~~~~~~
+
 How to extract an entire tar archive to the current working directory::
 
    import tarfile
@@ -1324,6 +1390,23 @@ a generator function instead of a list::
    tar.extractall(members=py_files(tar))
    tar.close()
 
+How to read a gzip compressed tar archive and display some member information::
+
+   import tarfile
+   tar = tarfile.open("sample.tar.gz", "r:gz")
+   for tarinfo in tar:
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
+       if tarinfo.isreg():
+           print("a regular file.")
+       elif tarinfo.isdir():
+           print("a directory.")
+       else:
+           print("something else.")
+   tar.close()
+
+Writing examples
+~~~~~~~~~~~~~~~~
+
 How to create an uncompressed tar archive from a list of filenames::
 
    import tarfile
@@ -1339,19 +1422,15 @@ The same example using the :keyword:`with` statement::
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
-How to read a gzip compressed tar archive and display some member information::
+How to create and write an archive to stdout using
+:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
+in :meth:`TarFile.add`::
 
-   import tarfile
-   tar = tarfile.open("sample.tar.gz", "r:gz")
-   for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
-       if tarinfo.isreg():
-           print("a regular file.")
-       elif tarinfo.isdir():
-           print("a directory.")
-       else:
-           print("something else.")
-   tar.close()
+    import sys
+    import tarfile
+    with tarfile.open("sample.tar.gz", "w|gz", fileobj=sys.stdout.buffer) as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
 
 How to create an archive and reset the user information using the *filter*
 parameter in :meth:`TarFile.add`::
