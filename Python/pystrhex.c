@@ -184,6 +184,50 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
         Py_ssize_t chunk;
         unsigned int k;
 
+#if PY_HEXLIFY_CAN_COMPILE_SIMD
+        /* SIMD path for large separator groups (>= 16 bytes per group).
+           SIMD hexlify to output buffer, then shuffle in-place to insert
+           separators. Working backwards avoids overlap issues since we're
+           expanding (destination index >= source index). */
+        if (abs_bytes_per_sep >= 16 && arglen >= 16) {
+            /* SIMD hexlify all bytes to start of output buffer */
+            _Py_hexlify_simd((const unsigned char *)argbuf, retbuf, arglen);
+
+            /* Shuffle in-place, working backwards */
+            Py_ssize_t hex_chunk_size = 2 * (Py_ssize_t)abs_bytes_per_sep;
+            Py_ssize_t remainder_bytes = arglen - chunks * (Py_ssize_t)abs_bytes_per_sep;
+            Py_ssize_t remainder_hex_len = 2 * remainder_bytes;
+            Py_ssize_t hex_pos = 2 * arglen;   /* End of hex data */
+            Py_ssize_t out_pos = resultlen;    /* End of output */
+
+            if (bytes_per_sep_group < 0) {
+                /* Forward: remainder at end, separators after each chunk */
+                if (remainder_hex_len > 0) {
+                    hex_pos -= remainder_hex_len;
+                    out_pos -= remainder_hex_len;
+                    memmove(retbuf + out_pos, retbuf + hex_pos, remainder_hex_len);
+                }
+                for (Py_ssize_t c = chunks - 1; c >= 0; c--) {
+                    retbuf[--out_pos] = sep_char;
+                    hex_pos -= hex_chunk_size;
+                    out_pos -= hex_chunk_size;
+                    memmove(retbuf + out_pos, retbuf + hex_pos, hex_chunk_size);
+                }
+            }
+            else {
+                /* Backward: remainder at start, separators before each chunk */
+                for (Py_ssize_t c = chunks - 1; c >= 0; c--) {
+                    hex_pos -= hex_chunk_size;
+                    out_pos -= hex_chunk_size;
+                    memmove(retbuf + out_pos, retbuf + hex_pos, hex_chunk_size);
+                    retbuf[--out_pos] = sep_char;
+                }
+                /* Remainder at start stays in place (hex_pos == out_pos == remainder_hex_len) */
+            }
+            goto done_hexlify;
+        }
+#endif /* PY_HEXLIFY_CAN_COMPILE_SIMD */
+
         if (bytes_per_sep_group < 0) {
             i = j = 0;
             for (chunk = 0; chunk < chunks; chunk++) {
@@ -220,6 +264,10 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
             assert(j == -1);
         }
     }
+
+#if PY_HEXLIFY_CAN_COMPILE_SIMD
+done_hexlify:
+#endif
 
 #ifdef Py_DEBUG
     if (!return_bytes) {

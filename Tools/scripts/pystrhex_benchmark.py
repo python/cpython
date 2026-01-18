@@ -79,6 +79,21 @@ def bench_bytes_hex_sep_group():
         print(f"  {ns:7.1f} ns    {format_size(size)}")
 
 
+def bench_bytes_hex_newline_32():
+    """Benchmark bytes.hex() with newline separator every 32 bytes.
+
+    This simulates hex dump output with 32 bytes (64 hex chars) per line.
+    """
+    print("\nbytes.hex('\\n', 32) with newline (every 32 bytes):")
+    # Only test sizes >= 32 where this grouping is meaningful
+    for size in SIZES:
+        if size < 32:
+            continue
+        data = DATA[size]
+        ns = run_benchmark(lambda d=data: d.hex('\n', 32))
+        print(f"  {ns:7.1f} ns    {format_size(size)}")
+
+
 def bench_bytearray_hex():
     """Benchmark bytearray.hex() for comparison."""
     print("\nbytearray.hex() by size:")
@@ -179,6 +194,7 @@ if __name__ == '__main__':
     bench_bytes_hex()
     bench_bytes_hex_sep()
     bench_bytes_hex_sep_group()
+    bench_bytes_hex_newline_32()
     bench_bytearray_hex()
     bench_memoryview_hex()
     bench_binascii_hexlify()
