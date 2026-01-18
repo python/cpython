@@ -871,7 +871,6 @@ class Popen:
         self.stdout = None
         self.stderr = None
         self.pid = None
-        self._pidfd = None
         self.returncode = None
         self.encoding = encoding
         self.errors = errors
@@ -1818,12 +1817,6 @@ class Popen:
             self.pid = os.posix_spawn(executable, args, env, **kwargs)
             self._child_created = True
 
-            if hasattr(os, "pidfd_open"):
-                try:
-                    self._pidfd = os.pidfd_open(self.pid, 0)
-                except OSError:
-                    pass
-
             self._close_pipe_fds(p2cread, p2cwrite,
                                  c2pread, c2pwrite,
                                  errread, errwrite)
@@ -2054,14 +2047,21 @@ class Popen:
             return (pid, sts)
 
         def _wait_pidfd(self, timeout):
-            if self._pidfd is None:
-                return False  # fallback
-            poller = select.poll()
-            poller.register(self._pidfd, select.POLLIN)
-            events = poller.poll(int(timeout * 1000))
-            if not events:
-                raise TimeoutExpired(self.args, timeout)
-            return True
+            if not hasattr(os, "pidfd_open"):
+                return False
+            try:
+                pidfd = os.pidfd_open(self.pid, 0)
+            except OSError:
+                return False
+            try:
+                poller = select.poll()
+                poller.register(pidfd, select.POLLIN)
+                events = poller.poll(int(timeout * 1000))
+                if not events:
+                    raise TimeoutExpired(self.args, timeout)
+                return True
+            finally:
+                os.close(pidfd)
 
         def _busy_wait(self, timeout):
             endtime = _time() + timeout
