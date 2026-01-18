@@ -1588,11 +1588,12 @@ class TestParser(TestParserMixin, TestEmailBase):
     # get_comment
 
     @params
-    def test_get_comment(self, s, *args, **kw):
+    def test_get_comment(self, s, *args, value=' ', **kw):
         cmt = self._test_parse(
             parser.get_comment,
             C(s),
             *args,
+            value=value,
             **kw,
             )
         if 'exception' in kw:
@@ -1605,11 +1606,7 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         only = C(
             '(comment)',
-            '(comment)',
-            ' ',
-            [],
-            '',
-            ['comment'],
+            comments=['comment'],
             ),
 
         must_start_with_paren_no_ws = C(
@@ -1624,112 +1621,73 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         following_wsp_preserved = C(
             '(comment)  \t',
-            '(comment)',
-            ' ',
-            [],
-            '  \t',
-            ['comment'],
+            remainder='  \t',
+            comments=['comment'],
             ),
 
         multiple_words = C(
             '(foo bar)  \t',
-            '(foo bar)',
-            ' ',
-            [],
-            '  \t',
-            ['foo bar'],
+            remainder='  \t',
+            comments=['foo bar'],
             ),
 
         multiple_words_wsp_preserved = C(
             '( foo  bar\t )  \t',
-            '( foo  bar\t )',
-            ' ',
-            [],
-            '  \t',
-            [' foo  bar\t '],
+            remainder='  \t',
+            comments=[' foo  bar\t '],
             ),
 
         end_paren_mid_word = C(
             '(foo)bar',
-            '(foo)',
-            ' ',
-            [],
-            'bar',
-            ['foo'],
+            remainder='bar',
+            comments=['foo'],
             ),
 
         quoted_parens = C(
             r'(foo\) \(\)bar)',
-            r'(foo\) \(\)bar)',
-            ' ',
-            [],
-            '',
-            ['foo) ()bar'],
+            comments=['foo) ()bar'],
             ),
 
         non_printable = C(
             '(foo\x7Fbar)',
-            '(foo\x7Fbar)',
-            ' ',
-            [errors.NonPrintableDefect],
-            '',
-            ['foo\x7Fbar'],
+            defects=[errors.NonPrintableDefect],
+            comments=['foo\x7Fbar'],
             ),
 
         no_end_paren_after_non_ws = C(
             '(foo bar',
-            '(foo bar)',
-            ' ',
-            [errors.InvalidHeaderDefect],
-            '',
-            ['foo bar'],
+            stringified='(foo bar)',
+            defects=[errors.InvalidHeaderDefect],
+            comments=['foo bar'],
             ),
 
         no_end_paren_after_ws = C(
             '(foo bar  ',
-            '(foo bar  )',
-            ' ',
-            [errors.InvalidHeaderDefect],
-            '',
-            ['foo bar  '],
+            stringified='(foo bar  )',
+            defects=[errors.InvalidHeaderDefect],
+            comments=['foo bar  '],
             ),
 
         nested_comment = C(
             '(foo(bar))',
-            '(foo(bar))',
-            ' ',
-            [],
-            '',
-            ['foo(bar)'],
+            comments=['foo(bar)'],
             ),
             #self.assertEqual(comment[1].content, 'bar')
 
         nested_comment_wsp = C(
             '(foo ( bar ) )',
-            '(foo ( bar ) )',
-            ' ',
-            [],
-            '',
-            ['foo ( bar ) '],
+            comments=['foo ( bar ) '],
             ),
             #self.assertEqual(comment[2].content, ' bar ')
 
         empty_comment = C(
             '()',
-            '()',
-            ' ',
-            [],
-            '',
-            [''],
+            comments=[''],
             ),
 
         multiple_nesting = C(
             '(((((foo)))))',
-            '(((((foo)))))',
-            ' ',
-            [],
-            '',
-            ['((((foo))))'],
+            comments=['((((foo))))'],
             ),
             #for i in range(4, 0, -1):
             #    self.assertEqual(comment[0].content, '('*(i-1)+'foo'+')'*(i-1))
@@ -1738,20 +1696,14 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         missing_end_of_nesting = C(
             '(((((foo)))',
-            '(((((foo)))))',
-            ' ',
-            [errors.InvalidHeaderDefect]*2,
-            '',
-            ['((((foo))))'],
+            stringified='(((((foo)))))',
+            defects=[errors.InvalidHeaderDefect]*2,
+            comments=['((((foo))))'],
             ),
 
         qs_in_nested_comment = C(
             r'(foo (b\)))',
-            r'(foo (b\)))',
-            ' ',
-            [],
-            '',
-            [r'foo (b\))']
+            comments=[r'foo (b\))']
             ),
             #self.assertEqual(comment[2].content, 'b)')
 
