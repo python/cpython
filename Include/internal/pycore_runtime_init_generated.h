@@ -1795,6 +1795,7 @@ extern "C" {
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
+    INIT_ID(ignorechars), \
     INIT_ID(imag), \
     INIT_ID(implieslink), \
     INIT_ID(importlib), \

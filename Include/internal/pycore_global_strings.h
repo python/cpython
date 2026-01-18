@@ -520,6 +520,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(ident)
         STRUCT_FOR_ID(identity_hint)
         STRUCT_FOR_ID(ignore)
+        STRUCT_FOR_ID(ignorechars)
         STRUCT_FOR_ID(imag)
         STRUCT_FOR_ID(implieslink)
         STRUCT_FOR_ID(importlib)
