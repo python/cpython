@@ -1,1 +1,1 @@
-Replace the usage of the deprecated optparse module with argparse in Lib/test/test_decimal.py.
+Replace :mod:`optparse` with :mod:`argparse` in ``Lib/test/test_decimal.py``.
