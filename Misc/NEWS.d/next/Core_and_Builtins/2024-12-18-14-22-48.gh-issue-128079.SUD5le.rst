@@ -1,5 +1,0 @@
-Fix a bug where :keyword:`except* <except_star>` does not properly check the
-return value of an :exc:`ExceptionGroup`'s :meth:`~BaseExceptionGroup.split`
-function, leading to a crash in some cases. Now when :meth:`~BaseExceptionGroup.split`
-returns an invalid object, :keyword:`except* <except_star>` raises a :exc:`TypeError`
-with the original raised :exc:`ExceptionGroup` object chained to it.

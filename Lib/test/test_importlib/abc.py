@@ -41,22 +41,6 @@ class FinderTests(metaclass=abc.ABCMeta):
 class LoaderTests(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def test_module(self):
-        """A module should load without issue.
-
-        After the loader returns the module should be in sys.modules.
-
-        Attributes to verify:
-
-            * __file__
-            * __loader__
-            * __name__
-            * No __path__
-
-        """
-        pass
-
-    @abc.abstractmethod
     def test_package(self):
         """Loading a package should work.
 

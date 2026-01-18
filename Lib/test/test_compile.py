@@ -2,7 +2,6 @@ import contextlib
 import dis
 import io
 import itertools
-import marshal
 import math
 import opcode
 import os
@@ -21,7 +20,7 @@ except ImportError:
 
 from test import support
 from test.support import (script_helper, requires_debug_ranges, run_code,
-                          requires_specialization, get_c_recursion_limit)
+                          requires_specialization)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
@@ -123,7 +122,7 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.skip_emscripten_stack_overflow()
     def test_extended_arg(self):
-        repeat = int(get_c_recursion_limit() * 0.9)
+        repeat = 100
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = textwrap.dedent('''
@@ -652,6 +651,21 @@ class TestSpecifics(unittest.TestCase):
                 compile('pass', filename, 'exec')
         self.assertRaises(TypeError, compile, 'pass', list(b'file.py'), 'exec')
 
+    def test_compile_filename_refleak(self):
+        # Regression tests for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'mode' AC conversion failed
+        self.assertRaises(TypeError, compile, b'', mortal_str, mode=1234)
+        # check error path when 'optimize' AC conversion failed
+        self.assertRaises(OverflowError, compile, b'', mortal_str,
+                          'exec', optimize=1 << 1000)
+        # check error path when 'dont_inherit' AC conversion failed
+        class EvilBool:
+            def __bool__(self): raise ValueError
+        self.assertRaises(ValueError, compile, b'', mortal_str,
+                          'exec', dont_inherit=EvilBool())
+
     @support.cpython_only
     def test_same_filename_used(self):
         s = """def f(): pass\ndef g(): pass"""
@@ -712,21 +726,19 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
-        # Expected limit is Py_C_RECURSION_LIMIT
-        limit = get_c_recursion_limit()
-        fail_depth = limit + 1
-        crash_depth = limit * 100
-        success_depth = int(limit * 0.8)
+        # Compiler frames are small
+        limit = 100
+        # Android test devices have less memory.
+        crash_depth = limit * (1000 if sys.platform == "android" else 5000)
+        success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
             compile(expect_ok, '<test>', mode)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    compile(broken, '<test>', mode)
+            broken = prefix + repeated * crash_depth
+            details = f"Compiling ({prefix!r} + {repeated!r} * {crash_depth})"
+            with self.assertRaises(RecursionError, msg=details):
+                compile(broken, '<test>', mode)
 
         check_limit("a", "()")
         check_limit("a", ".b")
@@ -797,9 +809,9 @@ class TestSpecifics(unittest.TestCase):
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
         self.assertIs(f1.__code__.co_consts[0],
-                      f2.__code__.co_consts[0][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[0])),
-                      f2.__code__.co_consts[0])
+                      f2.__code__.co_consts[1][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[1])),
+                      f2.__code__.co_consts[1])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
@@ -827,8 +839,10 @@ class TestSpecifics(unittest.TestCase):
             else:
                 return "unused"
 
-        self.assertEqual(f.__code__.co_consts,
-                         (f.__doc__, "used"))
+        if f.__doc__ is None:
+            self.assertEqual(f.__code__.co_consts, (True, "used"))
+        else:
+            self.assertEqual(f.__code__.co_consts, (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -873,7 +887,11 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
+
+        if f1.__doc__ is None:
+            self.assertEqual(f1.__code__.co_consts, (42,))
+        else:
+            self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -1019,11 +1037,13 @@ class TestSpecifics(unittest.TestCase):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    # bpo-31113: Stack overflow when compile a long sequence of
+    # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # bpo-31113: Stack overflow when compile a long sequence of
-        # complex statements.
-        compile("if a: b\n" * 200000, "<dummy>", "exec")
+        # Android test devices have less memory.
+        size = 100_000 if sys.platform == "android" else 200_000
+        compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.
@@ -1132,6 +1152,31 @@ class TestSpecifics(unittest.TestCase):
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
                 self.assertIn('CALL', instructions)
+
+    def test_folding_type_param(self):
+        get_code_fn_cls = lambda x: x.co_consts[0].co_consts[2]
+        get_code_type_alias = lambda x: x.co_consts[0].co_consts[3]
+        snippets = [
+            ("def foo[T = 40 + 5](): pass", get_code_fn_cls),
+            ("def foo[**P = 40 + 5](): pass", get_code_fn_cls),
+            ("def foo[*Ts = 40 + 5](): pass", get_code_fn_cls),
+            ("class foo[T = 40 + 5]: pass", get_code_fn_cls),
+            ("class foo[**P = 40 + 5]: pass", get_code_fn_cls),
+            ("class foo[*Ts = 40 + 5]: pass", get_code_fn_cls),
+            ("type foo[T = 40 + 5] = 1", get_code_type_alias),
+            ("type foo[**P = 40 + 5] = 1", get_code_type_alias),
+            ("type foo[*Ts = 40 + 5] = 1", get_code_type_alias),
+        ]
+        for snippet, get_code in snippets:
+            c = compile(snippet, "<dummy>", "exec")
+            code = get_code(c)
+            opcodes = list(dis.get_instructions(code))
+            instructions = [opcode.opname for opcode in opcodes]
+            args = [opcode.oparg for opcode in opcodes]
+            self.assertNotIn(40, args)
+            self.assertNotIn(5, args)
+            self.assertIn('LOAD_SMALL_INT', instructions)
+            self.assertIn(45, args)
 
     def test_lineno_procedure_call(self):
         def call():
@@ -1253,7 +1298,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 4, 2, 0, 4]
+        genexp_lines = [4, 0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[0]
         code_lines = self.get_code_lines(genexp_code)
@@ -1410,7 +1455,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(load, "BINARY_SLICE", 3)
         check_op_count(load, "BUILD_SLICE", 0)
         check_consts(load, slice, [slice(None, None, None)])
-        check_op_count(load, "BINARY_SUBSCR", 1)
+        check_op_count(load, "BINARY_OP", 4)
 
         def store():
             x[a:b] = y
@@ -1429,7 +1474,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(long_slice, "BUILD_SLICE", 1)
         check_op_count(long_slice, "BINARY_SLICE", 0)
         check_consts(long_slice, slice, [])
-        check_op_count(long_slice, "BINARY_SUBSCR", 1)
+        check_op_count(long_slice, "BINARY_OP", 1)
 
         def aug():
             x[a:b] += y
@@ -1437,7 +1482,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
-        check_op_count(aug, "BINARY_SUBSCR", 0)
+        check_op_count(aug, "BINARY_OP", 1)
         check_op_count(aug, "STORE_SUBSCR", 0)
         check_consts(aug, slice, [])
 
@@ -1446,7 +1491,7 @@ class TestSpecifics(unittest.TestCase):
 
         check_op_count(aug_const, "BINARY_SLICE", 0)
         check_op_count(aug_const, "STORE_SLICE", 0)
-        check_op_count(aug_const, "BINARY_SUBSCR", 1)
+        check_op_count(aug_const, "BINARY_OP", 2)
         check_op_count(aug_const, "STORE_SUBSCR", 1)
         check_consts(aug_const, slice, [slice(1, 2)])
 
@@ -1588,6 +1633,17 @@ class TestSpecifics(unittest.TestCase):
         def f():
             a if (1 if b else c) else d
 
+    def test_lineno_propagation_empty_blocks(self):
+        # Smoke test. See gh-138714.
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
     def test_global_declaration_in_except_used_in_else(self):
         # See gh-111123
         code = textwrap.dedent("""\
@@ -1614,6 +1670,168 @@ class TestSpecifics(unittest.TestCase):
                 case []:
                     pass
             [[]]
+
+    def test_globals_dict_subclass(self):
+        # gh-132386
+        class WeirdDict(dict):
+            pass
+
+        ns = {}
+        exec('def foo(): return a', WeirdDict(), ns)
+
+        self.assertRaises(NameError, ns['foo'])
+
+    def test_compile_warnings(self):
+        # Each invocation of compile() emits compiler warnings, even if they
+        # have the same message and line number.
+        source = textwrap.dedent(r"""
+            # tokenizer
+            1or 0  # line 3
+            # code generator
+            1 is 1  # line 5
+        """)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            for i in range(2):
+                # Even if compile() is at the same line.
+                compile(source, '<stdin>', 'exec')
+
+        self.assertEqual([wm.lineno for wm in caught], [3, 5] * 2)
+
+    def test_compile_warning_in_finally(self):
+        # Ensure that warnings inside finally blocks are
+        # only emitted once despite the block being
+        # compiled twice (for normal execution and for
+        # exception handling).
+        source = textwrap.dedent("""
+            try:
+                pass
+            finally:
+                1 is 1  # line 5
+                try:
+                    pass
+                finally: # nested
+                    1 is 1  # line 9
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            compile(source, '<stdin>', 'exec')
+
+        self.assertEqual(sorted(wm.lineno for wm in caught), [5, 9])
+        for wm in caught:
+            self.assertEqual(wm.category, SyntaxWarning)
+            self.assertIn("\"is\" with 'int' literal", str(wm.message))
+
+        # Other code path is used for "try" with "except*".
+        source = textwrap.dedent("""
+            try:
+                pass
+            except *Exception:
+                pass
+            finally:
+                1 is 1  # line 7
+                try:
+                    pass
+                except *Exception:
+                    pass
+                finally: # nested
+                    1 is 1  # line 13
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            compile(source, '<stdin>', 'exec')
+
+        self.assertEqual(sorted(wm.lineno for wm in caught), [7, 13])
+        for wm in caught:
+            self.assertEqual(wm.category, SyntaxWarning)
+            self.assertIn("\"is\" with 'int' literal", str(wm.message))
+
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            compile(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=module_re)
+            compile(source, filename, 'exec', module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+    @support.subTests('src', [
+        textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    break
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    continue
+            """),
+    ])
+    def test_pep_765_warnings(self, src):
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(src, '<string>', 'exec')
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            tree = ast.parse(src)
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(tree, '<string>', 'exec')
+
+    @support.subTests('src', [
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                def f():
+                    return 42
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    break
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    continue
+            """),
+    ])
+    def test_pep_765_no_warnings(self, src):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            compile(src, '<string>', 'exec')
+
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:
@@ -1653,6 +1871,21 @@ class TestBooleanExpression(unittest.TestCase):
         res = v[0] or v[1] and v[2] or v[3] or v[4]
         self.assertIs(res, v[3])
         self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
+
+    def test_exception(self):
+        # See gh-137288
+        class Foo:
+            def __bool__(self):
+                raise NotImplementedError()
+
+        a = Foo()
+        b = Foo()
+
+        with self.assertRaises(NotImplementedError):
+            bool(a)
+
+        with self.assertRaises(NotImplementedError):
+            c = a or b
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -2050,16 +2283,16 @@ class TestSourcePositions(unittest.TestCase):
         snippet = "a - b @ (c * x['key'] + 23)"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=1, end_line=1, column=13, end_column=21)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=9, end_column=21, occurrence=1)
+            line=1, end_line=1, column=9, end_column=21, occurrence=2)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=9, end_column=26, occurrence=2)
+            line=1, end_line=1, column=9, end_column=26, occurrence=3)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=4, end_column=27, occurrence=3)
+            line=1, end_line=1, column=4, end_column=27, occurrence=4)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=0, end_column=27, occurrence=4)
+            line=1, end_line=1, column=0, end_column=27, occurrence=5)
 
     def test_multiline_assert_rewritten_as_method_call(self):
         # GH-94694: Don't crash if pytest rewrites a multiline assert as a
@@ -2419,7 +2652,9 @@ class TestStackSizeStability(unittest.TestCase):
             script = """def func():\n""" + i * snippet
             if async_:
                 script = "async " + script
-            code = compile(script, "<script>", "exec")
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', SyntaxWarning)
+                code = compile(script, "<script>", "exec")
             exec(code, ns, ns)
             return ns['func'].__code__
 

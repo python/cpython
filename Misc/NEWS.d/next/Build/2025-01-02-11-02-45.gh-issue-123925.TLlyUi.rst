@@ -1,2 +1,0 @@
-Fix building the :mod:`curses` module on platforms with libncurses but
-without libncursesw.

@@ -524,6 +524,9 @@ static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
 
 static inline void
+_Py_atomic_store_int8_release(int8_t *obj, int8_t value);
+
+static inline void
 _Py_atomic_store_int_release(int *obj, int value);
 
 static inline int
@@ -574,15 +577,15 @@ static inline void _Py_atomic_fence_release(void);
 
 #if _Py_USE_GCC_BUILTIN_ATOMICS
 #  define Py_ATOMIC_GCC_H
-#  include "cpython/pyatomic_gcc.h"
+#  include "pyatomic_gcc.h"
 #  undef Py_ATOMIC_GCC_H
 #elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
 #  define Py_ATOMIC_STD_H
-#  include "cpython/pyatomic_std.h"
+#  include "pyatomic_std.h"
 #  undef Py_ATOMIC_STD_H
 #elif defined(_MSC_VER)
 #  define Py_ATOMIC_MSC_H
-#  include "cpython/pyatomic_msc.h"
+#  include "pyatomic_msc.h"
 #  undef Py_ATOMIC_MSC_H
 #else
 #  error "no available pyatomic implementation for this platform/compiler"
@@ -590,6 +593,17 @@ static inline void _Py_atomic_fence_release(void);
 
 
 // --- aliases ---------------------------------------------------------------
+
+// Compilers don't really support "consume" semantics, so we fake it. Use
+// "acquire" with TSan to support false positives. Use "relaxed" otherwise,
+// because CPUs on all platforms we support respect address dependencies without
+// extra barriers.
+// See 2.6.7 in https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2055r0.pdf
+#if defined(_Py_THREAD_SANITIZER)
+# define _Py_atomic_load_ptr_consume _Py_atomic_load_ptr_acquire
+#else
+# define _Py_atomic_load_ptr_consume _Py_atomic_load_ptr_relaxed
+#endif
 
 #if SIZEOF_LONG == 8
 # define _Py_atomic_load_ulong(p) \

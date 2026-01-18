@@ -5,7 +5,7 @@ from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCFuncPtrType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
+                       Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin)
 
 
 try:
@@ -17,7 +17,7 @@ except AttributeError:
 lib = CDLL(_ctypes_test.__file__)
 
 
-class CFuncPtrTestCase(unittest.TestCase):
+class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
     def test_inheritance_hierarchy(self):
         self.assertEqual(_CFuncPtr.mro(), [_CFuncPtr, _CData, object])
 
@@ -88,6 +88,7 @@ class CFuncPtrTestCase(unittest.TestCase):
                         ("hCursor", HCURSOR),
                         ("lpszMenuName", LPCTSTR),
                         ("lpszClassName", LPCTSTR)]
+        self.check_struct(WNDCLASS)
 
         wndclass = WNDCLASS()
         wndclass.lpfnWndProc = WNDPROC(wndproc)

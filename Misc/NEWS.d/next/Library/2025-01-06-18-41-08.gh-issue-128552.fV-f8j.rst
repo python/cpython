@@ -1,1 +1,0 @@
-Fix cyclic garbage introduced by :meth:`asyncio.loop.create_task` and :meth:`asyncio.TaskGroup.create_task` holding a reference to the created task if it is eager.

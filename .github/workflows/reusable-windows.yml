@@ -3,10 +3,6 @@ name: Reusable Windows
 on:
   workflow_call:
     inputs:
-      os:
-        description: OS to run on
-        required: true
-        type: string
       arch:
         description: CPU architecture
         required: true
@@ -18,18 +14,19 @@ on:
         default: false
 
 env:
+  FORCE_COLOR: 1
   IncludeUwp: >-
     true
 
 jobs:
   build:
-    name: 'build and test (${{ inputs.arch }})'
-    runs-on: ${{ inputs.os }}
+    name: Build and test (${{ inputs.arch }})
+    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2022' }}
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Register MSVC problem matcher
@@ -42,11 +39,9 @@ jobs:
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
-    - name: Display build info  # FIXME(diegorusso): remove the `if`
-      if: inputs.arch != 'arm64'
+    - name: Display build info
       run: .\\python.bat -m test.pythoninfo
-    - name: Tests  # FIXME(diegorusso): remove the `if`
-      if: inputs.arch != 'arm64'
+    - name: Tests
       run: >-
         .\\PCbuild\\rt.bat
         -p "${ARCH}"

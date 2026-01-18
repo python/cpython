@@ -96,10 +96,11 @@ class RunTests:
     coverage: bool
     memory_limit: str | None
     gc_threshold: int | None
-    use_resources: tuple[str, ...]
+    use_resources: dict[str, str | None]
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
+    parallel_threads: int | None
 
     def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)
@@ -178,12 +179,21 @@ class RunTests:
         if self.gc_threshold:
             args.append(f"--threshold={self.gc_threshold}")
         if self.use_resources:
-            args.extend(("-u", ','.join(self.use_resources)))
+            simple = ','.join(resource
+                              for resource, value in self.use_resources.items()
+                              if value is None)
+            if simple:
+                args.extend(("-u", simple))
+            for resource, value in self.use_resources.items():
+                if value is not None:
+                    args.extend(("-u", f"{resource}={value}"))
         if self.python_cmd:
             cmd = shlex.join(self.python_cmd)
             args.extend(("--python", cmd))
         if self.randomize:
             args.append(f"--randomize")
+        if self.parallel_threads:
+            args.append(f"--parallel-threads={self.parallel_threads}")
         args.append(f"--randseed={self.random_seed}")
         return args
 

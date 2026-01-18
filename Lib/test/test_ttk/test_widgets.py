@@ -5,6 +5,7 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
     simulate_mouse_click, AbstractDefaultRootTest)
@@ -490,7 +491,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         width = self.combo.winfo_width()
         x, y = width - 5, 5
         if sys.platform != 'darwin':  # there's no down arrow on macOS
-            self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
+            self.assertRegex(self.combo.identify(x, y), r'.*downarrow\z')
         self.combo.event_generate('<Button-1>', x=x, y=y)
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
 
@@ -1250,7 +1251,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 - 5
-        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\Z')
+        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -1260,7 +1261,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 + 4
-        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\Z')
+        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()

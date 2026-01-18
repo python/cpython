@@ -43,6 +43,11 @@ class IntTestCase(unittest.TestCase, HelperMixin):
             for expected in (-n, n):
                 self.helper(expected)
             n = n >> 1
+        n = 1 << 100
+        while n:
+            for expected in (-n, -n+1, n-1, n):
+                self.helper(expected)
+            n = n >> 1
 
     def test_int64(self):
         # Simulate int marshaling with TYPE_INT64.
@@ -125,8 +130,7 @@ class CodeTestCase(unittest.TestCase):
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
         # more than MAX_MARSHAL_STACK_DEPTH
-        count = support.exceeds_recursion_limit()
-        codes = (ExceptionTestCase.test_exceptions.__code__,) * count
+        codes = (ExceptionTestCase.test_exceptions.__code__,) * 10_000
         marshal.loads(marshal.dumps(codes))
 
     def test_different_filenames(self):
@@ -408,6 +412,26 @@ class BugsTestCase(unittest.TestCase):
                     _, dump_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
                     _, dump_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
                     self.assertEqual(dump_0, dump_1)
+
+    def test_unmarshallable(self):
+        # Check no crash after encountering unmarshallable objects.
+        # See https://github.com/python/cpython/issues/106287.
+        fset = frozenset([int])
+        code = compile("a = 1", "<string>", "exec")
+        code = code.replace(co_consts=(1, fset, None))
+        cases = (('tuple', (fset,)),
+                 ('list', [fset]),
+                 ('set', fset),
+                 ('dict key', {fset: 'x'}),
+                 ('dict value', {'x': fset}),
+                 ('dict key & value', {fset: fset}),
+                 ('slice', slice(fset, fset)),
+                 ('code', code))
+        for name, arg in cases:
+            with self.subTest(name, arg=arg):
+                with self.assertRaisesRegex(ValueError, "unmarshallable object"):
+                    marshal.dumps((arg, memoryview(b'')))
+
 
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4

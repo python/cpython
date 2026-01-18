@@ -153,6 +153,12 @@ Module Contents
 
       Return a list of all power-of-two integers contained in a flag.
 
+   :func:`enum.bin`
+
+      Like built-in :func:`bin`, except negative values are represented in
+      two's complement, and the leading bit always indicates sign
+      (``0`` implies positive, ``1`` implies negative).
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
@@ -174,6 +180,10 @@ Data Types
    :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
+
+   .. versionadded:: 3.11
+
+      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
    .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
@@ -206,7 +216,7 @@ Data Types
         >>> Color.RED.value in Color
         True
 
-   .. versionchanged:: 3.12
+      .. versionchanged:: 3.12
 
          Before Python 3.12, a ``TypeError`` is raised if a
          non-Enum-member is used in a containment check.
@@ -250,20 +260,6 @@ Data Types
 
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
-
-   .. method:: EnumType._add_alias_
-
-      Adds a new name as an alias to an existing member.  Raises a
-      :exc:`NameError` if the name is already assigned to a different member.
-
-   .. method:: EnumType._add_value_alias_
-
-      Adds a new value as an alias to an existing member.  Raises a
-      :exc:`ValueError` if the value is already linked with a different member.
-
-   .. versionadded:: 3.11
-
-      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
 
 .. class:: Enum
@@ -325,6 +321,7 @@ Data Types
       Returns ``['__class__', '__doc__', '__module__', 'name', 'value']`` and
       any public methods defined on *self.__class__*::
 
+         >>> from enum import Enum
          >>> from datetime import date
          >>> class Weekday(Enum):
          ...     MONDAY = 1
@@ -351,7 +348,7 @@ Data Types
       A *staticmethod* that is used to determine the next value returned by
       :class:`auto`::
 
-         >>> from enum import auto
+         >>> from enum import auto, Enum
          >>> class PowersOfThree(Enum):
          ...     @staticmethod
          ...     def _generate_next_value_(name, start, count, last_values):
@@ -383,7 +380,7 @@ Data Types
       A *classmethod* for looking up values not found in *cls*.  By default it
       does nothing, but can be overridden to implement custom search behavior::
 
-         >>> from enum import StrEnum
+         >>> from enum import auto, StrEnum
          >>> class Build(StrEnum):
          ...     DEBUG = auto()
          ...     OPTIMIZED = auto()
@@ -422,6 +419,7 @@ Data Types
       Returns the string used for *repr()* calls.  By default, returns the
       *Enum* name, member name, and value, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -438,6 +436,7 @@ Data Types
       Returns the string used for *str()* calls.  By default, returns the
       *Enum* name and member name, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -453,6 +452,7 @@ Data Types
       Returns the string used for *format()* and *f-string* calls.  By default,
       returns :meth:`__str__` return value, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -469,6 +469,30 @@ Data Types
       starting with ``1``.
 
    .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
+
+   .. method:: Enum._add_alias_
+
+      Adds a new name as an alias to an existing member::
+
+         >>> Color.RED._add_alias_("ERROR")
+         >>> Color.ERROR
+         <Color.RED: 1>
+
+      Raises a :exc:`NameError` if the name is already assigned to a different member.
+
+      .. versionadded:: 3.13
+
+   .. method:: Enum._add_value_alias_
+
+      Adds a new value as an alias to an existing member::
+
+         >>> Color.RED._add_value_alias_(42)
+         >>> Color(42)
+         <Color.RED: 1>
+
+      Raises a :exc:`ValueError` if the value is already linked with a different member.
+
+      .. versionadded:: 3.13
 
 
 .. class:: IntEnum
@@ -504,16 +528,31 @@ Data Types
 
 .. class:: StrEnum
 
-   ``StrEnum`` is the same as :class:`Enum`, but its members are also strings and can be used
-   in most of the same places that a string can be used.  The result of any string
-   operation performed on or with a *StrEnum* member is not part of the enumeration.
+   *StrEnum* is the same as :class:`Enum`, but its members are also strings and
+   can be used in most of the same places that a string can be used. The result
+   of any string operation performed on or with a *StrEnum* member is not part
+   of the enumeration.
+
+   >>> from enum import StrEnum, auto
+   >>> class Color(StrEnum):
+   ...     RED = 'r'
+   ...     GREEN = 'g'
+   ...     BLUE = 'b'
+   ...     UNKNOWN = auto()
+   ...
+   >>> Color.RED
+   <Color.RED: 'r'>
+   >>> Color.UNKNOWN
+   <Color.UNKNOWN: 'unknown'>
+   >>> str(Color.UNKNOWN)
+   'unknown'
 
    .. note::
 
       There are places in the stdlib that check for an exact :class:`str`
       instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
       instead of ``isinstance(unknown, str)``), and in those locations you
-      will need to use ``str(StrEnum.member)``.
+      will need to use ``str(MyStrEnum.MY_MEMBER)``.
 
    .. note::
 
@@ -668,7 +707,7 @@ Data Types
    * the result is a valid *IntFlag*: an *IntFlag* is returned
    * the result is not a valid *IntFlag*: the result depends on the :class:`FlagBoundary` setting
 
-   The :func:`repr` of unnamed zero-valued flags has changed.  It is now:
+   The :func:`repr` of unnamed zero-valued flags has changed.  It is now::
 
       >>> Color(0)
       <Color: 0>
@@ -864,10 +903,6 @@ Once all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
-  member.
-- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
-  existing member.
 - :attr:`~Enum._name_` -- name of the member
 - :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
 - :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
@@ -887,6 +922,11 @@ Supported ``_sunder_`` names
 
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
+
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.
 
 - While ``_sunder_`` names are generally reserved for the further development
   of the :class:`Enum` class and can not be used, some are explicitly allowed:
@@ -913,12 +953,13 @@ Utilities and Decorators
    the member's name.  Care must be taken if mixing *auto()* with manually
    specified values.
 
-   *auto* instances are only resolved when at the top level of an assignment:
+   *auto* instances are only resolved when at the top level of an assignment, either by
+   itself or as part of a tuple:
 
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
      used to create the ``SECOND`` enum member;
-   * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
+   * ``THREE = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
      create the ``THREE`` enum member)
 
    .. versionchanged:: 3.11.1
@@ -999,6 +1040,20 @@ Utilities and Decorators
    Return a list of all power-of-two integers contained in a flag *value*.
 
    .. versionadded:: 3.11
+
+.. function:: bin(num, max_bits=None)
+
+   Like built-in :func:`bin`, except negative values are represented in
+   two's complement, and the leading bit always indicates sign
+   (``0`` implies positive, ``1`` implies negative).
+
+      >>> import enum
+      >>> enum.bin(10)
+      '0b0 1010'
+      >>> enum.bin(~10)   # ~10 is -11
+      '0b1 0101'
+
+   .. versionadded:: 3.10
 
 ---------------
 

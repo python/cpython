@@ -11,7 +11,7 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper, gc_collect
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -37,7 +37,7 @@ PROGRAM_CAT = [
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
@@ -879,6 +879,44 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
+    @warnings_helper.ignore_warnings(category=ResourceWarning)
+    def test_subprocess_read_pipe_cancelled(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.connect_read_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED, stderr=asyncio.subprocess.PIPE)
+
+        asyncio.run(main())
+        gc_collect()
+
+    @warnings_helper.ignore_warnings(category=ResourceWarning)
+    def test_subprocess_write_pipe_cancelled(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.connect_write_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.create_subprocess_exec(*PROGRAM_BLOCKED, stdin=asyncio.subprocess.PIPE)
+
+        asyncio.run(main())
+        gc_collect()
+
+    @warnings_helper.ignore_warnings(category=ResourceWarning)
+    def test_subprocess_read_write_pipe_cancelled(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.connect_read_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            loop.connect_write_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.create_subprocess_exec(
+                    *PROGRAM_BLOCKED,
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+
+        asyncio.run(main())
+        gc_collect()
 
 if sys.platform != 'win32':
     # Unix
@@ -901,9 +939,14 @@ if sys.platform != 'win32':
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
         def setUp(self):
+            self._original_can_use_pidfd = unix_events.can_use_pidfd
             # Force the use of the threaded child watcher
             unix_events.can_use_pidfd = mock.Mock(return_value=False)
             super().setUp()
+
+        def tearDown(self):
+            unix_events.can_use_pidfd = self._original_can_use_pidfd
+            return super().tearDown()
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),

@@ -3,6 +3,7 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
+from io import TextIOWrapper, text_encoding
 import os
 import sys
 try:
@@ -100,13 +101,13 @@ else:
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2'):
-    def copyfile(source, target):
+    def copyfile2(source, target):
         """
         Copy from one file to another using CopyFile2 (Windows only).
         """
         _winapi.CopyFile2(source, target, 0)
 else:
-    copyfile = None
+    copyfile2 = None
 
 
 def copyfileobj(source_f, target_f):
@@ -162,3 +163,141 @@ def copyfileobj(source_f, target_f):
     write_target = target_f.write
     while buf := read_source(1024 * 1024):
         write_target(buf)
+
+
+def _open_reader(obj):
+    cls = type(obj)
+    try:
+        open_reader = cls.__open_reader__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for reading") from None
+    else:
+        return open_reader(obj)
+
+
+def _open_writer(obj, mode):
+    cls = type(obj)
+    try:
+        open_writer = cls.__open_writer__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for writing") from None
+    else:
+        return open_writer(obj, mode)
+
+
+def _open_updater(obj, mode):
+    cls = type(obj)
+    try:
+        open_updater = cls.__open_updater__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for updating") from None
+    else:
+        return open_updater(obj, mode)
+
+
+def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
+            newline=None):
+    """
+    Open the file pointed to by this path and return a file object, as
+    the built-in open() function does.
+
+    Unlike the built-in open() function, this function additionally accepts
+    'openable' objects, which are objects with any of these special methods:
+
+        __open_reader__()
+        __open_writer__(mode)
+        __open_updater__(mode)
+
+    '__open_reader__' is called for 'r' mode; '__open_writer__' for 'a', 'w'
+    and 'x' modes; and '__open_updater__' for 'r+' and 'w+' modes. If text
+    mode is requested, the result is wrapped in an io.TextIOWrapper object.
+    """
+    if buffering != -1:
+        raise ValueError("buffer size can't be customized")
+    text = 'b' not in mode
+    if text:
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
+    try:
+        return open(obj, mode, buffering, encoding, errors, newline)
+    except TypeError:
+        pass
+    if not text:
+        if encoding is not None:
+            raise ValueError("binary mode doesn't take an encoding argument")
+        if errors is not None:
+            raise ValueError("binary mode doesn't take an errors argument")
+        if newline is not None:
+            raise ValueError("binary mode doesn't take a newline argument")
+    mode = ''.join(sorted(c for c in mode if c not in 'bt'))
+    if mode == 'r':
+        stream = _open_reader(obj)
+    elif mode in ('a', 'w', 'x'):
+        stream = _open_writer(obj, mode)
+    elif mode in ('+r', '+w'):
+        stream = _open_updater(obj, mode[1])
+    else:
+        raise ValueError(f'invalid mode: {mode}')
+    if text:
+        stream = TextIOWrapper(stream, encoding, errors, newline)
+    return stream
+
+
+def vfspath(obj):
+    """
+    Return the string representation of a virtual path object.
+    """
+    cls = type(obj)
+    try:
+        vfspath_method = cls.__vfspath__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"expected JoinablePath object, not {cls_name}") from None
+    else:
+        return vfspath_method(obj)
+
+
+def ensure_distinct_paths(source, target):
+    """
+    Raise OSError(EINVAL) if the other path is within this path.
+    """
+    # Note: there is no straightforward, foolproof algorithm to determine
+    # if one directory is within another (a particularly perverse example
+    # would be a single network share mounted in one location via NFS, and
+    # in another location via CIFS), so we simply checks whether the
+    # other path is lexically equal to, or within, this path.
+    if source == target:
+        err = OSError(EINVAL, "Source and target are the same path")
+    elif source in target.parents:
+        err = OSError(EINVAL, "Source path is a parent of target path")
+    else:
+        return
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
+    raise err
+
+
+def ensure_different_files(source, target):
+    """
+    Raise OSError(EINVAL) if both paths refer to the same file.
+    """
+    try:
+        source_file_id = source.info._file_id
+        target_file_id = target.info._file_id
+    except AttributeError:
+        if source != target:
+            return
+    else:
+        try:
+            if source_file_id() != target_file_id():
+                return
+        except (OSError, ValueError):
+            return
+    err = OSError(EINVAL, "Source and target are the same file")
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
+    raise err

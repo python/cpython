@@ -265,8 +265,35 @@ Known values:
     Python 3.14a4 3610 (Add VALUE_WITH_FAKE_GLOBALS format to annotationlib)
     Python 3.14a4 3611 (Add NOT_TAKEN instruction)
     Python 3.14a4 3612 (Add POP_ITER and INSTRUMENTED_POP_ITER)
+    Python 3.14a4 3613 (Add LOAD_CONST_MORTAL instruction)
+    Python 3.14a5 3614 (Add BINARY_OP_EXTEND)
+    Python 3.14a5 3615 (CALL_FUNCTION_EX always take a kwargs argument)
+    Python 3.14a5 3616 (Remove BINARY_SUBSCR and family. Make them BINARY_OPs)
+    Python 3.14a6 3617 (Branch monitoring for async for loops)
+    Python 3.14a6 3618 (Add oparg to END_ASYNC_FOR)
+    Python 3.14a6 3619 (Renumber RESUME opcode from 149 to 128)
+    Python 3.14a6 3620 (Optimize bytecode for all/any/tuple called on a genexp)
+    Python 3.14a7 3621 (Optimize LOAD_FAST opcodes into LOAD_FAST_BORROW)
+    Python 3.14a7 3622 (Store annotations in different class dict keys)
+    Python 3.14a7 3623 (Add BUILD_INTERPOLATION & BUILD_TEMPLATE opcodes)
+    Python 3.14b1 3624 (Don't optimize LOAD_FAST when local is killed by DELETE_FAST)
+    Python 3.14b3 3625 (Fix handling of opcodes that may leave operands on the stack when optimizing LOAD_FAST)
+    Python 3.14rc2 3626 (Fix missing exception handlers in logical expression)
+    Python 3.14rc3 3627 (Fix miscompilation of some module-level annotations)
+    Python 3.15a0 3650 (Initial version)
+    Python 3.15a1 3651 (Simplify LOAD_CONST)
+    Python 3.15a1 3652 (Virtual iterators)
+    Python 3.15a1 3653 (Fix handling of opcodes that may leave operands on the stack when optimizing LOAD_FAST)
+    Python 3.15a1 3654 (Fix missing exception handlers in logical expression)
+    Python 3.15a1 3655 (Fix miscompilation of some module-level annotations)
+    Python 3.15a2 3656 (Add TRACE_RECORD instruction, for platforms with switch based interpreter)
+    Python 3.15a4 3657 (Add BINARY_OP_SUBSCR_USTR_INT)
+    Python 3.15a4 3658 (Optimize bytecode for list/set called on genexp)
+    Python 3.15a4 3659 (Add CALL_FUNCTION_EX specialization)
+    Python 3.15a4 3660 (Change generator preamble code)
 
-    Python 3.15 will start with 3650
+
+    Python 3.16 will start with 3700
 
     Please don't copy-paste the same pre-release tag for new entries above!!!
     You should always use the *upcoming* tag. For example, if 3.12a6 came out
@@ -277,7 +304,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3612
+#define PYC_MAGIC_NUMBER 3660
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

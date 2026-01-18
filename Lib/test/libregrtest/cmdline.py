@@ -44,11 +44,19 @@ is possible to single step through the test files.  This is useful when
 doing memory analysis on the Python interpreter, which process tends to
 consume too many resources to run the full regression test non-stop.
 
--S is used to continue running tests after an aborted run.  It will
-maintain the order a standard run (ie, this assumes -r is not used).
+-S is used to resume running tests after an interrupted run.  It will
+maintain the order a standard run (i.e. it assumes -r is not used).
 This is useful after the tests have prematurely stopped for some external
-reason and you want to start running from where you left off rather
-than starting from the beginning.
+reason and you want to resume the run from where you left off rather
+than starting from the beginning. Note: this is different from --prioritize.
+
+--prioritize is used to influence the order of selected tests, such that
+the tests listed as an argument are executed first. This is especially
+useful when combined with -j and -r to pin the longest-running tests
+to start at the beginning of a test run. Pass --prioritize=test_a,test_b
+to make test_a run first, followed by test_b, and then the other tests.
+If test_a wasn't selected for execution by regular means, --prioritize will
+not make it execute.
 
 -f reads the names of tests from the file given as f's argument, one
 or more test names per line.  Whitespace is ignored.  Blank lines and
@@ -122,6 +130,13 @@ resources to test.  Currently only the following are defined:
 
     tzdata -         Run tests that require timezone data.
 
+    xpickle -   Test pickle and _pickle against Python 3.6, 3.7, 3.8
+                and 3.9 to test backwards compatibility. These tests
+                may take very long to complete.
+
+    wantobjects -    Allows to run Tkinter tests with the specified value of
+                     tkinter.wantobjects.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
@@ -150,7 +165,7 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources: list[str] = []
+        self.use_resources: dict[str, str | None] = {}
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
@@ -160,6 +175,7 @@ class Namespace(argparse.Namespace):
         self.print_slow = False
         self.random_seed = None
         self.use_mp = None
+        self.parallel_threads = None
         self.forever = False
         self.header = False
         self.failfast = False
@@ -167,6 +183,7 @@ class Namespace(argparse.Namespace):
         self.pgo = False
         self.pgo_extended = False
         self.tsan = False
+        self.tsan_parallel = False
         self.worker_json = None
         self.start = None
         self.timeout = None
@@ -234,7 +251,7 @@ def _create_parser():
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
     group.add_argument('-S', '--start', metavar='START',
-                       help='the name of the test at which to start.' +
+                       help='resume an interrupted run at the following test.' +
                             more_details)
     group.add_argument('-p', '--python', metavar='PYTHON',
                        help='Command to run Python test subprocesses with.')
@@ -261,6 +278,13 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
+    group.add_argument('--no-randomize', dest='no_randomize', action='store_true',
+                       help='do not randomize test execution order, even if '
+                       'it would be implied by another option')
+    group.add_argument('--prioritize', metavar='TEST1,TEST2,...',
+                       action='append', type=priority_list,
+                       help='select these tests first, even if the order is'
+                            ' randomized.' + more_details)
     group.add_argument('-f', '--fromfile', metavar='FILE',
                        help='read names of tests to run from a file.' +
                             more_details)
@@ -288,7 +312,7 @@ def _create_parser():
     group.add_argument('-G', '--failfast', action='store_true',
                        help='fail as soon as a test fails (only with -v or -W)')
     group.add_argument('-u', '--use', metavar='RES1,RES2,...',
-                       action='append', type=resources_list,
+                       action='extend', type=resources_list,
                        help='specify which special resource intensive tests '
                             'to run.' + more_details)
     group.add_argument('-M', '--memlimit', metavar='LIMIT',
@@ -316,6 +340,10 @@ def _create_parser():
                             'a single process, ignore -jN option, '
                             'and failed tests are also rerun sequentially '
                             'in the same process')
+    group.add_argument('--parallel-threads', metavar='PARALLEL_THREADS',
+                       type=int,
+                       help='run copies of each test in PARALLEL_THREADS at '
+                            'once')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
                        help='turn on code coverage tracing using the trace '
@@ -346,6 +374,9 @@ def _create_parser():
                        help='enable extended PGO training (slower training)')
     group.add_argument('--tsan', dest='tsan', action='store_true',
                        help='run a subset of test cases that are proper for the TSAN test')
+    group.add_argument('--tsan-parallel', action='store_true',
+                       help='run a subset of test cases that are appropriate '
+                            'for TSAN with `--parallel-threads=N`')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
@@ -386,15 +417,26 @@ def huntrleaks(string):
 
 
 def resources_list(string):
-    u = [x.lower() for x in string.split(',')]
-    for r in u:
+    u = []
+    for x in string.split(','):
+        r, eq, v = x.partition('=')
+        r = r.lower()
+        u.append((r, v if eq else None))
         if r == 'all' or r == 'none':
+            if eq:
+                raise argparse.ArgumentTypeError('invalid resource: ' + x)
             continue
         if r[0] == '-':
+            if eq:
+                raise argparse.ArgumentTypeError('invalid resource: ' + x)
             r = r[1:]
         if r not in RESOURCE_NAMES:
             raise argparse.ArgumentTypeError('invalid resource: ' + r)
     return u
+
+
+def priority_list(string):
+    return string.split(",")
 
 
 def _parse_args(args, **kwargs):
@@ -436,7 +478,11 @@ def _parse_args(args, **kwargs):
         if ns.python is None:
             ns.rerun = True
         ns.print_slow = True
-        ns.verbose3 = True
+        if not ns.verbose:
+            ns.verbose3 = True
+        else:
+            # --verbose has the priority over --verbose3
+            pass
     else:
         ns._add_python_opts = False
 
@@ -450,14 +496,14 @@ def _parse_args(args, **kwargs):
         # Similar to: -u "all" --timeout=1200
         if ns.use is None:
             ns.use = []
-        ns.use.insert(0, ['all'])
+        ns.use[:0] = [('all', None)]
         if ns.timeout is None:
             ns.timeout = 1200  # 20 minutes
     elif ns.fast_ci:
         # Similar to: -u "all,-cpu" --timeout=600
         if ns.use is None:
             ns.use = []
-        ns.use.insert(0, ['all', '-cpu'])
+        ns.use[:0] = [('all', None), ('-cpu', None)]
         if ns.timeout is None:
             ns.timeout = 600  # 10 minutes
 
@@ -495,25 +541,21 @@ def _parse_args(args, **kwargs):
         if ns.timeout <= 0:
             ns.timeout = None
     if ns.use:
-        for a in ns.use:
-            for r in a:
-                if r == 'all':
-                    ns.use_resources[:] = ALL_RESOURCES
-                    continue
-                if r == 'none':
-                    del ns.use_resources[:]
-                    continue
-                remove = False
-                if r[0] == '-':
-                    remove = True
-                    r = r[1:]
-                if remove:
-                    if r in ns.use_resources:
-                        ns.use_resources.remove(r)
-                elif r not in ns.use_resources:
-                    ns.use_resources.append(r)
+        for r, v in ns.use:
+            if r == 'all':
+                for r in ALL_RESOURCES:
+                    ns.use_resources[r] = None
+            elif r == 'none':
+                ns.use_resources.clear()
+            elif r[0] == '-':
+                r = r[1:]
+                ns.use_resources.pop(r, None)
+            else:
+                ns.use_resources[r] = v
     if ns.random_seed is not None:
         ns.randomize = True
+    if ns.no_randomize:
+        ns.randomize = False
     if ns.verbose:
         ns.header = True
 
@@ -541,5 +583,11 @@ def _parse_args(args, **kwargs):
                    "each (1:1).")
             print(msg, file=sys.stderr, flush=True)
             sys.exit(2)
+
+    ns.prioritize = [
+        test
+        for test_list in (ns.prioritize or ())
+        for test in test_list
+    ]
 
     return ns

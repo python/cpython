@@ -604,7 +604,7 @@ class Trace:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--version', action='version', version='trace 2.0')
 
     grp = parser.add_argument_group('Main options',
@@ -721,7 +721,6 @@ def main():
                 '__package__': mod_spec.parent,
                 '__loader__': mod_spec.loader,
                 '__spec__': mod_spec,
-                '__cached__': None,
             }
         else:
             sys.argv = [opts.progname, *opts.arguments]
@@ -734,7 +733,6 @@ def main():
                 '__file__': opts.progname,
                 '__name__': '__main__',
                 '__package__': None,
-                '__cached__': None,
             }
         t.runctx(code, globs, globs)
     except OSError as err:

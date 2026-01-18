@@ -109,7 +109,7 @@ Here is a short script to test three string methods::
       unittest.main()
 
 
-A testcase is created by subclassing :class:`unittest.TestCase`.  The three
+A test case is created by subclassing :class:`unittest.TestCase`.  The three
 individual tests are defined with methods whose names start with the letters
 ``test``.  This naming convention informs the test runner about which methods
 represent tests.
@@ -438,7 +438,7 @@ run whether the test method succeeded or not.
 Such a working environment for the testing code is called a
 :dfn:`test fixture`.  A new TestCase instance is created as a unique
 test fixture used to execute each individual test method.  Thus
-:meth:`~TestCase.setUp`, :meth:`~TestCase.tearDown`, and :meth:`~TestCase.__init__`
+:meth:`~TestCase.setUp`, :meth:`~TestCase.tearDown`, and :meth:`!TestCase.__init__`
 will be called once per test.
 
 It is recommended that you use TestCase implementations to group tests together
@@ -518,7 +518,7 @@ set-up and tear-down methods::
    subclasses will make future test refactorings infinitely easier.
 
 In some cases, the existing tests may have been written using the :mod:`doctest`
-module.  If so, :mod:`doctest` provides a :class:`DocTestSuite` class that can
+module.  If so, :mod:`doctest` provides a :class:`~doctest.DocTestSuite` class that can
 automatically build :class:`unittest.TestSuite` instances from the existing
 :mod:`doctest`\ -based tests.
 
@@ -883,6 +883,12 @@ Test cases
    | :meth:`assertNotIsInstance(a, b)        | ``not isinstance(a, b)``    | 3.2           |
    | <TestCase.assertNotIsInstance>`         |                             |               |
    +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertIsSubclass(a, b)           | ``issubclass(a, b)``        | 3.14          |
+   | <TestCase.assertIsSubclass>`            |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertNotIsSubclass(a, b)        | ``not issubclass(a, b)``    | 3.14          |
+   | <TestCase.assertNotIsSubclass>`         |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
 
    All the assert methods accept a *msg* argument that, if specified, is used
    as the error message on failure (see also :data:`longMessage`).
@@ -961,6 +967,15 @@ Test cases
       .. versionadded:: 3.2
 
 
+   .. method:: assertIsSubclass(cls, superclass, msg=None)
+               assertNotIsSubclass(cls, superclass, msg=None)
+
+      Test that *cls* is (or is not) a subclass of *superclass* (which can be a
+      class or a tuple of classes, as supported by :func:`issubclass`).
+      To check for the exact type, use :func:`assertIs(cls, superclass) <assertIs>`.
+
+      .. versionadded:: 3.14
+
 
    It is also possible to check the production of exceptions, warnings, and
    log messages using the following methods:
@@ -1008,7 +1023,7 @@ Test cases
       additional keyword argument *msg*.
 
       The context manager will store the caught exception object in its
-      :attr:`exception` attribute.  This can be useful if the intention
+      :attr:`!exception` attribute.  This can be useful if the intention
       is to perform additional checks on the exception raised::
 
          with self.assertRaises(SomeException) as cm:
@@ -1021,7 +1036,7 @@ Test cases
          Added the ability to use :meth:`assertRaises` as a context manager.
 
       .. versionchanged:: 3.2
-         Added the :attr:`exception` attribute.
+         Added the :attr:`!exception` attribute.
 
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
@@ -1074,8 +1089,8 @@ Test cases
       additional keyword argument *msg*.
 
       The context manager will store the caught warning object in its
-      :attr:`warning` attribute, and the source line which triggered the
-      warnings in the :attr:`filename` and :attr:`lineno` attributes.
+      :attr:`!warning` attribute, and the source line which triggered the
+      warnings in the :attr:`!filename` and :attr:`!lineno` attributes.
       This can be useful if the intention is to perform additional checks
       on the warning caught::
 
@@ -1116,7 +1131,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-   .. method:: assertLogs(logger=None, level=None)
+   .. method:: assertLogs(logger=None, level=None, formatter=None)
 
       A context manager to test that at least one message is logged on
       the *logger* or one of its children, with at least the given
@@ -1130,6 +1145,10 @@ Test cases
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
       :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
+
+      If given, *formatter* should be a :class:`logging.Formatter` object.
+      The default is a formatter with format string
+      ``"%(levelname)s:%(name)s:%(message)s"``
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1157,6 +1176,9 @@ Test cases
                                       'ERROR:foo.bar:second message'])
 
       .. versionadded:: 3.4
+
+      .. versionchanged:: 3.15
+         Now accepts a *formatter* to control how messages are formatted.
 
    .. method:: assertNoLogs(logger=None, level=None)
 
@@ -1209,6 +1231,24 @@ Test cases
    | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order.     |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
+   | <TestCase.assertStartsWith>`          |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotStartsWith(a, b)      | ``not a.startswith(b)``        | 3.14         |
+   | <TestCase.assertNotStartsWith>`       |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertEndsWith(a, b)           | ``a.endswith(b)``              | 3.14         |
+   | <TestCase.assertEndsWith>`            |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotEndsWith(a, b)        | ``not a.endswith(b)``          | 3.14         |
+   | <TestCase.assertNotEndsWith>`         |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
+   | <TestCase.assertHasAttr>`             |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotHasAttr(a, b)         | ``not hastattr(a, b)``         | 3.14         |
+   | <TestCase.assertNotHasAttr>`          |                                |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1277,6 +1317,34 @@ Test cases
       but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2
+
+
+   .. method:: assertStartsWith(s, prefix, msg=None)
+   .. method:: assertNotStartsWith(s, prefix, msg=None)
+
+      Test that the Unicode or byte string *s* starts (or does not start)
+      with a *prefix*.
+      *prefix* can also be a tuple of strings to try.
+
+      .. versionadded:: 3.14
+
+
+   .. method:: assertEndsWith(s, suffix, msg=None)
+   .. method:: assertNotEndsWith(s, suffix, msg=None)
+
+      Test that the Unicode or byte string *s* ends (or does not end)
+      with a *suffix*.
+      *suffix* can also be a tuple of strings to try.
+
+      .. versionadded:: 3.14
+
+
+   .. method:: assertHasAttr(obj, name, msg=None)
+   .. method:: assertNotHasAttr(obj, name, msg=None)
+
+      Test that the object *obj* has (or has not) an attribute *name*.
+
+      .. versionadded:: 3.14
 
 
    .. _type-specific-methods:
@@ -1369,7 +1437,7 @@ Test cases
       that lists the differences between the sets.  This method is used by
       default when comparing sets or frozensets with :meth:`assertEqual`.
 
-      Fails if either of *first* or *second* does not have a :meth:`set.difference`
+      Fails if either of *first* or *second* does not have a :meth:`~frozenset.difference`
       method.
 
       .. versionadded:: 3.1
@@ -1574,18 +1642,20 @@ Test cases
 
       .. versionadded:: 3.13
 
-   .. coroutinemethod:: asyncSetUp()
+   .. method:: asyncSetUp()
+      :async:
 
-      Method called to prepare the test fixture. This is called after :meth:`setUp`.
+      Method called to prepare the test fixture. This is called after :meth:`TestCase.setUp`.
       This is called immediately before calling the test method; other than
       :exc:`AssertionError` or :exc:`SkipTest`, any exception raised by this method
       will be considered an error rather than a test failure. The default implementation
       does nothing.
 
-   .. coroutinemethod:: asyncTearDown()
+   .. method:: asyncTearDown()
+      :async:
 
       Method called immediately after the test method has been called and the
-      result recorded.  This is called before :meth:`tearDown`. This is called even if
+      result recorded.  This is called before :meth:`~TestCase.tearDown`. This is called even if
       the test method raised an exception, so the implementation in subclasses may need
       to be particularly careful about checking internal state.  Any exception, other than
       :exc:`AssertionError` or :exc:`SkipTest`, raised by this method will be
@@ -1598,7 +1668,8 @@ Test cases
 
       This method accepts a coroutine that can be used as a cleanup function.
 
-   .. coroutinemethod:: enterAsyncContext(cm)
+   .. method:: enterAsyncContext(cm)
+      :async:
 
       Enter the supplied :term:`asynchronous context manager`.  If successful,
       also add its :meth:`~object.__aexit__` method as a cleanup function by
@@ -1613,7 +1684,7 @@ Test cases
       Sets up a new event loop to run the test, collecting the result into
       the :class:`TestResult` object passed as *result*.  If *result* is
       omitted or ``None``, a temporary result object is created (by calling
-      the :meth:`defaultTestResult` method) and used. The result object is
+      the :meth:`~TestCase.defaultTestResult` method) and used. The result object is
       returned to :meth:`run`'s caller. At the end of the test all the tasks
       in the event loop are cancelled.
 
@@ -1734,7 +1805,7 @@ Grouping tests
       returned by repeated iterations before :meth:`TestSuite.run` must be the
       same for each call iteration. After :meth:`TestSuite.run`, callers should
       not rely on the tests returned by this method unless the caller uses a
-      subclass that overrides :meth:`TestSuite._removeTestAtIndex` to preserve
+      subclass that overrides :meth:`!TestSuite._removeTestAtIndex` to preserve
       test references.
 
       .. versionchanged:: 3.2
@@ -1745,10 +1816,10 @@ Grouping tests
       .. versionchanged:: 3.4
          In earlier versions the :class:`TestSuite` held references to each
          :class:`TestCase` after :meth:`TestSuite.run`. Subclasses can restore
-         that behavior by overriding :meth:`TestSuite._removeTestAtIndex`.
+         that behavior by overriding :meth:`!TestSuite._removeTestAtIndex`.
 
    In the typical usage of a :class:`TestSuite` object, the :meth:`run` method
-   is invoked by a :class:`TestRunner` rather than by the end-user test harness.
+   is invoked by a :class:`!TestRunner` rather than by the end-user test harness.
 
 
 Loading and running tests
@@ -1782,12 +1853,12 @@ Loading and running tests
    .. method:: loadTestsFromTestCase(testCaseClass)
 
       Return a suite of all test cases contained in the :class:`TestCase`\ -derived
-      :class:`testCaseClass`.
+      :class:`!testCaseClass`.
 
       A test case instance is created for each method named by
       :meth:`getTestCaseNames`. By default these are the method names
       beginning with ``test``. If :meth:`getTestCaseNames` returns no
-      methods, but the :meth:`runTest` method is implemented, a single test
+      methods, but the :meth:`!runTest` method is implemented, a single test
       case is created for that method instead.
 
 
@@ -1834,13 +1905,13 @@ Loading and running tests
       case class will be picked up as "a test method within a test case class",
       rather than "a callable object".
 
-      For example, if you have a module :mod:`SampleTests` containing a
-      :class:`TestCase`\ -derived class :class:`SampleTestCase` with three test
-      methods (:meth:`test_one`, :meth:`test_two`, and :meth:`test_three`), the
+      For example, if you have a module :mod:`!SampleTests` containing a
+      :class:`TestCase`\ -derived class :class:`!SampleTestCase` with three test
+      methods (:meth:`!test_one`, :meth:`!test_two`, and :meth:`!test_three`), the
       specifier ``'SampleTests.SampleTestCase'`` would cause this method to
       return a suite which will run all three test methods. Using the specifier
       ``'SampleTests.SampleTestCase.test_two'`` would cause it to return a test
-      suite which will run only the :meth:`test_two` test method. The specifier
+      suite which will run only the :meth:`!test_two` test method. The specifier
       can refer to modules and packages which have not been imported; they will
       be imported as a side-effect.
 
@@ -1987,7 +2058,7 @@ Loading and running tests
    Testing frameworks built on top of :mod:`unittest` may want access to the
    :class:`TestResult` object generated by running a set of tests for reporting
    purposes; a :class:`TestResult` instance is returned by the
-   :meth:`TestRunner.run` method for this purpose.
+   :meth:`!TestRunner.run` method for this purpose.
 
    :class:`TestResult` instances have the following attributes that will be of
    interest when inspecting the results of running a set of tests:
@@ -2073,12 +2144,12 @@ Loading and running tests
 
       This method can be called to signal that the set of tests being run should
       be aborted by setting the :attr:`shouldStop` attribute to ``True``.
-      :class:`TestRunner` objects should respect this flag and return without
+      :class:`!TestRunner` objects should respect this flag and return without
       running any additional tests.
 
       For example, this feature is used by the :class:`TextTestRunner` class to
       stop the test framework when the user signals an interrupt from the
-      keyboard.  Interactive tools which provide :class:`TestRunner`
+      keyboard.  Interactive tools which provide :class:`!TestRunner`
       implementations can use this in a similar manner.
 
    The following methods of the :class:`TestResult` class are used to maintain
@@ -2398,9 +2469,9 @@ Class and Module Fixtures
 -------------------------
 
 Class and module level fixtures are implemented in :class:`TestSuite`. When
-the test suite encounters a test from a new class then :meth:`tearDownClass`
-from the previous class (if there is one) is called, followed by
-:meth:`setUpClass` from the new class.
+the test suite encounters a test from a new class then
+:meth:`~TestCase.tearDownClass` from the previous class (if there is one)
+is called, followed by :meth:`~TestCase.setUpClass` from the new class.
 
 Similarly if a test is from a different module from the previous test then
 ``tearDownModule`` from the previous module is run, followed by
@@ -2461,6 +2532,10 @@ instead of as an error.
 setUpModule and tearDownModule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. function:: setUpModule
+              tearDownModule
+   :no-typesetting:
+
 These should be implemented as functions::
 
     def setUpModule():
@@ -2492,7 +2567,7 @@ To add cleanup code that must be run even in the case of an exception, use
    .. versionadded:: 3.8
 
 
-.. classmethod:: enterModuleContext(cm)
+.. function:: enterModuleContext(cm)
 
    Enter the supplied :term:`context manager`.  If successful, also
    add its :meth:`~object.__exit__` method as a cleanup function by

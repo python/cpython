@@ -99,7 +99,7 @@ Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
 #From pycore_frame.h
-FRAME_OWNED_BY_CSTACK = 3
+FRAME_OWNED_BY_INTERPRETER = 3
 
 MAX_OUTPUT_LEN=1024
 
@@ -152,6 +152,11 @@ class TruncatedStringIO(object):
     def getvalue(self):
         return self._val
 
+
+def _PyStackRef_AsPyObjectBorrow(gdbval):
+    return gdb.Value(int(gdbval['bits']) & ~USED_TAGS)
+
+
 class PyObjectPtr(object):
     """
     Class wrapping a gdb.Value that's either a (PyObject*) within the
@@ -170,7 +175,7 @@ class PyObjectPtr(object):
         if gdbval.type.name == '_PyStackRef':
             if cast_to is None:
                 cast_to = gdb.lookup_type('PyObject').pointer()
-            self._gdbval = gdb.Value(int(gdbval['bits']) & ~USED_TAGS).cast(cast_to)
+            self._gdbval = _PyStackRef_AsPyObjectBorrow(gdbval).cast(cast_to)
         elif cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
@@ -890,7 +895,7 @@ class PyLongObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Python's Include/longinterpr.h has this declaration:
+        Python's Include/cpython/longinterpr.h has this declaration:
 
             typedef struct _PyLongValue {
                 uintptr_t lv_tag; /* Number of digits, sign and flags */
@@ -909,8 +914,7 @@ class PyLongObjectPtr(PyObjectPtr):
                 - 0: Positive
                 - 1: Zero
                 - 2: Negative
-            The third lowest bit of lv_tag is reserved for an immortality flag, but is
-            not currently used.
+            The third lowest bit of lv_tag is set to 1 for the small ints and 0 otherwise.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30
@@ -1035,30 +1039,49 @@ class PyFrameObjectPtr(PyObjectPtr):
             return
         return self._frame.write_repr(out, visited)
 
-    def print_traceback(self):
-        if self.is_optimized_out():
-            sys.stdout.write('  %s\n' % FRAME_INFO_OPTIMIZED_OUT)
-            return
-        return self._frame.print_traceback()
-
 class PyFramePtr:
 
     def __init__(self, gdbval):
         self._gdbval = gdbval
+        if self.is_optimized_out():
+            return
+        self.co = self._f_code()
+        if self.is_shim():
+            return
+        self.co_name = self.co.pyop_field('co_name')
+        self.co_filename = self.co.pyop_field('co_filename')
 
-        if not self.is_optimized_out():
+        self.f_lasti = self._f_lasti()
+        self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
+        pnames = self.co.field('co_localsplusnames')
+        self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+
+    @staticmethod
+    def get_thread_state():
+        exprs = [
+            '_Py_tss_gilstate',  # 3.15+
+            '_Py_tss_tstate',    # 3.12+ (and not when GIL is released)
+            'pthread_getspecific(_PyRuntime.autoTSSkey._key)',  # only live programs
+            '((struct pthread*)$fs_base)->specific_1stblock[_PyRuntime.autoTSSkey._key].data'  # x86-64
+        ]
+        for expr in exprs:
             try:
-                self.co = self._f_code()
-                self.co_name = self.co.pyop_field('co_name')
-                self.co_filename = self.co.pyop_field('co_filename')
+                val = gdb.parse_and_eval(f'(PyThreadState*)({expr})')
+            except gdb.error:
+                continue
+            if int(val) != 0:
+                return val
+        return None
 
-                self.f_lasti = self._f_lasti()
-                self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
-                pnames = self.co.field('co_localsplusnames')
-                self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
-                self._is_code = True
-            except:
-                self._is_code = False
+    @staticmethod
+    def get_thread_local_frame():
+        thread_state = PyFramePtr.get_thread_state()
+        if thread_state is None:
+            return None
+        current_frame = thread_state['current_frame']
+        if int(current_frame) == 0:
+            return None
+        return PyFramePtr(current_frame)
 
     def is_optimized_out(self):
         return self._gdbval.is_optimized_out
@@ -1113,9 +1136,11 @@ class PyFramePtr:
         return int(instr_ptr - first_instr)
 
     def is_shim(self):
-        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
+        return self._f_special("owner", int) == FRAME_OWNED_BY_INTERPRETER
 
     def previous(self):
+        if int(self._gdbval['previous']) == 0:
+            return None
         return self._f_special("previous", PyFramePtr)
 
     def iter_globals(self):
@@ -1243,6 +1268,27 @@ class PyFramePtr:
                   % (self.co_filename.proxyval(visited),
                      lineno,
                      self.co_name.proxyval(visited)))
+
+    def print_traceback_until_shim(self, frame_index=None):
+        # Print traceback for _PyInterpreterFrame and return previous frame
+        interp_frame = self
+        while True:
+            if not interp_frame:
+                sys.stdout.write('  (unable to read python frame information)\n')
+                return None
+            if interp_frame.is_shim():
+                return interp_frame.previous()
+
+            if frame_index is not None:
+                line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
+                sys.stdout.write('#%i %s\n' % (frame_index, line))
+            else:
+                interp_frame.print_traceback()
+            if not interp_frame.is_optimized_out():
+                line = interp_frame.current_line()
+                if line is not None:
+                    sys.stdout.write('    %s\n' % line.strip())
+            interp_frame = interp_frame.previous()
 
     def get_truncated_repr(self, maxlen):
         '''
@@ -1856,49 +1902,16 @@ class Frame(object):
     def print_summary(self):
         if self.is_evalframe():
             interp_frame = self.get_pyop()
-            while True:
-                if interp_frame:
-                    if interp_frame.is_shim():
-                        break
-                    line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
-                    sys.stdout.write('#%i %s\n' % (self.get_index(), line))
-                    if not interp_frame.is_optimized_out():
-                        line = interp_frame.current_line()
-                        if line is not None:
-                            sys.stdout.write('    %s\n' % line.strip())
-                else:
-                    sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
-                    break
-                interp_frame = interp_frame.previous()
+            if interp_frame:
+                interp_frame.print_traceback_until_shim(self.get_index())
+            else:
+                sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
         else:
             info = self.is_other_python_frame()
             if info:
                 sys.stdout.write('#%i %s\n' % (self.get_index(), info))
             else:
                 sys.stdout.write('#%i\n' % self.get_index())
-
-    def print_traceback(self):
-        if self.is_evalframe():
-            interp_frame = self.get_pyop()
-            while True:
-                if interp_frame:
-                    if interp_frame.is_shim():
-                        break
-                    interp_frame.print_traceback()
-                    if not interp_frame.is_optimized_out():
-                        line = interp_frame.current_line()
-                        if line is not None:
-                            sys.stdout.write('    %s\n' % line.strip())
-                else:
-                    sys.stdout.write('  (unable to read python frame information)\n')
-                    break
-                interp_frame = interp_frame.previous()
-        else:
-            info = self.is_other_python_frame()
-            if info:
-                sys.stdout.write('  %s\n' % info)
-            else:
-                sys.stdout.write('  (not a python frame)\n')
 
 class PyList(gdb.Command):
     '''List the current Python source code, if any
@@ -2043,6 +2056,41 @@ if hasattr(gdb.Frame, 'select'):
     PyUp()
     PyDown()
 
+
+def print_traceback_helper(full_info):
+    frame = Frame.get_selected_python_frame()
+    interp_frame = PyFramePtr.get_thread_local_frame()
+    if not frame and not interp_frame:
+        print('Unable to locate python frame')
+        return
+
+    sys.stdout.write('Traceback (most recent call first):\n')
+    if frame:
+        while frame:
+            frame_index = frame.get_index() if full_info else None
+            if frame.is_evalframe():
+                pyop = frame.get_pyop()
+                if pyop is not None:
+                    # Use the _PyInterpreterFrame from the gdb frame
+                    interp_frame = pyop
+                if interp_frame:
+                    interp_frame = interp_frame.print_traceback_until_shim(frame_index)
+                else:
+                    sys.stdout.write('  (unable to read python frame information)\n')
+            else:
+                info = frame.is_other_python_frame()
+                if full_info:
+                    if info:
+                        sys.stdout.write('#%i %s\n' % (frame_index, info))
+                elif info:
+                    sys.stdout.write('  %s\n' % info)
+            frame = frame.older()
+    else:
+        # Fall back to just using the thread-local frame
+        while interp_frame:
+            interp_frame = interp_frame.print_traceback_until_shim()
+
+
 class PyBacktraceFull(gdb.Command):
     'Display the current python frame and all the frames within its call stack (if any)'
     def __init__(self):
@@ -2053,15 +2101,7 @@ class PyBacktraceFull(gdb.Command):
 
 
     def invoke(self, args, from_tty):
-        frame = Frame.get_selected_python_frame()
-        if not frame:
-            print('Unable to locate python frame')
-            return
-
-        while frame:
-            if frame.is_python_frame():
-                frame.print_summary()
-            frame = frame.older()
+        print_traceback_helper(full_info=True)
 
 PyBacktraceFull()
 
@@ -2073,18 +2113,8 @@ class PyBacktrace(gdb.Command):
                               gdb.COMMAND_STACK,
                               gdb.COMPLETE_NONE)
 
-
     def invoke(self, args, from_tty):
-        frame = Frame.get_selected_python_frame()
-        if not frame:
-            print('Unable to locate python frame')
-            return
-
-        sys.stdout.write('Traceback (most recent call first):\n')
-        while frame:
-            if frame.is_python_frame():
-                frame.print_traceback()
-            frame = frame.older()
+        print_traceback_helper(full_info=False)
 
 PyBacktrace()
 

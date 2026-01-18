@@ -1,2 +1,0 @@
-Highlight today in colour in :mod:`calendar`'s CLI output. Patch by Hugo van
-Kemenade.

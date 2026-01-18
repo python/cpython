@@ -145,12 +145,15 @@ class ForkServer(object):
             cmd = ('from multiprocessing.forkserver import main; ' +
                    'main(%d, %d, %r, **%r)')
 
+            main_kws = {}
             if self._preload_modules:
-                desired_keys = {'main_path', 'sys_path'}
                 data = spawn.get_preparation_data('ignore')
-                main_kws = {x: y for x, y in data.items() if x in desired_keys}
-            else:
-                main_kws = {}
+                if 'sys_path' in data:
+                    main_kws['sys_path'] = data['sys_path']
+                if 'init_main_from_path' in data:
+                    main_kws['main_path'] = data['init_main_from_path']
+                if 'sys_argv' in data:
+                    main_kws['sys_argv'] = data['sys_argv']
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -196,7 +199,7 @@ class ForkServer(object):
 #
 
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, authkey_r=None):
+         *, sys_argv=None, authkey_r=None):
     """Run forkserver."""
     if authkey_r is not None:
         try:
@@ -208,6 +211,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
         authkey = b''
 
     if preload:
+        if sys_argv is not None:
+            sys.argv[:] = sys_argv
         if sys_path is not None:
             sys.path[:] = sys_path
         if '__main__' in preload and main_path is not None:
@@ -221,6 +226,10 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                 __import__(modname)
             except ImportError:
                 pass
+
+        # gh-135335: flush stdout/stderr in case any of the preloaded modules
+        # wrote to them, otherwise children might inherit buffered data
+        util._flush_std_streams()
 
     util._close_stdin()
 
@@ -382,13 +391,14 @@ def _serve_one(child_r, fds, unused_fds, handlers):
 #
 
 def read_signed(fd):
-    data = b''
-    length = SIGNED_STRUCT.size
-    while len(data) < length:
-        s = os.read(fd, length - len(data))
-        if not s:
+    data = bytearray(SIGNED_STRUCT.size)
+    unread = memoryview(data)
+    while unread:
+        count = os.readinto(fd, unread)
+        if count == 0:
             raise EOFError('unexpected EOF')
-        data += s
+        unread = unread[count:]
+
     return SIGNED_STRUCT.unpack(data)[0]
 
 def write_signed(fd, n):

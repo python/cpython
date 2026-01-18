@@ -7,13 +7,12 @@ import platform
 import random
 import re
 import shlex
-import signal
 import subprocess
 import sys
 import sysconfig
 import tempfile
 import textwrap
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 
 from test import support
 from test.support import os_helper
@@ -32,7 +31,7 @@ WORKER_WORK_DIR_PREFIX = WORK_DIR_PREFIX + 'worker_'
 EXIT_TIMEOUT = 120.0
 
 
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
 
 # Other resources excluded from --use=all:
@@ -42,7 +41,7 @@ ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
 #   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle', 'wantobjects')
 
 
 # Types for types hints
@@ -295,6 +294,25 @@ def clear_caches():
     else:
         importlib_metadata.FastPath.__new__.cache_clear()
 
+    try:
+        encodings = sys.modules['encodings']
+    except KeyError:
+        pass
+    else:
+        encodings._cache.clear()
+
+    try:
+        codecs = sys.modules['codecs']
+    except KeyError:
+        pass
+    else:
+        # There's no direct API to clear the codecs search cache, but
+        # `unregister` clears it implicitly.
+        def noop_search_function(name):
+            return None
+        codecs.register(noop_search_function)
+        codecs.unregister(noop_search_function)
+
 
 def get_build_info():
     # Get most important configure and build options as a list of strings.
@@ -336,43 +354,11 @@ def get_build_info():
             build.append('with_assert')
 
     # --enable-experimental-jit
-    tier2 = re.search('-D_Py_TIER2=([0-9]+)', cflags)
-    if tier2:
-        tier2 = int(tier2.group(1))
-
-    if not sys.flags.ignore_environment:
-        PYTHON_JIT = os.environ.get('PYTHON_JIT', None)
-        if PYTHON_JIT:
-            PYTHON_JIT = (PYTHON_JIT != '0')
-    else:
-        PYTHON_JIT = None
-
-    if tier2 == 1:  # =yes
-        if PYTHON_JIT == False:
-            jit = 'JIT=off'
+    if sys._jit.is_available():
+        if sys._jit.is_enabled():
+            build.append("JIT")
         else:
-            jit = 'JIT'
-    elif tier2 == 3:  # =yes-off
-        if PYTHON_JIT:
-            jit = 'JIT'
-        else:
-            jit = 'JIT=off'
-    elif tier2 == 4:  # =interpreter
-        if PYTHON_JIT == False:
-            jit = 'JIT-interpreter=off'
-        else:
-            jit = 'JIT-interpreter'
-    elif tier2 == 6:  # =interpreter-off (Secret option!)
-        if PYTHON_JIT:
-            jit = 'JIT-interpreter'
-        else:
-            jit = 'JIT-interpreter=off'
-    elif '-D_Py_JIT' in cflags:
-        jit = 'JIT'
-    else:
-        jit = None
-    if jit:
-        build.append(jit)
+            build.append("JIT (disabled)")
 
     # --enable-framework=name
     framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
@@ -569,7 +555,7 @@ def normalize_test_name(test_full_name: str, *,
     if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
         if test_full_name.startswith(('setUpModule (', 'tearDownModule (')):
             # if setUpModule() or tearDownModule() failed, don't filter
-            # tests with the test file name, don't use use filters.
+            # tests with the test file name, don't use filters.
             return None
 
         # This means that we have a failure in a life-cycle hook,
@@ -621,21 +607,30 @@ def is_cross_compiled() -> bool:
     return ('_PYTHON_HOST_PLATFORM' in os.environ)
 
 
-def format_resources(use_resources: Iterable[str]) -> str:
-    use_resources = set(use_resources)
+def format_resources(use_resources: dict[str, str | None]) -> str:
     all_resources = set(ALL_RESOURCES)
+
+    values = []
+    for name in sorted(use_resources):
+        if use_resources[name] is not None:
+            values.append(f'{name}={use_resources[name]}')
 
     # Express resources relative to "all"
     relative_all = ['all']
-    for name in sorted(all_resources - use_resources):
+    for name in sorted(all_resources - set(use_resources)):
         relative_all.append(f'-{name}')
-    for name in sorted(use_resources - all_resources):
-        relative_all.append(f'{name}')
-    all_text = ','.join(relative_all)
+    for name in sorted(set(use_resources) - all_resources):
+        if use_resources[name] is None:
+            relative_all.append(name)
+    all_text = ','.join(relative_all + values)
     all_text = f"resources: {all_text}"
 
     # List of enabled resources
-    text = ','.join(sorted(use_resources))
+    resources = []
+    for name in sorted(use_resources):
+        if use_resources[name] is None:
+            resources.append(name)
+    text = ','.join(resources + values)
     text = f"resources ({len(use_resources)}): {text}"
 
     # Pick the shortest string (prefer relative to all if lengths are equal)
@@ -645,7 +640,7 @@ def format_resources(use_resources: Iterable[str]) -> str:
         return text
 
 
-def display_header(use_resources: tuple[str, ...],
+def display_header(use_resources: dict[str, str | None],
                    python_cmd: tuple[str, ...] | None) -> None:
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())

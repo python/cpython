@@ -2,6 +2,7 @@ from test import support
 from test.support import warnings_helper
 import decimal
 import enum
+import fractions
 import math
 import platform
 import sys
@@ -158,10 +159,26 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(int(time.mktime(time.localtime(self.t))),
                          int(self.t))
 
-    def test_sleep(self):
+    def test_sleep_exceptions(self):
+        self.assertRaises(TypeError, time.sleep, [])
+        self.assertRaises(TypeError, time.sleep, "a")
+        self.assertRaises(TypeError, time.sleep, complex(0, 0))
+
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
-        time.sleep(1.2)
+        self.assertRaises(ValueError, time.sleep, -0.1)
+
+        # Improved exception #81267
+        with self.assertRaises(TypeError) as errmsg:
+            time.sleep([])
+        self.assertIn("real number", str(errmsg.exception))
+
+    def test_sleep(self):
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2,
+                      decimal.Decimal('0.02'),
+                      fractions.Fraction(1, 50)]:
+            with self.subTest(value=value):
+                time.sleep(value)
 
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
@@ -169,6 +186,38 @@ class TimeTestCase(unittest.TestCase):
         epoch = time.gmtime(0)
         # Only test the date and time, ignore other gmtime() members
         self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
+
+    def test_gmtime(self):
+        # expected format:
+        # (tm_year, tm_mon, tm_mday,
+        #  tm_hour, tm_min, tm_sec,
+        #  tm_wday, tm_yday)
+        tests = [
+            (-13262400, (1969, 7, 31, 12, 0, 0, 3, 212)),
+            (-6177600, (1969, 10, 21, 12, 0, 0, 1, 294)),
+            # leap years (pre epoch)
+            (-2077660800, (1904, 3, 1, 0, 0, 0, 1, 61)),
+            (-2077833600, (1904, 2, 28, 0, 0, 0, 6, 59)),
+        ]
+
+        try:
+            from _testinternalcapi import SIZEOF_TIME_T
+        except ImportError:
+            pass
+        else:
+            if SIZEOF_TIME_T >= 8:
+                tests.extend((
+                    # non-leap years (pre epoch)
+                    (-2203891200, (1900, 3, 1, 0, 0, 0, 3, 60)),
+                    (-2203977600, (1900, 2, 28, 0, 0, 0, 2, 59)),
+                    (-5359564800, (1800, 3, 1, 0, 0, 0, 5, 60)),
+                    (-5359651200, (1800, 2, 28, 0, 0, 0, 4, 59)),
+                ))
+
+        for t, expected in tests:
+            with self.subTest(t=t, expected=expected):
+                res = time.gmtime(t)
+                self.assertEqual(tuple(res)[:8], expected, res)
 
     def test_strftime(self):
         tt = time.gmtime(self.t)
@@ -331,11 +380,11 @@ class TimeTestCase(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             time.strptime('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
-        # additional check for IndexError branch (issue #19545)
+        self.assertTrue(e.exception.__suppress_context__)
+        # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
-            time.strptime('19', '%Y %')
-        self.assertIsNone(e.exception.__context__)
+            time.strptime('%', '%')
+        self.assertTrue(e.exception.__suppress_context__)
 
     def test_strptime_leap_year(self):
         # GH-70647: warns if parsing a format with a day and no year.
@@ -484,12 +533,13 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
+            t_struct = time.localtime(t)
             try:
-                tt = time.localtime(t)
+                t1 = time.mktime(t_struct)
             except (OverflowError, OSError):
                 pass
             else:
-                self.assertEqual(time.mktime(tt), t)
+                self.assertEqual(t1, t)
 
     # Issue #13309: passing extreme values to mktime() or localtime()
     # borks the glibc's internal timezone data.
@@ -563,11 +613,10 @@ class TimeTestCase(unittest.TestCase):
 
         # thread_time() should not include time spend during a sleep
         start = time.thread_time()
-        time.sleep(0.100)
+        time.sleep(0.200)
         stop = time.thread_time()
-        # use 20 ms because thread_time() has usually a resolution of 15 ms
-        # on Windows
-        self.assertLess(stop - start, 0.020)
+        # gh-143528: use 100 ms to support slow CI
+        self.assertLess(stop - start, 0.100)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
@@ -742,22 +791,21 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 class TestPytime(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.
         lt = time.localtime()
-        self.assertTrue(hasattr(lt, "tm_gmtoff"))
-        self.assertTrue(hasattr(lt, "tm_zone"))
+        self.assertHasAttr(lt, "tm_gmtoff")
+        self.assertHasAttr(lt, "tm_zone")
 
         # See if the offset and zone are similar to the module
         # attributes.
         if lt.tm_gmtoff is None:
-            self.assertTrue(not hasattr(time, "timezone"))
+            self.assertNotHasAttr(time, "timezone")
         else:
             self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
         if lt.tm_zone is None:
-            self.assertTrue(not hasattr(time, "tzname"))
+            self.assertNotHasAttr(time, "tzname")
         else:
             self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
 
@@ -777,14 +825,12 @@ class TestPytime(unittest.TestCase):
         self.assertEqual(new_lt.tm_gmtoff, lt.tm_gmtoff)
         self.assertEqual(new_lt9.tm_zone, lt.tm_zone)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_strptime_timezone(self):
         t = time.strptime("UTC", "%Z")
         self.assertEqual(t.tm_zone, 'UTC')
         t = time.strptime("+0500", "%z")
         self.assertEqual(t.tm_gmtoff, 5 * 3600)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_short_times(self):
 
         import pickle
@@ -1170,11 +1216,11 @@ class TestTimeWeaklinking(unittest.TestCase):
 
         if mac_ver >= (10, 12):
             for name in clock_names:
-                self.assertTrue(hasattr(time, name), f"time.{name} is not available")
+                self.assertHasAttr(time, name)
 
         else:
             for name in clock_names:
-                self.assertFalse(hasattr(time, name), f"time.{name} is available")
+                self.assertNotHasAttr(time, name)
 
 
 if __name__ == "__main__":

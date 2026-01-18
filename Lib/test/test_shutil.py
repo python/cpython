@@ -10,7 +10,6 @@ import os
 import os.path
 import errno
 import functools
-import pathlib
 import subprocess
 import random
 import string
@@ -32,7 +31,6 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
-from test.support import warnings_helper
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -429,12 +427,12 @@ class TestRmTree(BaseTest, unittest.TestCase):
             else:
                 self.assertIs(func, os.listdir)
                 self.assertIn(arg, [TESTFN, self.child_dir_path])
-            self.assertTrue(issubclass(exc[0], OSError))
+            self.assertIsSubclass(exc[0], OSError)
             self.errorState += 1
         else:
             self.assertEqual(func, os.rmdir)
             self.assertEqual(arg, TESTFN)
-            self.assertTrue(issubclass(exc[0], OSError))
+            self.assertIsSubclass(exc[0], OSError)
             self.errorState = 3
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
@@ -1587,7 +1585,6 @@ class TestCopy(BaseTest, unittest.TestCase):
     # the path as a directory, but on AIX the trailing slash has no effect
     # and is considered as a file.
     @unittest.skipIf(AIX, 'Not valid on AIX, see gh-92670')
-    @unittest.skipIf(support.is_emscripten, 'Fixed by emscripten-core/emscripten#23218, remove when next Emscripten release comes out')
     def test_copyfile_nonexistent_dir(self):
         # Issue 43219
         src_dir = self.mkdtemp()
@@ -2156,6 +2153,10 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_unpack_archive_bztar(self):
         self.check_unpack_tarball('bztar')
 
+    @support.requires_zstd()
+    def test_unpack_archive_zstdtar(self):
+        self.check_unpack_tarball('zstdtar')
+
     @support.requires_lzma()
     @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
     def test_unpack_archive_xztar(self):
@@ -2461,7 +2462,7 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     def test_environ_path_missing(self):
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('PATH', None)
+            del env['PATH']
 
             # without confstr
             with unittest.mock.patch('os.confstr', side_effect=ValueError, \
@@ -2487,7 +2488,7 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     def test_empty_path_no_PATH(self):
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('PATH', None)
+            del env['PATH']
             rv = shutil.which(self.file)
             self.assertIsNone(rv)
 
@@ -3240,12 +3241,8 @@ class _ZeroCopyFileTest(object):
                 self.assertRaises(OSError, self.zerocopy_fun, src, dst)
 
 
-@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
-class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
-    PATCHPOINT = "os.sendfile"
-
-    def zerocopy_fun(self, fsrc, fdst):
-        return shutil._fastcopy_sendfile(fsrc, fdst)
+class _ZeroCopyFileLinuxTest(_ZeroCopyFileTest):
+    BLOCKSIZE_INDEX = None
 
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
@@ -3266,65 +3263,65 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                 self.assertEqual(dst.read(), self.FILEDATA)
 
     def test_exception_on_second_call(self):
-        def sendfile(*args, **kwargs):
+        def syscall(*args, **kwargs):
             if not flag:
                 flag.append(None)
-                return orig_sendfile(*args, **kwargs)
+                return orig_syscall(*args, **kwargs)
             else:
                 raise OSError(errno.EBADF, "yo")
 
         flag = []
-        orig_sendfile = os.sendfile
-        with unittest.mock.patch('os.sendfile', create=True,
-                                 side_effect=sendfile):
+        orig_syscall = eval(self.PATCHPOINT)
+        with unittest.mock.patch(self.PATCHPOINT, create=True,
+                                 side_effect=syscall):
             with self.get_files() as (src, dst):
                 with self.assertRaises(OSError) as cm:
-                    shutil._fastcopy_sendfile(src, dst)
+                    self.zerocopy_fun(src, dst)
         assert flag
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_cant_get_size(self):
         # Emulate a case where src file size cannot be determined.
         # Internally bufsize will be set to a small value and
-        # sendfile() will be called repeatedly.
+        # a system call will be called repeatedly.
         with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
             with self.get_files() as (src, dst):
-                shutil._fastcopy_sendfile(src, dst)
+                self.zerocopy_fun(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_small_chunks(self):
         # Force internal file size detection to be smaller than the
-        # actual file size. We want to force sendfile() to be called
+        # actual file size. We want to force a system call to be called
         # multiple times, also in order to emulate a src fd which gets
         # bigger while it is being copied.
         mock = unittest.mock.Mock()
         mock.st_size = 65536 + 1
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._fastcopy_sendfile(src, dst)
+                self.zerocopy_fun(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_big_chunk(self):
         # Force internal file size detection to be +100MB bigger than
-        # the actual file size. Make sure sendfile() does not rely on
+        # the actual file size. Make sure a system call does not rely on
         # file size value except for (maybe) a better throughput /
         # performance.
         mock = unittest.mock.Mock()
         mock.st_size = self.FILESIZE + (100 * 1024 * 1024)
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._fastcopy_sendfile(src, dst)
+                self.zerocopy_fun(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_blocksize_arg(self):
-        with unittest.mock.patch('os.sendfile',
+        with unittest.mock.patch(self.PATCHPOINT,
                                  side_effect=ZeroDivisionError) as m:
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN, TESTFN2)
-            blocksize = m.call_args[0][3]
+            blocksize = m.call_args[0][self.BLOCKSIZE_INDEX]
             # Make sure file size and the block size arg passed to
             # sendfile() are the same.
             self.assertEqual(blocksize, os.path.getsize(TESTFN))
@@ -3334,8 +3331,18 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             self.addCleanup(os_helper.unlink, TESTFN2 + '3')
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN2, TESTFN2 + '3')
-            blocksize = m.call_args[0][3]
+            blocksize = m.call_args[0][self.BLOCKSIZE_INDEX]
             self.assertEqual(blocksize, 2 ** 23)
+
+
+@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
+@unittest.mock.patch.object(shutil, "_USE_CP_COPY_FILE_RANGE", False)
+class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
+    PATCHPOINT = "os.sendfile"
+    BLOCKSIZE_INDEX = 3
+
+    def zerocopy_fun(self, fsrc, fdst):
+        return shutil._fastcopy_sendfile(fsrc, fdst)
 
     def test_file2file_not_supported(self):
         # Emulate a case where sendfile() only support file->socket
@@ -3357,6 +3364,29 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                 assert not m.called
         finally:
             shutil._USE_CP_SENDFILE = True
+
+
+@unittest.skipUnless(shutil._USE_CP_COPY_FILE_RANGE, "os.copy_file_range() not supported")
+class TestZeroCopyCopyFileRange(_ZeroCopyFileLinuxTest, unittest.TestCase):
+    PATCHPOINT = "os.copy_file_range"
+    BLOCKSIZE_INDEX = 2
+
+    def zerocopy_fun(self, fsrc, fdst):
+        return shutil._fastcopy_copy_file_range(fsrc, fdst)
+
+    def test_empty_file(self):
+        srcname = f"{TESTFN}src"
+        dstname = f"{TESTFN}dst"
+        self.addCleanup(lambda: os_helper.unlink(srcname))
+        self.addCleanup(lambda: os_helper.unlink(dstname))
+        with open(srcname, "wb"):
+            pass
+
+        with open(srcname, "rb") as src, open(dstname, "wb") as dst:
+            # _fastcopy_copy_file_range gives up copying empty files due
+            # to a bug in older Linux.
+            with self.assertRaises(shutil._GiveupOnFastCopy):
+                self.zerocopy_fun(src, dst)
 
 
 @unittest.skipIf(not MACOS, 'macOS only')
@@ -3420,8 +3450,7 @@ class TestGetTerminalSize(unittest.TestCase):
         expected = (int(size[1]), int(size[0])) # reversed order
 
         with os_helper.EnvironmentVarGuard() as env:
-            del env['LINES']
-            del env['COLUMNS']
+            env.unset('LINES', 'COLUMNS')
             actual = shutil.get_terminal_size()
 
         self.assertEqual(expected, actual)
@@ -3429,8 +3458,7 @@ class TestGetTerminalSize(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "WASI has no /dev/null")
     def test_fallback(self):
         with os_helper.EnvironmentVarGuard() as env:
-            del env['LINES']
-            del env['COLUMNS']
+            env.unset('LINES', 'COLUMNS')
 
             # sys.__stdout__ has no fileno()
             with support.swap_attr(sys, '__stdout__', None):
@@ -3451,7 +3479,7 @@ class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
 
     def test_module_all_attribute(self):
-        self.assertTrue(hasattr(shutil, '__all__'))
+        self.assertHasAttr(shutil, '__all__')
         target_api = ['copyfileobj', 'copyfile', 'copymode', 'copystat',
                       'copy', 'copy2', 'copytree', 'move', 'rmtree', 'Error',
                       'SpecialFileError', 'make_archive',
@@ -3464,7 +3492,7 @@ class PublicAPITests(unittest.TestCase):
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
         with self.assertWarns(DeprecationWarning):
-            from shutil import ExecError
+            from shutil import ExecError  # noqa: F401
 
 
 if __name__ == '__main__':

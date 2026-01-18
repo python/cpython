@@ -32,6 +32,7 @@ void *foo(void)
 
 @unittest.skipUnless(sys.platform.startswith('linux'),
                      'test requires GNU IFUNC support')
+@unittest.skipIf(test.support.linked_to_musl(), "Requires glibc")
 class TestNullDlsym(unittest.TestCase):
     """GH-126554: Ensure that we catch NULL dlsym return values
 
@@ -58,11 +59,14 @@ class TestNullDlsym(unittest.TestCase):
         import subprocess
         import tempfile
 
-        retcode = subprocess.call(["gcc", "--version"],
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
-        if retcode != 0:
+        try:
+            retcode = subprocess.call(["gcc", "--version"],
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
+        except OSError:
             self.skipTest("gcc is missing")
+        if retcode != 0:
+            self.skipTest("gcc --version failed")
 
         pipe_r, pipe_w = os.pipe()
         self.addCleanup(os.close, pipe_r)
@@ -117,7 +121,7 @@ class TestNullDlsym(unittest.TestCase):
             # Assert that the IFUNC was called
             self.assertEqual(os.read(pipe_r, 2), b'OK')
 
-
+@test.support.thread_unsafe('setlocale is not thread-safe')
 @unittest.skipUnless(os.name != 'nt', 'test requires dlerror() calls')
 class TestLocalization(unittest.TestCase):
 

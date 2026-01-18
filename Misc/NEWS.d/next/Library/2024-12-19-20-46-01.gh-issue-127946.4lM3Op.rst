@@ -1,2 +1,0 @@
-Fix crash when modifying :class:`ctypes._CFuncPtr` objects concurrently on
-the :term:`free threaded <free threading>` build.

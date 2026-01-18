@@ -196,7 +196,11 @@ class RotatingFileHandler(BaseRotatingHandler):
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
-            pos = self.stream.tell()
+            try:
+                pos = self.stream.tell()
+            except io.UnsupportedOperation:
+                # gh-143237: Never rollover a named pipe.
+                return False
             if not pos:
                 # gh-116263: Never rollover an empty file
                 return False
@@ -855,7 +859,7 @@ class SysLogHandler(logging.Handler):
     }
 
     def __init__(self, address=('localhost', SYSLOG_UDP_PORT),
-                 facility=LOG_USER, socktype=None):
+                 facility=LOG_USER, socktype=None, timeout=None):
         """
         Initialize a handler.
 
@@ -872,6 +876,7 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
+        self.timeout = timeout
         self.socket = None
         self.createSocket()
 
@@ -933,6 +938,8 @@ class SysLogHandler(logging.Handler):
                 err = sock = None
                 try:
                     sock = socket.socket(af, socktype, proto)
+                    if self.timeout:
+                        sock.settimeout(self.timeout)
                     if socktype == socket.SOCK_STREAM:
                         sock.connect(sa)
                     break
@@ -1040,7 +1047,8 @@ class SMTPHandler(logging.Handler):
         only be used when authentication credentials are supplied. The tuple
         will be either an empty tuple, or a single-value tuple with the name
         of a keyfile, or a 2-value tuple with the names of the keyfile and
-        certificate file. (This tuple is passed to the `starttls` method).
+        certificate file. (This tuple is passed to the
+        `ssl.SSLContext.load_cert_chain` method).
         A timeout in seconds can be specified for the SMTP connection (the
         default is one second).
         """
@@ -1093,8 +1101,23 @@ class SMTPHandler(logging.Handler):
             msg.set_content(self.format(record))
             if self.username:
                 if self.secure is not None:
+                    import ssl
+
+                    try:
+                        keyfile = self.secure[0]
+                    except IndexError:
+                        keyfile = None
+
+                    try:
+                        certfile = self.secure[1]
+                    except IndexError:
+                        certfile = None
+
+                    context = ssl._create_stdlib_context(
+                        certfile=certfile, keyfile=keyfile
+                    )
                     smtp.ehlo()
-                    smtp.starttls(*self.secure)
+                    smtp.starttls(context=context)
                     smtp.ehlo()
                 smtp.login(self.username, self.password)
             smtp.send_message(msg)
@@ -1106,7 +1129,7 @@ class NTEventLogHandler(logging.Handler):
     """
     A handler class which sends events to the NT Event Log. Adds a
     registry entry for the specified application name. If no dllname is
-    provided, win32service.pyd (which contains some basic message
+    provided and pywin32 installed, win32service.pyd (which contains some basic message
     placeholders) is used. Note that use of these placeholders will make
     your event logs big, as the entire message source is held in the log.
     If you want slimmer logs, you have to pass in the name of your own DLL
@@ -1114,38 +1137,46 @@ class NTEventLogHandler(logging.Handler):
     """
     def __init__(self, appname, dllname=None, logtype="Application"):
         logging.Handler.__init__(self)
-        try:
-            import win32evtlogutil, win32evtlog
-            self.appname = appname
-            self._welu = win32evtlogutil
-            if not dllname:
-                dllname = os.path.split(self._welu.__file__)
+        import _winapi
+        self._winapi = _winapi
+        self.appname = appname
+        if not dllname:
+            # backward compatibility
+            try:
+                import win32evtlogutil
+                dllname = os.path.split(win32evtlogutil.__file__)
                 dllname = os.path.split(dllname[0])
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
-            self.dllname = dllname
-            self.logtype = logtype
-            # Administrative privileges are required to add a source to the registry.
-            # This may not be available for a user that just wants to add to an
-            # existing source - handle this specific case.
-            try:
-                self._welu.AddSourceToRegistry(appname, dllname, logtype)
-            except Exception as e:
-                # This will probably be a pywintypes.error. Only raise if it's not
-                # an "access denied" error, else let it pass
-                if getattr(e, 'winerror', None) != 5:  # not access denied
-                    raise
-            self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
-            self.typemap = {
-                logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                logging.INFO    : win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                logging.WARNING : win32evtlog.EVENTLOG_WARNING_TYPE,
-                logging.ERROR   : win32evtlog.EVENTLOG_ERROR_TYPE,
-                logging.CRITICAL: win32evtlog.EVENTLOG_ERROR_TYPE,
-         }
-        except ImportError:
-            print("The Python Win32 extensions for NT (service, event "\
-                        "logging) appear not to be available.")
-            self._welu = None
+            except ImportError:
+                pass
+        self.dllname = dllname
+        self.logtype = logtype
+        # Administrative privileges are required to add a source to the registry.
+        # This may not be available for a user that just wants to add to an
+        # existing source - handle this specific case.
+        try:
+            self._add_source_to_registry(appname, dllname, logtype)
+        except PermissionError:
+            pass
+        self.deftype = _winapi.EVENTLOG_ERROR_TYPE
+        self.typemap = {
+            logging.DEBUG: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.INFO: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.WARNING: _winapi.EVENTLOG_WARNING_TYPE,
+            logging.ERROR: _winapi.EVENTLOG_ERROR_TYPE,
+            logging.CRITICAL: _winapi.EVENTLOG_ERROR_TYPE,
+        }
+
+    @staticmethod
+    def _add_source_to_registry(appname, dllname, logtype):
+        import winreg
+
+        key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\{logtype}\\{appname}"
+
+        with winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+            if dllname:
+                winreg.SetValueEx(key, "EventMessageFile", 0, winreg.REG_EXPAND_SZ, dllname)
+            winreg.SetValueEx(key, "TypesSupported", 0, winreg.REG_DWORD, 7)  # All types are supported
 
     def getMessageID(self, record):
         """
@@ -1186,15 +1217,20 @@ class NTEventLogHandler(logging.Handler):
         Determine the message ID, event category and event type. Then
         log the message in the NT event log.
         """
-        if self._welu:
+        try:
+            id = self.getMessageID(record)
+            cat = self.getEventCategory(record)
+            type = self.getEventType(record)
+            msg = self.format(record)
+
+            # Get a handle to the event log
+            handle = self._winapi.RegisterEventSource(None, self.appname)
             try:
-                id = self.getMessageID(record)
-                cat = self.getEventCategory(record)
-                type = self.getEventType(record)
-                msg = self.format(record)
-                self._welu.ReportEvent(self.appname, id, cat, type, [msg])
-            except Exception:
-                self.handleError(record)
+                self._winapi.ReportEvent(handle, type, cat, id, msg)
+            finally:
+                self._winapi.DeregisterEventSource(handle)
+        except Exception:
+            self.handleError(record)
 
     def close(self):
         """
@@ -1513,6 +1549,19 @@ class QueueListener(object):
         self._thread = None
         self.respect_handler_level = respect_handler_level
 
+    def __enter__(self):
+        """
+        For use as a context manager. Starts the listener.
+        """
+        self.start()
+        return self
+
+    def __exit__(self, *args):
+        """
+        For use as a context manager. Stops the listener.
+        """
+        self.stop()
+
     def dequeue(self, block):
         """
         Dequeue a record and return it, optionally blocking.
@@ -1529,6 +1578,9 @@ class QueueListener(object):
         This starts up a background thread to monitor the queue for
         LogRecords to process.
         """
+        if self._thread is not None:
+            raise RuntimeError("Listener already started")
+
         self._thread = t = threading.Thread(target=self._monitor)
         t.daemon = True
         t.start()

@@ -146,17 +146,25 @@ The :mod:`urllib.request` module defines the following functions:
    attribute to modify its position in the handlers list.
 
 
-.. function:: pathname2url(path)
+.. function:: pathname2url(path, *, add_scheme=False)
 
    Convert the given local path to a ``file:`` URL. This function uses
-   :func:`~urllib.parse.quote` function to encode the path. For historical
-   reasons, the return value omits the ``file:`` scheme prefix. This example
-   shows the function being used on Windows::
+   :func:`~urllib.parse.quote` function to encode the path.
+
+   If *add_scheme* is false (the default), the return value omits the
+   ``file:`` scheme prefix. Set *add_scheme* to true to return a complete URL.
+
+   This example shows the function being used on Windows::
 
       >>> from urllib.request import pathname2url
       >>> path = 'C:\\Program Files'
-      >>> 'file:' + pathname2url(path)
+      >>> pathname2url(path, add_scheme=True)
       'file:///C:/Program%20Files'
+
+   .. versionchanged:: 3.14
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
 
    .. versionchanged:: 3.14
       Paths beginning with a slash are converted to URLs with authority
@@ -164,25 +172,49 @@ The :mod:`urllib.request` module defines the following functions:
       the URL ``///etc/hosts``.
 
    .. versionchanged:: 3.14
+      The *add_scheme* parameter was added.
+
+
+.. function:: url2pathname(url, *, require_scheme=False, resolve_host=False)
+
+   Convert the given ``file:`` URL to a local path. This function uses
+   :func:`~urllib.parse.unquote` to decode the URL.
+
+   If *require_scheme* is false (the default), the given value should omit a
+   ``file:`` scheme prefix. If *require_scheme* is set to true, the given
+   value should include the prefix; a :exc:`~urllib.error.URLError` is raised
+   if it doesn't.
+
+   The URL authority is discarded if it is empty, ``localhost``, or the local
+   hostname. Otherwise, if *resolve_host* is set to true, the authority is
+   resolved using :func:`socket.gethostbyname` and discarded if it matches a
+   local IP address (as per :rfc:`RFC 8089 §3 <8089#section-3>`). If the
+   authority is still unhandled, then on Windows a UNC path is returned, and
+   on other platforms a :exc:`~urllib.error.URLError` is raised.
+
+   This example shows the function being used on Windows::
+
+      >>> from urllib.request import url2pathname
+      >>> url = 'file:///C:/Program%20Files'
+      >>> url2pathname(url, require_scheme=True)
+      'C:\\Program Files'
+
+   .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase, and ``:``
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
 
-
-.. function:: url2pathname(url)
-
-   Convert the given ``file:`` URL to a local path. This function uses
-   :func:`~urllib.parse.unquote` to decode the URL. For historical reasons,
-   the given value *must* omit the ``file:`` scheme prefix. This example shows
-   the function being used on Windows::
-
-      >>> from urllib.request import url2pathname
-      >>> url = 'file:///C:/Program%20Files'
-      >>> url2pathname(url.removeprefix('file:'))
-      'C:\\Program Files'
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: 3.14
-      Windows drive letters are no longer converted to uppercase.
+      The URL query and fragment components are discarded if present.
+
+   .. versionchanged:: 3.14
+      The *require_scheme* and *resolve_host* parameters were added.
 
 
 .. function:: getproxies()
@@ -800,10 +832,13 @@ The following attribute and methods should only be used by classes derived from
    errors.  It will be called automatically by the  :class:`OpenerDirector` getting
    the error, and should not normally be called in other circumstances.
 
-   *req* will be a :class:`Request` object, *fp* will be a file-like object with
-   the HTTP error body, *code* will be the three-digit code of the error, *msg*
-   will be the user-visible explanation of the code and *hdrs* will be a mapping
-   object with the headers of the error.
+   :class:`OpenerDirector` will call this method with five positional arguments:
+
+   1. a :class:`Request` object,
+   #. a file-like object with the HTTP error body,
+   #. the three-digit code of the error, as a string,
+   #. the user-visible explanation of the code, as a string, and
+   #. the headers of the error, as a mapping object.
 
    Return values and exceptions raised should be the same as those of
    :func:`urlopen`.
@@ -1092,7 +1127,7 @@ HTTPHandler Objects
 .. method:: HTTPHandler.http_open(req)
 
    Send an HTTP request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _https-handler-objects:
@@ -1104,7 +1139,7 @@ HTTPSHandler Objects
 .. method:: HTTPSHandler.https_open(req)
 
    Send an HTTPS request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _file-handler-objects:
@@ -1213,17 +1248,13 @@ In addition to the examples below, more examples are given in
 :ref:`urllib-howto`.
 
 This example gets the python.org main page and displays the first 300 bytes of
-it. ::
+it::
 
    >>> import urllib.request
    >>> with urllib.request.urlopen('http://www.python.org/') as f:
    ...     print(f.read(300))
    ...
-   b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n\n\n<html
-   xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n\n<head>\n
-   <meta http-equiv="content-type" content="text/html; charset=utf-8" />\n
-   <title>Python Programming '
+   b'<!doctype html>\n<!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->\n<!--[if IE 7]>      <html class="no-js ie7 lt-ie8 lt-ie9">          <![endif]-->\n<!--[if IE 8]>      <html class="no-js ie8 lt-ie9">
 
 Note that urlopen returns a bytes object.  This is because there is no way
 for urlopen to automatically determine the encoding of the byte stream
@@ -1231,27 +1262,35 @@ it receives from the HTTP server. In general, a program will decode
 the returned bytes object to string once it determines or guesses
 the appropriate encoding.
 
-The following W3C document, https://www.w3.org/International/O-charset\ , lists
-the various ways in which an (X)HTML or an XML document could have specified its
+The following HTML spec document, https://html.spec.whatwg.org/#charset, lists
+the various ways in which an HTML or an XML document could have specified its
 encoding information.
 
+For additional information, see the W3C document: https://www.w3.org/International/questions/qa-html-encoding-declarations.
+
 As the python.org website uses *utf-8* encoding as specified in its meta tag, we
-will use the same for decoding the bytes object. ::
+will use the same for decoding the bytes object::
 
    >>> with urllib.request.urlopen('http://www.python.org/') as f:
    ...     print(f.read(100).decode('utf-8'))
    ...
-   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtm
+   <!doctype html>
+   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
+   <!-
 
 It is also possible to achieve the same result without using the
-:term:`context manager` approach. ::
+:term:`context manager` approach::
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
-   >>> print(f.read(100).decode('utf-8'))
-   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtm
+   >>> try:
+   ...     print(f.read(100).decode('utf-8'))
+   ... finally:
+   ...     f.close()
+   ...
+   <!doctype html>
+   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
+   <!--
 
 In the following example, we are sending a data-stream to the stdin of a CGI
 and reading the data it returns to us. Note that this example will only work
@@ -1294,7 +1333,8 @@ Use of Basic HTTP Authentication::
    opener = urllib.request.build_opener(auth_handler)
    # ...and install it globally so it can be used with urlopen.
    urllib.request.install_opener(opener)
-   urllib.request.urlopen('http://www.example.com/login.html')
+   with urllib.request.urlopen('http://www.example.com/login.html') as f:
+       print(f.read().decode('utf-8'))
 
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
@@ -1312,7 +1352,8 @@ programmatically supplied proxy URLs, and adds proxy authorization support with
 
    opener = urllib.request.build_opener(proxy_handler, proxy_auth_handler)
    # This time, rather than install the OpenerDirector, we use it directly:
-   opener.open('http://www.example.com/login.html')
+   with opener.open('http://www.example.com/login.html') as f:
+      print(f.read().decode('utf-8'))
 
 Adding HTTP headers:
 
@@ -1323,7 +1364,9 @@ Use the *headers* argument to the :class:`Request` constructor, or::
    req.add_header('Referer', 'http://www.python.org/')
    # Customize the default User-Agent header value:
    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
-   r = urllib.request.urlopen(req)
+   with urllib.request.urlopen(req) as f:
+       print(f.read().decode('utf-8'))
+
 
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to
 every :class:`Request`.  To change this::
@@ -1331,7 +1374,8 @@ every :class:`Request`.  To change this::
    import urllib.request
    opener = urllib.request.build_opener()
    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-   opener.open('http://www.example.com/')
+   with opener.open('http://www.example.com/') as f:
+      print(f.read().decode('utf-8'))
 
 Also, remember that a few standard headers (:mailheader:`Content-Length`,
 :mailheader:`Content-Type` and :mailheader:`Host`)

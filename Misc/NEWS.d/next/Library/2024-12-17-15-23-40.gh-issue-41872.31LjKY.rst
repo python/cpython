@@ -1,3 +1,0 @@
-Fix quick extraction of module docstrings from a file in :mod:`pydoc`.
-It now supports docstrings with single quotes, escape sequences,
-raw string literals, and other Python syntax.
