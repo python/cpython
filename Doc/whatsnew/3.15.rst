@@ -166,8 +166,8 @@ Key features include:
   * ``--flamegraph``: Generates a self-contained interactive HTML flamegraph using D3.js.
     Opens directly in your browser for immediate visual analysis. Flamegraphs show the call
     hierarchy where width represents time spent, making it easy to spot bottlenecks at a glance.
-  * ``--gecko``: Generates Gecko Profiler format compatible with Firefox Profiler
-    (https://profiler.firefox.com). Upload the output to Firefox Profiler for advanced
+  * ``--gecko``: Generates Gecko Profiler format compatible with `Firefox Profiler
+    <https://profiler.firefox.com>`__. Upload the output to Firefox Profiler for advanced
     timeline-based analysis with features like stack charts, markers, and network activity.
   * ``--heatmap``: Generates an interactive HTML heatmap visualization with line-level sample
     counts. Creates a directory with per-file heatmaps showing exactly where time is spent
