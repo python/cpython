@@ -2063,33 +2063,36 @@ class Popen:
                 raise TimeoutExpired(self.args, timeout)
             return True
 
+        def _busy_wait(self, timeout):
+            endtime = _time() + timeout
+            # Enter a busy loop if we have a timeout.  This busy loop was
+            # cribbed from Lib/threading.py in Thread.wait() at r71065.
+            delay = 0.0005 # 500 us -> initial delay of 1 ms
+            while True:
+                if self._waitpid_lock.acquire(False):
+                    try:
+                        if self.returncode is not None:
+                            break  # Another thread waited.
+                        (pid, sts) = self._try_wait(os.WNOHANG)
+                        assert pid == self.pid or pid == 0
+                        if pid == self.pid:
+                            self._handle_exitstatus(sts)
+                            break
+                    finally:
+                        self._waitpid_lock.release()
+                remaining = self._remaining_time(endtime)
+                if remaining <= 0:
+                    raise TimeoutExpired(self.args, timeout)
+                delay = min(delay * 2, remaining, .05)
+                time.sleep(delay)
+
         def _wait(self, timeout):
             """Internal implementation of wait() on POSIX."""
             if self.returncode is not None:
                 return self.returncode
 
             if timeout is not None:
-                endtime = _time() + timeout
-                # Enter a busy loop if we have a timeout.  This busy loop was
-                # cribbed from Lib/threading.py in Thread.wait() at r71065.
-                delay = 0.0005 # 500 us -> initial delay of 1 ms
-                while True:
-                    if self._waitpid_lock.acquire(False):
-                        try:
-                            if self.returncode is not None:
-                                break  # Another thread waited.
-                            (pid, sts) = self._try_wait(os.WNOHANG)
-                            assert pid == self.pid or pid == 0
-                            if pid == self.pid:
-                                self._handle_exitstatus(sts)
-                                break
-                        finally:
-                            self._waitpid_lock.release()
-                    remaining = self._remaining_time(endtime)
-                    if remaining <= 0:
-                        raise TimeoutExpired(self.args, timeout)
-                    delay = min(delay * 2, remaining, .05)
-                    time.sleep(delay)
+                self._busy_wait(timeout)
             else:
                 while self.returncode is None:
                     with self._waitpid_lock:
