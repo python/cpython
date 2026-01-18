@@ -281,8 +281,8 @@ class ForwardRef:
             and self.__forward_is_class__ == other.__forward_is_class__
             # Two separate cells are always considered unequal in forward refs.
             and (
-                dict(zip(self.__cell__, map(id, self.__cell__.values())))
-                == dict(zip(other.__cell__, map(id, other.__cell__.values())))
+                {name: id(cell) for name, cell in self.__cell__.items()}
+                == {name: id(cell) for name, cell in other.__cell__.items()}
                 if isinstance(self.__cell__, dict) and isinstance(other.__cell__, dict)
                 else self.__cell__ is other.__cell__
             )
