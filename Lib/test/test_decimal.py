@@ -6029,10 +6029,22 @@ def test(arith=None, verbose=None, todo_tests=None, debug=None):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(usage="test_decimal.py [--debug] [{--skip | test1 [test2 [...]]}]")
-    parser.add_argument('--debug', '-d', action='store_true', help='shows the test number and context before each test')
-    parser.add_argument('--skip',  '-s', action='store_true', help='skip over 90%% of the arithmetic tests')
-    parser.add_argument('tests', nargs='*', help='specific tests to run')
+
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("tests", nargs="*", default=[], help="specific tests to run")
+    group.add_argument(
+        "-s",
+        "--skip",
+        action="store_true",
+        help="skip over 90%% of the arithmetic tests",
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="shows the test number and context before each test",
+    )
     args = parser.parse_args()
 
     if args.skip:
