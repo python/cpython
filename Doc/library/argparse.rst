@@ -1899,7 +1899,7 @@ Subcommands
 .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None,
                                          deprecated=False, **kwargs)
 
-   Creates and returns a new :class:`!ArgumentParser` object for the
+   Create and return a new :class:`ArgumentParser` object for the
    subcommand *name*.
 
    The *name* argument is the name of the sub-command.
