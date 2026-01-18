@@ -2,19 +2,24 @@ import unittest
 import sys
 import functools
 
-from test import support
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import import_fresh_module, import_module
 
 
 TESTS = 'test.datetimetester'
 
 def load_tests(loader, tests, pattern):
     try:
-        pure_tests = import_fresh_module(TESTS,
-                                         fresh=['datetime', '_pydatetime', '_strptime'],
-                                         blocked=['_datetime'])
+        pure_tests = import_fresh_module(
+            TESTS,
+            fresh=['datetime', '_pydatetime', '_strptime'],
+            blocked=['_datetime'],
+        )
         fast_tests = None
-        if support.import_module('_datetime', required=False):
+        try:
+            import_module('_datetime')
+        except ImportError:
+            fast_tests = None
+        else:
             fast_tests = import_fresh_module(
                 TESTS,
                 fresh=['datetime', '_strptime'],
