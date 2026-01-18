@@ -4104,7 +4104,7 @@ class FastWaitTestCase(BaseTestCase):
         with mock.patch(patch_point, side_effect=exc) as m:
             p = subprocess.Popen([sys.executable,
                                   "-c", "import time; time.sleep(0.3)"])
-            with self.assertRaises(subprocess.TimeoutExpired) as c:
+            with self.assertRaises(subprocess.TimeoutExpired):
                 p.wait(timeout=0.0001)
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         assert m.called
@@ -4118,6 +4118,30 @@ class FastWaitTestCase(BaseTestCase):
     )
     def test_wait_kqueue_error(self, patch_point="os.pidfd_open"):
         self.assert_fast_waitpid_error("select.kqueue")
+
+    # ---
+
+    def assert_wait_pid_race(self, patch_target, real_func):
+        # Call pidfd_open() / kqueue, then terminate the process. Make
+        # sure that the next poll() / kqueue.control() call still works
+        # for a terminated PID.
+        p = subprocess.Popen([sys.executable,
+                              "-c", "import time; time.sleep(0.3)"])
+
+        def wrapper(*args, **kwargs):
+            ret = real_func(*args, **kwargs)
+            os.kill(p.pid, signal.SIGTERM)
+            return ret
+
+        with mock.patch(patch_target, side_effect=wrapper) as m:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.wait(timeout=0.0001)
+        assert m.called
+        self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), -signal.SIGTERM)
+
+    @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
+    def test_pidfd_open_race(self):
+        self.assert_wait_pid_race("os.pidfd_open", os.pidfd_open)
 
 
 if __name__ == "__main__":
