@@ -1,6 +1,5 @@
 import builtins
 import codecs
-import _datetime
 import gc
 import io
 import locale
@@ -1566,6 +1565,8 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(sys.getsizeof(True, -1), size('') + self.longdigit)
 
     def test_objecttypes(self):
+        import _datetime
+
         # check all types defined in Objects/
         calcsize = struct.calcsize
         size = test.support.calcobjsize
