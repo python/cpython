@@ -310,6 +310,12 @@ dummy_func(void) {
         r = right;
     }
 
+    op(_BINARY_OP_EXTEND, (left, right -- res, l, r)) {
+        res = sym_new_not_null(ctx);
+        l = left;
+        r = right;
+    }
+
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- res)) {
         if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
