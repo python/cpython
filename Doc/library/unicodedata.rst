@@ -31,7 +31,7 @@ following functions:
    this module.
 
 
-.. function:: lookup(name)
+.. function:: lookup(name, /)
 
    Look up character by name.  If a character with the given name is found, return
    the corresponding character.  If not found, :exc:`KeyError` is raised.
@@ -94,7 +94,7 @@ following functions:
       0.5
 
 
-.. function:: category(chr)
+.. function:: category(chr, /)
 
    Returns the general category assigned to the character *chr* as
    string. General category names consist of two letters.
@@ -106,7 +106,7 @@ following functions:
       'Lu'
 
 
-.. function:: bidirectional(chr)
+.. function:: bidirectional(chr, /)
 
    Returns the bidirectional class assigned to the character *chr* as
    string. If no such value is defined, an empty string is returned.
@@ -118,7 +118,7 @@ following functions:
       'AN'
 
 
-.. function:: combining(chr)
+.. function:: combining(chr, /)
 
    Returns the canonical combining class assigned to the character *chr*
    as integer. Returns ``0`` if no combining class is defined.
@@ -127,14 +127,14 @@ following functions:
    for more information.
 
 
-.. function:: east_asian_width(chr)
+.. function:: east_asian_width(chr, /)
 
    Returns the east asian width assigned to the character *chr* as
    string. For a list of widths and or more information, see the
    `Unicode Standard Annex #11 <https://www.unicode.org/reports/tr11/>`_.
 
 
-.. function:: mirrored(chr)
+.. function:: mirrored(chr, /)
 
    Returns the mirrored property assigned to the character *chr* as
    integer. Returns ``1`` if the character has been identified as a "mirrored"
@@ -144,7 +144,37 @@ following functions:
       1
 
 
-.. function:: decomposition(chr)
+.. function:: isxidstart(chr, /)
+
+   Return ``True`` if *chr* is a valid identifier start per the
+   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
+   that is, it has the ``XID_Start`` property. Return ``False`` otherwise.
+   For example::
+
+      >>> unicodedata.isxidstart('S')
+      True
+      >>> unicodedata.isxidstart('0')
+      False
+
+   .. versionadded:: 3.15
+
+
+.. function:: isxidcontinue(chr, /)
+
+   Return ``True`` if *chr* is a valid identifier character per the
+   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
+   that is, it has the ``XID_Continue`` property. Return ``False`` otherwise.
+   For example::
+
+      >>> unicodedata.isxidcontinue('S')
+      True
+      >>> unicodedata.isxidcontinue(' ')
+      False
+
+   .. versionadded:: 3.15
+
+
+.. function:: decomposition(chr, /)
 
    Returns the character decomposition mapping assigned to the character
    *chr* as string. An empty string is returned in case no such mapping is
@@ -154,7 +184,29 @@ following functions:
       '0041 0303'
 
 
-.. function:: normalize(form, unistr)
+.. function:: grapheme_cluster_break(chr, /)
+
+   Returns the Grapheme_Cluster_Break property assigned to the character.
+
+   .. versionadded:: 3.15
+
+
+.. function:: indic_conjunct_break(chr, /)
+
+   Returns the Indic_Conjunct_Break property assigned to the character.
+
+   .. versionadded:: 3.15
+
+
+.. function:: extended_pictographic(chr, /)
+
+   Returns ``True`` if the character has the Extended_Pictographic property,
+   ``False`` otherwise.
+
+   .. versionadded:: 3.15
+
+
+.. function:: normalize(form, unistr, /)
 
    Return the normal form *form* for the Unicode string *unistr*. Valid values for
    *form* are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
@@ -187,12 +239,30 @@ following functions:
    doesn't, they may not compare equal.
 
 
-.. function:: is_normalized(form, unistr)
+.. function:: is_normalized(form, unistr, /)
 
    Return whether the Unicode string *unistr* is in the normal form *form*. Valid
    values for *form* are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 
    .. versionadded:: 3.8
+
+
+.. function:: iter_graphemes(unistr, start=0, end=sys.maxsize, /)
+
+   Returns an iterator to iterate over grapheme clusters.
+   With optional *start*, iteration begins at that position.
+   With optional *end*, iteration stops at that position.
+
+   Converting an emitted item to string returns a substring corresponding to
+   the grapheme cluster.
+   Its ``start`` and ``end`` attributes denote the start and end of
+   the grapheme cluster.
+
+   It uses extended grapheme cluster rules defined by Unicode
+   Standard Annex #29, `"Unicode Text Segmentation"
+   <https://www.unicode.org/reports/tr29/>`_.
+
+   .. versionadded:: 3.15
 
 
 In addition, the module exposes the following constant:
@@ -204,7 +274,7 @@ In addition, the module exposes the following constant:
 
 .. data:: ucd_3_2_0
 
-   This is an object that has the same methods as the entire module, but uses the
+   This is an object that has most of the methods of the entire module, but uses the
    Unicode database version 3.2 instead, for applications that require this
    specific version of the Unicode database (such as IDNA).
 

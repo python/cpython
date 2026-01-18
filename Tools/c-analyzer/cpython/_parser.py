@@ -81,12 +81,16 @@ EXCLUDED = format_conf_lines([
     'Python/executor_cases.c.h',
     'Python/optimizer_cases.c.h',
     'Python/opcode_targets.h',
+    'Modules/_testinternalcapi/test_targets.h',
+    'Modules/_testinternalcapi/test_cases.c.h',
+    'Modules/_testinternalcapi/interpreter.c',
     # XXX: Throws errors if PY_VERSION_HEX is not mocked out
     'Modules/clinic/_testclinic_depr.c.h',
 
     # not actually source
     'Python/bytecodes.c',
     'Python/optimizer_bytecodes.c',
+    'Modules/_testinternalcapi/testbytecodes.c',
 
     # mimalloc
     'Objects/mimalloc/*.c',
@@ -114,7 +118,10 @@ INCL_DIRS = format_tsv_lines([
     ('*', './Include/internal/mimalloc'),
 
     ('Modules/_decimal/**/*.c', 'Modules/_decimal/libmpdec'),
+
     ('Modules/_elementtree.c', 'Modules/expat'),
+    ('Modules/pyexpat.c', 'Modules/expat'),
+
     ('Modules/_hacl/*.c', 'Modules/_hacl/include'),
     ('Modules/_hacl/*.c', 'Modules/_hacl/'),
     ('Modules/_hacl/*.h', 'Modules/_hacl/include'),
@@ -125,6 +132,7 @@ INCL_DIRS = format_tsv_lines([
     ('Modules/sha3module.c', 'Modules/_hacl/include'),
     ('Modules/blake2module.c', 'Modules/_hacl/include'),
     ('Modules/hmacmodule.c', 'Modules/_hacl/include'),
+
     ('Objects/stringlib/*.h', 'Objects'),
 
     # possible system-installed headers, just in case
@@ -309,6 +317,7 @@ MAX_SIZES = {
     _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
     _abs('Modules/termios.c'): (10_000, 800),
+    _abs('Modules/_remote_debugging/*.h'): (20_000, 1000),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
     _abs('Modules/expat/expat.h'): (10_000, 400),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
@@ -340,6 +349,10 @@ MAX_SIZES = {
 
     # Catch-alls:
     _abs('Include/**/*.h'): (5_000, 500),
+
+    # Specific to clang
+    _abs('Modules/selectmodule.c'): (40_000, 3000),
+    _abs('Modules/_testcapi/pyatomic.c'): (30_000, 1000),
 }
 
 

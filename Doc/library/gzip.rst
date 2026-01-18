@@ -11,6 +11,8 @@
 This module provides a simple interface to compress and decompress files just
 like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
+.. include:: ../includes/optional-module.rst
+
 The data compression is provided by the :mod:`zlib` module.
 
 The :mod:`gzip` module provides the :class:`GzipFile` class, as well as the
@@ -281,7 +283,7 @@ Example of how to GZIP compress a binary string::
 
 .. _gzip-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`gzip` module provides a simple command line interface to compress or
@@ -294,7 +296,7 @@ Once executed the :mod:`gzip` module keeps the input file(s).
    Add a new command line interface with a usage.
    By default, when you will execute the CLI, the default compression level is 6.
 
-Command line options
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. option:: file

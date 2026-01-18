@@ -73,7 +73,7 @@ Object Protocol
 
    Flag to be used with multiple functions that print the object (like
    :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
-   If passed, these function would use the :func:`str` of the object
+   If passed, these functions use the :func:`str` of the object
    instead of the :func:`repr`.
 
 
@@ -83,6 +83,35 @@ Object Protocol
    is used to enable certain printing options.  The only option currently supported
    is :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.
+
+
+.. c:function:: void PyObject_Dump(PyObject *op)
+
+   Dump an object *op* to ``stderr``. This should only be used for debugging.
+
+   The output is intended to try dumping objects even after memory corruption:
+
+   * Information is written starting with fields that are the least likely to
+     crash when accessed.
+   * This function can be called without an :term:`attached thread state`, but
+     it's not recommended to do so: it can cause deadlocks.
+   * An object that does not belong to the current interpreter may be dumped,
+     but this may also cause crashes or unintended behavior.
+   * Implement a heuristic to detect if the object memory has been freed. Don't
+     display the object contents in this case, only its memory address.
+   * The output format may change at any time.
+
+   Example of output:
+
+   .. code-block:: output
+
+       object address  : 0x7f80124702c0
+       object refcount : 2
+       object type     : 0x9902e0
+       object type name: str
+       object repr     : 'abcdef'
+
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)

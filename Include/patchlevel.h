@@ -24,10 +24,10 @@
 #define PY_MINOR_VERSION        15
 #define PY_MICRO_VERSION        0
 #define PY_RELEASE_LEVEL        PY_RELEASE_LEVEL_ALPHA
-#define PY_RELEASE_SERIAL       1
+#define PY_RELEASE_SERIAL       5
 
 /* Version as a string */
-#define PY_VERSION              "3.15.0a1+"
+#define PY_VERSION              "3.15.0a5+"
 /*--end constants--*/
 
 

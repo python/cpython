@@ -16,6 +16,12 @@ through multiple files (grep)</p></li>
 of global and local namespaces</p></li>
 <li><p>configuration, browsers, and other dialogs</p></li>
 </ul>
+<p>The IDLE application is implemented in the <a class="reference internal" href="#module-idlelib" title="idlelib: Implementation package for the IDLE shell/editor."><code class="xref py py-mod docutils literal notranslate"><span class="pre">idlelib</span></code></a> package.</p>
+<p>This is an <a class="reference internal" href="../glossary.html#term-optional-module"><span class="xref std std-term">optional module</span></a>.
+If it is missing from your copy of CPython,
+look for documentation from your distributor (that is,
+whoever provided Python to you).
+If you are the distributor, see <a class="reference internal" href="../using/configure.html#optional-module-requirements"><span class="std std-ref">Requirements for optional modules</span></a>.</p>
 <section id="menus">
 <h2>Menus<a class="headerlink" href="#menus" title="Link to this heading">¶</a></h2>
 <p>IDLE has two main window types, the Shell window and the Editor window.  It is
@@ -53,7 +59,7 @@ and after the window title.  If there is no associated file,
 do Save As instead.</p>
 </dd>
 <dt>Save As…</dt><dd><p>Save the current window with a Save As dialog.  The file saved becomes the
-new associated file for the window. (If your file namager is set to hide
+new associated file for the window. (If your file manager is set to hide
 extensions, the current extension will be omitted in the file name box.
 If the new filename has no ‘.’, ‘.py’ and ‘.txt’ will be added for Python
 and text files, except that on macOS Aqua,’.py’ is added for all files.)</p>
@@ -143,8 +149,8 @@ paragraph will be formatted to less than N columns, where N defaults to 72.</p>
 <dt>New Indent Width</dt><dd><p>Open a dialog to change indent width. The accepted default by the Python
 community is 4 spaces.</p>
 </dd>
-<dt>Strip Trailing Chitespace</dt><dd><p>Remove trailing space and other whitespace characters after the last
-non-whitespace character of a line by applying str.rstrip to each line,
+<dt>Strip Trailing Whitespace</dt><dd><p>Remove trailing space and other whitespace characters after the last
+non-whitespace character of a line by applying <a class="reference internal" href="stdtypes.html#str.rstrip" title="str.rstrip"><code class="xref py py-meth docutils literal notranslate"><span class="pre">str.rstrip()</span></code></a> to each line,
 including lines within multiline strings.  Except for Shell windows,
 remove extra newlines at the end of the file.</p>
 </dd>
@@ -337,16 +343,16 @@ Unix and the <kbd class="kbd docutils literal notranslate">Command</kbd> key on 
 assume that the keys have not been re-bound to something else.)</p>
 <ul class="simple">
 <li><p>Arrow keys move the cursor one character or line.</p></li>
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">LeftArrow</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">RightArrow</kbd></kbd> moves left or right one word.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">LeftArrow</kbd> and <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">RightArrow</kbd> moves left or right one word.</p></li>
 <li><p><kbd class="kbd docutils literal notranslate">Home</kbd> and <kbd class="kbd docutils literal notranslate">End</kbd> go to the beginning or end of the line.</p></li>
 <li><p><kbd class="kbd docutils literal notranslate">Page Up</kbd> and <kbd class="kbd docutils literal notranslate">Page Down</kbd> go up or down one screen.</p></li>
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Home</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">End</kbd></kbd> go to beginning or end of the file.</p></li>
-<li><p><kbd class="kbd docutils literal notranslate">Backspace</kbd> and <kbd class="kbd docutils literal notranslate">Del</kbd> (or <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">d</kbd></kbd>) delete the previous
+<li><p><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Home</kbd> and <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">End</kbd> go to beginning or end of the file.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Backspace</kbd> and <kbd class="kbd docutils literal notranslate">Del</kbd> (or <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">d</kbd>) delete the previous
 or next character.</p></li>
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Backspace</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Del</kbd></kbd> delete one word left or right.</p></li>
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">k</kbd></kbd> deletes (‘kills’) everything to the right.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Backspace</kbd> and <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">Del</kbd> delete one word left or right.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">k</kbd> deletes (‘kills’) everything to the right.</p></li>
 </ul>
-<p>Standard keybindings (like <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">c</kbd></kbd> to copy and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">v</kbd></kbd> to paste)
+<p>Standard keybindings (like <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">c</kbd> to copy and <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">v</kbd> to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.</p>
 </section>
 <section id="automatic-indentation">
@@ -390,7 +396,7 @@ one can specify a drive first.)  Move into subdirectories by typing a
 directory name and a separator.</p>
 <p>Instead of waiting, or after a box is closed, open a completion box
 immediately with Show Completions on the Edit menu.  The default hot
-key is <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">space</kbd></kbd>.  If one types a prefix for the desired name
+key is <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">space</kbd>.  If one types a prefix for the desired name
 before opening the box, the first match or near miss is made visible.
 The result is the same as if one enters a prefix
 after the box is displayed.  Show Completions after a quote completes
@@ -473,9 +479,9 @@ in an editor window.</p>
 <p>The editing features described in previous subsections work when entering
 code interactively.  IDLE’s Shell window also responds to the following:</p>
 <ul class="simple">
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">c</kbd></kbd> attempts to interrupt statement execution (but may fail).</p></li>
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">d</kbd></kbd> closes Shell if typed at a <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt.</p></li>
-<li><p><kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Alt</kbd>-<kbd class="kbd docutils literal notranslate">p</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">Alt</kbd>-<kbd class="kbd docutils literal notranslate">n</kbd></kbd> (<kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">p</kbd></kbd> and <kbd class="kbd compound docutils literal notranslate"><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">n</kbd></kbd> on macOS)
+<li><p><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">c</kbd> attempts to interrupt statement execution (but may fail).</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">d</kbd> closes Shell if typed at a <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Alt</kbd>-<kbd class="kbd docutils literal notranslate">p</kbd> and <kbd class="kbd docutils literal notranslate">Alt</kbd>-<kbd class="kbd docutils literal notranslate">n</kbd> (<kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">p</kbd> and <kbd class="kbd docutils literal notranslate">C</kbd>-<kbd class="kbd docutils literal notranslate">n</kbd> on macOS)
 retrieve to the current prompt the previous or next previously
 entered statement that matches anything already typed.</p></li>
 <li><p><kbd class="kbd docutils literal notranslate">Return</kbd> while the cursor is on any previous statement
@@ -516,28 +522,74 @@ looked for in the user’s home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE’s Python shell.</p>
 <section id="command-line-usage">
-<h3>Command line usage<a class="headerlink" href="#command-line-usage" title="Link to this heading">¶</a></h3>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
-
--c command  run command in the shell window
--d          enable debugger and open shell window
--e          open editor window
--h          print help message with legal combinations and exit
--i          open shell window
--r file     run file in shell window
--s          run $IDLESTARTUP or $PYTHONSTARTUP first, in shell window
--t title    set title of shell window
--           run stdin in shell (- must be last option before args)
+<span id="idlelib-cli"></span><h3>Command-line usage<a class="headerlink" href="#command-line-usage" title="Link to this heading">¶</a></h3>
+<p>IDLE can be invoked from the command line with various options. The general syntax is:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>idlelib<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="o">[</span>file<span class="w"> </span>...<span class="o">]</span>
 </pre></div>
 </div>
-<p>If there are arguments:</p>
+<p>The following options are available:</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-c">
+<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;command&gt;</span></span><a class="headerlink" href="#cmdoption-idle-c" title="Link to this definition">¶</a></dt>
+<dd><p>Run the specified Python command in the shell window.
+For example, pass <code class="docutils literal notranslate"><span class="pre">-c</span> <span class="pre">&quot;print('Hello,</span> <span class="pre">World!')&quot;</span></code>.
+On Windows, the outer quotes must be double quotes as shown.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-d">
+<span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-idle-d" title="Link to this definition">¶</a></dt>
+<dd><p>Enable the debugger and open the shell window.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-e">
+<span class="sig-name descname"><span class="pre">-e</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-idle-e" title="Link to this definition">¶</a></dt>
+<dd><p>Open an editor window.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-h">
+<span class="sig-name descname"><span class="pre">-h</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-idle-h" title="Link to this definition">¶</a></dt>
+<dd><p>Print a help message with legal combinations of options and exit.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-i">
+<span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-idle-i" title="Link to this definition">¶</a></dt>
+<dd><p>Open a shell window.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-r">
+<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;file&gt;</span></span><a class="headerlink" href="#cmdoption-idle-r" title="Link to this definition">¶</a></dt>
+<dd><p>Run the specified file in the shell window.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-s">
+<span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-idle-s" title="Link to this definition">¶</a></dt>
+<dd><p>Run the startup file (as defined by the environment variables <span class="target" id="index-7"></span><code class="xref std std-envvar docutils literal notranslate"><span class="pre">IDLESTARTUP</span></code> or <span class="target" id="index-8"></span><a class="reference internal" href="../using/cmdline.html#envvar-PYTHONSTARTUP"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">PYTHONSTARTUP</span></code></a>) before opening the shell window.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-t">
+<span class="sig-name descname"><span class="pre">-t</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;title&gt;</span></span><a class="headerlink" href="#cmdoption-idle-t" title="Link to this definition">¶</a></dt>
+<dd><p>Set the title of the shell window.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-idle-0">
+<span class="sig-name descname"><span class="pre">-</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-idle-0" title="Link to this definition">¶</a></dt>
+<dd><p>Read and execute standard input in the shell window. This option must be the last one before any arguments.</p>
+</dd></dl>
+
+<p>If arguments are provided:</p>
 <ul class="simple">
-<li><p>If <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">-c</span></code>, or <code class="docutils literal notranslate"><span class="pre">r</span></code> is used, all arguments are placed in
-<code class="docutils literal notranslate"><span class="pre">sys.argv[1:...]</span></code> and <code class="docutils literal notranslate"><span class="pre">sys.argv[0]</span></code> is set to <code class="docutils literal notranslate"><span class="pre">''</span></code>, <code class="docutils literal notranslate"><span class="pre">'-c'</span></code>,
-or <code class="docutils literal notranslate"><span class="pre">'-r'</span></code>.  No editor window is opened, even if that is the default
-set in the Options dialog.</p></li>
-<li><p>Otherwise, arguments are files opened for editing and
-<code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> reflects the arguments passed to IDLE itself.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">-c</span></code>, or <code class="docutils literal notranslate"><span class="pre">-r</span></code> is used, all arguments are placed in <code class="docutils literal notranslate"><span class="pre">sys.argv[1:]</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">sys.argv[0]</span></code> is set to <code class="docutils literal notranslate"><span class="pre">''</span></code>, <code class="docutils literal notranslate"><span class="pre">'-c'</span></code>, or <code class="docutils literal notranslate"><span class="pre">'-r'</span></code> respectively.
+No editor window is opened, even if that is the default set in the <em>Options</em> dialog.</p></li>
+<li><p>Otherwise, arguments are treated as files to be opened for editing, and <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> reflects the arguments passed to IDLE itself.</p></li>
 </ul>
 </section>
 <section id="startup-failure">
@@ -798,7 +850,7 @@ of this page for how to use IDLE.</p>
 either in idlelib or click Help =&gt; About IDLE on the IDLE menu.  This
 file also maps IDLE menu items to the code that implements the item.
 Except for files listed under ‘Startup’, the idlelib code is ‘private’ in
-sense that feature changes can be backported (see <span class="target" id="index-7"></span><a class="pep reference external" href="https://peps.python.org/pep-0434/"><strong>PEP 434</strong></a>).</p>
+sense that feature changes can be backported (see <span class="target" id="index-9"></span><a class="pep reference external" href="https://peps.python.org/pep-0434/"><strong>PEP 434</strong></a>).</p>
 </section>
 </section>
 

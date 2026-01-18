@@ -21,6 +21,14 @@ def check_pass_thru():
     raise PassThru
     yield 1
 
+class CustomHash:
+    def __init__(self, hash):
+        self.hash = hash
+    def __hash__(self):
+        return self.hash
+    def __repr__(self):
+        return f'<CustomHash {self.hash} at {id(self):#x}>'
+
 class BadCmp:
     def __hash__(self):
         return 1
@@ -662,7 +670,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         with check_unhashable_element():
             myset.discard(elem)
 
-        # Only TypeError exception is overriden,
+        # Only TypeError exception is overridden,
         # other exceptions are left unchanged.
         class HashError:
             def __hash__(self):
@@ -675,6 +683,28 @@ class TestSet(TestJointOps, unittest.TestCase):
             myset.add(elem2)
         with self.assertRaises(KeyError):
             myset.discard(elem2)
+
+    def test_hash_collision_remove_add(self):
+        self.maxDiff = None
+        # There should be enough space, so all elements with unique hash
+        # will be placed in corresponding cells without collision.
+        n = 64
+        elems = [CustomHash(h) for h in range(n)]
+        # Elements with hash collision.
+        a = CustomHash(n)
+        b = CustomHash(n)
+        elems += [a, b]
+        s = self.thetype(elems)
+        self.assertEqual(len(s), len(elems), s)
+        s.remove(a)
+        # "a" has been replaced with a dummy.
+        del elems[n]
+        self.assertEqual(len(s), len(elems), s)
+        self.assertEqual(s, set(elems))
+        s.add(b)
+        # "b" should not replace the dummy.
+        self.assertEqual(len(s), len(elems), s)
+        self.assertEqual(s, set(elems))
 
 
 class SetSubclass(set):
@@ -1854,6 +1884,7 @@ class TestWeirdBugs(unittest.TestCase):
         list(si)
 
     def test_merge_and_mutate(self):
+        # gh-141805
         class X:
             def __hash__(self):
                 return hash(0)
@@ -1865,6 +1896,33 @@ class TestWeirdBugs(unittest.TestCase):
         other = {X() for i in range(10)}
         s = {0}
         s.update(other)
+
+    def test_hash_collision_concurrent_add(self):
+        class X:
+            def __hash__(self):
+                return 0
+        class Y:
+            flag = False
+            def __hash__(self):
+                return 0
+            def __eq__(self, other):
+                if not self.flag:
+                    self.flag = True
+                    s.add(X())
+                return self is other
+
+        a = X()
+        s = set()
+        s.add(a)
+        s.add(X())
+        s.remove(a)
+        # Now the set contains a dummy entry followed by an entry
+        # for an object with hash 0.
+        s.add(Y())
+        # The following operations should not crash.
+        repr(s)
+        list(s)
+        set() | s
 
 
 class TestOperationsMutating:

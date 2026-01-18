@@ -115,7 +115,7 @@ The module defines the following:
    :ref:`kevent-objects` below for the methods supported by kevent objects.
 
 
-.. function:: select(rlist, wlist, xlist[, timeout])
+.. function:: select(rlist, wlist, xlist, timeout=None)
 
    This is a straightforward interface to the Unix :c:func:`!select` system call.
    The first three arguments are iterables of 'waitable objects': either
@@ -131,7 +131,7 @@ The module defines the following:
    platform-dependent. (It is known to work on Unix but not on Windows.)  The
    optional *timeout* argument specifies a time-out in seconds; it may be
    a non-integer to specify fractions of seconds.
-   When the *timeout* argument is omitted the function blocks until
+   When the *timeout* argument is omitted or ``None``, the function blocks until
    at least one file descriptor is ready.  A time-out value of zero specifies a
    poll and never blocks.
 
@@ -478,6 +478,8 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
 
    .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
+      If ``ppoll()`` function is available, *timeout* has a resolution
+      of ``1`` ns (``1e-6`` ms) instead of ``1`` ms.
 
 
 .. _kqueue-objects:
