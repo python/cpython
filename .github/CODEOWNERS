@@ -64,7 +64,7 @@
 
 # GitHub & related scripts
 .github/                               @ezio-melotti @hugovk @AA-Turner @webknjaz
-Tools/build/compute-changes.py         @AA-Turner @hugovk
+Tools/build/compute-changes.py         @AA-Turner @hugovk @webknjaz
 Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
 
 # Pre-commit
