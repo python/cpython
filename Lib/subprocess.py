@@ -51,6 +51,7 @@ import sys
 import threading
 import warnings
 import contextlib
+import functools
 from time import monotonic as _time
 import types
 
