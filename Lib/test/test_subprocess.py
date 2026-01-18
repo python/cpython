@@ -1428,29 +1428,6 @@ class ProcessTestCase(BaseTestCase):
         self.assertIn("0.0001", str(c.exception))  # For coverage of __str__.
         self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
-    def assert_fast_waitpid_error(self, patch_point):
-        # Emulate a case where pidfd_open() (Linux) or kqueue()
-        # (BSD/macOS) fails due to too many open files. _busy_wait()
-        # should be used as fallback.
-        exc = OSError(errno.EMFILE, os.strerror(errno.EMFILE))
-        with mock.patch(patch_point, side_effect=exc) as m:
-            p = subprocess.Popen([sys.executable,
-                                  "-c", "import time; time.sleep(0.3)"])
-            with self.assertRaises(subprocess.TimeoutExpired) as c:
-                p.wait(timeout=0.0001)
-            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
-        assert m.called
-
-    @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
-    def test_wait_pidfd_open_error(self, patch_point="os.pidfd_open"):
-        self.assert_fast_waitpid_error("os.pidfd_open")
-
-    @unittest.skipIf(
-        not subprocess._can_use_kqueue(), reason="macOS / BSD only"
-    )
-    def test_wait_kqueue_error(self, patch_point="os.pidfd_open"):
-        self.assert_fast_waitpid_error("select.kqueue")
-
     def test_invalid_bufsize(self):
         # an invalid type of the bufsize argument should raise
         # TypeError.
@@ -4115,6 +4092,32 @@ class ContextManagerTests(BaseTestCase):
         self.assertRaises(OSError, proc.__exit__, None, None, None)
         self.assertEqual(proc.returncode, 0)
         self.assertTrue(proc.stdin.closed)
+
+
+class FastWaitTestCase(BaseTestCase):
+
+    def assert_fast_waitpid_error(self, patch_point):
+        # Emulate a case where pidfd_open() (Linux) or kqueue()
+        # (BSD/macOS) fails due to too many open files. _busy_wait()
+        # should be used as fallback.
+        exc = OSError(errno.EMFILE, os.strerror(errno.EMFILE))
+        with mock.patch(patch_point, side_effect=exc) as m:
+            p = subprocess.Popen([sys.executable,
+                                  "-c", "import time; time.sleep(0.3)"])
+            with self.assertRaises(subprocess.TimeoutExpired) as c:
+                p.wait(timeout=0.0001)
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
+        assert m.called
+
+    @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
+    def test_wait_pidfd_open_error(self, patch_point="os.pidfd_open"):
+        self.assert_fast_waitpid_error("os.pidfd_open")
+
+    @unittest.skipIf(
+        not subprocess._can_use_kqueue(), reason="macOS / BSD only"
+    )
+    def test_wait_kqueue_error(self, patch_point="os.pidfd_open"):
+        self.assert_fast_waitpid_error("select.kqueue")
 
 
 if __name__ == "__main__":
