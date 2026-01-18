@@ -2898,15 +2898,12 @@ _PyBytes_FromSequence_lock_held(PyObject *x)
 
     PyObject *const *items = PySequence_Fast_ITEMS(x);
     for (Py_ssize_t i = 0; i < size; i++) {
-        if (!PyLong_Check(items[i])) {
-            PyBytesWriter_Discard(writer);
-            /* Py_None as a fallback sentinel to the slow path */
-            Py_RETURN_NONE;
-        }
-        Py_ssize_t value = PyNumber_AsSsize_t(items[i], NULL);
+        Py_ssize_t value = PyLong_AsSsize_t(items[i]);
         if (value == -1 && PyErr_Occurred()) {
             PyBytesWriter_Discard(writer);
-            return NULL;
+            PyErr_Clear();
+            /* Py_None as a fallback sentinel to the slow path */
+            Py_RETURN_NONE;
         }
 
         if (value < 0 || value >= 256) {
