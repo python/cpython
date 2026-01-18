@@ -1,6 +1,0 @@
-Add the ``ignorechars`` parameter to :func:`binascii.a2b_base64` and
-:func:`base64.b64decode`. When provided, only characters in this set will be
-silently ignored during decoding; other non-base64 characters will cause an
-error. This allows selective filtering of characters (e.g., ignoring
-whitespace while rejecting other invalid characters), similar to the existing
-``ignorechars`` parameter in :func:`base64.a85decode`.
