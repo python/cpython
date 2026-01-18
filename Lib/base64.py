@@ -72,9 +72,9 @@ def b64decode(s, altchars=None, validate=False):
     The result is returned as a bytes object.  A binascii.Error is raised if
     s is incorrectly padded.
 
-    If validate is False (the default), characters that are neither in the
+    If validate is false (the default), characters that are neither in the
     normal base-64 alphabet nor the alternative alphabet are discarded prior
-    to the padding check.  If validate is True, these non-alphabet characters
+    to the padding check.  If validate is true, these non-alphabet characters
     in the input result in a binascii.Error.
     For more information about the strict base64 check, see:
 
@@ -86,21 +86,24 @@ def b64decode(s, altchars=None, validate=False):
         altchars = _bytes_from_decode_data(altchars)
         if len(altchars) != 2:
             raise ValueError(f'invalid altchars: {altchars!r}')
-        if validate:
-            s = s.translate(bytes.maketrans(b'+/' + altchars, altchars + b'+/'))
-        else:
-            for b in set(b'+/') - set(altchars):
-                if b in s:
-                    badchar = b
-                    break
-            s = s.translate(bytes.maketrans(altchars, b'+/'))
+        for b in b'+/':
+            if b not in altchars and b in s:
+                badchar = b
+                break
+        s = s.translate(bytes.maketrans(altchars, b'+/'))
     result = binascii.a2b_base64(s, strict_mode=validate)
     if badchar is not None:
         import warnings
-        warnings.warn(f'invalid character {chr(badchar)!a} in base64 data '
-                      f'with altchars={altchars!r} will be discarded in '
-                      f'future Python versions',
-                      FutureWarning, stacklevel=2)
+        if validate:
+            warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                          f'with altchars={altchars!r} and validate=True '
+                          f'will be an error in future Python versions',
+                          DeprecationWarning, stacklevel=2)
+        else:
+            warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                          f'with altchars={altchars!r} and validate=False '
+                          f'will be discarded in future Python versions',
+                          FutureWarning, stacklevel=2)
     return result
 
 
@@ -123,7 +126,7 @@ def standard_b64decode(s):
 
 
 _urlsafe_encode_translation = bytes.maketrans(b'+/', b'-_')
-_urlsafe_decode_translation = bytes.maketrans(b'+/-_', b'-_+/')
+_urlsafe_decode_translation = bytes.maketrans(b'-_', b'+/')
 
 def urlsafe_b64encode(s):
     """Encode bytes using the URL- and filesystem-safe Base64 alphabet.
@@ -146,8 +149,19 @@ def urlsafe_b64decode(s):
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
     """
     s = _bytes_from_decode_data(s)
+    badchar = None
+    for b in b'+/':
+        if b in s:
+            badchar = b
+            break
     s = s.translate(_urlsafe_decode_translation)
-    return b64decode(s)
+    result = binascii.a2b_base64(s, strict_mode=False)
+    if badchar is not None:
+        import warnings
+        warnings.warn(f'invalid character {chr(badchar)!a} in URL-safe Base64 data '
+                      f'will be discarded in future Python versions',
+                      FutureWarning, stacklevel=2)
+    return result
 
 
 

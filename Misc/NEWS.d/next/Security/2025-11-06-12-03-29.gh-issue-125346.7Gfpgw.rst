@@ -1,4 +1,0 @@
-The ``+`` and ``/`` characters are no longer recognized as the part of the
-Base64 alphabet in :func:`base64.urlsafe_b64decode` and
-:func:`base64.b64decode` with the *altchars* argument that does not contain
-them.

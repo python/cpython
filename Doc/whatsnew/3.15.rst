@@ -1143,6 +1143,15 @@ Deprecated
 New deprecations
 ----------------
 
+* :mod:`base64`:
+
+  * Accepting the ``+`` and ``/`` characters with an alternative alphabet in
+    :func:`~base64.b64decode` and :func:`~base64.urlsafe_b64decode` is now
+    deprecated.
+    In future Python versions they will be errors in the strict mode and
+    discarded in the non-strict mode.
+    (Contributed by Serhiy Storchaka in :gh:`125346`.)
+
 * CLI:
 
   * Deprecate :option:`-b` and :option:`!-bb` command-line options

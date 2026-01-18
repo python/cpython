@@ -335,12 +335,16 @@ class BaseXYTestCase(unittest.TestCase):
         with self.assertWarns(FutureWarning):
             self.assertEqual(base64.b64decode(b'////', altchars=b'-_'),
                              b'\xff\xff\xff')
-        self.assertEqual(base64.urlsafe_b64decode(b'++++'), b'')
-        self.assertEqual(base64.urlsafe_b64decode(b'////'), b'')
-        with self.assertRaises(binascii.Error):
-            base64.b64decode(b'++++', altchars=b'-_', validate=True)
-        with self.assertRaises(binascii.Error):
-            base64.b64decode(b'////', altchars=b'-_', validate=True)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(base64.b64decode(b'++++', altchars=b'-_', validate=True),
+                             b'\xfb\xef\xbe')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(base64.b64decode(b'////', altchars=b'-_', validate=True),
+                             b'\xff\xff\xff')
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.urlsafe_b64decode(b'++++'), b'\xfb\xef\xbe')
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.urlsafe_b64decode(b'////'), b'\xff\xff\xff')
         with self.assertRaises(binascii.Error):
             base64.b64decode(b'+/!', altchars=b'-_')
 
