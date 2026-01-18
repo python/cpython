@@ -90,6 +90,8 @@ class HelpParser(HTMLParser):
             self.chartags = 'pre'
         elif tag == 'span' and class_ == 'versionmodified':
             self.chartags = 'em'
+        elif tag == 'span' and class_ == 'accelerator':
+            self.chartags = 'underline'
         elif tag == 'em':
             self.chartags = 'em'
         elif tag in ['ul', 'ol']:
@@ -179,6 +181,7 @@ class HelpText(Text):
         color_config(self)
         self['font'] = (normalfont, 12)
         self.tag_configure('em', font=(normalfont, 12, 'italic'))
+        self.tag_configure('underline', font=(normalfont, 12, 'underline'))
         self.tag_configure('h1', font=(normalfont, 20, 'bold'))
         self.tag_configure('h2', font=(normalfont, 18, 'bold'))
         self.tag_configure('h3', font=(normalfont, 15, 'bold'))
