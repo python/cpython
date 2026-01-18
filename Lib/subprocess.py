@@ -748,6 +748,18 @@ def _use_posix_spawn():
     return False
 
 
+@functools.lru_cache
+def _can_use_kqueue():
+    names = (
+        "kqueue",
+        "KQ_EV_ADD",
+        "KQ_EV_ONESHOT",
+        "KQ_FILTER_PROC",
+        "KQ_NOTE_EXIT",
+    )
+    return all(hasattr(select, x) for x in names)
+
+
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
@@ -2063,6 +2075,38 @@ class Popen:
             finally:
                 os.close(pidfd)
 
+        def _wait_kqueue(self, timeout):
+            """Wait for PID to terminate using kqueue(). macOS and BSD only."""
+            if not _can_use_kqueue():
+                return False
+
+            try:
+                kq = select.kqueue()
+            except OSError as err:
+                if err.errno in {errno.EMFILE, errno.ENFILE}:  # too many open files
+                    return False
+                raise
+
+            try:
+                kev = select.kevent(
+                    self.pid,
+                    filter=select.KQ_FILTER_PROC,
+                    flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+                    fflags=select.KQ_NOTE_EXIT,
+                )
+                try:
+                    events = kq.control([kev], 1, timeout)  # wait
+                except OSError as err:
+                    if err.errno in {errno.EACCES, errno.EPERM, errno.ESRCH}:
+                        return False
+                    raise
+                else:
+                    if not events:
+                        raise TimeoutExpired(timeout)
+                    return True
+            finally:
+                kq.close()
+
         def _busy_wait(self, timeout):
             endtime = _time() + timeout
             # Enter a busy loop if we have a timeout.  This busy loop was
@@ -2106,7 +2150,7 @@ class Popen:
             if timeout is not None:
                 if timeout < 0:
                     raise TimeoutExpired(self.args, timeout)
-                if self._wait_pidfd(timeout):
+                if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
                     self._blocking_wait()
                 else:
                     self._busy_wait(timeout)
