@@ -62,6 +62,8 @@ def bench_bytes_hex_sep():
     """Benchmark bytes.hex() with separator."""
     print("\nbytes.hex(':') with separator (every byte):")
     for size in SIZES:
+        if size > 256:
+            continue
         data = DATA[size]
         ns = run_benchmark(lambda d=data: d.hex(':'))
         print(f"  {ns:7.1f} ns    {format_size(size)}")
@@ -72,11 +74,24 @@ def bench_bytes_hex_sep_group():
     print("\nbytes.hex(':', 2) with separator (every 2 bytes):")
     # Skip 0 and 1 byte sizes since grouping doesn't apply well
     for size in SIZES:
-        if size < 2:
+        if size < 2 or size > 256:
             continue
         data = DATA[size]
         ns = run_benchmark(lambda d=data: d.hex(':', 2))
         print(f"  {ns:7.1f} ns    {format_size(size)}")
+
+
+def bench_bytes_hex_sep_4_thru_20():
+    """Benchmark bytes.hex() with separators in the 4-20 bytes range."""
+    for sep_width in (4, 8, 16, 20):
+        print(f"\nbytes.hex('\\n', {sep_width}) with - (every {sep_width} bytes):")
+        # Only test sizes > width where this grouping is meaningful
+        for size in SIZES:
+            if size <= sep_width:
+                continue
+            data = DATA[size]
+            ns = run_benchmark(lambda d=data: d.hex('-', sep_width))
+            print(f"  {ns:7.1f} ns    {format_size(size)}")
 
 
 def bench_bytes_hex_newline_32():
@@ -125,6 +140,8 @@ def bench_binascii_hexlify_sep():
     """Benchmark binascii.hexlify() with separator."""
     print("\nbinascii.hexlify(sep=':') with separator:")
     for size in SIZES:
+        if size > 256:
+            continue
         data = DATA[size]
         ns = run_benchmark(lambda d=data: binascii.hexlify(d, ':'))
         print(f"  {ns:7.1f} ns    {format_size(size)}")
@@ -194,6 +211,7 @@ if __name__ == '__main__':
     bench_bytes_hex()
     bench_bytes_hex_sep()
     bench_bytes_hex_sep_group()
+    bench_bytes_hex_sep_4_thru_20()
     bench_bytes_hex_newline_32()
     bench_bytearray_hex()
     bench_memoryview_hex()

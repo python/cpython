@@ -3,140 +3,188 @@ pystrhex.c benchmark
 Timing: best of 7 runs, 50000 iterations each
 
 bytes.hex() by size:
-     31.4 ns    0 bytes
-     46.9 ns    1 byte
-     47.6 ns    3 bytes
-     48.1 ns    4 bytes
-     48.7 ns    7 bytes
-     50.1 ns    8 bytes
-     51.1 ns    15 bytes
-     51.5 ns    16 bytes
-     55.1 ns    20 bytes
-     64.8 ns    32 bytes
-     65.2 ns    33 bytes
-     90.4 ns    64 bytes
-    153.4 ns    128 bytes
-    268.7 ns    256 bytes
-    514.2 ns    512 bytes
-   3412.0 ns    4096 bytes
+     31.2 ns    0 bytes
+     46.2 ns    1 byte
+     47.7 ns    3 bytes
+     47.8 ns    4 bytes
+     47.7 ns    7 bytes
+     48.5 ns    8 bytes
+     50.7 ns    15 bytes
+     51.2 ns    16 bytes
+     55.0 ns    20 bytes
+     64.4 ns    32 bytes
+     65.4 ns    33 bytes
+     89.9 ns    64 bytes
+    152.2 ns    128 bytes
+    266.7 ns    256 bytes
+    501.8 ns    512 bytes
+   3358.7 ns    4096 bytes
 
 bytes.hex(':') with separator (every byte):
-     80.2 ns    0 bytes
-     97.7 ns    1 byte
-    102.4 ns    3 bytes
-    104.5 ns    4 bytes
-    110.4 ns    7 bytes
-    112.0 ns    8 bytes
-    132.6 ns    15 bytes
-    135.4 ns    16 bytes
-    143.2 ns    20 bytes
-    162.2 ns    32 bytes
-    160.6 ns    33 bytes
-    208.0 ns    64 bytes
-    331.4 ns    128 bytes
-    563.0 ns    256 bytes
-   1050.9 ns    512 bytes
-   7245.8 ns    4096 bytes
+     76.5 ns    0 bytes
+     96.3 ns    1 byte
+     99.8 ns    3 bytes
+    104.7 ns    4 bytes
+    111.4 ns    7 bytes
+    109.3 ns    8 bytes
+    130.2 ns    15 bytes
+    133.6 ns    16 bytes
+    140.4 ns    20 bytes
+    156.9 ns    32 bytes
+    156.1 ns    33 bytes
+    206.9 ns    64 bytes
+    324.8 ns    128 bytes
+    553.3 ns    256 bytes
 
 bytes.hex(':', 2) with separator (every 2 bytes):
-    101.9 ns    3 bytes
-    104.0 ns    4 bytes
-    107.2 ns    7 bytes
-    109.7 ns    8 bytes
-    121.4 ns    15 bytes
-    122.0 ns    16 bytes
-    129.4 ns    20 bytes
-    144.6 ns    32 bytes
-    148.8 ns    33 bytes
-    186.2 ns    64 bytes
-    284.1 ns    128 bytes
-    469.9 ns    256 bytes
-    851.3 ns    512 bytes
-   4997.0 ns    4096 bytes
+    105.5 ns    3 bytes
+    106.7 ns    4 bytes
+    107.8 ns    7 bytes
+    109.2 ns    8 bytes
+    122.4 ns    15 bytes
+    124.5 ns    16 bytes
+    128.6 ns    20 bytes
+    144.5 ns    32 bytes
+    150.3 ns    33 bytes
+    180.5 ns    64 bytes
+    259.9 ns    128 bytes
+    414.0 ns    256 bytes
+
+bytes.hex('\n', 4) with - (every 4 bytes):
+    111.5 ns    7 bytes
+    110.2 ns    8 bytes
+    120.7 ns    15 bytes
+    123.5 ns    16 bytes
+    125.8 ns    20 bytes
+    143.2 ns    32 bytes
+    145.8 ns    33 bytes
+    171.2 ns    64 bytes
+    242.9 ns    128 bytes
+    373.5 ns    256 bytes
+    650.1 ns    512 bytes
+   4055.4 ns    4096 bytes
+
+bytes.hex('\n', 8) with - (every 8 bytes):
+    118.9 ns    15 bytes
+    118.7 ns    16 bytes
+    121.2 ns    20 bytes
+    138.0 ns    32 bytes
+    140.0 ns    33 bytes
+    164.7 ns    64 bytes
+    224.7 ns    128 bytes
+    339.6 ns    256 bytes
+    586.8 ns    512 bytes
+   3547.6 ns    4096 bytes
+
+bytes.hex('\n', 16) with - (every 16 bytes):
+    122.4 ns    20 bytes
+    129.8 ns    32 bytes
+    136.4 ns    33 bytes
+    169.1 ns    64 bytes
+    221.3 ns    128 bytes
+    329.9 ns    256 bytes
+    562.3 ns    512 bytes
+   3309.3 ns    4096 bytes
+
+bytes.hex('\n', 20) with - (every 20 bytes):
+    130.8 ns    32 bytes
+    131.9 ns    33 bytes
+    161.5 ns    64 bytes
+    213.1 ns    128 bytes
+    320.4 ns    256 bytes
+    550.2 ns    512 bytes
+   3273.6 ns    4096 bytes
+
+bytes.hex('\n', 32) with newline (every 32 bytes):
+    128.8 ns    32 bytes
+    127.5 ns    33 bytes
+    151.5 ns    64 bytes
+    202.2 ns    128 bytes
+    307.7 ns    256 bytes
+    536.0 ns    512 bytes
+   3191.3 ns    4096 bytes
 
 bytearray.hex() by size:
-     33.0 ns    0 bytes
-     48.5 ns    1 byte
-     48.1 ns    3 bytes
-     48.7 ns    4 bytes
-     50.0 ns    7 bytes
-     49.7 ns    8 bytes
-     51.3 ns    15 bytes
-     51.2 ns    16 bytes
-     54.5 ns    20 bytes
-     64.7 ns    32 bytes
-     64.9 ns    33 bytes
-     90.0 ns    64 bytes
-    152.5 ns    128 bytes
-    265.6 ns    256 bytes
-    500.9 ns    512 bytes
-   3383.6 ns    4096 bytes
+     31.3 ns    0 bytes
+     48.1 ns    1 byte
+     47.8 ns    3 bytes
+     50.6 ns    4 bytes
+     50.3 ns    7 bytes
+     50.2 ns    8 bytes
+     51.9 ns    15 bytes
+     52.1 ns    16 bytes
+     55.9 ns    20 bytes
+     65.3 ns    32 bytes
+     66.4 ns    33 bytes
+     93.1 ns    64 bytes
+    153.5 ns    128 bytes
+    265.4 ns    256 bytes
+    506.2 ns    512 bytes
+   3364.1 ns    4096 bytes
 
 memoryview.hex() by size:
      32.5 ns    0 bytes
-     46.6 ns    1 byte
-     48.6 ns    3 bytes
-     48.9 ns    4 bytes
-     49.6 ns    7 bytes
-     50.0 ns    8 bytes
-     53.5 ns    15 bytes
-     53.1 ns    16 bytes
-     58.1 ns    20 bytes
-     66.5 ns    32 bytes
-     67.5 ns    33 bytes
-     91.2 ns    64 bytes
-    153.2 ns    128 bytes
-    265.9 ns    256 bytes
-    501.7 ns    512 bytes
-   3375.4 ns    4096 bytes
+     47.7 ns    1 byte
+     48.0 ns    3 bytes
+     48.3 ns    4 bytes
+     49.4 ns    7 bytes
+     49.2 ns    8 bytes
+     51.8 ns    15 bytes
+     53.2 ns    16 bytes
+     56.7 ns    20 bytes
+     67.6 ns    32 bytes
+     66.6 ns    33 bytes
+     91.5 ns    64 bytes
+    154.3 ns    128 bytes
+    268.2 ns    256 bytes
+    508.5 ns    512 bytes
+   3361.2 ns    4096 bytes
 
 binascii.hexlify() by size:
-     85.2 ns    0 bytes
-    102.0 ns    1 byte
-     99.9 ns    3 bytes
-    100.2 ns    4 bytes
-    104.5 ns    7 bytes
-    102.1 ns    8 bytes
-    109.3 ns    15 bytes
-    109.9 ns    16 bytes
-    114.0 ns    20 bytes
-    124.8 ns    32 bytes
-    128.0 ns    33 bytes
-    152.3 ns    64 bytes
-    214.4 ns    128 bytes
-    326.4 ns    256 bytes
-    568.5 ns    512 bytes
-   3429.2 ns    4096 bytes
+     84.0 ns    0 bytes
+     98.7 ns    1 byte
+     98.9 ns    3 bytes
+    101.4 ns    4 bytes
+     98.9 ns    7 bytes
+    103.5 ns    8 bytes
+    109.6 ns    15 bytes
+    111.8 ns    16 bytes
+    116.0 ns    20 bytes
+    129.2 ns    32 bytes
+    127.7 ns    33 bytes
+    151.1 ns    64 bytes
+    212.2 ns    128 bytes
+    323.5 ns    256 bytes
+    566.1 ns    512 bytes
+   3435.1 ns    4096 bytes
 
 binascii.hexlify(sep=':') with separator:
-     94.4 ns    0 bytes
-    111.6 ns    1 byte
-    114.5 ns    3 bytes
-    116.5 ns    4 bytes
-    124.2 ns    7 bytes
-    127.3 ns    8 bytes
-    136.7 ns    15 bytes
-    137.5 ns    16 bytes
-    144.3 ns    20 bytes
-    164.7 ns    32 bytes
-    164.3 ns    33 bytes
-    218.1 ns    64 bytes
-    334.5 ns    128 bytes
-    567.5 ns    256 bytes
-   1061.5 ns    512 bytes
-   7274.6 ns    4096 bytes
+     94.7 ns    0 bytes
+    112.2 ns    1 byte
+    115.3 ns    3 bytes
+    114.7 ns    4 bytes
+    121.8 ns    7 bytes
+    125.5 ns    8 bytes
+    138.0 ns    15 bytes
+    140.3 ns    16 bytes
+    143.6 ns    20 bytes
+    161.9 ns    32 bytes
+    160.8 ns    33 bytes
+    214.9 ns    64 bytes
+    333.0 ns    128 bytes
+    564.2 ns    256 bytes
 
 hashlib hexdigest (hash + hex conversion):
-    562.6 ns    md5 (16 byte digest)
-    527.4 ns    sha1 (20 byte digest)
-    537.2 ns    sha256 (32 byte digest)
-    746.1 ns    sha512 (64 byte digest)
+    557.2 ns    md5 (16 byte digest)
+    522.8 ns    sha1 (20 byte digest)
+    532.5 ns    sha256 (32 byte digest)
+    726.3 ns    sha512 (64 byte digest)
 
 hashlib hexdigest only (hex conversion, pre-computed hash):
-    318.8 ns    md5 (16 byte digest)
-    283.2 ns    sha1 (20 byte digest)
-    298.2 ns    sha256 (32 byte digest)
-    504.5 ns    sha512 (64 byte digest)
+    324.7 ns    md5 (16 byte digest)
+    282.0 ns    sha1 (20 byte digest)
+    294.9 ns    sha256 (32 byte digest)
+    500.5 ns    sha512 (64 byte digest)
 
 ==================================================
 Done.
