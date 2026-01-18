@@ -1,1 +1,1 @@
-Replace :mod:`optparse` with :mod:`argparse` in ``Lib/test/test_decimal.py``.
+Improve the help output of ``Lib/test/test_decimal.py`` by switching to :mod:`argparse`, adding colorized help and better grouping.
