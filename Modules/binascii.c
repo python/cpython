@@ -919,8 +919,9 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
             this_digit = 84;
         }
         if (this_digit < 85) {
-            if (leftchar > UINT32_MAX / 85
-                || (leftchar *= 85) > UINT32_MAX - this_digit)
+            if (group_pos == 4
+                && (leftchar > UINT32_MAX / 85
+                    || leftchar * 85 > UINT32_MAX - this_digit))
             {
                 state = get_binascii_state(module);
                 if (state != NULL) {
@@ -928,7 +929,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
                 }
                 goto error;
             }
-            leftchar += this_digit;
+            leftchar = leftchar * 85 + this_digit;
             group_pos++;
         }
         else if ((this_ch == 'y' && fold_spaces) || this_ch == 'z') {
@@ -1137,8 +1138,9 @@ internal_a2b_base85(PyObject *module, Py_buffer *data, int strict_mode,
             this_digit = 84;
         }
         if (this_digit < 85) {
-            if (leftchar > UINT32_MAX / 85
-                || (leftchar *= 85) > UINT32_MAX - this_digit)
+            if (group_pos == 4
+                && (leftchar > UINT32_MAX / 85
+                    || leftchar * 85 > UINT32_MAX - this_digit))
             {
                 state = get_binascii_state(module);
                 if (state != NULL) {
@@ -1148,7 +1150,7 @@ internal_a2b_base85(PyObject *module, Py_buffer *data, int strict_mode,
                 }
                 goto error;
             }
-            leftchar += this_digit;
+            leftchar = leftchar * 85 + this_digit;
             group_pos++;
         }
         else if (strict_mode) {
