@@ -2059,6 +2059,9 @@ class Popen:
             return (pid, sts)
 
         def _wait_pidfd(self, timeout):
+            """Wait for PID to terminate using pidfd_open() + poll().
+            Linux >= 5.3 only.
+            """
             if not hasattr(os, "pidfd_open"):
                 return False
             try:
@@ -2083,7 +2086,8 @@ class Popen:
             try:
                 kq = select.kqueue()
             except OSError as err:
-                if err.errno in {errno.EMFILE, errno.ENFILE}:  # too many open files
+                # too many open files
+                if err.errno in {errno.EMFILE, errno.ENFILE}:
                     return False
                 raise
 
