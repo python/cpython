@@ -865,15 +865,25 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     }
 
     /* Allocate output buffer. */
-    Py_ssize_t bin_len = ascii_len;
+    size_t bin_len = ascii_len;
     unsigned char this_ch = 0;
+    size_t count_yz = 0;
     for (Py_ssize_t i = 0; i < ascii_len; i++) {
         this_ch = ascii_data[i];
         if (this_ch == 'y' || this_ch == 'z') {
-            bin_len += 4;
+            count_yz++;
         }
     }
-    bin_len = 4 * ((bin_len + 4) / 5);
+    bin_len = (bin_len - count_yz + 4) / 5 * 4;
+    if (count_yz > (PY_SSIZE_T_MAX - bin_len) / 4) {
+        binascii_state *state = get_binascii_state(module);
+        if (state == NULL) {
+            return NULL;
+        }
+        PyErr_SetString(state->Error, "Too much Ascii85 data");
+        return NULL;
+    }
+    bin_len += count_yz * 4;
 
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
@@ -1106,7 +1116,7 @@ internal_a2b_base85(PyObject *module, Py_buffer *data, int strict_mode,
     assert(ascii_len >= 0);
 
     /* Allocate output buffer. */
-    Py_ssize_t bin_len = 4 * ((ascii_len + 4) / 5);
+    size_t bin_len = ((size_t)ascii_len + 4) / 5 * 4;
     PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
     if (writer == NULL) {
         return NULL;
