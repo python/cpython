@@ -5119,7 +5119,7 @@ dummy_func(
             assert(oparg <= NB_OPARG_LAST);
         }
 
-        op(_BINARY_OP, (lhs, rhs -- res)) {
+        op(_BINARY_OP, (lhs, rhs -- res, l, r)) {
             PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
             PyObject *rhs_o = PyStackRef_AsPyObjectBorrow(rhs);
 
@@ -5129,10 +5129,13 @@ dummy_func(
                 ERROR_NO_POP();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
-            DECREF_INPUTS();
+            l = lhs;
+            r = rhs;
+            DEAD(lhs);
+            DEAD(rhs);
         }
 
-        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
+        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP + POP_TOP + POP_TOP;
 
         pure replicate(2:4) inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
