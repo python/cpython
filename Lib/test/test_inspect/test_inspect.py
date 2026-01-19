@@ -2810,12 +2810,12 @@ class TestGetGeneratorState(unittest.TestCase):
             yield 2
 
         @types.coroutine
-        def legacy_coro():
+        def wrapped_generator_coro():
             # return a generator iterator so types.coroutine
             # wraps it into types._GeneratorWrapper.
             return gen()
 
-        g = legacy_coro()
+        g = wrapped_generator_coro()
         self.addCleanup(g.close)
         self.assertIs(type(g), types._GeneratorWrapper)
 
