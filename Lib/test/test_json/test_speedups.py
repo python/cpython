@@ -80,3 +80,33 @@ class TestEncode(CTest):
     def test_unsortable_keys(self):
         with self.assertRaises(TypeError):
             self.json.encoder.JSONEncoder(sort_keys=True).encode({'a': 1, 1: 'a'})
+
+    def test_mutate_items_during_encode(self):
+        c_make_encoder = getattr(self.json.encoder, 'c_make_encoder', None)
+        if c_make_encoder is None:
+            self.skipTest("c_make_encoder not available")
+
+        cache = []
+
+        class BadDict(dict):
+            def items(self):
+                entries = [("boom", object())]
+                cache.append(entries)
+                return entries
+
+        def encode_str(obj):
+            if cache:
+                cache.pop().clear()
+            return '"x"'
+
+        encoder = c_make_encoder(
+            None, lambda o: "null",
+            encode_str, None,
+            ": ", ", ", False,
+            False, True
+        )
+
+        try:
+            encoder(BadDict(real=1), 0)
+        except (ValueError, RuntimeError):
+            pass

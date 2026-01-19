@@ -65,39 +65,6 @@ class TestDump:
         d[1337] = "true.dat"
         self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
 
-    def test_mutate_items_during_encode(self):
-        c_make_encoder = getattr(self.json.encoder, 'c_make_encoder', None)
-        if c_make_encoder is None:
-            self.skipTest("c_make_encoder not available")
-
-        cache = []
-
-        class BadDict(dict):
-            def __init__(self):
-                super().__init__(real=1)
-
-            def items(self):
-                entries = [("boom", object())]
-                cache.append(entries)
-                return entries
-
-        def encode_str(obj):
-            if cache:
-                cache.pop().clear()
-            return '"x"'
-
-        encoder = c_make_encoder(
-            None, lambda o: "null",
-            encode_str, None,
-            ": ", ", ", False,
-            False, True
-        )
-
-        try:
-            encoder(BadDict(), 0)
-        except (ValueError, RuntimeError):
-            pass
-
 
 class TestPyDump(TestDump, PyTest): pass
 
