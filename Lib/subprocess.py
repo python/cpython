@@ -2178,8 +2178,8 @@ class Popen:
                 # Try efficient wait first.
                 if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
                     # Process is gone. At this point os.waitpid(pid, 0)
-                    # will return immediately, but in rare races (e.g.
-                    # long running processes) the PID may have been reused.
+                    # will return immediately, but in rare races the
+                    # PID may have been reused.
                     # os.waitpid(pid, WNOHANG) ensures we attempt a
                     # non-blocking reap without blocking indefinitely.
                     with self._waitpid_lock:
