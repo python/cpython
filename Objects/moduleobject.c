@@ -510,6 +510,20 @@ module_from_slots_and_spec(
                 break;
             case Py_mod_exec:
                 if (!original_def) {
+                    if (m_exec) {
+                        PyErr_Format(
+                            PyExc_SystemError,
+                            "module %s has multiple Py_mod_exec slots",
+                            name);
+                        goto error;
+                    }
+                    if (!it.current.sl_func) {
+                        PyErr_Format(
+                            PyExc_SystemError,
+                            "module %s: Py_mod_exec slot must not be NULL",
+                            name);
+                        goto error;
+                    }
                     COPY_NONDEF_SLOT(_Py_modexecfunc, sl_func, m_exec);
                 }
                 break;

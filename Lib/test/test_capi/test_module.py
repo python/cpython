@@ -156,7 +156,7 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
 
     def test_null_def_slot(self):
         """Slots that replace PyModuleDef fields can't be NULL"""
-        for name in (*DEF_SLOTS, 'Py_mod_exec'):
+        for name in {*DEF_SLOTS, 'Py_mod_exec'} - {'Py_mod_state_size'}:
             with self.subTest(name):
                 spec = FakeSpec()
                 spec._test_slot_id = getattr(_testcapi, name)

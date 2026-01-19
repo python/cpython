@@ -890,7 +890,7 @@ _PySlot_Info _PySlot_InfoTable[_Py_slot_COUNT + 1] = {
         .name = "Py_mod_doc",
         .dtype = _PySlot_TYPE_PTR,
         .kind = _PySlot_KIND_MOD,
-        .null_handling = _PySlot_PROBLEM_ALLOW,
+        .null_handling = _PySlot_PROBLEM_REJECT,
         .duplicate_handling = _PySlot_PROBLEM_REJECT,
     },
     [102] = {
