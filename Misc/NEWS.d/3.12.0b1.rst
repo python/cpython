@@ -312,7 +312,7 @@ Patch by Eric Traut, Larry Hastings, and Jelle Zijlstra.
 .. date: 2023-04-24-21-47-38
 .. gh-issue: 103801
 .. nonce: WaBanq
-.. section: Core and Builtins
+.. section: Library
 
 Adds three minor linting fixes to the wasm module caught that were caught by
 ruff.
