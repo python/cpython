@@ -2530,7 +2530,7 @@ types.
    .. deprecated-removed:: 3.15 3.20
       It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
       protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
-      after subclassing runtime-checkable protocol classes. This will throw
+      but that inherit from a runtime-checkable protocol class. This will throw
       a :exc:`TypeError` in Python 3.20.
 
 .. decorator:: runtime_checkable
@@ -2609,7 +2609,7 @@ types.
    .. deprecated-removed:: 3.15 3.20
       It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
       protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
-      after subclassing runtime-checkable protocol classes. This will throw
+      but that inherit from a runtime-checkable protocol class. This will throw
       a :exc:`TypeError` in Python 3.20.
 
 .. class:: TypedDict(dict)

@@ -2022,7 +2022,7 @@ class _ProtocolMeta(ABCMeta):
                     f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
                     "it is used in issubclass() or isinstance(). Instance and class "
                     "checks can only be used with @runtime_checkable protocols. "
-                    "This may stop working in Python 3.20."
+                    "This will raise a TypeError in Python 3.20."
                 )
                 warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
             if (
@@ -2062,7 +2062,7 @@ class _ProtocolMeta(ABCMeta):
                 f"{cls!r} isn't explicitly decorated with @runtime_checkable but "
                 "it is used in issubclass() or isinstance(). Instance and class "
                 "checks can only be used with @runtime_checkable protocols. "
-                "This may stop working in Python 3.20."
+                "This will raise a TypeError in Python 3.20."
             )
             warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
 
