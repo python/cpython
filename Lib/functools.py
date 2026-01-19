@@ -889,7 +889,7 @@ def _find_impl(cls, registry):
     return registry.get(match)
 
 def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
-    """Finds the first positional and user-specified parameter in a callable
+    """Find the first positional and user-specified parameter in a callable
     or descriptor.
 
     Used by singledispatch for registration by type annotation of the parameter.
