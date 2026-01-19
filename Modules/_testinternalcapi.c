@@ -693,6 +693,43 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+// Defined in interpreter.c
+extern PyObject*
+Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag);
+extern int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
+
+static PyObject *
+get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *res = PyDict_New();
+    if (res == NULL) {
+        return NULL;
+    }
+    PyObject *resumes = PyLong_FromLong(Test_EvalFrame_Resumes);
+    if (resumes == NULL || PyDict_SetItemString(res, "resumes", resumes) < 0) {
+        Py_XDECREF(resumes);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(resumes);
+    PyObject *loads = PyLong_FromLong(Test_EvalFrame_Loads);
+    if (loads == NULL || PyDict_SetItemString(res, "loads", loads) < 0) {
+        Py_XDECREF(loads);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(loads);
+    Test_EvalFrame_Resumes = Test_EvalFrame_Loads = 0;
+    return res;
+}
+
+static PyObject *
+set_eval_frame_interp(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 
 _testinternalcapi.compiler_cleandoc -> object
@@ -1243,6 +1280,30 @@ invalidate_executors(PyObject *self, PyObject *obj)
     PyInterpreterState *interp = PyInterpreterState_Get();
     _Py_Executors_InvalidateDependency(interp, obj, 1);
     Py_RETURN_NONE;
+}
+
+static PyObject *
+clear_executor_deletion_list(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _Py_ClearExecutorDeletionList(interp);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_exit_executor(PyObject *self, PyObject *arg)
+{
+    if (!PyLong_CheckExact(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be an ID to an _PyExitData");
+        return NULL;
+    }
+    uint64_t ptr;
+    if (PyLong_AsUInt64(arg, &ptr) < 0) {
+        // Error set by PyLong API
+        return NULL;
+    }
+    _PyExitData *exit = (_PyExitData *)ptr;
+    return Py_NewRef(exit->executor);
 }
 
 #endif
@@ -2507,6 +2568,7 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
+    {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
@@ -2523,6 +2585,7 @@ static PyMethodDef module_functions[] = {
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
+    {"set_eval_frame_interp", set_eval_frame_interp, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
@@ -2546,6 +2609,8 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
+    {"clear_executor_deletion_list", clear_executor_deletion_list, METH_NOARGS, NULL},
+    {"get_exit_executor", get_exit_executor, METH_O, NULL},
 #endif
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
