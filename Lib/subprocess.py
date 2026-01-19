@@ -2136,12 +2136,17 @@ class Popen:
                 time.sleep(delay)
 
         def _wait(self, timeout):
-            """Internal implementation of wait() on POSIX."""
+            """Internal implementation of wait() on POSIX.
+
+            Uses efficient pidfd_open() + poll() on Linux or kqueue()
+            on macOS/BSD when available. Falls back to polling
+            waitpid(WNOHANG) otherwise.
+            """
             if self.returncode is not None:
                 return self.returncode
 
             if timeout is not None:
-                # Try fast wait first (pidfd on Linux, kqueue on BSD/macOS).
+                # Try efficient wait first.
                 if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
                     with self._waitpid_lock:
                         if self.returncode is not None:
