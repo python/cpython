@@ -4096,11 +4096,28 @@ class ContextManagerTests(BaseTestCase):
         self.assertTrue(proc.stdin.closed)
 
 
+# ---
+
+def can_use_pidfd():
+    # Availability: Linux >= 5.3
+    if not hasattr(os, "pidfd_open"):
+        return False
+    try:
+        pidfd = os.pidfd_open(os.getpid(), 0)
+    except OSError as err:
+        # blocked by security policy like SECCOMP
+        return False
+    else:
+        os.close(pidfd)
+        return True
+
+
+
 class FastWaitTestCase(BaseTestCase):
     """Tests for efficient (pidfd_open() + poll() / kqueue()) process
     waiting in subprocess.Popen.wait().
     """
-    CAN_USE_PIDFD_OPEN = hasattr(os, "pidfd_open")
+    CAN_USE_PIDFD_OPEN = can_use_pidfd()
     CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
 
     def assert_fast_waitpid_error(self, patch_point):
@@ -4115,7 +4132,7 @@ class FastWaitTestCase(BaseTestCase):
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         assert m.called
 
-    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="LINUX only")
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="pidfd_open not supported")
     def test_wait_pidfd_open_error(self):
         self.assert_fast_waitpid_error("os.pidfd_open")
 
@@ -4162,7 +4179,7 @@ class FastWaitTestCase(BaseTestCase):
         assert m.called
         self.assertEqual(status, 0)
 
-    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="LINUX only")
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="pidfd_open not supported")
     def test_pidfd_open_race(self):
         self.assert_wait_race_condition("os.pidfd_open", os.pidfd_open)
 
@@ -4192,8 +4209,8 @@ class FastWaitTestCase(BaseTestCase):
         assert m1.called
         assert m2.called
 
-    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="LINUX only")
-    def test_poll_notification_without_immediate_reap(self):
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="pidfd_open not supported")
+    def test_pidfd_open_notification_without_immediate_reap(self):
         self.assert_notification_without_immediate_reap("_wait_pidfd")
 
     @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
