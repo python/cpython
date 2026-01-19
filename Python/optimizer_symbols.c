@@ -25,24 +25,24 @@ state represents no information, and the BOTTOM state represents contradictory
 information. Though symbols logically progress through all intermediate nodes,
 we often skip in-between states for convenience:
 
-   UNKNOWN
-   |     |
-NULL     |
-|        |                <- Anything below this level is an object.
-|        NON_NULL-+
-|          |      |       <- Anything below this level has a known type version.
-|    TYPE_VERSION |
-|    |            |       <- Anything below this level has a known type.
-|    KNOWN_CLASS  |
-|    |  |  |   |  |
-|    |  | INT* |  |
-|    |  |  |   |  |       <- Anything below this level has a known truthiness.
-|    |  |  |   |  TRUTHINESS
-|    |  |  |   |  |
-| TUPLE |  |   |  |
-|    |  |  |   |  |       <- Anything below this level is a known constant.
-|    KNOWN_VALUE--+
-|    |                    <- Anything below this level is unreachable.
+   UNKNOWN-------------------+
+   |     |                   |
+NULL     |                   |
+|        |                   |   <- Anything below this level is an object.
+|        NON_NULL-+          |
+|          |      |          |   <- Anything below this level has a known type version.
+|    TYPE_VERSION |          |
+|    |            |          |   <- Anything below this level has a known type.
+|    KNOWN_CLASS  |          |
+|    |  |  |   |  |          PREDICATE
+|    |  | INT* |  |          |
+|    |  |  |   |  |          |   <- Anything below this level has a known truthiness.
+|    |  |  |   |  TRUTHINESS |
+|    |  |  |   |  |          |
+| TUPLE |  |   |  |          |
+|    |  |  |   |  |          |   <- Anything below this level is a known constant.
+|    KNOWN_VALUE--+----------+
+|    |                           <- Anything below this level is unreachable.
 BOTTOM
 
 For example, after guarding that the type of an UNKNOWN local is int, we can
