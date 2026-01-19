@@ -13,6 +13,7 @@ import tempfile
 import textwrap
 import types
 import unittest
+import warnings
 import weakref
 from io import StringIO
 from pathlib import Path
@@ -24,7 +25,7 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, skip_if_unlimited_stack_size
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
@@ -988,10 +989,12 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
+    @skip_if_unlimited_stack_size
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        crash_depth = 500_000
+        # Android test devices have less memory.
+        crash_depth = 100_000 if sys.platform == "android" else 500_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
@@ -1057,61 +1060,6 @@ class AST_Tests(unittest.TestCase):
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
 
-    def test_pep_765_warnings(self):
-        srcs = [
-            textwrap.dedent("""
-                 def f():
-                     try:
-                         pass
-                     finally:
-                         return 42
-                 """),
-            textwrap.dedent("""
-                 for x in y:
-                     try:
-                         pass
-                     finally:
-                         break
-                 """),
-            textwrap.dedent("""
-                 for x in y:
-                     try:
-                         pass
-                     finally:
-                         continue
-                 """),
-        ]
-        for src in srcs:
-            with self.assertWarnsRegex(SyntaxWarning, 'finally'):
-                ast.parse(src)
-
-    def test_pep_765_no_warnings(self):
-        srcs = [
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     def f():
-                         return 42
-                 """),
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     for x in y:
-                         break
-                 """),
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     for x in y:
-                         continue
-                 """),
-        ]
-        for src in srcs:
-            ast.parse(src)
-
     def test_tstring(self):
         # Test AST structure for simple t-string
         tree = ast.parse('t"Hello"')
@@ -1123,6 +1071,29 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
         self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
         self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<unknown>\z')
+            ast.parse(source)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<unknown>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=r'<unknown>')
+            ast.parse(source, filename, module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
 
 
 class CopyTests(unittest.TestCase):
@@ -1157,6 +1128,7 @@ class CopyTests(unittest.TestCase):
                     ast2 = pickle.loads(pickle.dumps(tree, protocol))
                     self.assertEqual(to_tuple(ast2), to_tuple(tree))
 
+    @skip_if_unlimited_stack_size
     def test_copy_with_parents(self):
         # gh-120108
         code = """
@@ -2004,6 +1976,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2012,6 +1985,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -3088,8 +3062,8 @@ class EndPositionTests(unittest.TestCase):
 
 class NodeTransformerTests(ASTTestMixin, unittest.TestCase):
     def assertASTTransformation(self, transformer_class,
-                                initial_code, expected_code):
-        initial_ast = ast.parse(dedent(initial_code))
+                                code, expected_code):
+        initial_ast = ast.parse(dedent(code))
         expected_ast = ast.parse(dedent(expected_code))
 
         transformer = transformer_class()
@@ -3307,6 +3281,15 @@ class ASTConstructorTests(unittest.TestCase):
         obj = MoreFieldsThanTypes(a=1, b=2)
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, 2)
+
+    def test_malformed_fields_with_bytes(self):
+        class BadFields(ast.AST):
+            _fields = (b'\xff'*64,)
+            _field_types = {'a': int}
+
+        # This should not crash
+        with self.assertWarnsRegex(DeprecationWarning, r"Field b'\\xff\\xff.*' .*"):
+            obj = BadFields()
 
     def test_complete_field_types(self):
         class _AllFieldTypes(ast.AST):

@@ -482,6 +482,9 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    .. versionchanged:: 3.14
       Added support for ``TCP_QUICKACK`` on Windows platforms when available.
 
+   .. versionchanged:: 3.15
+      ``IPV6_HDRINCL`` was added.
+
 
 .. data:: AF_CAN
           PF_CAN
@@ -1069,10 +1072,16 @@ The :mod:`socket` module also offers various network-related services:
    a string representing the canonical name of the *host* if
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
-   format depends on the returned *family* (a ``(address, port)`` 2-tuple for
-   :const:`AF_INET`, a ``(address, port, flowinfo, scope_id)`` 4-tuple for
-   :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
-   method.
+   format depends on the returned *family* and flags Python was compiled with,
+   and is meant to be passed to the :meth:`socket.connect` method.
+
+   *sockaddr* can be one of the following:
+
+   * a ``(address, port)`` 2-tuple for :const:`AF_INET`
+   * a ``(address, port, flowinfo, scope_id)`` 4-tuple for :const:`AF_INET6` if
+     Python was compiled with ``--enable-ipv6`` (the default)
+   * a 2-tuple containing raw data for :const:`AF_INET6` if Python was
+     compiled with ``--disable-ipv6``
 
    .. note::
 
@@ -1412,7 +1421,7 @@ The :mod:`socket` module also offers various network-related services:
    :meth:`~socket.settimeout` for possible values and their respective
    meanings.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
@@ -2088,15 +2097,12 @@ to sockets.
       The method no longer toggles :const:`SOCK_NONBLOCK` flag on
       :attr:`socket.type`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
-.. method:: socket.setsockopt(level, optname, value: int)
-.. method:: socket.setsockopt(level, optname, value: buffer)
-   :noindex:
-.. method:: socket.setsockopt(level, optname, None, optlen: int)
-   :noindex:
+.. method:: socket.setsockopt(level, optname, value: int | Buffer)
+            socket.setsockopt(level, optname, None, optlen: int)
 
    .. index:: pair: module; struct
 

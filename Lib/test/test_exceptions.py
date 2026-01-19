@@ -224,6 +224,8 @@ class ExceptionTests(unittest.TestCase):
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
+                if lineno == 1:
+                    line = line.removeprefix('\ufeff')
                 self.assertIn(line, cm.exception.text)
 
     def test_error_offset_continuation_characters(self):
@@ -239,7 +241,9 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
+        check(b'\n\n\nPython = "\xcf\xb3\xf2\xee\xed" +', 4, 12)
+        check(b'\xef\xbb\xbfPython = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -248,7 +252,16 @@ class ExceptionTests(unittest.TestCase):
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 9)
-        check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
+        check(dedent("""\
+          match ...:
+            case {**rest1, "after": after}:
+              ...
+        """), 2, 11)
+        check(dedent("""\
+          match ...:
+            case {"before": before, **rest2, "after": after}:
+              ...
+        """), 2, 29)
         check("[a b c d e f]", 1, 2)
         check("for x yfff:", 1, 7)
         check("f(a for a in b, c)", 1, 3, 1, 15)
@@ -287,7 +300,7 @@ class ExceptionTests(unittest.TestCase):
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
-        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 1, 0)
         check("""f'''
             {
             (123_a)
@@ -1908,6 +1921,39 @@ class ExceptionTests(unittest.TestCase):
             # Break any potential reference cycle
             exc1 = None
             exc2 = None
+
+
+    @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    def test_exec_set_nomemory_hang(self):
+        import_module("_testcapi")
+        # gh-134163: A MemoryError inside code that was wrapped by a try/except
+        # block would lead to an infinite loop.
+
+        # The frame_lasti needs to be greater than 257 to prevent
+        # PyLong_FromLong() from returning cached integers, which
+        # don't require a memory allocation. Prepend some dummy code
+        # to artificially increase the instruction index.
+        warmup_code = "a = list(range(0, 1))\n" * 60
+        user_input = warmup_code + dedent("""
+            try:
+                import _testcapi
+                _testcapi.set_nomemory(0)
+                b = list(range(1000, 2000))
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            """)
+        with SuppressCrashReport():
+            with script_helper.spawn_python('-c', user_input) as p:
+                p.wait()
+                output = p.stdout.read()
+
+        self.assertIn(p.returncode, (0, 1))
+        self.assertGreater(len(output), 0)  # At minimum, should not hang
+        self.assertIn(b"MemoryError", output)
 
 
 class NameErrorTests(unittest.TestCase):

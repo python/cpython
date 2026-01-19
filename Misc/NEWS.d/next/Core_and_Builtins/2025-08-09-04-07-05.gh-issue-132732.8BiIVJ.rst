@@ -1,1 +1,0 @@
-Optimize ``_COMPARE_OP``, ``_CONTAINS_OP``, ``_UNARY_NEGATIVE``, ``_UNARY_NOT``, and ``_UNARY_INVERT`` in JIT builds with constant-loading uops (``_POP_TWO_LOAD_CONST_INLINE_BORROW`` and ``_POP_TOP_LOAD_CONST_INLINE_BORROW``), and then remove both to reduce instruction count.

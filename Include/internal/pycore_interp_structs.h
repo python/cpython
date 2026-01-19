@@ -14,8 +14,6 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
-#include "pycore_uop.h"           // struct _PyUOpInstruction
-
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -89,7 +87,9 @@ struct _ceval_runtime_state {
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
         Py_ssize_t persist_after_fork;
-       _PyFrameEvalFunction prev_eval_frame;
+        _PyFrameEvalFunction prev_eval_frame;
+        Py_ssize_t trampoline_refcount;
+        int code_watcher_id;
 #else
         int _not_used;
 #endif
@@ -181,6 +181,10 @@ struct gc_collection_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects considered for collection and traversed:
+    Py_ssize_t candidates;
+    // Duration of the collection in seconds:
+    double duration;
 };
 
 /* Running stats per generation */
@@ -191,6 +195,10 @@ struct gc_generation_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects considered for collection and traversed:
+    Py_ssize_t candidates;
+    // Duration of the collection in seconds:
+    double duration;
 };
 
 enum _GCPhase {
@@ -199,7 +207,7 @@ enum _GCPhase {
 };
 
 /* If we change this, we need to change the default value in the
-   signature of gc.collect. */
+   signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
 
 struct _gc_runtime_state {
@@ -214,6 +222,9 @@ struct _gc_runtime_state {
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
     /* true if we are currently running the collector */
     int collecting;
+    // The frame that started the current collection. It might be NULL even when
+    // collecting (if no Python frame is running):
+    _PyInterpreterFrame *frame;
     /* list of uncollectable objects */
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
@@ -386,6 +397,21 @@ typedef struct _rare_events {
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint8_t func_modification;
 } _rare_events;
+
+// Optimization configuration for the interpreter.
+// This groups all thresholds and optimization flags for both JIT and interpreter.
+typedef struct _PyOptimizationConfig {
+    // Interpreter optimization thresholds
+    uint16_t jump_backward_initial_value;
+    uint16_t jump_backward_initial_backoff;
+
+    // JIT optimization thresholds
+    uint16_t side_exit_initial_value;
+    uint16_t side_exit_initial_backoff;
+
+    // Optimization flags
+    bool specialization_enabled;
+} _PyOptimizationConfig;
 
 struct
 Bigint {
@@ -769,12 +795,6 @@ struct _is {
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
 
-    /* This structure is carefully allocated so that it's correctly aligned
-     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
-     * field stores the allocated pointer address that will later be freed.
-     */
-    void *_malloced;
-
     PyInterpreterState *next;
 
     int64_t id;
@@ -940,12 +960,14 @@ struct _is {
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
-    struct _PyUOpInstruction *jit_uop_buffer;
+
+    // Optimization configuration (thresholds and flags for JIT and interpreter)
+    _PyOptimizationConfig opt_config;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
-    int executor_deletion_list_remaining_capacity;
-    size_t trace_run_counter;
+    struct _PyExecutorObject *cold_dynamic_executor;
+    size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -969,6 +991,18 @@ struct _is {
 #  ifdef Py_STACKREF_CLOSE_DEBUG
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
+#endif
+
+#ifdef Py_STATS
+    // true if recording of pystats is on, this is used when new threads
+    // are created to decide if recording should be on for them
+    int pystats_enabled;
+    // allocated when (and if) stats are first enabled
+    PyStats *pystats_struct;
+#ifdef Py_GIL_DISABLED
+    // held when pystats related interpreter state is being updated
+    PyMutex pystats_mutex;
+#endif
 #endif
 
     /* the initial PyInterpreterState.threads.head */
