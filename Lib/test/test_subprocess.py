@@ -4098,6 +4098,8 @@ class FastWaitTestCase(BaseTestCase):
     """Tests for efficient (pidfd_open / kqueue) process waiting in
     subprocess.Popen.wait().
     """
+    CAN_USE_PIDFD_OPEN = hasattr(os, "pidfd_open")
+    CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
 
     def assert_fast_waitpid_error(self, patch_point):
         # Emulate a case where pidfd_open() (Linux) or kqueue()
@@ -4111,19 +4113,15 @@ class FastWaitTestCase(BaseTestCase):
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         assert m.called
 
-    @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="LINUX only")
     def test_wait_pidfd_open_error(self):
         self.assert_fast_waitpid_error("os.pidfd_open")
 
-    @unittest.skipIf(
-        not subprocess._CAN_USE_KQUEUE, reason="macOS / BSD only"
-    )
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
     def test_wait_kqueue_error(self):
         self.assert_fast_waitpid_error("select.kqueue")
 
-    @unittest.skipIf(
-        not subprocess._CAN_USE_KQUEUE, reason="macOS / BSD only"
-    )
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
     def test_kqueue_control_error(self):
         # Emulate a case where kqueue.control() fails. _busy_wait()
         # should be used as fallback.
@@ -4162,13 +4160,11 @@ class FastWaitTestCase(BaseTestCase):
         assert m.called
         self.assertEqual(status, 0)
 
-    @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="LINUX only")
     def test_pidfd_open_race(self):
         self.assert_wait_race_condition("os.pidfd_open", os.pidfd_open)
 
-    @unittest.skipIf(
-        not subprocess._CAN_USE_KQUEUE, reason="macOS / BSD only"
-    )
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
     def test_kqueue_race(self):
         self.assert_wait_race_condition("select.kqueue", select.kqueue)
 
