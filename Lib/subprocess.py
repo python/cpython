@@ -2134,7 +2134,8 @@ class Popen:
                     with self._waitpid_lock:
                         if self.returncode is not None:
                             return self.returncode
-                        pid, sts = self._try_wait(os.WNOHANG)
+                        (pid, sts) = self._try_wait(os.WNOHANG)
+                        assert pid == self.pid or pid == 0
                         if pid == self.pid:
                             self._handle_exitstatus(sts)
                             return self.returncode
