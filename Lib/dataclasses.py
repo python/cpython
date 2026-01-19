@@ -725,7 +725,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         annotation_fields=annotation_fields)
 
 
-def _frozen_get_del_attr(cls, fields, func_builder):
+def _frozen_set_del_attr(cls, fields, func_builder):
     locals = {'__class__': cls,
               'FrozenInstanceError': FrozenInstanceError}
     condition = 'type(self) is __class__'
@@ -1199,7 +1199,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             overwrite_error='Consider using functools.total_ordering')
 
     if frozen:
-        _frozen_get_del_attr(cls, field_list, func_builder)
+        _frozen_set_del_attr(cls, field_list, func_builder)
 
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),
