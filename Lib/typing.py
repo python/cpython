@@ -1825,8 +1825,9 @@ class _TypingEllipsis:
 
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
-    '_is_protocol', '_is_runtime_protocol', '_is_deprecated_inherited_runtime_protocol',
-    '__protocol_attrs__', '__non_callable_proto_members__', '__type_params__',
+    '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
+    '__typing_is_deprecated_inherited_runtime_protocol__',
+    '__non_callable_proto_members__', '__type_params__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -2015,7 +2016,7 @@ class _ProtocolMeta(ABCMeta):
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
                 )
-            if getattr(cls, '_is_deprecated_inherited_runtime_protocol', False):
+            if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
                 # See GH-132604.
                 import warnings
                 depr_message = (
@@ -2054,7 +2055,7 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if getattr(cls, '_is_deprecated_inherited_runtime_protocol', False):
+        if getattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__', False):
             # See GH-132604.
             import warnings
 
@@ -2161,7 +2162,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # Mark inherited runtime checkability (deprecated). See GH-132604.
         if cls._is_protocol and getattr(cls, '_is_runtime_protocol', False):
             # This flag is set to False by @runtime_checkable.
-            cls._is_deprecated_inherited_runtime_protocol = True
+            cls.__typing_is_deprecated_inherited_runtime_protocol__ = True
 
         # Set (or override) the protocol subclass hook.
         if '__subclasshook__' not in cls.__dict__:
@@ -2310,8 +2311,8 @@ def runtime_checkable(cls):
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
     # See GH-132604.
-    if hasattr(cls, '_is_deprecated_inherited_runtime_protocol'):
-        cls._is_deprecated_inherited_runtime_protocol = False
+    if hasattr(cls, '__typing_is_deprecated_inherited_runtime_protocol__'):
+        cls.__typing_is_deprecated_inherited_runtime_protocol__ = False
     # PEP 544 prohibits using issubclass()
     # with protocols that have non-method members.
     # See gh-113320 for why we compute this attribute here,

@@ -3885,7 +3885,7 @@ class ProtocolTests(BaseTestCase):
         self.assertIsNot(get_protocol_members(PR), P.__protocol_attrs__)
 
         acceptable_extra_attrs = {
-            '_is_protocol', '_is_runtime_protocol', '_is_deprecated_inherited_runtime_protocol',
+            '_is_protocol', '_is_runtime_protocol', '__typing_is_deprecated_inherited_runtime_protocol__',
             '__parameters__', '__init__', '__annotations__', '__subclasshook__', '__annotate__',
             '__annotations_cache__', '__annotate_func__',
         }
