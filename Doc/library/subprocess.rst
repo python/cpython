@@ -803,8 +803,8 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. note::
 
-      When ``timeout`` is not ``None``, an efficient event-driven mechanism
-      waits for process termination when available:
+      When ``timeout`` is not ``None`` and the platform supports it, an
+      efficient event-driven mechanism is used to wait for process termination:
 
       - Linux ≥= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`
       - macOS and other BSD variants use :func:`select.kqueue` +
@@ -812,8 +812,11 @@ Instances of the :class:`Popen` class have the following methods:
       - Windows uses ``WaitForSingleObject``
 
       If none of these mechanisms are available, the function falls back to a
-      busy loop (non-blocking call and short sleeps). Use the :mod:`asyncio`
-      module for an asynchronous wait: see
+      busy loop (non-blocking call and short sleeps).
+
+   .. note::
+
+      Use the :mod:`asyncio` module for an asynchronous wait: see
       :class:`asyncio.create_subprocess_exec`.
 
    .. versionchanged:: 3.3
