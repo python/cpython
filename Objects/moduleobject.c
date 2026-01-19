@@ -400,8 +400,8 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
 typedef PyObject *(*createfunc_t)(PyObject *, PyModuleDef*);
 
 static PyObject *
-module_from_def_and_spec(
-    PyModuleDef* def_like, /* not necessarily a valid Python object */
+module_from_slots_and_spec(
+    const PySlot *slots,
     PyObject *spec,
     int module_api_version,
     PyModuleDef* original_def /* NULL if not defined by a def */)
@@ -430,12 +430,19 @@ module_from_def_and_spec(
         goto error;
     }
 
-    if (def_like->m_size < 0) {
-        PyErr_Format(
-            PyExc_SystemError,
-            "module %s: m_size may not be negative for multi-phase initialization",
-            name);
-        goto error;
+    _PySlotIterator it;
+
+    PyModuleDef _dummy_def = {0};
+    PyModuleDef* def_like;
+    if (slots) {
+        assert(!original_def);
+        def_like = &_dummy_def;
+         _PySlotIterator_Init(&it, slots, _PySlot_KIND_MOD);
+    }
+    else {
+        assert(original_def);
+        def_like = original_def;
+         _PySlotIterator_InitLegacy(&it, def_like->m_slots, _PySlot_KIND_MOD);
     }
 
         // Macro to copy a non-NULL, non-repeatable slot.
@@ -494,8 +501,6 @@ module_from_def_and_spec(
             break;                                                      \
         /////////////////////////////////////////////////////////////////
 
-    _PySlotIterator it;
-    _PySlotIterator_InitLegacy(&it, def_like->m_slots, _PySlot_KIND_MOD);
     while (_PySlotIterator_Next(&it)) {
         switch (it.current.sl_id) {
             case Py_slot_invalid:
@@ -567,6 +572,14 @@ module_from_def_and_spec(
         }
     }
 #endif
+
+    if (def_like->m_size < 0) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "module %s: m_size may not be negative for multi-phase initialization",
+            name);
+        goto error;
+    }
 
     /* By default, multi-phase init modules are expected
        to work under multiple interpreters. */
@@ -684,11 +697,11 @@ PyObject *
 PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_version)
 {
     PyModuleDef_Init(def);
-    return module_from_def_and_spec(def, spec, module_api_version, def);
+    return module_from_slots_and_spec(NULL, spec, module_api_version, def);
 }
 
 PyObject *
-PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots, PyObject *spec)
+PyModule_FromSlotsAndSpec(const PySlot *slots, PyObject *spec)
 {
     if (!slots) {
         PyErr_SetString(
@@ -696,11 +709,9 @@ PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots, PyObject *spec)
             "PyModule_FromSlotsAndSpec called with NULL slots");
         return NULL;
     }
-    // Fill in enough of a PyModuleDef to pass to common machinery
-    PyModuleDef def_like = {.m_slots = (PyModuleDef_Slot *)slots};
 
-    return module_from_def_and_spec(&def_like, spec, PYTHON_API_VERSION,
-                                    NULL);
+    return module_from_slots_and_spec(slots, spec, PYTHON_API_VERSION,
+                                      NULL);
 }
 
 #ifdef Py_GIL_DISABLED

@@ -33,7 +33,7 @@ kind_name(_PySlot_KIND kind)
 }
 
 static void
-init_with_kind(_PySlotIterator *it, void *slots,
+init_with_kind(_PySlotIterator *it, const void *slots,
                _PySlot_KIND result_kind,
                _PySlot_KIND slot_struct_kind)
 {
@@ -53,20 +53,21 @@ init_with_kind(_PySlotIterator *it, void *slots,
 }
 
 void
-_PySlotIterator_Init(_PySlotIterator *it, PySlot *slots,
+_PySlotIterator_Init(_PySlotIterator *it, const PySlot *slots,
                      _PySlot_KIND result_kind)
 {
     init_with_kind(it, slots, result_kind, _PySlot_KIND_SLOT);
 }
 
 void
-_PySlotIterator_InitLegacy(_PySlotIterator *it, void *slots, _PySlot_KIND kind)
+_PySlotIterator_InitLegacy(_PySlotIterator *it, const void *slots,
+                           _PySlot_KIND kind)
 {
     init_with_kind(it, slots, kind, kind);
 }
 
 void
-_PySlotIterator_Rewind(_PySlotIterator *it, void *slots)
+_PySlotIterator_Rewind(_PySlotIterator *it, const void *slots)
 {
     MSG("");
     MSG("rewind (%s slot iterator)", kind_name(it->kind));
@@ -335,7 +336,7 @@ validate_current_slot(_PySlotIterator *it)
             if (it->info->null_handling == _PySlot_PROBLEM_REJECT) {
                 MSG("error (NULL rejected)");
                 PyErr_Format(PyExc_SystemError,
-                             "NULL not allowed for slot %s",
+                             "NULL not allowed for slot Py_%s",
                              it->info->name);
                 return -1;
             }

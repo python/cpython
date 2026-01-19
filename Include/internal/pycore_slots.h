@@ -76,10 +76,10 @@ extern _PySlot_Info _PySlot_InfoTable[];
 typedef struct _PySlotIterator_state {
     union {
         // tagged by slot_struct_kind:
-        PySlot *slot;               // with _PySlot_KIND_SLOT
-        PyType_Slot *tp_slot;       // with _PySlot_KIND_TYPE
-        PyModuleDef_Slot *mod_slot; // with _PySlot_KIND_MOD
-        void *any_slot;
+        const PySlot *slot;               // with _PySlot_KIND_SLOT
+        const PyType_Slot *tp_slot;       // with _PySlot_KIND_TYPE
+        const PyModuleDef_Slot *mod_slot; // with _PySlot_KIND_MOD
+        const void *any_slot;
     };
     _PySlot_KIND slot_struct_kind;
     bool ignoring_fallbacks :1;
@@ -113,12 +113,12 @@ typedef struct {
 
 /* Initialize an iterator using a Py_Slot array */
 PyAPI_FUNC(void)
-_PySlotIterator_Init(_PySlotIterator *it, PySlot *slots,
+_PySlotIterator_Init(_PySlotIterator *it, const PySlot *slots,
                      _PySlot_KIND result_kind);
 
 /* Initialize an iterator using a legacy slot array */
 PyAPI_FUNC(void)
-_PySlotIterator_InitLegacy(_PySlotIterator *it, void *slots,
+_PySlotIterator_InitLegacy(_PySlotIterator *it, const void *slots,
                            _PySlot_KIND kind);
 
 /* Reset a *successfully exhausted* iterator to the beginning.
@@ -126,7 +126,7 @@ _PySlotIterator_InitLegacy(_PySlotIterator *it, void *slots,
  * `_PySlotIterator_InitWithKind` call.
  * (Subsequent iterations skip some validation.)
  */
-PyAPI_FUNC(void) _PySlotIterator_Rewind(_PySlotIterator *it, void *slots);
+PyAPI_FUNC(void) _PySlotIterator_Rewind(_PySlotIterator *it, const void *slots);
 
 /* Iteration function.
  *
