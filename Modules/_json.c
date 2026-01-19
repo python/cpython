@@ -1734,8 +1734,6 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
 
-        // GH-142831: The item must be strong-referenced to avoid
-        // use-after-free if the user code modifies the list during iteration.
         Py_INCREF(item);
 
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
