@@ -58,7 +58,7 @@ typedef struct _stack_chunk {
     struct _stack_chunk *previous;
     size_t size;
     size_t top;
-    PyObject * data[1]; /* Variable sized */
+    PyObject * data[];
 } _PyStackChunk;
 
 /* Minimum size of data stack chunk */

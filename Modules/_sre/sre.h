@@ -65,7 +65,7 @@ typedef struct {
     struct {
         Py_ssize_t index;
         PyObject *literal;  /* NULL if empty */
-    } items[0];
+    } items[];
 } TemplateObject;
 
 typedef struct SRE_REPEAT_T {

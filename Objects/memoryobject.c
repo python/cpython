@@ -1042,7 +1042,7 @@ memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int flags)
 
 typedef struct {
     Py_buffer view;
-    Py_ssize_t array[1];
+    Py_ssize_t array[];
 } Py_buffer_full;
 
 int
