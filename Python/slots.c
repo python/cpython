@@ -213,7 +213,7 @@ _PySlotIterator_Next(_PySlotIterator *it)
         MSG("slot %d: %s", (int)result->sl_id, it->info->name);
 
         if (it->is_first_run && it->info->is_name) {
-            MSG("setting name for error messages");
+            MSG("setting name: %s", (char*)result->sl_ptr);
             assert(it->info->dtype == _PySlot_TYPE_PTR);
             it->name = result->sl_ptr;
         }
@@ -286,7 +286,35 @@ _PySlotIterator_Next(_PySlotIterator *it)
         }
 
         advance(it);
-        MSG("result: %d (%s)", (int)result->sl_id, it->info->name);
+        switch (it->info->dtype) {
+            case _PySlot_TYPE_VOID:
+            case _PySlot_TYPE_PTR:
+                MSG("result: %d (%s): %p",
+                    (int)result->sl_id, it->info->name,
+                    (void*)result->sl_ptr);
+                break;
+            case _PySlot_TYPE_FUNC:
+                MSG("result: %d (%s): %p",
+                    (int)result->sl_id, it->info->name,
+                    (void*)result->sl_func);
+                break;
+            case _PySlot_TYPE_SIZE:
+                MSG("result: %d (%s): %zd",
+                    (int)result->sl_id, it->info->name,
+                    (Py_ssize_t)result->sl_size);
+                break;
+            case _PySlot_TYPE_INT64:
+                MSG("result: %d (%s): %ld",
+                    (int)result->sl_id,  it->info->name,
+                    (long)result->sl_int64);
+                break;
+            case _PySlot_TYPE_UINT64:
+                MSG("result: %d (%s): %lu (0x%lx)",
+                    (int)result->sl_id, it->info->name,
+                    (unsigned long)result->sl_int64,
+                    (unsigned long)result->sl_int64);
+                break;
+        }
         assert (result->sl_id > 0);
         assert (result->sl_id <= _Py_slot_COUNT);
         assert (result->sl_id <= INT_MAX);
