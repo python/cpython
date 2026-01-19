@@ -2157,6 +2157,11 @@ class TestLRU:
                 with self.assertRaises(RecursionError):
                     fib(support.exceeds_recursion_limit())
 
+    def test_lru_checks_arg_is_callable(self):
+        with self.assertRaises(TypeError) as te:
+            self.module.lru_cache(1)('hello')
+        self.assertIn("the first argument must be callable", str(te.exception))
+
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):
