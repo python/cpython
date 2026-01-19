@@ -1253,6 +1253,26 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
     return true;
 }
 
+// Disables deferred refcounting for all GC objects during interpreter
+// shutdown.  The scan_heap_visitor() skips untracked objects but those
+// could have deferred refcounts enabled as well.  This is separated
+// into a separate scan pass since we only need to do it at shutdown.
+// Note that untracked GC objects are typically exact tuples but could
+// also be GC objects that were never tracked or manually untracked.
+static bool
+scan_heap_disable_deferred(const mi_heap_t *heap, const mi_heap_area_t *area,
+        void *block, size_t block_size, void *args)
+{
+    PyObject *op = op_from_block_all_gc(block, args);
+    if (op == NULL) {
+        return true;
+    }
+    if (!_Py_IsImmortal(op) && _PyObject_HasDeferredRefcount(op)) {
+        disable_deferred_refcounting(op);
+    }
+    return true;
+}
+
 static int
 move_legacy_finalizer_reachable(struct collection_state *state);
 
@@ -1486,6 +1506,10 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // Identify remaining unreachable objects and push them onto a stack.
     // Restores ob_tid for reachable objects.
     gc_visit_heaps(interp, &scan_heap_visitor, &state->base);
+
+    if (state->reason == _Py_GC_REASON_SHUTDOWN) {
+        gc_visit_heaps(interp, &scan_heap_disable_deferred, &state->base);
+    }
 
     if (state->legacy_finalizers.head) {
         // There may be objects reachable from legacy finalizers that are in
