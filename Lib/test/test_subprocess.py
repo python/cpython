@@ -4131,17 +4131,23 @@ class FastWaitTestCase(BaseTestCase):
         def wrapper(*args, **kwargs):
             ret = real_func(*args, **kwargs)
             os.kill(p.pid, signal.SIGTERM)
+            os.waitpid(p.pid, 0)
             return ret
 
         with mock.patch(patch_target, side_effect=wrapper) as m:
-            with self.assertRaises(subprocess.TimeoutExpired):
-                p.wait(timeout=0.0001)
+            status = p.wait(timeout=support.SHORT_TIMEOUT)
         assert m.called
-        self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), -signal.SIGTERM)
+        self.assertEqual(status, 0)
 
     @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
     def test_pidfd_open_race(self):
         self.assert_wait_pid_race("os.pidfd_open", os.pidfd_open)
+
+    @unittest.skipIf(
+        not subprocess._can_use_kqueue(), reason="macOS / BSD only"
+    )
+    def test_kqueue_race(self):
+        self.assert_wait_pid_race("select.kqueue", select.kqueue)
 
 
 if __name__ == "__main__":
