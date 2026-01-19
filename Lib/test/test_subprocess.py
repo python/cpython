@@ -4105,8 +4105,8 @@ class FastWaitTestCase(BaseTestCase):
     CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
 
     def assert_fast_waitpid_error(self, patch_point):
-        # Emulate a case where pidfd_open() (Linux) or kqueue()
-        # (BSD/macOS) fails. Busy-poll wait should be used as fallback.
+        # Emulate a case where pidfd_open() or kqueue() fails.
+        # Busy-poll wait should be used as fallback.
         exc = OSError(errno.EMFILE, os.strerror(errno.EMFILE))
         with mock.patch(patch_point, side_effect=exc) as m:
             p = subprocess.Popen([sys.executable,
