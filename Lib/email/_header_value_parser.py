@@ -101,6 +101,12 @@ def make_quoted_pairs(value):
     return str(value).replace('\\', '\\\\').replace('"', '\\"')
 
 
+def make_parenthesis_pairs(value):
+    """Escape parenthesis and backslash for use within a comment."""
+    return str(value).replace('\\', '\\\\') \
+        .replace('(', '\\(').replace(')', '\\)')
+
+
 def quote_string(value):
     escaped = make_quoted_pairs(value)
     return f'"{escaped}"'
@@ -939,7 +945,7 @@ class WhiteSpaceTerminal(Terminal):
         return ' '
 
     def startswith_fws(self):
-        return True
+        return self and self[0] in WSP
 
 
 class ValueTerminal(Terminal):
@@ -2959,6 +2965,13 @@ def _refold_parse_tree(parse_tree, *, policy):
                     [ValueTerminal(make_quoted_pairs(p), 'ptext')
                      for p in newparts] +
                     [ValueTerminal('"', 'ptext')])
+            if part.token_type == 'comment':
+                newparts = (
+                    [ValueTerminal('(', 'ptext')] +
+                    [ValueTerminal(make_parenthesis_pairs(p), 'ptext')
+                     if p.token_type == 'ptext' else p
+                     for p in newparts] +
+                    [ValueTerminal(')', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)
