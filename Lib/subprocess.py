@@ -2122,6 +2122,9 @@ class Popen:
                 return self.returncode
 
             if timeout is not None:
+                started = _time()
+                endtime = started + timeout
+
                 # Try efficient wait first.
                 if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
                     # Process is gone. At this point os.waitpid(pid, 0)
@@ -2136,11 +2139,17 @@ class Popen:
                         assert pid == self.pid or pid == 0
                         if pid == self.pid:
                             self._handle_exitstatus(sts)
-                        return self.returncode
+                            return self.returncode
+                        # os.waitpid(pid, WNOHANG) returned 0 instead
+                        # of our PID, meaning PID has not yet exited,
+                        # even though poll() / kqueue() said so. Very
+                        # rare and mostly theoretical. Fallback to busy
+                        # polling.
+                        elapsed = _time() - started
+                        endtime -= elapsed
 
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
-                endtime = _time() + timeout
                 delay = 0.0005 # 500 us -> initial delay of 1 ms
                 while True:
                     if self._waitpid_lock.acquire(False):

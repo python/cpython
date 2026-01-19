@@ -4091,8 +4091,8 @@ class ContextManagerTests(BaseTestCase):
 
 
 class FastWaitTestCase(BaseTestCase):
-    """Tests for efficient (pidfd_open / kqueue) process waiting in
-    subprocess.Popen.wait().
+    """Tests for efficient (pidfd_open() + poll() / kqueue()) process
+    waiting in subprocess.Popen.wait().
     """
     CAN_USE_PIDFD_OPEN = hasattr(os, "pidfd_open")
     CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
@@ -4163,6 +4163,36 @@ class FastWaitTestCase(BaseTestCase):
     @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
     def test_kqueue_race(self):
         self.assert_wait_race_condition("select.kqueue", select.kqueue)
+
+    def assert_notification_without_immediate_reap(self, patch_target):
+        # Verify fallback to busy polling when poll() / kqueue()
+        # succeeds, but waitpid(pid, WNOHANG) returns (0, 0).
+        def waitpid_wrapper(pid, flags):
+            nonlocal ncalls
+            ncalls += 1
+            if ncalls == 1:
+                return (0, 0)
+            return real_waitpid(pid, flags)
+
+        ncalls = 0
+        real_waitpid = os.waitpid
+        with mock.patch.object(subprocess.Popen, patch_target, return_value=True) as m1:
+            with mock.patch("os.waitpid", side_effect=waitpid_wrapper) as m2:
+                p = subprocess.Popen([sys.executable,
+                                      "-c", "import time; time.sleep(0.3)"])
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    p.wait(timeout=0.0001)
+                self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
+        assert m1.called
+        assert m2.called
+
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="LINUX only")
+    def test_poll_notification_without_immediate_reap(self):
+        self.assert_notification_without_immediate_reap("_wait_pidfd")
+
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
+    def test_kqueue_notification_without_immediate_reap(self):
+        self.assert_notification_without_immediate_reap("_wait_kqueue")
 
 
 if __name__ == "__main__":
