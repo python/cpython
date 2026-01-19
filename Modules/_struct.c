@@ -1799,17 +1799,18 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
     assert(alloc_func != NULL);
     self = (PyStructObject *)alloc_func(type, 0);
-    if (self != NULL) {
-        self->s_format = Py_NewRef(Py_None);
-        self->s_codes = NULL;
-        self->s_size = -1;
-        self->s_len = -1;
-        self->init_called = false;
-        if (PyTuple_GET_SIZE(args) > 0) {
-            if (actual___init___impl(self, PyTuple_GET_ITEM(args, 0))) {
-                Py_DECREF(self);
-                return NULL;
-            }
+    if (self == NULL) {
+        return NULL;
+    }
+    self->s_format = Py_NewRef(Py_None);
+    self->s_codes = NULL;
+    self->s_size = -1;
+    self->s_len = -1;
+    self->init_called = false;
+    if (PyTuple_GET_SIZE(args) > 0) {
+        if (actual___init___impl(self, PyTuple_GET_ITEM(args, 0))) {
+            Py_DECREF(self);
+            return NULL;
         }
     }
     return (PyObject *)self;
