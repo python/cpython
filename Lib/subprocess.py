@@ -2125,6 +2125,12 @@ class Popen:
             if timeout is not None:
                 # Try efficient wait first.
                 if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
+                    # Process is gone. At this point os.waitpid(pid, 0)
+                    # should return immediately, but in rare races
+                    # another thread or signal handler may have already
+                    # reaped the PID. os.waitpid(pid, WNOHANG) ensures
+                    # we attempt a non-blocking reap safely without
+                    # blocking indefinitely.
                     with self._waitpid_lock:
                         if self.returncode is not None:
                             return self.returncode
