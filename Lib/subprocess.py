@@ -2157,7 +2157,13 @@ class Popen:
                 if timeout < 0:
                     raise TimeoutExpired(self.args, timeout)
                 if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
-                    self._blocking_wait()
+                    # At this point os.waitpid(pid, 0) should return
+                    # immediately, but in rare races another thread or
+                    # signal handler may have already reaped the PID.
+                    # Using _busy_wait(0) (WNOHANG) ensures we attempt
+                    # a non-blocking reap safely without blocking
+                    # indefinitely.
+                    self._busy_wait(0)
                 else:
                     self._busy_wait(timeout)
             else:
