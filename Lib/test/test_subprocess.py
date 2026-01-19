@@ -4119,12 +4119,31 @@ class FastWaitTestCase(BaseTestCase):
     def test_wait_kqueue_error(self, patch_point="os.pidfd_open"):
         self.assert_fast_waitpid_error("select.kqueue")
 
-    # ---
+    @unittest.skipIf(
+        not subprocess._can_use_kqueue(), reason="macOS / BSD only"
+    )
+    def test_kqueue_control_error(self):
+        # Emulate a case where kqueue.control() fails due to too many
+        # open files. _busy_wait() should be used as fallback.
+        p = subprocess.Popen([sys.executable,
+                              "-c", "import time; time.sleep(0.3)"])
+        kq_mock = mock.Mock()
+        kq_mock.control.side_effect = OSError(
+            errno.EPERM, os.strerror(errno.EPERM)
+        )
+        kq_mock.close = mock.Mock()
+
+        with mock.patch("select.kqueue", return_value=kq_mock) as m:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.wait(timeout=0.0001)
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
+        assert m.called
+
 
     def assert_wait_pid_race(self, patch_target, real_func):
-        # Call pidfd_open() / kqueue, then terminate the process. Make
-        # sure that the next poll() / kqueue.control() call still works
-        # for a terminated PID.
+        # Call pidfd_open() / kqueue(), then terminate the process.
+        # Make sure that the next poll() / kqueue.control() call still
+        # works for a terminated PID.
         p = subprocess.Popen([sys.executable,
                               "-c", "import time; time.sleep(0.3)"])
 
