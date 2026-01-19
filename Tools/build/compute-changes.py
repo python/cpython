@@ -194,7 +194,7 @@ def get_file_platform(file: Path) -> str | None:
         return "ios"
     if first_part in ANDROID_DIRS:
         return "android"
-    if len(file.parts) >= 2 and Path(*file.parts[:2]) in WASI_DIRS: # Tools/wasm/
+    if len(file.parts) >= 2 and Path(*file.parts[:2]) in WASI_DIRS:
         return "wasi"
     return None
 
