@@ -2067,8 +2067,7 @@ class Popen:
                 pidfd = os.pidfd_open(self.pid, 0)
             except OSError:
                 # May be:
-                # - ESRCH: no such process; waitpid() should still be
-                #   able to return the status code.
+                # - ESRCH: no such process
                 # - EMFILE, ENFILE: too many open files (usually 1024)
                 # - ENODEV: anonymous inode filesystem not supported
                 # - EPERM, EACCES, ENOSYS: undocumented; may happen if
