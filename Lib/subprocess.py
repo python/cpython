@@ -52,6 +52,7 @@ import threading
 import warnings
 import contextlib
 import math
+import select
 from time import monotonic as _time
 import types
 
@@ -122,7 +123,6 @@ else:
             WNOHANG = None
             ECHILD = errno.ECHILD
 
-    import select
     import selectors
 
 
