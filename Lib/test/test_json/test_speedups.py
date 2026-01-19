@@ -111,7 +111,7 @@ class TestEncode(CTest):
         self.assertEqual(enc(['spam', {'ham': 'eggs'}], 3)[0], expected2)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}], 3.0)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])
-       
+
     def test_mutate_items_during_encode(self):
         c_make_encoder = getattr(self.json.encoder, 'c_make_encoder', None)
         if c_make_encoder is None:
