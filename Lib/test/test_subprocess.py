@@ -4150,8 +4150,11 @@ class FastWaitTestCase(BaseTestCase):
 
         def wrapper(*args, **kwargs):
             ret = real_func(*args, **kwargs)
-            os.kill(p.pid, signal.SIGTERM)
-            os.waitpid(p.pid, 0)
+            try:
+                os.kill(p.pid, signal.SIGTERM)
+                os.waitpid(p.pid, 0)
+            except OSError:
+                pass
             return ret
 
         with mock.patch(patch_target, side_effect=wrapper) as m:
