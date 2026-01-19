@@ -807,7 +807,8 @@ Instances of the :class:`Popen` class have the following methods:
       waits for process termination when available:
 
       - Linux ≥5.3 uses :func:`os.pidfd_open` + :func:`select.poll`
-      - macOS and other BSD variants use :func:`select.kqueue`
+      - macOS and other BSD variants use :func:`select.kqueue` +
+        ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``
       - Windows uses ``WaitForSingleObject``
 
       If none of these mechanisms are available, the function falls back to a
@@ -819,7 +820,8 @@ Instances of the :class:`Popen` class have the following methods:
       *timeout* was added.
 
    .. versionchanged:: 3.15
-      use efficient event-driven implementation on Linux >= 5.3 and macOS / BSD.
+      if *timeout* is not ``None``, use efficient event-driven implementation
+      on Linux >= 5.3 and macOS / BSD.
 
 .. method:: Popen.communicate(input=None, timeout=None)
 
