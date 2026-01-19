@@ -1,5 +1,4 @@
 When both *frozen* and *slots* are set to ``True``
 in :func:`~dataclasses.dataclass`, added methods
 ``__setattr__`` and ``__delattr__`` were still referencing the original class,
-preventing it from being garbage collected and making one of the conditions
-inside these methods to be always ``False``.
+preventing it from being garbage collected and causing unexpected exceptions.
