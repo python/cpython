@@ -575,6 +575,39 @@ class TestCallCache(TestBase):
         for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             f()
 
+    @requires_jit_disabled
+    @requires_specialization_ft
+    def test_specialize_call_function_ex_py(self):
+        def ex_py(*args, **kwargs):
+            return 1
+
+        def instantiate():
+            args = (1, 2, 3)
+            kwargs = {}
+            return ex_py(*args, **kwargs)
+
+        # Trigger specialization
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            instantiate()
+        self.assert_specialized(instantiate, "CALL_EX_PY")
+
+    @requires_jit_disabled
+    @requires_specialization_ft
+    def test_specialize_call_function_ex_py_fail(self):
+        def ex_py(*args, **kwargs):
+            return 1
+
+        def instantiate():
+            args = (1, 2, 3)
+            kwargs = {}
+            return ex_py(*args, **kwargs)
+
+        _testinternalcapi.set_vectorcall_nop(ex_py)
+        # Trigger specialization
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            instantiate()
+        self.assert_no_opcode(instantiate, "CALL_EX_PY")
+        self.assert_specialized(instantiate, "CALL_EX_NON_PY_GENERAL")
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.
@@ -590,7 +623,7 @@ def make_deferred_ref_count_obj():
 class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
-    ITEMS = 1000
+    ITEMS = 1400
     LOOPS = 4
     WRITERS = 2
 
@@ -1785,6 +1818,16 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_subscr_str_int, "BINARY_OP_SUBSCR_STR_INT")
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_OP")
 
+        def binary_subscr_str_int_non_compact():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = "바이트코드_특수화"
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_str_int_non_compact()
+        self.assert_specialized(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_USTR_INT")
+        self.assert_no_opcode(binary_subscr_str_int_non_compact, "BINARY_OP_SUBSCR_STR_INT")
+
         def binary_subscr_getitems():
             class C:
                 def __init__(self, val):
@@ -1871,6 +1914,71 @@ class TestSpecializer(TestBase):
         for_iter_generator()
         self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_call_list_append(self):
+        # gh-141367: only exact lists should use
+        # CALL_LIST_APPEND instruction after specialization.
+
+        r = range(_testinternalcapi.SPECIALIZATION_THRESHOLD)
+
+        def list_append(l):
+            for _ in r:
+                l.append(1)
+
+        list_append([])
+        self.assert_specialized(list_append, "CALL_LIST_APPEND")
+        self.assert_no_opcode(list_append, "CALL_METHOD_DESCRIPTOR_O")
+        self.assert_no_opcode(list_append, "CALL")
+
+        def my_list_append(l):
+            for _ in r:
+                l.append(1)
+
+        class MyList(list): pass
+        my_list_append(MyList())
+        self.assert_specialized(my_list_append, "CALL_METHOD_DESCRIPTOR_O")
+        self.assert_no_opcode(my_list_append, "CALL_LIST_APPEND")
+        self.assert_no_opcode(my_list_append, "CALL")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_load_attr_module_with_getattr(self):
+        module = types.ModuleType("test_module_with_getattr")
+        module.__dict__["some_attr"] = "foo"
+
+        def module_getattr(name):
+            if name == "missing_attr":
+                return 42
+            raise AttributeError(f"module has no attribute {name}")
+
+        module.__dict__["__getattr__"] = module_getattr
+
+        import sys
+        sys.modules.pop("test_module_with_getattr", None)
+        sys.modules["test_module_with_getattr"] = module
+        try:
+            def load_module_attr_present():
+                import test_module_with_getattr
+                return test_module_with_getattr.some_attr
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(load_module_attr_present(), "foo")
+
+            self.assert_specialized(load_module_attr_present, "LOAD_ATTR_MODULE")
+            self.assert_no_opcode(load_module_attr_present, "LOAD_ATTR")
+
+            def load_module_attr_missing():
+                import test_module_with_getattr
+                return test_module_with_getattr.missing_attr
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(load_module_attr_missing(), 42)
+
+            self.assert_no_opcode(load_module_attr_missing, "LOAD_ATTR_MODULE")
+        finally:
+            sys.modules.pop("test_module_with_getattr", None)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ filename	funcname	name	reason
 ## indicators for resource availability/capability
 # (set during first init)
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/bootstrap_hash.c	py_getentropy	getentropy_works	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, *after* first init)
@@ -24,6 +25,7 @@ Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
+Modules/_struct.c	-	endian_tables_init_once	-
 
 ##-----------------------
 ## other values (not Python-specific)
@@ -56,7 +58,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 Python/parking_lot.c	-	buckets	-
 
 ## data needed for introspecting asyncio state from debuggers and profilers
-Modules/_asynciomodule.c	-	_AsyncioDebug	-
+Modules/_asynciomodule.c	-	_Py_AsyncioDebug	-
 
 
 ##################################
@@ -194,6 +196,7 @@ Python/pyfpe.c	-	PyFPE_counter	-
 Python/import.c	-	pkgcontext	-
 Python/pystate.c	-	_Py_tss_tstate	-
 Python/pystate.c	-	_Py_tss_gilstate	-
+Python/pystate.c	-	_Py_tss_interp	-
 
 ##-----------------------
 ## should be const
@@ -357,6 +360,7 @@ Parser/parser.c	-	soft_keywords	-
 Parser/lexer/lexer.c	-	type_comment_prefix	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
+Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	codecs_builtin_error_handlers	-
 Python/codecs.c	-	ucnhash_capi	-
@@ -563,6 +567,10 @@ Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
 Modules/_testinternalcapi.c	-	pending_identify_result	-
+Modules/_testinternalcapi.c	-	Test_EvalFrame_Resumes	-
+Modules/_testinternalcapi.c	-	Test_EvalFrame_Loads	-
+Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Resumes	-
+Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Loads	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-

@@ -30,9 +30,9 @@
 #endif
 
 #include <Python.h>
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
-#include "complexobject.h"
 
 #include <mpdecimal.h>
 
@@ -57,6 +57,9 @@
 #endif
 
 #include "clinic/_decimal.c.h"
+
+#define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
+                                 // See https://speleotrove.com/decimal/decarith.html
 
 /*[clinic input]
 module _decimal
@@ -3761,7 +3764,8 @@ _decimal_Decimal___format___impl(PyObject *dec, PyTypeObject *cls,
 
     if (size > 0 && fmt[size-1] == 'N') {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Format specifier 'N' is deprecated", 1) < 0) {
+                         "Format specifier 'N' is deprecated and "
+                         "slated for removal in Python 3.18", 1) < 0) {
             return NULL;
         }
     }
@@ -5235,13 +5239,15 @@ _decimal_Decimal_copy_negate_impl(PyObject *self, PyTypeObject *cls)
 /*[clinic input]
 _decimal.Decimal.logical_invert = _decimal.Decimal.exp
 
-Return the digit-wise inversion of the (logical) operand.
+Invert all its digits.
+
+The self must be logical number.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_invert_impl(PyObject *self, PyTypeObject *cls,
                                      PyObject *context)
-/*[clinic end generated code: output=c626ed4b104a97b7 input=3531dac8b9548dad]*/
+/*[clinic end generated code: output=c626ed4b104a97b7 input=7158d5b525417955]*/
 Dec_UnaryFuncVA(mpd_qinvert)
 
 /*[clinic input]
@@ -5471,37 +5477,43 @@ _decimal_Decimal_same_quantum_impl(PyObject *self, PyTypeObject *cls,
 /*[clinic input]
 _decimal.Decimal.logical_and = _decimal.Decimal.compare
 
-Return the digit-wise 'and' of the two (logical) operands.
+Applies an 'and' operation between self and other's digits.
+
+Both self and other must be logical numbers.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_and_impl(PyObject *self, PyTypeObject *cls,
                                   PyObject *other, PyObject *context)
-/*[clinic end generated code: output=9a4cbb74c180b0bb input=2b319baee8970929]*/
+/*[clinic end generated code: output=9a4cbb74c180b0bb input=f22460f1285782d2]*/
 Dec_BinaryFuncVA(mpd_qand)
 
 /*[clinic input]
 _decimal.Decimal.logical_or = _decimal.Decimal.compare
 
-Return the digit-wise 'or' of the two (logical) operands.
+Applies an 'or' operation between self and other's digits.
+
+Both self and other must be logical numbers.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_or_impl(PyObject *self, PyTypeObject *cls,
                                  PyObject *other, PyObject *context)
-/*[clinic end generated code: output=063c4de18dc41ecb input=75e0e1d4dd373b90]*/
+/*[clinic end generated code: output=063c4de18dc41ecb input=b5afa1e1fdebdfce]*/
 Dec_BinaryFuncVA(mpd_qor)
 
 /*[clinic input]
 _decimal.Decimal.logical_xor = _decimal.Decimal.compare
 
-Return the digit-wise 'xor' of the two (logical) operands.
+Applies an 'xor' operation between self and other's digits.
+
+Both self and other must be logical numbers.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_xor_impl(PyObject *self, PyTypeObject *cls,
                                   PyObject *other, PyObject *context)
-/*[clinic end generated code: output=829b09cb49926ad7 input=a1ed8d6ac38c1c9e]*/
+/*[clinic end generated code: output=829b09cb49926ad7 input=84d722ada08a2da7]*/
 Dec_BinaryFuncVA(mpd_qxor)
 
 /*[clinic input]
@@ -5788,7 +5800,7 @@ _decimal_Decimal___floor___impl(PyObject *self, PyTypeObject *cls)
 static Py_hash_t
 _dec_hash(PyDecObject *v)
 {
-#if defined(CONFIG_64) && _PyHASH_BITS == 61
+#if defined(CONFIG_64) && PyHASH_BITS == 61
     /* 2**61 - 1 */
     mpd_uint_t p_data[1] = {2305843009213693951ULL};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 19, 1, 1, p_data};
@@ -5796,7 +5808,7 @@ _dec_hash(PyDecObject *v)
     mpd_uint_t inv10_p_data[1] = {2075258708292324556ULL};
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 19, 1, 1, inv10_p_data};
-#elif defined(CONFIG_32) && _PyHASH_BITS == 31
+#elif defined(CONFIG_32) && PyHASH_BITS == 31
     /* 2**31 - 1 */
     mpd_uint_t p_data[2] = {147483647UL, 2};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 10, 2, 2, p_data};
@@ -5805,7 +5817,7 @@ _dec_hash(PyDecObject *v)
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 10, 2, 2, inv10_p_data};
 #else
-    #error "No valid combination of CONFIG_64, CONFIG_32 and _PyHASH_BITS"
+    #error "No valid combination of CONFIG_64, CONFIG_32 and PyHASH_BITS"
 #endif
     const Py_hash_t py_hash_inf = 314159;
     mpd_uint_t ten_data[1] = {10};
@@ -7099,13 +7111,26 @@ DecCtx_UnaryFunc(mpd_qlogb)
 /*[clinic input]
 _decimal.Context.logical_invert = _decimal.Context.abs
 
-Invert all digits of x.
+Invert all the digits in the operand.
+
+The operand must be a logical number.
+
+    >>> ExtendedContext.logical_invert(Decimal('0'))
+    Decimal('111111111')
+    >>> ExtendedContext.logical_invert(Decimal('1'))
+    Decimal('111111110')
+    >>> ExtendedContext.logical_invert(Decimal('111111111'))
+    Decimal('0')
+    >>> ExtendedContext.logical_invert(Decimal('101010101'))
+    Decimal('10101010')
+    >>> ExtendedContext.logical_invert(1101)
+    Decimal('111110010')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_invert_impl(PyObject *context, PyTypeObject *cls,
                                      PyObject *x)
-/*[clinic end generated code: output=97760277a958e2b0 input=1fa8dcc59c557fcc]*/
+/*[clinic end generated code: output=97760277a958e2b0 input=8e568f4c745ab596]*/
 DecCtx_UnaryFunc(mpd_qinvert)
 
 /*[clinic input]
@@ -7262,37 +7287,100 @@ _decimal_Context_copy_sign_impl(PyObject *context, PyTypeObject *cls,
 /*[clinic input]
 _decimal.Context.logical_and = _decimal.Context.add
 
-Digit-wise and of x and y.
+Applies the logical operation 'and' between each operand's digits.
+
+The operands must be both logical numbers.
+
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('1'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_and(Decimal('1100'), Decimal('1010'))
+    Decimal('1000')
+    >>> ExtendedContext.logical_and(Decimal('1111'), Decimal('10'))
+    Decimal('10')
+    >>> ExtendedContext.logical_and(110, 1101)
+    Decimal('100')
+    >>> ExtendedContext.logical_and(Decimal(110), 1101)
+    Decimal('100')
+    >>> ExtendedContext.logical_and(110, Decimal(1101))
+    Decimal('100')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_and_impl(PyObject *context, PyTypeObject *cls,
                                   PyObject *x, PyObject *y)
-/*[clinic end generated code: output=009dfa08ecaa2ac8 input=30ee33b5b365fd80]*/
+/*[clinic end generated code: output=009dfa08ecaa2ac8 input=bcb7d3d6ab7530de]*/
 DecCtx_BinaryFunc(mpd_qand)
 
 /*[clinic input]
 _decimal.Context.logical_or = _decimal.Context.add
 
-Digit-wise or of x and y.
+Applies the logical operation 'or' between each operand's digits.
+
+The operands must be both logical numbers.
+
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('0'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1100'), Decimal('1010'))
+    Decimal('1110')
+    >>> ExtendedContext.logical_or(Decimal('1110'), Decimal('10'))
+    Decimal('1110')
+    >>> ExtendedContext.logical_or(110, 1101)
+    Decimal('1111')
+    >>> ExtendedContext.logical_or(Decimal(110), 1101)
+    Decimal('1111')
+    >>> ExtendedContext.logical_or(110, Decimal(1101))
+    Decimal('1111')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_or_impl(PyObject *context, PyTypeObject *cls,
                                  PyObject *x, PyObject *y)
-/*[clinic end generated code: output=eb38617e8d31bf12 input=3b1a6725d0262fb9]*/
+/*[clinic end generated code: output=eb38617e8d31bf12 input=47b45d296fb90846]*/
 DecCtx_BinaryFunc(mpd_qor)
 
 /*[clinic input]
 _decimal.Context.logical_xor = _decimal.Context.add
 
-Digit-wise xor of x and y.
+Applies the logical operation 'xor' between each operand's digits.
+
+The operands must be both logical numbers.
+
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('0'))
+    Decimal('1')
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('1'))
+    Decimal('0')
+    >>> ExtendedContext.logical_xor(Decimal('1100'), Decimal('1010'))
+    Decimal('110')
+    >>> ExtendedContext.logical_xor(Decimal('1111'), Decimal('10'))
+    Decimal('1101')
+    >>> ExtendedContext.logical_xor(110, 1101)
+    Decimal('1011')
+    >>> ExtendedContext.logical_xor(Decimal(110), 1101)
+    Decimal('1011')
+    >>> ExtendedContext.logical_xor(110, Decimal(1101))
+    Decimal('1011')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_xor_impl(PyObject *context, PyTypeObject *cls,
                                   PyObject *x, PyObject *y)
-/*[clinic end generated code: output=23cd81fdcd865d5a input=5ebbbe8bb35da380]*/
+/*[clinic end generated code: output=23cd81fdcd865d5a input=fcaaf828c1d2d089]*/
 DecCtx_BinaryFunc(mpd_qxor)
 
 /*[clinic input]
@@ -7482,12 +7570,35 @@ static PyType_Spec context_spec = {
 };
 
 
+static PyObject *
+decimal_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString(MPD_SPEC_VERSION);
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
+    return NULL;
+}
+
+
 static PyMethodDef _decimal_methods [] =
 {
   _DECIMAL_GETCONTEXT_METHODDEF
   _DECIMAL_SETCONTEXT_METHODDEF
   _DECIMAL_LOCALCONTEXT_METHODDEF
   _DECIMAL_IEEECONTEXT_METHODDEF
+  {"__getattr__", decimal_getattr, METH_VARARGS, "Module __getattr__"},
   { NULL, NULL, 1, NULL }
 };
 
@@ -7643,10 +7754,15 @@ _decimal_exec(PyObject *m)
 
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
-    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
-                                 "namedtuple", "(ss)", "DecimalTuple",
-                                 "sign digits exponent"));
-
+    ASSIGN_PTR(obj, PyObject_CallMethod(collections, "namedtuple", "(ss)",
+                                        "DecimalTuple",
+                                        "sign digits exponent"));
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "type is expected from namedtuple call");
+        goto error;
+    }
+    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)obj);
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
     CHECK_INT(PyDict_SetItemString(state->DecimalTuple->tp_dict, "__module__", obj));
     Py_CLEAR(obj);
@@ -7807,7 +7923,7 @@ _decimal_exec(PyObject *m)
     }
 
     /* Add specification version number */
-    CHECK_INT(PyModule_AddStringConstant(m, "__version__", "1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
     return 0;

@@ -217,7 +217,7 @@ has significant benefits:
 * they support a new (to Python), human-friendly concurrency model
 * true multi-core parallelism
 
-For some use cases, concurrency in software enables efficiency and
+For some use cases, concurrency in software improves efficiency and
 can simplify design, at a high level.
 At the same time, implementing and maintaining all but the simplest concurrency
 is often a struggle for the human brain.
@@ -225,9 +225,10 @@ That especially applies to plain threads (for example, :mod:`threading`),
 where all memory is shared between all threads.
 
 With multiple isolated interpreters, you can take advantage of a class
-of concurrency models, like CSP or the actor model, that have found
+of concurrency models, like Communicating Sequential Processes (CSP)
+or the actor model, that have found
 success in other programming languages, like Smalltalk, Erlang,
-Haskell, and Go. Think of multiple interpreters like threads
+Haskell, and Go. Think of multiple interpreters as threads
 but with opt-in sharing.
 
 Regarding multi-core parallelism: as of Python 3.12, interpreters
@@ -249,8 +250,8 @@ having the isolation of processes with the efficiency of threads.
 While the feature has been around for decades, multiple interpreters
 have not been used widely, due to low awareness and the lack of a
 standard library module. Consequently, they currently have several
-notable limitations, which will improve significantly now that the
-feature is finally going mainstream.
+notable limitations, which are expected to improve significantly now
+that the feature is going mainstream.
 
 Current limitations:
 
@@ -449,8 +450,8 @@ depending on platform and architecture.
 The baseline is Python 3.14 built with Clang 19, without this new interpreter.
 
 This interpreter currently only works with Clang 19 and newer
-on x86-64 and AArch64 architectures. However, a future release
-of GCC is expected will support this as well.
+on x86-64 and AArch64 architectures.
+However, a future release of GCC is expected to support this as well.
 
 This feature is opt-in for now. Enabling profile-guided optimization is highly
 recommendeded when using the new interpreter as it is the only configuration
@@ -1139,7 +1140,7 @@ concurrent.futures
 .. _whatsnew314-concurrent-futures-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>` for
   :class:`~concurrent.futures.ProcessPoolExecutor`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
@@ -1590,7 +1591,7 @@ multiprocessing
 .. _whatsnew314-multiprocessing-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
   This change does not affect Windows or macOS, where :ref:`'spawn'
@@ -2264,6 +2265,15 @@ pdb
   (Contributed by Tian Gao in :gh:`124533`.)
 
 
+textwrap
+--------
+
+* Optimize the :func:`~textwrap.dedent` function, improving performance by
+  an average of 2.4x, with larger improvements for bigger inputs,
+  and fix a bug with incomplete normalization of blank lines with whitespace
+  characters other than space and tab.
+
+
 uuid
 ----
 
@@ -2708,6 +2718,8 @@ New deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
 
+.. include:: ../deprecations/pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
@@ -3044,7 +3056,7 @@ Deprecated C APIs
 -----------------
 
 * The :c:macro:`!Py_HUGE_VAL` macro is now :term:`soft deprecated`.
-  Use :c:macro:`!Py_INFINITY` instead.
+  Use :c:macro:`!INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * The :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`,

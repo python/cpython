@@ -20,7 +20,7 @@ from test.support import (
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
-                                    change_cwd)
+                                    change_cwd, EnvironmentVarGuard)
 from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
@@ -770,6 +770,7 @@ class MakefileTests(unittest.TestCase):
             print("var8=$$(var3)", file=makefile)
             print("var9=$(var10)(var3)", file=makefile)
             print("var10=$$", file=makefile)
+            print("var11=$${ORIGIN}${var5}", file=makefile)
         vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
@@ -782,6 +783,7 @@ class MakefileTests(unittest.TestCase):
             'var8': '$(var3)',
             'var9': '$(var3)',
             'var10': '$',
+            'var11': '${ORIGIN}dollar$5',
         })
 
     def _test_parse_makefile_recursion(self):
@@ -805,7 +807,9 @@ class MakefileTests(unittest.TestCase):
             print("PY_LDFLAGS=-lm", file=makefile)
             print("var2=$(LDFLAGS)", file=makefile)
             print("var3=$(CPPFLAGS)", file=makefile)
-        vars = _parse_makefile(TESTFN)
+        with EnvironmentVarGuard() as env:
+            env.clear()
+            vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': '-Wall',
             'CFLAGS': '-Wall',
