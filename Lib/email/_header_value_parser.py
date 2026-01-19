@@ -1288,7 +1288,7 @@ def get_comment(value):
 
     We handle nested comments here, and quoted-pair in our qp-ctext routine.
     """
-    if value and value[0] != '(':
+    if not value or value[0] != '(':
         raise errors.HeaderParseError(
             "expected '(' but found '{}'".format(value))
     comment = Comment()

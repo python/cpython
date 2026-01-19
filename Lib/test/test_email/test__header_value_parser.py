@@ -255,6 +255,7 @@ class TestParserMixin:
             remainder='',
             comments=None,
             *,
+            commenttree=None,
             exception=None,
             warnings=None,
             test_start=True,
@@ -305,6 +306,10 @@ class TestParserMixin:
 
         Assert that the comments attribute of the returned object matches
         comments.
+
+        If commenttree is not None, assert that the comment tree of the
+        returned object matches it. XXX commenttree is an internal testing
+        hack, a real API is needed some day.
 
         Assert that the defects attribute of the returned object matches
         defects.
@@ -363,6 +368,8 @@ class TestParserMixin:
             self.assertEqual(result.value, value)
             self.assertDefectsMatch(result.all_defects, defects)
             self.assertEqual(result.comments, comments)
+            if commenttree is not None:
+                self.assertEqual(self.ctree(result), commenttree)
         return (result, *other) if other else result
 
     def verify_terminal_types(self, tl, *text_types):
@@ -377,6 +384,36 @@ class TestParserMixin:
                 # to use 'extend' when consuming returned a TokenList.
                 self.assertIsNotNone(t.token_type, t)
                 self.verify_terminal_types(t, *text_types)
+
+    def ctree(self, tl, cnt=0):
+        """Return a testing-adequate depiction of the nested comments"""
+        if isinstance(tl, parser.Comment):
+            return self._ctree(tl)
+        comments = []
+        for t in tl:
+            if isinstance(t, parser.Comment):
+                comments.append(self._ctree(t))
+            elif isinstance(t, parser.TokenList):
+                comments.extend(self.ctree(t))
+        return comments
+
+    def _ctree(self, tl):
+        comments = []
+        empty = True
+        text = ''
+        for t in tl:
+            if isinstance(t, parser.Comment):
+                if text:
+                    comments.append(text)
+                    text = ''
+                comments.append(self._ctree(t))
+                empty = False
+            else:
+                text += str(t)
+        if text or empty:
+            comments.append(text)
+        return comments
+
 
 # XXX XXX temporary step-wise refactoring tool, goes away at end of refactor.
 @params_map(with_namelist=True)
@@ -1588,16 +1625,30 @@ class TestParser(TestParserMixin, TestEmailBase):
     # get_comment
 
     @params
-    def test_get_comment(self, s, *args, value=' ', **kw):
+    def test_get_comment(self,
+            s,
+            *args,
+            value=' ',
+            comments=None,
+            content=None,
+            commenttree=None,
+            **kw):
+        if content is None:
+            content = comments[0] if comments else None
+        if commenttree is None:
+            commenttree = [content]
         cmt = self._test_parse(
             parser.get_comment,
             C(s),
             *args,
             value=value,
+            comments=comments,
+            commenttree=commenttree,
             **kw,
             )
         if 'exception' in kw:
             return
+        self.assertEqual(cmt.content, content)
         self.assertIsInstance(cmt, parser.Comment)
         self.assertEqual(cmt.token_type, 'comment')
         self.verify_terminal_types(cmt, 'ptext', 'fws')
@@ -1610,13 +1661,13 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
 
         non_wsp_before_left_paren_is_error = C(
-            'foo(',
-            exception=(errors.HeaderParseError, '.*'),
+            'foo"',
+            exception=(errors.HeaderParseError, r'(?=.*expected)(?=.*foo)'),
             ),
 
         wsp_before_left_paren_is_error = C(
             '  (foo"',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(errors.HeaderParseError, r'(?=.*expected)(?=.* \(foo)'),
             ),
 
         wsp_after_right_paren = C(
@@ -1626,14 +1677,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
 
         multiple_words = C(
-            '(foo bar)  \t',
-            remainder='  \t',
+            '(foo bar)',
             comments=['foo bar'],
             ),
 
         wsp_runs_inside_comment = C(
-            '( foo  bar\t )  \t',
-            remainder='  \t',
+            '( foo  bar\t )',
             comments=[' foo  bar\t '],
             ),
 
@@ -1648,64 +1697,137 @@ class TestParser(TestParserMixin, TestEmailBase):
             comments=['foo) ()bar'],
             ),
 
-        non_printable = C(
-            '(foo\x7Fbar)',
-            defects=[errors.NonPrintableDefect],
-            comments=['foo\x7Fbar'],
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable = C(
+                '(foo{char}bar)',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['foo{char}bar'],
+                ),
             ),
 
         no_right_paren_after_non_ws = C(
             '(foo bar',
             stringified='(foo bar)',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_comment_defect],
             comments=['foo bar'],
             ),
 
         no_right_paren_after_ws = C(
             '(foo bar  ',
             stringified='(foo bar  )',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_comment_defect],
             comments=['foo bar  '],
             ),
 
         nested_comment = C(
             '(foo(bar))',
             comments=['foo(bar)'],
+            commenttree=['foo', ['bar']],
             ),
-            #self.assertEqual(comment[1].content, 'bar')
 
         nested_comment_wsp = C(
             '(foo ( bar ) )',
             comments=['foo ( bar ) '],
+            commenttree=['foo ', [' bar '], ' '],
             ),
-            #self.assertEqual(comment[2].content, ' bar ')
 
         empty_comment = C(
             '()',
             comments=[''],
+            commenttree=[''],
             ),
 
         multiple_nesting = C(
             '(((((foo)))))',
             comments=['((((foo))))'],
+            commenttree=[[[[['foo']]]]],
             ),
-            #for i in range(4, 0, -1):
-            #    self.assertEqual(comment[0].content, '('*(i-1)+'foo'+')'*(i-1))
-            #    comment = comment[0]
-            #self.assertEqual(comment.content, 'foo')
 
         multiple_mesting_missing_two_right_parens = C(
             '(((((foo)))',
             stringified='(((((foo)))))',
-            defects=[errors.InvalidHeaderDefect]*2,
+            defects=[*[end_inside_comment_defect]*2],
             comments=['((((foo))))'],
+            commenttree=[[[[['foo']]]]],
             ),
 
         quoted_paren_in_nested_comment = C(
             r'(foo (b\)))',
-            comments=[r'foo (b\))']
+            comments=[r'foo (b\))'],
+            commenttree=['foo ', ['b)']],
             ),
-            #self.assertEqual(comment[2].content, 'b)')
+
+        any_printable_may_be_escaped = C(
+            f"({''.join(fr'\{c}' for c in RFC_PRINTABLES)})",
+            stringified=
+                f"({RFC_PRINTABLES
+                    .replace('\\', r'\\')
+                    .replace('(', r'\(')
+                    .replace(')', r'\)')
+                    })",
+            comments=[RFC_PRINTABLES],
+            ),
+
+        all_printables = C(
+            f"({RFC_PRINTABLES.
+                replace('\\', r'\\').replace('(', r'\(').replace(')', r'\)')})",
+            comments=[RFC_PRINTABLES],
+            ),
+
+        multiple_nested_comments = C(
+            '(foo (nest 1) (nest 2 (nest 3)))',
+            comments=['foo (nest 1) (nest 2 (nest 3))'],
+            commenttree=['foo ', ['nest 1'], ' ', ['nest 2 ', ['nest 3']]],
+            ),
+
+        nested_empty_comments = C(
+            '( () ( (   ) ) )',
+            comments=[' () ( (   ) ) '],
+            commenttree=[' ', [''], ' ', [' ', ['   '], ' '], ' '],
+            ),
+
+        empty = C(
+            '',
+            exception=(errors.HeaderParseError, '(?i)expected'),
+            ),
+
+        ew_after_comment_no_ws = C(
+            '(foo)=?UTF-8?q?foo?=',
+            stringified='(foo)',
+            comments=['foo'],
+            remainder='=?UTF-8?q?foo?=',
+            ),
+
+        # XXX XXX comments may contain EWs, but the current code is buggy.
+        # These will get decoded after the refactor is done.  We'll add some
+        # some more test then, this is a target sample.
+
+        ws_around_ew = C(
+            '( =?utf-8?q?test?= )',
+            #stringified='( test )',
+            comments=[' =?utf-8?q?test?= '],
+            #comments=[' test '],
+            ),
+
+        ew_in_nested_comment = C(
+            '(foo (=?UTF-8?q?bar?=))',
+            #stringified='(foo (bar))',
+            comments=['foo (=?UTF-8?q?bar?=)'],
+            #comments=['foo (bar)'],
+            commenttree=['foo ', ['=?UTF-8?q?bar?=']],
+            #commenttree=['foo ', ['bar']],
+            ),
+
+        ew_missing_whitespace = C(
+            '(=?UTF-8?q?foo?==?UTF-8?q?bar?=)',
+            #stringified='(foobar)',
+            comments=['=?UTF-8?q?foo?==?UTF-8?q?bar?='],
+            #comments=['foobar'],
+            #defects=[
+            #    missing_whitespace_after_ew_defect,
+            #    missing_whitespace_before_ew_defect,
+            #    ],
+            ),
 
         )
 
