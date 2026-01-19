@@ -4201,6 +4201,20 @@ class FastWaitTestCase(BaseTestCase):
     def test_kqueue_notification_without_immediate_reap(self):
         self.assert_notification_without_immediate_reap("_wait_kqueue")
 
+    @unittest.skipUnless(
+        CAN_USE_PIDFD_OPEN or CAN_USE_KQUEUE,
+        "fast wait mechanism not available"
+    )
+    def test_fast_path_avoid_busy_loop(self):
+        # assert that the busy loop is not called as long as the fast
+        # wait is available
+        with mock.patch('time.sleep') as m:
+            p = subprocess.Popen([sys.executable,
+                                  "-c", "import time; time.sleep(0.3)"])
+            with self.assertRaises(subprocess.TimeoutExpired):
+                p.wait(timeout=0.0001)
+            self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
+        assert not m.called
 
 if __name__ == "__main__":
     unittest.main()
