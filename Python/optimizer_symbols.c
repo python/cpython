@@ -870,7 +870,7 @@ _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool br
     bool lhs_is_const = _Py_uop_sym_is_const(ctx, lhs_ref);
     bool rhs_is_const = _Py_uop_sym_is_const(ctx, rhs_ref);
     if (!lhs_is_const && !rhs_is_const) {
-        return;;
+        return;
     }
 
     bool narrow = false;
