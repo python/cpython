@@ -4112,13 +4112,32 @@ def can_use_pidfd():
         return True
 
 
+def can_use_kevent():
+    if not subprocess._CAN_USE_KQUEUE:
+        return False
+    kq = select.kqueue()
+    try:
+        kev = select.kevent(
+            os.getpid(),
+            filter=select.KQ_FILTER_PROC,
+            flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+            fflags=select.KQ_NOTE_EXIT,
+        )
+        events = kq.control([kev], 1, 0)
+        return True
+    except OSError:
+        return False
+    finally:
+        kq.close()
+
+
 
 class FastWaitTestCase(BaseTestCase):
     """Tests for efficient (pidfd_open() + poll() / kqueue()) process
     waiting in subprocess.Popen.wait().
     """
     CAN_USE_PIDFD_OPEN = can_use_pidfd()
-    CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
+    CAN_USE_KQUEUE = can_use_kevent()
 
     def assert_fast_waitpid_error(self, patch_point):
         # Emulate a case where pidfd_open() (Linux) or kqueue()
@@ -4132,15 +4151,15 @@ class FastWaitTestCase(BaseTestCase):
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         assert m.called
 
-    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="pidfd_open not supported")
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
     def test_wait_pidfd_open_error(self):
         self.assert_fast_waitpid_error("os.pidfd_open")
 
-    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
     def test_wait_kqueue_error(self):
         self.assert_fast_waitpid_error("select.kqueue")
 
-    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
     def test_kqueue_control_error(self):
         # Emulate a case where kqueue.control() fails. Busy-poll wait
         # should be used as fallback.
@@ -4179,11 +4198,11 @@ class FastWaitTestCase(BaseTestCase):
         assert m.called
         self.assertEqual(status, 0)
 
-    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="pidfd_open not supported")
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
     def test_pidfd_open_race(self):
         self.assert_wait_race_condition("os.pidfd_open", os.pidfd_open)
 
-    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
     def test_kqueue_race(self):
         self.assert_wait_race_condition("select.kqueue", select.kqueue)
 
@@ -4209,11 +4228,11 @@ class FastWaitTestCase(BaseTestCase):
         assert m1.called
         assert m2.called
 
-    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="pidfd_open not supported")
+    @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
     def test_pidfd_open_notification_without_immediate_reap(self):
         self.assert_notification_without_immediate_reap("_wait_pidfd")
 
-    @unittest.skipIf(not CAN_USE_KQUEUE, reason="macOS / BSD only")
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
     def test_kqueue_notification_without_immediate_reap(self):
         self.assert_notification_without_immediate_reap("_wait_kqueue")
 
