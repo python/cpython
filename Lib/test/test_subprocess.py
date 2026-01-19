@@ -4095,11 +4095,13 @@ class ContextManagerTests(BaseTestCase):
 
 
 class FastWaitTestCase(BaseTestCase):
+    """Tests for efficient (pidfd_open / kqueue) process waiting in
+    subprocess.Popen.wait().
+    """
 
     def assert_fast_waitpid_error(self, patch_point):
         # Emulate a case where pidfd_open() (Linux) or kqueue()
-        # (BSD/macOS) fails due to too many open files. _busy_wait()
-        # should be used as fallback.
+        # (BSD/macOS) fails. _busy_wait() should be used as fallback.
         exc = OSError(errno.EMFILE, os.strerror(errno.EMFILE))
         with mock.patch(patch_point, side_effect=exc) as m:
             p = subprocess.Popen([sys.executable,
@@ -4110,21 +4112,21 @@ class FastWaitTestCase(BaseTestCase):
         assert m.called
 
     @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
-    def test_wait_pidfd_open_error(self, patch_point="os.pidfd_open"):
+    def test_wait_pidfd_open_error(self):
         self.assert_fast_waitpid_error("os.pidfd_open")
 
     @unittest.skipIf(
         not subprocess._can_use_kqueue(), reason="macOS / BSD only"
     )
-    def test_wait_kqueue_error(self, patch_point="os.pidfd_open"):
+    def test_wait_kqueue_error(self):
         self.assert_fast_waitpid_error("select.kqueue")
 
     @unittest.skipIf(
         not subprocess._can_use_kqueue(), reason="macOS / BSD only"
     )
     def test_kqueue_control_error(self):
-        # Emulate a case where kqueue.control() fails due to too many
-        # open files. _busy_wait() should be used as fallback.
+        # Emulate a case where kqueue.control() fails. _busy_wait()
+        # should be used as fallback.
         p = subprocess.Popen([sys.executable,
                               "-c", "import time; time.sleep(0.3)"])
         kq_mock = mock.Mock()
@@ -4139,11 +4141,10 @@ class FastWaitTestCase(BaseTestCase):
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         assert m.called
 
-
-    def assert_wait_pid_race(self, patch_target, real_func):
+    def assert_wait_race_condition(self, patch_target, real_func):
         # Call pidfd_open() / kqueue(), then terminate the process.
-        # Make sure that the next poll() / kqueue.control() call still
-        # works for a terminated PID.
+        # Make sure that the wait call (poll() / kqueue.control())
+        # still works for a terminated PID.
         p = subprocess.Popen([sys.executable,
                               "-c", "import time; time.sleep(0.3)"])
 
@@ -4160,13 +4161,13 @@ class FastWaitTestCase(BaseTestCase):
 
     @unittest.skipIf(not hasattr(os, "pidfd_open"), reason="LINUX only")
     def test_pidfd_open_race(self):
-        self.assert_wait_pid_race("os.pidfd_open", os.pidfd_open)
+        self.assert_wait_race_condition("os.pidfd_open", os.pidfd_open)
 
     @unittest.skipIf(
         not subprocess._can_use_kqueue(), reason="macOS / BSD only"
     )
     def test_kqueue_race(self):
-        self.assert_wait_pid_race("select.kqueue", select.kqueue)
+        self.assert_wait_race_condition("select.kqueue", select.kqueue)
 
 
 if __name__ == "__main__":
