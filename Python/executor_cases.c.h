@@ -5176,6 +5176,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            if (res_o == NULL) {
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache0 = res;
             _tos_cache1 = PyStackRef_ZERO_BITS;
