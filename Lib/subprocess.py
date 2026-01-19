@@ -2106,7 +2106,7 @@ class Popen:
                 )
                 try:
                     events = kq.control([kev], 1, timeout)  # wait
-                except OSError as err:
+                except OSError:
                     return False
                 if not events:
                     raise TimeoutExpired(self.args, timeout)
