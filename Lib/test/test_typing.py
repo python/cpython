@@ -4501,7 +4501,7 @@ class ProtocolTests(BaseTestCase):
             r"<class .+\.InheritedRCProto\d'> isn't explicitly decorated "
             r"with @runtime_checkable but it is used in issubclass\(\) or "
             r"isinstance\(\). Instance and class checks can only be used with "
-            r"@runtime_checkable protocols. This may stop working in Python 3.20."
+            r"@runtime_checkable protocols. This will raise a TypeError in Python 3.20."
         )
 
         for inherited_runtime_proto in InheritedRCProto1, InheritedRCProto2, InheritedRCProto3:
