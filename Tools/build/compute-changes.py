@@ -50,7 +50,7 @@ SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 ANDROID_DIRS = frozenset({"Android"})
 IOS_DIRS = frozenset({"Apple", "iOS"})
 MACOS_DIRS = frozenset({"Mac"})
-WASI_DIRS = frozenset({Path("Tools", "wasm")})
+WASI_DIRS = frozenset({Path("Platforms", "WASI")})
 
 LIBRARY_FUZZER_PATHS = frozenset({
     # All C/CPP fuzzers.
