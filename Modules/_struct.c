@@ -1759,7 +1759,7 @@ prepare_s(PyStructObject *self)
 }
 
 static int
-actual___init___impl(PyStructObject *self, PyObject *format)
+s_init(PyStructObject *self, PyObject *format)
 {
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
@@ -1808,7 +1808,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->s_len = -1;
     self->init_called = false;
     if (PyTuple_GET_SIZE(args) > 0) {
-        if (actual___init___impl(self, PyTuple_GET_ITEM(args, 0))) {
+        if (s_init(self, PyTuple_GET_ITEM(args, 0))) {
             Py_DECREF(self);
             return NULL;
         }
@@ -1837,7 +1837,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         return -1;
     }
     if (!self->init_called) {
-        if (!self->s_codes && actual___init___impl(self, format)) {
+        if (!self->s_codes && s_init(self, format)) {
             return -1;
         }
         self->init_called = true;
@@ -1850,7 +1850,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
     {
         return -1;
     }
-    return actual___init___impl(self, format);
+    return s_init(self, format);
 }
 
 static int
