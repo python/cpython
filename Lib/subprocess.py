@@ -2153,8 +2153,7 @@ class Popen:
                 return self.returncode
 
             if timeout is not None:
-                if timeout < 0:
-                    raise TimeoutExpired(self.args, timeout)
+                # Try fast wait first (pidfd on Linux, kqueue on BSD/macOS).
                 if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
                     self._blocking_wait()
                 else:
