@@ -1773,8 +1773,8 @@ actual___init___impl(PyStructObject *self, PyObject *format)
         Py_DECREF(format);
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
-                     "not %.200s",
-                     _PyType_Name(Py_TYPE(format)));
+                     "not %T",
+                     format);
         return -1;
     }
     Py_SETREF(self->s_format, format);
