@@ -2135,18 +2135,6 @@ class Popen:
                 delay = min(delay * 2, remaining, .05)
                 time.sleep(delay)
 
-        def _blocking_wait(self):
-            while self.returncode is None:
-                with self._waitpid_lock:
-                    if self.returncode is not None:
-                        break  # Another thread waited.
-                    (pid, sts) = self._try_wait(0)
-                    # Check the pid and loop as waitpid has been known to
-                    # return 0 even without WNOHANG in odd situations.
-                    # http://bugs.python.org/issue14396.
-                    if pid == self.pid:
-                        self._handle_exitstatus(sts)
-
         def _wait(self, timeout):
             """Internal implementation of wait() on POSIX."""
             if self.returncode is not None:
@@ -2155,11 +2143,27 @@ class Popen:
             if timeout is not None:
                 # Try fast wait first (pidfd on Linux, kqueue on BSD/macOS).
                 if self._wait_pidfd(timeout) or self._wait_kqueue(timeout):
-                    self._blocking_wait()
+                    with self._waitpid_lock:
+                        if self.returncode is not None:
+                            return self.returncode
+                        pid, sts = self._try_wait(os.WNOHANG)
+                        if pid == self.pid:
+                            self._handle_exitstatus(sts)
+                            return self.returncode
                 else:
                     self._busy_wait(timeout)
             else:
-                self._blocking_wait()
+                while self.returncode is None:
+                    with self._waitpid_lock:
+                        if self.returncode is not None:
+                            break  # Another thread waited.
+                        (pid, sts) = self._try_wait(0)
+                        # Check the pid and loop as waitpid has been known to
+                        # return 0 even without WNOHANG in odd situations.
+                        # http://bugs.python.org/issue14396.
+                        if pid == self.pid:
+                            self._handle_exitstatus(sts)
+
             return self.returncode
 
 
