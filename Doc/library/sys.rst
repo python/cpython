@@ -1996,8 +1996,25 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    and minor version as the local process. If either the local or remote
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
-   The temporary script file is created with restrictive permissions (typically
-   ``0o600``). The target process must be able to read this file.
+   Note that the remote process must be able to read the temporary script file in terms
+   of permissions. If the caller is running under different user than the process,
+   the caller should grant permissions (typically ``os.fchmod(filename, 0o644)``).
+
+   Callers should adjust permissions before calling, for example::
+
+      import os
+      import tempfile
+      import sys
+
+      with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+          f.write("print('Hello from remote!')")
+          f.flush()
+          os.chmod(f.name, 0o644)  # Readable by group/other
+          sys.remote_exec(pid, f.name)
+      os.unlink(f.name)  # Cleanup
+
+   .. availability:: Unix, Windows.
+   .. versionadded:: 3.14
 
    .. audit-event:: sys.remote_exec pid script_path
 
@@ -2015,21 +2032,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This event is raised in the remote process, not the one
       that called :func:`sys.remote_exec`.
 
-   Callers should adjust permissions before calling, for example::
-
-      import os
-      import tempfile
-      import sys
-
-      with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-          f.write("print('Hello from remote!')")
-          f.flush()
-          os.chmod(f.name, 0o644)  # Readable by group/other
-          sys.remote_exec(pid, f.name)
-      os.unlink(f.name)  # Cleanup
-
-   .. availability:: Unix, Windows.
-   .. versionadded:: 3.14
 
 .. function:: _enablelegacywindowsfsencoding()
 
