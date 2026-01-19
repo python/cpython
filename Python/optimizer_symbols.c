@@ -875,16 +875,22 @@ _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool br
     bool lhs_is_const = _Py_uop_sym_is_const(ctx, lhs_ref);
     bool rhs_is_const = _Py_uop_sym_is_const(ctx, rhs_ref);
 
-    if (pred.kind == JIT_PRED_IS && (lhs_is_const || rhs_is_const)) {
-        JitOptRef subject_ref = lhs_is_const ? rhs_ref : lhs_ref;
-        JitOptRef const_ref = lhs_is_const ? lhs_ref : rhs_ref;
+    switch(pred.kind) {
+        case JIT_PRED_IS: {
+            if (!lhs_is_const && !rhs_is_const) {
+                break;
+            }
+            JitOptRef subject_ref = lhs_is_const ? rhs_ref : lhs_ref;
+            JitOptRef const_ref = lhs_is_const ? lhs_ref : rhs_ref;
 
-        PyObject *const_val = _Py_uop_sym_get_const(ctx, const_ref);
-        if (const_val == NULL) {
-            return;
+            PyObject *const_val = _Py_uop_sym_get_const(ctx, const_ref);
+            if (const_val == NULL) {
+                break;
+            }
+            _Py_uop_sym_set_const(ctx, subject_ref, const_val);
+            assert(_Py_uop_sym_is_const(ctx, subject_ref));
+            break;
         }
-        _Py_uop_sym_set_const(ctx, subject_ref, const_val);
-        assert(_Py_uop_sym_is_const(ctx, subject_ref));
     }
 }
 
