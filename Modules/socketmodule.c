@@ -5017,7 +5017,11 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
 
         bufsize = cmsgs[ncmsgbufs++].data.len;
 
-        if(!get_CMSG_SPACE(bufsize, &space)){
+#ifdef CMSG_SPACE
+        if (!get_CMSG_SPACE(bufsize, &space)) {
+#else
+        if (!get_CMSG_LEN(bufsize, &space)) {
+#endif
             PyErr_SetString(PyExc_OSError, "ancillary data item too large");
             goto finally;
         }
