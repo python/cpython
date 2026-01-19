@@ -297,8 +297,8 @@ clocks to track time.
    are called is undefined.
 
    The optional positional *args* will be passed to the callback when
-   it is called. You can use :func:`functools.partial`
-   :ref:`to pass *keyword* arguments <asyncio-pass-keywords>` to
+   it is called. Use :func:`functools.partial`
+   :ref:`to pass keyword arguments <asyncio-pass-keywords>` to
    *callback*.
 
    An optional keyword-only *context* argument allows specifying a
@@ -1041,7 +1041,7 @@ Watching file descriptors
    Any preexisting callback registered for *fd* is cancelled and replaced by
    *callback*.
 
-   You can use :func:`functools.partial` :ref:`to pass *keyword* arguments
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *callback*.
 
 .. method:: loop.remove_writer(fd)
@@ -1320,7 +1320,7 @@ Unix signals
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
-   You can use :func:`functools.partial` :ref:`to pass *keyword* arguments
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *callback*.
 
    Like :func:`signal.signal`, this function must be invoked in the main
@@ -1409,7 +1409,7 @@ Executing code in thread or process pools
 
    This method returns a :class:`asyncio.Future` object.
 
-   You can use :func:`functools.partial` :ref:`to pass *keyword* arguments
+   Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *func*.
 
    .. versionchanged:: 3.5.3
