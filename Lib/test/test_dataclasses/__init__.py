@@ -3971,6 +3971,13 @@ class TestSlots(unittest.TestCase):
 
             return SlotsTest
 
+        def make_frozen():
+            @dataclass(frozen=True, slots=True)
+            class SlotsTest:
+                pass
+
+            return SlotsTest
+
         def make_with_annotations():
             @dataclass(slots=True)
             class SlotsTest:
@@ -3996,13 +4003,38 @@ class TestSlots(unittest.TestCase):
 
             return SlotsTest
 
-        for make in (make_simple, make_with_annotations, make_with_annotations_and_method, make_with_forwardref):
+        for make in (make_simple, make_frozen, make_with_annotations, make_with_annotations_and_method, make_with_forwardref):
             with self.subTest(make=make):
                 C = make()
                 support.gc_collect()
                 candidates = [cls for cls in object.__subclasses__() if cls.__name__ == 'SlotsTest'
                               and cls.__firstlineno__ == make.__code__.co_firstlineno + 1]
                 self.assertEqual(candidates, [C])
+
+    def test_set_del_attr_reference_new_class(self):
+        @dataclass(frozen=True, slots=True)
+        class SetDelAttrTest:
+            pass
+
+        for method_name in ('__setattr__', '__delattr__'):
+            with self.subTest(method_name=method_name):
+                method = getattr(SetDelAttrTest, method_name)
+                cell_idx = method.__code__.co_freevars.index('__class__')
+                reference = method.__closure__[cell_idx].cell_contents
+                self.assertIs(reference, SetDelAttrTest)
+
+    def test_set_del_attr_do_not_reference_old_class(self):
+        class SetDelAttrTest:
+            pass
+
+        OriginalCls = SetDelAttrTest
+        SetDelAttrTest = dataclass(frozen=True, slots=True)(SetDelAttrTest)
+
+        for method_name in ('__setattr__', '__delattr__'):
+            with self.subTest(method_name=method_name):
+                method = getattr(SetDelAttrTest, method_name)
+                cell_contents = [cell.cell_contents for cell in method.__closure__]
+                self.assertNotIn(OriginalCls, cell_contents)
 
 
 class TestDescriptors(unittest.TestCase):
