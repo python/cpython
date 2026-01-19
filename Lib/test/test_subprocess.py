@@ -164,6 +164,12 @@ class ProcessTestCase(BaseTestCase):
 
     def test_timeout_exception(self):
         try:
+            subprocess.run([sys.executable, '-c', 'import time;time.sleep(9)'], timeout = -1)
+        except subprocess.TimeoutExpired as e:
+            self.assertIn("-1 seconds", str(e))
+        else:
+            self.fail("Expected TimeoutExpired exception not raised")
+        try:
             subprocess.run([sys.executable, '-c', 'import time;time.sleep(9)'], timeout = 0)
         except subprocess.TimeoutExpired as e:
             self.assertIn("0 seconds", str(e))

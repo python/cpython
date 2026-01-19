@@ -2122,6 +2122,8 @@ class Popen:
                 return self.returncode
 
             if timeout is not None:
+                if timeout < 0:
+                    raise TimeoutExpired(self.args, timeout)
                 started = _time()
                 endtime = started + timeout
 
