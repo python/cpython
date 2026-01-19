@@ -882,7 +882,7 @@ _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool br
             narrow = !branch_is_true;
             break;
         default:
-            break;
+            return;
     }
     if (!narrow) {
         return;
