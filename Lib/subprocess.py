@@ -2080,7 +2080,7 @@ class Popen:
             try:
                 poller = select.poll()
                 poller.register(pidfd, select.POLLIN)
-                events = poller.poll(int(timeout * 1000))
+                events = poller.poll(math.ceil(timeout * 1000))
                 if not events:
                     raise TimeoutExpired(self.args, timeout)
                 return True
