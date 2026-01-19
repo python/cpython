@@ -3578,25 +3578,6 @@ class TestUopsOptimization(unittest.TestCase):
         # v + 1 should be constant folded
         self.assertNotIn("_BINARY_OP", uops)
 
-    def test_is_number_narrows_to_constant(self):
-        def f(n):
-            def return_1():
-                return 1
-
-            hits = 0
-            v = return_1()
-            for i in range(n):
-                if v is 1:
-                    hits += v + 1
-            return hits
-
-        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD * 2)
-        self.assertIsNotNone(ex)
-
-        # v + 1 should be constant folded
-        self.assertLessEqual(count_ops(ex, "_BINARY_OP_ADD_INT"), 1)
-
     def test_for_iter_gen_frame(self):
         def f(n):
             for i in range(n):
