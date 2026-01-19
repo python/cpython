@@ -10,7 +10,6 @@ from test.support.import_helper import import_fresh_module
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
-import _datetime
 import gc
 import inspect
 import pickle
@@ -22,6 +21,10 @@ import unittest.mock
 import weakref
 import typing
 import re
+try:
+    import _datetime
+except ModuleNotFoundError:
+    _datetime = None
 
 c_types = import_fresh_module('types', fresh=['_types'])
 py_types = import_fresh_module('types', blocked=['_types'])
@@ -691,6 +694,7 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(exc.__traceback__, types.TracebackType)
         self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
 
+    @unittest.skipUnless(_datetime, "requires _datetime module")
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
