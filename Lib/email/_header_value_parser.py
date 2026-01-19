@@ -96,6 +96,12 @@ EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
 NLSET = {'\n', '\r'}
 SPECIALSNL = SPECIALS | NLSET
 
+def make_parenthesis_pairs(value):
+    """Escape parenthesis and backslash for use within a comment."""
+    return str(value).replace('\\', '\\\\') \
+        .replace('(', '\\(').replace(')', '\\)')
+
+
 def quote_string(value):
     return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
 
@@ -931,7 +937,7 @@ class WhiteSpaceTerminal(Terminal):
         return ' '
 
     def startswith_fws(self):
-        return True
+        return self and self[0] in WSP
 
 
 class ValueTerminal(Terminal):
@@ -2861,6 +2867,22 @@ def _refold_parse_tree(parse_tree, *, policy):
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
             newparts = list(part)
+            if part.token_type == 'bare-quoted-string':
+                # To fold a quoted string we need to create a list of terminal
+                # tokens that will render the leading and trailing quotes
+                # and use quoted pairs in the value as appropriate.
+                newparts = (
+                    [ValueTerminal('"', 'ptext')] +
+                    [ValueTerminal(make_quoted_pairs(p), 'ptext')
+                     for p in newparts] +
+                    [ValueTerminal('"', 'ptext')])
+            if part.token_type == 'comment':
+                newparts = (
+                    [ValueTerminal('(', 'ptext')] +
+                    [ValueTerminal(make_parenthesis_pairs(p), 'ptext')
+                     if p.token_type == 'ptext' else p
+                     for p in newparts] +
+                    [ValueTerminal(')', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)
