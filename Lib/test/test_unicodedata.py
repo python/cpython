@@ -83,15 +83,7 @@ class UnicodeMethodsTest(unittest.TestCase):
         self.assertEqual(result, self.expectedchecksum)
 
 
-class UnicodeFunctionsTest(unittest.TestCase):
-    db = unicodedata
-    old = False
-
-    # Update this if the database changes. Make sure to do a full rebuild
-    # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('83cc43a2fbb779185832b4c049217d80b05bf349'
-                        if quicktest else
-                        '65670ae03a324c5f9e826a4de3e25bae4d73c9b7')
+class BaseUnicodeFunctionsTest:
 
     def test_function_checksum(self):
         db = self.db
@@ -589,6 +581,16 @@ class UnicodeFunctionsTest(unittest.TestCase):
             self.assertEqual(eaw(char), 'A')
             self.assertIs(self.db.name(char, None), None)
 
+class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
+    db = unicodedata
+    old = False
+
+    # Update this if the database changes. Make sure to do a full rebuild
+    # (e.g. 'make distclean && make') to get the correct checksum.
+    expectedchecksum = ('83cc43a2fbb779185832b4c049217d80b05bf349'
+                        if quicktest else
+                        '65670ae03a324c5f9e826a4de3e25bae4d73c9b7')
+
     def test_isxidstart(self):
         self.assertTrue(self.db.isxidstart('S'))
         self.assertTrue(self.db.isxidstart('\u0AD0'))  # GUJARATI OM
@@ -832,17 +834,12 @@ class UnicodeFunctionsTest(unittest.TestCase):
             ['a', '\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
 
 
-class Unicode_3_2_0_FunctionsTest(UnicodeFunctionsTest):
+class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
     expectedchecksum = ('f4526159891a4b766dd48045646547178737ba09'
                         if quicktest else
                         'f217b8688d7bdff31db4207e078a96702f091597')
-
-    test_grapheme_cluster_break = None
-    test_indic_conjunct_break = None
-    test_extended_pictographic = None
-    test_grapheme_break = None
 
 
 class UnicodeMiscTest(unittest.TestCase):
