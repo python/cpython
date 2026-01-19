@@ -3573,41 +3573,6 @@ class SendmsgStreamTests(SendmsgTests):
     # Tests for sendmsg() which require a stream socket and do not
     # involve recvmsg() or recvmsg_into().
 
-    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
-                     "sendmsg not supported")
-    def test_sendmsg_reentrant_ancillary_mutation(self):
-        self._test_sendmsg_reentrant_ancillary_mutation()
-
-    def _test_sendmsg_reentrant_ancillary_mutation(self):
-        import socket
-
-        seq = []
-
-        class Mut:
-            def __init__(self):
-                self.tripped = False
-            def __index__(self):
-                if not self.tripped:
-                    self.tripped = True
-                    seq.clear()
-                return 0
-
-        seq[:] = [
-            (socket.SOL_SOCKET, Mut(), b'x'),
-            (socket.SOL_SOCKET, 0, b'x'),
-        ]
-
-        left, right = socket.socketpair()
-        self.addCleanup(left.close)
-        self.addCleanup(right.close)
-
-        self.assertRaises(
-            (TypeError, OSError),
-            left.sendmsg,
-            [b'x'],
-            seq,
-        )
-
     def testSendmsgExplicitNoneAddr(self):
         # Check that peer address can be specified as None.
         self.assertEqual(self.serv_sock.recv(len(MSG)), MSG)
@@ -7525,6 +7490,32 @@ class FreeThreadingTests(unittest.TestCase):
         with threading_helper.start_threads([t1, t2]):
             pass
 
+
+class SendmsgReentrancyTests(unittest.TestCase):
+
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),
+                         "sendmsg not supported")
+    def test_sendmsg_reentrant_ancillary_mutation(self):
+
+        class Mut:
+            def __index__(self):
+                seq.clear()
+                return 0
+
+        seq = [
+            (socket.SOL_SOCKET, Mut(), b'x'),
+            (socket.SOL_SOCKET, 0, b'x'),
+        ]
+
+        left, right = socket.socketpair()
+        self.addCleanup(left.close)
+        self.addCleanup(right.close)
+        self.assertRaises(
+            (TypeError, OSError),
+            left.sendmsg,
+            [b'x'],
+            seq,
+        )
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()

@@ -4982,8 +4982,8 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
             PyErr_SetString(PyExc_TypeError,
                 "sendmsg() argument 2 must be an iterable");
             goto finally;
-    }
-    ncmsgs = PyTuple_GET_SIZE(cmsg_fast);
+        }
+        ncmsgs = PyTuple_GET_SIZE(cmsg_fast);
     }
 
 #ifndef CMSG_SPACE
@@ -5008,13 +5008,11 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
         item = PyTuple_GET_ITEM(cmsg_fast, ncmsgbufs);
 
         if (!PyArg_Parse(item,
-                        "(iiy*):[sendmsg() ancillary data items]",
-                        &cmsgs[ncmsgbufs].level,
-                        &cmsgs[ncmsgbufs].type,
-                        &cmsgs[ncmsgbufs].data)){
+                       "(iiy*):[sendmsg() ancillary data items]",
+                       &cmsgs[ncmsgbufs].level,
+                       &cmsgs[ncmsgbufs].type,
+                       &cmsgs[ncmsgbufs].data))
             goto finally;
-        }
-
         bufsize = cmsgs[ncmsgbufs++].data.len;
 
 #ifdef CMSG_SPACE
