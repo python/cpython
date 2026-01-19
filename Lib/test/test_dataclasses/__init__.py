@@ -4011,7 +4011,7 @@ class TestSlots(unittest.TestCase):
                               and cls.__firstlineno__ == make.__code__.co_firstlineno + 1]
                 self.assertEqual(candidates, [C])
 
-    def test_set_del_attr_reference_new_class(self):
+    def test_set_del_attr_reference_new_class_via__class__(self):
         @dataclass(frozen=True, slots=True)
         class SetDelAttrTest:
             pass
