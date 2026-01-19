@@ -2,7 +2,7 @@
 event-driven mechanism now waits for process termination, if available:
 
 - Linux ≥= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`
-- macOS and other BSD variants use :func:`select.kqueue` + ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``
+- macOS and other BSD variants use :func:`select.kqueue`
 - Windows keeps using ``WaitForSingleObject`` (unchanged)
 
 If none of these mechanisms are available, the function falls back to the
