@@ -4096,48 +4096,13 @@ class ContextManagerTests(BaseTestCase):
         self.assertTrue(proc.stdin.closed)
 
 
-# ---
-
-def can_use_pidfd():
-    # Availability: Linux >= 5.3
-    if not hasattr(os, "pidfd_open"):
-        return False
-    try:
-        pidfd = os.pidfd_open(os.getpid(), 0)
-    except OSError as err:
-        # blocked by security policy like SECCOMP
-        return False
-    else:
-        os.close(pidfd)
-        return True
-
-
-def can_use_kevent():
-    if not subprocess._CAN_USE_KQUEUE:
-        return False
-    kq = select.kqueue()
-    try:
-        kev = select.kevent(
-            os.getpid(),
-            filter=select.KQ_FILTER_PROC,
-            flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
-            fflags=select.KQ_NOTE_EXIT,
-        )
-        events = kq.control([kev], 1, 0)
-        return True
-    except OSError:
-        return False
-    finally:
-        kq.close()
-
-
 
 class FastWaitTestCase(BaseTestCase):
     """Tests for efficient (pidfd_open() + poll() / kqueue()) process
     waiting in subprocess.Popen.wait().
     """
-    CAN_USE_PIDFD_OPEN = can_use_pidfd()
-    CAN_USE_KQUEUE = can_use_kevent()
+    CAN_USE_PIDFD_OPEN = subprocess._CAN_USE_PIDFD_OPEN
+    CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
 
     def assert_fast_waitpid_error(self, patch_point):
         # Emulate a case where pidfd_open() (Linux) or kqueue()

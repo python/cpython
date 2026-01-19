@@ -748,16 +748,63 @@ def _use_posix_spawn():
     # By default, assume that posix_spawn() does not properly report errors.
     return False
 
-_CAN_USE_KQUEUE = all(
-    hasattr(select, x)
-    for x in (
-        "kqueue",
-        "KQ_EV_ADD",
-        "KQ_EV_ONESHOT",
-        "KQ_FILTER_PROC",
-        "KQ_NOTE_EXIT",
-    )
-)
+
+def _can_use_pidfd_open():
+    # Availability: Linux >= 5.3
+    if not hasattr(os, "pidfd_open"):
+        return False
+    try:
+        pidfd = os.pidfd_open(os.getpid(), 0)
+    except OSError as err:
+        if err.errno in {errno.EMFILE, errno.ENFILE}:
+            # transitory 'too many open files'
+            return True
+        # likely blocked by security policy like SECCOMP (EPERM,
+        # EACCES, ENOSYS)
+        return False
+    else:
+        os.close(pidfd)
+        return True
+
+
+def _can_use_kqueue():
+    # Availability: macOS, BSD
+    if not all(
+        hasattr(select, x)
+        for x in (
+            "kqueue",
+            "KQ_EV_ADD",
+            "KQ_EV_ONESHOT",
+            "KQ_FILTER_PROC",
+            "KQ_NOTE_EXIT",
+        )
+    ):
+        return False
+
+    kq = None
+    try:
+        kq = select.kqueue()
+        kev = select.kevent(
+            os.getpid(),
+            filter=select.KQ_FILTER_PROC,
+            flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+            fflags=select.KQ_NOTE_EXIT,
+        )
+        events = kq.control([kev], 1, 0)
+        return True
+    except OSError as err:
+        if err.errno in {errno.EMFILE, errno.ENFILE}:
+            # transitory 'too many open files'
+            return True
+        return False
+    finally:
+        if kq is not None:
+            kq.close()
+
+
+_CAN_USE_PIDFD_OPEN = _can_use_pidfd_open()
+_CAN_USE_KQUEUE = _can_use_kqueue()
+
 
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
@@ -2061,7 +2108,7 @@ class Popen:
             """Wait for PID to terminate using pidfd_open() + poll().
             Linux >= 5.3 only.
             """
-            if not hasattr(os, "pidfd_open"):
+            if not _CAN_USE_PIDFD_OPEN:
                 return False
             try:
                 pidfd = os.pidfd_open(self.pid, 0)
@@ -2091,7 +2138,7 @@ class Popen:
             try:
                 kq = select.kqueue()
             except OSError:
-                # usually EMFILE / ENFILE (too many open files)
+                # likely EMFILE / ENFILE (too many open files)
                 return False
 
             try:
@@ -2103,7 +2150,7 @@ class Popen:
                 )
                 try:
                     events = kq.control([kev], 1, timeout)  # wait
-                except OSError as err:
+                except OSError as err:  # should never happen
                     return False
                 if not events:
                     raise TimeoutExpired(self.args, timeout)
