@@ -7523,12 +7523,7 @@ class ReentrantMutationTests(unittest.TestCase):
         left, right = socket.socketpair()
         self.addCleanup(left.close)
         self.addCleanup(right.close)
-        # Should not crash. With the fix, the call succeeds;
-        # without the fix, it would crash (SIGSEGV).
-        try:
-            left.sendmsg(seq)
-        except (TypeError, OSError):
-            pass  # Also acceptable
+        left.sendmsg(seq)
 
     @unittest.skipUnless(hasattr(socket.socket, "recvmsg_into"),
                          "recvmsg_into not supported")
@@ -7554,12 +7549,7 @@ class ReentrantMutationTests(unittest.TestCase):
         self.addCleanup(left.close)
         self.addCleanup(right.close)
         left.send(b'Hello World!')
-        # Should not crash. With the fix, the call succeeds;
-        # without the fix, it would crash (SIGSEGV).
-        try:
-            right.recvmsg_into(seq)
-        except (TypeError, OSError):
-            pass  # Also acceptable
+        right.recvmsg_into(seq)
 
 
 def setUpModule():
