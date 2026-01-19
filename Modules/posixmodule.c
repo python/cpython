@@ -1637,7 +1637,7 @@ static int
 fd_and_follow_symlinks_invalid(const char *function_name, int fd,
                                int follow_symlinks)
 {
-    if ((fd > 0) && (!follow_symlinks)) {
+    if ((fd >= 0) && (!follow_symlinks)) {
         PyErr_Format(PyExc_ValueError,
                      "%s: cannot use fd and follow_symlinks together",
                      function_name);
