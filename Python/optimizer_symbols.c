@@ -836,7 +836,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
 }
 
 JitOptRef
-_Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind, bool invert)
+_Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind)
 {
     JitOptSymbol *lhs = PyJitRef_Unwrap(lhs_ref);
     JitOptSymbol *rhs = PyJitRef_Unwrap(rhs_ref);
@@ -847,7 +847,6 @@ _Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_r
     }
 
     res->tag = JIT_SYM_PREDICATE_TAG;
-    res->predicate.invert = invert;
     res->predicate.kind = kind;
     res->predicate.lhs = (uint16_t)(lhs - allocation_base(ctx));
     res->predicate.rhs = (uint16_t)(rhs - allocation_base(ctx));
@@ -864,34 +863,40 @@ _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool br
     }
 
     JitOptPredicate pred = sym->predicate;
-    bool narrow = (branch_is_true && !pred.invert) || (!branch_is_true && pred.invert);
-    if (!narrow) {
-        return;
-    }
 
     JitOptRef lhs_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.lhs);
     JitOptRef rhs_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.rhs);
 
     bool lhs_is_const = _Py_uop_sym_is_const(ctx, lhs_ref);
     bool rhs_is_const = _Py_uop_sym_is_const(ctx, rhs_ref);
-
-    switch(pred.kind) {
-        case JIT_PRED_IS: {
-            if (!lhs_is_const && !rhs_is_const) {
-                break;
-            }
-            JitOptRef subject_ref = lhs_is_const ? rhs_ref : lhs_ref;
-            JitOptRef const_ref = lhs_is_const ? lhs_ref : rhs_ref;
-
-            PyObject *const_val = _Py_uop_sym_get_const(ctx, const_ref);
-            if (const_val == NULL) {
-                break;
-            }
-            _Py_uop_sym_set_const(ctx, subject_ref, const_val);
-            assert(_Py_uop_sym_is_const(ctx, subject_ref));
-            break;
-        }
+    if (!lhs_is_const && !rhs_is_const) {
+        return;;
     }
+
+    bool narrow = false;
+    switch(pred.kind) {
+        case JIT_PRED_IS: 
+            narrow = branch_is_true;
+            break;
+        case JIT_PRED_IS_NOT:
+            narrow = !branch_is_true;
+            break;
+        default:
+            break;
+    }
+    if (!narrow) {
+        return;
+    }
+
+    JitOptRef subject_ref = lhs_is_const ? rhs_ref : lhs_ref;
+    JitOptRef const_ref = lhs_is_const ? lhs_ref : rhs_ref;
+
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, const_ref);
+    if (const_val == NULL) {
+        return;
+    }
+    _Py_uop_sym_set_const(ctx, subject_ref, const_val);
+    assert(_Py_uop_sym_is_const(ctx, subject_ref));
 }
 
 JitOptRef
@@ -1236,7 +1241,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_true)) {
         goto fail;
     }
-    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS, false);
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS);
     if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
@@ -1249,7 +1254,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (PyJitRef_IsNull(subject)) {
         goto fail;
     }
-    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS, false);
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS);
     if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
@@ -1261,7 +1266,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (PyJitRef_IsNull(subject)) {
         goto fail;
     }
-    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS, true);
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS_NOT);
     if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
@@ -1274,7 +1279,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (PyJitRef_IsNull(subject)) {
         goto fail;
     }
-    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS, true);
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS_NOT);
     if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
@@ -1287,7 +1292,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_none)) {
         goto fail;
     }
-    ref = _Py_uop_sym_new_predicate(ctx, subject, const_none, JIT_PRED_IS, false);
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_none, JIT_PRED_IS);
     if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
@@ -1302,7 +1307,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_one)) {
         goto fail;
     }
-    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_IS, false);
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_IS);
     if (PyJitRef_IsNull(ref)) {
         goto fail;
     }

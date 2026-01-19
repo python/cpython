@@ -535,7 +535,7 @@ dummy_func(void) {
     }
 
     op(_IS_OP, (left, right -- b, l, r)) {
-        b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, oparg != 0);
+        b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
         l = left;
         r = right;
     }

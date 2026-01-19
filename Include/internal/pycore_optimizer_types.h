@@ -75,12 +75,12 @@ typedef struct {
 
 typedef enum {
     JIT_PRED_IS,
+    JIT_PRED_IS_NOT,
 } JitOptPredicateKind;
 
 typedef struct {
     uint8_t tag;
     uint8_t kind;
-    bool invert;
     uint16_t lhs;
     uint16_t rhs;
 } JitOptPredicate;

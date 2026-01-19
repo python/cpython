@@ -2293,7 +2293,7 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            b = sym_new_predicate(ctx, left, right, JIT_PRED_IS, oparg != 0);
+            b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
