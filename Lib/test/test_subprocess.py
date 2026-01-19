@@ -4116,13 +4116,13 @@ class FastWaitTestCase(BaseTestCase):
         self.assert_fast_waitpid_error("os.pidfd_open")
 
     @unittest.skipIf(
-        not subprocess._can_use_kqueue(), reason="macOS / BSD only"
+        not subprocess._CAN_USE_KQUEUE, reason="macOS / BSD only"
     )
     def test_wait_kqueue_error(self):
         self.assert_fast_waitpid_error("select.kqueue")
 
     @unittest.skipIf(
-        not subprocess._can_use_kqueue(), reason="macOS / BSD only"
+        not subprocess._CAN_USE_KQUEUE, reason="macOS / BSD only"
     )
     def test_kqueue_control_error(self):
         # Emulate a case where kqueue.control() fails. _busy_wait()
@@ -4167,7 +4167,7 @@ class FastWaitTestCase(BaseTestCase):
         self.assert_wait_race_condition("os.pidfd_open", os.pidfd_open)
 
     @unittest.skipIf(
-        not subprocess._can_use_kqueue(), reason="macOS / BSD only"
+        not subprocess._CAN_USE_KQUEUE, reason="macOS / BSD only"
     )
     def test_kqueue_race(self):
         self.assert_wait_race_condition("select.kqueue", select.kqueue)

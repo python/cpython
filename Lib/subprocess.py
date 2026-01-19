@@ -749,18 +749,16 @@ def _use_posix_spawn():
     # By default, assume that posix_spawn() does not properly report errors.
     return False
 
-
-@functools.lru_cache
-def _can_use_kqueue():
-    names = (
+_CAN_USE_KQUEUE = all(
+    hasattr(select, x)
+    for x in (
         "kqueue",
         "KQ_EV_ADD",
         "KQ_EV_ONESHOT",
         "KQ_FILTER_PROC",
         "KQ_NOTE_EXIT",
     )
-    return all(hasattr(select, x) for x in names)
-
+)
 
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
@@ -2090,7 +2088,7 @@ class Popen:
 
         def _wait_kqueue(self, timeout):
             """Wait for PID to terminate using kqueue(). macOS and BSD only."""
-            if not _can_use_kqueue():
+            if not _CAN_USE_KQUEUE:
                 return False
             try:
                 kq = select.kqueue()
