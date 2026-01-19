@@ -67,6 +67,9 @@ outputs:
       - if: c_compiler == "gcc" and "san" in variant
         then:
           - libsanitizer
+      - if: c_compiler == "clang" and "san" in variant
+        then:
+          - libcompiler-rt
 
     ignore_run_exports:
       from_package:
