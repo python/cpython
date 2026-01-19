@@ -875,7 +875,7 @@ _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool br
 
     bool narrow = false;
     switch(pred.kind) {
-        case JIT_PRED_IS: 
+        case JIT_PRED_IS:
             narrow = branch_is_true;
             break;
         case JIT_PRED_IS_NOT:
