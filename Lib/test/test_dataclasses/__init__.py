@@ -3076,6 +3076,20 @@ class TestFrozen(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             del c.i
 
+    def test_frozen_slotted(self):
+        # See https://github.com/python/cpython/pull/144021
+        @dataclass(frozen=True, slots=True)
+        class C:
+            pass
+
+        c = C()
+        # Mutating not defined fields must raise FrozenInstanceError.
+        with self.assertRaises(FrozenInstanceError):
+            c.any_field = 5
+
+        with self.assertRaises(FrozenInstanceError):
+            del c.any_field
+
     def test_inherit(self):
         @dataclass(frozen=True)
         class C:
