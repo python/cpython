@@ -112,27 +112,6 @@ typedef struct ty_arena {
     JitOptSymbol arena[TY_ARENA_SIZE];
 } ty_arena;
 
-typedef struct _JitOptContext {
-    char done;
-    char out_of_space;
-    bool contradiction;
-    // Has the builtins dict been watched?
-    bool builtins_watched;
-    // The current "executing" frame.
-    _Py_UOpsAbstractFrame *frame;
-    _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
-    int curr_frame_depth;
-
-    // Arena for the symbolic types.
-    ty_arena t_arena;
-
-    JitOptRef *n_consumed;
-    JitOptRef *limit;
-    JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
-    _PyUOpInstruction *out_buffer;
-    int out_len;
-} JitOptContext;
-
 
 #ifdef __cplusplus
 }

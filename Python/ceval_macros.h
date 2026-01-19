@@ -433,7 +433,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state->prev_state.code_curr_size == 2); \
+        assert(uop_buffer_length(&((_PyThreadStateImpl *)tstate)->jit_tracer_state->code_buffer)); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \

@@ -192,7 +192,6 @@ dummy_func(void) {
                     _Py_BloomFilter_Add(dependencies, type);
                 }
             }
-
         }
     }
 
@@ -796,7 +795,7 @@ dummy_func(void) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
             assert(PyFunction_Check(sym_get_const(ctx, callable)));
             ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-            ctx->out_buffer[ctx->out_len - 1].operand1 = (uintptr_t)sym_get_const(ctx, callable);
+            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)sym_get_const(ctx, callable);
         }
         sym_set_type(callable, &PyFunction_Type);
     }
@@ -806,7 +805,7 @@ dummy_func(void) {
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
             assert(PyMethod_Check(method));
             ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-            ctx->out_buffer[ctx->out_len - 1].operand1 = (uintptr_t)method->im_func;
+            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)method->im_func;
         }
         sym_set_type(callable, &PyMethod_Type);
     }
@@ -1546,7 +1545,7 @@ dummy_func(void) {
                     ctx->frame->globals_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != version && this_instr[-1].opcode == _NOP) {
-                    REPLACE_OP(&ctx->out_buffer[ctx->out_len - 1], _GUARD_GLOBALS_VERSION, 0, version);
+                    REPLACE_OP(uop_buffer_last(&ctx->out_buffer), _GUARD_GLOBALS_VERSION, 0, version);
                     ctx->frame->globals_checked_version = version;
                 }
                 if (ctx->frame->globals_checked_version == version) {
