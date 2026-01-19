@@ -6,60 +6,121 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val PYTHON_DIR = file("../../..").canonicalPath
-val PYTHON_CROSS_DIR = "$PYTHON_DIR/cross-build"
+val ANDROID_DIR = file("../..")
+val PYTHON_DIR = ANDROID_DIR.parentFile!!
+val PYTHON_CROSS_DIR = file("$PYTHON_DIR/cross-build")
+val inSourceTree = (
+    ANDROID_DIR.name == "Android" && file("$PYTHON_DIR/pyconfig.h.in").exists()
+)
 
-val ABIS = mapOf(
-    "arm64-v8a" to "aarch64-linux-android",
-    "x86_64" to "x86_64-linux-android",
-).filter { file("$PYTHON_CROSS_DIR/${it.value}").exists() }
-if (ABIS.isEmpty()) {
+val KNOWN_ABIS = mapOf(
+    "aarch64-linux-android" to "arm64-v8a",
+    "x86_64-linux-android" to "x86_64",
+)
+
+// Discover prefixes.
+val prefixes = ArrayList<File>()
+if (inSourceTree) {
+    for ((triplet, _) in KNOWN_ABIS.entries) {
+        val prefix = file("$PYTHON_CROSS_DIR/$triplet/prefix")
+        if (prefix.exists()) {
+            prefixes.add(prefix)
+        }
+    }
+} else {
+    // Testbed is inside a release package.
+    val prefix = file("$ANDROID_DIR/prefix")
+    if (prefix.exists()) {
+        prefixes.add(prefix)
+    }
+}
+if (prefixes.isEmpty()) {
     throw GradleException(
-        "No Android ABIs found in $PYTHON_CROSS_DIR: see Android/README.md " +
-        "for building instructions."
+        "No Android prefixes found: see README.md for testing instructions"
     )
 }
 
-val PYTHON_VERSION = file("$PYTHON_DIR/Include/patchlevel.h").useLines {
-    for (line in it) {
-        val match = """#define PY_VERSION\s+"(\d+\.\d+)""".toRegex().find(line)
-        if (match != null) {
-            return@useLines match.groupValues[1]
+// Detect Python versions and ABIs.
+lateinit var pythonVersion: String
+var abis = HashMap<File, String>()
+for ((i, prefix) in prefixes.withIndex()) {
+    val libDir = file("$prefix/lib")
+    val version = run {
+        for (filename in libDir.list()!!) {
+            """python(\d+\.\d+[a-z]*)""".toRegex().matchEntire(filename)?.let {
+                return@run it.groupValues[1]
+            }
         }
+        throw GradleException("Failed to find Python version in $libDir")
     }
-    throw GradleException("Failed to find Python version")
-}
+    if (i == 0) {
+        pythonVersion = version
+    } else if (pythonVersion != version) {
+        throw GradleException(
+            "${prefixes[0]} is Python $pythonVersion, but $prefix is Python $version"
+        )
+    }
 
-android.ndkVersion = file("../../android-env.sh").useLines {
-    for (line in it) {
-        val match = """ndk_version=(\S+)""".toRegex().find(line)
-        if (match != null) {
-            return@useLines match.groupValues[1]
+    val libPythonDir = file("$libDir/python$pythonVersion")
+    val triplet = run {
+        for (filename in libPythonDir.list()!!) {
+            """_sysconfigdata_[a-z]*_android_(.+).py""".toRegex()
+                .matchEntire(filename)?.let {
+                    return@run it.groupValues[1]
+                }
         }
+        throw GradleException("Failed to find Python triplet in $libPythonDir")
     }
-    throw GradleException("Failed to find NDK version")
+    abis[prefix] = KNOWN_ABIS[triplet]!!
 }
 
 
 android {
+    val androidEnvFile = file("../../android-env.sh").absoluteFile
+
     namespace = "org.python.testbed"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "org.python.testbed"
-        minSdk = 21
-        targetSdk = 34
+
+        minSdk = androidEnvFile.useLines {
+            for (line in it) {
+                """ANDROID_API_LEVEL:=(\d+)""".toRegex().find(line)?.let {
+                    return@useLines it.groupValues[1].toInt()
+                }
+            }
+            throw GradleException("Failed to find API level in $androidEnvFile")
+        }
+        targetSdk = 35
+
         versionCode = 1
         versionName = "1.0"
 
-        ndk.abiFilters.addAll(ABIS.keys)
+        ndk.abiFilters.addAll(abis.values)
         externalNativeBuild.cmake.arguments(
-            "-DPYTHON_CROSS_DIR=$PYTHON_CROSS_DIR",
-            "-DPYTHON_VERSION=$PYTHON_VERSION")
+            "-DPYTHON_PREFIX_DIR=" + if (inSourceTree) {
+                // AGP uses the ${} syntax for its own purposes, so use a Jinja style
+                // placeholder.
+                "$PYTHON_CROSS_DIR/{{triplet}}/prefix"
+            } else {
+                prefixes[0]
+            },
+            "-DPYTHON_VERSION=$pythonVersion",
+            "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    ndkVersion = androidEnvFile.useLines {
+        for (line in it) {
+            """ndk_version=(\S+)""".toRegex().find(line)?.let {
+                return@useLines it.groupValues[1]
+            }
+        }
+        throw GradleException("Failed to find NDK version in $androidEnvFile")
+    }
     externalNativeBuild.cmake {
         path("src/main/c/CMakeLists.txt")
     }
@@ -122,40 +183,59 @@ dependencies {
 // Create some custom tasks to copy Python and its standard library from
 // elsewhere in the repository.
 androidComponents.onVariants { variant ->
-    val pyPlusVer = "python$PYTHON_VERSION"
+    val pyPlusVer = "python$pythonVersion"
     generateTask(variant, variant.sources.assets!!) {
         into("python") {
+            // Include files such as pyconfig.h are used by some of the tests.
             into("include/$pyPlusVer") {
-                for (triplet in ABIS.values) {
-                    from("$PYTHON_CROSS_DIR/$triplet/prefix/include/$pyPlusVer")
+                for (prefix in prefixes) {
+                    from("$prefix/include/$pyPlusVer")
                 }
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             }
 
             into("lib/$pyPlusVer") {
-                // To aid debugging, the source directory takes priority.
-                from("$PYTHON_DIR/Lib")
-
-                // The cross-build directory provides ABI-specific files such as
-                // sysconfigdata.
-                for (triplet in ABIS.values) {
-                    from("$PYTHON_CROSS_DIR/$triplet/prefix/lib/$pyPlusVer")
+                // To aid debugging, the source directory takes priority when
+                // running inside a CPython source tree.
+                if (inSourceTree) {
+                    from("$PYTHON_DIR/Lib")
+                }
+                for (prefix in prefixes) {
+                    from("$prefix/lib/$pyPlusVer")
                 }
 
                 into("site-packages") {
                     from("$projectDir/src/main/python")
+
+                    val sitePackages = findProperty("python.sitePackages") as String?
+                    if (!sitePackages.isNullOrEmpty()) {
+                        if (!file(sitePackages).exists()) {
+                            throw GradleException("$sitePackages does not exist")
+                        }
+                        from(sitePackages)
+                    }
                 }
 
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 exclude("**/__pycache__")
             }
+
+            into("cwd") {
+                val cwd = findProperty("python.cwd") as String?
+                if (!cwd.isNullOrEmpty()) {
+                    if (!file(cwd).exists()) {
+                        throw GradleException("$cwd does not exist")
+                    }
+                    from(cwd)
+                }
+            }
         }
     }
 
     generateTask(variant, variant.sources.jniLibs!!) {
-        for ((abi, triplet) in ABIS.entries) {
+        for ((prefix, abi) in abis.entries) {
             into(abi) {
-                from("$PYTHON_CROSS_DIR/$triplet/prefix/lib")
+                from("$prefix/lib")
                 include("libpython*.*.so")
                 include("lib*_python.so")
             }

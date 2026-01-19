@@ -105,7 +105,6 @@ RUNNING = 3
 DONE = 4
 EVENTDRIVEN = 5
 
-menufont = ("Arial", 12, NORMAL)
 btnfont = ("Arial", 12, 'bold')
 txtfont = ['Lucida Console', 10, 'normal']
 
@@ -297,23 +296,21 @@ class DemoWindow(object):
         for entry in getExampleEntries():
             def load(entry=entry):
                 self.loadfile(entry)
-            menu.add_command(label=entry, underline=0,
-                             font=menufont, command=load)
+            menu.add_command(label=entry, underline=0, command=load)
         return menu
 
     def makeFontMenu(self, master):
         menu = Menu(master, tearoff=0)
-        menu.add_command(label="Decrease (C-'-')", command=self.decrease_size,
-                         font=menufont)
-        menu.add_command(label="Increase (C-'+')", command=self.increase_size,
-                         font=menufont)
+        menu.add_command(label="Decrease", command=self.decrease_size,
+                         accelerator=f"{'Command' if darwin else 'Ctrl'}+-")
+        menu.add_command(label="Increase", command=self.increase_size,
+                         accelerator=f"{'Command' if darwin else 'Ctrl'}+=")
         menu.add_separator()
 
         for size in font_sizes:
             def resize(size=size):
                 self.set_txtsize(size)
-            menu.add_command(label=str(size), underline=0,
-                             font=menufont, command=resize)
+            menu.add_command(label=str(size), underline=0, command=resize)
         return menu
 
     def makeHelpMenu(self, master):
@@ -322,7 +319,7 @@ class DemoWindow(object):
         for help_label, help_file in help_entries:
             def show(help_label=help_label, help_file=help_file):
                 view_text(self.root, help_label, help_file)
-            menu.add_command(label=help_label, font=menufont, command=show)
+            menu.add_command(label=help_label, command=show)
         return menu
 
     def refreshCanvas(self):

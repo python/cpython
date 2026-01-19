@@ -16,7 +16,7 @@ idlelib.testing = True
 
 # Unittest.main and test.libregrtest.runtest.runtest_inner
 # call load_tests, when present here, to discover tests to run.
-from idlelib.idle_test import load_tests
+from idlelib.idle_test import load_tests  # noqa: F401
 
 if __name__ == '__main__':
     tk.NoDefaultRoot()

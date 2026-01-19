@@ -1,2 +1,0 @@
-Rename build variable ``MODULE_LDFLAGS`` back to ``LIBPYTHON``, as it's used by
-package build systems (e.g. Meson).

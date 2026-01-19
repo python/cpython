@@ -13,39 +13,7 @@ extern "C" {
 #include "pycore_global_strings.h"  // _Py_DECLARE_STR()
 #include "pycore_pyarena.h"         // PyArena
 
-
-#ifdef Py_DEBUG
-#define _PYPEGEN_NSTATISTICS 2000
-#endif
-
-struct _parser_runtime_state {
-#ifdef Py_DEBUG
-    long memo_statistics[_PYPEGEN_NSTATISTICS];
-#ifdef Py_GIL_DISABLED
-    PyMutex mutex;
-#endif
-#else
-    int _not_used;
-#endif
-    struct _expr dummy_name;
-};
-
 _Py_DECLARE_STR(empty, "")
-#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
-#define _parser_runtime_state_INIT \
-    { \
-        .mutex = {0}, \
-        .dummy_name = { \
-            .kind = Name_kind, \
-            .v.Name.id = &_Py_STR(empty), \
-            .v.Name.ctx = Load, \
-            .lineno = 1, \
-            .col_offset = 0, \
-            .end_lineno = 1, \
-            .end_col_offset = 0, \
-        }, \
-    }
-#else
 #define _parser_runtime_state_INIT \
     { \
         .dummy_name = { \
@@ -58,14 +26,14 @@ _Py_DECLARE_STR(empty, "")
             .end_col_offset = 0, \
         }, \
     }
-#endif
 
 extern struct _mod* _PyParser_ASTFromString(
     const char *str,
     PyObject* filename,
     int mode,
     PyCompilerFlags *flags,
-    PyArena *arena);
+    PyArena *arena,
+    PyObject *module);
 
 extern struct _mod* _PyParser_ASTFromFile(
     FILE *fp,

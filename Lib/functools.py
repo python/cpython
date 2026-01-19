@@ -6,23 +6,21 @@
 # Written by Nick Coghlan <ncoghlan at gmail.com>,
 # Raymond Hettinger <python at rcn.com>,
 # and Łukasz Langa <lukasz at langa.pl>.
-#   Copyright (C) 2006-2013 Python Software Foundation.
+#   Copyright (C) 2006 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
-           'cached_property']
+           'cached_property', 'Placeholder']
 
 from abc import get_cache_token
 from collections import namedtuple
-# import types, weakref  # Deferred to single_dispatch()
+# import weakref  # Deferred to single_dispatch()
+from operator import itemgetter
 from reprlib import recursive_repr
-from types import MethodType
+from types import GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
-
-# Avoid importing types, so we can speedup import time
-GenericAlias = type(list[int])
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -238,14 +236,16 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial], /) -> value
+    reduce(function, iterable, /[, initial]) -> value
 
-    Apply a function of two arguments cumulatively to the items of a sequence
-    or iterable, from left to right, so as to reduce the iterable to a single
-    value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
-    ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
-    of the iterable in the calculation, and serves as a default when the
-    iterable is empty.
+    Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
+
+    This effectively reduces the iterable to a single value.  If initial is present,
+    it is placed before the items of the iterable in the calculation, and serves as
+    a default when the iterable is empty.
+
+    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
+    calculates ((((1 + 2) + 3) + 4) + 5).
     """
 
     it = iter(sequence)
@@ -264,15 +264,106 @@ def reduce(function, sequence, initial=_initial_missing):
 
     return value
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
-
 
 ################################################################################
 ### partial() argument application
 ################################################################################
+
+
+class _PlaceholderType:
+    """The type of the Placeholder singleton.
+
+    Used as a placeholder for partial arguments.
+    """
+    __instance = None
+    __slots__ = ()
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
+
+    def __new__(cls):
+        if cls.__instance is None:
+            cls.__instance = object.__new__(cls)
+        return cls.__instance
+
+    def __repr__(self):
+        return 'Placeholder'
+
+    def __reduce__(self):
+        return 'Placeholder'
+
+Placeholder = _PlaceholderType()
+
+def _partial_prepare_merger(args):
+    if not args:
+        return 0, None
+    nargs = len(args)
+    order = []
+    j = nargs
+    for i, a in enumerate(args):
+        if a is Placeholder:
+            order.append(j)
+            j += 1
+        else:
+            order.append(i)
+    phcount = j - nargs
+    merger = itemgetter(*order) if phcount else None
+    return phcount, merger
+
+def _partial_new(cls, func, /, *args, **keywords):
+    if issubclass(cls, partial):
+        base_cls = partial
+        if not callable(func):
+            raise TypeError("the first argument must be callable")
+    else:
+        base_cls = partialmethod
+        # func could be a descriptor like classmethod which isn't callable
+        if not callable(func) and not hasattr(func, "__get__"):
+            raise TypeError(f"the first argument {func!r} must be a callable "
+                            "or a descriptor")
+    if args and args[-1] is Placeholder:
+        raise TypeError("trailing Placeholders are not allowed")
+    for value in keywords.values():
+        if value is Placeholder:
+            raise TypeError("Placeholder cannot be passed as a keyword argument")
+    if isinstance(func, base_cls):
+        pto_phcount = func._phcount
+        tot_args = func.args
+        if args:
+            tot_args += args
+            if pto_phcount:
+                # merge args with args of `func` which is `partial`
+                nargs = len(args)
+                if nargs < pto_phcount:
+                    tot_args += (Placeholder,) * (pto_phcount - nargs)
+                tot_args = func._merger(tot_args)
+                if nargs > pto_phcount:
+                    tot_args += args[pto_phcount:]
+            phcount, merger = _partial_prepare_merger(tot_args)
+        else:   # works for both pto_phcount == 0 and != 0
+            phcount, merger = pto_phcount, func._merger
+        keywords = {**func.keywords, **keywords}
+        func = func.func
+    else:
+        tot_args = args
+        phcount, merger = _partial_prepare_merger(tot_args)
+
+    self = object.__new__(cls)
+    self.func = func
+    self.args = tot_args
+    self.keywords = keywords
+    self._phcount = phcount
+    self._merger = merger
+    return self
+
+def _partial_repr(self):
+    cls = type(self)
+    module = cls.__module__
+    qualname = cls.__qualname__
+    args = [repr(self.func)]
+    args.extend(map(repr, self.args))
+    args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+    return f"{module}.{qualname}({', '.join(args)})"
 
 # Purely functional, no descriptor behaviour
 class partial:
@@ -280,37 +371,26 @@ class partial:
     and keywords.
     """
 
-    __slots__ = "func", "args", "keywords", "__dict__", "__weakref__"
+    __slots__ = ("func", "args", "keywords", "_phcount", "_merger",
+                 "__dict__", "__weakref__")
 
-    def __new__(cls, func, /, *args, **keywords):
-        if not callable(func):
-            raise TypeError("the first argument must be callable")
-
-        if isinstance(func, partial):
-            args = func.args + args
-            keywords = {**func.keywords, **keywords}
-            func = func.func
-
-        self = super(partial, cls).__new__(cls)
-
-        self.func = func
-        self.args = args
-        self.keywords = keywords
-        return self
+    __new__ = _partial_new
+    __repr__ = recursive_repr()(_partial_repr)
 
     def __call__(self, /, *args, **keywords):
+        phcount = self._phcount
+        if phcount:
+            try:
+                pto_args = self._merger(self.args + args)
+                args = args[phcount:]
+            except IndexError:
+                raise TypeError("missing positional arguments "
+                                "in 'partial' call; expected "
+                                f"at least {phcount}, got {len(args)}")
+        else:
+            pto_args = self.args
         keywords = {**self.keywords, **keywords}
-        return self.func(*self.args, *args, **keywords)
-
-    @recursive_repr()
-    def __repr__(self):
-        cls = type(self)
-        qualname = cls.__qualname__
-        module = cls.__module__
-        args = [repr(self.func)]
-        args.extend(repr(x) for x in self.args)
-        args.extend(f"{k}={v!r}" for (k, v) in self.keywords.items())
-        return f"{module}.{qualname}({', '.join(args)})"
+        return self.func(*pto_args, *args, **keywords)
 
     def __get__(self, obj, objtype=None):
         if obj is None:
@@ -332,6 +412,10 @@ class partial:
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
+        phcount, merger = _partial_prepare_merger(args)
+
         args = tuple(args) # just in case it's a subclass
         if kwds is None:
             kwds = {}
@@ -344,53 +428,43 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = kwds
+        self._phcount = phcount
+        self._merger = merger
+
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 try:
-    from _functools import partial
+    from _functools import partial, Placeholder, _PlaceholderType
 except ImportError:
     pass
 
 # Descriptor version
-class partialmethod(object):
+class partialmethod:
     """Method descriptor with partial application of the given arguments
     and keywords.
 
     Supports wrapping existing descriptors and handles non-descriptor
     callables as instance methods.
     """
-
-    def __init__(self, func, /, *args, **keywords):
-        if not callable(func) and not hasattr(func, "__get__"):
-            raise TypeError("{!r} is not callable or a descriptor"
-                                 .format(func))
-
-        # func could be a descriptor like classmethod which isn't callable,
-        # so we can't inherit from partial (it verifies func is callable)
-        if isinstance(func, partialmethod):
-            # flattening is mandatory in order to place cls/self before all
-            # other arguments
-            # it's also more efficient since only one function will be called
-            self.func = func.func
-            self.args = func.args + args
-            self.keywords = {**func.keywords, **keywords}
-        else:
-            self.func = func
-            self.args = args
-            self.keywords = keywords
-
-    def __repr__(self):
-        cls = type(self)
-        module = cls.__module__
-        qualname = cls.__qualname__
-        args = [repr(self.func)]
-        args.extend(map(repr, self.args))
-        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
-        return f"{module}.{qualname}({', '.join(args)})"
+    __new__ = _partial_new
+    __repr__ = _partial_repr
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
+            phcount = self._phcount
+            if phcount:
+                try:
+                    pto_args = self._merger(self.args + args)
+                    args = args[phcount:]
+                except IndexError:
+                    raise TypeError("missing positional arguments "
+                                    "in 'partialmethod' call; expected "
+                                    f"at least {phcount}, got {len(args)}")
+            else:
+                pto_args = self.args
             keywords = {**self.keywords, **keywords}
-            return self.func(cls_or_self, *self.args, *args, **keywords)
+            return self.func(cls_or_self, *pto_args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.__partialmethod__ = self
         return _method
@@ -443,23 +517,7 @@ def _unwrap_partialmethod(func):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
-
-class _HashedSeq(list):
-    """ This class guarantees that hash() will be called no more than once
-        per element.  This is important because the lru_cache() will hash
-        the key multiple times on a cache miss.
-
-    """
-
-    __slots__ = 'hashvalue'
-
-    def __init__(self, tup, hash=hash):
-        self[:] = tup
-        self.hashvalue = hash(tup)
-
-    def __hash__(self):
-        return self.hashvalue
+_CacheInfo = namedtuple("CacheInfo", ("hits", "misses", "maxsize", "currsize"))
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
@@ -481,16 +539,18 @@ def _make_key(args, kwds, typed,
     # distinct call from f(y=2, x=1) which will be cached separately.
     key = args
     if kwds:
+        key = list(key)
         key += kwd_mark
         for item in kwds.items():
             key += item
+        key = tuple(key)
     if typed:
-        key += tuple(type(v) for v in args)
+        key += tuple([type(v) for v in args])
         if kwds:
-            key += tuple(type(v) for v in kwds.values())
+            key += tuple([type(v) for v in kwds.values()])
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
-    return _HashedSeq(key)
+    return key
 
 def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.
@@ -522,12 +582,14 @@ def lru_cache(maxsize=128, typed=False):
         # Negative maxsize is treated as 0
         if maxsize < 0:
             maxsize = 0
+
     elif callable(maxsize) and isinstance(typed, bool):
         # The user_function was passed in directly via the maxsize argument
         user_function, maxsize = maxsize, 128
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
+
     elif maxsize is not None:
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
@@ -559,6 +621,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
         def wrapper(*args, **kwds):
             # No caching -- just a statistics update
             nonlocal misses
+
             misses += 1
             result = user_function(*args, **kwds)
             return result
@@ -568,6 +631,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
         def wrapper(*args, **kwds):
             # Simple caching without ordering or size limit
             nonlocal hits, misses
+
             key = make_key(args, kwds, typed)
             result = cache_get(key, sentinel)
             if result is not sentinel:
@@ -583,7 +647,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
         def wrapper(*args, **kwds):
             # Size limited caching that tracks accesses by recency
             nonlocal root, hits, misses, full
+
             key = make_key(args, kwds, typed)
+
             with lock:
                 link = cache_get(key)
                 if link is not None:
@@ -598,7 +664,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     hits += 1
                     return result
                 misses += 1
+
             result = user_function(*args, **kwds)
+
             with lock:
                 if key in cache:
                     # Getting here means that this same key was added to the
@@ -606,11 +674,13 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # update is already done, we need only return the
                     # computed result and update the count of misses.
                     pass
+
                 elif full:
                     # Use the old root to store the new key and result.
                     oldroot = root
                     oldroot[KEY] = key
                     oldroot[RESULT] = result
+
                     # Empty the oldest link and make it the new root.
                     # Keep a reference to the old key and old result to
                     # prevent their ref counts from going to zero during the
@@ -619,22 +689,27 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # still adjusting the links.
                     root = oldroot[NEXT]
                     oldkey = root[KEY]
-                    oldresult = root[RESULT]
+                    oldresult = root[RESULT]  # noqa: F841
                     root[KEY] = root[RESULT] = None
+
                     # Now update the cache dictionary.
                     del cache[oldkey]
+
                     # Save the potentially reentrant cache[key] assignment
                     # for last, after the root and links have been put in
                     # a consistent state.
                     cache[key] = oldroot
+
                 else:
                     # Put result in a new link at the front of the queue.
                     last = root[PREV]
                     link = [last, root, key, result]
                     last[NEXT] = root[PREV] = cache[key] = link
+
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
+
             return result
 
     def cache_info():
@@ -645,6 +720,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     def cache_clear():
         """Clear the cache and cache statistics"""
         nonlocal hits, misses, full
+
         with lock:
             cache.clear()
             root[:] = [root, root, None, None]
@@ -826,7 +902,7 @@ def singledispatch(func):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
-    import types, weakref
+    import weakref
 
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
@@ -855,16 +931,11 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
-    def _is_union_type(cls):
-        from typing import get_origin, Union
-        return get_origin(cls) in {Union, types.UnionType}
-
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
-        from typing import get_args
-        return (_is_union_type(cls) and
-                all(isinstance(arg, type) for arg in get_args(cls)))
+        return (isinstance(cls, UnionType) and
+                all(isinstance(arg, type) for arg in cls.__args__))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -896,7 +967,7 @@ def singledispatch(func):
             from annotationlib import Format, ForwardRef
             argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
             if not _is_valid_dispatch_type(cls):
-                if _is_union_type(cls):
+                if isinstance(cls, UnionType):
                     raise TypeError(
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} not all arguments are classes."
@@ -912,10 +983,8 @@ def singledispatch(func):
                         f"{cls!r} is not a class."
                     )
 
-        if _is_union_type(cls):
-            from typing import get_args
-
-            for arg in get_args(cls):
+        if isinstance(cls, UnionType):
+            for arg in cls.__args__:
                 registry[arg] = func
         else:
             registry[cls] = func
@@ -934,7 +1003,7 @@ def singledispatch(func):
     registry[object] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
-    wrapper.registry = types.MappingProxyType(registry)
+    wrapper.registry = MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper
@@ -955,9 +1024,6 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
-        import weakref # see comment in singledispatch function
-        self._method_cache = weakref.WeakKeyDictionary()
-
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -966,36 +1032,79 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._method_cache is not None:
-            try:
-                _method = self._method_cache[obj]
-            except TypeError:
-                self._method_cache = None
-            except KeyError:
-                pass
-            else:
-                return _method
-
-        dispatch = self.dispatcher.dispatch
-        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
-        def _method(*args, **kwargs):
-            if not args:
-                raise TypeError(f'{funcname} requires at least '
-                                '1 positional argument')
-            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
-
-        _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method.register = self.register
-        update_wrapper(_method, self.func)
-
-        if self._method_cache is not None:
-            self._method_cache[obj] = _method
-
-        return _method
+        return _singledispatchmethod_get(self, obj, cls)
 
     @property
     def __isabstractmethod__(self):
         return getattr(self.func, '__isabstractmethod__', False)
+
+    def __repr__(self):
+        try:
+            name = self.func.__qualname__
+        except AttributeError:
+            try:
+                name = self.func.__name__
+            except AttributeError:
+                name = '?'
+        return f'<single dispatch method descriptor {name}>'
+
+class _singledispatchmethod_get:
+    def __init__(self, unbound, obj, cls):
+        self._unbound = unbound
+        self._dispatch = unbound.dispatcher.dispatch
+        self._obj = obj
+        self._cls = cls
+        # Set instance attributes which cannot be handled in __getattr__()
+        # because they conflict with type descriptors.
+        func = unbound.func
+        try:
+            self.__module__ = func.__module__
+        except AttributeError:
+            pass
+        try:
+            self.__doc__ = func.__doc__
+        except AttributeError:
+            pass
+
+    def __repr__(self):
+        try:
+            name = self.__qualname__
+        except AttributeError:
+            try:
+                name = self.__name__
+            except AttributeError:
+                name = '?'
+        if self._obj is not None:
+            return f'<bound single dispatch method {name} of {self._obj!r}>'
+        else:
+            return f'<single dispatch method {name}>'
+
+    def __call__(self, /, *args, **kwargs):
+        if not args:
+            funcname = getattr(self._unbound.func, '__name__',
+                               'singledispatchmethod method')
+            raise TypeError(f'{funcname} requires at least '
+                            '1 positional argument')
+        method = self._dispatch(args[0].__class__)
+        if hasattr(method, "__get__"):
+            method = method.__get__(self._obj, self._cls)
+        return method(*args, **kwargs)
+
+    def __getattr__(self, name):
+        # Resolve these attributes lazily to speed up creation of
+        # the _singledispatchmethod_get instance.
+        if name not in {'__name__', '__qualname__', '__isabstractmethod__',
+                        '__annotations__', '__type_params__'}:
+            raise AttributeError
+        return getattr(self._unbound.func, name)
+
+    @property
+    def __wrapped__(self):
+        return self._unbound.func
+
+    @property
+    def register(self):
+        return self._unbound.register
 
 
 ################################################################################
@@ -1048,3 +1157,31 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
+
+def _warn_python_reduce_kwargs(py_reduce):
+    @wraps(py_reduce)
+    def wrapper(*args, **kwargs):
+        if 'function' in kwargs or 'sequence' in kwargs:
+            import os
+            import warnings
+            warnings.warn(
+                'Calling functools.reduce with keyword arguments '
+                '"function" or "sequence" '
+                'is deprecated in Python 3.14 and will be '
+                'forbidden in Python 3.16.',
+                DeprecationWarning,
+                skip_file_prefixes=(os.path.dirname(__file__),))
+        return py_reduce(*args, **kwargs)
+    return wrapper
+
+reduce = _warn_python_reduce_kwargs(reduce)
+del _warn_python_reduce_kwargs
+
+# The import of the C accelerated version of reduce() has been moved
+# here due to gh-121676. In Python 3.16, _warn_python_reduce_kwargs()
+# should be removed and the import block should be moved back right
+# after the definition of reduce().
+try:
+    from _functools import reduce
+except ImportError:
+    pass

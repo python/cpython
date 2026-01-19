@@ -316,7 +316,7 @@ class CompileallTestsBase:
 
         self.assertTrue(mods)
         for mod in mods:
-            self.assertTrue(mod.startswith(self.directory), mod)
+            self.assertStartsWith(mod, self.directory)
             modcode = importlib.util.cache_from_source(mod)
             modpath = mod[len(self.directory+os.sep):]
             _, _, err = script_helper.assert_python_failure(modcode)
@@ -766,6 +766,7 @@ class CommandLineTestsBase:
         rc, out, err = self.assertRunNotOK('-q', '-d', 'dinsdale', self.pkgdir)
         self.assertRegex(out, b'File "dinsdale')
 
+    @support.force_not_colorized
     def test_d_runtime_error(self):
         bazfn = script_helper.make_script(self.pkgdir, 'baz', 'raise Exception')
         self.assertRunOK('-q', '-d', 'dinsdale', self.pkgdir)

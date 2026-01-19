@@ -12,14 +12,14 @@ from unittest.mock import patch
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 def interrupt_self():
     _thread.interrupt_main()
 
 
-class TestPolicy(asyncio.AbstractEventLoopPolicy):
+class TestPolicy(asyncio.events._AbstractEventLoopPolicy):
 
     def __init__(self, loop_factory):
         self.loop_factory = loop_factory
@@ -61,15 +61,15 @@ class BaseTest(unittest.TestCase):
         super().setUp()
 
         policy = TestPolicy(self.new_loop)
-        asyncio.set_event_loop_policy(policy)
+        asyncio.events._set_event_loop_policy(policy)
 
     def tearDown(self):
-        policy = asyncio.get_event_loop_policy()
+        policy = asyncio.events._get_event_loop_policy()
         if policy.loop is not None:
             self.assertTrue(policy.loop.is_closed())
             self.assertTrue(policy.loop.shutdown_ag_run)
 
-        asyncio.set_event_loop_policy(None)
+        asyncio.events._set_event_loop_policy(None)
         super().tearDown()
 
 
@@ -93,8 +93,8 @@ class RunTests(BaseTest):
     def test_asyncio_run_only_coro(self):
         for o in {1, lambda: None}:
             with self.subTest(obj=o), \
-                    self.assertRaisesRegex(ValueError,
-                                           'a coroutine was expected'):
+                    self.assertRaisesRegex(TypeError,
+                                           'an awaitable is required'):
                 asyncio.run(o)
 
     def test_asyncio_run_debug(self):
@@ -208,7 +208,7 @@ class RunTests(BaseTest):
             await asyncio.sleep(0)
             return 42
 
-        policy = asyncio.get_event_loop_policy()
+        policy = asyncio.events._get_event_loop_policy()
         policy.set_event_loop = mock.Mock()
         asyncio.run(main())
         self.assertTrue(policy.set_event_loop.called)
@@ -259,7 +259,7 @@ class RunTests(BaseTest):
             loop.set_task_factory(Task)
             return loop
 
-        asyncio.set_event_loop_policy(TestPolicy(new_event_loop))
+        asyncio.events._set_event_loop_policy(TestPolicy(new_event_loop))
         with self.assertRaises(asyncio.CancelledError):
             asyncio.run(main())
 
@@ -319,19 +319,28 @@ class RunnerTests(BaseTest):
     def test_run_non_coro(self):
         with asyncio.Runner() as runner:
             with self.assertRaisesRegex(
-                ValueError,
-                "a coroutine was expected"
+                TypeError,
+                "an awaitable is required"
             ):
                 runner.run(123)
 
     def test_run_future(self):
         with asyncio.Runner() as runner:
-            with self.assertRaisesRegex(
-                ValueError,
-                "a coroutine was expected"
-            ):
-                fut = runner.get_loop().create_future()
-                runner.run(fut)
+            fut = runner.get_loop().create_future()
+            fut.set_result('done')
+            self.assertEqual('done', runner.run(fut))
+
+    def test_run_awaitable(self):
+        class MyAwaitable:
+            def __await__(self):
+                return self.run().__await__()
+
+            @staticmethod
+            async def run():
+                return 'done'
+
+        with asyncio.Runner() as runner:
+            self.assertEqual('done', runner.run(MyAwaitable()))
 
     def test_explicit_close(self):
         runner = asyncio.Runner()
@@ -486,7 +495,7 @@ class RunnerTests(BaseTest):
         async def coro():
             pass
 
-        policy = asyncio.get_event_loop_policy()
+        policy = asyncio.events._get_event_loop_policy()
         policy.set_event_loop = mock.Mock()
         runner = asyncio.Runner()
         runner.run(coro())

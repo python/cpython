@@ -1,3 +1,0 @@
-Remove internal frames from tracebacks shown in
-:class:`code.InteractiveInterpreter` with non-default :func:`sys.excepthook`.
-Save correct tracebacks in :attr:`sys.last_traceback` and update ``__traceback__`` attribute of :attr:`sys.last_value` and :attr:`sys.last_exc`.

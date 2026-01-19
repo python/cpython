@@ -1,4 +1,5 @@
 from collections import abc
+from itertools import combinations
 import array
 import gc
 import math
@@ -9,13 +10,17 @@ import sys
 import weakref
 
 from test import support
-from test.support import import_helper, suppress_immortalization
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 ISBIGENDIAN = sys.byteorder == "big"
 
 integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N'
 byteorders = '', '@', '=', '<', '>', '!'
+
+INF = float('inf')
+NAN = float('nan')
 
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
@@ -33,7 +38,7 @@ def bigendian_to_native(value):
     else:
         return string_reverse(value)
 
-class StructTest(unittest.TestCase):
+class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == 0), ISBIGENDIAN)
 
@@ -428,41 +433,11 @@ class StructTest(unittest.TestCase):
         self.assertEqual(s.unpack_from(buffer=test_string, offset=2),
                          (b'cd01',))
 
-    def test_pack_into(self):
+    def _test_pack_into(self, pack_into):
         test_string = b'Reykjavik rocks, eow!'
-        writable_buf = array.array('b', b' '*100)
-        fmt = '21s'
-        s = struct.Struct(fmt)
+        writable_buf = memoryview(array.array('b', b' '*100))
 
         # Test without offset
-        s.pack_into(writable_buf, 0, test_string)
-        from_buf = writable_buf.tobytes()[:len(test_string)]
-        self.assertEqual(from_buf, test_string)
-
-        # Test with offset.
-        s.pack_into(writable_buf, 10, test_string)
-        from_buf = writable_buf.tobytes()[:len(test_string)+10]
-        self.assertEqual(from_buf, test_string[:10] + test_string)
-
-        # Go beyond boundaries.
-        small_buf = array.array('b', b' '*10)
-        self.assertRaises((ValueError, struct.error), s.pack_into, small_buf, 0,
-                          test_string)
-        self.assertRaises((ValueError, struct.error), s.pack_into, small_buf, 2,
-                          test_string)
-
-        # Test bogus offset (issue 3694)
-        sb = small_buf
-        self.assertRaises((TypeError, struct.error), struct.pack_into, b'', sb,
-                          None)
-
-    def test_pack_into_fn(self):
-        test_string = b'Reykjavik rocks, eow!'
-        writable_buf = array.array('b', b' '*100)
-        fmt = '21s'
-        pack_into = lambda *args: struct.pack_into(fmt, *args)
-
-        # Test without offset.
         pack_into(writable_buf, 0, test_string)
         from_buf = writable_buf.tobytes()[:len(test_string)]
         self.assertEqual(from_buf, test_string)
@@ -472,12 +447,49 @@ class StructTest(unittest.TestCase):
         from_buf = writable_buf.tobytes()[:len(test_string)+10]
         self.assertEqual(from_buf, test_string[:10] + test_string)
 
+        # Test with negative offset.
+        pack_into(writable_buf, -30, test_string)
+        from_buf = writable_buf.tobytes()[-30:-30+len(test_string)]
+        self.assertEqual(from_buf, test_string)
+
         # Go beyond boundaries.
         small_buf = array.array('b', b' '*10)
-        self.assertRaises((ValueError, struct.error), pack_into, small_buf, 0,
-                          test_string)
-        self.assertRaises((ValueError, struct.error), pack_into, small_buf, 2,
-                          test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(small_buf, 0, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, 90, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, -10, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, 150, test_string)
+        with self.assertRaises((ValueError, struct.error)):
+            pack_into(writable_buf, -150, test_string)
+
+        # Test invalid buffer.
+        self.assertRaises(TypeError, pack_into, b' '*100, 0, test_string)
+        self.assertRaises(TypeError, pack_into, ' '*100, 0, test_string)
+        self.assertRaises(TypeError, pack_into, [0]*100, 0, test_string)
+        self.assertRaises(TypeError, pack_into, None, 0, test_string)
+        self.assertRaises(TypeError, pack_into, writable_buf[::2], 0, test_string)
+        self.assertRaises(TypeError, pack_into, writable_buf[::-1], 0, test_string)
+
+        # Test bogus offset (issue bpo-3694)
+        with self.assertRaises(TypeError):
+            pack_into(writable_buf, None, test_string)
+        with self.assertRaises(TypeError):
+            pack_into(writable_buf, 0.0, test_string)
+        with self.assertRaises((IndexError, OverflowError)):
+            pack_into(writable_buf, 2**1000, test_string)
+        with self.assertRaises((IndexError, OverflowError)):
+            pack_into(writable_buf, -2**1000, test_string)
+
+    def test_pack_into(self):
+        s = struct.Struct('21s')
+        self._test_pack_into(s.pack_into)
+
+    def test_pack_into_fn(self):
+        pack_into = lambda *args: struct.pack_into('21s', *args)
+        self._test_pack_into(pack_into)
 
     def test_unpack_with_buffer(self):
         # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
@@ -529,6 +541,9 @@ class StructTest(unittest.TestCase):
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
             self.assertTrue(struct.unpack('>?', c)[0])
+            self.assertTrue(struct.unpack('<?', c)[0])
+            self.assertTrue(struct.unpack('=?', c)[0])
+            self.assertTrue(struct.unpack('@?', c)[0])
 
     def test_count_overflow(self):
         hugecount = '{}b'.format(sys.maxsize+1)
@@ -680,10 +695,9 @@ class StructTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
         self.assertEqual(stdout.rstrip(), b"")
-        self.assertIn(b"Exception ignored in:", stderr)
+        self.assertIn(b"Exception ignored while calling deallocator", stderr)
         self.assertIn(b"C.__del__", stderr)
 
-    @suppress_immortalization()
     def test__struct_reference_cycle_cleaned_up(self):
         # Regression test for python/cpython#94207.
 
@@ -783,6 +797,45 @@ class StructTest(unittest.TestCase):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
 
+    def test_c_complex_round_trip(self):
+        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
+                                                     -3, INF, -INF, NAN], 2)]
+        for z in values:
+            for f in ['F', 'D', '>F', '>D', '<F', '<D']:
+                with self.subTest(z=z, format=f):
+                    round_trip = struct.unpack(f, struct.pack(f, z))[0]
+                    self.assertComplexesAreIdentical(z, round_trip)
+
+    @unittest.skipIf(
+        support.is_android or support.is_apple_mobile,
+        "Subinterpreters are not supported on Android and iOS"
+    )
+    def test_endian_table_init_subinterpreters(self):
+        # Verify that the _struct extension module can be initialized
+        # concurrently in subinterpreters (gh-140260).
+        try:
+            from concurrent.futures import InterpreterPoolExecutor
+        except ImportError:
+            raise unittest.SkipTest("InterpreterPoolExecutor not available")
+
+        code = "import struct"
+        with InterpreterPoolExecutor(max_workers=5) as executor:
+            results = executor.map(exec, [code] * 5)
+            self.assertListEqual(list(results), [None] * 5)
+
+    def test_operations_on_half_initialized_Struct(self):
+        S = struct.Struct.__new__(struct.Struct)
+
+        spam = array.array('b', b' ')
+        self.assertRaises(RuntimeError, S.iter_unpack, spam)
+        self.assertRaises(RuntimeError, S.pack, 1)
+        self.assertRaises(RuntimeError, S.pack_into, spam, 1)
+        self.assertRaises(RuntimeError, S.unpack, spam)
+        self.assertRaises(RuntimeError, S.unpack_from, spam)
+        self.assertRaises(RuntimeError, getattr, S, 'format')
+        self.assertEqual(S.size, -1)
+
+
 class UnpackIteratorTest(unittest.TestCase):
     """
     Tests for iterative unpacking (struct.Struct.iter_unpack).
@@ -856,6 +909,7 @@ class UnpackIteratorTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, it)
 
     def test_half_float(self):
+        _testcapi = import_helper.import_module('_testcapi')
         # Little-endian examples from:
         # http://en.wikipedia.org/wiki/Half_precision_floating-point_format
         format_bits_float__cleanRoundtrip_list = [
@@ -900,10 +954,17 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Check that packing produces a bit pattern representing a quiet NaN:
         # all exponent bits and the msb of the fraction should all be 1.
+        if _testcapi.nan_msb_is_signaling:
+            # HP PA RISC and some MIPS CPUs use 0 for quiet, see:
+            # https://en.wikipedia.org/wiki/NaN#Encoding
+            expected = 0x7c
+        else:
+            expected = 0x7e
+
         packed = struct.pack('<e', math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
         packed = struct.pack('<e', -math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
 
         # Checks for round-to-even behavior
         format_bits_float__rounding_list = [

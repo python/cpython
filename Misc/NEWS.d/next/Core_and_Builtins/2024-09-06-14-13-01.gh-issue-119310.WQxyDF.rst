@@ -1,3 +1,0 @@
-Allow the new interactive shell to read history files written with the
-editline library that use unicode-escaped entries.  Patch by aorcajo and
-Łukasz Langa.

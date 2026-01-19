@@ -102,7 +102,7 @@ All allocating functions belong to one of three different "domains" (see also
 strategies and are optimized for different purposes. The specific details on
 how every domain allocates memory or what internal functions each domain calls
 is considered an implementation detail, but for debugging purposes a simplified
-table can be found at :ref:`here <default-memory-allocators>`.
+table can be found at :ref:`default-memory-allocators`.
 The APIs used to allocate and free a block of memory must be from the same domain.
 For example, :c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
@@ -110,12 +110,12 @@ The three allocation domains are:
 
 * Raw domain: intended for allocating memory for general-purpose memory
   buffers where the allocation *must* go to the system allocator or where the
-  allocator can operate without the :term:`GIL`. The memory is requested directly
-  from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
+  allocator can operate without an :term:`attached thread state`. The memory
+  is requested directly from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
 
 * "Mem" domain: intended for allocating memory for Python buffers and
   general-purpose memory buffers where the allocation must be performed with
-  the :term:`GIL` held. The memory is taken from the Python private heap.
+  an :term:`attached thread state`. The memory is taken from the Python private heap.
   See :ref:`Memory Interface <memoryinterface>`.
 
 * Object domain: intended for allocating memory for Python objects. The
@@ -139,8 +139,8 @@ Raw Memory Interface
 ====================
 
 The following function sets are wrappers to the system allocator. These
-functions are thread-safe, the :term:`GIL <global interpreter lock>` does not
-need to be held.
+functions are thread-safe, so a :term:`thread state` does not
+need to be :term:`attached <attached thread state>`.
 
 The :ref:`default raw memory allocator <default-memory-allocators>` uses
 the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
@@ -213,8 +213,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
 .. warning::
 
-   The :term:`GIL <global interpreter lock>` must be held when using these
-   functions.
+   There must be an :term:`attached thread state` when using these functions.
 
 .. versionchanged:: 3.6
 
@@ -294,17 +293,39 @@ The following type-oriented macros are provided for convenience.  Note  that
 
    Same as :c:func:`PyMem_Free`.
 
-In addition, the following macro sets are provided for calling the Python memory
-allocator directly, without involving the C API functions listed above. However,
-note that their use does not preserve binary compatibility across Python
-versions and is therefore deprecated in extension modules.
 
-* ``PyMem_MALLOC(size)``
-* ``PyMem_NEW(type, size)``
-* ``PyMem_REALLOC(ptr, size)``
-* ``PyMem_RESIZE(ptr, type, size)``
-* ``PyMem_FREE(ptr)``
-* ``PyMem_DEL(ptr)``
+Deprecated aliases
+------------------
+
+These are :term:`soft deprecated` aliases to existing functions and macros.
+They exist solely for backwards compatibility.
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * Deprecated alias
+     * Corresponding function or macro
+   * * .. c:macro:: PyMem_MALLOC(size)
+     * :c:func:`PyMem_Malloc`
+   * * .. c:macro:: PyMem_NEW(type, size)
+     * :c:macro:`PyMem_New`
+   * * .. c:macro:: PyMem_REALLOC(ptr, size)
+     * :c:func:`PyMem_Realloc`
+   * * .. c:macro:: PyMem_RESIZE(ptr, type, size)
+     * :c:macro:`PyMem_Resize`
+   * * .. c:macro:: PyMem_FREE(ptr)
+     * :c:func:`PyMem_Free`
+   * * .. c:macro:: PyMem_DEL(ptr)
+     * :c:func:`PyMem_Free`
+
+.. versionchanged:: 3.4
+
+   The macros are now aliases of the corresponding functions and macros.
+   Previously, their behavior was the same, but their use did not necessarily
+   preserve binary compatibility across Python versions.
+
+.. deprecated:: 2.0
 
 
 .. _objectinterface:
@@ -327,8 +348,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. warning::
 
-   The :term:`GIL <global interpreter lock>` must be held when using these
-   functions.
+   There must be an :term:`attached thread state` when using these functions.
 
 .. c:function:: void* PyObject_Malloc(size_t n)
 
@@ -377,6 +397,24 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
    before, undefined behavior occurs.
 
    If *p* is ``NULL``, no operation is performed.
+
+   Do not call this directly to free an object's memory; call the type's
+   :c:member:`~PyTypeObject.tp_free` slot instead.
+
+   Do not use this for memory allocated by :c:macro:`PyObject_GC_New` or
+   :c:macro:`PyObject_GC_NewVar`; use :c:func:`PyObject_GC_Del` instead.
+
+   .. seealso::
+
+      * :c:func:`PyObject_GC_Del` is the equivalent of this function for memory
+        allocated by types that support garbage collection.
+      * :c:func:`PyObject_Malloc`
+      * :c:func:`PyObject_Realloc`
+      * :c:func:`PyObject_Calloc`
+      * :c:macro:`PyObject_New`
+      * :c:macro:`PyObject_NewVar`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_free`
 
 
 .. _default-memory-allocators:
@@ -485,12 +523,12 @@ Customize Memory Allocators
    zero bytes.
 
    For the :c:macro:`PYMEM_DOMAIN_RAW` domain, the allocator must be
-   thread-safe: the :term:`GIL <global interpreter lock>` is not held when the
-   allocator is called.
+   thread-safe: a :term:`thread state` is not :term:`attached <attached thread state>`
+   when the allocator is called.
 
    For the remaining domains, the allocator must also be thread-safe:
    the allocator may be called in different interpreters that do not
-   share a ``GIL``.
+   share a :term:`GIL`.
 
    If the new allocator is not a hook (does not call the previous allocator),
    the :c:func:`PyMem_SetupDebugHooks` function must be called to reinstall the
@@ -507,8 +545,8 @@ Customize Memory Allocators
          :c:func:`Py_InitializeFromConfig` to install a custom memory
          allocator. There are no restrictions over the installed allocator
          other than the ones imposed by the domain (for instance, the Raw
-         Domain allows the allocator to be called without the GIL held). See
-         :ref:`the section on allocator domains <allocator-domains>` for more
+         Domain allows the allocator to be called without an :term:`attached thread state`).
+         See :ref:`the section on allocator domains <allocator-domains>` for more
          information.
 
        * If called after Python has finish initializing (after
@@ -555,7 +593,7 @@ Runtime checks:
   called on a memory block allocated by :c:func:`PyMem_Malloc`.
 - Detect write before the start of the buffer (buffer underflow).
 - Detect write after the end of the buffer (buffer overflow).
-- Check that the :term:`GIL <global interpreter lock>` is held when
+- Check that there is an :term:`attached thread state` when
   allocator functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex:
   :c:func:`PyObject_Malloc`) and :c:macro:`PYMEM_DOMAIN_MEM` (ex:
   :c:func:`PyMem_Malloc`) domains are called.
@@ -620,8 +658,8 @@ PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
    The :c:func:`PyMem_SetupDebugHooks` function now also works on Python
    compiled in release mode.  On error, the debug hooks now use
    :mod:`tracemalloc` to get the traceback where a memory block was allocated.
-   The debug hooks now also check if the GIL is held when functions of
-   :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are
+   The debug hooks now also check if there is an :term:`attached thread state` when
+   functions of :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are
    called.
 
 .. versionchanged:: 3.8
@@ -655,6 +693,10 @@ The arena allocator uses the following functions:
 This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
+
+Typically, it makes sense to disable the pymalloc allocator when building
+Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
+uncover low level bugs within the C code.
 
 Customize pymalloc Arena Allocator
 ----------------------------------

@@ -20,8 +20,4 @@ def load_tests(loader, standard_tests, pattern):
                                     pattern='test_*.py',  # Insert here.
                                     top_level_dir=top_dir)
     standard_tests.addTests(module_tests)
-##    module_tests = loader.discover(start_dir=this_dir,
-##                                    pattern='test_*.py',  # Insert here.
-##                                    top_level_dir=top_dir)
-##    standard_tests.addTests(module_tests)
     return standard_tests

@@ -1,2 +1,0 @@
-``zipfile.Path.glob`` now correctly matches directories instead of
-silently omitting them.

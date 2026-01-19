@@ -1,2 +1,0 @@
-Fix :class:`unittest.mock.MagicMock` reseting magic methods return values
-after ``.reset_mock(return_value=True)`` was called.

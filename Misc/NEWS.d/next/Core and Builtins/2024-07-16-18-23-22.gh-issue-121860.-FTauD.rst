@@ -1,1 +1,0 @@
-Fix crash when rematerializing a managed dictionary after it was deleted.

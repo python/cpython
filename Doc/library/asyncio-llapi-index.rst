@@ -96,7 +96,7 @@ See also the main documentation section about the
       - Invoke a callback *at* the given time.
 
 
-.. rubric:: Thread/Process Pool
+.. rubric:: Thread/Interpreter/Process Pool
 .. list-table::
     :widths: 50 50
     :class: full-width-table

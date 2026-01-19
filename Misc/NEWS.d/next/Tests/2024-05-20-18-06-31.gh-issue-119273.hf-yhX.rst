@@ -1,3 +1,0 @@
-Python test runner no longer runs tests using TTY (ex: test_ioctl) in a
-process group (using ``setsid()``). Previously, tests using TTY were
-skipped. Patch by Victor Stinner.

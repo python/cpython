@@ -8,7 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
+#include "pycore_stackref.h"      // _PyStackRef
+#include "pycore_optimizer_types.h"
 #include <stdbool.h>
 
 
@@ -18,52 +22,27 @@ typedef struct _PyExecutorLinkListNode {
 } _PyExecutorLinkListNode;
 
 
-/* Bloom filter with m = 256
- * https://en.wikipedia.org/wiki/Bloom_filter */
-#define _Py_BLOOM_FILTER_WORDS 8
-
-typedef struct {
-    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
-} _PyBloomFilter;
-
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint16_t valid:1;
-    uint16_t linked:1;
-    uint16_t chain_depth:14;  // Must be big engough for MAX_CHAIN_DEPTH - 1.
-    int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
+    uint8_t valid;
+    uint8_t chain_depth;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
+    bool cold;
+    uint8_t pending_deletion;
+    int32_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
-/* Depending on the format,
- * the 32 bits between the oparg and operand are:
- * UOP_FORMAT_TARGET:
- *    uint32_t target;
- * UOP_FORMAT_JUMP
- *    uint16_t jump_target;
- *    uint16_t error_target;
- */
-typedef struct {
-    uint16_t opcode:15;
-    uint16_t format:1;
-    uint16_t oparg;
-    union {
-        uint32_t target;
-        struct {
-            uint16_t jump_target;
-            uint16_t error_target;
-        };
-    };
-    uint64_t operand;  // A cache entry
-} _PyUOpInstruction;
-
-typedef struct {
+typedef struct _PyExitData {
     uint32_t target;
+    uint16_t index:12;
+    uint16_t stack_cache:2;
+    uint16_t is_dynamic:1;
+    uint16_t is_control_flow:1;
     _Py_BackoffCounter temperature;
-    const struct _PyExecutorObject *executor;
+    struct _PyExecutorObject *executor;
 } _PyExitData;
 
 typedef struct _PyExecutorObject {
@@ -74,32 +53,8 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
-    void *jit_side_entry;
     _PyExitData exits[1];
 } _PyExecutorObject;
-
-typedef struct _PyOptimizerObject _PyOptimizerObject;
-
-/* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */
-typedef int (*_Py_optimize_func)(
-    _PyOptimizerObject* self, struct _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
-    int curr_stackentries, bool progress_needed);
-
-struct _PyOptimizerObject {
-    PyObject_HEAD
-    _Py_optimize_func optimize;
-    /* Data needed by the optimizer goes here, but is opaque to the VM */
-};
-
-/** Test support **/
-typedef struct {
-    _PyOptimizerObject base;
-    int64_t count;
-} _PyCounterOptimizerObject;
-
-_PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
-
 
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
@@ -110,49 +65,32 @@ void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 
-// For testing
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(_PyOptimizerObject *) _Py_GetOptimizer(void);
-PyAPI_FUNC(int) _Py_SetTier2Optimizer(_PyOptimizerObject* optimizer);
-PyAPI_FUNC(PyObject *) _PyOptimizer_NewCounter(void);
-PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
-
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
 
 #ifdef _Py_TIER2
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
+
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)
+
 #endif
 
+// Used as the threshold to trigger executor invalidation when
+// executor_creation_counter is greater than this value.
+// This value is arbitrary and was not optimized.
+#define JIT_CLEANUP_THRESHOLD 1000
 
-// This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 800
-
-#define TRACE_STACK_SIZE 5
-
-int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
+int _Py_uop_analyze_and_optimize(
+    _PyThreadStateImpl *tstate,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
-extern PyTypeObject _PyCounterExecutor_Type;
-extern PyTypeObject _PyCounterOptimizer_Type;
-extern PyTypeObject _PyDefaultOptimizer_Type;
 extern PyTypeObject _PyUOpExecutor_Type;
-extern PyTypeObject _PyUOpOptimizer_Type;
 
-/* Symbols */
-/* See explanation in optimizer_symbols.c */
-
-struct _Py_UopsSymbol {
-    int flags;  // 0 bits: Top; 2 or more bits: Bottom
-    PyTypeObject *typ;  // Borrowed reference
-    PyObject *const_val;  // Owned reference (!)
-    unsigned int type_version; // currently stores type version
-};
 
 #define UOP_FORMAT_TARGET 0
 #define UOP_FORMAT_JUMP 1
@@ -175,106 +113,144 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
     return inst->error_target;
 }
 
-// Holds locals, stack, locals, stack ... co_consts (in that order)
-#define MAX_ABSTRACT_INTERP_SIZE 4096
 
-#define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * 5)
+#define REF_IS_BORROWED 1
+#define REF_IS_INVALID  2
+#define REF_TAG_BITS    3
 
-// Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
-#define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
+#define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_TAG_BITS)))
 
-// The maximum number of side exits that we can take before requiring forward
-// progress (and inserting a new ENTER_EXECUTOR instruction). In practice, this
-// is the "maximum amount of polymorphism" that an isolated trace tree can
-// handle before rejoining the rest of the program.
-#define MAX_CHAIN_DEPTH 4
+static inline JitOptSymbol *
+PyJitRef_Unwrap(JitOptRef ref)
+{
+    return JIT_BITS_TO_PTR_MASKED(ref);
+}
 
-typedef struct _Py_UopsSymbol _Py_UopsSymbol;
-
-struct _Py_UOpsAbstractFrame {
-    // Max stacklen
-    int stack_len;
-    int locals_len;
-
-    _Py_UopsSymbol **stack_pointer;
-    _Py_UopsSymbol **stack;
-    _Py_UopsSymbol **locals;
-};
-
-typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
-
-typedef struct ty_arena {
-    int ty_curr_number;
-    int ty_max_number;
-    _Py_UopsSymbol arena[TY_ARENA_SIZE];
-} ty_arena;
-
-struct _Py_UOpsContext {
-    char done;
-    char out_of_space;
-    bool contradiction;
-    // The current "executing" frame.
-    _Py_UOpsAbstractFrame *frame;
-    _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
-    int curr_frame_depth;
-
-    // Arena for the symbolic types.
-    ty_arena t_arena;
-
-    _Py_UopsSymbol **n_consumed;
-    _Py_UopsSymbol **limit;
-    _Py_UopsSymbol *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
-};
-
-typedef struct _Py_UOpsContext _Py_UOpsContext;
-
-extern bool _Py_uop_sym_is_null(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_is_not_null(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_is_const(_Py_UopsSymbol *sym);
-extern PyObject *_Py_uop_sym_get_const(_Py_UopsSymbol *sym);
-extern _Py_UopsSymbol *_Py_uop_sym_new_unknown(_Py_UOpsContext *ctx);
-extern _Py_UopsSymbol *_Py_uop_sym_new_not_null(_Py_UOpsContext *ctx);
-extern _Py_UopsSymbol *_Py_uop_sym_new_type(
-    _Py_UOpsContext *ctx, PyTypeObject *typ);
-extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val);
-extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
-extern bool _Py_uop_sym_has_type(_Py_UopsSymbol *sym);
-extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, unsigned int version);
-extern void _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ);
-extern bool _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version);
-extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val);
-extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
-extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
-extern PyTypeObject *_Py_uop_sym_get_type(_Py_UopsSymbol *sym);
+bool _Py_uop_symbol_is_immortal(JitOptSymbol *sym);
 
 
-extern void _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
-extern void _Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx);
+static inline JitOptRef
+PyJitRef_Wrap(JitOptSymbol *sym)
+{
+    return (JitOptRef){.bits=(uintptr_t)sym};
+}
+
+static inline JitOptRef
+PyJitRef_WrapInvalid(void *ptr)
+{
+    return (JitOptRef){.bits=(uintptr_t)ptr | REF_IS_INVALID};
+}
+
+static inline bool
+PyJitRef_IsInvalid(JitOptRef ref)
+{
+    return (ref.bits & REF_IS_INVALID) == REF_IS_INVALID;
+}
+
+static inline JitOptRef
+PyJitRef_StripReferenceInfo(JitOptRef ref)
+{
+    return PyJitRef_Wrap(PyJitRef_Unwrap(ref));
+}
+
+static inline JitOptRef
+PyJitRef_Borrow(JitOptRef ref)
+{
+    return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
+}
+
+static const JitOptRef PyJitRef_NULL = {.bits = REF_IS_BORROWED};
+
+static inline bool
+PyJitRef_IsNull(JitOptRef ref)
+{
+    return ref.bits == PyJitRef_NULL.bits;
+}
+
+static inline int
+PyJitRef_IsBorrowed(JitOptRef ref)
+{
+    return (ref.bits & REF_IS_BORROWED) == REF_IS_BORROWED;
+}
+
+extern bool _Py_uop_sym_is_null(JitOptRef sym);
+extern bool _Py_uop_sym_is_not_null(JitOptRef sym);
+extern bool _Py_uop_sym_is_const(JitOptContext *ctx, JitOptRef sym);
+extern PyObject *_Py_uop_sym_get_const(JitOptContext *ctx, JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_unknown(JitOptContext *ctx);
+extern JitOptRef _Py_uop_sym_new_not_null(JitOptContext *ctx);
+extern JitOptRef _Py_uop_sym_new_type(
+    JitOptContext *ctx, PyTypeObject *typ);
+
+extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
+extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
+bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+_PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
+extern bool _Py_uop_sym_has_type(JitOptRef sym);
+extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version);
+extern void _Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef sym);
+extern void _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef sym);
+extern void _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef sym, unsigned int version);
+extern void _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef sym, PyObject *const_val);
+extern bool _Py_uop_sym_is_bottom(JitOptRef sym);
+extern int _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef sym);
+extern PyTypeObject *_Py_uop_sym_get_type(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args);
+extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, Py_ssize_t item);
+extern Py_ssize_t _Py_uop_sym_tuple_length(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
+extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
+extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
+
+extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
+extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
 
 extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
-    _Py_UOpsContext *ctx,
+    JitOptContext *ctx,
     PyCodeObject *co,
     int curr_stackentries,
-    _Py_UopsSymbol **args,
+    JitOptRef *args,
     int arg_len);
-extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
+extern int _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyStackRef *stack_pointer, _PyExecutorObject **exec_ptr, int chain_depth);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, PyThreadState *tstate);
 
-static inline int is_terminator(const _PyUOpInstruction *uop)
+static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
 {
-    int opcode = uop->opcode;
-    return (
-        opcode == _EXIT_TRACE ||
-        opcode == _JUMP_TO_TOP ||
-        opcode == _DYNAMIC_EXIT
-    );
+    _PyExitData *exit0 = exit - exit->index;
+    return (_PyExecutorObject *)(((char *)exit0) - offsetof(_PyExecutorObject, exits));
 }
+
+extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
+extern _PyExecutorObject *_PyExecutor_GetColdDynamicExecutor(void);
+
+PyAPI_FUNC(void) _PyExecutor_ClearExit(_PyExitData *exit);
+
+extern void _PyExecutor_Free(_PyExecutorObject *self);
+
+PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
+#ifdef _Py_TIER2
+PyAPI_FUNC(void) _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
+#endif
+
+PyAPI_FUNC(int) _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
+
+PyAPI_FUNC(int)
+_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
+    _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
+    _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
+    int oparg, _PyExecutorObject *current_executor);
+
+PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
+void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
+
+void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
 
 #ifdef __cplusplus
 }

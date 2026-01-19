@@ -454,7 +454,7 @@ There are two factors that produce this result:
    (the list), and both ``x`` and ``y`` refer to it.
 2) Lists are :term:`mutable`, which means that you can change their content.
 
-After the call to :meth:`!append`, the content of the mutable object has
+After the call to :meth:`~sequence.append`, the content of the mutable object has
 changed from ``[]`` to ``[10]``.  Since both the variables refer to the same
 object, using either name accesses the modified value ``[10]``.
 
@@ -986,8 +986,8 @@ There are various techniques.
      f()
 
 
-Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
--------------------------------------------------------------------------------------
+Is there an equivalent to Perl's ``chomp()`` for removing trailing newlines from strings?
+-----------------------------------------------------------------------------------------
 
 You can use ``S.rstrip("\r\n")`` to remove all occurrences of any line
 terminator from the end of the string ``S`` without removing other trailing
@@ -1005,8 +1005,8 @@ Since this is typically only desired when reading text one line at a time, using
 ``S.rstrip()`` this way works well.
 
 
-Is there a scanf() or sscanf() equivalent?
-------------------------------------------
+Is there a ``scanf()`` or ``sscanf()`` equivalent?
+--------------------------------------------------
 
 Not as such.
 
@@ -1020,8 +1020,8 @@ For more complicated input parsing, regular expressions are more powerful
 than C's ``sscanf`` and better suited for the task.
 
 
-What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
--------------------------------------------------------------------
+What does ``UnicodeDecodeError`` or ``UnicodeEncodeError`` error mean?
+----------------------------------------------------------------------
 
 See the :ref:`unicode-howto`.
 
@@ -1036,7 +1036,7 @@ A raw string ending with an odd number of backslashes will escape the string's q
    >>> r'C:\this\will\not\work\'
      File "<stdin>", line 1
        r'C:\this\will\not\work\'
-            ^
+       ^
    SyntaxError: unterminated string literal (detected at line 1)
 
 There are several workarounds for this. One is to use regular strings and double
@@ -1397,9 +1397,9 @@ To see why this happens, you need to know that (a) if an object implements an
 :meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
 assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`!extend` on the list
-and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for :meth:`!list.extend`::
+and (b) for lists, :meth:`!__iadd__` is equivalent to calling
+:meth:`~sequence.extend` on the list and returning the list.
+That's why we say that for lists, ``+=`` is a "shorthand" for :meth:`list.extend`::
 
     >>> a_list = []
     >>> a_list += [1]
@@ -1613,9 +1613,16 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Most :meth:`!__setattr__` implementations must modify
-:meth:`self.__dict__ <object.__dict__>` to store
-local state for self without causing an infinite recursion.
+Many :meth:`~object.__setattr__` implementations call :meth:`!object.__setattr__` to set
+an attribute on self without causing infinite recursion::
+
+   class X:
+       def __setattr__(self, name, value):
+           # Custom logic here...
+           object.__setattr__(self, name, value)
+
+Alternatively, it is possible to set attributes by inserting
+entries into :attr:`self.__dict__ <object.__dict__>` directly.
 
 
 How do I call a method defined in a base class from a derived class that extends it?
@@ -1861,15 +1868,15 @@ object identity is assured.  Generally, there are three circumstances where
 identity is guaranteed:
 
 1) Assignments create new names but do not change object identity.  After the
-assignment ``new = old``, it is guaranteed that ``new is old``.
+   assignment ``new = old``, it is guaranteed that ``new is old``.
 
 2) Putting an object in a container that stores object references does not
-change object identity.  After the list assignment ``s[0] = x``, it is
-guaranteed that ``s[0] is x``.
+   change object identity.  After the list assignment ``s[0] = x``, it is
+   guaranteed that ``s[0] is x``.
 
 3) If an object is a singleton, it means that only one instance of that object
-can exist.  After the assignments ``a = None`` and ``b = None``, it is
-guaranteed that ``a is b`` because ``None`` is a singleton.
+   can exist.  After the assignments ``a = None`` and ``b = None``, it is
+   guaranteed that ``a is b`` because ``None`` is a singleton.
 
 In most other circumstances, identity tests are inadvisable and equality tests
 are preferred.  In particular, identity tests should not be used to check
@@ -1899,28 +1906,30 @@ In the standard library code, you will see several common patterns for
 correctly using identity tests:
 
 1) As recommended by :pep:`8`, an identity test is the preferred way to check
-for ``None``.  This reads like plain English in code and avoids confusion with
-other objects that may have boolean values that evaluate to false.
+   for ``None``.  This reads like plain English in code and avoids confusion
+   with other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create a singleton sentinel object
-guaranteed to be distinct from other objects.  For example, here is how
-to implement a method that behaves like :meth:`dict.pop`::
+   value.  In those situations, you can create a singleton sentinel object
+   guaranteed to be distinct from other objects.  For example, here is how
+   to implement a method that behaves like :meth:`dict.pop`:
 
-   _sentinel = object()
+   .. code-block:: python
 
-   def pop(self, key, default=_sentinel):
-       if key in self:
-           value = self[key]
-           del self[key]
-           return value
-       if default is _sentinel:
-           raise KeyError(key)
-       return default
+      _sentinel = object()
+
+      def pop(self, key, default=_sentinel):
+          if key in self:
+              value = self[key]
+              del self[key]
+              return value
+          if default is _sentinel:
+              raise KeyError(key)
+          return default
 
 3) Container implementations sometimes need to augment equality tests with
-identity tests.  This prevents the code from being confused by objects such as
-``float('NaN')`` that are not equal to themselves.
+   identity tests.  This prevents the code from being confused by objects
+   such as ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
 :meth:`!collections.abc.Sequence.__contains__`::

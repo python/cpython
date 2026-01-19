@@ -1,6 +1,6 @@
 .. highlight:: c
 
-.. _monitoring:
+.. _c-api-monitoring:
 
 Monitoring C API
 ================
@@ -75,9 +75,14 @@ See :mod:`sys.monitoring` for descriptions of the events.
    Fire a ``JUMP`` event.
 
 
-.. c:function:: int PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
+.. c:function:: int PyMonitoring_FireBranchLeftEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
 
-   Fire a ``BRANCH`` event.
+   Fire a ``BRANCH_LEFT`` event.
+
+
+.. c:function:: int PyMonitoring_FireBranchRightEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
+
+   Fire a ``BRANCH_RIGHT`` event.
 
 
 .. c:function:: int PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *retval)
@@ -131,7 +136,7 @@ Managing the Monitoring State
 -----------------------------
 
 Monitoring states can be managed with the help of monitoring scopes. A scope
-would typically correspond to a python function.
+would typically correspond to a Python function.
 
 .. c:function:: int PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version, const uint8_t *event_types, Py_ssize_t length)
 
@@ -141,18 +146,18 @@ would typically correspond to a python function.
    to the base-2 logarithm of ``sys.monitoring.events.PY_START``.
    ``state_array`` is an array with a monitoring state entry for each event in
    ``event_types``, it is allocated by the user but populated by
-   ``PyMonitoring_EnterScope`` with information about the activation state of
+   :c:func:`!PyMonitoring_EnterScope` with information about the activation state of
    the event. The size of ``event_types`` (and hence also of ``state_array``)
    is given in ``length``.
 
    The ``version`` argument is a pointer to a value which should be allocated
    by the user together with ``state_array`` and initialized to 0,
-   and then set only by ``PyMonitoring_EnterScope`` itelf. It allows this
+   and then set only by :c:func:`!PyMonitoring_EnterScope` itself. It allows this
    function to determine whether event states have changed since the previous call,
    and to return quickly if they have not.
 
    The scopes referred to here are lexical scopes: a function, class or method.
-   ``PyMonitoring_EnterScope`` should be called whenever the lexical scope is
+   :c:func:`!PyMonitoring_EnterScope` should be called whenever the lexical scope is
    entered. Scopes can be reentered, reusing the same *state_array* and *version*,
    in situations like when emulating a recursive Python function. When a code-like's
    execution is paused, such as when emulating a generator, the scope needs to
@@ -168,7 +173,8 @@ would typically correspond to a python function.
    ================================================== =====================================
    Macro                                              Event
    ================================================== =====================================
-   .. c:macro:: PY_MONITORING_EVENT_BRANCH            :monitoring-event:`BRANCH`
+   .. c:macro:: PY_MONITORING_EVENT_BRANCH_LEFT       :monitoring-event:`BRANCH_LEFT`
+   .. c:macro:: PY_MONITORING_EVENT_BRANCH_RIGHT      :monitoring-event:`BRANCH_RIGHT`
    .. c:macro:: PY_MONITORING_EVENT_CALL              :monitoring-event:`CALL`
    .. c:macro:: PY_MONITORING_EVENT_C_RAISE           :monitoring-event:`C_RAISE`
    .. c:macro:: PY_MONITORING_EVENT_C_RETURN          :monitoring-event:`C_RETURN`
@@ -189,4 +195,16 @@ would typically correspond to a python function.
 
 .. c:function:: int PyMonitoring_ExitScope(void)
 
-   Exit the last scope that was entered with ``PyMonitoring_EnterScope``.
+   Exit the last scope that was entered with :c:func:`!PyMonitoring_EnterScope`.
+
+
+.. c:function:: int PY_MONITORING_IS_INSTRUMENTED_EVENT(uint8_t ev)
+
+   Return true if the event corresponding to the event ID *ev* is
+   a :ref:`local event <monitoring-event-local>`.
+
+   .. versionadded:: 3.13
+
+   .. deprecated:: 3.14
+
+      This function is :term:`soft deprecated`.

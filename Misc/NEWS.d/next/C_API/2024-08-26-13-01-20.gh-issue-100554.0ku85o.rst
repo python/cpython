@@ -1,4 +1,0 @@
-Added a slot ``Py_tp_vectorcall`` to set
-:c:member:`~PyTypeObject.tp_vectorcall` via the :c:func:`PyType_FromSpec`
-function family. Limited API extensions can use this feature to provide more
-efficient vector call-based implementation of ``__new__`` and ``__init__``.

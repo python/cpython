@@ -78,7 +78,7 @@ Bookkeeping functions
    instead of the system time (see the :func:`os.urandom` function for details
    on availability).
 
-   If *a* is an int, it is used directly.
+   If *a* is an int, its absolute value is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
    object gets converted to an :class:`int` and all of its bits are used.
@@ -447,6 +447,11 @@ Alternative Generator
       Override this method in subclasses to customise the
       :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
 
+   .. method:: Random.randbytes(n)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.randbytes` behaviour of :class:`!Random` instances.
+
 
 .. class:: SystemRandom([seed])
 
@@ -625,14 +630,16 @@ Recipes
 -------
 
 These recipes show how to efficiently make random selections
-from the combinatoric iterators in the :mod:`itertools` module:
+from the combinatoric iterators in the :mod:`itertools` module
+or the :pypi:`more-itertools` project:
 
 .. testcode::
+
    import random
 
-   def random_product(*args, repeat=1):
-       "Random selection from itertools.product(*args, **kwds)"
-       pools = [tuple(pool) for pool in args] * repeat
+   def random_product(*iterables, repeat=1):
+       "Random selection from itertools.product(*iterables, repeat=repeat)"
+       pools = tuple(map(tuple, iterables)) * repeat
        return tuple(map(random.choice, pools))
 
    def random_permutation(iterable, r=None):
@@ -655,6 +662,91 @@ from the combinatoric iterators in the :mod:`itertools` module:
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
+
+   def random_derangement(iterable):
+       "Choose a permutation where no element stays in its original position."
+       seq = tuple(iterable)
+       if len(seq) < 2:
+           if not seq:
+               return ()
+           raise IndexError('No derangments to choose from')
+       perm = list(range(len(seq)))
+       start = tuple(perm)
+       while True:
+           random.shuffle(perm)
+           if all(p != q for p, q in zip(start, perm)):
+               return tuple([seq[i] for i in perm])
+
+.. doctest::
+    :hide:
+
+    >>> import random
+
+
+    >>> random.seed(8675309)
+    >>> random_product('ABCDEFG', repeat=5)
+    ('D', 'B', 'E', 'F', 'E')
+
+
+    >>> random.seed(8675309)
+    >>> random_permutation('ABCDEFG')
+    ('D', 'B', 'E', 'C', 'G', 'A', 'F')
+    >>> random_permutation('ABCDEFG', 5)
+    ('A', 'G', 'D', 'C', 'B')
+
+
+    >>> random.seed(8675309)
+    >>> random_combination('ABCDEFG', 7)
+    ('A', 'B', 'C', 'D', 'E', 'F', 'G')
+    >>> random_combination('ABCDEFG', 6)
+    ('A', 'B', 'C', 'D', 'F', 'G')
+    >>> random_combination('ABCDEFG', 5)
+    ('A', 'B', 'C', 'E', 'F')
+    >>> random_combination('ABCDEFG', 4)
+    ('B', 'C', 'D', 'G')
+    >>> random_combination('ABCDEFG', 3)
+    ('B', 'E', 'G')
+    >>> random_combination('ABCDEFG', 2)
+    ('E', 'G')
+    >>> random_combination('ABCDEFG', 1)
+    ('C',)
+    >>> random_combination('ABCDEFG', 0)
+    ()
+
+
+    >>> random.seed(8675309)
+    >>> random_combination_with_replacement('ABCDEFG', 7)
+    ('B', 'C', 'D', 'E', 'E', 'E', 'G')
+    >>> random_combination_with_replacement('ABCDEFG', 3)
+    ('A', 'B', 'E')
+    >>> random_combination_with_replacement('ABCDEFG', 2)
+    ('A', 'G')
+    >>> random_combination_with_replacement('ABCDEFG', 1)
+    ('E',)
+    >>> random_combination_with_replacement('ABCDEFG', 0)
+    ()
+
+
+    >>> random.seed(8675309)
+    >>> random_derangement('')
+    ()
+    >>> random_derangement('A')
+    Traceback (most recent call last):
+    ...
+    IndexError: No derangments to choose from
+    >>> random_derangement('AB')
+    ('B', 'A')
+    >>> random_derangement('ABC')
+    ('C', 'A', 'B')
+    >>> random_derangement('ABCD')
+    ('B', 'A', 'D', 'C')
+    >>> random_derangement('ABCDE')
+    ('B', 'C', 'A', 'E', 'D')
+    >>> # Identical inputs treated as distinct
+    >>> identical = 20
+    >>> random_derangement((10, identical, 30, identical))
+    (20, 30, 10, 20)
+
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
@@ -741,7 +833,7 @@ The following options are accepted:
 .. option:: -f <N>
             --float <N>
 
-   Print a random floating-point number between 1 and N inclusive,
+   Print a random floating-point number between 0 and N inclusive,
    using :meth:`uniform`.
 
 If no options are given, the output depends on the input:

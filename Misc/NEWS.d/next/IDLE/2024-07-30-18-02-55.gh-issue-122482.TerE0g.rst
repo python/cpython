@@ -1,2 +1,0 @@
-Change About IDLE to direct users to discuss.python.org instead of the now
-unused idle-dev email and mailing list.

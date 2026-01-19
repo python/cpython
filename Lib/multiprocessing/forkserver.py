@@ -9,6 +9,7 @@ import sys
 import threading
 import warnings
 
+from . import AuthenticationError
 from . import connection
 from . import process
 from .context import reduction
@@ -25,6 +26,7 @@ __all__ = ['ensure_running', 'get_inherited_fds', 'connect_to_new_process',
 
 MAXFDS_TO_SEND = 256
 SIGNED_STRUCT = struct.Struct('q')     # large enough for pid_t
+_AUTHKEY_LEN = 32  # <= PIPEBUF so it fits a single write to an empty pipe.
 
 #
 # Forkserver class
@@ -33,12 +35,14 @@ SIGNED_STRUCT = struct.Struct('q')     # large enough for pid_t
 class ForkServer(object):
 
     def __init__(self):
+        self._forkserver_authkey = None
         self._forkserver_address = None
         self._forkserver_alive_fd = None
         self._forkserver_pid = None
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
+        self._preload_on_error = 'ignore'
 
     def _stop(self):
         # Method used by unit tests to stop the server
@@ -59,12 +63,24 @@ class ForkServer(object):
         if not util.is_abstract_socket_namespace(self._forkserver_address):
             os.unlink(self._forkserver_address)
         self._forkserver_address = None
+        self._forkserver_authkey = None
 
-    def set_forkserver_preload(self, modules_names):
-        '''Set list of module names to try to load in forkserver process.'''
+    def set_forkserver_preload(self, modules_names, *, on_error='ignore'):
+        '''Set list of module names to try to load in forkserver process.
+
+        The on_error parameter controls how import failures are handled:
+        "ignore" (default) silently ignores failures, "warn" emits warnings,
+        and "fail" raises exceptions breaking the forkserver context.
+        '''
         if not all(type(mod) is str for mod in modules_names):
             raise TypeError('module_names must be a list of strings')
+        if on_error not in ('ignore', 'warn', 'fail'):
+            raise ValueError(
+                f"on_error must be 'ignore', 'warn', or 'fail', "
+                f"not {on_error!r}"
+            )
         self._preload_modules = modules_names
+        self._preload_on_error = on_error
 
     def get_inherited_fds(self):
         '''Return list of fds inherited from parent process.
@@ -83,6 +99,7 @@ class ForkServer(object):
         process data.
         '''
         self.ensure_running()
+        assert self._forkserver_authkey
         if len(fds) + 4 >= MAXFDS_TO_SEND:
             raise ValueError('too many fds')
         with socket.socket(socket.AF_UNIX) as client:
@@ -93,6 +110,26 @@ class ForkServer(object):
                       resource_tracker.getfd()]
             allfds += fds
             try:
+                client.setblocking(True)
+                wrapped_client = connection.Connection(client.fileno())
+                # The other side of this exchange happens in the child as
+                # implemented in main().
+                try:
+                    connection.answer_challenge(
+                            wrapped_client, self._forkserver_authkey)
+                    connection.deliver_challenge(
+                            wrapped_client, self._forkserver_authkey)
+                except (EOFError, ConnectionError, BrokenPipeError) as exc:
+                    if (self._preload_modules and
+                        self._preload_on_error == 'fail'):
+                        exc.add_note(
+                            "Forkserver process may have crashed during module "
+                            "preloading. Check stderr."
+                        )
+                    raise
+                finally:
+                    wrapped_client._detach()
+                    del wrapped_client
                 reduction.sendfds(client, allfds)
                 return parent_r, parent_w
             except:
@@ -120,6 +157,7 @@ class ForkServer(object):
                     return
                 # dead, launch it again
                 os.close(self._forkserver_alive_fd)
+                self._forkserver_authkey = None
                 self._forkserver_address = None
                 self._forkserver_alive_fd = None
                 self._forkserver_pid = None
@@ -127,12 +165,17 @@ class ForkServer(object):
             cmd = ('from multiprocessing.forkserver import main; ' +
                    'main(%d, %d, %r, **%r)')
 
+            main_kws = {}
             if self._preload_modules:
-                desired_keys = {'main_path', 'sys_path'}
                 data = spawn.get_preparation_data('ignore')
-                data = {x: y for x, y in data.items() if x in desired_keys}
-            else:
-                data = {}
+                if 'sys_path' in data:
+                    main_kws['sys_path'] = data['sys_path']
+                if 'init_main_from_path' in data:
+                    main_kws['main_path'] = data['init_main_from_path']
+                if 'sys_argv' in data:
+                    main_kws['sys_argv'] = data['sys_argv']
+                if self._preload_on_error != 'ignore':
+                    main_kws['on_error'] = self._preload_on_error
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -144,19 +187,31 @@ class ForkServer(object):
                 # all client processes own the write end of the "alive" pipe;
                 # when they all terminate the read end becomes ready.
                 alive_r, alive_w = os.pipe()
+                # A short lived pipe to initialize the forkserver authkey.
+                authkey_r, authkey_w = os.pipe()
                 try:
-                    fds_to_pass = [listener.fileno(), alive_r]
+                    fds_to_pass = [listener.fileno(), alive_r, authkey_r]
+                    main_kws['authkey_r'] = authkey_r
                     cmd %= (listener.fileno(), alive_r, self._preload_modules,
-                            data)
+                            main_kws)
                     exe = spawn.get_executable()
                     args = [exe] + util._args_from_interpreter_flags()
                     args += ['-c', cmd]
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 except:
                     os.close(alive_w)
+                    os.close(authkey_w)
                     raise
                 finally:
                     os.close(alive_r)
+                    os.close(authkey_r)
+                # Authenticate our control socket to prevent access from
+                # processes we have not shared this key with.
+                try:
+                    self._forkserver_authkey = os.urandom(_AUTHKEY_LEN)
+                    os.write(authkey_w, self._forkserver_authkey)
+                finally:
+                    os.close(authkey_w)
                 self._forkserver_address = address
                 self._forkserver_alive_fd = alive_w
                 self._forkserver_pid = pid
@@ -165,20 +220,80 @@ class ForkServer(object):
 #
 #
 
-def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
-    '''Run forkserver.'''
-    if preload:
-        if '__main__' in preload and main_path is not None:
-            process.current_process()._inheriting = True
-            try:
-                spawn.import_main_path(main_path)
-            finally:
-                del process.current_process()._inheriting
-        for modname in preload:
-            try:
-                __import__(modname)
-            except ImportError:
-                pass
+def _handle_import_error(on_error, modinfo, exc, *, warn_stacklevel):
+    """Handle an import error according to the on_error policy."""
+    match on_error:
+        case 'fail':
+            raise
+        case 'warn':
+            warnings.warn(
+                f"Failed to preload {modinfo}: {exc}",
+                ImportWarning,
+                stacklevel=warn_stacklevel + 1
+            )
+        case 'ignore':
+            pass
+
+
+def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
+                    on_error='ignore'):
+    """Handle module preloading with configurable error handling.
+
+    Args:
+        preload: List of module names to preload.
+        main_path: Path to __main__ module if '__main__' is in preload.
+        sys_path: sys.path to use for imports (None means use current).
+        sys_argv: sys.argv to use (None means use current).
+        on_error: How to handle import errors ("ignore", "warn", or "fail").
+    """
+    if not preload:
+        return
+
+    if sys_argv is not None:
+        sys.argv[:] = sys_argv
+    if sys_path is not None:
+        sys.path[:] = sys_path
+
+    if '__main__' in preload and main_path is not None:
+        process.current_process()._inheriting = True
+        try:
+            spawn.import_main_path(main_path)
+        except Exception as e:
+            # Catch broad Exception because import_main_path() uses
+            # runpy.run_path() which executes the script and can raise
+            # any exception, not just ImportError
+            _handle_import_error(
+                on_error, f"__main__ from {main_path!r}", e, warn_stacklevel=2
+            )
+        finally:
+            del process.current_process()._inheriting
+
+    for modname in preload:
+        try:
+            __import__(modname)
+        except ImportError as e:
+            _handle_import_error(
+                on_error, f"module {modname!r}", e, warn_stacklevel=2
+            )
+
+    # gh-135335: flush stdout/stderr in case any of the preloaded modules
+    # wrote to them, otherwise children might inherit buffered data
+    util._flush_std_streams()
+
+
+def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
+         *, sys_argv=None, authkey_r=None, on_error='ignore'):
+    """Run forkserver."""
+    if authkey_r is not None:
+        try:
+            authkey = os.read(authkey_r, _AUTHKEY_LEN)
+            assert len(authkey) == _AUTHKEY_LEN, f'{len(authkey)} < {_AUTHKEY_LEN}'
+        finally:
+            os.close(authkey_r)
+    else:
+        authkey = b''
+
+    _handle_preload(preload, main_path, sys_path, sys_argv, on_error)
 
     util._close_stdin()
 
@@ -255,8 +370,24 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                 if listener in rfds:
                     # Incoming fork request
                     with listener.accept()[0] as s:
-                        # Receive fds from client
-                        fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
+                        try:
+                            if authkey:
+                                wrapped_s = connection.Connection(s.fileno())
+                                # The other side of this exchange happens in
+                                # in connect_to_new_process().
+                                try:
+                                    connection.deliver_challenge(
+                                            wrapped_s, authkey)
+                                    connection.answer_challenge(
+                                            wrapped_s, authkey)
+                                finally:
+                                    wrapped_s._detach()
+                                    del wrapped_s
+                            # Receive fds from client
+                            fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
+                        except (EOFError, BrokenPipeError, AuthenticationError):
+                            s.close()
+                            continue
                         if len(fds) > MAXFDS_TO_SEND:
                             raise RuntimeError(
                                 "Too many ({0:n}) fds to send".format(
@@ -324,13 +455,14 @@ def _serve_one(child_r, fds, unused_fds, handlers):
 #
 
 def read_signed(fd):
-    data = b''
-    length = SIGNED_STRUCT.size
-    while len(data) < length:
-        s = os.read(fd, length - len(data))
-        if not s:
+    data = bytearray(SIGNED_STRUCT.size)
+    unread = memoryview(data)
+    while unread:
+        count = os.readinto(fd, unread)
+        if count == 0:
             raise EOFError('unexpected EOF')
-        data += s
+        unread = unread[count:]
+
     return SIGNED_STRUCT.unpack(data)[0]
 
 def write_signed(fd, n):

@@ -34,6 +34,7 @@ import builtins
 import pkgutil
 from inspect import iscoroutinefunction
 import threading
+from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -568,6 +569,11 @@ class NonCallableMock(Base):
         __dict__['_mock_methods'] = spec
         __dict__['_spec_asyncs'] = _spec_asyncs
 
+    def _mock_extend_spec_methods(self, spec_methods):
+        methods = self.__dict__.get('_mock_methods') or []
+        methods.extend(spec_methods)
+        self.__dict__['_mock_methods'] = methods
+
     def __get_return_value(self):
         ret = self._mock_return_value
         if self._mock_delegate is not None:
@@ -628,7 +634,9 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self, visited=None, *, return_value=False, side_effect=False):
+    def reset_mock(self, visited=None, *,
+                   return_value: bool = False,
+                   side_effect: bool = False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -692,7 +700,7 @@ class NonCallableMock(Base):
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
-                    f"for the mock if {name!r} is meant to be an attribute.")
+                    f"for the mock if {name!r} is meant to be an attribute")
 
         with NonCallableMock._lock:
             result = self._mock_children.get(name)
@@ -978,7 +986,7 @@ class NonCallableMock(Base):
 
 
     def assert_called_once_with(self, /, *args, **kwargs):
-        """assert that the mock was called exactly once and that that call was
+        """assert that the mock was called exactly once and that call was
         with the specified arguments."""
         if not self.call_count == 1:
             msg = ("Expected '%s' to be called once. Called %s times.%s"
@@ -1172,7 +1180,6 @@ class CallableMixin(Base):
 
     def _increment_mock_call(self, /, *args, **kwargs):
         self.called = True
-        self.call_count += 1
 
         # handle call_args
         # needs to be set here so assertions on call arguments pass before
@@ -1180,6 +1187,7 @@ class CallableMixin(Base):
         _call = _Call((args, kwargs), two=True)
         self.call_args = _call
         self.call_args_list.append(_call)
+        self.call_count = len(self.call_args_list)
 
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None
@@ -1357,6 +1365,7 @@ class _patch(object):
         self.autospec = autospec
         self.kwargs = kwargs
         self.additional_patchers = []
+        self.is_started = False
 
 
     def copy(self):
@@ -1469,6 +1478,9 @@ class _patch(object):
 
     def __enter__(self):
         """Perform the patch."""
+        if self.is_started:
+            raise RuntimeError("Patch is already started")
+
         new, spec, spec_set = self.new, self.spec, self.spec_set
         autospec, kwargs = self.autospec, self.kwargs
         new_callable = self.new_callable
@@ -1600,6 +1612,7 @@ class _patch(object):
         self.temp_original = original
         self.is_local = local
         self._exit_stack = contextlib.ExitStack()
+        self.is_started = True
         try:
             setattr(self.target, self.attribute, new_attr)
             if self.attribute_name is not None:
@@ -1619,6 +1632,9 @@ class _patch(object):
 
     def __exit__(self, *exc_info):
         """Undo the patch."""
+        if not self.is_started:
+            return
+
         if self.is_local and self.temp_original is not DEFAULT:
             setattr(self.target, self.attribute, self.temp_original)
         else:
@@ -1635,6 +1651,7 @@ class _patch(object):
         del self.target
         exit_stack = self._exit_stack
         del self._exit_stack
+        self.is_started = False
         return exit_stack.__exit__(*exc_info)
 
 
@@ -2218,7 +2235,7 @@ class MagicMock(MagicMixin, Mock):
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
 
-    def reset_mock(self, /, *args, return_value=False, **kwargs):
+    def reset_mock(self, /, *args, return_value: bool = False, **kwargs):
         if (
             return_value
             and self._mock_name
@@ -2755,6 +2772,16 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
     _kwargs = {'spec': spec}
+
+    entries = [(entry, _missing) for entry in dir(spec)]
+    if is_type and instance and is_dataclass(spec):
+        is_dataclass_spec = True
+        dataclass_fields = fields(spec)
+        entries.extend((f.name, f.type) for f in dataclass_fields)
+        dataclass_spec_list = [f.name for f in dataclass_fields]
+    else:
+        is_dataclass_spec = False
+
     if spec_set:
         _kwargs = {'spec_set': spec}
     elif spec is None:
@@ -2790,6 +2817,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
     mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
                  name=_name, **_kwargs)
+    if is_dataclass_spec:
+        mock._mock_extend_spec_methods(dataclass_spec_list)
 
     if isinstance(spec, FunctionTypes):
         # should only happen at the top level because we don't
@@ -2811,7 +2840,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                             _name='()', _parent=mock,
                                             wraps=wrapped)
 
-    for entry in dir(spec):
+    for entry, original in entries:
         if _is_magic(entry):
             # MagicMock already does the useful magic methods for us
             continue
@@ -2825,10 +2854,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # AttributeError on being fetched?
         # we could be resilient against it, or catch and propagate the
         # exception when the attribute is fetched from the mock
-        try:
-            original = getattr(spec, entry)
-        except AttributeError:
-            continue
+        if original is _missing:
+            try:
+                original = getattr(spec, entry)
+            except AttributeError:
+                continue
 
         child_kwargs = {'spec': original}
         # Wrap child attributes also.

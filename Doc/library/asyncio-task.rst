@@ -158,7 +158,7 @@ other coroutines::
         # Nothing happens if we just call "nested()".
         # A coroutine object is created but not awaited,
         # so it *won't run at all*.
-        nested()
+        nested()  # will raise a "RuntimeWarning".
 
         # Let's do it differently now and await it:
         print(await nested())  # will print "42".
@@ -238,17 +238,23 @@ Creating Tasks
 
 -----------------------------------------------
 
-.. function:: create_task(coro, *, name=None, context=None)
+.. function:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
 
-   If *name* is not ``None``, it is set as the name of the task using
-   :meth:`Task.set_name`.
+   The full function signature is largely the same as that of the
+   :class:`Task` constructor (or factory) - all of the keyword arguments to
+   this function are passed through to that interface.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
+
+   An optional keyword-only *eager_start* argument allows specifying
+   if the task should execute eagerly during the call to create_task,
+   or be scheduled later. If *eager_start* is not passed the mode set
+   by :meth:`loop.set_task_factory` will be used.
 
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -290,6 +296,9 @@ Creating Tasks
    .. versionchanged:: 3.11
       Added the *context* parameter.
 
+   .. versionchanged:: 3.14
+      Added the *eager_start* parameter by passing on all *kwargs*.
+
 
 Task Cancellation
 =================
@@ -330,7 +339,7 @@ and reliable way to wait for all tasks in the group to finish.
 
    .. versionadded:: 3.11
 
-   .. method:: create_task(coro, *, name=None, context=None)
+   .. method:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
       Create a task in this task group.
       The signature matches that of :func:`asyncio.create_task`.
@@ -341,6 +350,10 @@ and reliable way to wait for all tasks in the group to finish.
       .. versionchanged:: 3.13
 
          Close the given coroutine if the task group is not active.
+
+      .. versionchanged:: 3.14
+
+         Passes on all *kwargs* to :meth:`loop.create_task`
 
 Example::
 
@@ -464,7 +477,8 @@ Expected output:
 Sleeping
 ========
 
-.. coroutinefunction:: sleep(delay, result=None)
+.. function:: sleep(delay, result=None)
+   :async:
 
    Block for *delay* seconds.
 
@@ -819,7 +833,8 @@ Timeouts
 
    .. versionadded:: 3.11
 
-.. coroutinefunction:: wait_for(aw, timeout)
+.. function:: wait_for(aw, timeout)
+   :async:
 
    Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
@@ -879,7 +894,8 @@ Timeouts
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+   :async:
 
    Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
    iterable concurrently and block until the condition specified
@@ -998,7 +1014,8 @@ Waiting Primitives
 Running in Threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
+.. function:: to_thread(func, /, *args, **kwargs)
+   :async:
 
    Asynchronously run function *func* in a separate thread.
 
@@ -1067,14 +1084,59 @@ Scheduling From Other Threads
    This function is meant to be called from a different OS thread
    than the one where the event loop is running.  Example::
 
-     # Create a coroutine
-     coro = asyncio.sleep(1, result=3)
+     def in_thread(loop: asyncio.AbstractEventLoop) -> None:
+         # Run some blocking IO
+         pathlib.Path("example.txt").write_text("hello world", encoding="utf8")
 
-     # Submit the coroutine to a given loop
-     future = asyncio.run_coroutine_threadsafe(coro, loop)
+         # Create a coroutine
+         coro = asyncio.sleep(1, result=3)
 
-     # Wait for the result with an optional timeout argument
-     assert future.result(timeout) == 3
+         # Submit the coroutine to a given loop
+         future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+         # Wait for the result with an optional timeout argument
+         assert future.result(timeout=2) == 3
+
+     async def amain() -> None:
+         # Get the running loop
+         loop = asyncio.get_running_loop()
+
+         # Run something in a thread
+         await asyncio.to_thread(in_thread, loop)
+
+   It's also possible to run the other way around.  Example::
+
+     @contextlib.contextmanager
+     def loop_in_thread() -> Generator[asyncio.AbstractEventLoop]:
+         loop_fut = concurrent.futures.Future[asyncio.AbstractEventLoop]()
+         stop_event = asyncio.Event()
+
+         async def main() -> None:
+             loop_fut.set_result(asyncio.get_running_loop())
+             await stop_event.wait()
+
+         with concurrent.futures.ThreadPoolExecutor(1) as tpe:
+             complete_fut = tpe.submit(asyncio.run, main())
+             for fut in concurrent.futures.as_completed((loop_fut, complete_fut)):
+                 if fut is loop_fut:
+                     loop = loop_fut.result()
+                     try:
+                         yield loop
+                     finally:
+                         loop.call_soon_threadsafe(stop_event.set)
+                 else:
+                     fut.result()
+
+     # Create a loop in another thread
+     with loop_in_thread() as loop:
+         # Create a coroutine
+         coro = asyncio.sleep(1, result=3)
+
+         # Submit the coroutine to a given loop
+         future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+         # Wait for the result with an optional timeout argument
+         assert future.result(timeout=2) == 3
 
    If an exception is raised in the coroutine, the returned Future
    will be notified.  It can also be used to cancel the task in
@@ -1131,6 +1193,7 @@ Introspection
 
    .. versionadded:: 3.4
 
+.. _asyncio-task-obj:
 
 Task Object
 ===========
@@ -1158,8 +1221,8 @@ Task Object
 
    To cancel a running Task use the :meth:`cancel` method.  Calling it
    will cause the Task to throw a :exc:`CancelledError` exception into
-   the wrapped coroutine.  If a coroutine is awaiting on a Future
-   object during cancellation, the Future object will be cancelled.
+   the wrapped coroutine.  If a coroutine is awaiting on a future-like
+   object during cancellation, the awaited object will be cancelled.
 
    :meth:`cancelled` can be used to check if the Task was cancelled.
    The method returns ``True`` if the wrapped coroutine did not
@@ -1332,7 +1395,10 @@ Task Object
 
       Request the Task to be cancelled.
 
-      This arranges for a :exc:`CancelledError` exception to be thrown
+      If the Task is already *done* or *cancelled*, return ``False``,
+      otherwise, return ``True``.
+
+      The method arranges for a :exc:`CancelledError` exception to be thrown
       into the wrapped coroutine on the next cycle of the event loop.
 
       The coroutine then has a chance to clean up or even deny the
@@ -1344,6 +1410,10 @@ Task Object
       discouraged.  Should the coroutine nevertheless decide to suppress
       the cancellation, it needs to call :meth:`Task.uncancel` in addition
       to catching the exception.
+
+      If the Task being cancelled is currently awaiting on a future-like
+      object, that awaited object will also be cancelled. This cancellation
+      propagates down the entire chain of awaited objects.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.

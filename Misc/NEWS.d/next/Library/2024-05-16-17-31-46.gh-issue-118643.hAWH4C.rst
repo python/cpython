@@ -1,2 +1,0 @@
-Fix an AttributeError in the :mod:`email` module when re-fold a long address
-list. Also fix more cases of incorrect encoding of the address separator in the address list.

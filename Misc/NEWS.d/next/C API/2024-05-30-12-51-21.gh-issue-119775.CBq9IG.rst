@@ -1,2 +1,0 @@
-Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-bases was deprecated since 3.12 and now raises a :exc:`TypeError`.

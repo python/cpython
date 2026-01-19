@@ -1,3 +1,0 @@
-:func:`complex` accepts now a string only as a positional argument. Passing
-a complex number as the "real" or "imag" argument is deprecated; it should
-only be passed as a single positional argument.

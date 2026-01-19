@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
@@ -518,6 +519,78 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicodedata_isxidstart__doc__,
+"isxidstart($module, chr, /)\n"
+"--\n"
+"\n"
+"Return True if the character has the XID_Start property, else False.");
+
+#define UNICODEDATA_ISXIDSTART_METHODDEF    \
+    {"isxidstart", (PyCFunction)unicodedata_isxidstart, METH_O, unicodedata_isxidstart__doc__},
+
+static PyObject *
+unicodedata_isxidstart_impl(PyObject *module, int chr);
+
+static PyObject *
+unicodedata_isxidstart(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("isxidstart", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "isxidstart(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_isxidstart_impl(module, chr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicodedata_isxidcontinue__doc__,
+"isxidcontinue($module, chr, /)\n"
+"--\n"
+"\n"
+"Return True if the character has the XID_Continue property, else False.");
+
+#define UNICODEDATA_ISXIDCONTINUE_METHODDEF    \
+    {"isxidcontinue", (PyCFunction)unicodedata_isxidcontinue, METH_O, unicodedata_isxidcontinue__doc__},
+
+static PyObject *
+unicodedata_isxidcontinue_impl(PyObject *module, int chr);
+
+static PyObject *
+unicodedata_isxidcontinue(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("isxidcontinue", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "isxidcontinue(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_isxidcontinue_impl(module, chr);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicodedata_UCD_lookup__doc__,
 "lookup($self, name, /)\n"
 "--\n"
@@ -549,4 +622,180 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a59d430cee41058 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(unicodedata_iter_graphemes__doc__,
+"iter_graphemes($module, unistr, start=0, end=sys.maxsize, /)\n"
+"--\n"
+"\n"
+"Returns an iterator to iterate over grapheme clusters.\n"
+"\n"
+"It uses extended grapheme cluster rules from TR29.");
+
+#define UNICODEDATA_ITER_GRAPHEMES_METHODDEF    \
+    {"iter_graphemes", _PyCFunction_CAST(unicodedata_iter_graphemes), METH_FASTCALL, unicodedata_iter_graphemes__doc__},
+
+static PyObject *
+unicodedata_iter_graphemes_impl(PyObject *module, PyObject *unistr,
+                                Py_ssize_t start, Py_ssize_t end);
+
+static PyObject *
+unicodedata_iter_graphemes(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *unistr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("iter_graphemes", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("iter_graphemes", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    unistr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        start = ival;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        end = ival;
+    }
+skip_optional:
+    return_value = unicodedata_iter_graphemes_impl(module, unistr, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicodedata_grapheme_cluster_break__doc__,
+"grapheme_cluster_break($module, chr, /)\n"
+"--\n"
+"\n"
+"Returns the Grapheme_Cluster_Break property assigned to the character.");
+
+#define UNICODEDATA_GRAPHEME_CLUSTER_BREAK_METHODDEF    \
+    {"grapheme_cluster_break", (PyCFunction)unicodedata_grapheme_cluster_break, METH_O, unicodedata_grapheme_cluster_break__doc__},
+
+static PyObject *
+unicodedata_grapheme_cluster_break_impl(PyObject *module, int chr);
+
+static PyObject *
+unicodedata_grapheme_cluster_break(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("grapheme_cluster_break", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "grapheme_cluster_break(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_grapheme_cluster_break_impl(module, chr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicodedata_indic_conjunct_break__doc__,
+"indic_conjunct_break($module, chr, /)\n"
+"--\n"
+"\n"
+"Returns the Indic_Conjunct_Break property assigned to the character.");
+
+#define UNICODEDATA_INDIC_CONJUNCT_BREAK_METHODDEF    \
+    {"indic_conjunct_break", (PyCFunction)unicodedata_indic_conjunct_break, METH_O, unicodedata_indic_conjunct_break__doc__},
+
+static PyObject *
+unicodedata_indic_conjunct_break_impl(PyObject *module, int chr);
+
+static PyObject *
+unicodedata_indic_conjunct_break(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("indic_conjunct_break", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "indic_conjunct_break(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_indic_conjunct_break_impl(module, chr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicodedata_extended_pictographic__doc__,
+"extended_pictographic($module, chr, /)\n"
+"--\n"
+"\n"
+"Returns the Extended_Pictographic property assigned to the character, as boolean.");
+
+#define UNICODEDATA_EXTENDED_PICTOGRAPHIC_METHODDEF    \
+    {"extended_pictographic", (PyCFunction)unicodedata_extended_pictographic, METH_O, unicodedata_extended_pictographic__doc__},
+
+static PyObject *
+unicodedata_extended_pictographic_impl(PyObject *module, int chr);
+
+static PyObject *
+unicodedata_extended_pictographic(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("extended_pictographic", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "extended_pictographic(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_extended_pictographic_impl(module, chr);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=0f09cc90f06ace76 input=a9049054013a1b77]*/

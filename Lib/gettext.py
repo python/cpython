@@ -41,14 +41,10 @@ internationalized, to the local language and cultural habits.
 #   to do binary searches and lazy initializations.  Or you might want to use
 #   the undocumented double-hash algorithm for .mo files with hash tables, but
 #   you'll need to study the GNU gettext code to do this.
-#
-# - Support Solaris .mo file formats.  Unfortunately, we've been unable to
-#   find this format documented anywhere.
 
 
 import operator
 import os
-import re
 import sys
 
 
@@ -70,22 +66,26 @@ _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
 # https://www.gnu.org/software/gettext/manual/gettext.html#Plural-forms
 # http://git.savannah.gnu.org/cgit/gettext.git/tree/gettext-runtime/intl/plural.y
 
-_token_pattern = re.compile(r"""
-        (?P<WHITESPACES>[ \t]+)                    | # spaces and horizontal tabs
-        (?P<NUMBER>[0-9]+\b)                       | # decimal integer
-        (?P<NAME>n\b)                              | # only n is allowed
-        (?P<PARENTHESIS>[()])                      |
-        (?P<OPERATOR>[-*/%+?:]|[><!]=?|==|&&|\|\|) | # !, *, /, %, +, -, <, >,
-                                                     # <=, >=, ==, !=, &&, ||,
-                                                     # ? :
-                                                     # unary and bitwise ops
-                                                     # not allowed
-        (?P<INVALID>\w+|.)                           # invalid token
-    """, re.VERBOSE|re.DOTALL)
-
+_token_pattern = None
 
 def _tokenize(plural):
-    for mo in re.finditer(_token_pattern, plural):
+    global _token_pattern
+    if _token_pattern is None:
+        import re
+        _token_pattern = re.compile(r"""
+                (?P<WHITESPACES>[ \t]+)                    | # spaces and horizontal tabs
+                (?P<NUMBER>[0-9]+\b)                       | # decimal integer
+                (?P<NAME>n\b)                              | # only n is allowed
+                (?P<PARENTHESIS>[()])                      |
+                (?P<OPERATOR>[-*/%+?:]|[><!]=?|==|&&|\|\|) | # !, *, /, %, +, -, <, >,
+                                                             # <=, >=, ==, !=, &&, ||,
+                                                             # ? :
+                                                             # unary and bitwise ops
+                                                             # not allowed
+                (?P<INVALID>\w+|.)                           # invalid token
+            """, re.VERBOSE|re.DOTALL)
+
+    for mo in _token_pattern.finditer(plural):
         kind = mo.lastgroup
         if kind == 'WHITESPACES':
             continue

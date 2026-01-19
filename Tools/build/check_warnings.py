@@ -4,25 +4,33 @@ exist only in files that are expected to have warnings.
 """
 
 import argparse
-from collections import defaultdict
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, TypedDict
 
 
 class IgnoreRule(NamedTuple):
     file_path: str
-    count: int
+    count: int  # type: ignore[assignment]
     ignore_all: bool = False
     is_directory: bool = False
+
+
+class CompileWarning(TypedDict):
+    file: str
+    line: str
+    column: str
+    message: str
+    option: str
 
 
 def parse_warning_ignore_file(file_path: str) -> set[IgnoreRule]:
     """
     Parses the warning ignore file and returns a set of IgnoreRules
     """
-    files_with_expected_warnings = set()
+    files_with_expected_warnings: set[IgnoreRule] = set()
     with Path(file_path).open(encoding="UTF-8") as ignore_rules_file:
         files_with_expected_warnings = set()
         for i, line in enumerate(ignore_rules_file):
@@ -38,14 +46,15 @@ def parse_warning_ignore_file(file_path: str) -> set[IgnoreRule]:
                     # Directories must have a wildcard count
                     if is_directory and count != "*":
                         print(
-                            f"Error parsing ignore file: {file_path} at line: {i}"
+                            f"Error parsing ignore file: {file_path} "
+                            f"at line: {i}"
                         )
                         print(
                             f"Directory {file_name} must have count set to *"
                         )
                         sys.exit(1)
                     if ignore_all:
-                        count = 0
+                        count = "0"
 
                     files_with_expected_warnings.add(
                         IgnoreRule(
@@ -60,7 +69,7 @@ def extract_warnings_from_compiler_output(
     compiler_output: str,
     compiler_output_type: str,
     path_prefix: str = "",
-) -> list[dict]:
+) -> list[CompileWarning]:
     """
     Extracts warnings from the compiler output based on compiler
     output type. Removes path prefix from file paths if provided.
@@ -77,32 +86,35 @@ def extract_warnings_from_compiler_output(
             r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: "
             r"(?P<message>.*) (?P<option>\[-[^\]]+\])$"
         )
+    else:
+        raise RuntimeError(
+            f"Unsupported compiler output type: {compiler_output_type}",
+        )
     compiled_regex = re.compile(regex_pattern)
-    compiler_warnings = []
+    compiler_warnings: list[CompileWarning] = []
     for i, line in enumerate(compiler_output.splitlines(), start=1):
         if match := compiled_regex.match(line):
             try:
-                compiler_warnings.append(
-                    {
-                        "file": match.group("file").removeprefix(path_prefix),
-                        "line": match.group("line"),
-                        "column": match.group("column"),
-                        "message": match.group("message"),
-                        "option": match.group("option")
-                        .lstrip("[")
-                        .rstrip("]"),
-                    }
-                )
-            except:
+                compiler_warnings.append({
+                    "file": match.group("file").removeprefix(path_prefix),
+                    "line": match.group("line"),
+                    "column": match.group("column"),
+                    "message": match.group("message"),
+                    "option": match.group("option").lstrip("[").rstrip("]"),
+                })
+            except AttributeError:
                 print(
-                    f"Error parsing compiler output. Unable to extract warning on line {i}:\n{line}"
+                    f"Error parsing compiler output. "
+                    f"Unable to extract warning on line {i}:\n{line}"
                 )
                 sys.exit(1)
 
     return compiler_warnings
 
 
-def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
+def get_warnings_by_file(
+    warnings: list[CompileWarning],
+) -> dict[str, list[CompileWarning]]:
     """
     Returns a dictionary where the key is the file and the data is the
     warnings in that file. Does not include duplicate warnings for a
@@ -125,8 +137,9 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
 def is_file_ignored(
     file_path: str, ignore_rules: set[IgnoreRule]
 ) -> IgnoreRule | None:
-    """
-    Returns the IgnoreRule object for the file path if there is a related rule for it
+    """Return the IgnoreRule object for the file path.
+
+    Return ``None`` if there is no related rule for that path.
     """
     for rule in ignore_rules:
         if rule.is_directory:
@@ -139,7 +152,7 @@ def is_file_ignored(
 
 def get_unexpected_warnings(
     ignore_rules: set[IgnoreRule],
-    files_with_warnings: set[IgnoreRule],
+    files_with_warnings: dict[str, list[CompileWarning]],
 ) -> int:
     """
     Returns failure status if warnings discovered in list of warnings
@@ -148,7 +161,6 @@ def get_unexpected_warnings(
     """
     unexpected_warnings = {}
     for file in files_with_warnings.keys():
-
         rule = is_file_ignored(file, ignore_rules)
 
         if rule:
@@ -182,7 +194,7 @@ def get_unexpected_warnings(
 
 def get_unexpected_improvements(
     ignore_rules: set[IgnoreRule],
-    files_with_warnings: set[IgnoreRule],
+    files_with_warnings: dict[str, list[CompileWarning]],
 ) -> int:
     """
     Returns failure status if the number of warnings for a file is greater
@@ -191,17 +203,18 @@ def get_unexpected_improvements(
     """
     unexpected_improvements = []
     for rule in ignore_rules:
-        if not rule.ignore_all and rule.file_path not in files_with_warnings.keys():
+        if (
+            not rule.ignore_all
+            and rule.file_path not in files_with_warnings.keys()
+        ):
             if rule.file_path not in files_with_warnings.keys():
                 unexpected_improvements.append((rule.file_path, rule.count, 0))
             elif len(files_with_warnings[rule.file_path]) < rule.count:
-                unexpected_improvements.append(
-                    (
-                        rule.file_path,
-                        rule.count,
-                        len(files_with_warnings[rule.file_path]),
-                    )
-                )
+                unexpected_improvements.append((
+                    rule.file_path,
+                    rule.count,
+                    len(files_with_warnings[rule.file_path]),
+                ))
 
     if unexpected_improvements:
         print("Unexpected improvements:")

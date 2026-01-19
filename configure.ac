@@ -2,7 +2,7 @@ dnl ************************************************************
 dnl * Please run autoreconf -ivf -Werror to test your changes! *
 dnl ************************************************************
 dnl
-dnl Python's configure script requires autoconf 2.71, autoconf-archive,
+dnl Python's configure script requires autoconf 2.72, autoconf-archive,
 dnl aclocal 1.16, and pkg-config.
 dnl
 dnl It is recommended to use the Tools/build/regen-configure.sh shell script
@@ -10,9 +10,9 @@ dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define([PYTHON_VERSION], [3.14])
+m4_define([PYTHON_VERSION], [3.15])
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.72])
 
 AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
@@ -164,7 +164,7 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -205,7 +205,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.13 python3.12 python3.11 python3.10 python3 python],
+  [python$PACKAGE_VERSION python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST([PYTHON_FOR_REGEN])
 
@@ -307,6 +307,15 @@ if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
   AC_MSG_ERROR([pkg-config is required])]
 fi
 
+dnl Allow distributors to provide custom missing stdlib module error messages
+AC_ARG_WITH([missing-stdlib-config],
+  [AS_HELP_STRING([--with-missing-stdlib-config=FILE],
+                  [File with custom module error messages for missing stdlib modules])],
+  [MISSING_STDLIB_CONFIG="$withval"],
+  [MISSING_STDLIB_CONFIG=""]
+)
+AC_SUBST([MISSING_STDLIB_CONFIG])
+
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
 AC_MSG_CHECKING([MACHDEP])
@@ -330,13 +339,16 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-*-darwin*)
+		ac_sys_system=Darwin
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
 	*-*-emscripten)
 	    ac_sys_system=Emscripten
 	    ;;
-	*-*-wasi)
+	*-*-wasi*)
 	    ac_sys_system=WASI
 	    ;;
 	*)
@@ -362,6 +374,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
@@ -378,6 +391,25 @@ then
     fi
 fi
 AC_MSG_RESULT(["$MACHDEP"])
+
+dnl For cross compilation, we distinguish between "prefix" (where we install the
+dnl files) and "host_prefix" (where we expect to find the files at runtime)
+
+if test -z "$host_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_prefix=/],
+    [host_prefix='${prefix}']
+  )
+fi
+AC_SUBST([host_prefix])
+
+if test -z "$host_exec_prefix"; then
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [host_exec_prefix=$host_prefix],
+    [host_exec_prefix='${exec_prefix}']
+  )
+fi
+AC_SUBST([host_exec_prefix])
 
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
@@ -536,7 +568,7 @@ AC_ARG_ENABLE([framework],
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) AC_MSG_ERROR([Unknown platform for framework build])
 		esac
 	esac
@@ -643,9 +675,9 @@ AC_ARG_ENABLE([framework],
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=iOS/Resources
+				RESSRCDIR=Apple/iOS/Resources
 
-				AC_CONFIG_FILES([iOS/Resources/Info.plist])
+				AC_CONFIG_FILES([Apple/iOS/Resources/Info.plist])
 				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
@@ -771,8 +803,20 @@ if test "$cross_compiling" = yes; then
 				;;
 		esac
 		;;
+	*-*-darwin*)
+		case "$host_cpu" in
+		arm*)
+			_host_ident=arm
+			;;
+		*)
+			_host_ident=$host_cpu
+		esac
+		;;
 	*-*-vxworks*)
 		_host_ident=$host_cpu
+		;;
+	*-*-emscripten)
+		_host_ident=$(emcc -dumpversion | cut -f1 -d-)-$host_cpu
 		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
@@ -1029,6 +1073,9 @@ AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_EGREP
 
+dnl GNU Autoconf recommends the use of expr instead of basename.
+AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
+
 dnl detect compiler name
 dnl check for xlc before clang, newer xlc's can use clang as frontend.
 dnl check for GCC last, other compilers set __GNUC__, too.
@@ -1054,9 +1101,7 @@ EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ac_cv_cc_name=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  if test $(expr "//$CC" : '.*/\(.*\)') = "mpicc"; then
-    ac_cv_cc_name="mpicc"
-  fi
+  AS_VAR_IF([CC_BASENAME], [mpicc], [ac_cv_cc_name=mpicc])
 else
   ac_cv_cc_name="unknown"
 fi
@@ -1085,11 +1130,11 @@ AC_SUBST([CXX])
 preset_cxx="$CXX"
 if test -z "$CXX"
 then
-        case "$CC" in
+        case "$ac_cv_cc_name" in
         gcc)    AC_PATH_TOOL([CXX], [g++], [g++], [notfound]) ;;
         cc)     AC_PATH_TOOL([CXX], [c++], [c++], [notfound]) ;;
-        clang|*/clang)     AC_PATH_TOOL([CXX], [clang++], [clang++], [notfound]) ;;
-        icc|*/icc)         AC_PATH_TOOL([CXX], [icpc], [icpc], [notfound]) ;;
+        clang)             AC_PATH_TOOL([CXX], [clang++], [clang++], [notfound]) ;;
+        icc)               AC_PATH_TOOL([CXX], [icpc], [icpc], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -1166,33 +1211,42 @@ if test x$MULTIARCH != x; then
 fi
 AC_SUBST([MULTIARCH_CPPFLAGS])
 
+# Guess C stack direction
+AS_CASE([$host],
+  [hppa*], [_Py_STACK_GROWS_DOWN=0],
+  [_Py_STACK_GROWS_DOWN=1])
+AC_DEFINE_UNQUOTED([_Py_STACK_GROWS_DOWN], [$_Py_STACK_GROWS_DOWN],
+  [Define to 1 if the machine stack grows down (default); 0 if it grows up.])
+AC_SUBST([_Py_STACK_GROWS_DOWN])
+
 dnl Support tiers according to https://peps.python.org/pep-0011/
 dnl
 dnl NOTE: Windows support tiers are defined in PC/pyconfig.h.
 dnl
 AC_MSG_CHECKING([for PEP 11 support tier])
 AS_CASE([$host/$ac_cv_cc_name],
-  [x86_64-*-linux-gnu/gcc],          [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
-  [x86_64-apple-darwin*/clang],      [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
-  [aarch64-apple-darwin*/clang],     [PY_SUPPORT_TIER=1], dnl macOS on M1, any version
-  [i686-pc-windows-msvc/msvc],       [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
-  [x86_64-pc-windows-msvc/msvc],     [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
+  [x86_64-*-linux-gnu/gcc],              [PY_SUPPORT_TIER=1], dnl Linux on AMD64, any vendor, glibc, gcc
+  [x86_64-apple-darwin*/clang],          [PY_SUPPORT_TIER=1], dnl macOS on Intel, any version
+  [aarch64-apple-darwin*/clang],         [PY_SUPPORT_TIER=1], dnl macOS on M1, any version
+  [i686-pc-windows-msvc/msvc],           [PY_SUPPORT_TIER=1], dnl 32bit Windows on Intel, MSVC
+  [x86_64-pc-windows-msvc/msvc],         [PY_SUPPORT_TIER=1], dnl 64bit Windows on AMD64, MSVC
 
-  [aarch64-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
-  [aarch64-*-linux-gnu/clang],       [PY_SUPPORT_TIER=2],
-  [powerpc64le-*-linux-gnu/gcc],     [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
-  [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=2], dnl WebAssembly System Interface, clang
-  [x86_64-*-linux-gnu/clang],        [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
+  [aarch64-*-linux-gnu/gcc],             [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
+  [aarch64-*-linux-gnu/clang],           [PY_SUPPORT_TIER=2],
+  [powerpc64le-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [wasm32-unknown-wasip1/clang],         [PY_SUPPORT_TIER=2], dnl WebAssembly System Interface preview1, clang
+  [x86_64-*-linux-gnu/clang],            [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
 
-  [aarch64-pc-windows-msvc/msvc],    [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
-  [armv7l-*-linux-gnueabihf/gcc],    [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
-  [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
-  [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
-  [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
-  [aarch64-apple-ios*-simulator/clang],   [PY_SUPPORT_TIER=3], dnl iOS Simulator on arm64
-  [aarch64-apple-ios*/clang],             [PY_SUPPORT_TIER=3], dnl iOS on ARM64
-  [aarch64-*-linux-android/clang],   [PY_SUPPORT_TIER=3], dnl Android on ARM64
-  [x86_64-*-linux-android/clang],    [PY_SUPPORT_TIER=3], dnl Android on AMD64
+  [aarch64-pc-windows-msvc/msvc],        [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
+  [armv7l-*-linux-gnueabihf/gcc],        [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
+  [powerpc64le-*-linux-gnu/clang],       [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
+  [s390x-*-linux-gnu/gcc],               [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
+  [x86_64-*-freebsd*/clang],             [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [aarch64-apple-ios*-simulator/clang],  [PY_SUPPORT_TIER=3], dnl iOS Simulator on arm64
+  [aarch64-apple-ios*/clang],            [PY_SUPPORT_TIER=3], dnl iOS on ARM64
+  [aarch64-*-linux-android/clang],       [PY_SUPPORT_TIER=3], dnl Android on ARM64
+  [x86_64-*-linux-android/clang],        [PY_SUPPORT_TIER=3], dnl Android on AMD64
+  [wasm32-*-emscripten/emcc],            [PY_SUPPORT_TIER=3], dnl Emscripten
 
   [PY_SUPPORT_TIER=0]
 )
@@ -1262,30 +1316,6 @@ AS_CASE([$ac_sys_system/$ac_sys_release],
  ]
 )
 
-AC_MSG_CHECKING([for --with-emscripten-target])
-AC_ARG_WITH([emscripten-target],
-  [AS_HELP_STRING([--with-emscripten-target=@<:@browser|node@:>@], [Emscripten platform])],
-[
-	AS_VAR_IF([ac_sys_system], [Emscripten], [
-    AS_CASE([$with_emscripten_target],
-      [browser], [ac_sys_emscripten_target=browser],
-      [node], [ac_sys_emscripten_target=node],
-dnl Debug builds with source map / dwarf symbols. Py_DEBUG builds easily
-dnl run out of stack space. Detached sybmols and map prohibit some
-dnl optimizations and increase file size. Options are undocumented so we
-dnl are free to remove them in the future.
-      [browser-debug], [ac_sys_emscripten_target=browser-debug],
-      [node-debug], [ac_sys_emscripten_target=node-debug],
-      [AC_MSG_ERROR([Invalid argument: --with-emscripten-target=browser|node])]
-    )
-  ], [
-    AC_MSG_ERROR([--with-emscripten-target only applies to Emscripten])
-  ])
-], [
-  AS_VAR_IF([ac_sys_system], [Emscripten], [ac_sys_emscripten_target=browser])
-])
-AC_MSG_RESULT([$ac_sys_emscripten_target])
-
 dnl On Emscripten dlopen() requires -s MAIN_MODULE and -fPIC. The flags
 dnl disables dead code elimination and increases the size of the WASM module
 dnl by about 1.5 to 2MB. MAIN_MODULE defines __wasm_mutable_globals__.
@@ -1293,11 +1323,11 @@ dnl See https://emscripten.org/docs/compiling/Dynamic-Linking.html
 AC_MSG_CHECKING([for --enable-wasm-dynamic-linking])
 AC_ARG_ENABLE([wasm-dynamic-linking],
   [AS_HELP_STRING([--enable-wasm-dynamic-linking],
-                  [Enable dynamic linking support for WebAssembly (default is no)])],
+                  [Enable dynamic linking support for WebAssembly (default is no); WASI requires an external dynamic loader to handle imports])],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI dynamic linking is not implemented yet.])],
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
   )
 ], [
@@ -1330,14 +1360,16 @@ AC_ARG_WITH([suffix],
     [EXEEXT=$with_suffix]
   )
 ], [
-  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXEEXT=.js],
-    [Emscripten/node*], [EXEEXT=.js],
-    [WASI/*], [EXEEXT=.wasm],
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [EXEEXT=.mjs],
+    [WASI], [EXEEXT=.wasm],
     [EXEEXT=]
   )
 ])
 AC_MSG_RESULT([$EXEEXT])
+
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
 
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
@@ -1359,7 +1391,7 @@ rmdir CaseSensitiveTestDir
 
 case $ac_sys_system in
 hp*|HP*)
-    case $CC in
+    case $ac_cv_cc_name in
     cc|*/cc) CC="$CC -Ae";;
     esac;;
 esac
@@ -1445,7 +1477,7 @@ AC_MSG_RESULT([$EXPORTSYMS])
 AC_SUBST([GNULD])
 AC_MSG_CHECKING([for GNU ld])
 ac_prog=ld
-if test "$GCC" = yes; then
+if test "$ac_cv_cc_name" = "gcc"; then
        ac_prog=`$CC -print-prog-name=ld`
 fi
 case `"$ac_prog" -V 2>&1 < /dev/null` in
@@ -1607,52 +1639,19 @@ else # shared is disabled
 fi
 AC_MSG_RESULT([$LDLIBRARY])
 
-if test "$cross_compiling" = yes; then
-  RUNSHARED=
-fi
-
+# HOSTRUNNER - Program to run CPython for the host platform
 AC_MSG_CHECKING([HOSTRUNNER])
-AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
 if test -z "$HOSTRUNNER"
 then
-  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/node*], [
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [
       AC_PATH_TOOL([NODE], [node], [node])
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      AC_CACHE_CHECK([for node --experimental-wasm-bigint], [ac_cv_tool_node_wasm_bigint], [
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-      ])
-      AS_VAR_IF([ac_cv_tool_node_wasm_bigint], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bigint"])
-      ])
-
-      AS_VAR_IF([enable_wasm_pthreads], [yes], [
-        AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-threads"])
-        # no longer available in Node 16
-        AC_CACHE_CHECK([for node --experimental-wasm-bulk-memory], [ac_cv_tool_node_wasm_bulk_memory], [
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-        ])
-        AS_VAR_IF([ac_cv_tool_node_wasm_bulk_memory], [yes], [
-          AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-bulk-memory"])
-        ])
-      ])
-
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
-    dnl TODO: support other WASI runtimes
-    dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
-    dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
+    [WASI], [
+      AC_MSG_ERROR([HOSTRUNNER must be set when cross-compiling to WASI])
+    ],
     [HOSTRUNNER='']
   )
 fi
@@ -1665,10 +1664,8 @@ if test -n "$HOSTRUNNER"; then
 fi
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
-AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-  [Emscripten/browser*], [LIBRARY_DEPS='$(PY3LIBRARY) $(WASM_STDLIB) python.html python.worker.js'],
-  [LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)']
-)
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+
 LINK_PYTHON_DEPS='$(LIBRARY_DEPS)'
 if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
     LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
@@ -1732,7 +1729,7 @@ ABI_THREAD=""
 # --disable-gil
 AC_MSG_CHECKING([for --disable-gil])
 AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_HELP_STRING([--disable-gil], [enable support for running without the GIL (default is no)])],
   [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
 )
 AC_MSG_RESULT([$disable_gil])
@@ -1818,41 +1815,6 @@ else
   AC_MSG_RESULT([no])
 fi
 
-# Check for --enable-experimental-jit:
-AC_MSG_CHECKING([for --enable-experimental-jit])
-AC_ARG_ENABLE([experimental-jit],
-              [AS_HELP_STRING([--enable-experimental-jit@<:@=no|yes|yes-off|interpreter@:>@],
-                              [build the experimental just-in-time compiler (default is no)])],
-              [],
-              [enable_experimental_jit=no])
-case $enable_experimental_jit in
-  no)              jit_flags="";          tier2_flags="" ;;
-  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
-  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
-  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
-  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
-  *) AC_MSG_ERROR(
-      [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;
-esac
-AS_VAR_IF([tier2_flags],
-          [],
-          [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" $tier2_flags"])])
-AS_VAR_IF([jit_flags],
-          [],
-          [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
-           AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
-           AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
-           AS_VAR_IF([Py_DEBUG],
-                     [true],
-                     [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
-                     [])])
-AC_SUBST([REGEN_JIT_COMMAND])
-AC_SUBST([JIT_STENCILS_H])
-AC_MSG_RESULT([$tier2_flags $jit_flags])
-
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])
 AC_SUBST([DEF_MAKE_RULE])
@@ -1873,6 +1835,14 @@ fi],
 [AC_MSG_RESULT([no])])
 
 if test "$Py_OPT" = 'true' ; then
+  # Check for conflicting CFLAGS=-O0 and --enable-optimizations
+  case "$CFLAGS" in
+    *-O0*)
+      AC_MSG_WARN([m4_normalize([
+        CFLAGS contains -O0 which may conflict with --enable-optimizations.
+        Consider removing -O0 from CFLAGS for optimal performance.])])
+      ;;
+  esac
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
@@ -1880,17 +1850,19 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
-  case $CC in
-    *gcc*)
+  AS_VAR_IF([ac_cv_gcc_compat], [yes], [
       AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
       ], [], [-Werror])
-      ;;
-  esac
-elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-  dnl Emscripten does not support shared extensions yet. Build
-  dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  ])
+elif test "$ac_sys_system" = "Emscripten"; then
+  dnl Build "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_emscripten"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
+elif test "$ac_sys_system" = "WASI"; then
+  dnl Build "python.wasm", "pybuilddir.txt", and "platform" files.
   DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
@@ -1914,7 +1886,7 @@ AC_MSG_RESULT([$PROFILE_TASK])
 
 llvm_bin_dir=''
 llvm_path="${PATH}"
-if test "${CC}" = "clang"
+if test "${ac_cv_cc_name}" = "clang"
 then
   clang_bin=`which clang`
   # Some systems install clang elsewhere as a symlink to the real path
@@ -1961,8 +1933,8 @@ esac
 ],
 [AC_MSG_RESULT([no])])
 if test "$Py_LTO" = 'true' ; then
-  case $CC in
-    *clang*)
+  case $ac_cv_cc_name in
+    clang)
       LDFLAGS_NOLTO="-fno-lto"
       dnl Clang linker requires -flto in order to link objects with LTO information.
       dnl Thin LTO is faster and works for object files with full LTO information, too.
@@ -2025,14 +1997,14 @@ if test "$Py_LTO" = 'true' ; then
           ;;
       esac
       ;;
-    *emcc*)
+    emcc)
       if test "$Py_LTO_POLICY" != "default"; then
         AC_MSG_ERROR([emcc supports only default lto.])
       fi
       LTOFLAGS="-flto"
       LTOCFLAGS="-flto"
       ;;
-    *gcc*)
+    gcc)
       if test $Py_LTO_POLICY = thin
       then
         AC_MSG_ERROR([thin lto is not supported under gcc compiler.])
@@ -2045,7 +2017,7 @@ if test "$Py_LTO" = 'true' ; then
           LTOCFLAGS="-flto"
           ;;
         *)
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
           ;;
       esac
       ;;
@@ -2091,10 +2063,8 @@ then
 fi
 LLVM_PROF_ERR=no
 
-# GNU Autoconf recommends the use of expr instead of basename.
-AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
-case "$CC_BASENAME" in
-  *clang*)
+case "$ac_cv_cc_name" in
+  clang)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
@@ -2113,35 +2083,13 @@ case "$CC_BASENAME" in
       fi
     fi
     ;;
-  *gcc*)
-    case $ac_sys_system in
-      Darwin*)
-        PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
-        LLVM_PROF_MERGER=m4_normalize("
-            ${LLVM_PROFDATA} merge
-                -output=\"\$(shell pwd)/code.profclangd\"
-                \"\$(shell pwd)\"/*.profclangr
-        ")
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
-        if test "${LLVM_PROF_FOUND}" = "not-found"
-        then
-          LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
-	  fi
-        fi
-        ;;
-      *)
-        PGO_PROF_GEN_FLAG="-fprofile-generate"
-        PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
-        LLVM_PROF_MERGER="true"
-        LLVM_PROF_FILE=""
-        ;;
-    esac
+  gcc)
+    PGO_PROF_GEN_FLAG="-fprofile-generate"
+    PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
     ;;
-  *icc*)
+  icc)
     PGO_PROF_GEN_FLAG="-prof-gen"
     PGO_PROF_USE_FLAG="-prof-use"
     LLVM_PROF_MERGER="true"
@@ -2212,13 +2160,35 @@ AS_VAR_IF([enable_shared], [yes], [
 ])
 
 AC_ARG_VAR(
+  [BOLT_COMMON_FLAGS],
+  [Common arguments to llvm-bolt when instrumenting and applying]
+)
+
+AC_MSG_CHECKING([BOLT_COMMON_FLAGS])
+if test -z "${BOLT_COMMON_FLAGS}"
+then
+  AS_VAR_SET(
+    [BOLT_COMMON_FLAGS],
+    [m4_normalize("
+      [-update-debug-sections]
+
+      dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
+      dnl Exclude functions containing computed gotos.
+      dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
+      dnl GCC's LTO creates .lto_priv.0 clones of these functions.
+      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1]
+    ")]
+  )
+fi
+
+AC_ARG_VAR(
   [BOLT_INSTRUMENT_FLAGS],
   [Arguments to llvm-bolt when instrumenting binaries]
 )
 AC_MSG_CHECKING([BOLT_INSTRUMENT_FLAGS])
 if test -z "${BOLT_INSTRUMENT_FLAGS}"
 then
-  BOLT_INSTRUMENT_FLAGS=
+  BOLT_INSTRUMENT_FLAGS="${BOLT_COMMON_FLAGS}"
 fi
 AC_MSG_RESULT([$BOLT_INSTRUMENT_FLAGS])
 
@@ -2232,9 +2202,9 @@ then
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
-     -update-debug-sections
+     ${BOLT_COMMON_FLAGS}
      -reorder-blocks=ext-tsp
-     -reorder-functions=hfsort+
+     -reorder-functions=cdsort
      -split-functions
      -icf=1
      -inline-all
@@ -2264,19 +2234,6 @@ AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
 # see if OPT was set and one that does BASECFLAGS setting based upon
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
-
-case $CC in
-    *clang*)
-        cc_is_clang=1
-        ;;
-    *)
-        if $CC --version 2>&1 | grep -q clang
-        then
-            cc_is_clang=1
-        else
-            cc_is_clang=
-        fi
-esac
 
 dnl Historically, some of our code assumed that signed integer overflow
 dnl is defined behaviour via twos-complement.
@@ -2352,7 +2309,7 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test -n "${cc_is_clang}"
+        if test "${ac_cv_cc_name}" != "clang"
         then
             # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
             # see Makefile.pre.in for more information
@@ -2392,13 +2349,18 @@ AS_CASE([$ac_sys_system],
     AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
 
     dnl Start with 20 MB and allow to grow
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
     dnl map int64_t and uint64_t to JS bigint
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
 
     dnl Include file system support
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
+    dnl Avoid bugs in JS fallback string decoding path
+    AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
@@ -2409,23 +2371,9 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
-
-    AS_CASE([$ac_sys_emscripten_target],
-      [browser*], [
-        AS_VAR_IF([ac_sys_emscripten_target], [browser-debug], [wasm_debug=yes])
-        AS_VAR_APPEND([LINKFORSHARED], [" --preload-file=\$(WASM_ASSETS_DIR)"])
-        WASM_ASSETS_DIR=".\$(prefix)"
-        WASM_STDLIB="\$(WASM_ASSETS_DIR)/local/lib/python\$(VERSION)/os.py"
-        dnl separate-dwarf does not seem to work in Chrome DevTools Support.
-        WASM_LINKFORSHARED_DEBUG="-gsource-map --emit-symbol-map"
-      ],
-      [node*], [
-        AS_VAR_IF([ac_sys_emscripten_target], [node-debug], [wasm_debug=yes])
-        AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sNODERAWFS"])
-        AS_VAR_APPEND([LINKFORSHARED], [" -sEXIT_RUNTIME"])
-        WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
-      ]
-    )
+    dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXIT_RUNTIME"])
+    WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 
     AS_VAR_IF([wasm_debug], [yes], [
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -sASSERTIONS"])
@@ -2531,8 +2479,7 @@ then
   AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
 fi
 
-case $GCC in
-yes)
+AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
 
     PY_CHECK_CC_WARNING([enable], [extra], [if we can add -Wextra])
@@ -2573,8 +2520,8 @@ yes)
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    AS_CASE(["$CC_BASENAME"],
-            [*icc*], [ac_cv_disable_unused_result_warning=no]
+    AS_CASE(["$ac_cv_cc_name"],
+            [icc], [ac_cv_disable_unused_result_warning=no]
             [PY_CHECK_CC_WARNING([disable], [unused-result])])
     AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
               [BASECFLAGS="$BASECFLAGS -Wno-unused-result"
@@ -2667,20 +2614,24 @@ yes)
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
-        if test "${CC}" = gcc
-        then
-            AC_MSG_CHECKING([which compiler should be used])
-            case "${UNIVERSALSDK}" in
-            */MacOSX10.4u.sdk)
-                # Build using 10.4 SDK, force usage of gcc when the
-                # compiler is gcc, otherwise the user will get very
-                # confusing error messages when building on OSX 10.6
-                CC=gcc-4.0
-                CPP=cpp-4.0
-                ;;
-            esac
-            AC_MSG_RESULT([$CC])
-        fi
+        AC_MSG_CHECKING([which compiler should be used])
+        case "${UNIVERSALSDK}" in
+        */MacOSX10.4u.sdk)
+            # Build using 10.4 SDK, force usage of gcc when the
+            # compiler is gcc, otherwise the user will get very
+            # confusing error messages when building on OSX 10.6
+            CC=gcc-4.0
+            CPP=cpp-4.0
+            ;;
+        esac
+        AC_MSG_RESULT([$CC])
+
+        # Error on unguarded use of new symbols, which will fail at runtime for
+        # users on older versions of macOS
+        AX_CHECK_COMPILE_FLAG([-Wunguarded-availability],
+            [AS_VAR_APPEND([CFLAGS_NODIST], [" -Werror=unguarded-availability"])],
+            [],
+            [-Werror])
 
         LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
@@ -2690,42 +2641,50 @@ yes)
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               ARCH_TRIPLES=`echo {ppc,i386}-apple-darwin`
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=`echo {ppc64,x86_64}-apple-darwin`
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               ARCH_TRIPLES=`echo {i386,ppc,ppc64,x86_64}-apple-darwin`
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=`echo {aarch64,x86_64}-apple-darwin`
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+               ARCH_TRIPLES=`echo {i386,x86_64}-apple-darwin`
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               ARCH_TRIPLES=i386-apple-darwin
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=x86_64-apple-darwin
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               ARCH_TRIPLES=`echo {i386,ppc,x86_64}-apple-darwin`
                ;;
             *)
                AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
@@ -2805,9 +2764,7 @@ yes)
         # end of Darwin* tests
         ;;
     esac
-    ;;
-
-*)
+], [
     case $ac_sys_system in
     OpenUNIX*|UnixWare*)
 	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
@@ -2816,18 +2773,56 @@ yes)
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
     esac
-    ;;
-esac
+])
 
-case "$CC_BASENAME" in
-*mpicc*)
+# Check for --enable-experimental-jit:
+AC_MSG_CHECKING([for --enable-experimental-jit])
+AC_ARG_ENABLE([experimental-jit],
+              [AS_HELP_STRING([--enable-experimental-jit@<:@=no|yes|yes-off|interpreter@:>@],
+                              [build the experimental just-in-time compiler (default is no)])],
+              [],
+              [enable_experimental_jit=no])
+case $enable_experimental_jit in
+  no)              jit_flags="";          tier2_flags="" ;;
+  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
+  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
+  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
+  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
+  *) AC_MSG_ERROR(
+      [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;
+esac
+AS_VAR_IF([tier2_flags],
+          [],
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" $tier2_flags"])])
+AS_VAR_IF([jit_flags],
+          [],
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
+           AS_VAR_SET([REGEN_JIT_COMMAND],
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\""])
+           AS_VAR_IF([Py_DEBUG],
+                     [true],
+                     [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
+                     [])])
+AC_SUBST([REGEN_JIT_COMMAND])
+AC_MSG_RESULT([$tier2_flags $jit_flags])
+
+if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
+  # GH-133171: This configuration builds the JIT but never actually uses it,
+  # which is surprising (and strictly worse than not building it at all):
+  AC_MSG_WARN([--enable-experimental-jit does not work correctly with --disable-gil.])
+fi
+
+case "$ac_cv_cc_name" in
+mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
-*icc*)
+icc)
     # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
     ;;
-*xlc*)
+xlc)
     CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
     ;;
 esac
@@ -3013,11 +3008,11 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/random.h linux/soundcard.h \
+  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
-  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
+  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
@@ -3070,10 +3065,10 @@ AC_CHECK_HEADERS([linux/vm_sockets.h], [], [], [
 #endif
 ])
 
-# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+# On Linux, can.h, can/bcm.h, can/isotp.h, can/j1939.h, can/raw.h require sys/socket.h
 # On NetBSD, netcan/can.h requires sys/socket.h
 AC_CHECK_HEADERS(
-[linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h netcan/can.h],
+[linux/can.h linux/can/bcm.h linux/can/isotp.h linux/can/j1939.h linux/can/raw.h netcan/can.h],
 [], [], [
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -3199,10 +3194,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-dnl LFS does not work with Emscripten 3.1
-AS_CASE([$ac_sys_system],
-  [Emscripten], [have_largefile_support="no"]
-)
 AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
   [Defined to enable large file support when an off_t is bigger than a long
@@ -3435,7 +3426,7 @@ then
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
 	SunOS/5*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -3443,7 +3434,7 @@ then
 			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -3536,7 +3527,7 @@ then
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	OpenUNIX*|UnixWare*)
-		if test "$GCC" = "yes" ; then
+		if test "$ac_cv_gcc_compat" = "yes" ; then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
@@ -3576,13 +3567,13 @@ AC_MSG_CHECKING([CCSHARED])
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS*) if test "$GCC" = yes;
+	SunOS*) if test "$ac_cv_gcc_compat" = "yes";
 		then CCSHARED="-fPIC";
 		elif test `uname -p` = sparc;
 		then CCSHARED="-xcode=pic32";
 		else CCSHARED="-Kpic";
 		fi;;
-	hp*|HP*) if test "$GCC" = yes;
+	hp*|HP*) if test "$ac_cv_gcc_compat" = "yes";
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
@@ -3594,12 +3585,12 @@ then
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
-		if test "$GCC" = "yes"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-KPIC"
 		fi;;
 	SCO_SV*)
-		if test "$GCC" = "yes"
+		if test "$ac_cv_gcc_compat" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
@@ -3657,13 +3648,13 @@ then
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
-	SunOS/5*) case $CC in
-		  *gcc*)
+    SunOS/5*) if test "$ac_cv_gcc_compat" = "yes"; then
 		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
-		    fi;;
-		  esac;;
+		    fi
+        fi
+		;;
 	CYGWIN*)
 		if test $enable_shared = "no"
 		then
@@ -3720,12 +3711,13 @@ case "$ac_sys_system" in
 esac
 AC_MSG_RESULT([$SHLIBS])
 
-dnl perf trampoline is Linux specific and requires an arch-specific
+dnl perf trampoline is Linux and macOS specific and requires an arch-specific
 dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
+  [darwin], [perf_trampoline=yes],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
@@ -3747,19 +3739,37 @@ AC_CHECK_LIB([dl], [dlopen])       # Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB([dld], [shl_load])    # Dynamic linking for HP-UX
 
 
+dnl for faulthandler
+AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
+  AC_CHECK_FUNCS([backtrace dladdr1], [
+    # dladdr1 requires -ldl
+    ac_cv_require_ldl=yes
+  ])
+])
+
+dnl only add -ldl to LDFLAGS if it isn't already part of LIBS (GH-133081)
+AS_VAR_IF([ac_cv_require_ldl], [yes], [
+  AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [], [
+    AS_VAR_APPEND([LDFLAGS], [" -ldl"])
+  ])
+])
+
+
 dnl check for uuid dependencies
 AH_TEMPLATE([HAVE_UUID_H], [Define to 1 if you have the <uuid.h> header file.])
 AH_TEMPLATE([HAVE_UUID_UUID_H], [Define to 1 if you have the <uuid/uuid.h> header file.])
 AH_TEMPLATE([HAVE_UUID_GENERATE_TIME_SAFE], [Define if uuid_generate_time_safe() exists.])
+AH_TEMPLATE([HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC], [Define if uuid_generate_time_safe() is able to deduce a MAC address.])
 have_uuid=missing
 
 dnl AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1
 dnl (anno 2007). FreeBSD and OpenBSD provides support in libc as well.
 dnl Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
 dnl stream in big-endian byte-order
-AC_CHECK_HEADERS([uuid.h],
-  [AC_CHECK_FUNCS([uuid_create uuid_enc_be],
-    [have_uuid=yes
+AC_CHECK_HEADERS([uuid.h], [
+  AC_CHECK_FUNCS([uuid_create uuid_enc_be], [
+    have_uuid=yes
+    ac_cv_have_uuid_h=yes
     LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
     LIBUUID_LIBS=${LIBUUID_LIBS-""}
   ])
@@ -3769,19 +3779,29 @@ AS_VAR_IF([have_uuid], [missing], [
   PKG_CHECK_MODULES(
     [LIBUUID], [uuid >= 2.20],
       [dnl linux-util's libuuid has uuid_generate_time_safe() since v2.20 (2011)
-      dnl and provides <uuid.h>.
+      dnl and provides <uuid.h> assuming specific include paths are given
       have_uuid=yes
-      AC_DEFINE([HAVE_UUID_H], [1])
-      AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
+      ac_cv_have_uuid_generate_time_safe=yes
+      # The uuid.h file to include may be <uuid.h> *or* <uuid/uuid.h>.
+      # Since pkg-config --cflags uuid may return -I/usr/include/uuid,
+      # it's possible to write '#include <uuid.h>' in _uuidmodule.c,
+      # assuming that the compiler flags are properly updated.
+      #
+      # Ideally, we should have defined HAVE_UUID_H if and only if
+      # #include <uuid.h> can be written, *without* assuming extra
+      # include path.
+      ac_cv_have_uuid_h=yes
     ], [
       WITH_SAVE_ENV([
         CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
-        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        LIBS="$LIBS $LIBUUID_LIBS"
         AC_CHECK_HEADERS([uuid/uuid.h], [
+          ac_cv_have_uuid_uuid_h=yes
           PY_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
-          PY_CHECK_LIB([uuid], [uuid_generate_time_safe],
-            [have_uuid=yes
-            AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1]) ]) ])
+          PY_CHECK_LIB([uuid], [uuid_generate_time_safe], [
+            have_uuid=yes
+            ac_cv_have_uuid_generate_time_safe=yes
+          ])])
         AS_VAR_IF([have_uuid], [yes], [
           LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
           LIBUUID_LIBS=${LIBUUID_LIBS-"-luuid"}
@@ -3796,13 +3816,89 @@ AS_VAR_IF([have_uuid], [missing], [
   AC_CHECK_HEADERS([uuid/uuid.h], [
     AC_CHECK_FUNC([uuid_generate_time], [
       have_uuid=yes
+      ac_cv_have_uuid_uuid_h=yes
       LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
       LIBUUID_LIBS=${LIBUUID_LIBS-""}
     ])
   ])
 ])
 
+AS_VAR_IF([ac_cv_have_uuid_h], [yes], [AC_DEFINE([HAVE_UUID_H], [1])])
+AS_VAR_IF([ac_cv_have_uuid_uuid_h], [yes], [AC_DEFINE([HAVE_UUID_UUID_H], [1])])
+AS_VAR_IF([ac_cv_have_uuid_generate_time_safe], [yes], [
+  AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
+])
+
+# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# This restriction inhibits the proper generation of time-based UUIDs.
+if test "$ac_sys_system" = "NetBSD"; then
+  have_uuid=missing
+  AC_DEFINE([HAVE_UUID_H], [0])
+fi
+
 AS_VAR_IF([have_uuid], [missing], [have_uuid=no])
+
+# gh-132710: The UUID node is fetched by using libuuid when possible
+# and cached. While the node is constant within the same process,
+# different interpreters may have different values as libuuid may
+# randomize the node value if the latter cannot be deduced.
+#
+# Consumers may define HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
+# to indicate that libuuid is unstable and should not be relied
+# upon to deduce the MAC address.
+AC_DEFUN([PY_EXTRACT_UUID_GENERATE_TIME_SAFE_MAC], [WITH_SAVE_ENV([
+  # Be sure to add the extra include path if we used pkg-config
+  # as HAVE_UUID_H may be set even though <uuid.h> is only reachable
+  # by adding extra -I flags.
+  #
+  # If the following script does not compile, we simply assume that
+  # libuuid is missing.
+  CFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+  LIBS="$LIBS $LIBUUID_LIBS"
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
+    #include <inttypes.h>   // PRIu64
+    #include <stdint.h>     // uint64_t
+    #include <stdio.h>      // fopen(), fclose()
+
+    #ifdef HAVE_UUID_H
+    #include <uuid.h>
+    #else
+    #include <uuid/uuid.h>
+    #endif
+
+    #define ERR 1
+    int main(void) {
+        uuid_t uuid;  // unsigned char[16]
+        (void)uuid_generate_time_safe(uuid);
+        uint64_t node = 0;
+        for (size_t i = 0; i < 6; i++) {
+            node |= (uint64_t)uuid[15 - i] << (8 * i);
+        }
+        FILE *fp = fopen("conftest.out", "w");
+        if (fp == NULL) {
+            return ERR;
+        }
+        int rc = fprintf(fp, "%" PRIu64 "\n", node) >= 0;
+        rc |= fclose(fp);
+        return rc == 0 ? 0 : ERR;
+    }]])], [
+      AS_VAR_SET([$1], [`cat conftest.out`])
+    ], [], []
+  )])])
+
+if test "$have_uuid" = "yes" -a "$HAVE_UUID_GENERATE_TIME_SAFE" = "1"
+then
+  AC_MSG_CHECKING([if uuid_generate_time_safe() node value is stable])
+  PY_EXTRACT_UUID_GENERATE_TIME_SAFE_MAC([py_cv_uuid_node1])
+  PY_EXTRACT_UUID_GENERATE_TIME_SAFE_MAC([py_cv_uuid_node2])
+  if test -n "$py_cv_uuid_node1" -a "$py_cv_uuid_node1" = "$py_cv_uuid_node2"
+  then
+    AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC], [1])
+    AC_MSG_RESULT([stable])
+  else
+    AC_MSG_RESULT([unstable])
+  fi
+fi
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
@@ -3841,35 +3937,6 @@ dnl The AIX_BUILDDATE is obtained from the kernel fileset - bos.mp64
                ;;
 	*) ;;
 esac
-
-# check for _Complex C type
-#
-# Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
-# none properly support C11+ Annex G (where pure imaginary types
-# represented by _Imaginary are mandatory).  This is a bug (see e.g.
-# llvm/llvm-project#60269), so we don't rely on presence
-# of __STDC_IEC_559_COMPLEX__.
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <complex.h>
-#define test(type, out)                                \
-{                                                      \
-    type complex z = 1 + 2*I; z = z*z;                 \
-    (out) = (out) || creal(z) != -3 || cimag(z) != 4;  \
-}
-int main(void)
-{
-   int res = 0;
-   test(float, res);
-   test(double, res);
-   test(long double, res);
-   return res;
-}]])], [ac_cv_c_complex_supported=yes],
-[ac_cv_c_complex_supported=no],
-[ac_cv_c_complex_supported=no])
-if test "$ac_cv_c_complex_supported" = "yes"; then
-    AC_DEFINE([Py_HAVE_C_COMPLEX], [1],
-              [Defined if _Complex C type is available.])
-fi
 
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
@@ -4039,7 +4106,7 @@ AS_VAR_IF([have_libffi], [missing], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
     WITH_SAVE_ENV([
       CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      LIBS="$LIBS $LIBFFI_LIBS"
       AC_CHECK_HEADER([ffi.h], [
         AC_CHECK_LIB([ffi], [ffi_call], [
           have_libffi=yes
@@ -4073,8 +4140,8 @@ AS_VAR_IF([have_libffi], [yes], [
   AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
 
   WITH_SAVE_ENV([
-    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+    CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+    LIBS="$LIBS $LIBFFI_LIBS"
 
     PY_CHECK_FUNC([ffi_prep_cif_var], [@%:@include <ffi.h>])
     PY_CHECK_FUNC([ffi_prep_closure_loc], [@%:@include <ffi.h>])
@@ -4082,24 +4149,65 @@ AS_VAR_IF([have_libffi], [yes], [
   ])
 ])
 
+# Check for libffi with real complex double support.
+# This is a workaround, since FFI_TARGET_HAS_COMPLEX_TYPE was defined in libffi v3.2.1,
+# but real support was provided only in libffi v3.3.0.
+# See https://github.com/python/cpython/issues/125206 for more details.
+#
+AC_CACHE_CHECK([libffi has complex type support], [ac_cv_ffi_complex_double_supported],
+[WITH_SAVE_ENV([
+ CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
+ LIBS="$LIBS $LIBFFI_LIBS"
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <complex.h>
+#include <ffi.h>
+int z_is_expected(double complex z)
+{
+    const double complex expected = 1.25 - 0.5 * I;
+    return z == expected;
+}
+int main(void)
+{
+    double complex z = 1.25 - 0.5 * I;
+    ffi_type *args[1] = {&ffi_type_complex_double};
+    void *values[1] = {&z};
+    ffi_cif cif;
+    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
+        &ffi_type_sint, args) != FFI_OK)
+    {
+        return 2;
+    }
+    ffi_arg rc;
+    ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
+    return !rc;
+}
+]])], [ac_cv_ffi_complex_double_supported=yes],
+[ac_cv_ffi_complex_double_supported=no],
+[ac_cv_ffi_complex_double_supported=no])
+])])
+if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
+    AC_DEFINE([_Py_FFI_SUPPORT_C_COMPLEX], [1],
+              [Defined if _Complex C type can be used with libffi.])
+fi
+
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING([for --with-system-libmpdec])
-AC_ARG_WITH(
-  [system_libmpdec],
-  [AS_HELP_STRING(
-    [--with-system-libmpdec],
-    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
-  )],
-  [],
-  [with_system_libmpdec="yes"])
-AC_MSG_RESULT([$with_system_libmpdec])
-
 AC_DEFUN([USE_BUNDLED_LIBMPDEC],
          [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
           LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
           LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
           have_mpdec=yes
           with_system_libmpdec=no])
+AC_ARG_WITH(
+  [system_libmpdec],
+  [AS_HELP_STRING(
+    [--with-system-libmpdec],
+    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
+  )],
+  [AS_IF([test "x$with_system_libmpdec" = xno],
+         [USE_BUNDLED_LIBMPDEC()])],
+  [with_system_libmpdec="yes"])
+AC_MSG_RESULT([$with_system_libmpdec])
 
 AS_VAR_IF(
   [with_system_libmpdec], [yes],
@@ -4107,13 +4215,12 @@ AS_VAR_IF(
     [LIBMPDEC], [libmpdec >= 2.5.0], [],
     [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=])],
-  [USE_BUNDLED_LIBMPDEC()])
+     LIBMPDEC_INTERNAL=])])
 
 AS_VAR_IF([with_system_libmpdec], [yes],
   [WITH_SAVE_ENV([
-    CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
-    LIBS="$LIBMPDEC_LIBS $LIBS"
+    CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
+    LIBS="$LIBS $LIBMPDEC_LIBS"
 
     AC_LINK_IFELSE([
       AC_LANG_PROGRAM([
@@ -4124,16 +4231,7 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       ], [const char *x = mpd_version();])],
       [have_mpdec=yes],
       [have_mpdec=no])
-  ])],
-  [AC_MSG_WARN([m4_normalize([
-     the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
-     consider using a system installed mpdecimal library.])])])
-
-AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
-      [AC_MSG_WARN([m4_normalize([
-         no system libmpdecimal found; falling back to bundled libmpdecimal
-         (deprecated and scheduled for removal in Python 3.15)])])
-       USE_BUNDLED_LIBMPDEC()])
+  ])])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
@@ -4184,7 +4282,7 @@ AS_VAR_IF(
        fi
    elif test $ac_cv_sizeof_size_t -eq 4; then
        if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-           AS_CASE([$CC],
+           AS_CASE([$ac_cv_cc_name],
                [*gcc*],   [libmpdec_machine=ppro],
                [*clang*], [libmpdec_machine=ppro],
                [libmpdec_machine=ansi32]
@@ -4246,7 +4344,7 @@ WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
   CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
-  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+  LIBS="$LIBS $LIBSQLITE3_LIBS"
 
   AC_CHECK_HEADER([sqlite3.h], [
     have_sqlite3=yes
@@ -4349,7 +4447,7 @@ AS_CASE([$ac_sys_system],
 
 WITH_SAVE_ENV([
   CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
-  LIBS="$TCLTK_LIBS $LDFLAGS"
+  LIBS="$LIBS $TCLTK_LIBS"
 
   AC_LINK_IFELSE([
     AC_LANG_PROGRAM([
@@ -4391,7 +4489,7 @@ AC_ARG_VAR([GDBM_CFLAGS], [C compiler flags for gdbm])
 AC_ARG_VAR([GDBM_LIBS], [additional linker flags for gdbm])
 WITH_SAVE_ENV([
   CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
-  LDFLAGS="$GDBM_LIBS $LDFLAGS"
+  LIBS="$LIBS $GDBM_LIBS"
   AC_CHECK_HEADERS([gdbm.h], [
     AC_CHECK_LIB([gdbm], [gdbm_open], [
       have_gdbm=yes
@@ -4423,29 +4521,21 @@ AS_CASE([$ac_cv_search_dbm_open],
 AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
 
 dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-dnl unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
-AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
-  AC_CHECK_HEADER(
-    [gdbm/ndbm.h],
-    [ac_cv_header_gdbm_slash_ndbm_h=yes], [ac_cv_header_gdbm_slash_ndbm_h=no]
-  )
-])
+AC_CACHE_CHECK([for gdbm/ndbm.h], [ac_cv_header_gdbm_slash_ndbm_h],
+               [AC_PREPROC_IFELSE([AC_LANG_SOURCE([@%:@include <gdbm/ndbm.h>])],
+                                  [ac_cv_header_gdbm_slash_ndbm_h=yes],
+                                  [ac_cv_header_gdbm_slash_ndbm_h=no])])
 AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
   AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
 ])
 
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
-AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
-  AC_CHECK_HEADER(
-    [gdbm-ndbm.h],
-    [ac_cv_header_gdbm_dash_ndbm_h=yes], [ac_cv_header_gdbm_dash_ndbm_h=no]
-  )
-])
+AC_CACHE_CHECK([for gdbm-ndbm.h], [ac_cv_header_gdbm_dash_ndbm_h],
+               [AC_PREPROC_IFELSE([AC_LANG_SOURCE([@%:@include <gdbm-ndbm.h>])],
+                                  [ac_cv_header_gdbm_dash_ndbm_h=yes],
+                                  [ac_cv_header_gdbm_dash_ndbm_h=no])])
 AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
   AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
 ])
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
   AS_UNSET([ac_cv_search_dbm_open])
@@ -4670,6 +4760,7 @@ if test "$posix_threads" = "yes"; then
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }]])],
       [ac_cv_pthread_system_supported=yes],
@@ -4970,24 +5061,6 @@ then
 fi
 AC_MSG_RESULT([$with_pymalloc])
 
-# Check whether objects such as float, tuple and dict are using
-# freelists to optimization memory allocation.
-AC_MSG_CHECKING([for --with-freelists])
-AC_ARG_WITH(
-  [freelists],
-  [AS_HELP_STRING([--with-freelists], [enable object freelists (default is yes)])])
-
-if test -z "$with_freelists"
-then
-    with_freelists="yes"
-fi
-if test "$with_freelists" != "no"
-then
-    AC_DEFINE([WITH_FREELISTS], [1],
-     [Define if you want to compile in object freelists optimization])
-fi
-AC_MSG_RESULT([$with_freelists])
-
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING([for --with-c-locale-coercion])
 AC_ARG_WITH(
@@ -5051,16 +5124,33 @@ then
     # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
     # generation flag '-G'. We check for presence of this flag, rather than
     # hardcoding support by OS, in the interest of robustness.
+    #
+    # NetBSD DTrace requires the -x nolibs flag to avoid system library conflicts
+    # and uses header generation for testing instead of object generation.
     AC_CACHE_CHECK([whether DTrace probes require linking],
-        [ac_cv_dtrace_link], [dnl
+        [ac_cv_dtrace_link], [
             ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            case $host in
+                *netbsd*)
+                    DTRACE_TEST_FLAGS="-x nolibs -h"
+                    ;;
+                *)
+                    DTRACE_TEST_FLAGS="-G"
+                    ;;
+            esac
+            "$DTRACE" $DFLAGS $DTRACE_TEST_FLAGS -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
     if test "$ac_cv_dtrace_link" = "yes"; then
         DTRACE_OBJS="Python/pydtrace.o"
     fi
+    # Set NetBSD-specific DTrace flags in DFLAGS
+    case $host in
+        *netbsd*)
+            DFLAGS="$DFLAGS -x nolibs"
+            ;;
+    esac
 fi
 
 dnl Platform-specific C and header files.
@@ -5069,7 +5159,7 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
@@ -5151,21 +5241,25 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
-  copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
+  accept4 alarm bind_textdomain_codeset chmod chown clearenv \
+  clock closefrom close_range confstr \
+  copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
-  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
-  pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
+  pipe2 plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
-  pread preadv preadv2 process_vm_readv pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  pread preadv preadv2 process_vm_readv \
+  pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
+  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np \
+  pthread_setname_np pthread_getattr_np \
+  ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
@@ -5174,9 +5268,15 @@ AC_CHECK_FUNCS([ \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
   sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname umask uname unlinkat unlockpt utimensat utimes vfork \
+  tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
+
+# os.statx uses Linux's statx function.  AIX also has a function named statx,
+# but it's unrelated.  Check only on Linux (including Android).
+AS_CASE([$ac_sys_system],
+  [Linux*], [AC_CHECK_FUNCS([statx])]
+)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -5285,10 +5385,13 @@ AS_VAR_IF([ac_cv_broken_unsetenv], [yes], [
 dnl check for true
 AC_CHECK_PROGS([TRUE], [true], [/bin/true])
 
-dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
+dnl On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
 dnl On others, they are in the C library, so we to take no action
 AC_CHECK_LIB([c], [inet_aton], [$ac_cv_prog_TRUE],
-  AC_CHECK_LIB([resolv], [inet_aton])
+  AC_CHECK_LIB([resolv], [inet_aton], [SOCKET_LIBS="-lresolv"])
+)
+AC_CHECK_LIB([c], [hstrerror], [$ac_cv_prog_TRUE],
+  AC_CHECK_LIB([resolv], [hstrerror], [SOCKET_LIBS="-lresolv"])
 )
 
 # On Tru64, chflags seems to be present, but calling it will
@@ -5342,14 +5445,14 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 dnl detect zlib from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    LIBS="$LIBS $ZLIB_LIBS"
     AC_CHECK_HEADERS([zlib.h], [
       PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
     ], [have_zlib=no])
@@ -5373,7 +5476,7 @@ PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
 PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
-    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    LIBS="$LIBS $BZIP2_LIBS"
     AC_CHECK_HEADERS([bzlib.h], [
       AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
     ], [have_bzip2=no])
@@ -5387,7 +5490,7 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
-    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    LIBS="$LIBS $LIBLZMA_LIBS"
     AC_CHECK_HEADERS([lzma.h], [
       AC_CHECK_LIB([lzma], [lzma_easy_encoder], [have_liblzma=yes], [have_liblzma=no])
     ], [have_liblzma=no])
@@ -5397,6 +5500,47 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
     ])
   ])
 ])
+
+dnl zstd 1.4.5 stabilised ZDICT_finalizeDictionary
+PKG_CHECK_MODULES([LIBZSTD], [libzstd >= 1.4.5], [have_libzstd=yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    CFLAGS="$CFLAGS $LIBZSTD_CFLAGS"
+    LIBS="$LIBS $LIBZSTD_LIBS"
+    AC_SEARCH_LIBS([ZDICT_finalizeDictionary], [zstd], [
+      AC_MSG_CHECKING([ZSTD_VERSION_NUMBER >= 1.4.5])
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([@%:@include "zstd.h"], [
+          #if ZSTD_VERSION_NUMBER < 10405
+          #  error "zstd version is too old"
+          #endif
+        ])
+      ], [
+        AC_MSG_RESULT([yes])
+        AC_CHECK_HEADERS([zstd.h zdict.h], [have_libzstd=yes], [have_libzstd=no])
+      ], [
+        AC_MSG_RESULT([no])
+        have_libzstd=no
+      ])
+    ], [have_libzstd=no])
+    AS_VAR_IF([have_libzstd], [yes], [
+      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
+      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
+    ])
+  ])
+])
+
+dnl _remote_debugging module: optional zstd compression support
+dnl The module always builds, but zstd compression is only available when libzstd is found
+AS_VAR_IF([have_libzstd], [yes], [
+  REMOTE_DEBUGGING_CFLAGS="-DHAVE_ZSTD $LIBZSTD_CFLAGS"
+  REMOTE_DEBUGGING_LIBS="$LIBZSTD_LIBS"
+], [
+  REMOTE_DEBUGGING_CFLAGS=""
+  REMOTE_DEBUGGING_LIBS=""
+])
+AC_SUBST([REMOTE_DEBUGGING_CFLAGS])
+AC_SUBST([REMOTE_DEBUGGING_LIBS])
 
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
@@ -5440,6 +5584,26 @@ PY_CHECK_FUNC([setgroups], [
 #endif
 ])
 
+AC_CHECK_DECL([MAXLOGNAME],
+              [AC_DEFINE([HAVE_MAXLOGNAME], [1],
+                         [Define if you have the 'MAXLOGNAME' constant.])],
+              [],
+              [@%:@include <sys/param.h>])
+
+AC_CHECK_DECLS([UT_NAMESIZE],
+              [AC_DEFINE([HAVE_UT_NAMESIZE], [1],
+                         [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
+              [],
+              [@%:@include <utmp.h>])
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
+AS_IF([test "$ac_cv_libc" != musl], [
+AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+              [AC_DEFINE([HAVE_PR_SET_VMA_ANON_NAME], [1],
+                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+              [],
+              [@%:@include <linux/prctl.h>
+               @%:@include <sys/prctl.h>])
+])
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],
@@ -5696,6 +5860,24 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
 
+if test "$ac_cv_func_statx" = yes; then
+  # Some systems have the definitions of the mask bits without having the
+  # corresponding members in struct statx.  Check for members added after Linux
+  # 4.11 (when statx itself was added).
+  AC_CHECK_MEMBERS([struct statx.stx_mnt_id])
+  AC_CHECK_MEMBERS([struct statx.stx_dio_mem_align])
+  # stx_dio_offset_align was added together with stx_dio_mem_align
+  AC_CHECK_MEMBERS([struct statx.stx_subvol])
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_min])
+  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
+  # together with stx_atomic_write_unit_min
+  AC_CHECK_MEMBERS([struct statx.stx_dio_read_offset_align])
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_max_opt])
+fi
+
 AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[return altzone;]])],
     [ac_cv_header_time_altzone=yes],
@@ -5917,28 +6099,28 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
 # * Check for various properties of floating point *
 # **************************************************
 
-AX_C_FLOAT_WORDS_BIGENDIAN
-if test "$ax_cv_c_float_words_bigendian" = "yes"
-then
-  AC_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the most significant byte first])
-elif test "$ax_cv_c_float_words_bigendian" = "no"
-then
-  AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the least significant byte first])
-else
-  # Some ARM platforms use a mixed-endian representation for doubles.
-  # While Python doesn't currently have full support for these platforms
-  # (see e.g., issue 1762561), we can at least make sure that float <-> string
-  # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
-  # or little, then it must be this?
-  AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   in ARM mixed-endian order (byte order 45670123)])
-fi
+AX_C_FLOAT_WORDS_BIGENDIAN(
+  [AC_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
+             [Define if C doubles are 64-bit IEEE 754 binary format,
+              stored with the most significant byte first])],
+  [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
+             [Define if C doubles are 64-bit IEEE 754 binary format,
+              stored with the least significant byte first])],
+  [AS_CASE([$host_cpu],
+           [*arm*], [# Some ARM platforms use a mixed-endian representation for
+                     # doubles. While Python doesn't currently have full support
+                     # for these platforms (see e.g., issue 1762561), we can at
+                     # least make sure that float <-> string conversions work.
+                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
+                     # but if it's not big or little, then it must be this?
+                     AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
+                               [Define if C doubles are 64-bit IEEE 754 binary format,
+                                stored in ARM mixed-endian order (byte order 45670123)])],
+           [AC_MSG_ERROR([m4_normalize([
+             Unknown float word ordering. You need to manually
+             preset ax_cv_c_float_words_bigendian=no (or yes)
+             according to your system.
+           ])])])])
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
@@ -5965,8 +6147,8 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x87], [yes], [
 AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set mc68881 fpcr], [ac_cv_gcc_asm_for_mc68881], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned int fpcr;
-  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
-  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=dm" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "dm" (fpcr));
 ]])],[ac_cv_gcc_asm_for_mc68881=yes],[ac_cv_gcc_asm_for_mc68881=no])
 ])
 AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
@@ -6252,15 +6434,10 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-AC_SUBST([BINLIBDEST])
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 AC_SUBST([PLATLIBDIR])
-PLATLIBDIR="lib"
+PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
 AC_MSG_CHECKING([for --with-platlibdir])
 AC_ARG_WITH(
   [platlibdir],
@@ -6277,19 +6454,22 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT([yes])
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   AC_MSG_RESULT([no])
 fi],
 [AC_MSG_RESULT([no])])
 
+AC_SUBST([LIBDEST])
+AC_SUBST([BINLIBDEST])
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST([PY_ENABLE_SHARED])
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST([LIBPL])
 
@@ -6381,7 +6561,7 @@ AS_VAR_IF([with_readline], [readline], [
   ], [
     WITH_SAVE_ENV([
       CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      LIBS="$LIBS $LIBREADLINE_LIBS"
       AC_CHECK_HEADERS([readline/readline.h], [
         AC_CHECK_LIB([readline], [readline], [
           LIBREADLINE=readline
@@ -6402,7 +6582,7 @@ AS_VAR_IF([with_readline], [edit], [
   ], [
     WITH_SAVE_ENV([
       CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      LIBS="$LIBS $LIBEDIT_LIBS"
       AC_CHECK_HEADERS([editline/readline.h], [
         AC_CHECK_LIB([edit], [readline], [
           LIBREADLINE=edit
@@ -6426,7 +6606,7 @@ AS_VAR_IF([with_readline], [no], [
 
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
-    LIBS="$READLINE_LIBS $LIBS"
+    LIBS="$LIBS $READLINE_LIBS"
     LIBS_SAVE=$LIBS
 
     m4_define([readline_includes], [
@@ -6681,62 +6861,6 @@ if test "$ac_cv_stat_tv_nsec2" = yes
 then
   AC_DEFINE([HAVE_STAT_TV_NSEC2], [1],
   [Define if you have struct stat.st_mtimensec])
-fi
-
-AC_CACHE_CHECK([whether year with century should be normalized for strftime], [ac_cv_normalize_century], [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char year[5];
-  struct tm date = {
-    .tm_year = -1801,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
-    return 1;
-  }
-  return 0;
-}
-]])],
-[ac_cv_normalize_century=yes],
-[ac_cv_normalize_century=no],
-[ac_cv_normalize_century=yes])])
-if test "$ac_cv_normalize_century" = yes
-then
-  AC_DEFINE([Py_NORMALIZE_CENTURY], [1],
-  [Define if year with century should be normalized for strftime.])
-fi
-
-AC_CACHE_CHECK([whether C99-specific strftime specifiers are supported], [ac_cv_strftime_c99_support], [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char full_date[11];
-  struct tm date = {
-    .tm_year = 0,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(full_date, sizeof(full_date), "%F", &date) && !strcmp(full_date, "1900-01-01")) {
-    return 0;
-  }
-  return 1;
-}
-]])],
-[ac_cv_strftime_c99_support=yes],
-[ac_cv_strftime_c99_support=no],
-[ac_cv_strftime_c99_support=no])])
-if test "$ac_cv_strftime_c99_support" = yes
-then
-  AC_DEFINE([Py_STRFTIME_C99_SUPPORT], [1],
-  [Define if C99-specific strftime specifiers are supported.])
 fi
 
 dnl check for ncursesw/ncurses and panelw/panel
@@ -7028,6 +7152,49 @@ case "$ac_cv_computed_gotos" in yes*)
   [Define if the C compiler supports computed gotos.])
 esac
 
+# Check for --with-tail-call-interp
+AC_MSG_CHECKING([for --with-tail-call-interp])
+AC_ARG_WITH(
+  [tail-call-interp],
+  [AS_HELP_STRING(
+    [--with-tail-call-interp],
+    [enable tail-calling interpreter in evaluation loop and rest of CPython]
+  )],
+[
+if test "$withval" = yes
+then
+  AC_DEFINE([_Py_TAIL_CALL_INTERP], [1],
+  [Define if you want to use tail-calling interpreters in CPython.])
+  AC_MSG_RESULT([yes])
+fi
+if test "$withval" = no
+then
+  AC_DEFINE([_Py_TAIL_CALL_INTERP], [0],
+  [Define if you want to use tail-calling interpreters in CPython.])
+  AC_MSG_RESULT([no])
+fi
+],
+[AC_MSG_RESULT([no value specified])])
+
+# Check for --with-remote-debug
+AC_MSG_CHECKING([for --with-remote-debug])
+AC_ARG_WITH(
+  [remote-debug],
+  [AS_HELP_STRING(
+    [--with-remote-debug],
+    [enable remote debugging support (default is yes)])],
+  [],
+  [with_remote_debug=yes])
+
+if test "$with_remote_debug" = yes; then
+  AC_DEFINE([Py_REMOTE_DEBUG], [1],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+fi
+
+
 case $ac_sys_system in
 AIX*)
   AC_DEFINE([HAVE_BROKEN_PIPE_BUF], [1],
@@ -7045,19 +7212,20 @@ done
 AC_SUBST([SRCDIRS])
 SRCDIRS="\
   Modules \
-  Modules/_blake2 \
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
+  Modules/_remote_debugging \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
   Modules/_testinternalcapi \
   Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
+  Modules/_zstd \
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
@@ -7124,8 +7292,8 @@ if test "$ac_cv_gcc_asm_for_x87" = yes; then
     # Some versions of gcc miscompile inline asm:
     # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
     # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    case $CC in
-        *gcc*)
+    case $ac_cv_cc_name in
+        gcc)
             AC_MSG_CHECKING([for gcc ipa-pure-const bug])
             saved_cflags="$CFLAGS"
             CFLAGS="-O2"
@@ -7394,8 +7562,8 @@ WITH_SAVE_ENV([
     ], [
       OBJ_nid2sn(NID_md5);
       OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha512);
       OBJ_nid2sn(NID_sha3_512);
-      OBJ_nid2sn(NID_blake2b512);
       EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
     ])], [ac_cv_working_openssl_hashlib=yes], [ac_cv_working_openssl_hashlib=no])
   ])
@@ -7480,12 +7648,7 @@ AC_MSG_CHECKING([for --disable-test-modules])
 AC_ARG_ENABLE([test-modules],
   [AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules])], [
   AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
-], [
-  AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [TEST_MODULES=no],
-    [TEST_MODULES=yes]
-  )
-])
+], [TEST_MODULES=yes])
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
@@ -7508,7 +7671,7 @@ CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
 AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
                [ac_cv_libatomic_needed],
-[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+[AC_LINK_IFELSE([AC_LANG_SOURCE([[
 // pyatomic.h needs uint64_t and Py_ssize_t types
 #include <stdint.h>  // int64_t, intptr_t
 #ifdef HAVE_SYS_TYPES_H
@@ -7545,15 +7708,32 @@ int main()
     return 0; // all good
 }
 ]])],
-  [ac_cv_libatomic_needed=no],  dnl build succeeded
-  [ac_cv_libatomic_needed=yes], dnl build failed
-  [ac_cv_libatomic_needed=no])  dnl cross compilation
+  [ac_cv_libatomic_needed=no],  dnl build and link succeeded
+  [ac_cv_libatomic_needed=yes]) dnl build and link failed
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
           [LIBS="${LIBS} -latomic"
            LIBATOMIC=${LIBATOMIC-"-latomic"}])
 _RESTORE_VAR([CPPFLAGS])
+
+
+# gh-59705: Maximum length in bytes of a thread name
+case "$ac_sys_system" in
+  Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
+  Darwin) _PYTHREAD_NAME_MAXLEN=63;;
+  iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
+  OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  *) _PYTHREAD_NAME_MAXLEN=;;
+esac
+if test -n "$_PYTHREAD_NAME_MAXLEN"; then
+    AC_DEFINE_UNQUOTED([_PYTHREAD_NAME_MAXLEN], [$_PYTHREAD_NAME_MAXLEN],
+                       [Maximum length in bytes of a thread name])
+fi
+AC_SUBST([_PYTHREAD_NAME_MAXLEN])
 
 
 # stdlib
@@ -7594,12 +7774,11 @@ AS_CASE([$ac_sys_system],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
-  [Emscripten|WASI], [
+  [Emscripten], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.
     dnl dbm and gdbm aren't available, too.
-    dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
-    dnl resource functions (get/setrusage) are stubs, too.
+    dnl pwd, grp APIs, and resource functions (get/setrusage) are stubs.
     PY_STDLIB_MOD_SET_NA(
       [_curses],
       [_curses_panel],
@@ -7618,33 +7797,48 @@ AS_CASE([$ac_sys_system],
       [resource],
       [syslog],
     )
-    AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-      [Emscripten/browser*], [
-        dnl These modules are not particularly useful in browsers.
-        PY_STDLIB_MOD_SET_NA(
-          [fcntl],
-          [readline],
-          [termios],
-        )
-      ],
-      [Emscripten/node*], [],
-      [WASI/*], [
-        dnl WASI SDK 15.0 does not support file locking, mmap, and more.
-        dnl Test modules that must be compiled as shared libraries are not supported
-        dnl (see Modules/Setup.stdlib.in).
-        PY_STDLIB_MOD_SET_NA(
-          [_ctypes_test],
-          [_testexternalinspection],
-          [_testimportmultiple],
-          [_testmultiphase],
-          [_testsinglephase],
-          [fcntl],
-          [mmap],
-          [termios],
-          [xxlimited],
-          [xxlimited_35],
-        )
-      ]
+    dnl fcntl, readline, and termios are not particularly useful in browsers.
+    PY_STDLIB_MOD_SET_NA(
+      [readline],
+    )
+  ],
+  [WASI], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl dbm and gdbm aren't available, too.
+    dnl pwd, grp APIs, and resource functions (get/setrusage) are stubs.
+    PY_STDLIB_MOD_SET_NA(
+      [_curses],
+      [_curses_panel],
+      [_dbm],
+      [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
+      [_scproxy],
+      [_tkinter],
+      [_interpreters],
+      [_interpchannels],
+      [_interpqueues],
+      [grp],
+      [pwd],
+      [resource],
+      [syslog],
+    )
+    dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+    dnl Test modules that must be compiled as shared libraries are not supported
+    dnl (see Modules/Setup.stdlib.in).
+    PY_STDLIB_MOD_SET_NA(
+      [_ctypes_test],
+      [_remote_debugging],
+      [_testimportmultiple],
+      [_testmultiphase],
+      [_testsinglephase],
+      [fcntl],
+      [mmap],
+      [termios],
+      [xxlimited],
+      [xxlimited_35],
     )
   ],
   [PY_STDLIB_MOD_SET_NA([_scproxy])]
@@ -7720,9 +7914,9 @@ PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
 dnl always enabled extension modules
 PY_STDLIB_MOD_SIMPLE([array])
+PY_STDLIB_MOD_SIMPLE([_math_integer])
 PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
-PY_STDLIB_MOD_SIMPLE([_contextvars])
 PY_STDLIB_MOD_SIMPLE([_csv])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
@@ -7731,8 +7925,10 @@ PY_STDLIB_MOD_SIMPLE([_pickle])
 PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
+PY_STDLIB_MOD_SIMPLE([_remote_debugging], [$REMOTE_DEBUGGING_CFLAGS], [$REMOTE_DEBUGGING_LIBS])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
+PY_STDLIB_MOD_SIMPLE([_types])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_interpreters])
 PY_STDLIB_MOD_SIMPLE([_interpchannels])
@@ -7764,7 +7960,7 @@ PY_STDLIB_MOD([mmap],
 PY_STDLIB_MOD([_socket],
   [], m4_flatten([test "$ac_cv_header_sys_socket_h" = "yes"
                     -a "$ac_cv_header_sys_types_h" = "yes"
-                    -a "$ac_cv_header_netinet_in_h" = "yes"]))
+                    -a "$ac_cv_header_netinet_in_h" = "yes"]), [], [$SOCKET_LIBS])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [],
@@ -7792,67 +7988,162 @@ PY_STDLIB_MOD_SIMPLE([_codecs_tw])
 PY_STDLIB_MOD_SIMPLE([_multibytecodec])
 PY_STDLIB_MOD_SIMPLE([unicodedata])
 
-dnl By default we always compile these even when OpenSSL is available
-dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
-PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
-PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
-PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
-
-LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+###############################################################################
+# HACL* compilation and linking configuration (contact: @picnixz)
+#
+# Used by the HACL*-based implementations of cryptographic primitives.
+#
+# CPython provides a vendored copy of a subset of the HACL* project used
+# to build extension modules of cryptographic primitives. On WASI, HACL*
+# sources must be statically linked with the extension modules; on other
+# platforms, the extension modules may assume that HACL* has been compiled
+# as a shared library.
+#
+# Example for MD5:
+#
+#   * Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
+#   * Decide whether the object files are to be passed to the linker (emulate
+#     a shared library without having to install it) or if we need to create
+#     a static library for WASI. The following summarizes the values taken by
+#     the MODULE_<NAME>_LDFLAGS variable depending on the linkage type:
+#     - shared: MODULE__MD5_LDFLAGS is set to LIBHACL_MD5_OBJS
+#     - static: MODULE__MD5_LDFLAGS is set to Modules/_hacl/libHacl_Hash_MD5.a
+#   * Compile Modules/md5module.c into Modules/md5module.o.
+#   * Link Modules/md5module.o using $(MODULE__MD5_LDFLAGS)
+#     and get Modules/_md5$(EXT_SUFFIX).
+#
+# LIBHACL_FLAG_I: '-I' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_FLAG_D: '-D' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_CFLAGS: compiler flags passed for HACL* and HACL*-based modules
+# LIBHACL_LDFLAGS: linker flags passed for HACL* and HACL*-based modules
+LIBHACL_FLAG_I='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include'
+LIBHACL_FLAG_D='-D_BSD_SOURCE -D_DEFAULT_SOURCE'
 case "$ac_sys_system" in
   Linux*)
     if test "$ac_cv_func_explicit_bzero" = "no"; then
-      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+      LIBHACL_FLAG_D="${LIBHACL_FLAG_D} -DLINUX_NO_EXPLICIT_BZERO"
     fi
   ;;
 esac
+LIBHACL_CFLAGS="${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D} \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
 AC_SUBST([LIBHACL_CFLAGS])
+LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
+AC_SUBST([LIBHACL_LDFLAGS])
 
-dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
-AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
-  [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
+dnl Check if universal2 HACL* implementation should be used.
+if test "$UNIVERSAL_ARCHS" = "universal2" -o \
+   \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \)
+then
+  use_hacl_universal2_impl=yes
+else
+  use_hacl_universal2_impl=no
+fi
 
-  AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
+  dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
+  AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
+    [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
-  # macOS universal2 builds *support* the -msse etc flags because they're
-  # available on x86_64. However, performance of the HACL SIMD128 implementation
-  # isn't great, so it's disabled on ARM64.
-  AC_MSG_CHECKING([for HACL* SIMD128 implementation])
-  if test "$UNIVERSAL_ARCHS" == "universal2"; then
-    [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
-    AC_MSG_RESULT([universal2])
-  else
-    [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
-    AC_MSG_RESULT([standard])
-  fi
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC128], [1], [
+      HACL* library can compile SIMD128 implementations])
 
-], [], [-Werror])
+    # macOS universal2 builds *support* the -msse etc flags because they're
+    # available on x86_64. However, performance of the HACL SIMD128 implementation
+    # isn't great, so it's disabled on ARM64.
+    AC_MSG_CHECKING([for HACL* SIMD128 implementation])
+    if test "$use_hacl_universal2_impl" = "yes"; then
+      [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
+      AC_MSG_RESULT([universal2])
+    else
+      [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+      AC_MSG_RESULT([standard])
+    fi
 
+  ], [], [-Werror])
+fi
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
-AC_SUBST([LIBHACL_SIMD128_OBJS])
+AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])
 
-AX_CHECK_COMPILE_FLAG([-mavx2],[
-  [LIBHACL_SIMD256_FLAGS="-mavx2"]
-  AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+#
+# Although AVX support is not guaranteed on Android
+# (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
+# runtime CPUID check.
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
+  AX_CHECK_COMPILE_FLAG([-mavx2],[
+    [LIBHACL_SIMD256_FLAGS="-mavx2"]
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC256], [1], [
+      HACL* library can compile SIMD256 implementations])
 
-  # macOS universal2 builds *support* the -mavx2 compiler flag because it's
-  # available on x86_64; but the HACL SIMD256 build then fails because the
-  # implementation requires symbols that aren't available on ARM64. Use a
-  # wrapped implementation if we're building for universal2.
-  AC_MSG_CHECKING([for HACL* SIMD256 implementation])
-  if test "$UNIVERSAL_ARCHS" == "universal2"; then
-    [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
-    AC_MSG_RESULT([universal2])
-  else
-    [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
-    AC_MSG_RESULT([standard])
-  fi
-], [], [-Werror])
-
+    # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+    # available on x86_64; but the HACL SIMD256 build then fails because the
+    # implementation requires symbols that aren't available on ARM64. Use a
+    # wrapped implementation if we're building for universal2.
+    AC_MSG_CHECKING([for HACL* SIMD256 implementation])
+    if test "$use_hacl_universal2_impl" = "yes"; then
+      [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
+      AC_MSG_RESULT([universal2])
+    else
+      [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+      AC_MSG_RESULT([standard])
+    fi
+  ], [], [-Werror])
+fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
-AC_SUBST([LIBHACL_SIMD256_OBJS])
+AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])
+### end(HACL* configuration)
+
+###############################################################################
+# HACL*-based cryptographic primitives
+
+AC_MSG_CHECKING([for HACL* library linking type])
+if test "$ac_sys_system" = "WASI"; then
+  LIBHACL_LDEPS_LIBTYPE=STATIC
+  AC_MSG_RESULT([static])
+else
+  LIBHACL_LDEPS_LIBTYPE=SHARED
+  AC_MSG_RESULT([shared])
+fi
+# Used to complete the "MODULE_<NAME>_LDEPS" Makefile variable.
+# The LDEPS variable is a Makefile rule prerequisite.
+AC_SUBST([LIBHACL_LDEPS_LIBTYPE])
+
+dnl PY_HACL_CREATE_MODULE([COMPONENT], [EXTNAME], [ENABLED-TEST])
+dnl The COMPONENT is the name of the HACL* component being built in uppercase.
+dnl Corresponding Makefile variables are named as LIBHACL_<COMPONENT>_*.
+dnl The EXTNAME is the name of the extension module being built.
+AC_DEFUN([PY_HACL_CREATE_MODULE], [
+  AS_VAR_PUSHDEF([v], [[LIBHACL_][$1][_LDFLAGS]])
+  AS_VAR_SET([v], [[LIBHACL_][$1][_LIB_${LIBHACL_LDEPS_LIBTYPE}]])
+  PY_STDLIB_MOD([$2], [$3], [], [$LIBHACL_CFLAGS], [\$($v)])
+  AS_VAR_POPDEF([v])
+])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (see bpo-14693). The modules are small.
+PY_HACL_CREATE_MODULE([MD5], [_md5], [test "$with_builtin_md5" = yes])
+PY_HACL_CREATE_MODULE([SHA1], [_sha1], [test "$with_builtin_sha1" = yes])
+PY_HACL_CREATE_MODULE([SHA2], [_sha2], [test "$with_builtin_sha2" = yes])
+PY_HACL_CREATE_MODULE([SHA3], [_sha3], [test "$with_builtin_sha3" = yes])
+PY_HACL_CREATE_MODULE([BLAKE2], [_blake2], [test "$with_builtin_blake2" = yes])
+
+dnl HMAC builtin library does not need OpenSSL for now. In the future
+dnl we might want to rely on OpenSSL EVP/NID interface or implement
+dnl our own for algorithm resolution.
+dnl
+dnl For Emscripten, we disable HACL* HMAC as it is tricky to make it work.
+dnl See https://github.com/python/cpython/issues/133042.
+PY_HACL_CREATE_MODULE([HMAC], [_hmac], [test "$ac_sys_system" != "Emscripten"])
+### end(cryptographic primitives)
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
@@ -7868,6 +8159,16 @@ PY_STDLIB_MOD([_curses_panel],
 PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
+
+AS_VAR_IF([with_system_libmpdec], [no],
+          [AC_MSG_WARN([m4_normalize([
+     the bundled copy of libmpdec is scheduled for removal in Python 3.16;
+     consider using a system installed mpdecimal library.])])])
+AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
+      [AC_MSG_WARN([m4_normalize([
+         no system libmpdec found; falling back to pure-Python version
+         for the decimal module])])])
+
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
   [$DBM_CFLAGS], [$DBM_LIBS])
@@ -7897,6 +8198,8 @@ PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
   [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
+PY_STDLIB_MOD([_zstd], [], [test "$have_libzstd" = yes],
+  [$LIBZSTD_CFLAGS], [$LIBZSTD_LIBS])
 
 dnl OpenSSL bindings
 PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
@@ -7917,7 +8220,6 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testsinglephase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
-PY_STDLIB_MOD([_testexternalinspection], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],
@@ -7928,6 +8230,36 @@ dnl Limited API template modules.
 dnl Emscripten does not support shared libraries yet.
 PY_STDLIB_MOD([xxlimited], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+
+# Determine JIT stencils header files based on target platform
+JIT_STENCILS_H=""
+AS_VAR_IF([enable_experimental_jit], [no],
+  [],
+  [case "$host" in
+    aarch64-apple-darwin*)
+      JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
+      ;;
+    x86_64-apple-darwin*)
+      JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
+      ;;
+    aarch64-pc-windows-msvc)
+      JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
+      ;;
+    i686-pc-windows-msvc)
+      JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
+      ;;
+    x86_64-pc-windows-msvc)
+      JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
+      ;;
+    aarch64-*-linux-gnu)
+      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
+      ;;
+    x86_64-*-linux-gnu)
+      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
+      ;;
+  esac])
+
+AC_SUBST([JIT_STENCILS_H])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

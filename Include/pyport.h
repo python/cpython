@@ -36,11 +36,22 @@
 // Macro to use the more powerful/dangerous C-style cast even in C++.
 #define _Py_CAST(type, expr) ((type)(expr))
 
+// Cast a function to another function type T.
+//
+// The macro first casts the function to the "void func(void)" type
+// to prevent compiler warnings.
+//
+// Note that using this cast only prevents the compiler from emitting
+// warnings, but does not prevent an undefined behavior at runtime if
+// the original function signature is not respected.
+#define _Py_FUNC_CAST(T, func) _Py_CAST(T, _Py_CAST(void(*)(void), (func)))
+
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
-#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
-        || (defined(__cplusplus) && __cplusplus >= 201103)
+#if !defined(_MSC_VER) && \
+    ((defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) \
+        || (defined(__cplusplus) && __cplusplus >= 201103))
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -493,28 +504,30 @@ extern "C" {
  * Thread support is stubbed and any attempt to create a new thread fails.
  */
 #if (!defined(HAVE_PTHREAD_STUBS) && \
+     !defined(__wasi__) && \
       (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
 #  define Py_CAN_START_THREADS 1
 #endif
 
+
+/* gh-142163: Some libraries rely on HAVE_THREAD_LOCAL being undefined, so
+ * we can only define it only when Py_BUILD_CORE is set.*/
+#ifdef Py_BUILD_CORE
+// This is no longer coupled to _Py_thread_local.
+#  define HAVE_THREAD_LOCAL 1
+#endif
+
 #ifdef WITH_THREAD
-#  ifdef Py_BUILD_CORE
-#    ifdef HAVE_THREAD_LOCAL
-#      error "HAVE_THREAD_LOCAL is already defined"
-#    endif
-#    define HAVE_THREAD_LOCAL 1
-#    ifdef thread_local
-#      define _Py_thread_local thread_local
-#    elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
-#      define _Py_thread_local _Thread_local
-#    elif defined(_MSC_VER)  /* AKA NT_THREADS */
-#      define _Py_thread_local __declspec(thread)
-#    elif defined(__GNUC__)  /* includes clang */
-#      define _Py_thread_local __thread
-#    else
-       // fall back to the PyThread_tss_*() API, or ignore.
-#      undef HAVE_THREAD_LOCAL
-#    endif
+#  ifdef thread_local
+#    define _Py_thread_local thread_local
+#  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#    define _Py_thread_local _Thread_local
+#  elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#    define _Py_thread_local __declspec(thread)
+#  elif defined(__GNUC__)  /* includes clang */
+#    define _Py_thread_local __thread
+#  else
+#    error "no supported thread-local variable storage classifier"
 #  endif
 #endif
 
@@ -565,27 +578,45 @@ extern "C" {
 #  if __has_feature(memory_sanitizer)
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
+#      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
 #    if !defined(_Py_ADDRESS_SANITIZER)
 #      define _Py_ADDRESS_SANITIZER
+#      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #    endif
 #  endif
 #  if __has_feature(thread_sanitizer)
 #    if !defined(_Py_THREAD_SANITIZER)
 #      define _Py_THREAD_SANITIZER
+#      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
+#    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #  endif
 #  if defined(__SANITIZE_THREAD__)
 #    define _Py_THREAD_SANITIZER
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+#  elif  __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)
+     // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
+     // is provided only since GCC 7.
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #  endif
 #endif
 
+#ifndef _Py_NO_SANITIZE_ADDRESS
+#  define _Py_NO_SANITIZE_ADDRESS
+#endif
+#ifndef _Py_NO_SANITIZE_THREAD
+#  define _Py_NO_SANITIZE_THREAD
+#endif
+#ifndef _Py_NO_SANITIZE_MEMORY
+#  define _Py_NO_SANITIZE_MEMORY
+#endif
 
 /* AIX has __bool__ redefined in it's system header file. */
 #if defined(_AIX) && defined(__bool__)
@@ -625,11 +656,38 @@ extern "C" {
 //     case 2: code; break;
 //     }
 //
-// __attribute__((fallthrough)) was introduced in GCC 7.
-#if _Py__has_attribute(fallthrough)
+// __attribute__((fallthrough)) was introduced in GCC 7 and Clang 10 /
+// Apple Clang 12.0. Earlier Clang versions support only the C++11
+// style fallthrough attribute, not the GCC extension syntax used here,
+// and __has_attribute(fallthrough) evaluates to 1.
+#if _Py__has_attribute(fallthrough) && (!defined(__clang__) || \
+    (!defined(__apple_build_version__) && __clang_major__ >= 10) || \
+    (defined(__apple_build_version__) && __clang_major__ >= 12))
 #  define _Py_FALLTHROUGH __attribute__((fallthrough))
 #else
 #  define _Py_FALLTHROUGH do { } while (0)
 #endif
+
+
+// _Py_NONSTRING: The nonstring variable attribute specifies that an object or
+// member declaration with type array of char, signed char, or unsigned char,
+// or pointer to such a type is intended to store character arrays that do not
+// necessarily contain a terminating NUL.
+//
+// Usage:
+//
+//   char name [8] _Py_NONSTRING;
+#if _Py__has_attribute(nonstring)
+#  define _Py_NONSTRING __attribute__((nonstring))
+#else
+#  define _Py_NONSTRING
+#endif
+
+
+// Assume the stack grows down unless specified otherwise
+#ifndef _Py_STACK_GROWS_DOWN
+#  define _Py_STACK_GROWS_DOWN 1
+#endif
+
 
 #endif /* Py_PYPORT_H */

@@ -59,7 +59,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.12.
    Brevity is key.
 
-Python 3.12 is the latest stable release of the Python programming language,
+Python 3.12 is a stable release of the Python programming language,
 with a mix of changes to the language and the standard library.
 The library changes focus on cleaning up deprecated APIs, usability, and correctness.
 Of note, the :mod:`!distutils` package has been removed from the standard library.
@@ -811,6 +811,14 @@ pathlib
   :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
   the path's case sensitivity, allowing for more precise control over the matching process.
 
+platform
+--------
+
+* Add support for detecting Windows 11 and Windows Server releases past 2012.
+  Previously, lookups on Windows Server platforms newer than Windows Server 2012
+  and on Windows 11 would return ``Windows-10``.
+  (Contributed by Steve Dower in :gh:`89545`.)
+
 pdb
 ---
 
@@ -1123,7 +1131,7 @@ CPython bytecode changes
 * Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
   Vladimir Matveev in :gh:`103497`.)
 
-* Add the :opcode:`RETURN_CONST` instruction. (Contributed by Wenyang Wang in :gh:`101632`.)
+* Add the ``RETURN_CONST`` instruction. (Contributed by Wenyang Wang in :gh:`101632`.)
 
 Demos and Tools
 ===============
@@ -1183,9 +1191,23 @@ Deprecated
   replaced by :data:`calendar.JANUARY` and :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
-* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
-  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
-  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+* :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
+
+  Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj`` implements
+  the :ref:`buffer protocol <bufferobjects>` at runtime. For use in type
+  annotations, either use :class:`~collections.abc.Buffer` or a union
+  that explicitly specifies the types your code supports (e.g.,
+  ``bytes | bytearray | memoryview``).
+
+  :class:`!ByteString` was originally intended to be an abstract class that
+  would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+  However, since the ABC never had any methods, knowing that an object was an
+  instance of :class:`!ByteString` never actually told you anything useful
+  about the object. Other common buffer types such as :class:`memoryview` were
+  also never understood as subtypes of :class:`!ByteString` (either at
+  runtime or by static type checkers).
+
+  See :pep:`PEP 688 <688#current-options>` for more details.
   (Contributed by Shantanu Jain in :gh:`91896`.)
 
 * :mod:`datetime`: :class:`datetime.datetime`'s :meth:`~datetime.datetime.utcnow` and
@@ -1229,7 +1251,7 @@ Deprecated
   your code *requires* ``'fork'``.  See :ref:`contexts and start methods
   <multiprocessing-start-methods>`.
 
-* :mod:`pkgutil`: :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+* :mod:`pkgutil`: :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader`
   are deprecated and will be removed in Python 3.14;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
@@ -1293,7 +1315,7 @@ Deprecated
     :class:`collections.abc.Hashable` and :class:`collections.abc.Sized` respectively, are
     deprecated. (:gh:`94309`.)
 
-  * :class:`!typing.ByteString`, deprecated since Python 3.9, now causes a
+  * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
     :exc:`DeprecationWarning` to be emitted when it is used.
     (Contributed by Alex Waygood in :gh:`91896`.)
 
@@ -1309,14 +1331,15 @@ Deprecated
   may be removed in a future version of Python. Use the single-arg versions
   of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
 
-* :exc:`DeprecationWarning` is now raised when ``__package__`` on a
-  module differs from ``__spec__.parent`` (previously it was
-  :exc:`ImportWarning`).
+* :exc:`DeprecationWarning` is now raised when :attr:`~module.__package__` on a
+  module differs from
+  :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>` (previously
+  it was :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* Setting ``__package__`` or ``__cached__`` on a module is deprecated,
-  and will cease to be set or taken into consideration by the import system in Python 3.14.
-  (Contributed by Brett Cannon in :gh:`65961`.)
+* Setting :attr:`~module.__package__` or ``__cached__`` on a
+  module is deprecated, and will cease to be set or taken into consideration by
+  the import system in Python 3.14. (Contributed by Brett Cannon in :gh:`65961`.)
 
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
   error in Python 3.16. Use ``not`` for logical negation of bools instead.
@@ -1326,8 +1349,8 @@ Deprecated
 
 * Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
   Python 3.10 via :pep:`626`,
-  but it only got a proper :exc:`DeprecationWarning` in 3.12,
-  therefore it will be removed in 3.14.
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.15.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 .. include:: ../deprecations/pending-removal-in-3.13.rst
@@ -1338,7 +1361,15 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
+
+.. _whatsnew312-removed:
 
 Removed
 =======
@@ -1364,6 +1395,8 @@ configparser
     shorter :class:`~configparser.ConfigParser` name instead.
   * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
     Use :meth:`~configparser.ConfigParser.read_file` instead.
+
+.. _whatsnew312-removed-distutils:
 
 distutils
 ---------
@@ -1446,6 +1479,8 @@ importlib
   * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
     have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
+.. _whatsnew312-removed-imp:
+
 imp
 ---
 
@@ -1460,8 +1495,8 @@ imp
     ``imp.NullImporter``               Insert ``None`` into ``sys.path_importer_cache``
     ``imp.cache_from_source()``        :func:`importlib.util.cache_from_source`
     ``imp.find_module()``              :func:`importlib.util.find_spec`
-    ``imp.get_magic()``                :attr:`importlib.util.MAGIC_NUMBER`
-    ``imp.get_suffixes()``             :attr:`importlib.machinery.SOURCE_SUFFIXES`, :attr:`importlib.machinery.EXTENSION_SUFFIXES`, and :attr:`importlib.machinery.BYTECODE_SUFFIXES`
+    ``imp.get_magic()``                :const:`importlib.util.MAGIC_NUMBER`
+    ``imp.get_suffixes()``             :const:`importlib.machinery.SOURCE_SUFFIXES`, :const:`importlib.machinery.EXTENSION_SUFFIXES`, and :const:`importlib.machinery.BYTECODE_SUFFIXES`
     ``imp.get_tag()``                  :attr:`sys.implementation.cache_tag <sys.implementation>`
     ``imp.load_module()``              :func:`importlib.import_module`
     ``imp.new_module(name)``           ``types.ModuleType(name)``
@@ -1812,7 +1847,7 @@ Build Changes
 * ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
 
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-  :file:`!configure`.
+  :file:`configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
 * Windows builds and macOS installers from python.org now use OpenSSL 3.0.
@@ -1887,7 +1922,7 @@ New Features
 
   The :c:macro:`Py_TPFLAGS_MANAGED_DICT` and :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
   flags have been added. This allows extensions classes to support object
-  ``__dict__`` and weakrefs with less bookkeeping,
+  :attr:`~object.__dict__` and weakrefs with less bookkeeping,
   using less memory and with faster access.
 
 * API for performing calls using
@@ -2006,7 +2041,7 @@ Porting to Python 3.12
   internal-only field directly.
 
   To get a list of subclasses, call the Python method
-  :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
+  :py:meth:`~type.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
 * Add support of more formatting options (left aligning, octals, uppercase
@@ -2025,7 +2060,7 @@ Porting to Python 3.12
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Philip Georgi in :gh:`95504`.)
 
-* Extension classes wanting to add a ``__dict__`` or weak reference slot
+* Extension classes wanting to add a :attr:`~object.__dict__` or weak reference slot
   should use :c:macro:`Py_TPFLAGS_MANAGED_DICT` and
   :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
   ``tp_weaklistoffset``, respectively.
@@ -2215,6 +2250,8 @@ Deprecated
 .. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 

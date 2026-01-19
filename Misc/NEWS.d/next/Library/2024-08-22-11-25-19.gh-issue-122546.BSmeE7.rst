@@ -1,2 +1,0 @@
-Consistently use same file name for different exceptions in the new repl.
-Patch by Sergey B Kirpichev.

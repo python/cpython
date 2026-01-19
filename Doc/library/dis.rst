@@ -60,6 +60,8 @@ interpreter.
       The :option:`-P <dis --show-positions>` command-line option
       and the ``show_positions`` argument were added.
 
+      The :option:`-S <dis --specialized>` command-line option is added.
+
 Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
@@ -74,7 +76,7 @@ the following command can be used to display the disassembly of
      2           RESUME                   0
    <BLANKLINE>
      3           LOAD_GLOBAL              1 (len + NULL)
-                 LOAD_FAST                0 (alist)
+                 LOAD_FAST_BORROW         0 (alist)
                  CALL                     1
                  RETURN_VALUE
 
@@ -89,27 +91,39 @@ The :mod:`dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
-   python -m dis [-h] [-C] [-O] [-P] [infile]
+   python -m dis [-h] [-C] [-O] [-P] [-S] [infile]
 
 The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Display usage and exit.
 
-.. cmdoption:: -C, --show-caches
+.. option:: -C, --show-caches
 
    Show inline caches.
 
-.. cmdoption:: -O, --show-offsets
+   .. versionadded:: 3.13
+
+.. option:: -O, --show-offsets
 
    Show offsets of instructions.
 
-.. cmdoption:: -P, --show-positions
+   .. versionadded:: 3.13
+
+.. option:: -P, --show-positions
 
    Show positions of instructions in the source code.
+
+   .. versionadded:: 3.14
+
+.. option:: -S, --specialized
+
+   Show specialized bytecode.
+
+   .. versionadded:: 3.14
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
@@ -201,7 +215,7 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
-    LOAD_FAST
+    LOAD_FAST_BORROW
     CALL
     RETURN_VALUE
 
@@ -521,7 +535,7 @@ details of bytecode instructions as :class:`Instruction` instances:
       :class:`dis.Positions` object holding the
       start and end locations that are covered by this instruction.
 
-   .. data::cache_info
+   .. data:: cache_info
 
       Information about the cache entries of this instruction, as
       triplets of the form ``(name, size, data)``, where the ``name``
@@ -569,6 +583,22 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
    Do nothing code.  Used as a placeholder by the bytecode optimizer, and to
    generate line tracing events.
+
+
+.. opcode:: NOT_TAKEN
+
+   Do nothing code.
+   Used by the interpreter to record :monitoring-event:`BRANCH_LEFT`
+   and :monitoring-event:`BRANCH_RIGHT` events for :mod:`sys.monitoring`.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: POP_TOP
@@ -697,15 +727,8 @@ not have to be) the original ``STACK[-2]``.
       STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements::
-
-      key = STACK.pop()
-      container = STACK.pop()
-      STACK.append(container[key])
+   .. versionchanged:: 3.14
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR
@@ -745,7 +768,7 @@ not have to be) the original ``STACK[-2]``.
       end = STACK.pop()
       start = STACK.pop()
       container = STACK.pop()
-      values = STACK.pop()
+      value = STACK.pop()
       container[start:end] = value
 
    .. versionadded:: 3.12
@@ -862,13 +885,6 @@ iterations of the loop.
    Returns with ``STACK[-1]`` to the caller of the function.
 
 
-.. opcode:: RETURN_CONST (consti)
-
-   Returns with ``co_consts[consti]`` to the caller of the function.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: YIELD_VALUE
 
    Yields ``STACK.pop()`` from a :term:`generator`.
@@ -969,7 +985,8 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   Perform ``STACK.append(len(STACK[-1]))``.
+   Perform ``STACK.append(len(STACK[-1]))``. Used in :keyword:`match` statements where
+   comparison with structure of pattern is needed.
 
    .. versionadded:: 3.10
 
@@ -1085,6 +1102,14 @@ iterations of the loop.
    Pushes ``co_consts[consti]`` onto the stack.
 
 
+.. opcode:: LOAD_SMALL_INT (i)
+
+   Pushes the integer ``i`` onto the stack.
+   ``i`` must be in ``range(256)``
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
@@ -1109,6 +1134,48 @@ iterations of the loop.
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
    .. versionadded:: 3.12
+
+
+.. opcode:: BUILD_TEMPLATE
+
+   Constructs a new :class:`~string.templatelib.Template` instance from a tuple
+   of strings and a tuple of interpolations and pushes the resulting object
+   onto the stack::
+
+      interpolations = STACK.pop()
+      strings = STACK.pop()
+      STACK.append(_build_template(strings, interpolations))
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: BUILD_INTERPOLATION (format)
+
+   Constructs a new :class:`~string.templatelib.Interpolation` instance from a
+   value and its source expression and pushes the resulting object onto the
+   stack.
+
+   If no conversion or format specification is present, ``format`` is set to
+   ``2``.
+
+   If the low bit of ``format`` is set, it indicates that the interpolation
+   contains a format specification.
+
+   If ``format >> 2`` is non-zero, it indicates that the interpolation
+   contains a conversion. The value of ``format >> 2`` is the conversion type
+   (``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
+   ``3`` for ``!a``)::
+
+      conversion = format >> 2
+      if format & 1:
+          format_spec = STACK.pop()
+      else:
+          format_spec = None
+      expression = STACK.pop()
+      value = STACK.pop()
+      STACK.append(_build_interpolation(value, expression, conversion, format_spec))
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: BUILD_TUPLE (count)
@@ -1337,9 +1404,6 @@ iterations of the loop.
    If ``STACK[-1]`` is not ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
 
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
-
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1350,9 +1414,6 @@ iterations of the loop.
 
    If ``STACK[-1]`` is ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
-
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
 
    .. versionadded:: 3.11
 
@@ -1385,6 +1446,28 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_BORROW (var_num)
+
+   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the
+   stack.
+
+   .. versionadded:: 3.14
+
+.. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
+
+   Pushes references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.13
+
+
+.. opcode:: LOAD_FAST_BORROW_LOAD_FAST_BORROW (var_nums)
+
+   Pushes borrowed references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.14
+
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
@@ -1405,6 +1488,20 @@ iterations of the loop.
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
 
+.. opcode:: STORE_FAST_STORE_FAST (var_nums)
+
+   Stores ``STACK[-1]`` into ``co_varnames[var_nums >> 4]``
+   and ``STACK[-2]`` into ``co_varnames[var_nums & 15]``.
+
+   .. versionadded:: 3.13
+
+.. opcode:: STORE_FAST_LOAD_FAST (var_nums)
+
+   Stores ``STACK.pop()`` into the local ``co_varnames[var_nums >> 4]``
+   and pushes a reference to the local ``co_varnames[var_nums & 15]``
+   onto the stack.
+
+   .. versionadded:: 3.13
 
 .. opcode:: DELETE_FAST (var_num)
 
@@ -1434,7 +1531,7 @@ iterations of the loop.
    slot ``i`` of the "fast locals" storage in this mapping.
    If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
-   free variables in class bodies (which previously used
+   :term:`closure variables <closure variable>` in class bodies (which previously used
    :opcode:`!LOAD_CLASSDEREF`) and in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
@@ -1463,8 +1560,8 @@ iterations of the loop.
 
 .. opcode:: COPY_FREE_VARS (n)
 
-   Copies the ``n`` free variables from the closure into the frame.
-   Removes the need for special code on the caller's side when calling
+   Copies the ``n`` :term:`free (closure) variables <closure variable>` from the closure
+   into the frame. Removes the need for special code on the caller's side when calling
    closures.
 
    .. versionadded:: 3.11
@@ -1545,14 +1642,14 @@ iterations of the loop.
 
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
-   :opcode:`LOAD_METHOD` for non-method calls.
+   :opcode:`!LOAD_METHOD` for non-method calls.
 
    .. versionadded:: 3.11
 
 
 .. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+   Pushes a new function object on the stack built from the code object at ``STACK[-1]``.
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
@@ -1576,8 +1673,12 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
+   * ``0x10`` the :term:`annotate function` for the function object
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.14
+      Added ``0x10`` to indicate the annotate function for the function object.
 
 
 .. opcode:: BUILD_SLICE (argc)
@@ -1620,7 +1721,7 @@ iterations of the loop.
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1633,11 +1734,11 @@ iterations of the loop.
       result = value.__format__("")
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
-.. opcode:: FORMAT_SPEC
+.. opcode:: FORMAT_WITH_SPEC
 
    Formats the given value with the given format spec::
 
@@ -1646,7 +1747,7 @@ iterations of the loop.
       result = value.__format__(spec)
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1866,11 +1967,18 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Marks the end of the code block associated with the last ``SETUP_FINALLY``,
    ``SETUP_CLEANUP`` or ``SETUP_WITH``.
 
+
 .. opcode:: JUMP
-.. opcode:: JUMP_NO_INTERRUPT
+            JUMP_NO_INTERRUPT
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
+
+.. opcode:: JUMP_IF_TRUE
+            JUMP_IF_FALSE
+
+   Conditional jumps which do not impact the stack. Replaced by the sequence
+   ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
 
 .. opcode:: LOAD_CLOSURE (i)
 
@@ -1881,12 +1989,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
-
-
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
 
 
 .. _opcode_collections:
@@ -1931,10 +2033,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable. 'free' in this
-   context refers to names in the current scope that are referenced by inner
-   scopes or names in outer scopes that are referenced from this scope.  It does
-   *not* include references to global or builtin scopes.
+   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
+   'free' in this context refers to names in the current scope that are
+   referenced by inner scopes or names in outer scopes that are referenced
+   from this scope.  It does *not* include references to global or builtin scopes.
 
 
 .. data:: hasname
@@ -1979,4 +2081,3 @@ instructions:
 
    .. deprecated:: 3.13
       All jumps are now relative. This list is empty.
-

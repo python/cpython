@@ -1,3 +1,0 @@
-Fix regression in the new REPL that meant that globals from files passed
-using the ``-i`` argument would not be included in the REPL's global
-namespace. Patch by Alex Waygood.

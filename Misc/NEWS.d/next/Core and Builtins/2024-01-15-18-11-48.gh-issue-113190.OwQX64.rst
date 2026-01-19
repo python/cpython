@@ -1,1 +1,0 @@
-:c:func:`Py_Finalize` now deletes all interned strings.
