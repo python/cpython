@@ -7539,17 +7539,16 @@ class ReentrantMutationTests(unittest.TestCase):
         seq = []
 
         class MutBuffer:
-            def __init__(self, data):
-                self._data = bytearray(data)
+            def __init__(self):
                 self.tripped = False
 
             def __buffer__(self, flags):
                 if not self.tripped:
                     self.tripped = True
                     seq.clear()
-                return memoryview(self._data)
+                return memoryview(bytearray(100))
 
-        seq = [MutBuffer(b'x' * 100), bytearray(100), bytearray(100)]
+        seq = [MutBuffer(), bytearray(100), bytearray(100)]
 
         left, right = socket.socketpair()
         self.addCleanup(left.close)
