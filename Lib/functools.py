@@ -902,9 +902,8 @@ def _get_singledispatch_annotated_param(func, *, __role__):
         func = func.__func__
     else:
         idx = 0 if __role__ == "function" else 1
-    # If it is a simple function, try to read from the code object fast.
+    # Fast path: emulate inspect._signature_from_function if possible.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
-        # Emulate inspect._signature_from_function to get the desired parameter.
         func_code = func.__code__
         try:
             return func_code.co_varnames[:func_code.co_argcount][idx]
