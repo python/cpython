@@ -165,7 +165,8 @@ class TestFilemode:
 
     def test_filemode_does_not_misclassify_random_bits(self):
         # gh-144050 regression test
-        self.assertEqual(self.statmod.filemode(32767)[0], "?")
+        self.assertEqual(self.statmod.filemode(0o77777)[0], "?")
+        self.assertEqual(self.statmod.filemode(0o177777)[0], "?")
 
     @os_helper.skip_unless_working_chmod
     def test_directory(self):
