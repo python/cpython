@@ -888,7 +888,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
+def _get_singledispatch_annotated_param(func, *, __role__):
     """Find the first positional and user-specified parameter in a callable
     or descriptor.
 
@@ -906,7 +906,7 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
     # Pick the first parameter if registering via singledispatch.
     # Pick the second parameter if registering via singledispatchmethod.
     else:
-        idx = int(_inside_dispatchmethod)
+        idx = 0 if __role__ == "function" else 1
 
     # If it is a simple function, try to read from the code object fast.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
@@ -981,7 +981,7 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
-    def register(cls, func=None, _inside_dispatchmethod=False):
+    def register(cls, func=None, __role__="function"):
         """generic_func.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_func*.
@@ -1006,8 +1006,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            argname = _get_singledispatch_annotated_param(
-                func, _inside_dispatchmethod=_inside_dispatchmethod)
+            argname = _get_singledispatch_annotated_param(func, __role__=__role__)
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
@@ -1086,7 +1085,7 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        return self.dispatcher.register(cls, func=method, _inside_dispatchmethod=True)
+        return self.dispatcher.register(cls, func=method, __role__="method")
 
     def __get__(self, obj, cls=None):
         return _singledispatchmethod_get(self, obj, cls)
