@@ -5018,11 +5018,11 @@ static int
 PyCArray_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
     if (PyUnicode_Check(key) &&
-        PyUnicode_CompareWithASCIIString(key, "__class__") == 0)
+        _PyUnicode_EqualToASCIIString(key, "__class__"))
     {
         ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
-        StgInfo *old_info;
-        StgInfo *new_info;
+        StgInfo *old_info = NULL;
+        StgInfo *new_info = NULL;
 
         if (PyStgInfo_FromObject(st, self, &old_info) < 0) {
             return -1;
@@ -5031,7 +5031,16 @@ PyCArray_setattro(PyObject *self, PyObject *key, PyObject *value)
             return -1;
         }
 
-        /* Only care about array → array */
+        /* If one side has no storage info, disallow */
+        if (old_info == NULL || new_info == NULL) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "cannot assign incompatible ctypes array type"
+            );
+            return -1;
+        }
+
+        /* Only care about array to array */
         if (old_info->length >= 0 && new_info->length >= 0) {
             if (old_info->length != new_info->length ||
                 old_info->size != new_info->size ||
