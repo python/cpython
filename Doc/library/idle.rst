@@ -179,7 +179,7 @@ Format menu (Editor window only)
 
 Format Paragraph
    Rewrap the text block containing the text insert cursor.
-   Avoid code lines.  See :ref:`Format Menu<format-menu>` in the
+   Avoid code lines.  See :ref:`Format block<format-block>` in the
    Editing and Navigation section below.
 
 Indent Region
@@ -566,10 +566,10 @@ In an editor, import statements have no effect until one runs the file.
 One might want to run a file after writing import statements, after
 adding function definitions, or after opening an existing file.
 
-.. _format-menu:
+.. _format-block:
 
-Format Menu
-^^^^^^^^^^^
+Format block
+^^^^^^^^^^^^
 
 Reformat Paragraph rewraps a block ('paragraph') of contiguous equally
 indented non-blank comments, a similar block of text within a multiline
