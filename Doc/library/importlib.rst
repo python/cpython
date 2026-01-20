@@ -283,6 +283,8 @@ ABC hierarchy::
 
       Returns an iterable of possible specs.
 
+      Raises :exc:`ValueError` if *parent* is not a package module.
+
       .. warning::
          This method can potentially yield a very large number of objects, and
          it may carry out IO operations when computing these values.
@@ -334,6 +336,8 @@ ABC hierarchy::
       search for top-level modules.
 
       Returns an iterable of possible specs.
+
+      Raises :exc:`ValueError` if *parent* is not a package module.
 
       .. warning::
          This method can potentially yield a very large number of objects, and

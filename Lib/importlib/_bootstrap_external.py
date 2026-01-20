@@ -1512,6 +1512,9 @@ class FileFinder:
                     break
 
     def discover(self, parent=None):
+        if parent and parent.submodule_search_locations is None:
+            raise ValueError(f'{parent} is not a package module')
+
         module_prefix = f'{parent.name}.' if parent else ''
         for child_name in self._find_children():
             if spec := self.find_spec(module_prefix + child_name):
