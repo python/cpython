@@ -72,7 +72,7 @@ POST request.
       Added the *wrapcol* parameter.
 
 
-.. function:: b64decode(s, altchars=None, validate=False)
+.. function:: b64decode(s, altchars=None, validate=False, *, ignorechars=None)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -90,9 +90,18 @@ POST request.
    these non-alphabet characters in the input result in a
    :exc:`binascii.Error`.
 
+   Optional *ignorechars* must be a :term:`bytes-like object` specifying
+   characters to ignore during decoding. When provided, only characters in
+   this set will be silently ignored; other non-base64 characters will cause
+   a :exc:`binascii.Error`. When ``None`` (the default), the behavior is
+   controlled by the *validate* parameter.
+
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
 .. function:: standard_b64encode(s)
 

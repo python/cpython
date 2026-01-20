@@ -48,7 +48,7 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, /, *, strict_mode=False)
+.. function:: a2b_base64(string, /, *, strict_mode=False, ignorechars=None)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
@@ -63,8 +63,17 @@ The :mod:`binascii` module defines the following functions:
    * Contains no excess data after padding (including excess padding, newlines, etc.).
    * Does not start with a padding.
 
+   Optional *ignorechars* must be a :term:`bytes-like object` specifying
+   characters to ignore during decoding. When provided, only characters in
+   this set will be silently ignored; other non-base64 characters will cause
+   an error. When ``None`` (the default), all non-base64 characters are
+   silently ignored (unless *strict_mode* is true).
+
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
 
 .. function:: b2a_base64(data, *, wrapcol=0, newline=True)
