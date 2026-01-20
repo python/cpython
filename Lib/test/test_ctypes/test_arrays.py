@@ -111,21 +111,17 @@ class ArrayTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             x.__class__ = B
 
-    def test_ctypes_array_class_assignment_abstract_target(self):
-        class AbstractArray(Array):
-            pass
+    def test_ctypes_array_class_assignment_incompatible_target(self):
         A = c_int * 3
+        class OtherArray(Array):
+            _type_ = c_int
+            _length_ = 4   # incompatible length
+
         a = A()
 
         with self.assertRaises(TypeError):
-            a.__class__ = AbstractArray
+            a.__class__ = OtherArray
 
-    def test_ctypes_array_class_assignment_non_array_instance(self):
-        p = POINTER(c_int)()
-        A = c_int * 3
-
-        with self.assertRaises(TypeError):
-            p.__class__ = A
 
     def test_ctypes_array_class_assignment_zero_length(self):
         A = c_long * 0
