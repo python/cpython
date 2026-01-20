@@ -2,8 +2,7 @@ import unittest
 import sys
 import functools
 
-from test.support.import_helper import import_fresh_module, import_module
-
+from test.support.import_helper import import_fresh_module
 
 TESTS = 'test.datetimetester'
 
@@ -14,28 +13,26 @@ def load_tests(loader, tests, pattern):
             fresh=['datetime', '_pydatetime', '_strptime'],
             blocked=['_datetime'],
         )
-        fast_tests = None
         try:
-            import_module('_datetime')
+            import _datetime
+            has_datetime = True
         except ImportError:
-            fast_tests = None
-        else:
-            fast_tests = import_fresh_module(
-                TESTS,
-                fresh=['datetime', '_strptime'],
-                blocked=['_pydatetime'],
-            )
+            has_datetime = False
+
+        fast_tests = import_fresh_module(
+            TESTS,
+            fresh=['datetime', '_strptime'],
+            blocked=['_pydatetime'],
+        )
     finally:
         # XXX: import_fresh_module() is supposed to leave sys.module cache untouched,
         # XXX: but it does not, so we have to cleanup ourselves.
         for modname in ['datetime', '_datetime', '_pydatetime', '_strptime']:
             sys.modules.pop(modname, None)
 
-    test_modules = [pure_tests]
-    test_suffixes = ["_Pure"]
-    if fast_tests is not None:
-        test_modules.append(fast_tests)
-        test_suffixes.append("_Fast")
+    test_modules = [pure_tests, fast_tests]
+    test_suffixes = ["_Pure", "_Fast"]
+
     # XXX(gb) First run all the _Pure tests, then all the _Fast tests.  You might
     # not believe this, but in spite of all the sys.modules trickery running a _Pure
     # test last will leave a mix of pure and native datetime stuff lying around.
@@ -58,6 +55,9 @@ def load_tests(loader, tests, pattern):
             class Wrapper(cls):
                 @classmethod
                 def setUpClass(cls_, module=module):
+                    if suffix == "_Fast" and not has_datetime:
+                        raise unittest.SkipTest("requires _datetime module")
+                    
                     cls_._save_sys_modules = sys.modules.copy()
                     sys.modules[TESTS] = module
                     sys.modules['datetime'] = module.datetime_module
