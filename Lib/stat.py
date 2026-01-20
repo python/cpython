@@ -166,9 +166,14 @@ def filemode(mode):
     perm = []
     for index, table in enumerate(_filemode_table):
         for bit, char in table:
-            if mode & bit == bit:
-                perm.append(char)
-                break
+            if index == 0:
+                if S_IFMT(mode) == bit:
+                    perm.append(char)
+                    break
+            else:
+                if mode & bit == bit:
+                    perm.append(char)
+                    break
         else:
             if index == 0:
                 # Unknown filetype
