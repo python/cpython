@@ -5058,6 +5058,7 @@
             _PyStackRef res;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
+            oparg = CURRENT_OPARG();
             right = _stack_item_1;
             left = _stack_item_0;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -5065,18 +5066,15 @@
             assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
             int next_oparg;
             #if TIER_ONE
+            next_oparg = next_instr->op.arg;
             #if _Py_TIER2
 
-            if (next_instr->op.code != STORE_FAST) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache1 = right;
-                _tos_cache0 = left;
-                SET_CURRENT_CACHED_VALUES(2);
-                JUMP_TO_JUMP_TARGET();
+            if (next_instr->op.code == ENTER_EXECUTOR) {
+                _PyExecutorObject *exec = _PyFrame_GetCode(frame)->co_executors->executors[next_oparg];
+                next_oparg = exec->vm_data.oparg;
             }
             #endif
-            assert(next_instr->op.code == STORE_FAST);
-            next_oparg = next_instr->op.arg;
+            assert(next_instr->op.code == STORE_FAST || next_instr->op.code == ENTER_EXECUTOR);
             #else
             next_oparg = (int)CURRENT_OPERAND0_16();
             #endif
