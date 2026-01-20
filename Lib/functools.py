@@ -901,7 +901,7 @@ def _get_singledispatch_annotated_param(func, *, __role__):
         idx = 1  # Skip 'cls' or 'self'.
         func = func.__func__
     else:
-        # Skip 'self' when called from `@singledispatchmethod.register`.
+        # Skip 'self' when called from `singledispatchmethod.register`.
         idx = 0 if __role__ == "function" else 1
     # Fast path: emulate `inspect._signature_from_function` if possible.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
