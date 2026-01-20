@@ -434,14 +434,19 @@ dummy_func(
             PyStackRef_CLOSE(receiver);
         }
 
-        inst(UNARY_NEGATIVE, (value -- res)) {
+        macro(UNARY_NEGATIVE) = _UNARY_NEGATIVE + POP_TOP;
+
+        op(_UNARY_NEGATIVE, (value -- res, v)) {
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
-            PyStackRef_CLOSE(value);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            v = value;
+            DEAD(value);
         }
 
-        pure inst(UNARY_NOT, (value -- res)) {
+        inst(UNARY_NOT, (value -- res)) {
             assert(PyStackRef_BoolCheck(value));
             res = PyStackRef_IsFalse(value)
                 ? PyStackRef_True : PyStackRef_False;
@@ -483,20 +488,16 @@ dummy_func(
             STAT_INC(TO_BOOL, hit);
         }
 
-        inst(TO_BOOL_INT, (unused/1, unused/2, value -- res)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!PyLong_CheckExact(value_o));
+        op(_TO_BOOL_INT, (value -- res, v)) {
             STAT_INC(TO_BOOL, hit);
-            if (_PyLong_IsZero((PyLongObject *)value_o)) {
-                assert(_Py_IsImmortal(value_o));
-                DEAD(value);
-                res = PyStackRef_False;
-            }
-            else {
-                PyStackRef_CLOSE(value);
-                res = PyStackRef_True;
-            }
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            res = (_PyLong_IsZero((PyLongObject *)value_o)) ? PyStackRef_False : PyStackRef_True;
+            v = value;
+            DEAD(value);
         }
+
+        macro(TO_BOOL_INT) =
+            _GUARD_TOS_INT + unused/1 + unused/2 + _TO_BOOL_INT + _POP_TOP_INT;
 
         op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
@@ -513,14 +514,15 @@ dummy_func(
             EXIT_IF(!PySlice_Check(o));
         }
 
-        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST;
+        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST + POP_TOP;
 
-        op(_TO_BOOL_LIST, (value -- res)) {
+        op(_TO_BOOL_LIST, (value -- res, v)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             assert(PyList_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
             res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
-            DECREF_INPUTS();
+            v = value;
+            DEAD(value);
         }
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
@@ -570,11 +572,16 @@ dummy_func(
             _REPLACE_WITH_TRUE +
             POP_TOP;
 
-        inst(UNARY_INVERT, (value -- res)) {
+        macro(UNARY_INVERT) = _UNARY_INVERT + POP_TOP;
+
+        op(_UNARY_INVERT, (value -- res, v)) {
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
-            PyStackRef_CLOSE(value);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            v = value;
+            DEAD(value);
         }
 
         family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
@@ -832,6 +839,7 @@ dummy_func(
 
             PyObject *res_o = d->action(left_o, right_o);
             DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -1046,9 +1054,9 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT;
+            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
@@ -1059,9 +1067,13 @@ dummy_func(
             if (rc == 0) {
                 _PyErr_SetKeyError(sub);
             }
-            DECREF_INPUTS();
-            ERROR_IF(rc <= 0); // not found or error
+            if (rc <= 0) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            ds = dict_st;
+            ss = sub_st;
+            INPUTS_DEAD();
         }
 
         op(_BINARY_OP_SUBSCR_CHECK_FUNC, (container, unused -- container, unused, getitem)) {
@@ -2841,14 +2853,18 @@ dummy_func(
             CONTAINS_OP_DICT,
         };
 
-        op(_CONTAINS_OP, (left, right -- b)) {
+        op(_CONTAINS_OP, (left, right -- b, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
             int res = PySequence_Contains(right_o, left_o);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0);
+            if (res < 0) {
+                ERROR_NO_POP();
+            }
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
         }
 
         specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
@@ -2863,16 +2879,16 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;
+        macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP + POP_TOP + POP_TOP;
 
         op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             DEOPT_IF(!PyAnySet_CheckExact(o));
         }
 
-        macro(CONTAINS_OP_SET) = _GUARD_TOS_ANY_SET + unused/1 + _CONTAINS_OP_SET;
+        macro(CONTAINS_OP_SET) = _GUARD_TOS_ANY_SET + unused/1 + _CONTAINS_OP_SET + POP_TOP + POP_TOP;
 
-        op(_CONTAINS_OP_SET, (left, right -- b)) {
+        op(_CONTAINS_OP_SET, (left, right -- b, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -2880,23 +2896,31 @@ dummy_func(
             STAT_INC(CONTAINS_OP, hit);
             // Note: both set and frozenset use the same seq_contains method!
             int res = _PySet_Contains((PySetObject *)right_o, left_o);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0);
+            if (res < 0) {
+                ERROR_NO_POP();
+            }
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
         }
 
-        macro(CONTAINS_OP_DICT) = _GUARD_TOS_DICT + unused/1 + _CONTAINS_OP_DICT;
+        macro(CONTAINS_OP_DICT) = _GUARD_TOS_DICT + unused/1 + _CONTAINS_OP_DICT + POP_TOP + POP_TOP;
 
-        op(_CONTAINS_OP_DICT, (left, right -- b)) {
+        op(_CONTAINS_OP_DICT, (left, right -- b, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
             assert(PyDict_CheckExact(right_o));
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right_o, left_o);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0);
+            if (res < 0) {
+                ERROR_NO_POP();
+            }
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
         }
 
         inst(CHECK_EG_MATCH, (exc_value_st, match_type_st -- rest, match)) {
@@ -2990,7 +3014,7 @@ dummy_func(
                     oparg >>= 8;
                     insert_exec_at--;
                 }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg, NULL);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -3166,14 +3190,15 @@ dummy_func(
             #ifdef Py_STATS
             _Py_GatherStats_GetIter(iterable);
             #endif
-            /* before: [obj]; after [getiter(obj)] */
             PyTypeObject *tp = PyStackRef_TYPE(iterable);
             if (tp == &PyTuple_Type || tp == &PyList_Type) {
+                /* Leave iterable on stack and pushed tagged 0 */
                 iter = iterable;
                 DEAD(iterable);
                 index_or_null = PyStackRef_TagInt(0);
             }
             else {
+                /* Pop iterable, and push iterator then NULL */
                 PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
                 PyStackRef_CLOSE(iterable);
                 ERROR_IF(iter_o == NULL);
@@ -5010,7 +5035,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             ERROR_IF(gen == NULL);
-            assert(STACK_LEVEL() == 0);
+            assert(STACK_LEVEL() <= 2);
             SAVE_STACK();
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
@@ -5395,6 +5420,13 @@ dummy_func(
             INPUTS_DEAD();
         }
 
+        tier2 op(_INSERT_2_LOAD_CONST_INLINE_BORROW, (ptr/4, left, right -- res, l, r)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
@@ -5444,7 +5476,7 @@ dummy_func(
         }
 
         tier2 op(_MAKE_WARM, (--)) {
-            current_executor->vm_data.warm = true;
+            current_executor->vm_data.cold = false;
         }
 
         tier2 op(_FATAL_ERROR, (--)) {
@@ -5518,7 +5550,7 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg, previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
@@ -5590,6 +5622,9 @@ dummy_func(
 #else
             assert(_PyErr_Occurred(tstate));
 #endif
+            SAVE_STACK();
+            STOP_TRACING();
+            RELOAD_STACK();
 
             /* Log traceback info. */
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -5604,6 +5639,9 @@ dummy_func(
         }
 
         spilled label(exception_unwind) {
+            SAVE_STACK();
+            STOP_TRACING();
+            RELOAD_STACK();
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
@@ -5738,15 +5776,17 @@ dummy_func(
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
             // JIT should have disabled super instructions, as we can
             // do these optimizations ourselves in the JIT.
-            _tstate->jit_tracer_state.prev_state.instr = next_instr;
+            _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+            assert(tracer != NULL);
+            tracer->prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
-            if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
-                Py_SETREF(_tstate->jit_tracer_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
+            if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
+                Py_SETREF(tracer->prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
             }
 
-            _tstate->jit_tracer_state.prev_state.instr_frame = frame;
-            _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
-            _tstate->jit_tracer_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tracer->prev_state.instr_frame = frame;
+            tracer->prev_state.instr_oparg = oparg;
+            tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }

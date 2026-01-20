@@ -45,6 +45,7 @@ __all__ = [
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
+    "skip_if_unlimited_stack_size",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -1771,6 +1772,25 @@ def skip_if_pgo_task(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+def skip_if_unlimited_stack_size(test):
+    """Skip decorator for tests not run when an unlimited stack size is configured.
+
+    Tests using support.infinite_recursion([...]) may otherwise run into
+    an infinite loop, running until the memory on the system is filled and
+    crashing due to OOM.
+
+    See https://github.com/python/cpython/issues/143460.
+    """
+    if is_emscripten or is_wasi or os.name == "nt":
+        return test
+
+    import resource
+    curlim, maxlim = resource.getrlimit(resource.RLIMIT_STACK)
+    unlimited_stack_size_cond = curlim == maxlim and curlim in (-1, 0xFFFF_FFFF_FFFF_FFFF)
+    reason = "Not run due to unlimited stack size"
+    return unittest.skipIf(unlimited_stack_size_cond, reason)(test)
+
+
 def detect_api_mismatch(ref_api, other_api, *, ignore=()):
     """Returns the set of items in ref_api not in other_api, except for a
     defined list of items to be ignored in this check.
@@ -3283,3 +3303,10 @@ def linked_to_musl():
         return _linked_to_musl
     _linked_to_musl = tuple(map(int, version.split('.')))
     return _linked_to_musl
+
+
+def control_characters_c0() -> list[str]:
+    """Returns a list of C0 control characters as strings.
+    C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
+    """
+    return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
