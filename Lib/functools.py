@@ -894,17 +894,12 @@ def _get_singledispatch_annotated_param(func, *, __role__):
 
     Used by singledispatch for registration by type annotation of the parameter.
     """
-    # Pick the first parameter if function had @staticmethod.
     if isinstance(func, staticmethod):
         idx = 0
         func = func.__func__
-    # Pick the second parameter if function had @classmethod or is a bound method.
     elif isinstance(func, (classmethod, MethodType)):
         idx = 1
         func = func.__func__
-    # If it is a regular function:
-    # Pick the first parameter if registering via singledispatch.
-    # Pick the second parameter if registering via singledispatchmethod.
     else:
         idx = 0 if __role__ == "function" else 1
 
