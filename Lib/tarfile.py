@@ -238,24 +238,32 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
     """
     bufsize = bufsize or 16 * 1024
     if length == 0:
-        return
+        return 0
     if length is None:
         shutil.copyfileobj(src, dst, bufsize)
-        return
+        return None
 
+    copied_length = 0
     blocks, remainder = divmod(length, bufsize)
-    for b in range(blocks):
+    for _ in range(blocks):
         buf = src.read(bufsize)
         if len(buf) < bufsize:
-            raise exception("unexpected end of data")
+            if exception is not None:
+                raise exception("unexpected end of data")
+            print("warning: file changed as we read it")
+        copied_length += len(buf)
         dst.write(buf)
 
     if remainder != 0:
         buf = src.read(remainder)
         if len(buf) < remainder:
-            raise exception("unexpected end of data")
+            if exception is not None:
+                raise exception("unexpected end of data")
+            print("warning: file changed as we read it")
+        copied_length += len(buf)
         dst.write(buf)
-    return
+
+    return copied_length
 
 def _safe_print(s):
     encoding = getattr(sys.stdout, 'encoding', None)
@@ -2350,19 +2358,26 @@ class TarFile(object):
             raise ValueError("fileobj not provided for non zero-size regular file")
 
         tarinfo = copy.copy(tarinfo)
-
-        buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
-        self.fileobj.write(buf)
-        self.offset += len(buf)
-        bufsize=self.copybufsize
         # If there's data to follow, append it.
         if fileobj is not None:
-            copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)
+            copybuf = io.BytesIO()
+            tarinfo.size = copyfileobj(fileobj, copybuf, tarinfo.size, exception=None, bufsize=self.copybufsize)
+            buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
+            self.fileobj.write(buf)
+            self.offset += len(buf)
+
+            self.fileobj.write(copybuf.getbuffer())
+
             blocks, remainder = divmod(tarinfo.size, BLOCKSIZE)
             if remainder > 0:
                 self.fileobj.write(NUL * (BLOCKSIZE - remainder))
                 blocks += 1
             self.offset += blocks * BLOCKSIZE
+
+        else:
+            buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
+            self.fileobj.write(buf)
+            self.offset += len(buf)
 
         self.members.append(tarinfo)
 
