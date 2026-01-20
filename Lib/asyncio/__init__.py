@@ -9,6 +9,7 @@ from .base_events import *
 from .coroutines import *
 from .events import *
 from .exceptions import *
+from .executor import *
 from .futures import *
 from .graph import *
 from .locks import *
@@ -27,6 +28,7 @@ __all__ = (base_events.__all__ +
            coroutines.__all__ +
            events.__all__ +
            exceptions.__all__ +
+           executor.__all__ +
            futures.__all__ +
            graph.__all__ +
            locks.__all__ +
