@@ -8,12 +8,6 @@ TESTS = 'test.datetimetester'
 
 def load_tests(loader, tests, pattern):
     try:
-        pure_tests = import_fresh_module(
-            TESTS,
-            fresh=['datetime', '_pydatetime', '_strptime'],
-            blocked=['_datetime'],
-        )
-
         try:
             import _datetime
         except ImportError:
@@ -21,7 +15,11 @@ def load_tests(loader, tests, pattern):
         else:
             has_datetime = True
             del _datetime
-
+        pure_tests = import_fresh_module(
+            TESTS,
+            fresh=['datetime', '_pydatetime', '_strptime'],
+            blocked=['_datetime'],
+        )
         fast_tests = import_fresh_module(
             TESTS,
             fresh=['datetime', '_strptime'],
