@@ -299,6 +299,14 @@ To launch the runtime, directly execute the main executable (typically
 
    $> py install ... [-t=|--target=<PATH>] <TAG>
 
+The ``py exec`` command will install the requested runtime if it is not already
+present. This is controlled by the ``automatic_install`` configuration
+(:envvar:`PYTHON_MANAGER_AUTOMATIC_INSTALL`), and is enabled by default.
+If no runtimes are available at all, all launch commands will do an automatic
+install if the configuration setting allows. This is to ensure a good experience
+for new users, but should not generally be relied on rather than using the
+``py exec`` command or explicit install commands.
+
 
 .. _pymanager-offline:
 
@@ -424,9 +432,11 @@ customization.
        By default, :file:`%TEMP%`.
 
    * - ``automatic_install``
-     - ``PYTHON_MANAGER_AUTOMATIC_INSTALL``
-     - True to allow automatic installs when using ``py exec`` to launch.
-       Other commands will not automatically install.
+     - .. envvar:: PYTHON_MANAGER_AUTOMATIC_INSTALL
+     - True to allow automatic installs when using ``py exec`` to launch (or
+       ``py`` when no runtimes are installed yet).
+       Other commands will not automatically install, regardless of this
+       setting.
        By default, true.
 
    * - ``include_unmanaged``
