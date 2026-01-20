@@ -91,16 +91,13 @@ class::
 
    >>> import urllib.robotparser
    >>> rp = urllib.robotparser.RobotFileParser()
-   >>> rp.set_url("http://www.musi-cal.com/robots.txt")
+   >>> rp.set_url("https://www.python.org/robots.txt")
    >>> rp.read()
-   >>> rrate = rp.request_rate("*")
-   >>> rrate.requests
-   3
-   >>> rrate.seconds
-   20
-   >>> rp.crawl_delay("*")
-   6
-   >>> rp.can_fetch("*", "http://www.musi-cal.com/cgi-bin/search?city=San+Francisco")
-   False
-   >>> rp.can_fetch("*", "http://www.musi-cal.com/")
+   >>> print(rp.request_rate("*"))
+   None
+   >>> print(rp.crawl_delay("*"))
+   None
+   >>> rp.can_fetch("*", "https://www.python.org/psf/")
    True
+   >>> rp.can_fetch("*", "https://www.python.org/webstats/")
+   False
