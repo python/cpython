@@ -895,21 +895,22 @@ def _get_singledispatch_annotated_param(func, *, __role__):
     Used by singledispatch for registration by type annotation of the parameter.
     """
     if isinstance(func, staticmethod):
-        idx = 0
+        idx = 0  # Nothing to skip.
         func = func.__func__
     elif isinstance(func, (classmethod, MethodType)):
-        idx = 1
+        idx = 1  # Skip 'cls' or 'self'.
         func = func.__func__
     else:
+        # Skip 'self' when called from `@singledispatchmethod.register`.
         idx = 0 if __role__ == "function" else 1
-    # Fast path: emulate inspect._signature_from_function if possible.
+    # Fast path: emulate `inspect._signature_from_function` if possible.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         func_code = func.__code__
         try:
             return func_code.co_varnames[:func_code.co_argcount][idx]
         except IndexError:
             pass
-    # Fall back to inspect.signature (slower, but complete).
+    # Fall back to `inspect.signature` (slower, but complete).
     import inspect
     params = list(inspect.signature(func).parameters.values())
     try:
