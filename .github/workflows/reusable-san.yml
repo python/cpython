@@ -97,7 +97,7 @@ jobs:
           || '--with-undefined-behavior-sanitizer'
         }}
         --with-pydebug
-        ${{ inputs.sanitizer == 'TSan' && ' --with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
+        ${{ inputs.sanitizer == 'TSan' && '--with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython
       run: make -j4
