@@ -308,17 +308,18 @@ disable_deferred_refcounting(PyObject *op)
         // should also be disabled when we turn off deferred refcounting.
         _PyObject_DisablePerThreadRefcounting(op);
     }
-
-    // Generators and frame objects may contain deferred references to other
-    // objects. If the pointed-to objects are part of cyclic trash, we may
-    // have disabled deferred refcounting on them and need to ensure that we
-    // use strong references, in case the generator or frame object is
-    // resurrected by a finalizer.
-    if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
-        frame_disable_deferred_refcounting(&((PyGenObject *)op)->gi_iframe);
-    }
-    else if (PyFrame_Check(op)) {
-        frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame);
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        // Generators and frame objects may contain deferred references to other
+        // objects. If the pointed-to objects are part of cyclic trash, we may
+        // have disabled deferred refcounting on them and need to ensure that we
+        // use strong references, in case the generator or frame object is
+        // resurrected by a finalizer.
+        if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
+            frame_disable_deferred_refcounting(&((PyGenObject *)op)->gi_iframe);
+        }
+        else if (PyFrame_Check(op)) {
+            frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame);
+        }
     }
 }
 
@@ -1240,25 +1241,16 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    if (state->reason == _Py_GC_REASON_SHUTDOWN) {
-        // Disable deferred refcounting for reachable objects as well during
-        // interpreter shutdown. This ensures that these objects are collected
-        // immediately when their last reference is removed.
-        disable_deferred_refcounting(op);
-    }
-
     // object is reachable, restore `ob_tid`; we're done with these objects
     gc_restore_tid(op);
     gc_clear_alive(op);
     return true;
 }
 
-// Disables deferred refcounting for all GC objects during interpreter
-// shutdown.  The scan_heap_visitor() skips untracked objects but those
-// could have deferred refcounts enabled as well.  This is separated
-// into a separate scan pass since we only need to do it at shutdown.
-// Note that untracked GC objects are typically exact tuples but could
-// also be GC objects that were never tracked or manually untracked.
+// Disable deferred refcounting for reachable objects during interpreter
+// shutdown. This ensures that these objects are collected immediately when
+// their last reference is removed. This needs to consider both tracked and
+// untracked GC objects, since either might have deferred refcounts enabled.
 static bool
 scan_heap_disable_deferred(const mi_heap_t *heap, const mi_heap_area_t *area,
         void *block, size_t block_size, void *args)
@@ -1267,7 +1259,7 @@ scan_heap_disable_deferred(const mi_heap_t *heap, const mi_heap_area_t *area,
     if (op == NULL) {
         return true;
     }
-    if (!_Py_IsImmortal(op) && _PyObject_HasDeferredRefcount(op)) {
+    if (!_Py_IsImmortal(op)) {
         disable_deferred_refcounting(op);
     }
     return true;
