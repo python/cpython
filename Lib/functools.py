@@ -888,7 +888,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_singledispatch_annotated_param(func, *, __role__):
+def _get_singledispatch_annotated_param(func, *, role):
     """Find the first positional and user-specified parameter in a callable
     or descriptor.
 
@@ -902,7 +902,7 @@ def _get_singledispatch_annotated_param(func, *, __role__):
         func = func.__func__
     else:
         # Skip *self* when called from `singledispatchmethod.register`.
-        idx = 0 if __role__ == "function" else 1
+        idx = 0 if role == "function" else 1
     # Fast path: emulate `inspect._signature_from_function` if possible.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         func_code = func.__code__
@@ -998,7 +998,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            argname = _get_singledispatch_annotated_param(func, __role__=__role__)
+            argname = _get_singledispatch_annotated_param(func, role=__role__)
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
