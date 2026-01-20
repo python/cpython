@@ -22,6 +22,9 @@
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#ifdef MS_WINDOWS
+#  include "pycore_namespace.h"     // _PyNamespace_New()
+#endif
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -17385,6 +17388,128 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 }
 #endif
 
+#ifdef MS_WINDOWS
+static PyObject *
+windows_namespace(void)
+{
+    PyObject *d = PyDict_New(), *ret = NULL, *consts = NULL, *errors = NULL;
+    if (d == NULL) {
+        return NULL;
+    }
+
+#define SET(NAME)                                     \
+    do {                                              \
+        PyObject *o = PyLong_FromLong(NAME);          \
+        if (o == NULL) {                              \
+            goto error;                               \
+        }                                             \
+        int res = PyDict_SetItemString(d, #NAME, o);  \
+        Py_DECREF(o);                                 \
+        if (res < 0) {                                \
+            goto error;                               \
+        }                                             \
+    } while (0)
+
+    SET(DELETE);
+    SET(READ_CONTROL);
+    SET(WRITE_DAC);
+    SET(WRITE_OWNER);
+    SET(SYNCHRONIZE);
+    SET(STANDARD_RIGHTS_REQUIRED);
+    SET(STANDARD_RIGHTS_READ);
+    SET(STANDARD_RIGHTS_WRITE);
+    SET(STANDARD_RIGHTS_EXECUTE);
+    SET(STANDARD_RIGHTS_ALL);
+    SET(SPECIFIC_RIGHTS_ALL);
+    SET(GENERIC_READ);
+    SET(GENERIC_WRITE);
+    SET(GENERIC_EXECUTE);
+    SET(GENERIC_ALL);
+    SET(MAXIMUM_ALLOWED);
+    SET(ACCESS_SYSTEM_SECURITY);
+    SET(FILE_GENERIC_READ);
+    SET(FILE_GENERIC_WRITE);
+    SET(FILE_GENERIC_EXECUTE);
+    SET(FILE_ALL_ACCESS);
+    consts = _PyNamespace_New(d);
+    if (consts == NULL) {
+        goto error;
+    }
+    PyDict_Clear(d);
+
+    SET(ERROR_ALREADY_EXISTS);
+    SET(ERROR_BROKEN_PIPE);
+    SET(ERROR_IO_PENDING);
+    SET(ERROR_MORE_DATA);
+    SET(ERROR_NETNAME_DELETED);
+    SET(ERROR_NO_DATA);
+    SET(ERROR_NO_SYSTEM_RESOURCES);
+    SET(ERROR_OPERATION_ABORTED);
+    SET(ERROR_PIPE_BUSY);
+    SET(ERROR_PIPE_CONNECTED);
+    SET(ERROR_SEM_TIMEOUT);
+    SET(ERROR_GEN_FAILURE);
+    SET(ERROR_INVALID_FUNCTION);
+    SET(ERROR_NOT_SUPPORTED);
+    SET(ERROR_INVALID_PARAMETER);
+    SET(ERROR_INVALID_HANDLE);
+    SET(ERROR_INVALID_NAME);
+    SET(ERROR_BAD_NET_NAME);
+    SET(ERROR_BAD_PATHNAME);
+    SET(ERROR_FILENAME_EXCED_RANGE);
+    SET(ERROR_FILE_NOT_FOUND);
+    SET(ERROR_PATH_NOT_FOUND);
+    SET(ERROR_BAD_NETPATH);
+    SET(ERROR_NO_MORE_FILES);
+    SET(ERROR_FILE_EXISTS);
+    SET(ERROR_NOT_SAME_DEVICE);
+    SET(ERROR_DIRECTORY);
+    SET(ERROR_TOO_MANY_OPEN_FILES);
+    SET(ERROR_DISK_FULL);
+    SET(ERROR_DIR_NOT_EMPTY);
+    SET(ERROR_CANT_ACCESS_FILE);
+    SET(ERROR_CANT_RESOLVE_FILENAME);
+    SET(ERROR_NOT_A_REPARSE_POINT);
+    SET(ERROR_INVALID_REPARSE_DATA);
+    SET(ERROR_REPARSE_TAG_INVALID);
+    SET(ERROR_ACCESS_DENIED);
+    SET(ERROR_NETWORK_ACCESS_DENIED);
+    SET(ERROR_SHARING_VIOLATION);
+    SET(ERROR_LOCK_VIOLATION);
+    SET(ERROR_NOT_READY);
+    SET(ERROR_NOT_LOCKED);
+    SET(ERROR_LOCK_FAILED);
+    SET(ERROR_BAD_EXE_FORMAT);
+    SET(ERROR_NOT_ENOUGH_MEMORY);
+    SET(ERROR_NOT_ENOUGH_QUOTA);
+#undef SET
+
+    errors = _PyNamespace_New(d);
+    if (errors == NULL) {
+        goto error;
+    }
+    PyDict_Clear(d);
+
+    int res = PyDict_SetItemString(d, "constants", consts);
+    Py_CLEAR(consts);
+    if (res < 0) {
+        goto error;
+    }
+    res = PyDict_SetItemString(d, "errors", errors);
+    Py_CLEAR(errors);
+    if (res < 0) {
+        goto error;
+    }
+    ret = _PyNamespace_New(d);
+error:
+    Py_DECREF(d);
+    Py_XDECREF(consts);
+    Py_XDECREF(errors);
+    return ret;
+}
+#endif
+
+
 #if defined(MS_WINDOWS)
 /*[clinic input]
 os._supports_virtual_terminal
@@ -18679,6 +18804,12 @@ posixmodule_exec(PyObject *m)
     if (PyModule_Add(m, "environ", convertenviron()) != 0) {
         return -1;
     }
+
+#ifdef MS_WINDOWS
+    if (PyModule_Add(m, "windows", windows_namespace()) < 0) {
+        return -1;
+    }
+#endif
 
     if (all_ins(m))
         return -1;
