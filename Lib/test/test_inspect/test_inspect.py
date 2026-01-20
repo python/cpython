@@ -6290,6 +6290,10 @@ class TestSignatureDefinitions(unittest.TestCase):
         import stat
         self._test_module_has_signatures(stat)
 
+    def test_struct_module_has_signatures(self):
+        import struct
+        self._test_module_has_signatures(struct)
+
     def test_string_module_has_signatures(self):
         import string
         self._test_module_has_signatures(string)

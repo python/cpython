@@ -358,6 +358,21 @@ static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
 
+#ifdef Py_GIL_DISABLED
+static void
+maybe_enable_deferred_ref_count(PyObject *op)
+{
+    if (!_Py_IsOwnedByCurrentThread(op)) {
+        // For module level variables that are heavily used from multiple
+        // threads, deferred reference counting provides good scaling
+        // benefits.  The downside is that the object will only be deallocated
+        // by a GC run.
+        PyUnstable_Object_EnableDeferredRefcount(op);
+    }
+}
+#endif
+
+
 static int
 specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, PyObject *name)
 {
@@ -366,7 +381,8 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_STRING);
         return -1;
     }
-    Py_ssize_t index = _PyDict_LookupIndex(dict, name);
+    PyObject *value;
+    Py_ssize_t index = _PyDict_LookupIndexAndValue(dict, name, &value);
     assert(index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(LOAD_ATTR,
@@ -381,6 +397,9 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
+#ifdef Py_GIL_DISABLED
+    maybe_enable_deferred_ref_count(value);
+#endif
     write_u32(cache->version, keys_version);
     cache->index = (uint16_t)index;
     specialize(instr, LOAD_ATTR_MODULE);
@@ -1269,7 +1288,6 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     return 1;
 }
 
-
 static void
 specialize_load_global_lock_held(
     PyObject *globals, PyObject *builtins,
@@ -1289,7 +1307,12 @@ specialize_load_global_lock_held(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
         goto fail;
     }
+#ifdef Py_GIL_DISABLED
+    PyObject *value;
+    Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
+#else
     Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
+#endif
     if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
@@ -1310,6 +1333,9 @@ specialize_load_global_lock_held(
             SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
+#ifdef Py_GIL_DISABLED
+        maybe_enable_deferred_ref_count(value);
+#endif
         cache->index = (uint16_t)index;
         cache->module_keys_version = (uint16_t)keys_version;
         specialize(instr, LOAD_GLOBAL_MODULE);
