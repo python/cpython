@@ -2270,9 +2270,7 @@ class CoroutineTest(unittest.TestCase):
         # should not be misinterpreted as a yield.
         class CallGeneratorOnDealloc:
             def __del__(self):
-                def gen():
-                    yield 1
-                next(gen())
+                next(x for x in [1])
 
         async def coro():
             obj = CallGeneratorOnDealloc()
