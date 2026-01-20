@@ -83,15 +83,7 @@ class UnicodeMethodsTest(unittest.TestCase):
         self.assertEqual(result, self.expectedchecksum)
 
 
-class UnicodeFunctionsTest(unittest.TestCase):
-    db = unicodedata
-    old = False
-
-    # Update this if the database changes. Make sure to do a full rebuild
-    # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = ('83cc43a2fbb779185832b4c049217d80b05bf349'
-                        if quicktest else
-                        '65670ae03a324c5f9e826a4de3e25bae4d73c9b7')
+class BaseUnicodeFunctionsTest:
 
     def test_function_checksum(self):
         db = self.db
@@ -589,6 +581,16 @@ class UnicodeFunctionsTest(unittest.TestCase):
             self.assertEqual(eaw(char), 'A')
             self.assertIs(self.db.name(char, None), None)
 
+class UnicodeFunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
+    db = unicodedata
+    old = False
+
+    # Update this if the database changes. Make sure to do a full rebuild
+    # (e.g. 'make distclean && make') to get the correct checksum.
+    expectedchecksum = ('83cc43a2fbb779185832b4c049217d80b05bf349'
+                        if quicktest else
+                        '65670ae03a324c5f9e826a4de3e25bae4d73c9b7')
+
     def test_isxidstart(self):
         self.assertTrue(self.db.isxidstart('S'))
         self.assertTrue(self.db.isxidstart('\u0AD0'))  # GUJARATI OM
@@ -616,8 +618,223 @@ class UnicodeFunctionsTest(unittest.TestCase):
         self.assertRaises(TypeError, self.db.isxidcontinue)
         self.assertRaises(TypeError, self.db.isxidcontinue, 'xx')
 
+    def test_grapheme_cluster_break(self):
+        gcb = self.db.grapheme_cluster_break
+        self.assertEqual(gcb(' '), 'Other')
+        self.assertEqual(gcb('x'), 'Other')
+        self.assertEqual(gcb('\U0010FFFF'), 'Other')
+        self.assertEqual(gcb('\r'), 'CR')
+        self.assertEqual(gcb('\n'), 'LF')
+        self.assertEqual(gcb('\0'), 'Control')
+        self.assertEqual(gcb('\t'), 'Control')
+        self.assertEqual(gcb('\x1F'), 'Control')
+        self.assertEqual(gcb('\x7F'), 'Control')
+        self.assertEqual(gcb('\x9F'), 'Control')
+        self.assertEqual(gcb('\U000E0001'), 'Control')
+        self.assertEqual(gcb('\u0300'), 'Extend')
+        self.assertEqual(gcb('\u200C'), 'Extend')
+        self.assertEqual(gcb('\U000E01EF'), 'Extend')
+        self.assertEqual(gcb('\u1159'), 'L')
+        self.assertEqual(gcb('\u11F9'), 'T')
+        self.assertEqual(gcb('\uD788'), 'LV')
+        self.assertEqual(gcb('\uD7A3'), 'LVT')
+        # New in 5.0.0
+        self.assertEqual(gcb('\u05BA'), 'Extend')
+        self.assertEqual(gcb('\u20EF'), 'Extend')
+        # New in 5.1.0
+        self.assertEqual(gcb('\u2064'), 'Control')
+        self.assertEqual(gcb('\uAA4D'), 'SpacingMark')
+        # New in 5.2.0
+        self.assertEqual(gcb('\u0816'), 'Extend')
+        self.assertEqual(gcb('\uA97C'), 'L')
+        self.assertEqual(gcb('\uD7C6'), 'V')
+        self.assertEqual(gcb('\uD7FB'), 'T')
+        # New in 6.0.0
+        self.assertEqual(gcb('\u093A'), 'Extend')
+        self.assertEqual(gcb('\U00011002'), 'SpacingMark')
+        # New in 6.1.0
+        self.assertEqual(gcb('\U000E0FFF'), 'Control')
+        self.assertEqual(gcb('\U00016F7E'), 'SpacingMark')
+        # New in 6.2.0
+        self.assertEqual(gcb('\U0001F1E6'), 'Regional_Indicator')
+        self.assertEqual(gcb('\U0001F1FF'), 'Regional_Indicator')
+        # New in 6.3.0
+        self.assertEqual(gcb('\u180E'), 'Control')
+        self.assertEqual(gcb('\u1A1B'), 'Extend')
+        # New in 7.0.0
+        self.assertEqual(gcb('\u0E33'), 'SpacingMark')
+        self.assertEqual(gcb('\u0EB3'), 'SpacingMark')
+        self.assertEqual(gcb('\U0001BCA3'), 'Control')
+        self.assertEqual(gcb('\U0001E8D6'), 'Extend')
+        self.assertEqual(gcb('\U0001163E'), 'SpacingMark')
+        # New in 8.0.0
+        self.assertEqual(gcb('\u08E3'), 'Extend')
+        self.assertEqual(gcb('\U00011726'), 'SpacingMark')
+        # New in 9.0.0
+        self.assertEqual(gcb('\u0600'), 'Prepend')
+        self.assertEqual(gcb('\U000E007F'), 'Extend')
+        self.assertEqual(gcb('\U00011CB4'), 'SpacingMark')
+        self.assertEqual(gcb('\u200D'), 'ZWJ')
+        # New in 10.0.0
+        self.assertEqual(gcb('\U00011D46'), 'Prepend')
+        self.assertEqual(gcb('\U00011D47'), 'Extend')
+        self.assertEqual(gcb('\U00011A97'), 'SpacingMark')
+        # New in 11.0.0
+        self.assertEqual(gcb('\U000110CD'), 'Prepend')
+        self.assertEqual(gcb('\u07FD'), 'Extend')
+        self.assertEqual(gcb('\U00011EF6'), 'SpacingMark')
+        # New in 12.0.0
+        self.assertEqual(gcb('\U00011A84'), 'Prepend')
+        self.assertEqual(gcb('\U00013438'), 'Control')
+        self.assertEqual(gcb('\U0001E2EF'), 'Extend')
+        self.assertEqual(gcb('\U00016F87'), 'SpacingMark')
+        # New in 13.0.0
+        self.assertEqual(gcb('\U00011941'), 'Prepend')
+        self.assertEqual(gcb('\U00016FE4'), 'Extend')
+        self.assertEqual(gcb('\U00011942'), 'SpacingMark')
+        # New in 14.0.0
+        self.assertEqual(gcb('\u0891'), 'Prepend')
+        self.assertEqual(gcb('\U0001E2AE'), 'Extend')
+        # New in 15.0.0
+        self.assertEqual(gcb('\U00011F02'), 'Prepend')
+        self.assertEqual(gcb('\U0001343F'), 'Control')
+        self.assertEqual(gcb('\U0001E4EF'), 'Extend')
+        self.assertEqual(gcb('\U00011F3F'), 'SpacingMark')
+        # New in 16.0.0
+        self.assertEqual(gcb('\U000113D1'), 'Prepend')
+        self.assertEqual(gcb('\U0001E5EF'), 'Extend')
+        self.assertEqual(gcb('\U0001612C'), 'SpacingMark')
+        self.assertEqual(gcb('\U00016D63'), 'V')
+        # New in 17.0.0
+        self.assertEqual(gcb('\u1AEB'), 'Extend')
+        self.assertEqual(gcb('\U00011B67'), 'SpacingMark')
 
-class Unicode_3_2_0_FunctionsTest(UnicodeFunctionsTest):
+        self.assertRaises(TypeError, gcb)
+        self.assertRaises(TypeError, gcb, b'x')
+        self.assertRaises(TypeError, gcb, 120)
+        self.assertRaises(TypeError, gcb, '')
+        self.assertRaises(TypeError, gcb, 'xx')
+
+    def test_indic_conjunct_break(self):
+        incb = self.db.indic_conjunct_break
+        self.assertEqual(incb(' '), 'None')
+        self.assertEqual(incb('x'), 'None')
+        self.assertEqual(incb('\U0010FFFF'), 'None')
+        # New in 15.1.0
+        self.assertEqual(incb('\u094D'), 'Linker')
+        self.assertEqual(incb('\u0D4D'), 'Linker')
+        self.assertEqual(incb('\u0915'), 'Consonant')
+        self.assertEqual(incb('\u0D3A'), 'Consonant')
+        self.assertEqual(incb('\u0300'), 'Extend')
+        self.assertEqual(incb('\U0001E94A'), 'Extend')
+        # New in 16.0.0
+        self.assertEqual(incb('\u034F'), 'Extend')
+        self.assertEqual(incb('\U000E01EF'), 'Extend')
+        # New in 17.0.0
+        self.assertEqual(incb('\u1039'), 'Linker')
+        self.assertEqual(incb('\U00011F42'), 'Linker')
+        self.assertEqual(incb('\u1000'), 'Consonant')
+        self.assertEqual(incb('\U00011F33'), 'Consonant')
+        self.assertEqual(incb('\U0001E6F5'), 'Extend')
+
+        self.assertRaises(TypeError, incb)
+        self.assertRaises(TypeError, incb, b'x')
+        self.assertRaises(TypeError, incb, 120)
+        self.assertRaises(TypeError, incb, '')
+        self.assertRaises(TypeError, incb, 'xx')
+
+    def test_extended_pictographic(self):
+        ext_pict = self.db.extended_pictographic
+        self.assertIs(ext_pict(' '), False)
+        self.assertIs(ext_pict('x'), False)
+        self.assertIs(ext_pict('\U0010FFFF'), False)
+        # New in 13.0.0
+        self.assertIs(ext_pict('\xA9'), True)
+        self.assertIs(ext_pict('\u203C'), True)
+        self.assertIs(ext_pict('\U0001FAD6'), True)
+        self.assertIs(ext_pict('\U0001FFFD'), True)
+        # New in 17.0.0
+        self.assertIs(ext_pict('\u2388'), False)
+        self.assertIs(ext_pict('\U0001FA6D'), False)
+
+        self.assertRaises(TypeError, ext_pict)
+        self.assertRaises(TypeError, ext_pict, b'x')
+        self.assertRaises(TypeError, ext_pict, 120)
+        self.assertRaises(TypeError, ext_pict, '')
+        self.assertRaises(TypeError, ext_pict, 'xx')
+
+    def test_grapheme_break(self):
+        def graphemes(*args):
+            return list(map(str, self.db.iter_graphemes(*args)))
+
+        self.assertRaises(TypeError, self.db.iter_graphemes)
+        self.assertRaises(TypeError, self.db.iter_graphemes, b'x')
+        self.assertRaises(TypeError, self.db.iter_graphemes, 'x', 0, 0, 0)
+
+        self.assertEqual(graphemes(''), [])
+        self.assertEqual(graphemes('abcd'), ['a', 'b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 1), ['b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 1, 3), ['b', 'c'])
+        self.assertEqual(graphemes('abcd', -3), ['b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 1, -1), ['b', 'c'])
+        self.assertEqual(graphemes('abcd', 3, 1), [])
+        self.assertEqual(graphemes('abcd', 5), [])
+        self.assertEqual(graphemes('abcd', 0, 5), ['a', 'b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', -5), ['a', 'b', 'c', 'd'])
+        self.assertEqual(graphemes('abcd', 0, -5), [])
+        # GB3
+        self.assertEqual(graphemes('\r\n'), ['\r\n'])
+        # GB4
+        self.assertEqual(graphemes('\r\u0308'), ['\r', '\u0308'])
+        self.assertEqual(graphemes('\n\u0308'), ['\n', '\u0308'])
+        self.assertEqual(graphemes('\0\u0308'), ['\0', '\u0308'])
+        # GB5
+        self.assertEqual(graphemes('\u06dd\r'), ['\u06dd', '\r'])
+        self.assertEqual(graphemes('\u06dd\n'), ['\u06dd', '\n'])
+        self.assertEqual(graphemes('\u06dd\0'), ['\u06dd', '\0'])
+        # GB6
+        self.assertEqual(graphemes('\u1100\u1160'), ['\u1100\u1160'])
+        self.assertEqual(graphemes('\u1100\uAC00'), ['\u1100\uAC00'])
+        self.assertEqual(graphemes('\u1100\uAC01'), ['\u1100\uAC01'])
+        # GB7
+        self.assertEqual(graphemes('\uAC00\u1160'), ['\uAC00\u1160'])
+        self.assertEqual(graphemes('\uAC00\u11A8'), ['\uAC00\u11A8'])
+        self.assertEqual(graphemes('\u1160\u1160'), ['\u1160\u1160'])
+        self.assertEqual(graphemes('\u1160\u11A8'), ['\u1160\u11A8'])
+        # GB8
+        self.assertEqual(graphemes('\uAC01\u11A8'), ['\uAC01\u11A8'])
+        self.assertEqual(graphemes('\u11A8\u11A8'), ['\u11A8\u11A8'])
+        # GB9
+        self.assertEqual(graphemes('a\u0300'), ['a\u0300'])
+        self.assertEqual(graphemes('a\u200D'), ['a\u200D'])
+        # GB9a
+        self.assertEqual(graphemes('\u0905\u0903'), ['\u0905\u0903'])
+        # GB9b
+        self.assertEqual(graphemes('\u06dd\u0661'), ['\u06dd\u0661'])
+        # GB9c
+        self.assertEqual(graphemes('\u0915\u094d\u0924'),
+                         ['\u0915\u094d\u0924'])
+        self.assertEqual(graphemes('\u0915\u094D\u094D\u0924'),
+                         ['\u0915\u094D\u094D\u0924'])
+        self.assertEqual(graphemes('\u0915\u094D\u0924\u094D\u092F'),
+                         ['\u0915\u094D\u0924\u094D\u092F'])
+        # GB11
+        self.assertEqual(graphemes(
+                '\U0001F9D1\U0001F3FE\u200D\u2764\uFE0F'
+                '\u200D\U0001F48B\u200D\U0001F9D1\U0001F3FC'),
+                ['\U0001F9D1\U0001F3FE\u200D\u2764\uFE0F'
+                '\u200D\U0001F48B\u200D\U0001F9D1\U0001F3FC'])
+        # GB12
+        self.assertEqual(graphemes(
+            '\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
+            ['\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
+        # GB13
+        self.assertEqual(graphemes(
+            'a\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
+            ['a', '\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
+
+
+class Unicode_3_2_0_FunctionsTest(unittest.TestCase, BaseUnicodeFunctionsTest):
     db = unicodedata.ucd_3_2_0
     old = True
     expectedchecksum = ('f4526159891a4b766dd48045646547178737ba09'
@@ -725,6 +942,17 @@ class UnicodeMiscTest(unittest.TestCase):
             else:
                 self.assertEqual(len(lines), 1,
                                  r"%a should not be a linebreak" % c)
+
+    def test_segment_object(self):
+        segments = list(unicodedata.iter_graphemes('spa\u0300m'))
+        self.assertEqual(len(segments), 4, segments)
+        segment = segments[2]
+        self.assertEqual(segment.start, 2)
+        self.assertEqual(segment.end, 4)
+        self.assertEqual(str(segment), 'a\u0300')
+        self.assertEqual(repr(segment), '<Segment 2:4>')
+        self.assertRaises(TypeError, iter, segment)
+        self.assertRaises(TypeError, len, segment)
 
 
 class NormalizationTest(unittest.TestCase):
@@ -846,6 +1074,62 @@ class NormalizationTest(unittest.TestCase):
                 with self.subTest(form=form, input_str=input_str):
                     self.assertIs(type(normalize(form, input_str)), str)
                     self.assertIs(type(normalize(form, MyStr(input_str))), str)
+
+
+class GraphemeBreakTest(unittest.TestCase):
+    @staticmethod
+    def check_version(testfile):
+        hdr = testfile.readline()
+        return unicodedata.unidata_version in hdr
+
+    @requires_resource('network')
+    def test_grapheme_break(self):
+        TESTDATAFILE = "auxiliary/GraphemeBreakTest.txt"
+        TESTDATAURL = f"https://www.unicode.org/Public/{unicodedata.unidata_version}/ucd/{TESTDATAFILE}"
+
+        # Hit the exception early
+        try:
+            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
+                                        check=self.check_version)
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
+
+        with testdata:
+            self.run_grapheme_break_tests(testdata)
+
+    def run_grapheme_break_tests(self, testdata):
+        for line in testdata:
+            line, _, comment = line.partition('#')
+            line = line.strip()
+            if not line:
+                continue
+            comment = comment.strip()
+
+            chunks = []
+            breaks = []
+            pos = 0
+            for field in line.replace('×', ' ').split():
+                if field == '÷':
+                    chunks.append('')
+                    breaks.append(pos)
+                else:
+                    chunks[-1] += chr(int(field, 16))
+                    pos += 1
+            self.assertEqual(chunks.pop(), '', line)
+            input = ''.join(chunks)
+            with self.subTest(line):
+                result = list(unicodedata.iter_graphemes(input))
+                self.assertEqual(list(map(str, result)), chunks, comment)
+                self.assertEqual([x.start for x in result], breaks[:-1], comment)
+                self.assertEqual([x.end for x in result], breaks[1:], comment)
+                for i in range(1, len(breaks) - 1):
+                    result = list(unicodedata.iter_graphemes(input, breaks[i]))
+                    self.assertEqual(list(map(str, result)), chunks[i:], comment)
+                    self.assertEqual([x.start for x in result], breaks[i:-1], comment)
+                    self.assertEqual([x.end for x in result], breaks[i+1:], comment)
 
 
 if __name__ == "__main__":

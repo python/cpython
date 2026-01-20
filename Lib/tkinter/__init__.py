@@ -1867,15 +1867,15 @@ class Misc:
         return '<%s.%s object %s>' % (
             self.__class__.__module__, self.__class__.__qualname__, self._w)
 
-    # Pack methods that apply to the master
+    # Pack methods that apply to the container widget
     _noarg_ = ['_noarg_']
 
     def pack_propagate(self, flag=_noarg_):
         """Set or get the status for propagation of geometry information.
 
-        A boolean argument specifies whether the geometry information
-        of the slaves will determine the size of this widget. If no argument
-        is given the current setting will be returned.
+        A boolean argument specifies whether the size of this container will
+        be determined by the geometry information of its content.
+        If no argument is given the current setting will be returned.
         """
         if flag is Misc._noarg_:
             return self._getboolean(self.tk.call(
@@ -1886,28 +1886,28 @@ class Misc:
     propagate = pack_propagate
 
     def pack_slaves(self):
-        """Return a list of all slaves of this widget
-        in its packing order."""
+        """Returns a list of all of the content widgets in the packing order
+        for this container."""
         return [self._nametowidget(x) for x in
                 self.tk.splitlist(
                    self.tk.call('pack', 'slaves', self._w))]
 
     slaves = pack_slaves
 
-    # Place method that applies to the master
+    # Place method that applies to the container widget
     def place_slaves(self):
-        """Return a list of all slaves of this widget
-        in its packing order."""
+        """Returns a list of all the content widgets for which this widget is
+        the container."""
         return [self._nametowidget(x) for x in
                 self.tk.splitlist(
                    self.tk.call(
                        'place', 'slaves', self._w))]
 
-    # Grid methods that apply to the master
+    # Grid methods that apply to the container widget
 
     def grid_anchor(self, anchor=None): # new in Tk 8.5
         """The anchor value controls how to place the grid within the
-        master when no row/column has any weight.
+        container widget when no row/column has any weight.
 
         The default anchor is nw."""
         self.tk.call('grid', 'anchor', self._w, anchor)
@@ -1924,7 +1924,7 @@ class Misc:
         starts at that cell.
 
         The returned integers specify the offset of the upper left
-        corner in the master widget and the width and height.
+        corner in the container widget and the width and height.
         """
         args = ('grid', 'bbox', self._w)
         if column is not None and row is not None:
@@ -1982,7 +1982,7 @@ class Misc:
 
     def grid_location(self, x, y):
         """Return a tuple of column and row which identify the cell
-        at which the pixel at position X and Y inside the master
+        at which the pixel at position X and Y inside the container
         widget is located."""
         return self._getints(
             self.tk.call(
@@ -1991,9 +1991,9 @@ class Misc:
     def grid_propagate(self, flag=_noarg_):
         """Set or get the status for propagation of geometry information.
 
-        A boolean argument specifies whether the geometry information
-        of the slaves will determine the size of this widget. If no argument
-        is given, the current setting will be returned.
+        A boolean argument specifies whether the size of this container will
+        be determined by the geometry information of its content.
+        If no argument is given the current setting will be returned.
         """
         if flag is Misc._noarg_:
             return self._getboolean(self.tk.call(
@@ -2019,8 +2019,13 @@ class Misc:
     size = grid_size
 
     def grid_slaves(self, row=None, column=None):
-        """Return a list of all slaves of this widget
-        in its packing order."""
+        """Returns a list of the content widgets.
+
+        If no arguments are supplied, a list of all of the content in this
+        container widget is returned, most recently managed first.
+        If ROW or COLUMN is specified, only the content in the row or
+        column is returned.
+        """
         args = ()
         if row is not None:
             args = args + ('-row', row)
@@ -2606,8 +2611,8 @@ class Pack:
         before=widget - pack it before you will pack widget
         expand=bool - expand widget if parent size grows
         fill=NONE or X or Y or BOTH - fill widget if widget grows
-        in=master - use master to contain this widget
-        in_=master - see 'in' option description
+        in=container - use the container widget to contain this widget
+        in_=container - see 'in' option description
         ipadx=amount - add internal padding in x direction
         ipady=amount - add internal padding in y direction
         padx=amount - add padding in x direction
@@ -2646,25 +2651,31 @@ class Place:
 
     def place_configure(self, cnf={}, **kw):
         """Place a widget in the parent widget. Use as options:
-        in=master - master relative to which the widget is placed
-        in_=master - see 'in' option description
-        x=amount - locate anchor of this widget at position x of master
-        y=amount - locate anchor of this widget at position y of master
+        in=container - the container widget relative to which this widget is
+                       placed
+        in_=container - see 'in' option description
+        x=amount - locate anchor of this widget at position x of the
+                   container widget
+        y=amount - locate anchor of this widget at position y of the
+                   container widget
         relx=amount - locate anchor of this widget between 0.0 and 1.0
-                      relative to width of master (1.0 is right edge)
+                      relative to width of the container widget (1.0 is
+                       right edge)
         rely=amount - locate anchor of this widget between 0.0 and 1.0
-                      relative to height of master (1.0 is bottom edge)
-        anchor=NSEW (or subset) - position anchor according to given direction
+                      relative to height of the container widget (1.0 is
+                      bottom edge)
+        anchor=NSEW (or subset) - position anchor according to given
+                                  direction
         width=amount - width of this widget in pixel
         height=amount - height of this widget in pixel
         relwidth=amount - width of this widget between 0.0 and 1.0
-                          relative to width of master (1.0 is the same width
-                          as the master)
+                          relative to width of the container widget (1.0 is
+                          the same width as the container widget)
         relheight=amount - height of this widget between 0.0 and 1.0
-                           relative to height of master (1.0 is the same
-                           height as the master)
+                           relative to height of the container widget (1.0
+                           is the same height as the container widget)
         bordermode="inside" or "outside" - whether to take border width of
-                                           master widget into account
+                                           the container widget into account
         """
         self.tk.call(
               ('place', 'configure', self._w)
@@ -2700,8 +2711,8 @@ class Grid:
         """Position a widget in the parent widget in a grid. Use as options:
         column=number - use cell identified with given column (starting with 0)
         columnspan=number - this widget will span several columns
-        in=master - use master to contain this widget
-        in_=master - see 'in' option description
+        in=container - use the container widget to contain this widget
+        in_=container - see 'in' option description
         ipadx=amount - add internal padding in x direction
         ipady=amount - add internal padding in y direction
         padx=amount - add padding in x direction

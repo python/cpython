@@ -435,12 +435,22 @@ argparse
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
-base64 & binascii
------------------
+base64
+------
 
-* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
-  faster thanks to simple CPU pipelining optimizations.
-  (Contributed by Gregory P. Smith & Serhiy Storchaka in :gh:`143262`.)
+* Added the *pad* parameter in :func:`~base64.z85encode`.
+  (Contributed by Hauke Dämpfling in :gh:`143103`.)
+
+* Added the *wrapcol* parameter in :func:`~base64.b64encode`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+
+binascii
+--------
+
+* Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
 
 calendar
 --------
@@ -801,6 +811,16 @@ unicodedata
   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
   (Contributed by Stan Ulbrych in :gh:`129117`.)
 
+* Add the :func:`~unicodedata.iter_graphemes`
+  function to iterate over grapheme clusters according to rules defined in
+  `Unicode Standard Annex #29, "Unicode Text Segmentation"
+  <https://www.unicode.org/reports/tr29/>`_.
+  Add :func:`~unicodedata.grapheme_cluster_break`,
+  :func:`~unicodedata.indic_conjunct_break` and
+  :func:`~unicodedata.extended_pictographic` functions to get the properties
+  of the character which are related to the above algorithm.
+  (Contributed by Serhiy Storchaka and Guillaume Sanchez in :gh:`74902`.)
+
 
 unittest
 --------
@@ -877,6 +897,13 @@ Optimizations
   This was made possible by a new feature introduced in MSVC 18.
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
+
+base64 & binascii
+-----------------
+
+* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
+  faster thanks to simple CPU pipelining optimizations.
+  (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
 
 csv
 ---
@@ -1234,7 +1261,7 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
-* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+* Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
 
