@@ -269,16 +269,16 @@ class TopologicalSorter:
 # That's a lot of work, though, and we can get most of the benefit much
 # more easily just by showing a single specific cycle.
 #
-# Finding a cycle is most natural via a breadth first search, which can
-# easily be arranged to find a shortest-possible cycle. But memory
-# burden can be high, because every path-in-progress has to keep its own
-# idea of what "the path" is so far.
+# Approaches to that are based on breadth first or depth first search
+# (BFS or DFS). BFS is most natural, which can easily be arranged to
+# find a shortest-possible cycle. But memory burden can be high, because
+# every path-in-progress has to keep its own idea of what "the path" is
+# so far.
 #
-# Depth first search (DFS) is much easier on RAM, only requiring keeping
-# track of _the_ path from the starting node to the current node at the
-# current recursion level. But there may be any number of nodes, and so
-# there's no bound on recursion depth short of the total number of
-# nodes.
+# DFS is much easier on RAM, only requiring keeping track of _the_ path
+# from the starting node to the current node at the current recursion
+# level. But there may be any number of nodes, and so there's no bound
+# on recursion depth short of the total number of nodes.
 #
 # So we use an iterative version of DFS, keeping an exploit list
 # (`stack`) of the path so far. A parallel stack (`itstack`) holds the
@@ -303,5 +303,6 @@ class TopologicalSorter:
 # successor to consider, emulating a chain of returns in a recursive
 # version.
 #
-# Worst case time is linear in the number of nodes plus the number of
-# edges. Worst case memory burden is linear in the number of nodes.
+# Worst cases: O(V+E) for time, and O(V) for memory, where V is the
+# number of nodes and V the number edges (which may be quadratic in V!).
+# It requires care to ensure these bounds are met.
