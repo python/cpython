@@ -2961,6 +2961,7 @@ class TestSingleDispatch(unittest.TestCase):
             def t(self, x):
                 return "base"
 
+            # This tests GH-130827.
             @t.register
             def _(self: typing.Self, x: int) -> str:
                 return "int"
@@ -3270,6 +3271,7 @@ class TestSingleDispatch(unittest.TestCase):
             pass
 
         with self.assertRaisesRegex(TypeError, add_missing_re):
+            # This tests GH-84644.
             @d.register
             def _(arg) -> int:
                 """I only annotated the return type."""
