@@ -1,0 +1,2 @@
+Fix a memory leak in the curses module when setupterm() is called before
+initscr(), where the previously allocated terminal state was not freed.
