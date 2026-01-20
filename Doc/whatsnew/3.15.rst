@@ -792,6 +792,12 @@ tkinter
   using Tcl's ``-all`` and ``-overlap`` options.
   (Contributed by Rihaan Meher in :gh:`130848`)
 
+* Added new methods :meth:`!pack_content`, :meth:`!place_content` and
+  :meth:`!grid_content` which use Tk commands with new names (introduced
+  in Tk 8.6) instead of :meth:`!*_slaves` methods which use Tk commands
+  with outdated names.
+  (Contributed by Serhiy Storchaka in :gh:`143754`)
+
 types
 ------
 
