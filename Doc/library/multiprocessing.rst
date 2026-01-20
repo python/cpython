@@ -2722,7 +2722,7 @@ multiple connections at the same time.
    ``'AF_UNIX'`` and address is ``None`` then the socket will be created in a
    private temporary directory created using :func:`tempfile.mkstemp`.
 
-   If the listener object uses a socket then *backlog* (1 by default) is passed
+   If the listener object uses a socket then *backlog* (None by default) is passed
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
