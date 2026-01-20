@@ -928,7 +928,11 @@ def _get_singledispatch_annotated_param(func, *, _inside_dispatchmethod=False):
         # Allow variadic positional "(*args)" parameters for backward compatibility.
         if param.kind not in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
             return param.name
-    return None
+
+    raise TypeError(
+        f"Invalid first argument to `register()`: {func!r} "
+        f"does not accept positional arguments."
+    )
 
 def singledispatch(func):
     """Single-dispatch generic function decorator.
@@ -1004,11 +1008,6 @@ def singledispatch(func):
 
             argname = _get_singledispatch_annotated_param(
                 func, _inside_dispatchmethod=_inside_dispatchmethod)
-            if argname is None:
-                raise TypeError(
-                    f"Invalid first argument to `register()`: {func!r} "
-                    f"does not accept positional arguments."
-                )
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
