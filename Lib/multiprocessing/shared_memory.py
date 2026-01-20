@@ -305,6 +305,13 @@ class ShareableList:
         else:
             return 3  # NoneType
 
+    @staticmethod
+    def _encode_value(value):
+        if not isinstance(value, str):
+            return value
+        else:
+            return value.encode(_encoding)
+
     def __init__(self, sequence=None, *, name=None):
         if name is None or sequence is not None:
             sequence = sequence or ()
@@ -312,7 +319,7 @@ class ShareableList:
                 self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
                     else self._types_mapping[type(item)] % (
-                        self._alignment * (len(item) // self._alignment + 1),
+                        self._alignment * (len(self._encode_value(item)) // self._alignment + 1),
                     )
                 for item in sequence
             ]
@@ -353,7 +360,7 @@ class ShareableList:
                 "".join(_formats),
                 self.shm.buf,
                 self._offset_data_start,
-                *(v.encode(_enc) if isinstance(v, str) else v for v in sequence)
+                *(self._encode_value(v) for v in sequence)
             )
             struct.pack_into(
                 self._format_packing_metainfo,
@@ -463,9 +470,8 @@ class ShareableList:
         else:
             allocated_length = self._allocated_offsets[position + 1] - item_offset
 
-            encoded_value = (value.encode(_encoding)
-                             if isinstance(value, str) else value)
-            if len(encoded_value) > allocated_length:
+            encoded_value = self._encode_value(value)
+            if len(encoded_value) >= allocated_length:
                 raise ValueError("bytes/str item exceeds available storage")
             if current_format[-1] == "s":
                 new_format = current_format
