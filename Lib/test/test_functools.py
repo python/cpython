@@ -2955,6 +2955,43 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t('').arg, "str")
         self.assertEqual(A.t(0.0).arg, "base")
 
+    def test_method_type_ann_register_correct_param_skipped(self):
+        class C:
+            @functools.singledispatchmethod
+            def t(self, x):
+                return "base"
+
+            @t.register
+            def _(self: typing.Self, x: int) -> str:
+                return "int"
+
+            @t.register
+            @classmethod
+            def _(self: type['C'], x: complex) -> str:
+                return "complex"
+
+            @t.register
+            @staticmethod  # 'x' cannot be skipped.
+            def _(x: float) -> str:
+                return "float"
+
+            def _bytes(self: typing.Self, x: bytes) -> None:
+                return "bytes"
+
+            def _bytearray(self: typing.Self, x: bytearray) -> None:
+                return "bytearray"
+
+        c = C()
+        C.t.register(c._bytes)
+        c.t.register(C._bytearray)
+
+        self.assertEqual(c.t(NotImplemented), "base")
+        self.assertEqual(c.t(42), "int")
+        self.assertEqual(c.t(1991j), "complex")
+        self.assertEqual(c.t(.572), "float")
+        self.assertEqual(c.t(b'ytes'), "bytes")
+        self.assertEqual(c.t(bytearray(3)), "bytearray")
+
     def test_method_wrapping_attributes(self):
         class A:
             @functools.singledispatchmethod
@@ -3175,7 +3212,7 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaises(TypeError) as exc:
             @i.register(42)
             def _(arg):
-                return "I annotated with a non-type"
+                return "I passed a non-type"
         self.assertStartsWith(str(exc.exception), msg_prefix + "42")
         self.assertEndsWith(str(exc.exception), msg_suffix)
         with self.assertRaises(TypeError) as exc:
@@ -3187,6 +3224,10 @@ class TestSingleDispatch(unittest.TestCase):
         )
         self.assertEndsWith(str(exc.exception), msg_suffix)
 
+    def test_type_ann_register_invalid_types(self):
+        @functools.singledispatch
+        def i(arg):
+            return "base"
         with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg: typing.Iterable[str]):
@@ -3212,6 +3253,99 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEndsWith(str(exc.exception),
             'int | typing.Iterable[str] not all arguments are classes.'
         )
+
+    def test_type_ann_register_missing_annotation(self):
+        add_missing_re = (
+            r"Invalid first argument to `register\(\)`: <function .+>. "
+            r"Use either `@register\(some_class\)` or add a type annotation "
+            r"to parameter 'arg' of your callable."
+        )
+        no_positional_re = (
+            r"Invalid first argument to `register\(\)`: <function .+> "
+            r"does not accept positional arguments."
+        )
+
+        @functools.singledispatch
+        def d(arg):
+            pass
+
+        with self.assertRaisesRegex(TypeError, add_missing_re):
+            @d.register
+            def _(arg) -> int:
+                """I only annotated the return type."""
+                return 42
+
+        with self.assertRaisesRegex(TypeError, add_missing_re):
+            @d.register
+            def _(arg, /, arg2) -> int:
+                """I did not annotate the first param."""
+                return 42
+
+        with self.assertRaisesRegex(TypeError, no_positional_re):
+            @d.register
+            def _(*, arg: int = 13, arg2: int = 37) -> int:
+                """I do not accept positional arguments."""
+                return 42
+
+        with self.assertRaisesRegex(TypeError, add_missing_re):
+            @d.register
+            def _(arg, **kwargs: int):
+                """I only annotated keyword arguments type."""
+                return 42
+
+    def test_method_type_ann_register_missing_annotation(self):
+        add_missing_re = (
+            r"Invalid first argument to `register\(\)`: <%s.+>. "
+            r"Use either `@register\(some_class\)` or add a type annotation "
+            r"to parameter 'arg' of your callable."
+        )
+        no_positional_re = (
+            r"Invalid first argument to `register\(\)`: <%s.+> "
+            r"does not accept positional arguments."
+        )
+
+        class C:
+            @functools.singledispatchmethod
+            def d(self, arg):
+                return "base"
+
+            with self.assertRaisesRegex(TypeError, no_positional_re % "function"):
+                @d.register
+                def _() -> None:
+                    """I am not a incorrect method."""
+                    return 42
+
+            with self.assertRaisesRegex(TypeError, no_positional_re % "function"):
+                @d.register
+                def _(self: typing.Self):
+                    """I only take self."""
+                    return 42
+
+            with self.assertRaisesRegex(TypeError, no_positional_re % "function"):
+                @d.register
+                def _(self: typing.Self, *, arg):
+                    """I did not annotate the key parameter."""
+                    return 42
+
+            with self.assertRaisesRegex(TypeError, add_missing_re % "classmethod"):
+                @d.register
+                @classmethod
+                def _(cls: type[typing.Self], arg) -> int:
+                    """I did not annotate the key parameter again."""
+                    return 42
+
+            with self.assertRaisesRegex(TypeError, add_missing_re % "staticmethod"):
+                @d.register
+                @staticmethod
+                def _(arg, arg2: int, /, *, arg3: int = 1991):
+                    """I missed first arg again."""
+                    return 42
+
+            def later(self, arg, **kwargs: int):
+                return 42
+
+        with self.assertRaisesRegex(TypeError, add_missing_re % "bound method"):
+            C.d.register(C().later)
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
