@@ -59,8 +59,6 @@ jobs:
         if [ "${SANITIZER}" = "TSan" ]; then
           # Reduce ASLR to avoid TSan crashing
           sudo sysctl -w vm.mmap_rnd_bits=28
-        fi
-        if [ "${SANITIZER}" = "TSan" ]; then
           echo "TSAN_OPTIONS=${SAN_LOG_OPTION} suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
               fromJSON(inputs.free-threading)
               && '_free_threading'
