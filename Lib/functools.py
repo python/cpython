@@ -895,7 +895,7 @@ def _get_singledispatch_annotated_param(func, *, role):
     Used by singledispatch for registration by type annotation of the parameter.
     """
     if isinstance(func, staticmethod):
-        idx = 0  # Always take the very first parameter.
+        idx = 0  # Take the very first parameter.
         func = func.__func__
     elif isinstance(func, (classmethod, MethodType)):
         idx = 1  # Skip *cls* or *self*.
