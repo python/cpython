@@ -1,21 +1,17 @@
-import _opcode
 import contextlib
-import gc
 import itertools
-import os
 import sys
 import textwrap
-import types
 import unittest
+import gc
+import os
+import types
 
-from test.support import (
-    Py_GIL_DISABLED,
-    import_helper,
-    requires_jit_enabled,
-    requires_specialization,
-    reset_code,
-    script_helper,
-)
+import _opcode
+
+from test.support import (script_helper, requires_specialization,
+                          import_helper, Py_GIL_DISABLED, requires_jit_enabled,
+                          reset_code)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
