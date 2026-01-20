@@ -1227,7 +1227,8 @@ into a list.
 
 
 How do you remove multiple items from a list
---------------------------------------------
+How do you remove multiple items from a list?
+---------------------------------------------
 
 As with removing duplicates, explicitly iterating in reverse with a
 delete condition is one possibility.  However, it is easier and faster
