@@ -425,10 +425,10 @@ class BuildOpenSSL(AbstractBuilder):
     def recent_versions():
         return [
             "3.0.18",
-            "3.2.6",
             "3.3.5",
             "3.4.4",
             "3.5.4",
+            "3.6.0",
             # See make_ssl_data.py for notes on adding a new version.
         ]
 
@@ -437,6 +437,7 @@ class BuildOpenSSL(AbstractBuilder):
         return [
             "1.1.1w",
             "3.1.8",
+            "3.2.6",
         ]
 
     def _post_install(self):

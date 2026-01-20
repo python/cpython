@@ -263,10 +263,10 @@ jobs:
           # supported by important vendors such as AWS-LC.
           - { ssl: openssl, ssl_ver: 1.1.1w }
           - { ssl: openssl, ssl_ver: 3.0.18 }
-          - { ssl: openssl, ssl_ver: 3.2.6 }
           - { ssl: openssl, ssl_ver: 3.3.5 }
           - { ssl: openssl, ssl_ver: 3.4.3 }
           - { ssl: openssl, ssl_ver: 3.5.4 }
+          - { ssl: openssl, ssl_ver: 3.6.0 }
           - { ssl: awslc,   ssl_ver: 1.55.0 }
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
