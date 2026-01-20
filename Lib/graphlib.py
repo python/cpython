@@ -304,5 +304,5 @@ class TopologicalSorter:
 # version.
 #
 # Worst cases: O(V+E) for time, and O(V) for memory, where V is the
-# number of nodes and V the number edges (which may be quadratic in V!).
+# number of nodes and E the number edges (which may be quadratic in V!).
 # It requires care to ensure these bounds are met.
