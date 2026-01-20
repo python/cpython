@@ -1327,6 +1327,8 @@ class PathFinder:
     def discover(cls, parent=None):
         if parent is None:
             path = sys.path
+        elif parent.submodule_search_locations is None:
+            raise ValueError(f'{parent} is not a package module')
         else:
             path = parent.submodule_search_locations
 
