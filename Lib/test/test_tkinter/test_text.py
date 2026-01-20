@@ -17,9 +17,9 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         text = self.text
         olddebug = text.debug()
         try:
-            text.debug(0)
+            text.debug(False)
             self.assertEqual(text.debug(), 0)
-            text.debug(1)
+            text.debug(True)
             self.assertEqual(text.debug(), 1)
         finally:
             text.debug(olddebug)
