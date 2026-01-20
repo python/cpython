@@ -3191,8 +3191,10 @@ through the object's keys; for sequences, it should iterate through the values.
    :data:`NotImplemented`, which is treated the same as if the
    ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
+   Used by functions like :func:`list` to choose an initial allocation size.
 
    .. versionadded:: 3.4
+      Originally specified by :pep:`424`.
 
 
 .. index:: pair: object; slice
