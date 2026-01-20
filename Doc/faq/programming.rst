@@ -2218,6 +2218,10 @@ changed module, do this::
    import modname
    importlib.reload(modname)
 
+Note that :func:`importlib.reload` was originally designed for use in
+development and debugging, not for use in production code.  Reloading modules
+in a running program is tricky and error-prone.
+
 Warning: this technique is not 100% fool-proof.  In particular, modules
 containing statements like ::
 
