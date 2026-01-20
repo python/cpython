@@ -3731,6 +3731,9 @@ _curses_initscr_impl(PyObject *module)
         }
         return PyCursesWindow_New(state, stdscr, NULL, NULL);
     }
+    if (cur_term != NULL) {
+        del_curterm(cur_term);
+        cur_term = NULL;
 
     win = initscr();
 
