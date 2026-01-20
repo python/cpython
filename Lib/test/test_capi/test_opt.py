@@ -3792,6 +3792,29 @@ class TestUopsOptimization(unittest.TestCase):
         """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_144068_daemon_thread_jit_cleanup(self):
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import threading
+        import time
+
+        def hot_loop():
+            end = time.time() + 5.0
+            while time.time() < end:
+                pass
+
+        # Create a daemon thread that will be abandoned at shutdown
+        t = threading.Thread(target=hot_loop, daemon=True)
+        t.start()
+
+        time.sleep(0.1)
+        """), PYTHON_JIT="1", ASAN_OPTIONS="detect_leaks=1")
+        self.assertEqual(result[0].rc, 0, result)
+        stderr = result[0].err.decode('utf-8', errors='replace')
+        self.assertNotIn('LeakSanitizer', stderr,
+                         f"Memory leak detected by ASan:\n{stderr}")
+        self.assertNotIn('_PyJit_TryInitializeTracing', stderr,
+                         f"JIT tracer memory leak detected:\n{stderr}")
+
 def global_identity(x):
     return x
 
