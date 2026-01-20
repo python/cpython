@@ -1058,6 +1058,7 @@ def singledispatch(func):
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
     wrapper.register = register
+    wrapper.register.__text_signature__ = "(cls, func)"  # Hide private parameters from help().
     wrapper.dispatch = dispatch
     wrapper.registry = MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
