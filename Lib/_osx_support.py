@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import shlex
 
 __all__ = [
     'compiler_fixup',
@@ -534,14 +535,16 @@ def get_platform_osx(_config_vars, osname, release, machine):
             # assume no universal support
             macrelease = (10, 3)
 
-        if (macrelease >= (10, 4)) and '-arch' in cflags.strip():
+        cflags_split = shlex.split(cflags)
+        archs = [cflags_split[i + 1] for i, flag in
+                 enumerate(cflags_split[:-1]) if flag == "-arch"]
+        archs = tuple(sorted(set(archs)))
+
+        if (macrelease >= (10, 4)) and archs:
             # The universal build will build fat binaries, but not on
             # systems before 10.4
 
             machine = 'fat'
-
-            archs = re.findall(r'-arch\s+(\S+)', cflags)
-            archs = tuple(sorted(set(archs)))
 
             if len(archs) == 1:
                 machine = archs[0]
