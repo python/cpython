@@ -280,6 +280,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
 
     if (return_kind == GENERATOR_YIELD) {
         assert(result != NULL && !_PyErr_Occurred(tstate));
+#ifndef Py_GIL_DISABLED
+        assert(FRAME_STATE_SUSPENDED(gen->gi_frame_state));
+#endif
         *presult = result;
         return PYGEN_NEXT;
     }
