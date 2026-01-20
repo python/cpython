@@ -57,7 +57,7 @@ def load_tests(loader, tests, pattern):
                 def setUpClass(cls_, module=module):
                     if suffix == "_Fast" and not has_datetime:
                         raise unittest.SkipTest("requires _datetime module")
-                    
+
                     cls_._save_sys_modules = sys.modules.copy()
                     sys.modules[TESTS] = module
                     sys.modules['datetime'] = module.datetime_module
