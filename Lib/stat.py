@@ -167,7 +167,7 @@ def filemode(mode):
     for index, table in enumerate(_filemode_table):
         for bit, char in table:
             if index == 0:
-                if (mode & S_IFMT) == bit:
+                if S_IFMT(mode) == bit:
                     perm.append(char)
                     break
             else:
