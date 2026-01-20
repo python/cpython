@@ -205,6 +205,9 @@ extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value,
 extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
 extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_slots_object(JitOptContext *ctx, unsigned int type_version);
+extern JitOptRef _Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index);
+extern void _Py_uop_sym_slots_setattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, JitOptRef value);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);

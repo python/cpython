@@ -113,6 +113,9 @@ _PyUOpSymPrint(JitOptRef ref)
         case JIT_SYM_COMPACT_INT:
             printf("<compact_int at %p>", (void *)sym);
             break;
+        case JIT_SYM_SLOTS_TAG:
+            printf("<slots[%d] v%u at %p>", sym->slots.num_slots, sym->slots.type_version, (void *)sym);
+            break;
         default:
             printf("<tag=%d at %p>", sym->tag, (void *)sym);
             break;
@@ -319,6 +322,11 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
                 sym_set_bottom(ctx, sym);
             }
             return;
+        case JIT_SYM_SLOTS_TAG:
+            if (typ->tp_version_tag != sym->slots.type_version) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
     }
 }
 
@@ -378,6 +386,12 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
             return true;
         case JIT_SYM_COMPACT_INT:
             if (version != PyLong_Type.tp_version_tag) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            return true;
+        case JIT_SYM_SLOTS_TAG:
+            if (version != sym->slots.type_version) {
                 sym_set_bottom(ctx, sym);
                 return false;
             }
@@ -473,6 +487,9 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             else {
                 sym_set_bottom(ctx, sym);
             }
+            return;
+        case JIT_SYM_SLOTS_TAG:
+            sym_set_bottom(ctx, sym);
             return;
     }
 }
@@ -593,7 +610,8 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return &PyBool_Type;
         case JIT_SYM_COMPACT_INT:
             return &PyLong_Type;
-
+        case JIT_SYM_SLOTS_TAG:
+            return _PyType_LookupByVersion(sym->slots.type_version);
     }
     Py_UNREACHABLE();
 }
@@ -621,6 +639,8 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
             return PyBool_Type.tp_version_tag;
         case JIT_SYM_COMPACT_INT:
             return PyLong_Type.tp_version_tag;
+        case JIT_SYM_SLOTS_TAG:
+            return sym->slots.type_version;
     }
     Py_UNREACHABLE();
 }
@@ -655,6 +675,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_SLOTS_TAG:
             return -1;
         case JIT_SYM_KNOWN_CLASS_TAG:
             /* TODO :
@@ -811,6 +832,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
             return;
         case JIT_SYM_TUPLE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_SLOTS_TAG:
             sym_set_bottom(ctx, sym);
             return;
         case JIT_SYM_BOTTOM_TAG:
@@ -857,6 +879,74 @@ _Py_uop_sym_new_compact_int(JitOptContext *ctx)
     }
     sym->tag = JIT_SYM_COMPACT_INT;
     return PyJitRef_Wrap(sym);
+}
+
+JitOptRef
+_Py_uop_sym_new_slots_object(JitOptContext *ctx, unsigned int type_version)
+{
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space_ref(ctx);
+    }
+    res->tag = JIT_SYM_SLOTS_TAG;
+    res->slots.num_slots = 0;
+    res->slots.type_version = type_version;
+    return PyJitRef_Wrap(res);
+}
+
+JitOptRef
+_Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+
+    if (sym->tag == JIT_SYM_SLOTS_TAG) {
+        // Linear search through the mapping array
+        for (int i = 0; i < sym->slots.num_slots; i++) {
+            if (sym->slots.slots[i].slot_index == slot_index) {
+                return PyJitRef_Wrap(allocation_base(ctx) + sym->slots.slots[i].symbol);
+            }
+        }
+    }
+
+    // Not found, return not_null
+    return _Py_uop_sym_new_not_null(ctx);
+}
+
+void
+_Py_uop_sym_slots_setattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, JitOptRef value)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+
+    if (sym->tag == JIT_SYM_TYPE_VERSION_TAG) {
+        uint32_t version = sym->version.version;
+        sym->tag = JIT_SYM_SLOTS_TAG;
+        sym->slots.type_version = version;
+        sym->slots.num_slots = 0;
+    }
+    else if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
+        uint32_t version = sym->cls.version;
+        sym->tag = JIT_SYM_SLOTS_TAG;
+        sym->slots.type_version = version;
+        sym->slots.num_slots = 0;
+    }
+    else if (sym->tag != JIT_SYM_SLOTS_TAG) {
+        return;
+    }
+
+    if (sym->slots.num_slots >= MAX_SYMBOLIC_SLOTS_SIZE) {
+        return;
+    }
+
+    for (int i = 0; i < sym->slots.num_slots; i++) {
+        if (sym->slots.slots[i].slot_index == slot_index) {
+            sym->slots.slots[i].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
+            return;
+        }
+    }
+
+    int idx = sym->slots.num_slots++;
+    sym->slots.slots[idx].slot_index = slot_index;
+    sym->slots.slots[idx].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
 }
 
 // 0 on success, -1 on error.
@@ -1185,6 +1275,33 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "43 is not a compact int");
     TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "43 is not an int");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref_int) == val_43, "43 isn't 43");
+
+    JitOptRef slots_obj = _Py_uop_sym_new_slots_object(ctx, 42);
+    TEST_PREDICATE(!_Py_uop_sym_is_null(slots_obj), "slots object is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(slots_obj), "slots object is not not-null");
+    TEST_PREDICATE(_Py_uop_sym_get_type_version(slots_obj) == 42,
+                   "slots object has wrong type version");
+
+    JitOptRef slot_val = _Py_uop_sym_new_const(ctx, val_42);
+    _Py_uop_sym_slots_setattr(ctx, slots_obj, 0, slot_val);
+    JitOptRef retrieved = _Py_uop_sym_slots_getattr(ctx, slots_obj, 0);
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_42,
+                   "slots getattr(0) didn't return val_42");
+
+    JitOptRef missing = _Py_uop_sym_slots_getattr(ctx, slots_obj, 99);
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(missing), "missing slot is not not-null");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, missing), "missing slot is const");
+
+    JitOptRef slot_val2 = _Py_uop_sym_new_const(ctx, val_43);
+    _Py_uop_sym_slots_setattr(ctx, slots_obj, 0, slot_val2);
+    retrieved = _Py_uop_sym_slots_getattr(ctx, slots_obj, 0);
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_43,
+                   "slots getattr(0) didn't return val_43 after update");
+
+    JitOptRef slots_obj2 = _Py_uop_sym_new_slots_object(ctx, 42);
+    _Py_uop_sym_set_type_version(ctx, slots_obj2, 43);
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(slots_obj2),
+                   "slots object with wrong type version isn't bottom");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);

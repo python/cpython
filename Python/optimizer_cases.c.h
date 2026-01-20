@@ -1919,8 +1919,7 @@
             JitOptRef o;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand0;
-            attr = sym_new_not_null(ctx);
-            (void)index;
+            attr = sym_slots_getattr(ctx, owner, (uint16_t)index);
             o = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -2027,8 +2026,7 @@
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint16_t index = (uint16_t)this_instr->operand0;
-            (void)index;
-            (void)value;
+            sym_slots_setattr(ctx, owner, (uint16_t)index, value);
             o = owner;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer[-2] = o;

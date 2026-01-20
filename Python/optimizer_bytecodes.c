@@ -38,6 +38,9 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_slots_object _Py_uop_sym_new_slots_object
+#define sym_slots_getattr _Py_uop_sym_slots_getattr
+#define sym_slots_setattr _Py_uop_sym_slots_setattr
 
 extern int
 optimize_to_bool(
@@ -123,8 +126,7 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
-        (void)index;
-        (void)value;
+        sym_slots_setattr(ctx, owner, (uint16_t)index, value);
         o = owner;
     }
 
@@ -709,8 +711,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
-        attr = sym_new_not_null(ctx);
-        (void)index;
+        attr = sym_slots_getattr(ctx, owner, (uint16_t)index);
         o = owner;
     }
 
