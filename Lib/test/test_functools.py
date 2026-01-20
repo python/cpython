@@ -2721,6 +2721,22 @@ class TestSingleDispatch(unittest.TestCase):
                 return self.arg == other
         self.assertEqual(i("str"), "str")
 
+    def test_annotations_positional_only(self):
+        """Regression test for GH-143888."""
+        @functools.singledispatch
+        def f(arg, /, extra):
+            return "base"
+        @f.register
+        def f_int(arg: int, /, extra: str):
+            return "int"
+        @f.register
+        def f_str(arg: str, /, extra: int):
+            return "str"
+
+        self.assertEqual(f(None, "extra"), "base")
+        self.assertEqual(f(1, "extra"), "int")
+        self.assertEqual(f("s", "extra"), "str")
+
     def test_method_register(self):
         class A:
             @functools.singledispatchmethod
