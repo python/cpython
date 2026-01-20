@@ -1,0 +1,2 @@
+email: improve handling trailing garbage in address lists, avoid throwing
+AttributeError in certain cases

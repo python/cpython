@@ -2062,12 +2062,10 @@ def get_address_list(value):
                 address_list.defects.append(errors.InvalidHeaderDefect(
                     "invalid address in address-list"))
         if value and value[0] != ',':
-            # Crap after address; treat it as an invalid mailbox.
-            # The mailbox info will still be available.
-            mailbox = address_list[-1][0]
-            mailbox.token_type = 'invalid-mailbox'
+            # Crap after address: add it to the address list
+            # as an invalid mailbox
             token, value = get_invalid_mailbox(value, ',')
-            mailbox.extend(token)
+            address_list.append(Address([token]))
             address_list.defects.append(errors.InvalidHeaderDefect(
                 "invalid address in address-list"))
         if value:  # Must be a , at this point.
