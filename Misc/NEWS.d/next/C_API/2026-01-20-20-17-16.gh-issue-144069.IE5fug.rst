@@ -1,0 +1,2 @@
+Fix a memory leak in :func:`dbm.open` when database creation fails, such as
+when the target directory does not exist.
