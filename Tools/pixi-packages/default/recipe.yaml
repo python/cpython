@@ -38,6 +38,9 @@ outputs:
     build:
       - ${{ compiler('c') }}
       - ${{ compiler('cxx') }}
+      # Note that we are not using stdlib arguments which means the packages
+      # are built for the build settings and are not relocatable to a different
+      # machine that has a older system version. (eg: macOS/glibc version)
       - make
       - pkg-config
       # configure script looks for llvm-ar for lto

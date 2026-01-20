@@ -17,6 +17,18 @@ else
     exit 1
 fi
 
+# rattler-build by default set a target of 10.9
+# override it to at least 10.12
+case ${MACOSX_DEPLOYMENT_TARGET:-10.12} in
+    10.12|10.13|10.14|10.15|10.16)
+        ;;
+    10.*)
+        export MACOSX_DEPLOYMENT_TARGET=10.12
+        ;;
+    *)
+        ;;
+esac
+
 BUILD_DIR="../build_${PYTHON_VARIANT}"
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
