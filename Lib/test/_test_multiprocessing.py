@@ -3284,6 +3284,39 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
+class _TestPoolResultHandlerErrors(BaseTestCase):
+    ALLOWED_TYPES = ('processes', )
+
+    def test_apply_async_callback_raises_exception(self):
+        p = multiprocessing.Pool(1)
+
+        def job():
+            return 1
+
+        def callback(value):
+            raise Exception()
+
+        p.apply_async(job, callback=callback)
+
+        self.assertTrue(p._result_handler.is_alive())
+        p.close()
+        p.join()
+
+    def test_map_async_callback_raises_exception(self):
+        p = multiprocessing.Pool(1)
+
+        def job(value):
+            return value
+
+        def callback(value):
+            raise Exception()
+
+        p.map_async(job, [1], callback=callback)
+
+        self.assertTrue(p._result_handler.is_alive())
+        p.close()
+        p.join()
+
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
 
@@ -7250,7 +7283,6 @@ def install_tests_in_module_dict(remote_globs, start_method,
     __module__ = remote_globs['__name__']
     local_globs = globals()
     ALL_TYPES = {'processes', 'threads', 'manager'}
-
     for name, base in local_globs.items():
         if not isinstance(base, type):
             continue
