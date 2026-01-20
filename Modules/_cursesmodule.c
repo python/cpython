@@ -3734,7 +3734,7 @@ _curses_initscr_impl(PyObject *module)
     if (cur_term != NULL) {
         del_curterm(cur_term);
         cur_term = NULL;
-
+    }
     win = initscr();
 
     if (win == NULL) {
