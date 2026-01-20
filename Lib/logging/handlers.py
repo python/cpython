@@ -25,6 +25,7 @@ To use, simply 'import logging.handlers' and log away!
 
 import copy
 import io
+import itertools
 import logging
 import os
 import pickle
@@ -32,6 +33,7 @@ import queue
 import re
 import socket
 import struct
+import sys
 import threading
 import time
 
@@ -555,43 +557,85 @@ class SocketHandler(logging.Handler):
 
     To unpickle the record at the receiving end into a LogRecord, use the
     makeLogRecord function.
+
+    Raises:
+        LogSocketConnectionError: If the connection fails after retries.
+
     """
 
-    def __init__(self, host, port):
-        """
-        Initializes the handler with a specific host address and port.
+    def __init__(
+        self,
+        host: str,
+        port: int | None = None,
+        socket_creation_timeout: float = 1,
+        initial_backoff_seconds: float = 1.0,
+        retry_scale_factor: float = 2.0,
+        retry_max_seconds: float = 30.0,
+        *,
+        print_log_on_retry: bool = False,
+    ) -> None:
+        """Initialize the handler.
 
         When the attribute *closeOnError* is set to True - if a socket error
         occurs, the socket is silently closed and then reopened on the next
         logging call.
+
+        Args:
+            host(str): The host to connect to.
+            port(int, optional): The port to connect to.
+            socket_creation_timeout(float, optional): The timeout in seconds
+                for creating the socket. Defaults to 1.
+            initial_backoff_seconds(float, optional): The initial backoff time
+                in seconds when the initial connection fails. Defaults to 1.0.
+            retry_scale_factor(float, optional): The factor by which the backoff time
+                is multiplied with on each retry. Defaults to 2.0.
+            retry_max_seconds(float, optional): The maximal summarized
+                backoff time in seconds. Defaults to 6.0.
+            print_warning_on_retry(bool, optional): Print a log message on each retry.
+                Defaults to False.
+
         """
         logging.Handler.__init__(self)
         self.host = host
         self.port = port
+        self.address: str | tuple[str, int]
         if port is None:
             self.address = host
         else:
             self.address = (host, port)
         self.sock = None
+        self.socket_creation_timeout = socket_creation_timeout
         self.closeOnError = False
         self.retryTime = None
         #
         # Exponential backoff parameters.
         #
-        self.retryStart = 1.0
-        self.retryMax = 30.0
-        self.retryFactor = 2.0
+        self.initial_backoff_seconds: float = initial_backoff_seconds
+        self.retry_scale_factor: float = retry_scale_factor
+        self.retry_max_seconds: float = retry_max_seconds
+        self.print_warning_on_retry: bool = print_log_on_retry
 
-    def makeSocket(self, timeout=1):
-        """
-        A factory method which allows subclasses to define the precise
+    def makeSocket(self, timeout: float = 1) -> socket.socket:
+        """A factory method which allows subclasses to define the precise
         type of socket they want.
+
+        Socket creation timeout can be set from the constructor or passed
+        as an argument. When passed as an argument, it overrides the value from the
+        constructor.
+
+        Args:
+            timeout(float): The timeout in seconds for creating the socket.
+
+        Returns:
+            socket.socket: The created socket.
+
         """
-        if self.port is not None:
-            result = socket.create_connection(self.address, timeout=timeout)
+        _socket_timeout = timeout if timeout else self.socket_creation_timeout
+        if isinstance(self.address, tuple):
+            result = socket.create_connection(self.address, timeout=_socket_timeout)
         else:
             result = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            result.settimeout(timeout)
+            result.settimeout(_socket_timeout)
             try:
                 result.connect(self.address)
             except OSError:
@@ -604,28 +648,40 @@ class SocketHandler(logging.Handler):
         Try to create a socket, using an exponential backoff with
         a max retry time. Thanks to Robert Olson for the original patch
         (SF #815911) which has been slightly refactored.
+
+        Raises:
+            LogSocketConnectionError: If the connection fails after retries.
+
         """
-        now = time.time()
-        # Either retryTime is None, in which case this
-        # is the first time back after a disconnect, or
-        # we've waited long enough.
-        if self.retryTime is None:
-            attempt = True
-        else:
-            attempt = (now >= self.retryTime)
-        if attempt:
+        accumulated_sleep_time = 0.0
+        current_backoff_seconds = self.initial_backoff_seconds
+        for try_count in itertools.count(1):
             try:
                 self.sock = self.makeSocket()
-                self.retryTime = None # next time, no delay before trying
-            except OSError:
-                #Creation failed, so set the retry time and return.
-                if self.retryTime is None:
-                    self.retryPeriod = self.retryStart
-                else:
-                    self.retryPeriod = self.retryPeriod * self.retryFactor
-                    if self.retryPeriod > self.retryMax:
-                        self.retryPeriod = self.retryMax
-                self.retryTime = now + self.retryPeriod
+                break  # Exit the loop if socket creation is successful
+            except OSError as _e:
+                # Creation failed, so set the retry time and return.
+                accumulated_sleep_time += current_backoff_seconds
+                if accumulated_sleep_time > self.retry_max_seconds:
+                    # Max retry time reached, raise the exception
+                    raise LogSocketConnectionError(
+                        parent_exception=_e,
+                        host=self.host,
+                        port=self.port,
+                        retry_time=accumulated_sleep_time - current_backoff_seconds,
+                        try_count=try_count,
+                    ) from None
+                if self.print_warning_on_retry:
+                    print(
+                        (
+                            f"[WARNING] logging to {self.address} failed ({_e.errno}, "
+                            f"{_e.strerror}); retrying in {current_backoff_seconds} s."
+                        ),
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                time.sleep(current_backoff_seconds)
+                current_backoff_seconds *= self.retry_scale_factor
 
     def send(self, s):
         """
@@ -707,6 +763,37 @@ class SocketHandler(logging.Handler):
                 self.sock = None
                 sock.close()
             logging.Handler.close(self)
+
+
+class LogSocketConnectionError(ConnectionError):
+    """Log host connection error."""
+
+    def __init__(
+        self,
+        host: str,
+        retry_time: float,
+        try_count: int,
+        port: int | None = None,
+        *,
+        parent_exception: Exception | None = None,
+    ) -> None:
+        """Log host connection error.
+
+        Args:
+            host(str): The host we tried to connect to.
+            retry_time(float): The total time we tried to connect.
+            try_count(int): The number of times we tried to connect.
+            port(int, optional): The port we tried to connect to. Defaults to None.
+            parent_exception(Exception): The parent exception.
+
+        """
+        self.message = (
+            f"Failed to connect to {host} at {port}, "
+            f"tried {try_count} times within {retry_time} seconds, "
+            f"final exception: {parent_exception}"
+        )
+        super().__init__(self.message)
+
 
 class DatagramHandler(SocketHandler):
     """
