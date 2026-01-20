@@ -5003,9 +5003,7 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     controllen = controllen_last = 0;
     while (ncmsgbufs < ncmsgs) {
         size_t bufsize, space;
-        PyObject *item;
-
-        item = PyTuple_GET_ITEM(cmsg_fast, ncmsgbufs);
+        PyObject *item = PyTuple_GET_ITEM(cmsg_fast, ncmsgbufs);
 
         if (!PyArg_Parse(item,
                          "(iiy*):[sendmsg() ancillary data items]",
