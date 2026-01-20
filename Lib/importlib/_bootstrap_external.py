@@ -1501,11 +1501,11 @@ class FileFinder:
                         yield entry.name
                     # files
                     if entry.is_file():
-                        yield from [
+                        yield from {
                             entry.name.removesuffix(suffix)
                             for suffix, _ in self._loaders
                             if entry.name.endswith(suffix)
-                        ]
+                        }
                 except OSError:
                     pass  # ignore exceptions from next(scan_iterator) and os.DirEntry
                 except StopIteration:
