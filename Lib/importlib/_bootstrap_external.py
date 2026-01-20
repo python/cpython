@@ -1332,7 +1332,7 @@ class PathFinder:
         else:
             path = parent.submodule_search_locations
 
-        for entry in path:
+        for entry in set(path):
             if not isinstance(entry, str):
                 continue
             if (finder := cls._path_importer_cache(entry)) is None:
