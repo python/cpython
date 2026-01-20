@@ -85,11 +85,16 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
     }
     dp->di_size = -1;
     dp->flags = flags;
+    dp->di_dbm = NULL;
     PyObject_GC_Track(dp);
 
     /* See issue #19296 */
-    if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == 0 ) {
+    if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == NULL ) {
         PyErr_SetFromErrnoWithFilename(state->dbm_error, file);
+        if (dp->di_dbm != NULL) {
+            dbm_close(dp->di_dbm);
+            dp->di_dbm = NULL;
+        }
         Py_DECREF(dp);
         return NULL;
     }
