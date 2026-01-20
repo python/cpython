@@ -1,0 +1,1 @@
+Add the ``IP_PORTRANGE*`` constants to :mod:`socket` on supporting systems.
