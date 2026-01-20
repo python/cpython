@@ -902,7 +902,6 @@ def _get_singledispatch_annotated_param(func, *, __role__):
         func = func.__func__
     else:
         idx = 0 if __role__ == "function" else 1
-
     # If it is a simple function, try to read from the code object fast.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         # Emulate inspect._signature_from_function to get the desired parameter.
@@ -911,7 +910,6 @@ def _get_singledispatch_annotated_param(func, *, __role__):
             return func_code.co_varnames[:func_code.co_argcount][idx]
         except IndexError:
             pass
-
     # Fall back to inspect.signature (slower, but complete).
     import inspect
     params = list(inspect.signature(func).parameters.values())
@@ -923,7 +921,6 @@ def _get_singledispatch_annotated_param(func, *, __role__):
         # Allow variadic positional "(*args)" parameters for backward compatibility.
         if param.kind not in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
             return param.name
-
     raise TypeError(
         f"Invalid first argument to `register()`: {func!r} "
         f"does not accept positional arguments."
