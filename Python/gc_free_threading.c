@@ -308,18 +308,17 @@ disable_deferred_refcounting(PyObject *op)
         // should also be disabled when we turn off deferred refcounting.
         _PyObject_DisablePerThreadRefcounting(op);
     }
-    if (_PyObject_GC_IS_TRACKED(op)) {
-        // Generators and frame objects may contain deferred references to other
-        // objects. If the pointed-to objects are part of cyclic trash, we may
-        // have disabled deferred refcounting on them and need to ensure that we
-        // use strong references, in case the generator or frame object is
-        // resurrected by a finalizer.
-        if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
-            frame_disable_deferred_refcounting(&((PyGenObject *)op)->gi_iframe);
-        }
-        else if (PyFrame_Check(op)) {
-            frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame);
-        }
+
+    // Generators and frame objects may contain deferred references to other
+    // objects. If the pointed-to objects are part of cyclic trash, we may
+    // have disabled deferred refcounting on them and need to ensure that we
+    // use strong references, in case the generator or frame object is
+    // resurrected by a finalizer.
+    if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
+        frame_disable_deferred_refcounting(&((PyGenObject *)op)->gi_iframe);
+    }
+    else if (PyFrame_Check(op)) {
+        frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame);
     }
 }
 
@@ -507,6 +506,10 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
 static bool
 gc_maybe_untrack(PyObject *op)
 {
+    if (_PyObject_HasDeferredRefcount(op)) {
+        // deferred refcounting only works if the object is tracked
+        return false;
+    }
     // Currently we only check for tuples containing only non-GC objects.  In
     // theory we could check other immutable objects that contain references
     // to non-GC objects.
@@ -1019,7 +1022,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
     _PyObject_ASSERT(op, refcount >= 0);
 
-    if (refcount > 0 && !_PyObject_HasDeferredRefcount(op)) {
+    if (refcount > 0) {
         if (gc_maybe_untrack(op)) {
             gc_restore_refs(op);
             return true;
@@ -1241,27 +1244,16 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
+    if (state->reason == _Py_GC_REASON_SHUTDOWN) {
+        // Disable deferred refcounting for reachable objects as well during
+        // interpreter shutdown. This ensures that these objects are collected
+        // immediately when their last reference is removed.
+        disable_deferred_refcounting(op);
+    }
+
     // object is reachable, restore `ob_tid`; we're done with these objects
     gc_restore_tid(op);
     gc_clear_alive(op);
-    return true;
-}
-
-// Disable deferred refcounting for reachable objects during interpreter
-// shutdown. This ensures that these objects are collected immediately when
-// their last reference is removed. This needs to consider both tracked and
-// untracked GC objects, since either might have deferred refcounts enabled.
-static bool
-scan_heap_disable_deferred(const mi_heap_t *heap, const mi_heap_area_t *area,
-        void *block, size_t block_size, void *args)
-{
-    PyObject *op = op_from_block_all_gc(block, args);
-    if (op == NULL) {
-        return true;
-    }
-    if (!_Py_IsImmortal(op)) {
-        disable_deferred_refcounting(op);
-    }
     return true;
 }
 
@@ -1498,10 +1490,6 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // Identify remaining unreachable objects and push them onto a stack.
     // Restores ob_tid for reachable objects.
     gc_visit_heaps(interp, &scan_heap_visitor, &state->base);
-
-    if (state->reason == _Py_GC_REASON_SHUTDOWN) {
-        gc_visit_heaps(interp, &scan_heap_disable_deferred, &state->base);
-    }
 
     if (state->legacy_finalizers.head) {
         // There may be objects reachable from legacy finalizers that are in
