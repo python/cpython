@@ -2544,8 +2544,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if not self._has_negative_number_optionals:
                 return None
 
-        # if it contains a space, it was meant to be a positional
-        if ' ' in arg_string:
+        # if it contains a space (before any equal sign), it was meant to be a
+        # positional
+        if ' ' in arg_string.split("=", 1)[0]:
             return None
 
         # it was meant to be an optional but there is no such option
