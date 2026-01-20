@@ -1,6 +1,7 @@
 import unittest
 import sys
 import functools
+import importlib.util
 
 from test.support.import_helper import import_fresh_module
 
@@ -13,11 +14,9 @@ def load_tests(loader, tests, pattern):
             fresh=['datetime', '_pydatetime', '_strptime'],
             blocked=['_datetime'],
         )
-        try:
-            import _datetime
-            has_datetime = True
-        except ImportError:
-            has_datetime = False
+
+        # Check availability without importing _datetime
+        has_datetime = importlib.util.find_spec('_datetime') is not None
 
         fast_tests = import_fresh_module(
             TESTS,
