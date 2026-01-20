@@ -66,7 +66,6 @@ PyCF_MASK
 PyCF_MASK_OBSOLETE
 PyCF_SOURCE_IS_UTF8
 # cpython/descrobject.h
-PyDescr_COMMON
 PyDescr_NAME
 PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
@@ -76,8 +75,6 @@ Py_UniversalNewlineFgets
 PyUnstable_CopyPerfMapFile
 PyUnstable_PerfTrampoline_CompileCode
 PyUnstable_PerfTrampoline_SetPersistAfterFork
-# cpython/pyerrors.h
-PyException_HEAD
 # cpython/pyframe.h
 PyUnstable_EXECUTABLE_KINDS
 PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION

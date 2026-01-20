@@ -1565,9 +1565,8 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 }
 
 /*[clinic input]
-unicodedata.UCD.isxidstart
+unicodedata.isxidstart
 
-    self: self
     chr: int(accept={str})
     /
 
@@ -1576,24 +1575,15 @@ Return True if the character has the XID_Start property, else False.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_isxidstart_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=944005823c72c3ef input=9353f88d709c21fb]*/
+unicodedata_isxidstart_impl(PyObject *module, int chr)
+/*[clinic end generated code: output=7ae0e1a3915aa031 input=3812717f3a6bfc56]*/
 {
-    if (UCD_Check(self)) {
-        const change_record *old = get_old_record(self, chr);
-        if (old->category_changed == 0) {
-            /* unassigned */
-            Py_RETURN_FALSE;
-        }
-    }
-
     return PyBool_FromLong(_PyUnicode_IsXidStart(chr));
 }
 
 /*[clinic input]
-unicodedata.UCD.isxidcontinue
+unicodedata.isxidcontinue
 
-    self: self
     chr: int(accept={str})
     /
 
@@ -1602,17 +1592,9 @@ Return True if the character has the XID_Continue property, else False.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_isxidcontinue_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=9438dcbff5ca3e41 input=bbb8dd3ac0d2d709]*/
+unicodedata_isxidcontinue_impl(PyObject *module, int chr)
+/*[clinic end generated code: output=517caa8b38c73aed input=a971ed6e57cac374]*/
 {
-    if (UCD_Check(self)) {
-        const change_record *old = get_old_record(self, chr);
-        if (old->category_changed == 0) {
-            /* unassigned */
-            Py_RETURN_FALSE;
-        }
-    }
-
     return PyBool_FromLong(_PyUnicode_IsXidContinue(chr));
 }
 
@@ -2128,10 +2110,12 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_INDIC_CONJUNCT_BREAK_METHODDEF
     UNICODEDATA_EXTENDED_PICTOGRAPHIC_METHODDEF
     UNICODEDATA_ITER_GRAPHEMES_METHODDEF
+    UNICODEDATA_ISXIDSTART_METHODDEF
+    UNICODEDATA_ISXIDCONTINUE_METHODDEF
 
     // The following definitions are shared between the module
     // and the UCD class.
-#define DB_methods (unicodedata_functions + 4)
+#define DB_methods (unicodedata_functions + 6)
 
     UNICODEDATA_UCD_DECIMAL_METHODDEF
     UNICODEDATA_UCD_DIGIT_METHODDEF
@@ -2143,8 +2127,6 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
     UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
     UNICODEDATA_UCD_NAME_METHODDEF
-    UNICODEDATA_UCD_ISXIDSTART_METHODDEF
-    UNICODEDATA_UCD_ISXIDCONTINUE_METHODDEF
     UNICODEDATA_UCD_LOOKUP_METHODDEF
     UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF
     UNICODEDATA_UCD_NORMALIZE_METHODDEF
