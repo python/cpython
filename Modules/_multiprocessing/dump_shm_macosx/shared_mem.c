@@ -25,6 +25,25 @@ int release_lock(SEM_HANDLE sem) {
     return 1;
 }
 
+int exists_lock(SEM_HANDLE sem) {
+    int res = -1 ;
+
+    errno = 0;
+    res = sem_trywait(sem);
+    if (res < 0 ) {
+        if (errno == EBADF) {
+            puts("global lock does not exist");
+            shm_semlock_counters.state_this = THIS_NOT_OPEN;
+            return 0;
+        }
+        return 0;
+    }
+    if (sem_post(sem) < 0) {
+        return 0;
+    }
+    return 1;
+}
+
 void connect_shm_semlock_counters(int unlink, int force_open, int call_release_lock) {
 puts(__func__);
 
@@ -102,22 +121,22 @@ static void _delete_shm_semlock_counters(int unlink) {
     puts("clean up...");
     if (shm_semlock_counters.state_this == THIS_AVAILABLE) {
         if (shm_semlock_counters.counters) {
-            if (ACQUIRE_SHM_LOCK) {
-                // unmmap
-                munmap(shm_semlock_counters.counters,
-                       shm_semlock_counters.header->size_shm);
-                if (unlink) {
-                    shm_unlink(shm_semlock_counters.name_shm);
-                }
-                shm_semlock_counters.state_this = THIS_CLOSED;
-                RELEASE_SHM_LOCK;
+            ACQUIRE_SHM_LOCK;
+            // unmmap
+            munmap(shm_semlock_counters.counters,
+                    shm_semlock_counters.header->size_shm);
+            if (unlink) {
+                shm_unlink(shm_semlock_counters.name_shm);
             }
+            shm_semlock_counters.state_this = THIS_CLOSED;
+            RELEASE_SHM_LOCK;
         }
-        // close lock
-        sem_close(shm_semlock_counters.handle_shm_lock);
-        sem_unlink(shm_semlock_counters.name_shm_lock);
     }
+    // close lock
+    sem_close(shm_semlock_counters.handle_shm_lock);
+    sem_unlink(shm_semlock_counters.name_shm_lock);
 }
+
 
 
 void delete_shm_semlock_counters_without_unlink(void) {

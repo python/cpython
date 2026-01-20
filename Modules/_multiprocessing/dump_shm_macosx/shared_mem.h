@@ -5,8 +5,8 @@ extern CountersWorkaround shm_semlock_counters;
 extern HeaderObject *header;
 extern CounterObject *counter;
 
-int acquire_lock(SEM_HANDLE sem);
-int release_lock(SEM_HANDLE sem);
+extern int acquire_lock(SEM_HANDLE sem);
+extern int release_lock(SEM_HANDLE sem);
 
 void connect_shm_semlock_counters(int unlink,  int force_connect, int release_lock);
 void delete_shm_semlock_counters_without_unlink(void);

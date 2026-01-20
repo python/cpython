@@ -11,10 +11,9 @@ typedef sem_t *SEM_HANDLE;
 // Static datas for each process.
 CountersWorkaround shm_semlock_counters = {
     .state_this = THIS_NOT_OPEN,
-    .name_shm = "/shm_gh125828",
+    .name_shm = SHAREDMEM_NAME,
     .handle_shm = (MEMORY_HANDLE)0,
-    .create_shm = 0,
-    .name_shm_lock = "/mp_gh125828",
+    .name_shm_lock = GLOCK_NAME,
     .handle_shm_lock = (SEM_HANDLE)0,
     .header = (HeaderObject *)NULL,
     .counters = (CounterObject *)NULL,
