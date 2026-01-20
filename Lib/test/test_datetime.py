@@ -1,7 +1,6 @@
 import unittest
 import sys
 import functools
-import importlib.util
 
 from test.support.import_helper import import_fresh_module
 
@@ -15,8 +14,13 @@ def load_tests(loader, tests, pattern):
             blocked=['_datetime'],
         )
 
-        # Check availability without importing _datetime
-        has_datetime = importlib.util.find_spec('_datetime') is not None
+        try:
+            import _datetime
+        except ImportError:
+            has_datetime = False
+        else:
+            has_datetime = True
+            del _datetime
 
         fast_tests = import_fresh_module(
             TESTS,
@@ -54,7 +58,7 @@ def load_tests(loader, tests, pattern):
             class Wrapper(cls):
                 @classmethod
                 def setUpClass(cls_, module=module):
-                    if suffix == "_Fast" and not has_datetime:
+                    if module is fast_tests and not has_datetime:
                         raise unittest.SkipTest("requires _datetime module")
 
                     cls_._save_sys_modules = sys.modules.copy()
