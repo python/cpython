@@ -4,7 +4,7 @@ import unittest
 from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulonglong, c_float, c_double, c_longdouble, POINTER)
+                    c_long, c_ulonglong, c_float, c_double, c_longdouble)
 from test.support import bigmemtest, _2G, threading_helper, Py_GIL_DISABLED
 from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
