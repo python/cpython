@@ -1416,13 +1416,6 @@ _multiprocessing_SemLock___exit___impl(SemLockObject *self,
     return _multiprocessing_SemLock_release_impl(self);
 }
 
-static int
-semlock_traverse(SemLockObject *s, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(s));
-    return 0;
-}
-
 /*
  * Semaphore methods
  */
