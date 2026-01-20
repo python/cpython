@@ -158,7 +158,7 @@ Go to Line
 
 Show Completions
    Open a scrollable list allowing selection of existing names. See
-   :ref:`Completions <completions>` in the Editing and navigation section below.
+   :ref:`Completions <completions>` in the Editing and Navigation section below.
 
 Expand Word
    Expand a prefix you have typed to match a full word in the same window;
@@ -167,7 +167,7 @@ Expand Word
 Show Call Tip
    After an unclosed parenthesis for a function, open a small window with
    function parameter hints.  See :ref:`Calltips <calltips>` in the
-   Editing and navigation section below.
+   Editing and Navigation section below.
 
 Show Surrounding Parens
    Highlight the surrounding parenthesis.
@@ -178,14 +178,9 @@ Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Format Paragraph
-   Rewrap the current 'paragraph'. A paragraph is a contiguous block of
-   equally indented non-blank comments containing the text cursor, a
-   similar block of non-comment lines (expected to be within a multiline
-   string), or a selection of a subset of either.  (Partial lines in a
-   selection expand to complete lines.)  The resulting lines have the
-   same indent as before but a max length of N columns (characters).
-   Change the default N of 72 on the Window tab of IDLE Settings.
-   Avoid rewrapping code lines.
+   Rewrap the text block containing the text insert cursor.
+   Avoid code lines.  See :ref:`Format Menu<format-menu>` in the
+   Editing and Navigation section below.
 
 Indent Region
    Shift selected lines right by the indent width (default 4 spaces).
@@ -570,6 +565,20 @@ will display a calltip.
 In an editor, import statements have no effect until one runs the file.
 One might want to run a file after writing import statements, after
 adding function definitions, or after opening an existing file.
+
+.. _format-menu:
+
+Format Menu
+^^^^^^^^^^^
+
+Reformat Paragraph rewraps a block ('paragraph') of contiguous equally
+indented non-blank comments, a similar block of text within a multiline
+string, or a selected subset of either.
+If needed, add a blank line to separate string from code.
+Partial lines in a selection expand to complete lines.
+The resulting lines have the same indent as before
+but have maximum total length of N columns (characters).
+Change the default N of 72 on the Window tab of IDLE Settings.
 
 .. _code-context:
 
