@@ -359,27 +359,13 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(block, err, lineno=6)
 
     def test_double_star_after_var_keyword(self):
-        err = "Function 'my_test_func' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = "parameters cannot follow var-keyword parameter: 'invalid_arg: object'"
         block = """
             /*[clinic input]
             my_test_func
 
-                pos_arg: object
                 **kwds: dict
-                **
-            [clinic start generated code]*/
-        """
-        self.expect_failure(block, err, lineno=5)
-
-    def test_var_keyword_after_star(self):
-        err = "Function 'my_test_func' has an invalid parameter declaration: '**'"
-        block = """
-            /*[clinic input]
-            my_test_func
-
-                pos_arg: object
-                **
-                **kwds: dict
+                invalid_arg: object
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=5)
@@ -1645,11 +1631,6 @@ class ClinicParserTest(TestCase):
                 [
                 a: object
                 ]
-        """, """
-            with_kwds
-                [
-                **kwds: dict
-                ]
         """)
         err = (
             "You cannot use optional groups ('[' and ']') unless all "
@@ -2037,38 +2018,40 @@ class ClinicParserTest(TestCase):
         block = """
             module foo
             foo.bar
-               x: int
-               y: int
                **kwds: dict
-               z: int
                /
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = "parameters cannot follow var-keyword parameter: '/'"
         self.expect_failure(block, err)
 
     def test_star_after_var_keyword(self):
         block = """
             module foo
             foo.bar
-               x: int
-               y: int
                **kwds: dict
-               z: int
                *
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = "parameters cannot follow var-keyword parameter: '*'"
         self.expect_failure(block, err)
 
     def test_parameter_after_var_keyword(self):
         block = """
             module foo
             foo.bar
-               x: int
-               y: int
                **kwds: dict
                z: int
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = "parameters cannot follow var-keyword parameter: 'z: int'"
+        self.expect_failure(block, err)
+
+    def test_group_with_var_keyword(self):
+        block = """
+            with_kwds
+                [
+                **kwds: dict
+                ]
+        """
+        err = "parameters cannot follow var-keyword parameter: ']'"
         self.expect_failure(block, err)
 
     def test_depr_star_must_come_after_slash(self):
@@ -2160,7 +2143,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=3)
 
     def test_parameters_no_more_than_one_var_keyword(self):
-        err = "Encountered parameter line when not expecting parameters: **var_keyword_2: dict"
+        err = "parameters cannot follow var-keyword parameter: '**var_keyword_2: dict'"
         block = """
             module foo
             foo.bar
@@ -2715,7 +2698,9 @@ class ClinicParserTest(TestCase):
                x: int
                **kwds: dict
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = ("Function 'bar' uses a var-keyword parameter and other "
+               "non-positional parameters, which Argument Clinic does "
+               "not currently support: '**kwds: dict'")
         self.expect_failure(block, err)
 
     def test_var_keyword_with_kw_only(self):
@@ -2728,7 +2713,9 @@ class ClinicParserTest(TestCase):
                y: int
                **kwds: dict
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = ("Function 'bar' uses a var-keyword parameter and other "
+               "non-positional parameters, which Argument Clinic does "
+               "not currently support: '**kwds: dict'")
         self.expect_failure(block, err)
 
     def test_var_keyword_with_pos_or_kw_and_kw_only(self):
@@ -2742,7 +2729,9 @@ class ClinicParserTest(TestCase):
                z: int
                **kwds: dict
         """
-        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        err = ("Function 'bar' uses a var-keyword parameter and other "
+               "non-positional parameters, which Argument Clinic does "
+               "not currently support: '**kwds: dict'")
         self.expect_failure(block, err)
 
     def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
