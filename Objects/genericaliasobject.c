@@ -659,6 +659,8 @@ static const char* const attr_exceptions[] = {
     "__parameters__",
     "__typing_unpacked_tuple_args__",
     "__mro_entries__",
+    "__instancecheck__",
+    "__subclasscheck__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
     "__reduce__",
     NULL,
