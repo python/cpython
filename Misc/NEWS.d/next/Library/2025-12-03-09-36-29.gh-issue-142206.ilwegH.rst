@@ -1,4 +1,0 @@
-The resource tracker in the :mod:`multiprocessing` module can now understand
-messages from older versions of itself. This avoids issues with upgrading
-Python while it is running. (Note that such 'in-place' upgrades are not
-tested.)

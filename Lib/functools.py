@@ -517,7 +517,7 @@ def _unwrap_partialmethod(func):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+_CacheInfo = namedtuple("CacheInfo", ("hits", "misses", "maxsize", "currsize"))
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
@@ -539,13 +539,15 @@ def _make_key(args, kwds, typed,
     # distinct call from f(y=2, x=1) which will be cached separately.
     key = args
     if kwds:
+        key = list(key)
         key += kwd_mark
         for item in kwds.items():
             key += item
+        key = tuple(key)
     if typed:
-        key += tuple(type(v) for v in args)
+        key += tuple([type(v) for v in args])
         if kwds:
-            key += tuple(type(v) for v in kwds.values())
+            key += tuple([type(v) for v in kwds.values()])
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
     return key

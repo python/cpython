@@ -729,6 +729,7 @@ _Py_COMP_DIAG_POP
 PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
                                       const char *format, ...)
 {
+    assert(callable != NULL);
     va_list va;
     va_start(va, format);
     PyObject *retval = callmethod(tstate, callable, format, va);

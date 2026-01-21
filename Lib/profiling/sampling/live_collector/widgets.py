@@ -13,7 +13,7 @@ from .constants import (
     WIDTH_THRESHOLD_CUMUL_PCT,
     WIDTH_THRESHOLD_CUMTIME,
     MICROSECONDS_PER_SECOND,
-    DISPLAY_UPDATE_INTERVAL,
+    DISPLAY_UPDATE_INTERVAL_SEC,
     MIN_BAR_WIDTH,
     MAX_SAMPLE_RATE_BAR_WIDTH,
     MAX_EFFICIENCY_BAR_WIDTH,
@@ -31,6 +31,7 @@ from ..constants import (
     PROFILING_MODE_GIL,
     PROFILING_MODE_WALL,
 )
+from ..opcode_utils import get_opcode_info, format_opcode
 
 
 class Widget(ABC):
@@ -181,7 +182,7 @@ class HeaderWidget(Widget):
 
         # Calculate display refresh rate
         refresh_hz = (
-            1.0 / self.collector.display_update_interval if self.collector.display_update_interval > 0 else 0
+            1.0 / self.collector.display_update_interval_sec if self.collector.display_update_interval_sec > 0 else 0
         )
 
         # Get current view mode and thread display
@@ -235,8 +236,8 @@ class HeaderWidget(Widget):
 
     def format_rate_with_units(self, rate_hz):
         """Format a rate in Hz with appropriate units (Hz, KHz, MHz)."""
-        if rate_hz >= 1_000_000:
-            return f"{rate_hz / 1_000_000:.1f}MHz"
+        if rate_hz >= MICROSECONDS_PER_SECOND:
+            return f"{rate_hz / MICROSECONDS_PER_SECOND:.1f}MHz"
         elif rate_hz >= 1_000:
             return f"{rate_hz / 1_000:.1f}KHz"
         else:
@@ -308,31 +309,21 @@ class HeaderWidget(Widget):
 
     def draw_efficiency_bar(self, line, width):
         """Draw sample efficiency bar showing success/failure rates."""
-        success_pct = (
-            self.collector.successful_samples
-            / max(1, self.collector.total_samples)
-        ) * 100
-        failed_pct = (
-            self.collector.failed_samples
-            / max(1, self.collector.total_samples)
-        ) * 100
+        # total_samples = successful_samples + failed_samples, so percentages add to 100%
+        total = max(1, self.collector.total_samples)
+        success_pct = (self.collector.successful_samples / total) * 100
+        failed_pct = (self.collector.failed_samples / total) * 100
 
         col = 0
         self.add_str(line, col, "Efficiency:", curses.A_BOLD)
         col += 11
 
-        label = f" {success_pct:>5.2f}% good, {failed_pct:>4.2f}% failed"
+        label = f" {success_pct:>5.2f}% good, {failed_pct:>5.2f}% failed"
         available_width = width - col - len(label) - 3
 
         if available_width >= MIN_BAR_WIDTH:
             bar_width = min(MAX_EFFICIENCY_BAR_WIDTH, available_width)
-            success_fill = int(
-                (
-                    self.collector.successful_samples
-                    / max(1, self.collector.total_samples)
-                )
-                * bar_width
-            )
+            success_fill = int((self.collector.successful_samples / total) * bar_width)
             failed_fill = bar_width - success_fill
 
             self.add_str(line, col, "[", curses.A_NORMAL)
@@ -651,8 +642,6 @@ class TableWidget(Widget):
 
     def draw_column_headers(self, line, width):
         """Draw column headers with sort indicators."""
-        col = 0
-
         # Determine which columns to show based on width
         show_sample_pct = width >= WIDTH_THRESHOLD_SAMPLE_PCT
         show_tottime = width >= WIDTH_THRESHOLD_TOTTIME
@@ -671,38 +660,38 @@ class TableWidget(Widget):
             "cumtime": 4,
         }.get(self.collector.sort_by, -1)
 
+        # Build the full header line first, then draw it
+        # This avoids gaps between columns when using reverse video
+        header_parts = []
+        col = 0
+
         # Column 0: nsamples
-        attr = sorted_header if sort_col == 0 else normal_header
-        text = f"{'▼nsamples' if sort_col == 0 else 'nsamples':>13}"
-        self.add_str(line, col, text, attr)
+        text = f"{'▼nsamples' if sort_col == 0 else 'nsamples':>13}  "
+        header_parts.append((col, text, sorted_header if sort_col == 0 else normal_header))
         col += 15
 
         # Column 1: sample %
         if show_sample_pct:
-            attr = sorted_header if sort_col == 1 else normal_header
-            text = f"{'▼%' if sort_col == 1 else '%':>5}"
-            self.add_str(line, col, text, attr)
+            text = f"{'▼%' if sort_col == 1 else '%':>5}  "
+            header_parts.append((col, text, sorted_header if sort_col == 1 else normal_header))
             col += 7
 
         # Column 2: tottime
         if show_tottime:
-            attr = sorted_header if sort_col == 2 else normal_header
-            text = f"{'▼tottime' if sort_col == 2 else 'tottime':>10}"
-            self.add_str(line, col, text, attr)
+            text = f"{'▼tottime' if sort_col == 2 else 'tottime':>10}  "
+            header_parts.append((col, text, sorted_header if sort_col == 2 else normal_header))
             col += 12
 
         # Column 3: cumul %
         if show_cumul_pct:
-            attr = sorted_header if sort_col == 3 else normal_header
-            text = f"{'▼%' if sort_col == 3 else '%':>5}"
-            self.add_str(line, col, text, attr)
+            text = f"{'▼%' if sort_col == 3 else '%':>5}  "
+            header_parts.append((col, text, sorted_header if sort_col == 3 else normal_header))
             col += 7
 
         # Column 4: cumtime
         if show_cumtime:
-            attr = sorted_header if sort_col == 4 else normal_header
-            text = f"{'▼cumtime' if sort_col == 4 else 'cumtime':>10}"
-            self.add_str(line, col, text, attr)
+            text = f"{'▼cumtime' if sort_col == 4 else 'cumtime':>10}  "
+            header_parts.append((col, text, sorted_header if sort_col == 4 else normal_header))
             col += 12
 
         # Remaining headers
@@ -712,13 +701,22 @@ class TableWidget(Widget):
                 MAX_FUNC_NAME_WIDTH,
                 max(MIN_FUNC_NAME_WIDTH, remaining_space // 2),
             )
-            self.add_str(
-                line, col, f"{'function':<{func_width}}", normal_header
-            )
+            text = f"{'function':<{func_width}}  "
+            header_parts.append((col, text, normal_header))
             col += func_width + 2
 
             if col < width - 10:
-                self.add_str(line, col, "file:line", normal_header)
+                file_text = "file:line"
+                padding = width - col - len(file_text)
+                text = file_text + " " * max(0, padding)
+                header_parts.append((col, text, normal_header))
+
+        # Draw full-width background first
+        self.add_str(line, 0, " " * (width - 1), normal_header)
+
+        # Draw each header part on top
+        for col_pos, text, attr in header_parts:
+            self.add_str(line, col_pos, text.rstrip(), attr)
 
         return (
             line + 1,
@@ -734,8 +732,7 @@ class TableWidget(Widget):
             column_flags
         )
 
-        # Get color attributes from the colors dict (already initialized)
-        color_samples = self.colors.get("color_samples", curses.A_NORMAL)
+        # Get color attributes
         color_file = self.colors.get("color_file", curses.A_NORMAL)
         color_func = self.colors.get("color_func", curses.A_NORMAL)
 
@@ -771,12 +768,12 @@ class TableWidget(Widget):
             # Check if this row is selected
             is_selected = show_opcodes and row_idx == selected_row
 
-            # Helper function to get trend color for a specific column
+            # Helper function to get trend color
             def get_trend_color(column_name):
                 if is_selected:
                     return A_REVERSE | A_BOLD
                 trend = trends.get(column_name, "stable")
-                if trend_tracker is not None:
+                if trend_tracker is not None and trend_tracker.enabled:
                     return trend_tracker.get_color(trend)
                 return curses.A_NORMAL
 
@@ -1017,8 +1014,6 @@ class OpcodePanel(Widget):
         Returns:
             Next available line number
         """
-        from ..opcode_utils import get_opcode_info, format_opcode
-
         stats_list = kwargs.get("stats_list", [])
         height = kwargs.get("height", 24)
         selected_row = self.collector.selected_row
