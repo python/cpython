@@ -2523,8 +2523,7 @@ class TextIOWrapper(TextIOBase):
                 else:
                     encoder.reset()
 
-        if self.closed:
-            raise ValueError("tell on closed file")
+        self._checkClosed()
         if not self._seekable:
             raise UnsupportedOperation("underlying stream is not seekable")
         if whence == SEEK_CUR:
