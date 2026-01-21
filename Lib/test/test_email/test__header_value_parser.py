@@ -5,6 +5,7 @@ from email import _header_value_parser as parser
 from email import errors
 from email import policy
 from test.test_email import TestEmailBase, parameterize
+from test.test_email.params import C, params
 
 
 # ---> Defect Expectations
@@ -129,6 +130,37 @@ misplaced_backslash_defect = (
     )
 
 # ---> End Defect Expectations
+
+
+class TestTokenList(TestEmailBase):
+
+    @params(
+        none_none = C([], []),
+        one_none =  C([errors.InvalidHeaderDefect('a')], []),
+        none_one =  C([], [errors.InvalidHeaderDefect('b')]),
+        one_one =   C(
+            [errors.InvalidHeaderDefect('a')],
+            [errors.InvalidHeaderDefect('b')],
+            ),
+        two_two =   C(
+            [errors.InvalidHeaderDefect('a'), errors.NonPrintableDefect('y')],
+            [errors.NonPrintableDefect('b'), errors.InvalidHeaderDefect('z')],
+            ),
+        )
+    def test_extend_copies_defects(self, existing, new):
+        tl1 = parser.TokenList()
+        tl1.defects.extend(existing)
+        tl2 = parser.TokenList(['fake', 'values'])
+        tl2.defects.extend(new)
+        tl1.extend(tl2)
+        self.assertEqual(tl1.defects, existing + new)
+
+    def test_extend_with_non_token_list_leaves_defects_unchanged(self):
+        tl = parser.TokenList()
+        defects = [errors.InvalidHeaderDefect('a')]
+        tl.defects.extend(defects)
+        tl.extend(['fake', 'values'])
+        self.assertEqual(tl.defects, defects)
 
 
 class TestTokens(TestEmailBase):
@@ -2395,7 +2427,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ', (foo),,(bar)',
             ', (foo),,(bar)',
             ', ,, ',
-            [errors.ObsoleteHeaderDefect],
+            [errors.ObsoleteHeaderDefect] * 5,
             '')
         self.assertEqual(group_list.token_type, 'group-list')
         self.assertEqual(len(group_list.mailboxes), 0)
