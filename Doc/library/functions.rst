@@ -1838,6 +1838,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an
    :term:`iterator`.
 
+   See also :ref:`slice-objects`.
+
    .. versionchanged:: 3.12
       Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
       :attr:`~slice.stop`, and :attr:`~slice.step` are hashable).

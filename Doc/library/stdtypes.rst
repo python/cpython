@@ -6304,7 +6304,7 @@ Internal Objects
 
 See :ref:`types` for this information.  It describes
 :ref:`stack frame objects <frame-objects>`,
-:ref:`traceback objects <traceback-objects>`, and slice objects.
+:ref:`traceback objects <traceback-objects>`, and :ref:`slice objects <slice-objects>`.
 
 
 .. _specialattrs:
