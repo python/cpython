@@ -2238,12 +2238,7 @@ class GeneralModuleTests(unittest.TestCase):
         left, right = socket.socketpair()
         self.addCleanup(left.close)
         self.addCleanup(right.close)
-        self.assertRaises(
-            OSError,
-            left.sendmsg,
-            [b'x'],
-            seq,
-        )
+        self.assertRaises(OSError, left.sendmsg, [b'x'], seq)
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
