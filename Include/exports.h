@@ -42,14 +42,7 @@
         #define _PyINIT_EXPORTED_SYMBOL __declspec(dllexport)
     #endif
 #else
-/*
- * If we only ever used gcc >= 5, we could use __has_attribute(visibility)
- * as a cross-platform way to determine if visibility is supported. However,
- * we may still need to support gcc >= 4, as some Ubuntu LTS and Centos versions
- * have 4 < gcc < 5.
- */
-    #if (defined(__GNUC__) && (__GNUC__ >= 4)) ||\
-        (defined(__clang__) && _Py__has_attribute(visibility))
+    #if _Py__has_attribute(visibility)
         #define Py_IMPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_EXPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_LOCAL_SYMBOL  __attribute__ ((visibility ("hidden")))
