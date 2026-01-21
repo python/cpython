@@ -2438,6 +2438,7 @@ class AbstractPicklingErrorTests:
         with self.assertRaises(TypeError):
             self.dumps(c)
 
+    @support.skip_if_unlimited_stack_size
     @no_tracing
     def test_bad_getattr(self):
         # Issue #3514: crash when there is an infinite loop in __getattr__
@@ -4131,6 +4132,82 @@ class AbstractPickleTests:
                 self.assertEqual(unpickled(), 43)
                 unpickled = self.loads(self.dumps(obj.get_staticmethod(), proto))
                 self.assertEqual(unpickled(), 44)
+
+    def test_object_with_attrs(self):
+        obj = Object()
+        obj.a = 1
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+
+    def test_object_with_slots(self):
+        obj = WithSlots()
+        obj.a = 1
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsSubclass()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsAndDict()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertEqual(unpickled.__dict__, obj.__dict__)
+                self.assertNotHasAttr(unpickled, 'b')
+
+    def test_object_with_private_attrs(self):
+        obj = WithPrivateAttrs(1)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateAttrsSubclass(1, 2)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
+
+    def test_object_with_private_slots(self):
+        obj = WithPrivateSlots(1)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateSlotsSubclass(1, 2)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
 
     def test_compat_pickle(self):
         if self.py_version < (3, 4):

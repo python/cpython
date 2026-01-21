@@ -3359,6 +3359,12 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+#ifdef HAVE_PPOLL
+    if (PyModule_AddObjectRef(m, "HAVE_PPOLL", Py_True) < 0) {
+        return -1;
+    }
+#endif
+
     if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
         return -1;
     }

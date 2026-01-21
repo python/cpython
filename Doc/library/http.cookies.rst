@@ -294,9 +294,9 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    Set-Cookie: chips=ahoy
    Set-Cookie: vienna=finger
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=;"
    >>> C = cookies.SimpleCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
