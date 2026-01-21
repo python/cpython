@@ -2239,7 +2239,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.addCleanup(left.close)
         self.addCleanup(right.close)
         self.assertRaises(
-            (TypeError, OSError),
+            OSError,
             left.sendmsg,
             [b'x'],
             seq,
