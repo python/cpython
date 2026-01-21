@@ -91,10 +91,6 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
     /* See issue #19296 */
     if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == NULL ) {
         PyErr_SetFromErrnoWithFilename(state->dbm_error, file);
-        if (dp->di_dbm != NULL) {
-            dbm_close(dp->di_dbm);
-            dp->di_dbm = NULL;
-        }
         Py_DECREF(dp);
         return NULL;
     }
@@ -110,6 +106,7 @@ dbm_dealloc(PyObject *self)
     PyObject_GC_UnTrack(dp);
     if (dp->di_dbm) {
         dbm_close(dp->di_dbm);
+        dp->di_dbm = NULL;
     }
     PyTypeObject *tp = Py_TYPE(dp);
     tp->tp_free(dp);

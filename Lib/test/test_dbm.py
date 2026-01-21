@@ -71,6 +71,11 @@ class AnyDBMTestCase:
     def test_anydbm_not_existing(self):
         self.assertRaises(dbm.error, dbm.open, _fname)
 
+    def test_open_nonexistent_directory(self):
+        missing_dir = os.path.join(dirname + "_does_not_exist", "test.db")
+        with self.assertRaises(OSError):
+            dbm.open(missing_dir, "c")
+
     def test_anydbm_creation(self):
         f = dbm.open(_fname, 'c')
         self.assertEqual(list(f.keys()), [])
@@ -244,10 +249,6 @@ class AnyDBMTestCase:
         self.addCleanup(cleaunup_test_dir)
         setup_test_dir()
 
-    def test_open_nonexistent_directory(self):
-        missing_dir = os.path.join(dirname + "_does_not_exist", "test.db")
-        with self.assertRaises(OSError):
-            dbm.open(missing_dir, "c")
 
 class WhichDBTestCase(unittest.TestCase):
     def test_whichdb(self):
