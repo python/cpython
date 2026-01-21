@@ -145,8 +145,8 @@ New features
 
 .. _whatsnew314-deferred-annotations:
 
-:pep:`649` & :pep:`749`: Deferred evaluation of annotations
-------------------------------------------------------------
+Deferred evaluation of annotations
+----------------------------------
 
 The :term:`annotations <annotation>` on functions, classes, and modules are no
 longer evaluated eagerly. Instead, annotations are stored in special-purpose
@@ -199,8 +199,8 @@ cases, code will continue working as-is.
 
 .. _whatsnew314-multiple-interpreters:
 
-:pep:`734`: Multiple interpreters in the standard library
----------------------------------------------------------
+Multiple interpreters in the standard library
+---------------------------------------------
 
 The CPython runtime supports running multiple copies of Python in the
 same process simultaneously and has done so for over 20 years.
@@ -298,8 +298,8 @@ Also added in 3.14: :ref:`concurrent.futures.InterpreterPoolExecutor
 
 .. _whatsnew314-template-string-literals:
 
-:pep:`750`: Template string literals
-------------------------------------
+Template string literals
+------------------------
 
 Template strings are a new mechanism for custom string processing.
 They share the familiar syntax of f-strings but, unlike f-strings,
@@ -382,8 +382,8 @@ and Pablo Galindo Salgado in :gh:`132661`.)
 
 .. _whatsnew314-remote-debugging:
 
-:pep:`768`: Safe external debugger interface
---------------------------------------------
+Safe external debugger interface
+--------------------------------
 
 Python 3.14 introduces a zero-overhead debugging interface that allows
 debuggers and profilers to safely attach to running Python processes
@@ -645,8 +645,8 @@ Improved error messages
 
 .. _whatsnew314-zstandard:
 
-:pep:`784`: Zstandard support in the standard library
------------------------------------------------------
+Zstandard support in the standard library
+-----------------------------------------
 
 The new :mod:`!compression` package contains modules :mod:`!compression.lzma`,
 :mod:`!compression.bz2`, :mod:`!compression.gzip` and :mod:`!compression.zlib`
@@ -910,8 +910,8 @@ Command line and environment
 
 .. _whatsnew314-bracketless-except:
 
-PEP 758: Allow ``except`` and ``except*`` expressions without brackets
-----------------------------------------------------------------------
+Allow ``except`` and ``except*`` expressions without brackets
+-------------------------------------------------------------
 
 The :keyword:`except` and :keyword:`except* <except_star>` expressions
 now allow brackets to be omitted when there are multiple exception types
@@ -930,8 +930,8 @@ For example:
 
 .. _whatsnew314-finally-syntaxwarning:
 
-PEP 765: Control flow in :keyword:`finally` blocks
---------------------------------------------------
+Control flow in :keyword:`finally` blocks
+-----------------------------------------
 
 The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
 :keyword:`break`, or :keyword:`continue` statement have the effect of
