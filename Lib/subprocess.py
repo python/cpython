@@ -2145,7 +2145,7 @@ class Popen:
                     fflags=select.KQ_NOTE_EXIT,
                 )
                 try:
-                    events = kq.control([kev], max_events=1, timeout=10) # wait
+                    events = kq.control([kev], 1, timeout)  # wait
                 except OSError:
                     return False
                 else:
