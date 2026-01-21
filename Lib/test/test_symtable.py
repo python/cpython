@@ -284,6 +284,20 @@ class SymtableTest(unittest.TestCase):
     def test_free(self):
         self.assertTrue(self.internal.lookup("x").is_free())
 
+    def test_cells(self):
+        #test for addition of is_cell() and get_cells()
+        #see https://github.com/python/cpython/issues/143504
+        code="""def outer():
+                    x=1
+                    def inner():
+                        return x"""
+
+        top=symtable.symtable(code,"?","exec")
+        outer = find_block(top, "outer")
+        self.assertIn("x",outer.get_cells())
+        self.assertTrue(outer.lookup("x").is_cell())
+        self.assertFalse(outer.lookup("inner").is_cell())
+
     def test_referenced(self):
         self.assertTrue(self.internal.lookup("x").is_referenced())
         self.assertTrue(self.spam.lookup("internal").is_referenced())
@@ -610,20 +624,6 @@ class SymtableTest(unittest.TestCase):
         for wm in wlog:
             self.assertEqual(wm.filename, filename)
             self.assertIs(wm.category, SyntaxWarning)
-
-    def test_cells(self):
-        #test for addition of is_cell() and get_cells()
-        #see https://github.com/python/cpython/issues/143504
-        code="""def outer():
-                    x=1
-                    def inner():
-                        return x"""
-
-        top=symtable.symtable(code,"?","exec")
-        outer = find_block(top, "outer")
-        self.assertIn("x",outer.get_cells())
-        self.assertTrue(outer.lookup("x").is_cell())
-        self.assertFalse(outer.lookup("inner").is_cell())
 
 
 class ComprehensionTests(unittest.TestCase):

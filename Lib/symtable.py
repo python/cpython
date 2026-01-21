@@ -171,10 +171,6 @@ class SymbolTable:
         return [_newSymbolTable(st, self._filename)
                 for st in self._table.children]
 
-    def get_cells(self):
-        """Return a list of cell variable names in the table."""
-        return [s.get_name() for s in self.get_symbols() if s.is_cell()]
-
 
 
 def _get_scope(flags):  # like _PyST_GetScope()
@@ -189,7 +185,6 @@ class Function(SymbolTable):
     __frees = None
     __globals = None
     __nonlocals = None
-    __cells = None
 
     def __idents_matching(self, test_func):
         return tuple(ident for ident in self.get_identifiers()
@@ -234,6 +229,10 @@ class Function(SymbolTable):
             is_free = lambda x: _get_scope(x) == FREE
             self.__frees = self.__idents_matching(is_free)
         return self.__frees
+
+    def get_cells(self):
+        """Return a list of cell variable names in the table."""
+        return [s.get_name() for s in self.get_symbols() if s.is_cell()]
 
 
 class Class(SymbolTable):
