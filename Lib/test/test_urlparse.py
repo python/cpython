@@ -1344,6 +1344,103 @@ class UrlParseTestCase(unittest.TestCase):
             check(func(burl))
             check(func(burl, missing_as_none=True))
 
+    def test_result_compat_unpickling(self):
+        def check(result, pickles):
+            for pickled in pickles:
+                result2 = pickle.loads(pickled)
+                self.assertEqual(result2, result)
+                self.assertEqual(result2.geturl(), result.geturl())
+
+        url = 'http://example.com/?#'
+        burl = url.encode()
+        # Pre-3.15 data.
+        check(urldefrag(url), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResult\nc__builtin__\ntuple\n(Vhttp://example.com/?\nV\nttR.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResult\nc__builtin__\ntuple\n(X\x14\x00\x00\x00http://example.com/?X\x00\x00\x00\x00ttR.',
+            b'\x80\x02curlparse\nDefragResult\nX\x14\x00\x00\x00http://example.com/?X\x00\x00\x00\x00\x86\x81.',
+            b'\x80\x03curllib.parse\nDefragResult\nX\x14\x00\x00\x00http://example.com/?X\x00\x00\x00\x00\x86\x81.',
+            b'\x80\x04\x958\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x0cDefragResult\x93\x8c\x14http://example.com/?\x8c\x00\x86\x81.',
+        ))
+        check(urldefrag(burl), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\n(Vhttp://example.com/?\nVlatin1\ntRc__builtin__\nbytes\n(tRttR.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\n(X\x14\x00\x00\x00http://example.com/?X\x06\x00\x00\x00latin1tRc__builtin__\nbytes\n)RttR.',
+            b'\x80\x02curlparse\nDefragResultBytes\nc_codecs\nencode\nX\x14\x00\x00\x00http://example.com/?X\x06\x00\x00\x00latin1\x86Rc__builtin__\nbytes\n)R\x86\x81.',
+            b'\x80\x03curllib.parse\nDefragResultBytes\nC\x14http://example.com/?C\x00\x86\x81.',
+            b'\x80\x04\x95=\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x11DefragResultBytes\x93C\x14http://example.com/?C\x00\x86\x81.',
+        ))
+        check(urlsplit(url), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResult\nc__builtin__\ntuple\n(Vhttp\nVexample.com\nV/\nV\np0\ng0\nttR.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResult\nc__builtin__\ntuple\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00ttR.',
+            b'\x80\x02curlparse\nSplitResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00t\x81.',
+            b'\x80\x03curllib.parse\nSplitResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00t\x81.',
+            b'\x80\x04\x95;\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x0bSplitResult\x93(\x8c\x04http\x8c\x0bexample.com\x8c\x01/\x8c\x00\x94h\x00t\x81.',
+        ))
+        check(urlsplit(burl), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\np0\n(Vhttp\nVlatin1\np1\ntRg0\n(Vexample.com\ng1\ntRg0\n(V/\ng1\ntRc__builtin__\nbytes\n(tRp2\ng2\nttR.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\nq\x00(X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01tRh\x00(X\x0b\x00\x00\x00example.comh\x01tRh\x00(X\x01\x00\x00\x00/h\x01tRc__builtin__\nbytes\n)Rq\x02h\x02ttR.',
+            b'\x80\x02curlparse\nSplitResultBytes\n(c_codecs\nencode\nq\x00X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01\x86Rh\x00X\x0b\x00\x00\x00example.comh\x01\x86Rh\x00X\x01\x00\x00\x00/h\x01\x86Rc__builtin__\nbytes\n)Rq\x02h\x02t\x81.',
+            b'\x80\x03curllib.parse\nSplitResultBytes\n(C\x04httpC\x0bexample.comC\x01/C\x00q\x00h\x00t\x81.',
+            b'\x80\x04\x95@\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x10SplitResultBytes\x93(C\x04httpC\x0bexample.comC\x01/C\x00\x94h\x00t\x81.',
+        ))
+        check(urlparse(url), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResult\nc__builtin__\ntuple\n(Vhttp\nVexample.com\nV/\nV\np0\ng0\ng0\nttR.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResult\nc__builtin__\ntuple\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00h\x00ttR.',
+            b'\x80\x02curlparse\nParseResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00h\x00t\x81.',
+            b'\x80\x03curllib.parse\nParseResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00h\x00t\x81.',
+            b'\x80\x04\x95=\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x0bParseResult\x93(\x8c\x04http\x8c\x0bexample.com\x8c\x01/\x8c\x00\x94h\x00h\x00t\x81.',
+        ))
+        check(urlparse(burl), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\np0\n(Vhttp\nVlatin1\np1\ntRg0\n(Vexample.com\ng1\ntRg0\n(V/\ng1\ntRc__builtin__\nbytes\n(tRp2\ng2\ng2\nttR.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\nq\x00(X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01tRh\x00(X\x0b\x00\x00\x00example.comh\x01tRh\x00(X\x01\x00\x00\x00/h\x01tRc__builtin__\nbytes\n)Rq\x02h\x02h\x02ttR.',
+            b'\x80\x02curlparse\nParseResultBytes\n(c_codecs\nencode\nq\x00X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01\x86Rh\x00X\x0b\x00\x00\x00example.comh\x01\x86Rh\x00X\x01\x00\x00\x00/h\x01\x86Rc__builtin__\nbytes\n)Rq\x02h\x02h\x02t\x81.',
+            b'\x80\x03curllib.parse\nParseResultBytes\n(C\x04httpC\x0bexample.comC\x01/C\x00q\x00h\x00h\x00t\x81.',
+            b'\x80\x04\x95B\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x10ParseResultBytes\x93(C\x04httpC\x0bexample.comC\x01/C\x00\x94h\x00h\x00t\x81.',
+        ))
+
+        # 3.15 data with missing_as_none=True.
+        check(urldefrag(url, missing_as_none=True), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResult\nc__builtin__\ntuple\n(Vhttp://example.com/?\nV\nttR(N(dV_keep_empty\nI01\nstb.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResult\nc__builtin__\ntuple\n(X\x14\x00\x00\x00http://example.com/?X\x00\x00\x00\x00ttR(N}X\x0b\x00\x00\x00_keep_emptyI01\nstb.',
+            b'\x80\x02curlparse\nDefragResult\nX\x14\x00\x00\x00http://example.com/?X\x00\x00\x00\x00\x86\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x03curllib.parse\nDefragResult\nX\x14\x00\x00\x00http://example.com/?X\x00\x00\x00\x00\x86\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x04\x95K\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x0cDefragResult\x93\x8c\x14http://example.com/?\x8c\x00\x86\x81N}\x8c\x0b_keep_empty\x88s\x86b.',
+        ))
+        check(urldefrag(burl, missing_as_none=True), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\n(Vhttp://example.com/?\nVlatin1\ntRc__builtin__\nbytes\n(tRttR(N(dV_keep_empty\nI01\nstb.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nDefragResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\n(X\x14\x00\x00\x00http://example.com/?X\x06\x00\x00\x00latin1tRc__builtin__\nbytes\n)RttR(N}X\x0b\x00\x00\x00_keep_emptyI01\nstb.',
+            b'\x80\x02curlparse\nDefragResultBytes\nc_codecs\nencode\nX\x14\x00\x00\x00http://example.com/?X\x06\x00\x00\x00latin1\x86Rc__builtin__\nbytes\n)R\x86\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x03curllib.parse\nDefragResultBytes\nC\x14http://example.com/?C\x00\x86\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x04\x95P\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x11DefragResultBytes\x93C\x14http://example.com/?C\x00\x86\x81N}\x8c\x0b_keep_empty\x88s\x86b.',
+        ))
+        check(urlsplit(url, missing_as_none=True), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResult\nc__builtin__\ntuple\n(Vhttp\nVexample.com\nV/\nV\np0\ng0\nttR(N(dV_keep_empty\nI01\nstb.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResult\nc__builtin__\ntuple\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00ttR(N}X\x0b\x00\x00\x00_keep_emptyI01\nstb.',
+            b'\x80\x02curlparse\nSplitResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x03curllib.parse\nSplitResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/X\x00\x00\x00\x00q\x00h\x00t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x04\x95N\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x0bSplitResult\x93(\x8c\x04http\x8c\x0bexample.com\x8c\x01/\x8c\x00\x94h\x00t\x81N}\x8c\x0b_keep_empty\x88s\x86b.',
+        ))
+        check(urlsplit(burl, missing_as_none=True), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\np0\n(Vhttp\nVlatin1\np1\ntRg0\n(Vexample.com\ng1\ntRg0\n(V/\ng1\ntRc__builtin__\nbytes\n(tRp2\ng2\nttR(N(dV_keep_empty\nI01\nstb.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nSplitResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\nq\x00(X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01tRh\x00(X\x0b\x00\x00\x00example.comh\x01tRh\x00(X\x01\x00\x00\x00/h\x01tRc__builtin__\nbytes\n)Rq\x02h\x02ttR(N}X\x0b\x00\x00\x00_keep_emptyI01\nstb.',
+            b'\x80\x02curlparse\nSplitResultBytes\n(c_codecs\nencode\nq\x00X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01\x86Rh\x00X\x0b\x00\x00\x00example.comh\x01\x86Rh\x00X\x01\x00\x00\x00/h\x01\x86Rc__builtin__\nbytes\n)Rq\x02h\x02t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x03curllib.parse\nSplitResultBytes\n(C\x04httpC\x0bexample.comC\x01/C\x00q\x00h\x00t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x04\x95S\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x10SplitResultBytes\x93(C\x04httpC\x0bexample.comC\x01/C\x00\x94h\x00t\x81N}\x8c\x0b_keep_empty\x88s\x86b.',
+        ))
+        check(urlparse(url, missing_as_none=True), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResult\nc__builtin__\ntuple\n(Vhttp\nVexample.com\nV/\nNV\np0\ng0\nttR(N(dV_keep_empty\nI01\nstb.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResult\nc__builtin__\ntuple\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/NX\x00\x00\x00\x00q\x00h\x00ttR(N}X\x0b\x00\x00\x00_keep_emptyI01\nstb.',
+            b'\x80\x02curlparse\nParseResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/NX\x00\x00\x00\x00q\x00h\x00t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x03curllib.parse\nParseResult\n(X\x04\x00\x00\x00httpX\x0b\x00\x00\x00example.comX\x01\x00\x00\x00/NX\x00\x00\x00\x00q\x00h\x00t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x04\x95O\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x0bParseResult\x93(\x8c\x04http\x8c\x0bexample.com\x8c\x01/N\x8c\x00\x94h\x00t\x81N}\x8c\x0b_keep_empty\x88s\x86b.',
+        ))
+        check(urlparse(burl, missing_as_none=True), (
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\np0\n(Vhttp\nVlatin1\np1\ntRg0\n(Vexample.com\ng1\ntRg0\n(V/\ng1\ntRNc__builtin__\nbytes\n(tRp2\ng2\nttR(N(dV_keep_empty\nI01\nstb.',
+            b'ccopy_reg\n_reconstructor\n(curlparse\nParseResultBytes\nc__builtin__\ntuple\n(c_codecs\nencode\nq\x00(X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01tRh\x00(X\x0b\x00\x00\x00example.comh\x01tRh\x00(X\x01\x00\x00\x00/h\x01tRNc__builtin__\nbytes\n)Rq\x02h\x02ttR(N}X\x0b\x00\x00\x00_keep_emptyI01\nstb.',
+            b'\x80\x02curlparse\nParseResultBytes\n(c_codecs\nencode\nq\x00X\x04\x00\x00\x00httpX\x06\x00\x00\x00latin1q\x01\x86Rh\x00X\x0b\x00\x00\x00example.comh\x01\x86Rh\x00X\x01\x00\x00\x00/h\x01\x86RNc__builtin__\nbytes\n)Rq\x02h\x02t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x03curllib.parse\nParseResultBytes\n(C\x04httpC\x0bexample.comC\x01/NC\x00q\x00h\x00t\x81N}X\x0b\x00\x00\x00_keep_empty\x88s\x86b.',
+            b'\x80\x04\x95T\x00\x00\x00\x00\x00\x00\x00\x8c\x0curllib.parse\x8c\x10ParseResultBytes\x93(C\x04httpC\x0bexample.comC\x01/NC\x00\x94h\x00t\x81N}\x8c\x0b_keep_empty\x88s\x86b.',
+        ))
+
     def test_parse_qs_encoding(self):
         result = urllib.parse.parse_qs("key=\u0141%E9", encoding="latin-1")
         self.assertEqual(result, {'key': ['\u0141\xE9']})
