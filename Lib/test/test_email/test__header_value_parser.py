@@ -260,6 +260,7 @@ class TestDeprecations(TestEmailBase):
     @params(with_names(
         # XXX XXX make sure this is completely filled in with all the names
         # we've replaced.
+        get_qp_ctext='get_ccontent_sequence',
         ))
     def test_replaced_names(self, oldname, newname):
         with check_all_warnings((
@@ -1973,15 +1974,11 @@ class TestParser(TestParserMixin, TestEmailBase):
     @params
     def test_get_qp_ctext(self, s, *args, value=' ', **kw):
         ptext = self._test_parse(
-            parser.get_qp_ctext,
+            parser._deprecated_get_qp_ctext,
             C(s),
             *args,
             value=value,
-            warnings=[
-                (DeprecationWarning, '.*deprecated.*get_ccontent_sequence'),
-                (DeprecationWarning, '.*ptext.*deprecated'),
-                (DeprecationWarning, '.*validate.*deprecated'),
-                ],
+            warnings=...,
             test_start=False,
             **kw,
             )
