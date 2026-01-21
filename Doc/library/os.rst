@@ -4092,7 +4092,7 @@ features:
               dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
    In the next example (simple implementation of :func:`shutil.rmtree`),
-   walking the tree bottom-up is essential, :func:`rmdir` doesn't allow
+   walking the tree bottom-up is essential: :func:`rmdir` doesn't allow
    deleting a directory before the directory is empty::
 
       # Delete everything reachable from the directory named in "top",
