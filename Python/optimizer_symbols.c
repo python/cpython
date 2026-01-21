@@ -113,7 +113,7 @@ _PyUOpSymPrint(JitOptRef ref)
         case JIT_SYM_COMPACT_INT:
             printf("<compact_int at %p>", (void *)sym);
             break;
-        case JIT_SYM_SLOTS_TAG:
+        case JIT_SYM_SLOTS_TAG: {
             PyTypeObject *slots_type = _PyType_LookupByVersion(sym->slots.type_version);
             if (slots_type) {
                 printf("<%s slots[%d] v%u at %p>", slots_type->tp_name, sym->slots.num_slots, sym->slots.type_version, (void *)sym);
@@ -121,6 +121,7 @@ _PyUOpSymPrint(JitOptRef ref)
                 printf("<slots[%d] v%u at %p>", sym->slots.num_slots, sym->slots.type_version, (void *)sym);
             }
             break;
+        }
         default:
             printf("<tag=%d at %p>", sym->tag, (void *)sym);
             break;
