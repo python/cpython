@@ -1,3 +1,4 @@
 Fix the not implemented ``get_value`` for :class:`multiprocessing.Semaphore` on MacOSX
 by adding a dedicated workaround  in ``_multiprocessing.SemLock``.
-All changes are located in the ``semaphore.c`` file of `_multiprocessing` module.
+All changes are located in the ``semaphore.c`` file of `multiprocessing` module.
+
