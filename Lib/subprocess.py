@@ -769,18 +769,15 @@ def _can_use_pidfd_open():
 
 def _can_use_kqueue():
     # Availability: macOS, BSD
-    if not all(
-        hasattr(select, x)
-        for x in (
-            "kqueue",
-            "KQ_EV_ADD",
-            "KQ_EV_ONESHOT",
-            "KQ_FILTER_PROC",
-            "KQ_NOTE_EXIT",
-        )
-    ):
+    names = (
+        "kqueue",
+        "KQ_EV_ADD",
+        "KQ_EV_ONESHOT",
+        "KQ_FILTER_PROC",
+        "KQ_NOTE_EXIT",
+    )
+    if not all(hasattr(select, x) for x in names):
         return False
-
     kq = None
     try:
         kq = select.kqueue()
@@ -790,7 +787,7 @@ def _can_use_kqueue():
             flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
             fflags=select.KQ_NOTE_EXIT,
         )
-        events = kq.control([kev], 1, 0)
+        kq.control([kev], 1, 0)
         return True
     except OSError as err:
         if err.errno in {errno.EMFILE, errno.ENFILE}:
