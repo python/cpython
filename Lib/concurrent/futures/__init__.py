@@ -43,6 +43,12 @@ if _interpreters:
     __all__.append('InterpreterPoolExecutor')
 
 
+# Remove the _base name from the exposed module.
+Future.__module__ = CancelledError.__module__ = Executor.__module__ = (
+    'concurrent.futures'
+)
+
+
 def __dir__():
     return __all__ + ['__author__', '__doc__']
 
