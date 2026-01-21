@@ -979,6 +979,9 @@
    function. */
 #undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
 
+/* Define to 1 if you have the 'ppoll' function. */
+#undef HAVE_PPOLL
+
 /* Define to 1 if you have the 'pread' function. */
 #undef HAVE_PREAD
 

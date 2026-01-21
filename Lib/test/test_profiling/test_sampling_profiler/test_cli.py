@@ -714,6 +714,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             with self.assertRaisesRegex(SamplingModuleNotFoundError, "Module '[\\w/.]+' not found."):
                 main()
 
+    @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_cli_attach_nonexistent_pid(self):
         fake_pid = "99999"
         with mock.patch("sys.argv", ["profiling.sampling.cli", "attach", fake_pid]):
