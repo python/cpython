@@ -1852,6 +1852,8 @@ to the object:
 13891296
 
 
+.. _faq-identity-with-is:
+
 When can I rely on identity tests with the *is* operator?
 ---------------------------------------------------------
 

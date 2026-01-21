@@ -36,7 +36,7 @@ implementation for built-in numeric types works as described in
 library documentation.
 
 Some additional rules apply for certain operators and non-numeric operands
-(e.g., a string as a left argument to the '%' operator).
+(for example, a string as a left argument to the ``%`` operator).
 Extensions must define their own conversion behavior.
 
 
@@ -70,6 +70,8 @@ Formally, the syntax for atoms is:
       | `list_display`
       | `dict_display`
       | `set_display`
+      | `generator_expression`
+      | `yield_atom`
 
 
 .. _atom-singletons:
@@ -86,8 +88,7 @@ Evaluation of these atoms yields the corresponding value.
 .. note::
 
    Several more built-in constants are available as global variables,
-   but only the ones mentioned here are :ref:`keywords <keywords>` and have
-   special support in the parser.
+   but only the ones mentioned here are :ref:`keywords <keywords>`.
    In particular, these names cannot be reassigned or used as attributes
 
    .. code-block:: pycon
@@ -175,41 +176,23 @@ Python supports numeric, string and bytes literals.
 :ref:`Format strings <f-strings>` and :ref:`template strings <t-strings>`
 are treated as string literals.
 
-Numeric literals consist of a single :token:`python-grammar:NUMBER` token,
-which names an integer, floating-point number, or an imaginary number.
+Numeric literals consist of a single :token:`NUMBER <python-grammar:NUMBER>`
+token, which names an integer, floating-point number, or an imaginary number.
 See the :ref:`numbers` section in Lexical analysis documentation for details.
 
 String and bytes literals may consist of several tokens.
 See section :ref:`string-concatenation` for details.
 
 Note that negative and complex numbers, like ``-3`` or ``3+4.2j``,
-are syntactically not literals, but expressions :ref:`unary <unary>` or
+are syntactically not literals, but :ref:`unary <unary>` or
 :ref:`binary <binary>` arithmetic operations involving the ``-`` or ``+``
 operator.
 
-Evaluation of a literal yields and object of the given type
+Evaluation of a literal yields an object of the given type
 (:class:`int`, :class:`float`, :class:`complex`, :class:`str`,
 :class:`bytes`, or :class:`~string.templatelib.Template`) with the given value.
 The value may be approximated in the case of floating-point
 and imaginary literals.
-
-.. index::
-   triple: immutable; data; type
-   pair: immutable; object
-
-All literals correspond to immutable data types, and hence the object's identity
-is less important than its value.  Multiple evaluations of literals with the
-same value (either the same occurrence in the program text or a different
-occurrence) may obtain the same object or a different object with the same
-value.
-
-.. impl-detail::
-
-   In CPython, each evaluation of a :ref:`template strings <t-strings>` results
-   in a different object.
-   Note that for two template strings to have the same value, the *identity*
-   of the values of their :class:`~string.templatelib.Interpolation`\ s
-   must match.
 
 The formal grammar for literals is:
 
@@ -219,12 +202,67 @@ The formal grammar for literals is:
    literal: `strings` | `NUMBER`
 
 
+.. index::
+   triple: immutable; data; type
+   pair: immutable; object
+
+Literals and object identity
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All literals correspond to immutable data types, and hence the object's identity
+is less important than its value.  Multiple evaluations of literals with the
+same value (either the same occurrence in the program text or a different
+occurrence) may obtain the same object or a different object with the same
+value.
+
+.. admonition:: CPython implementation detail
+
+   For example, in CPython, *small* integers with the same value evaluate
+   to the same object::
+
+      >>> x = 7
+      >>> y = 7
+      >>> x is y
+      True
+
+   However, large integers evaluate to different objects::
+
+      >>> x = 123456789
+      >>> y = 123456789
+      >>> x is y
+      False
+
+   This behavior may change in future versions of CPython.
+   In particular, the boundary between "small" and "large" integers has
+   already changed in the past.
+
+   CPython will emit a :py:exc:`SyntaxWarning` when you compare literals
+   using ``is``::
+
+      >>> x = 7
+      >>> x is 7
+      <input>:1: SyntaxWarning: "is" with 'int' literal. Did you mean "=="?
+      True
+
+   See :ref:`faq-identity-with-is` for more information.
+
+:ref:`Template strings <t-strings>` are immutable but may reference mutable
+objects as :class:`~string.templatelib.Interpolation` values.
+For the purposes of this section, two t-strings have the "same value" if
+both their structure and the *identity* of the values match.
+
+.. impl-detail::
+
+   Currently, each evaluation of a template string results in
+   a different object.
+
+
 .. _string-concatenation:
 
 String literal concatenation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Multiple adjacent string or bytes literals (delimited by whitespace), possibly
+Multiple adjacent string or bytes literals, possibly
 using different quoting conventions, are allowed, and their meaning is the same
 as their concatenation::
 
@@ -268,7 +306,7 @@ Formally:
 .. grammar-snippet::
    :group: python-grammar
 
-   strings: ( `STRING` | `fstring`)+ | `tstring`+
+   strings: (`STRING` | `fstring`)+ | `tstring`+
 
 
 .. _parenthesized:
