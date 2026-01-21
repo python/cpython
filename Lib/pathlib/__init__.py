@@ -1305,13 +1305,9 @@ class Path(PurePath):
         """
         Copy this file or directory tree into the given existing directory.
         """
-        name = self.name
-        if not name:
-            raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, 'with_segments'):
-            target = target_dir / name
-        else:
-            target = self.with_segments(target_dir, name)
+        if not hasattr(target_dir, 'with_segments'):
+            target_dir = self.with_segments(target_dir)
+        target = target_dir.joinpath('_').with_name(self.name)
         return self.copy(target, **kwargs)
 
     def _copy_from(self, source, follow_symlinks=True, preserve_metadata=False):
@@ -1324,7 +1320,7 @@ class Path(PurePath):
             children = source.iterdir()
             os.mkdir(self)
             for child in children:
-                self.joinpath(child.name)._copy_from(
+                self.joinpath('_').with_name(child.name)._copy_from(
                     child, follow_symlinks, preserve_metadata)
             if preserve_metadata:
                 _copy_info(source.info, self)

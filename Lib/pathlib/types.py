@@ -152,7 +152,7 @@ class _JoinablePath(ABC):
     def with_name(self, name):
         """Return a new path with the file name changed."""
         split = self.parser.split
-        if split(name)[0]:
+        if not name or split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
         path = vfspath(self)
         path = path.removesuffix(split(path)[1]) + name
@@ -390,10 +390,8 @@ class _ReadablePath(_JoinablePath):
         """
         Copy this file or directory tree into the given existing directory.
         """
-        name = self.name
-        if not name:
-            raise ValueError(f"{self!r} has an empty name")
-        return self.copy(target_dir / name, **kwargs)
+        target = target_dir.joinpath('_').with_name(self.name)
+        return self.copy(target, **kwargs)
 
 
 class _WritablePath(_JoinablePath):
@@ -463,7 +461,7 @@ class _WritablePath(_JoinablePath):
                 children = src.iterdir()
                 dst.mkdir()
                 for child in children:
-                    stack.append((child, dst.joinpath(child.name)))
+                    stack.append((child, dst.joinpath('_').with_name(child.name)))
             else:
                 ensure_different_files(src, dst)
                 with vfsopen(src, 'rb') as source_f:
