@@ -820,7 +820,6 @@ using the :func:`next` built-in function; this example shows how it all works::
    >>> next(it)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-       next(it)
    StopIteration
 
 Having seen the mechanics behind the iterator protocol, it is easy to add
