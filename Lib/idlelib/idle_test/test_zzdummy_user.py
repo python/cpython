@@ -10,13 +10,39 @@ from idlelib import editor
 from idlelib import format
 
 
-usercfg = zzdummy.idleConf.userCfg
-testcfg = {
+real_usercfg = zzdummy.idleConf.userCfg
+test_usercfg = {
     'main': config.IdleUserConfParser(''),
     'highlight': config.IdleUserConfParser(''),
     'keys': config.IdleUserConfParser(''),
     'extensions': config.IdleUserConfParser(''),
 }
+test_usercfg["extensions"].read_dict({
+    "ZzDummy": {'enable': 'True', 'enable_shell': 'False', 'enable_editor': 'True', 'z-text': 'Z'},
+    "ZzDummy_cfgBindings": {'z-in': '<Control-Shift-KeyRelease-Insert>'},
+    "ZzDummy_bindings": {'z-out': '<Control-Shift-KeyRelease-Delete>'},
+})
+real_defaultcfg = zzdummy.idleConf.defaultCfg
+test_defaultcfg = {
+    'main': config.IdleUserConfParser(''),
+    'highlight': config.IdleUserConfParser(''),
+    'keys': config.IdleUserConfParser(''),
+    'extensions': config.IdleUserConfParser(''),
+}
+test_defaultcfg["extensions"].read_dict({
+    "AutoComplete": {'popupwait': '2000'},
+    "CodeContext": {'maxlines': '15'},
+    "FormatParagraph": {'max-width': '72'},
+    "ParenMatch": {'style': 'expression', 'flash-delay': '500', 'bell': 'True'},
+})
+test_defaultcfg["main"].read_dict({
+    "Theme": {"default": 1, "name": "IDLE Classic", "name2": ""},
+    "Keys": {"default": 1, "name": "IDLE Classic", "name2": ""},
+})
+for key in ("keys",):
+    real_default = real_defaultcfg[key]
+    value = {name: dict(real_default[name]) for name in real_default}
+    test_defaultcfg[key].read_dict(value)
 code_sample = """\
 
 class C1:
@@ -47,11 +73,13 @@ class ZZDummyTest(unittest.TestCase):
         root.withdraw()
         text = cls.text = Text(cls.root)
         cls.editor = DummyEditwin(root, text)
-        zzdummy.idleConf.userCfg = testcfg
+        zzdummy.idleConf.userCfg = test_usercfg
+        zzdummy.idleConf.defaultCfg = test_defaultcfg
 
     @classmethod
     def tearDownClass(cls):
-        zzdummy.idleConf.userCfg = usercfg
+        zzdummy.idleConf.defaultCfg = real_defaultcfg
+        zzdummy.idleConf.userCfg = real_usercfg
         del cls.editor, cls.text
         cls.root.update_idletasks()
         for id in cls.root.tk.call('after', 'info'):
@@ -83,25 +111,11 @@ class ZZDummyTest(unittest.TestCase):
         return actual
 
     def test_exists(self):
-        self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), [])
-        self.assertEqual(zzdummy.idleConf.GetSectionList('default', 'extensions'), ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy', 'ZzDummy_cfgBindings', 'ZzDummy_bindings'])
-        self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions(False))
-        self.assertNotIn("ZzDummy", zzdummy.idleConf.GetExtensions())
-        self.assertEqual(zzdummy.idleConf.GetExtensionKeys("ZzDummy"), {})
-        self.assertEqual(zzdummy.idleConf.GetExtensionBindings("ZzDummy"), {'<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
-
-    def test_exists_user(self):
-        zzdummy.idleConf.userCfg["extensions"].read_dict({
-            "ZzDummy": {'enable': 'True'}
-        })
-        self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), ["ZzDummy"])
+        self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), ['ZzDummy', 'ZzDummy_cfgBindings', 'ZzDummy_bindings'])
+        self.assertEqual(zzdummy.idleConf.GetSectionList('default', 'extensions'), ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch'])
         self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions())
         self.assertEqual(zzdummy.idleConf.GetExtensionKeys("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
         self.assertEqual(zzdummy.idleConf.GetExtensionBindings("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'], '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
-        # Restore
-        zzdummy.idleConf.userCfg["extensions"].read_dict({
-            "ZzDummy": {'enable': 'False'}
-        })
 
     def test_init(self):
         zz = self.zz
@@ -110,7 +124,7 @@ class ZZDummyTest(unittest.TestCase):
 
     def test_reload(self):
         self.assertEqual(self.zz.ztext, '# ignore #')
-        testcfg['extensions'].SetOption('ZzDummy', 'z-text', 'spam')
+        test_usercfg['extensions'].SetOption('ZzDummy', 'z-text', 'spam')
         zzdummy.ZzDummy.reload()
         self.assertEqual(self.zz.ztext, 'spam')
 
