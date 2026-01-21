@@ -1,0 +1,2 @@
+The read pipe in :mod:`asyncio` UNIX transports now has access to the
+`is_reading()` API.
