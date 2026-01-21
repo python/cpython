@@ -1,0 +1,3 @@
+Optimize :meth:`collections.Counter.most_common` for ``n=1`` to use
+:func:`max` instead of :func:`heapq.nlargest`, improving performance for
+the common case of finding the single most common element.

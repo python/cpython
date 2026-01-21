@@ -2279,6 +2279,24 @@ class TestCounter(unittest.TestCase):
             self.assertTrue(elem in c)
             self.assertIn(elem, c)
 
+    def test_most_common(self):
+        c = Counter(a=5, b=3, c=5, d=2, e=0, f=-1)
+
+        self.assertEqual(c.most_common(), [('a', 5), ('c', 5), ('b', 3), ('d', 2), ('e', 0), ('f', -1)])
+        self.assertEqual(c.most_common(3), [('a', 5), ('c', 5), ('b', 3)])
+        self.assertEqual(c.most_common(0), [])
+        self.assertEqual(c.most_common(-2), [])
+        self.assertEqual(c.most_common(1), [('a', 5)])
+
+        # Test empty counter
+        empty_c = Counter()
+
+        self.assertEqual(empty_c.most_common(), [])
+        self.assertEqual(empty_c.most_common(3), [])
+        self.assertEqual(empty_c.most_common(0), [])
+        self.assertEqual(empty_c.most_common(-2), [])
+        self.assertEqual(empty_c.most_common(1), [])
+
     def test_multiset_operations(self):
         # Verify that adding a zero counter will strip zeros and negatives
         c = Counter(a=10, b=-2, c=0) + Counter()

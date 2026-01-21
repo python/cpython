@@ -634,6 +634,13 @@ class Counter(dict):
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
+        if n == 1:
+            # Optimization: use max() instead of heapq for single element
+            # max() raises ValueError on empty sequence, so check first
+            if not self:
+                return []
+            return [max(self.items(), key=_itemgetter(1))]
+
         # Lazy import to speedup Python startup time
         global heapq
         if heapq is None:
