@@ -270,9 +270,9 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
             have_old = 1;
             rc = -1.0;
         }
-        else if (old->decimal_changed != 0xFF) {
+        else if (old->numeric_changed != 0.0) {
             have_old = 1;
-            rc = old->decimal_changed;
+            rc = old->numeric_changed;
         }
     }
 
