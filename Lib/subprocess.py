@@ -51,7 +51,6 @@ import sys
 import threading
 import warnings
 import contextlib
-import select
 from time import monotonic as _time
 import types
 
@@ -122,6 +121,7 @@ else:
             WNOHANG = None
             ECHILD = errno.ECHILD
 
+    import select
     import selectors
 
 
@@ -798,8 +798,8 @@ def _can_use_kqueue():
             kq.close()
 
 
-_CAN_USE_PIDFD_OPEN = _can_use_pidfd_open()
-_CAN_USE_KQUEUE = _can_use_kqueue()
+_CAN_USE_PIDFD_OPEN = not _mswindows and _can_use_pidfd_open()
+_CAN_USE_KQUEUE = not _mswindows and _can_use_kqueue()
 
 
 # These are primarily fail-safe knobs for negatives. A True value does not
