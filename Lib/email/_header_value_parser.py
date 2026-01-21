@@ -146,6 +146,11 @@ class TokenList(list):
         return '{}({})'.format(self.__class__.__name__,
                              super().__repr__())
 
+    def extend(self, value):
+        super().extend(value)
+        if hasattr(value, 'defects'):
+            self.defects.extend(value.defects)
+
     @property
     def value(self):
         return ''.join(x.value for x in self if x.value)
