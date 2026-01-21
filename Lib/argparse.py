@@ -1989,8 +1989,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # (using explicit default to override global argument_default)
         default_prefix = '-' if '-' in prefix_chars else prefix_chars[0]
         if self.add_help:
+            self.reserved_args = [
+                default_prefix + 'h', default_prefix * 2 + 'help',
+            ]
             self.add_argument(
-                default_prefix+'h', default_prefix*2+'help',
+                *self.reserved_args,
                 action='help', default=SUPPRESS,
                 help=_('show this help message and exit'))
 
@@ -2099,6 +2102,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         else:
             # make sure that args are mutable
             args = list(args)
+
+        if self.add_help and len(set(args).intersection(self.reserved_args)) >= 1 and not self.exit_on_error:
+            args = [
+                arg for arg in args
+                if not self.add_help or args in self.reserved_args
+            ]
+            self.print_help()
 
         # default Namespace built from parser defaults
         if namespace is None:
