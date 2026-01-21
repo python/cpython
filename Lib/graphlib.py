@@ -1,4 +1,4 @@
-4from types import GenericAlias
+from types import GenericAlias
 
 __all__ = ["TopologicalSorter", "CycleError"]
 
