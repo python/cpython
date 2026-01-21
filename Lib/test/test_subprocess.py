@@ -4103,16 +4103,17 @@ class FastWaitTestCase(BaseTestCase):
     """
     CAN_USE_PIDFD_OPEN = subprocess._CAN_USE_PIDFD_OPEN
     CAN_USE_KQUEUE = subprocess._CAN_USE_KQUEUE
+    COMMAND = [sys.executable, "-c", "import time; time.sleep(0.3)"]
+    WAIT_TIMEOUT = 0.0001  # 0.1 ms
 
     def assert_fast_waitpid_error(self, patch_point):
         # Emulate a case where pidfd_open() or kqueue() fails.
         # Busy-poll wait should be used as fallback.
         exc = OSError(errno.EMFILE, os.strerror(errno.EMFILE))
         with mock.patch(patch_point, side_effect=exc) as m:
-            p = subprocess.Popen([sys.executable,
-                                  "-c", "import time; time.sleep(0.3)"])
+            p = subprocess.Popen(self.COMMAND)
             with self.assertRaises(subprocess.TimeoutExpired):
-                p.wait(timeout=0.0001)
+                p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         self.assertTrue(m.called)
 
@@ -4128,8 +4129,7 @@ class FastWaitTestCase(BaseTestCase):
     def test_kqueue_control_error(self):
         # Emulate a case where kqueue.control() fails. Busy-poll wait
         # should be used as fallback.
-        p = subprocess.Popen([sys.executable,
-                              "-c", "import time; time.sleep(0.3)"])
+        p = subprocess.Popen(self.COMMAND)
         kq_mock = mock.Mock()
         kq_mock.control.side_effect = OSError(
             errno.EPERM, os.strerror(errno.EPERM)
@@ -4138,7 +4138,7 @@ class FastWaitTestCase(BaseTestCase):
 
         with mock.patch("select.kqueue", return_value=kq_mock) as m:
             with self.assertRaises(subprocess.TimeoutExpired):
-                p.wait(timeout=0.0001)
+                p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         self.assertTrue(m.called)
 
@@ -4146,8 +4146,7 @@ class FastWaitTestCase(BaseTestCase):
         # Call pidfd_open() / kqueue(), then terminate the process.
         # Make sure that the wait call (poll() / kqueue.control())
         # still works for a terminated PID.
-        p = subprocess.Popen([sys.executable,
-                              "-c", "import time; time.sleep(0.3)"])
+        p = subprocess.Popen(self.COMMAND)
 
         def wrapper(*args, **kwargs):
             ret = real_func(*args, **kwargs)
@@ -4185,10 +4184,9 @@ class FastWaitTestCase(BaseTestCase):
         real_waitpid = os.waitpid
         with mock.patch.object(subprocess.Popen, patch_target, return_value=True) as m1:
             with mock.patch("os.waitpid", side_effect=waitpid_wrapper) as m2:
-                p = subprocess.Popen([sys.executable,
-                                      "-c", "import time; time.sleep(0.3)"])
+                p = subprocess.Popen(self.COMMAND)
                 with self.assertRaises(subprocess.TimeoutExpired):
-                    p.wait(timeout=0.0001)
+                    p.wait(self.WAIT_TIMEOUT)
                 self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         assert m1.called
         assert m2.called
@@ -4209,10 +4207,9 @@ class FastWaitTestCase(BaseTestCase):
         # assert that the busy loop is not called as long as the fast
         # wait is available
         with mock.patch('time.sleep') as m:
-            p = subprocess.Popen([sys.executable,
-                                  "-c", "import time; time.sleep(0.3)"])
+            p = subprocess.Popen(self.COMMAND)
             with self.assertRaises(subprocess.TimeoutExpired):
-                p.wait(timeout=0.0001)
+                p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
         assert not m.called
 
