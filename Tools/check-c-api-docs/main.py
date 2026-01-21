@@ -78,7 +78,7 @@ def scan_file_for_docs(
     text: str,
     names: set[str]) -> tuple[list[str], list[str]]:
     """
-    Scan a header file for  C API functions.
+    Scan a header file for C API functions.
     """
     undocumented: list[str] = []
     documented_ignored: list[str] = []
