@@ -126,9 +126,8 @@ is also an unambiguous ``pymanager`` command. Scripted installs that are
 intending to use Python install manager should consider using ``pymanager``, due
 to the lower chance of encountering a conflict with existing installs. The only
 difference between the two commands is when running without any arguments:
-``py`` will install and launch your default interpreter, while ``pymanager``
-will display help (``pymanager exec ...`` provides equivalent behaviour to
-``py ...``).
+``py`` will launch your default interpreter, while ``pymanager`` will display
+help (``pymanager exec ...`` provides equivalent behaviour to ``py ...``).
 
 Each of these commands also has a windowed version that avoids creating a
 console window. These are ``pyw``, ``pythonw`` and ``pymanagerw``. A ``python3``
@@ -187,12 +186,11 @@ that virtual environment. In this scenario, the ``python`` command was likely
 already overridden and none of these checks occurred. However, this behaviour
 ensures that the ``py`` command can be used interchangeably.
 
-When you launch either ``python`` or ``py`` but do not have any runtimes
-installed, and the requested version is the default, it will be installed
-automatically and then launched. Otherwise, the requested version will be
-installed if automatic installation is configured (most likely by setting
-``PYTHON_MANAGER_AUTOMATIC_INSTALL`` to ``true``), or if the ``py exec`` or
-``pymanager exec`` forms of the command were used.
+When no runtimes are installed, any launch command will try to install the
+requested version and launch it. However, after any version is installed, only
+the ``py exec ...`` and ``pymanager exec ...`` commands will install if the
+requested version is absent. Other forms of commands will display an error and
+direct you to use ``py install`` first.
 
 
 Command help
@@ -300,6 +298,14 @@ To launch the runtime, directly execute the main executable (typically
 .. code::
 
    $> py install ... [-t=|--target=<PATH>] <TAG>
+
+The ``py exec`` command will install the requested runtime if it is not already
+present. This is controlled by the ``automatic_install`` configuration
+(:envvar:`PYTHON_MANAGER_AUTOMATIC_INSTALL`), and is enabled by default.
+If no runtimes are available at all, all launch commands will do an automatic
+install if the configuration setting allows. This is to ensure a good experience
+for new users, but should not generally be relied on rather than using the
+``py exec`` command or explicit install commands.
 
 
 .. _pymanager-offline:
@@ -426,9 +432,11 @@ customization.
        By default, :file:`%TEMP%`.
 
    * - ``automatic_install``
-     - ``PYTHON_MANAGER_AUTOMATIC_INSTALL``
-     - True to allow automatic installs when using ``py exec`` to launch.
-       Other commands will not automatically install.
+     - .. envvar:: PYTHON_MANAGER_AUTOMATIC_INSTALL
+     - True to allow automatic installs when using ``py exec`` to launch (or
+       ``py`` when no runtimes are installed yet).
+       Other commands will not automatically install, regardless of this
+       setting.
        By default, true.
 
    * - ``include_unmanaged``
@@ -777,7 +785,7 @@ Troubleshooting
 
 If your Python install manager does not seem to be working correctly, please
 work through these tests and fixes to see if it helps. If not, please report an
-issue at `our bug tracker <https://github.com/python/cpython/issues>`_,
+issue at `our bug tracker <https://github.com/python/pymanager/issues>`_,
 including any relevant log files (written to your :file:`%TEMP%` directory by
 default).
 
