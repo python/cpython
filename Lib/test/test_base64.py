@@ -292,6 +292,11 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b64decode(data, altchars=altchars_str), res)
             eq(base64.b64decode(data_str, altchars=altchars_str), res)
 
+        self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+')
+        self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+/-')
+        self.assertRaises(ValueError, base64.b64decode, '', altchars='+')
+        self.assertRaises(ValueError, base64.b64decode, '', altchars='+/-')
+
     def test_b64decode_padding_error(self):
         self.assertRaises(binascii.Error, base64.b64decode, b'abc')
         self.assertRaises(binascii.Error, base64.b64decode, 'abc')
@@ -323,13 +328,25 @@ class BaseXYTestCase(unittest.TestCase):
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
 
-        # Normal alphabet characters not discarded when alternative given
-        res = b'\xfb\xef\xff'
-        self.assertEqual(base64.b64decode(b'++//', validate=True), res)
-        self.assertEqual(base64.b64decode(b'++//', '-_', validate=True), res)
-        self.assertEqual(base64.b64decode(b'--__', '-_', validate=True), res)
-        self.assertEqual(base64.urlsafe_b64decode(b'++//'), res)
-        self.assertEqual(base64.urlsafe_b64decode(b'--__'), res)
+        # Normal alphabet characters will be discarded when alternative given
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.b64decode(b'++++', altchars=b'-_'),
+                             b'\xfb\xef\xbe')
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.b64decode(b'////', altchars=b'-_'),
+                             b'\xff\xff\xff')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(base64.b64decode(b'++++', altchars=b'-_', validate=True),
+                             b'\xfb\xef\xbe')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(base64.b64decode(b'////', altchars=b'-_', validate=True),
+                             b'\xff\xff\xff')
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.urlsafe_b64decode(b'++++'), b'\xfb\xef\xbe')
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.urlsafe_b64decode(b'////'), b'\xff\xff\xff')
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'+/!', altchars=b'-_')
 
     def _altchars_strategy():
         """Generate 'altchars' for base64 encoding."""
