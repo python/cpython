@@ -13,7 +13,6 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 from test.support import control_characters_c0
-from test.support.testcase import ExtraAssertions
 import os
 try:
     import ssl
