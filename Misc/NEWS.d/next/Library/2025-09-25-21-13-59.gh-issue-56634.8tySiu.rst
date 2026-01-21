@@ -1,0 +1,2 @@
+:class:`gettext.GNUTranslations` now raises descriptive :exc:`ValueError`\s instead of :exc:`IndexError`\s for
+incorrect ``.mo`` file metadata.
