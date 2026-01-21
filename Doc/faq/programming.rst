@@ -1226,7 +1226,6 @@ This converts the list into a set, thereby removing duplicates, and then back
 into a list.
 
 
-How do you remove multiple items from a list
 How do you remove multiple items from a list?
 ---------------------------------------------
 
