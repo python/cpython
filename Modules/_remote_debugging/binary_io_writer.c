@@ -741,6 +741,7 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
 
     writer->write_buffer = PyMem_Malloc(WRITE_BUFFER_SIZE);
     if (!writer->write_buffer) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->buffer_size = WRITE_BUFFER_SIZE;
@@ -753,14 +754,17 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         NULL                 /* Use default allocator */
     );
     if (!writer->string_hash) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->strings = PyMem_Malloc(INITIAL_STRING_CAPACITY * sizeof(char *));
     if (!writer->strings) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->string_lengths = PyMem_Malloc(INITIAL_STRING_CAPACITY * sizeof(size_t));
     if (!writer->string_lengths) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->string_capacity = INITIAL_STRING_CAPACITY;
@@ -773,16 +777,19 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         NULL                 /* Use default allocator */
     );
     if (!writer->frame_hash) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->frame_entries = PyMem_Malloc(INITIAL_FRAME_CAPACITY * sizeof(FrameEntry));
     if (!writer->frame_entries) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->frame_capacity = INITIAL_FRAME_CAPACITY;
 
     writer->thread_entries = PyMem_Malloc(INITIAL_THREAD_CAPACITY * sizeof(ThreadEntry));
     if (!writer->thread_entries) {
+        PyErr_NoMemory();
         goto error;
     }
     writer->thread_capacity = INITIAL_THREAD_CAPACITY;

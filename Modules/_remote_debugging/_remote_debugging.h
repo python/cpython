@@ -140,6 +140,11 @@ typedef enum _WIN32_THREADSTATE {
 #define SIZEOF_GC_RUNTIME_STATE sizeof(struct _gc_runtime_state)
 #define SIZEOF_INTERPRETER_STATE sizeof(PyInterpreterState)
 
+/* Maximum sizes for validation to prevent buffer overflows from corrupted data */
+#define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
+#define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
+#define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
+
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
@@ -451,6 +456,7 @@ extern PyObject *make_frame_info(
 extern bool parse_linetable(
     const uintptr_t addrq,
     const char* linetable,
+    Py_ssize_t linetable_size,
     int firstlineno,
     LocationInfo* info
 );

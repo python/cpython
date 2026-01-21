@@ -45,6 +45,15 @@ process_single_stack_chunk(
     // Check actual size and reread if necessary
     size_t actual_size = GET_MEMBER(size_t, this_chunk, offsetof(_PyStackChunk, size));
     if (actual_size != current_size) {
+        // Validate size: reject garbage (too small or unreasonably large)
+        // Size must be at least enough for the header and reasonably bounded
+        if (actual_size <= offsetof(_PyStackChunk, data) || actual_size > MAX_STACK_CHUNK_SIZE) {
+            PyMem_RawFree(this_chunk);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid stack chunk size (corrupted remote memory)");
+            return -1;
+        }
+
         this_chunk = PyMem_RawRealloc(this_chunk, actual_size);
         if (!this_chunk) {
             PyErr_NoMemory();
@@ -129,7 +138,11 @@ void *
 find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
 {
     for (size_t i = 0; i < chunks->count; ++i) {
-        assert(chunks->chunks[i].size > offsetof(_PyStackChunk, data));
+        // Validate size: reject garbage that would cause underflow
+        if (chunks->chunks[i].size <= offsetof(_PyStackChunk, data)) {
+            // Skip this chunk - corrupted size from remote memory
+            continue;
+        }
         uintptr_t base = chunks->chunks[i].remote_addr + offsetof(_PyStackChunk, data);
         size_t payload = chunks->chunks[i].size - offsetof(_PyStackChunk, data);
 

@@ -9,6 +9,12 @@ try:
     import profiling.sampling
     import profiling.sampling.sample
     from profiling.sampling.pstats_collector import PstatsCollector
+    from profiling.sampling.cli import main, _parse_mode
+    from profiling.sampling.constants import PROFILING_MODE_EXCEPTION
+    from _remote_debugging import (
+        THREAD_STATUS_HAS_GIL,
+        THREAD_STATUS_ON_CPU,
+    )
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -40,7 +46,6 @@ class TestCpuModeFiltering(unittest.TestCase):
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            from profiling.sampling.cli import main
             main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
@@ -49,16 +54,6 @@ class TestCpuModeFiltering(unittest.TestCase):
 
     def test_frames_filtered_with_skip_idle(self):
         """Test that frames are actually filtered when skip_idle=True."""
-        # Import thread status flags
-        try:
-            from _remote_debugging import (
-                THREAD_STATUS_HAS_GIL,
-                THREAD_STATUS_ON_CPU,
-            )
-        except ImportError:
-            THREAD_STATUS_HAS_GIL = 1 << 0
-            THREAD_STATUS_ON_CPU = 1 << 1
-
         # Create mock frames with different thread statuses
         class MockThreadInfoWithStatus:
             def __init__(self, thread_id, frame_info, status):
@@ -240,7 +235,6 @@ class TestGilModeFiltering(unittest.TestCase):
 
     def test_gil_mode_validation(self):
         """Test that CLI accepts gil mode choice correctly."""
-        from profiling.sampling.cli import main
 
         test_args = [
             "profiling.sampling.cli",
@@ -298,7 +292,6 @@ class TestGilModeFiltering(unittest.TestCase):
 
     def test_gil_mode_cli_argument_parsing(self):
         """Test CLI argument parsing for GIL mode with various options."""
-        from profiling.sampling.cli import main
 
         test_args = [
             "profiling.sampling.cli",
@@ -405,7 +398,6 @@ cpu_thread.join()
 
     def test_parse_mode_function(self):
         """Test the _parse_mode function with all valid modes."""
-        from profiling.sampling.cli import _parse_mode
         self.assertEqual(_parse_mode("wall"), 0)
         self.assertEqual(_parse_mode("cpu"), 1)
         self.assertEqual(_parse_mode("gil"), 2)
@@ -422,7 +414,6 @@ class TestExceptionModeFiltering(unittest.TestCase):
 
     def test_exception_mode_validation(self):
         """Test that CLI accepts exception mode choice correctly."""
-        from profiling.sampling.cli import main
 
         test_args = [
             "profiling.sampling.cli",
@@ -480,7 +471,6 @@ class TestExceptionModeFiltering(unittest.TestCase):
 
     def test_exception_mode_cli_argument_parsing(self):
         """Test CLI argument parsing for exception mode with various options."""
-        from profiling.sampling.cli import main
 
         test_args = [
             "profiling.sampling.cli",
@@ -512,7 +502,6 @@ class TestExceptionModeFiltering(unittest.TestCase):
 
     def test_exception_mode_constants_are_defined(self):
         """Test that exception mode constant is properly defined."""
-        from profiling.sampling.constants import PROFILING_MODE_EXCEPTION
         self.assertEqual(PROFILING_MODE_EXCEPTION, 4)
 
     def test_exception_mode_integration_filtering(self):

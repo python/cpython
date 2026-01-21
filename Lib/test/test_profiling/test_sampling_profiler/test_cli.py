@@ -18,7 +18,6 @@ from test.support import is_emscripten, requires_remote_subprocess_debugging
 from profiling.sampling.cli import main
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
 
-
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):
         """Helper to set up socket and process mocks for coordinator tests."""
@@ -715,6 +714,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             with self.assertRaisesRegex(SamplingModuleNotFoundError, "Module '[\\w/.]+' not found."):
                 main()
 
+    @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_cli_attach_nonexistent_pid(self):
         fake_pid = "99999"
         with mock.patch("sys.argv", ["profiling.sampling.cli", "attach", fake_pid]):

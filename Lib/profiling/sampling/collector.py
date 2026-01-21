@@ -6,6 +6,7 @@ from .constants import (
     THREAD_STATUS_GIL_REQUESTED,
     THREAD_STATUS_UNKNOWN,
     THREAD_STATUS_HAS_EXCEPTION,
+    _INTERNAL_FRAME_SUFFIXES,
 )
 
 try:
@@ -42,6 +43,25 @@ def extract_lineno(location):
         return 0
     return location[0]
 
+def _is_internal_frame(frame):
+    if isinstance(frame, tuple):
+        filename = frame[0] if frame else ""
+    else:
+        filename = getattr(frame, "filename", "")
+
+    if not filename:
+        return False
+
+    return filename.endswith(_INTERNAL_FRAME_SUFFIXES)
+
+
+def filter_internal_frames(frames):
+    if not frames:
+        return frames
+
+    return [f for f in frames if not _is_internal_frame(f)]
+
+
 class Collector(ABC):
     @abstractmethod
     def collect(self, stack_frames, timestamps_us=None):
@@ -63,6 +83,10 @@ class Collector(ABC):
     def export(self, filename):
         """Export collected data to a file."""
 
+    @staticmethod
+    def _filter_internal_frames(frames):
+        return filter_internal_frames(frames)
+
     def _iter_all_frames(self, stack_frames, skip_idle=False):
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
@@ -76,7 +100,10 @@ class Collector(ABC):
                         continue
                 frames = thread_info.frame_info
                 if frames:
-                    yield frames, thread_info.thread_id
+                    # Filter out internal profiler frames from the bottom of the stack
+                    frames = self._filter_internal_frames(frames)
+                    if frames:
+                        yield frames, thread_info.thread_id
 
     def _iter_async_frames(self, awaited_info_list):
         # Phase 1: Index tasks and build parent relationships with pre-computed selection
