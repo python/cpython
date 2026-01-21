@@ -204,7 +204,8 @@ instantiation, of which this module provides three different variants:
       capabilities for future requests. If set to
       ``'HTTP/1.1'``, the server will permit HTTP persistent connections;
       however, your server *must* then include an accurate ``Content-Length``
-      header (using :meth:`send_header`) in all of its responses to clients.
+      header (using :meth:`send_header`) in all of its responses to clients
+      (with a few exceptions, like the ``1xx`` and ``204`` status codes [#]_).
       For backwards compatibility, the setting defaults to ``'HTTP/1.0'``.
 
    .. attribute:: MessageClass
@@ -563,3 +564,8 @@ server to send nefarious control codes to your terminal.
 
 .. versionchanged:: 3.12
    Control characters are scrubbed in stderr logs.
+
+.. rubric:: Footnotes
+
+.. [#] Read more about the ``Content-Length`` header in the relevant RFC:
+   https://www.rfc-editor.org/rfc/rfc9110#section-8.6
