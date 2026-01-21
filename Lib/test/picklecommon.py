@@ -26,7 +26,7 @@ __main__.E = E
 E.__module__ = "__main__"
 
 # Simple mutable object.
-class Object:
+class Object(object):
     pass
 
 # Hashable immutable key object containing unheshable mutable data.
@@ -37,6 +37,43 @@ class K:
     def __reduce__(self):
         # Shouldn't support the recursion itself
         return K, (self.value,)
+
+class WithSlots(object):
+    __slots__ = ('a', 'b')
+
+class WithSlotsSubclass(WithSlots):
+    __slots__ = ('c',)
+
+class WithSlotsAndDict(object):
+    __slots__ = ('a', '__dict__')
+
+class WithPrivateAttrs(object):
+    def __init__(self, a):
+        self.__private = a
+    def get(self):
+        return self.__private
+
+class WithPrivateAttrsSubclass(WithPrivateAttrs):
+    def __init__(self, a, b):
+        super().__init__(a)
+        self.__private = b
+    def get2(self):
+        return self.__private
+
+class WithPrivateSlots(object):
+    __slots__ = ('__private',)
+    def __init__(self, a):
+        self.__private = a
+    def get(self):
+        return self.__private
+
+class WithPrivateSlotsSubclass(WithPrivateSlots):
+    __slots__ = ('__private',)
+    def __init__(self, a, b):
+        super().__init__(a)
+        self.__private = b
+    def get2(self):
+        return self.__private
 
 # For test_misc
 class myint(int):
