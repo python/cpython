@@ -1,3 +1,0 @@
-Fix reference counting when adjacent literal parts are merged while constructing
-:class:`string.templatelib.Template`, preventing the displaced string object
-from leaking.

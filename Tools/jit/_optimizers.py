@@ -95,6 +95,7 @@ class InstructionKind(enum.Enum):
     JUMP = enum.auto()
     LONG_BRANCH = enum.auto()
     SHORT_BRANCH = enum.auto()
+    CALL = enum.auto()
     RETURN = enum.auto()
     SMALL_CONST_1 = enum.auto()
     SMALL_CONST_2 = enum.auto()
@@ -182,6 +183,8 @@ class Optimizer:
     # Two groups (instruction and target):
     _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # One group (target):
+    _re_call: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    # One group (target):
     _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # No groups:
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
@@ -225,6 +228,11 @@ class Optimizer:
                 assert inst.target is not None
                 block.target = self._lookup_label(inst.target)
                 assert block.fallthrough
+            elif inst.kind == InstructionKind.CALL:
+                # A block ending in a call has a target and return point after call:
+                assert inst.target is not None
+                block.target = self._lookup_label(inst.target)
+                assert block.fallthrough
             elif inst.kind == InstructionKind.JUMP:
                 # A block ending in a jump has a target and no fallthrough:
                 assert inst.target is not None
@@ -256,6 +264,10 @@ class Optimizer:
             target = match["target"]
             name = line[: -len(target)].strip()
             kind = InstructionKind.JUMP
+        elif match := self._re_call.match(line):
+            target = match["target"]
+            name = line[: -len(target)].strip()
+            kind = InstructionKind.CALL
         elif match := self._re_return.match(line):
             name = line
             kind = InstructionKind.RETURN
@@ -463,6 +475,8 @@ class Optimizer:
         for index, block in enumerate(self._blocks()):
             if block.target and block.fallthrough:
                 branch = block.instructions[-1]
+                if branch.kind == InstructionKind.CALL:
+                    continue
                 assert branch.is_branch()
                 target = branch.target
                 assert target is not None
@@ -566,6 +580,8 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         rf"\s*(?P<instruction>{'|'.join(_branch_patterns)})\s+(.+,\s+)*(?P<target>[\w.]+)"
     )
 
+    # https://developer.arm.com/documentation/ddi0406/b/Application-Level-Architecture/Instruction-Details/Alphabetical-list-of-instructions/BL--BLX--immediate-
+    _re_call = re.compile(r"\s*blx?\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
@@ -628,6 +644,8 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
     )
+    # https://www.felixcloutier.com/x86/call
+    _re_call = re.compile(r"\s*callq?\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/jmp
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret

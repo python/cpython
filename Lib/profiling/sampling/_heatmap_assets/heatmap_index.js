@@ -19,31 +19,8 @@ function applyHeatmapBarColors() {
 // ============================================================================
 
 function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('heatmap-theme', next);
-
-    // Update theme button icon
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
-    }
-
+    toggleAndSaveTheme();
     applyHeatmapBarColors();
-}
-
-function restoreUIState() {
-    // Restore theme
-    const savedTheme = localStorage.getItem('heatmap-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const btn = document.getElementById('theme-btn');
-        if (btn) {
-            btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
-        }
-    }
 }
 
 // ============================================================================

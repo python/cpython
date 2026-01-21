@@ -1,2 +1,0 @@
-Raise :exc:`ValueError` instead of crashing when empty string is used as a name
-in ``_imp.create_builtin()``.

@@ -1337,7 +1337,7 @@ Deprecated
   it was :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* Setting :attr:`~module.__package__` or :attr:`~module.__cached__` on a
+* Setting :attr:`~module.__package__` or ``__cached__`` on a
   module is deprecated, and will cease to be set or taken into consideration by
   the import system in Python 3.14. (Contributed by Brett Cannon in :gh:`65961`.)
 

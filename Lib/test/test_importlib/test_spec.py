@@ -336,7 +336,6 @@ class ModuleSpecMethodsTests:
         self.assertIs(loaded.__spec__, self.spec)
         self.assertNotHasAttr(loaded, '__path__')
         self.assertNotHasAttr(loaded, '__file__')
-        self.assertNotHasAttr(loaded, '__cached__')
 
 
 (Frozen_ModuleSpecMethodsTests,
