@@ -1,0 +1,4 @@
+Export :class:`multiprocessing.Synchronized`,
+:class:`multiprocessing.SynchronizedArray`, and
+:class:`multiprocessing.SynchronizedString` so multiprocessing users can
+annotate their code well.
