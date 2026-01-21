@@ -467,64 +467,6 @@ def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
     return res
 
 
-#def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
-    #"""Look for PyStackRef_FromPyObjectNew() calls"""
-
-    #def in_frame_push(idx: int) -> bool:
-        #for tkn in reversed(node.block.tokens[: idx - 1]):
-            #if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
-                #return False
-            #if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
-                #return True
-        #return False
-
-    #refs: dict[lexer.Token, str | None] = {}
-    #for idx, tkn in enumerate(node.block.tokens):
-        #if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
-            #continue
-
-        #if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
-            #if in_frame_push(idx):
-                ## PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
-                #refs[tkn] = None
-                #continue
-            #raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
-
-        #lhs = find_assignment_target(node, idx - 1)
-        #if len(lhs) == 0:
-            #raise analysis_error(
-                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            #)
-
-        #if lhs[0].kind == "TIMES" or any(
-            #t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
-        #):
-            ## Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
-            ## Assume that they are visible to the GC.
-            #refs[tkn] = None
-            #continue
-
-        #if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
-            #raise analysis_error(
-                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            #)
-
-        #name = lhs[0].text
-        #match = (
-            #any(var.name == name for var in node.inputs)
-            #or any(var.name == name for var in node.outputs)
-        #)
-        #if not match:
-            #raise analysis_error(
-                #f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
-                #tkn,
-            #)
-
-        #refs[tkn] = name
-
-    #return refs
-
-
 def variable_used(node: parser.CodeDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
