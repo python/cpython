@@ -55,9 +55,16 @@ also categorized syntactically as atoms.  The syntax for atoms is:
 
 .. productionlist:: python-grammar
    atom: `identifier` | `literal` | `enclosure`
-   enclosure: `parenth_form` | `list_display` | `dict_display` | `set_display`
-            : | `generator_expression` | `yield_atom`
 
+.. grammar-snippet::
+   :group: python-grammar
+
+   enclosure:
+      | (`group` | `tuple` | `yield_atom` | `generator_expression`)  # in (parentheses)
+      | `list_display`
+      | `dict_display`
+      | `set_display`
+      | `yield_atom`
 
 .. _atom-identifiers:
 
@@ -211,36 +218,75 @@ string literals::
 
 .. _parenthesized:
 
-Parenthesized forms
--------------------
+Parenthesized groups
+--------------------
 
-.. index::
-   single: parenthesized form
-   single: () (parentheses); tuple display
+A :dfn:`group` is an expression enclosed in parentheses.
+The parenthesized group evaluates to the same value as the expression inside.
 
-A parenthesized form is an optional expression list enclosed in parentheses:
+Groups are used to override or clarify
+:ref:`operator precedence <operator-precedence>`,
+in the same way as in math notation.
+For example::
 
-.. productionlist:: python-grammar
-   parenth_form: "(" [`starred_expression`] ")"
+   >>> 3 + 2 * 4
+   11
+   >>> (3 + 2) * 4    # Override precedence of the addition
+   20
+   >>> 3 + (2 * 4)    # Same effect as without parentheses
+   11
 
-A parenthesized expression list yields whatever that expression list yields: if
-the list contains at least one comma, it yields a tuple; otherwise, it yields
-the single expression that makes up the expression list.
+   >>> 3 << 2 | 4
+   12
+   >>> 3 << (2 | 4)   # Override precedence of the bitwise OR
+   192
+   >>> (3 << 2) | 4   # Same as without parentheses, but much clearer
+   12
 
-.. index:: pair: empty; tuple
+Formally, the syntax for groups is:
 
-An empty pair of parentheses yields an empty tuple object.  Since tuples are
-immutable, the same rules as for literals apply (i.e., two occurrences of the empty
-tuple may or may not yield the same object).
+.. grammar-snippet::
+   :group: python-grammar
 
-.. index::
-   single: comma
-   single: , (comma)
+   group: '(' `assignment_expression` ')'
 
-Note that tuples are not formed by the parentheses, but rather by use of the
-comma.  The exception is the empty tuple, for which parentheses *are*
-required --- allowing unparenthesized "nothing" in expressions would cause
-ambiguities and allow common typos to pass uncaught.
+
+
+Tuple displays
+--------------
+
+..
+
+         Parenthesized forms
+         -------------------
+
+         .. index::
+            single: parenthesized form
+            single: () (parentheses); tuple display
+
+         A parenthesized form is an optional expression list enclosed in parentheses:
+
+         .. productionlist:: python-grammar
+            parenth_form: "(" [`starred_expression`] ")"
+
+         A parenthesized expression list yields whatever that expression list yields: if
+         the list contains at least one comma, it yields a tuple; otherwise, it yields
+         the single expression that makes up the expression list.
+
+         .. index:: pair: empty; tuple
+
+         An empty pair of parentheses yields an empty tuple object.  Since tuples are
+         immutable, the same rules as for literals apply (i.e., two occurrences of the empty
+         tuple may or may not yield the same object).
+
+         .. index::
+            single: comma
+            single: , (comma)
+
+         Note that tuples are not formed by the parentheses, but rather by use of the
+         comma.  The exception is the empty tuple, for which parentheses *are*
+         required --- allowing unparenthesized "nothing" in expressions would cause
+         ambiguities and allow common typos to pass uncaught.
 
 
 .. _comprehensions:
@@ -2049,6 +2095,7 @@ their suffixes::
 
 
 .. _operator-summary:
+.. _operator-precedence:
 
 Operator precedence
 ===================
