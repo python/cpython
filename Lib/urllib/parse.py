@@ -112,7 +112,9 @@ def _encode_result(obj, encoding=_implicit_encoding,
 
 def _decode_args(args, encoding=_implicit_encoding,
                        errors=_implicit_errors):
-    return tuple(x.decode(encoding, errors) if x else '' if x is not None else x
+    return tuple(x.decode(encoding, errors) if x
+                 else '' if x is not None
+                 else None
                  for x in args)
 
 def _coerce_args(*args):
@@ -145,8 +147,8 @@ class _ResultMixinStr(object):
 
     def encode(self, encoding='ascii', errors='strict'):
         result = self._encoded_counterpart(*(x.encode(encoding, errors)
-                                           if x is not None else None
-                                           for x in self))
+                                             if x is not None else None
+                                             for x in self))
         try:
             result._keep_empty = self._keep_empty
         except AttributeError:
@@ -160,8 +162,8 @@ class _ResultMixinBytes(object):
 
     def decode(self, encoding='ascii', errors='strict'):
         result = self._decoded_counterpart(*(x.decode(encoding, errors)
-                                           if x is not None else None
-                                           for x in self))
+                                             if x is not None else None
+                                             for x in self))
         try:
             result._keep_empty = self._keep_empty
         except AttributeError:
