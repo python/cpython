@@ -171,6 +171,11 @@ class SymbolTable:
         return [_newSymbolTable(st, self._filename)
                 for st in self._table.children]
 
+    def get_cells(self):
+        """Return a list of cell variable names in the table."""
+        return [s.get_name() for s in self.get_symbols() if s.is_cell()]
+
+
 
 def _get_scope(flags):  # like _PyST_GetScope()
     return (flags >> SCOPE_OFF) & SCOPE_MASK
@@ -229,13 +234,6 @@ class Function(SymbolTable):
             is_free = lambda x: _get_scope(x) == FREE
             self.__frees = self.__idents_matching(is_free)
         return self.__frees
-
-    def get_cells(self):
-        """Return a tuple of cells in the function."""
-        if self.__cells is None:
-            is_cell = lambda x: _get_scope(x) == CELL
-            self.__cells = self.__idents_matching(is_cell)
-        return self.__cells
 
 
 class Class(SymbolTable):
