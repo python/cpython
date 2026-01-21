@@ -144,6 +144,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SEND_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_CHECK_IS_NOT_GEN_OR_CORO] = HAS_EXIT_FLAG,
     [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
@@ -1355,6 +1356,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { 2, 2, _SEND_GEN_FRAME_r22 },
             { -1, -1, -1 },
+        },
+    },
+    [_CHECK_IS_NOT_GEN_OR_CORO] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _CHECK_IS_NOT_GEN_OR_CORO_r02 },
+            { 2, 1, _CHECK_IS_NOT_GEN_OR_CORO_r12 },
+            { 2, 2, _CHECK_IS_NOT_GEN_OR_CORO_r22 },
+            { 3, 3, _CHECK_IS_NOT_GEN_OR_CORO_r33 },
         },
     },
     [_YIELD_VALUE] = {
@@ -3617,6 +3627,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_ANEXT_r12] = _GET_ANEXT,
     [_GET_AWAITABLE_r11] = _GET_AWAITABLE,
     [_SEND_GEN_FRAME_r22] = _SEND_GEN_FRAME,
+    [_CHECK_IS_NOT_GEN_OR_CORO_r02] = _CHECK_IS_NOT_GEN_OR_CORO,
+    [_CHECK_IS_NOT_GEN_OR_CORO_r12] = _CHECK_IS_NOT_GEN_OR_CORO,
+    [_CHECK_IS_NOT_GEN_OR_CORO_r22] = _CHECK_IS_NOT_GEN_OR_CORO,
+    [_CHECK_IS_NOT_GEN_OR_CORO_r33] = _CHECK_IS_NOT_GEN_OR_CORO,
     [_YIELD_VALUE_r11] = _YIELD_VALUE,
     [_POP_EXCEPT_r10] = _POP_EXCEPT,
     [_LOAD_COMMON_CONSTANT_r01] = _LOAD_COMMON_CONSTANT,
@@ -4228,6 +4242,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CHECK_FUNCTION_VERSION_INLINE_r33] = "_CHECK_FUNCTION_VERSION_INLINE_r33",
     [_CHECK_FUNCTION_VERSION_KW] = "_CHECK_FUNCTION_VERSION_KW",
     [_CHECK_FUNCTION_VERSION_KW_r11] = "_CHECK_FUNCTION_VERSION_KW_r11",
+    [_CHECK_IS_NOT_GEN_OR_CORO] = "_CHECK_IS_NOT_GEN_OR_CORO",
+    [_CHECK_IS_NOT_GEN_OR_CORO_r02] = "_CHECK_IS_NOT_GEN_OR_CORO_r02",
+    [_CHECK_IS_NOT_GEN_OR_CORO_r12] = "_CHECK_IS_NOT_GEN_OR_CORO_r12",
+    [_CHECK_IS_NOT_GEN_OR_CORO_r22] = "_CHECK_IS_NOT_GEN_OR_CORO_r22",
+    [_CHECK_IS_NOT_GEN_OR_CORO_r33] = "_CHECK_IS_NOT_GEN_OR_CORO_r33",
     [_CHECK_IS_NOT_PY_CALLABLE] = "_CHECK_IS_NOT_PY_CALLABLE",
     [_CHECK_IS_NOT_PY_CALLABLE_r00] = "_CHECK_IS_NOT_PY_CALLABLE_r00",
     [_CHECK_IS_NOT_PY_CALLABLE_EX] = "_CHECK_IS_NOT_PY_CALLABLE_EX",
@@ -5374,6 +5393,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _SEND_GEN_FRAME:
             return 1;
+        case _CHECK_IS_NOT_GEN_OR_CORO:
+            return 0;
         case _YIELD_VALUE:
             return 1;
         case _POP_EXCEPT:

@@ -2599,7 +2599,7 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
     assert(_PyOpcode_Caches[SEND] == INLINE_CACHE_ENTRIES_SEND);
     PyTypeObject *tp = Py_TYPE(receiver);
     if (tp == &PyGen_Type || tp == &PyCoro_Type) {
-        /* Don't specialize if PEP 523 is active */
+        /* Don't specialize SEND_GEN if PEP 523 is active */
         if (_PyInterpreterState_GET()->eval_frame) {
             SPECIALIZATION_FAIL(SEND, SPEC_FAIL_OTHER);
             goto failure;
@@ -2607,8 +2607,11 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
         specialize(instr, SEND_GEN);
         return;
     }
-    SPECIALIZATION_FAIL(SEND,
-                        _PySpecialization_ClassifyIterator(receiver));
+    /* Fallback: specialize to SEND_NON_GEN for all other types
+       (e.g., PyAsyncGenASend, user-defined iterators, etc.) */
+    specialize(instr, SEND_NON_GEN);
+    return;
+
 failure:
     unspecialize(instr);
 }
