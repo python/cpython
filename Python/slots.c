@@ -330,12 +330,6 @@ handle_first_run(_PySlotIterator *it)
 {
     int id = it->current.sl_id;
 
-    if (it->name == NULL && _PySlot_is_name(id)) {
-        MSG("setting name: %s", (char*)it->current.sl_ptr);
-        assert(_PySlot_get_dtype(it->current.sl_id) == _PySlot_DTYPE_PTR);
-        it->name = it->current.sl_ptr;
-    }
-
     _PySlot_PROBLEM_HANDLING null_handling = _PySlot_get_null_handling(id);
     if (null_handling != _PySlot_PROBLEM_ALLOW) {
         bool is_null = false;

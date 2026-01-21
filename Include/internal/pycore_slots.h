@@ -56,17 +56,15 @@ typedef struct {
     bool is_at_end :1;
     bool is_first_run :1;
 
+    // Name of the object (type/module) being defined, NULL if unknown.
+    // Must be set by the callers as soon as it's known.
+    const char *name;
+
     /* Output information: */
 
     // The slot. Always a copy; may be modified by caller of the iterator.
     PySlot current;
 
-    // Name of the object (type/module) being defined, NULL if unknown.
-    // Set by _PySlotIterator_Next as soon as it sees a tp_name/mod_name slot;
-    // used for internal error messages but available to the caller too.
-    // This points to the slot; must be copied for longer usage.
-    // The name is not reset by rewinding.
-    const char *name;
 } _PySlotIterator;
 
 /* Initialize an iterator using a Py_Slot array */

@@ -724,7 +724,6 @@ n.ulls = 'allow'
 
 [95]
 name = 'Py_tp_name'
-is_name = true
 kind = 'type'
 dtype = 'ptr'
 
@@ -750,7 +749,6 @@ dtype = 'uint64'
 
 [100]
 name = 'Py_mod_name'
-is_name = true
 kind = 'mod'
 dtype = 'ptr'
 
@@ -798,6 +796,7 @@ dtype = 'ptr'
 name = 'Py_mod_abi'
 kind = 'mod'
 dtype = 'ptr'
+duplicates = 'allow'
 
 [110]
 name = 'Py_mod_token'

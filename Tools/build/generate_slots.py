@@ -136,7 +136,7 @@ def write_private_header(f, slots):
         out(f'}}')
     out()
     out(f'static inline void*')
-    out(f'_PySlot_type_ptr(PyTypeObject *tp, uint16_t slot_id)')
+    out(f'_PySlot_type_getslot(PyTypeObject *tp, uint16_t slot_id)')
     out(f'{{')
     out(f'    switch (slot_id) {{')
     rest = []
@@ -146,18 +146,18 @@ def write_private_header(f, slots):
             table_ident = slot.get('table', field[:2])
             _, table, _ = TABLES[table_ident]
             if table_ident == 'tp':
-                out(f'        case {slot["id"]}: return &tp->{field};')
+                out(f'        case {slot["id"]}: return (void*)tp->{field};')
             else:
                 if table_ident == 'ht':
                     cond = 'tp->tp_flags & Py_TPFLAGS_HEAPTYPE'
-                    val = f'&((PyHeapTypeObject*)tp)->{field}'
+                    val = f'((PyHeapTypeObject*)tp)->{field}'
                 else:
                     cond = f'tp->{table}'
-                    val = f'&tp->{table}->{field}'
+                    val = f'tp->{table}->{field}'
                 out(f'        case {slot["id"]}: return ({cond})')
-                out(f'                      ? {val} : NULL;')
+                out(f'                       ? {val} : NULL;')
     out(f'    }}')
-    out(f'    _PySlot_err_bad_slot("type", slot_id);')
+    out(f'    _PySlot_err_bad_slot("PyType_GetSlot", slot_id);')
     out(f'    return NULL;')
     out(f'}}')
     out()
@@ -231,17 +231,6 @@ def write_private_header(f, slots):
         out(f'    }}')
         out(f'}}')
         out()
-    out(f'static inline bool')
-    out(f'_PySlot_is_name(uint16_t slot_id)')
-    out(f'{{')
-    out(f'    switch (slot_id) {{')
-    for slot in slots:
-        if slot.get('is_name'):
-            out(f'        case {slot["name"]}: return true;')
-    out(f'        default: return false;')
-    out(f'    }}')
-    out(f'}}')
-    out()
     out(f'#endif /* _PY_HAVE_INTERNAL_SLOTS_GENERATED_H */')
 
 

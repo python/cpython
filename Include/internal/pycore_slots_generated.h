@@ -47,147 +47,147 @@ _PySlot_resolve_mod_slot(uint16_t slot_id)
 }
 
 static inline void*
-_PySlot_type_ptr(PyTypeObject *tp, uint16_t slot_id)
+_PySlot_type_getslot(PyTypeObject *tp, uint16_t slot_id)
 {
     switch (slot_id) {
         case 5: return (tp->tp_as_mapping)
-                      ? &tp->tp_as_mapping->mp_subscript : NULL;
+                       ? tp->tp_as_mapping->mp_subscript : NULL;
         case 6: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_absolute : NULL;
+                       ? tp->tp_as_number->nb_absolute : NULL;
         case 7: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_add : NULL;
+                       ? tp->tp_as_number->nb_add : NULL;
         case 8: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_and : NULL;
+                       ? tp->tp_as_number->nb_and : NULL;
         case 9: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_bool : NULL;
+                       ? tp->tp_as_number->nb_bool : NULL;
         case 10: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_divmod : NULL;
+                       ? tp->tp_as_number->nb_divmod : NULL;
         case 11: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_float : NULL;
+                       ? tp->tp_as_number->nb_float : NULL;
         case 12: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_floor_divide : NULL;
+                       ? tp->tp_as_number->nb_floor_divide : NULL;
         case 13: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_index : NULL;
+                       ? tp->tp_as_number->nb_index : NULL;
         case 14: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_add : NULL;
+                       ? tp->tp_as_number->nb_inplace_add : NULL;
         case 15: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_and : NULL;
+                       ? tp->tp_as_number->nb_inplace_and : NULL;
         case 16: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_floor_divide : NULL;
+                       ? tp->tp_as_number->nb_inplace_floor_divide : NULL;
         case 17: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_lshift : NULL;
+                       ? tp->tp_as_number->nb_inplace_lshift : NULL;
         case 18: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_multiply : NULL;
+                       ? tp->tp_as_number->nb_inplace_multiply : NULL;
         case 19: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_or : NULL;
+                       ? tp->tp_as_number->nb_inplace_or : NULL;
         case 20: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_power : NULL;
+                       ? tp->tp_as_number->nb_inplace_power : NULL;
         case 21: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_remainder : NULL;
+                       ? tp->tp_as_number->nb_inplace_remainder : NULL;
         case 22: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_rshift : NULL;
+                       ? tp->tp_as_number->nb_inplace_rshift : NULL;
         case 23: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_subtract : NULL;
+                       ? tp->tp_as_number->nb_inplace_subtract : NULL;
         case 24: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_true_divide : NULL;
+                       ? tp->tp_as_number->nb_inplace_true_divide : NULL;
         case 25: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_xor : NULL;
+                       ? tp->tp_as_number->nb_inplace_xor : NULL;
         case 26: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_int : NULL;
+                       ? tp->tp_as_number->nb_int : NULL;
         case 27: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_invert : NULL;
+                       ? tp->tp_as_number->nb_invert : NULL;
         case 28: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_lshift : NULL;
+                       ? tp->tp_as_number->nb_lshift : NULL;
         case 29: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_multiply : NULL;
+                       ? tp->tp_as_number->nb_multiply : NULL;
         case 30: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_negative : NULL;
+                       ? tp->tp_as_number->nb_negative : NULL;
         case 31: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_or : NULL;
+                       ? tp->tp_as_number->nb_or : NULL;
         case 32: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_positive : NULL;
+                       ? tp->tp_as_number->nb_positive : NULL;
         case 33: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_power : NULL;
+                       ? tp->tp_as_number->nb_power : NULL;
         case 34: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_remainder : NULL;
+                       ? tp->tp_as_number->nb_remainder : NULL;
         case 35: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_rshift : NULL;
+                       ? tp->tp_as_number->nb_rshift : NULL;
         case 36: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_subtract : NULL;
+                       ? tp->tp_as_number->nb_subtract : NULL;
         case 37: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_true_divide : NULL;
+                       ? tp->tp_as_number->nb_true_divide : NULL;
         case 38: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_xor : NULL;
+                       ? tp->tp_as_number->nb_xor : NULL;
         case 39: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_ass_item : NULL;
+                       ? tp->tp_as_sequence->sq_ass_item : NULL;
         case 40: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_concat : NULL;
+                       ? tp->tp_as_sequence->sq_concat : NULL;
         case 41: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_contains : NULL;
+                       ? tp->tp_as_sequence->sq_contains : NULL;
         case 42: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_inplace_concat : NULL;
+                       ? tp->tp_as_sequence->sq_inplace_concat : NULL;
         case 43: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_inplace_repeat : NULL;
+                       ? tp->tp_as_sequence->sq_inplace_repeat : NULL;
         case 44: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_item : NULL;
+                       ? tp->tp_as_sequence->sq_item : NULL;
         case 45: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_length : NULL;
+                       ? tp->tp_as_sequence->sq_length : NULL;
         case 46: return (tp->tp_as_sequence)
-                      ? &tp->tp_as_sequence->sq_repeat : NULL;
-        case 47: return &tp->tp_alloc;
-        case 48: return &tp->tp_base;
-        case 49: return &tp->tp_bases;
-        case 50: return &tp->tp_call;
-        case 51: return &tp->tp_clear;
-        case 52: return &tp->tp_dealloc;
-        case 53: return &tp->tp_del;
-        case 54: return &tp->tp_descr_get;
-        case 55: return &tp->tp_descr_set;
-        case 56: return &tp->tp_doc;
-        case 57: return &tp->tp_getattr;
-        case 58: return &tp->tp_getattro;
-        case 59: return &tp->tp_hash;
-        case 60: return &tp->tp_init;
-        case 61: return &tp->tp_is_gc;
-        case 62: return &tp->tp_iter;
-        case 63: return &tp->tp_iternext;
-        case 64: return &tp->tp_methods;
-        case 65: return &tp->tp_new;
-        case 66: return &tp->tp_repr;
-        case 67: return &tp->tp_richcompare;
-        case 68: return &tp->tp_setattr;
-        case 69: return &tp->tp_setattro;
-        case 70: return &tp->tp_str;
-        case 71: return &tp->tp_traverse;
-        case 72: return &tp->tp_members;
-        case 73: return &tp->tp_getset;
-        case 74: return &tp->tp_free;
+                       ? tp->tp_as_sequence->sq_repeat : NULL;
+        case 47: return (void*)tp->tp_alloc;
+        case 48: return (void*)tp->tp_base;
+        case 49: return (void*)tp->tp_bases;
+        case 50: return (void*)tp->tp_call;
+        case 51: return (void*)tp->tp_clear;
+        case 52: return (void*)tp->tp_dealloc;
+        case 53: return (void*)tp->tp_del;
+        case 54: return (void*)tp->tp_descr_get;
+        case 55: return (void*)tp->tp_descr_set;
+        case 56: return (void*)tp->tp_doc;
+        case 57: return (void*)tp->tp_getattr;
+        case 58: return (void*)tp->tp_getattro;
+        case 59: return (void*)tp->tp_hash;
+        case 60: return (void*)tp->tp_init;
+        case 61: return (void*)tp->tp_is_gc;
+        case 62: return (void*)tp->tp_iter;
+        case 63: return (void*)tp->tp_iternext;
+        case 64: return (void*)tp->tp_methods;
+        case 65: return (void*)tp->tp_new;
+        case 66: return (void*)tp->tp_repr;
+        case 67: return (void*)tp->tp_richcompare;
+        case 68: return (void*)tp->tp_setattr;
+        case 69: return (void*)tp->tp_setattro;
+        case 70: return (void*)tp->tp_str;
+        case 71: return (void*)tp->tp_traverse;
+        case 72: return (void*)tp->tp_members;
+        case 73: return (void*)tp->tp_getset;
+        case 74: return (void*)tp->tp_free;
         case 75: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_matrix_multiply : NULL;
+                       ? tp->tp_as_number->nb_matrix_multiply : NULL;
         case 76: return (tp->tp_as_number)
-                      ? &tp->tp_as_number->nb_inplace_matrix_multiply : NULL;
+                       ? tp->tp_as_number->nb_inplace_matrix_multiply : NULL;
         case 77: return (tp->tp_as_async)
-                      ? &tp->tp_as_async->am_await : NULL;
+                       ? tp->tp_as_async->am_await : NULL;
         case 78: return (tp->tp_as_async)
-                      ? &tp->tp_as_async->am_aiter : NULL;
+                       ? tp->tp_as_async->am_aiter : NULL;
         case 79: return (tp->tp_as_async)
-                      ? &tp->tp_as_async->am_anext : NULL;
-        case 80: return &tp->tp_finalize;
+                       ? tp->tp_as_async->am_anext : NULL;
+        case 80: return (void*)tp->tp_finalize;
         case 81: return (tp->tp_as_async)
-                      ? &tp->tp_as_async->am_send : NULL;
-        case 82: return &tp->tp_vectorcall;
+                       ? tp->tp_as_async->am_send : NULL;
+        case 82: return (void*)tp->tp_vectorcall;
         case 83: return (tp->tp_flags & Py_TPFLAGS_HEAPTYPE)
-                      ? &((PyHeapTypeObject*)tp)->ht_token : NULL;
+                       ? ((PyHeapTypeObject*)tp)->ht_token : NULL;
         case 88: return (tp->tp_as_buffer)
-                      ? &tp->tp_as_buffer->bf_getbuffer : NULL;
+                       ? tp->tp_as_buffer->bf_getbuffer : NULL;
         case 89: return (tp->tp_as_buffer)
-                      ? &tp->tp_as_buffer->bf_releasebuffer : NULL;
+                       ? tp->tp_as_buffer->bf_releasebuffer : NULL;
         case 90: return (tp->tp_as_mapping)
-                      ? &tp->tp_as_mapping->mp_ass_subscript : NULL;
+                       ? tp->tp_as_mapping->mp_ass_subscript : NULL;
         case 91: return (tp->tp_as_mapping)
-                      ? &tp->tp_as_mapping->mp_length : NULL;
+                       ? tp->tp_as_mapping->mp_length : NULL;
     }
-    _PySlot_err_bad_slot("type", slot_id);
+    _PySlot_err_bad_slot("PyType_GetSlot", slot_id);
     return NULL;
 }
 
@@ -410,7 +410,7 @@ _PySlot_get_duplicate_handling(uint16_t slot_id)
         case 71: case 74: case 75: case 76: case 77: case 78: case 79: case 80:
         case 81: case 82: case 88: case 89: case 90: case 91:
             return _PySlot_PROBLEM_DEPRECATED;
-        case 85:
+        case 85: case 109:
             return _PySlot_PROBLEM_ALLOW;
         default:
             return _PySlot_PROBLEM_REJECT;
@@ -438,16 +438,6 @@ _PySlot_get_null_handling(uint16_t slot_id)
             return _PySlot_PROBLEM_ALLOW;
         default:
             return _PySlot_PROBLEM_REJECT;
-    }
-}
-
-static inline bool
-_PySlot_is_name(uint16_t slot_id)
-{
-    switch (slot_id) {
-        case Py_tp_name: return true;
-        case Py_mod_name: return true;
-        default: return false;
     }
 }
 

@@ -5219,8 +5219,10 @@ special_offset_from_member(
 }
 
 
-PyObject *
-type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
+static PyObject *
+type_from_slots_or_spec(
+    PySlot *slots, PyType_Spec *spec,
+    PyTypeObject *metaclass, PyObject *module, PyObject *bases_in)
 {
     /* Invariant: A non-NULL value in one of these means this function holds
      * a strong reference or owns allocated memory.
@@ -5244,26 +5246,61 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
     Py_ssize_t basicsize = 0;
     Py_ssize_t extra_basicsize = 0;
     Py_ssize_t itemsize = 0;
+    int flags = 0;
+    void *token = NULL;
 
     bool have_relative_members = false;
     Py_ssize_t max_relative_offset = 0;
 
-    /* The following are borrowed from the slots. */
-    PyTypeObject *metaclass = NULL;
-    PyObject *module = NULL;
-    PyObject *bases_slot = NULL;
-    int flags = 0;
+    PyObject *bases_slot = NULL; /* borrowed from the slots */
 
     _PySlotIterator it;
-    _PySlotIterator_Init(&it, slots, _PySlot_KIND_TYPE);
+
+    if (spec) {
+        assert(!slots);
+        if (spec->basicsize > 0) {
+            basicsize = spec->basicsize;
+        }
+        if (spec->basicsize < 0) {
+            extra_basicsize = -spec->basicsize;
+        }
+        itemsize = spec->itemsize;
+        flags = spec->flags;
+        _PySlotIterator_InitLegacy(&it, spec->slots, _PySlot_KIND_TYPE);
+        it.name = spec->name;
+    }
+    else {
+        assert(!spec);
+        assert(!metaclass);
+        assert(!module);
+        assert(!bases_in);
+        _PySlotIterator_Init(&it, slots, _PySlot_KIND_TYPE);
+    }
+
+    #define NO_SPEC                                         \
+        if (spec) {                                         \
+            PyErr_Format(                                   \
+                PyExc_SystemError,                          \
+                "%s must not be used with PyType_Spec",     \
+                _PySlot_GetName(it.current.sl_id));         \
+            goto finally;                                   \
+        }                                                   \
+        /////////////////////////////////////////////////////
+
     while (_PySlotIterator_Next(&it)) {
         switch (it.current.sl_id) {
         case Py_slot_invalid:
             goto finally;
+        case Py_tp_name:
+            NO_SPEC;
+            it.name = it.current.sl_ptr;
+            break;
         case Py_tp_metaclass:
+            NO_SPEC;
             metaclass = it.current.sl_ptr;
             break;
         case Py_tp_module:
+            NO_SPEC;
             module = it.current.sl_ptr;
             break;
         case Py_tp_bases:
@@ -5281,6 +5318,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
             }
             break;
         case Py_tp_basicsize:
+            NO_SPEC;
             basicsize = it.current.sl_size;
             if (basicsize <= 0) {
                 PyErr_SetString(
@@ -5290,6 +5328,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
             }
             break;
         case Py_tp_extra_basicsize:
+            NO_SPEC;
             extra_basicsize = it.current.sl_size;
             if (extra_basicsize <= 0) {
                 PyErr_SetString(
@@ -5299,6 +5338,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
             }
             break;
         case Py_tp_itemsize:
+            NO_SPEC;
             itemsize = it.current.sl_size;
             if (itemsize <= 0) {
                 PyErr_SetString(
@@ -5308,6 +5348,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
             }
             break;
         case Py_tp_flags:
+            NO_SPEC;
             flags = it.current.sl_uint64;
             break;
         case Py_tp_members:
@@ -5336,22 +5377,21 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
             }
             break;
         case Py_tp_token:
-            if (!spec_for_token && it.current.sl_ptr == Py_TP_USE_SPEC) {
-                PyErr_SetString(
-                    PyExc_SystemError,
-                    "Py_TP_USE_SPEC and NULL can only be used with PyType_Spec");
-                goto finally;
+            token = it.current.sl_ptr;
+            if (token == Py_TP_USE_SPEC) {
+                if (!spec) {
+                    PyErr_SetString(
+                        PyExc_SystemError,
+                        "Py_tp_token: Py_TP_USE_SPEC (NULL) can only be "
+                        "used with PyType_Spec");
+                    goto finally;
+                }
+                token = spec;
             }
             break;
         case Py_tp_doc:
             /* For the docstring slot, which usually points to a static string
                literal, we need to make a copy */
-            if (tp_doc != NULL) {
-                PyErr_SetString(
-                    PyExc_SystemError,
-                    "Multiple Py_tp_doc slots are not supported.");
-                goto finally;
-            }
             if (it.current.sl_ptr == NULL) {
                 PyMem_Free(tp_doc);
                 tp_doc = NULL;
@@ -5368,11 +5408,12 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
             break;
         }
     }
+    #undef NO_SPEC
 
     /* Required slots & bad combinations */
 
     if (it.name == NULL) {
-        if (spec_for_token) {
+        if (spec) {
             PyErr_SetString(PyExc_SystemError,
                             "Type spec does not define the name field.");
         }
@@ -5395,7 +5436,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
     }
 
     if (have_relative_members) {
-        if (_PySlotIterator_SawSlot(&it, Py_tp_basicsize)) {
+        if (!extra_basicsize) {
             PyErr_SetString(
                 PyExc_SystemError,
                 "With Py_RELATIVE_OFFSET, basicsize must be extended");
@@ -5443,8 +5484,10 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
 
     /* Get a tuple of bases.
      * bases is a strong reference (unlike bases_in).
+     * (This is convoluted for backwards compatibility -- preserving priority
+     * of the various ways to specify bases)
      */
-    if ((bases_arg ? 1 : 0)
+    if ((bases_in ? 1 : 0)
         + (_PySlotIterator_SawSlot(&it, Py_tp_bases) ? 1 : 0)
         + (_PySlotIterator_SawSlot(&it, Py_tp_base) ? 1 : 0)
         > 1)
@@ -5455,15 +5498,15 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
                 it.name))
             goto finally;
     }
-    if (!bases_arg) {
-        bases_arg = bases_slot;
+    if (!bases_in) {
+        bases_in = bases_slot;
     }
-    if (bases_arg) {
-        if (PyTuple_Check(bases_arg)) {
-            bases = Py_NewRef(bases_arg);
+    if (bases_in) {
+        if (PyTuple_Check(bases_in)) {
+            bases = Py_NewRef(bases_in);
         }
         else {
-            bases = PyTuple_Pack(1, bases_arg);
+            bases = PyTuple_Pack(1, bases_in);
         }
     }
     else {
@@ -5473,8 +5516,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
         goto finally;
     }
 
-    /* If this is an immutable type, check if all bases are also immutable,
-     * and (for now) fire a deprecation warning if not.
+    /* If this is an immutable type, check if all bases are also immutable.
      * (This isn't necessary for static types: those can't have heap bases,
      * and only heap types can be mutable.)
      */
@@ -5601,6 +5643,8 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
     res->_ht_tpname = _ht_tpname;
     _ht_tpname = NULL;  // Give ownership to the type
 
+    res->ht_token = token;
+
     /* Copy the sizes */
 
     type->tp_basicsize = basicsize;
@@ -5608,7 +5652,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
 
     /* Second pass of slots: copy most of them into the type */
 
-    _PySlotIterator_Rewind(&it, slots);
+    _PySlotIterator_Rewind(&it, spec ? (void*)spec->slots : (void*)slots);
     while (_PySlotIterator_Next(&it)) {
         switch (it.current.sl_id) {
         case Py_slot_invalid:
@@ -5636,21 +5680,8 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
                 }
             }
             break;
-        case Py_tp_token:
-            {
-                if (it.current.sl_ptr == Py_TP_USE_SPEC) {
-                    res->ht_token = spec_for_token;
-                }
-                else {
-                    res->ht_token = it.current.sl_ptr;
-                }
-            }
-            break;
         default:
-            {
-                /* Copy other slots directly */
-                _PySlot_heaptype_apply_field_slot(res, it.current);
-            }
+            _PySlot_heaptype_apply_field_slot(res, it.current);
             break;
         }
     }
@@ -5757,7 +5788,7 @@ type_from_slots(PySlot *slots, PyType_Spec *spec_for_token, PyObject *bases_arg)
 PyObject *
 PyType_FromSlots(PySlot *slots)
 {
-    return type_from_slots(slots, NULL, NULL);
+    return type_from_slots_or_spec(slots, NULL, NULL, NULL, NULL);
 }
 
 PyObject *
@@ -5765,48 +5796,25 @@ PyType_FromMetaclass(
     PyTypeObject *metaclass, PyObject *module,
     PyType_Spec *spec, PyObject *bases)
 {
-    static const PySlot nop = {Py_slot_invalid, .sl_flags=PySlot_OPTIONAL};
-    PySlot slots[] = {
-        PySlot_DATA(Py_tp_name, spec->name),
-        (spec->basicsize > 0
-            ? (PySlot)PySlot_SIZE(Py_tp_basicsize, spec->basicsize)
-            : spec->basicsize < 0
-                ? (PySlot)PySlot_SIZE(Py_tp_extra_basicsize, -spec->basicsize)
-            : nop),
-        (spec->itemsize
-            ? (PySlot)PySlot_SIZE(Py_tp_itemsize, spec->itemsize)
-            : nop),
-        PySlot_UINT64(Py_tp_flags, spec->flags),
-        PySlot_DATA(Py_tp_slots, spec->slots),
-        (metaclass
-            ? (PySlot)PySlot_PTR(Py_tp_metaclass, metaclass)
-            : nop),
-        (module
-            ? (PySlot)PySlot_PTR(Py_tp_module, module)
-            : nop),
-        /* We pass *bases* separately for deprecation and error reporting;
-         * eventually we can convert it to Py_tp_bases. */
-        PySlot_END,
-    };
-    return type_from_slots(slots, spec, bases);
+    return type_from_slots_or_spec(NULL, spec, metaclass, module, bases);
 }
 
 PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
-    return PyType_FromMetaclass(NULL, module, spec, bases);
+    return type_from_slots_or_spec(NULL, spec, NULL, module, bases);
 }
 
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
-    return PyType_FromMetaclass(NULL, NULL, spec, bases);
+    return type_from_slots_or_spec(NULL, spec, NULL, NULL, bases);
 }
 
 PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
+    return type_from_slots_or_spec(NULL, spec, NULL, NULL, NULL);
 }
 
 PyObject *
@@ -5831,14 +5839,7 @@ void *
 PyType_GetSlot(PyTypeObject *type, int slot_in)
 {
     uint16_t slot = _PySlot_resolve_type_slot(slot_in);
-    if (slot == Py_slot_invalid) {
-        return NULL;
-    }
-    void **ptr = _PySlot_type_ptr(type, slot);
-    if (ptr == NULL) {
-        return NULL;
-    }
-    return *ptr;
+    return _PySlot_type_getslot(type, slot);
 }
 
 PyObject *
