@@ -11,9 +11,9 @@ def load_tests(loader, tests, pattern):
         try:
             import _datetime
         except ImportError:
-            has_datetime = False
+            has_datetime_ext = False
         else:
-            has_datetime = True
+            has_datetime_ext = True
             del _datetime
         pure_tests = import_fresh_module(TESTS,
                                          fresh=['datetime', '_pydatetime', '_strptime'],
@@ -52,7 +52,7 @@ def load_tests(loader, tests, pattern):
             class Wrapper(cls):
                 @classmethod
                 def setUpClass(cls_, module=module):
-                    if module is fast_tests and not has_datetime:
+                    if module is fast_tests and not has_datetime_ext:
                         raise unittest.SkipTest("requires _datetime module")
 
                     cls_._save_sys_modules = sys.modules.copy()
