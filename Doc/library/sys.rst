@@ -2018,6 +2018,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
+      See :pep:`768` for more details.
 
 
 .. function:: _enablelegacywindowsfsencoding()
