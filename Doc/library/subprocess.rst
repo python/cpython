@@ -806,7 +806,7 @@ Instances of the :class:`Popen` class have the following methods:
       When ``timeout`` is not ``None`` and the platform supports it, an
       efficient event-driven mechanism is used to wait for process termination:
 
-      - Linux ≥= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`
+      - Linux >= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`
       - macOS and other BSD variants use :func:`select.kqueue` +
         ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``
       - Windows uses ``WaitForSingleObject``
