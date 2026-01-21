@@ -646,6 +646,18 @@ class _TestProcess(BaseTestCase):
         self.assertNotIn(p, self.active_children())
 
     @classmethod
+    def _test_main_process(cls, conn):
+        conn.send(cls.main_process() is cls.current_process())
+
+    def test_main_process(self):
+        self.assertIs(self.main_process(), self.current_process())
+        reader, writer = self.Pipe(duplex=False)
+        p = self.Process(target=self._test_main_process, args=(writer,))
+        p.start()
+        p.join()
+        self.assertEqual(reader.recv(), False)
+
+    @classmethod
     def _test_recursion(cls, wconn, id):
         wconn.send(id)
         if len(id) < 2:
@@ -7142,6 +7154,7 @@ class ProcessesMixin(BaseMixin):
     current_process = staticmethod(multiprocessing.current_process)
     parent_process = staticmethod(multiprocessing.parent_process)
     active_children = staticmethod(multiprocessing.active_children)
+    main_process = staticmethod(multiprocessing.main_process)
     set_executable = staticmethod(multiprocessing.set_executable)
     Pool = staticmethod(multiprocessing.Pool)
     Pipe = staticmethod(multiprocessing.Pipe)
@@ -7227,6 +7240,7 @@ class ThreadsMixin(BaseMixin):
     connection = multiprocessing.dummy.connection
     current_process = staticmethod(multiprocessing.dummy.current_process)
     active_children = staticmethod(multiprocessing.dummy.active_children)
+    main_process = staticmethod(multiprocessing.dummy.main_process)
     Pool = staticmethod(multiprocessing.dummy.Pool)
     Pipe = staticmethod(multiprocessing.dummy.Pipe)
     Queue = staticmethod(multiprocessing.dummy.Queue)
