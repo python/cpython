@@ -2623,7 +2623,7 @@ Fix :func:`unittest.mock.patch` to not read attributes of the target when
 .. nonce: s4HXR0
 .. section: Library
 
-Fixed the use-after-free issue in :mod:`cProfile` by disallowing
+Fixed the use-after-free issue in :mod:`!cProfile` by disallowing
 ``disable()`` and ``clear()`` in external timers.
 
 ..
@@ -4016,7 +4016,7 @@ Make ``this_instr`` and ``prev_instr`` const in cases generator.
 .. date: 2024-10-05-23-53-06
 .. gh-issue: 125008
 .. nonce: ETANpd
-.. section: Core and Builtins
+.. section: Library
 
 Fix :func:`tokenize.untokenize` producing invalid syntax for double braces
 preceded by certain escape characters.
@@ -4275,7 +4275,7 @@ devdanzin
 .. date: 2024-09-02-20-39-10
 .. gh-issue: 123614
 .. nonce: 26TMHp
-.. section: Core and Builtins
+.. section: Library
 
 Add :func:`turtle.save` to easily save Turtle drawings as PostScript files.
 Patch by Marie Roald and Yngve Mardal Moe.
@@ -4761,7 +4761,7 @@ enabled (yet).
 .. date: 2024-07-18-21-19-04
 .. gh-issue: 121999
 .. nonce: 8IBbTK
-.. section: Core and Builtins
+.. section: Library
 
 The default extraction filter for the :mod:`tarfile` module is now set to
 :func:`'data' <tarfile.data_filter>`.
@@ -4955,7 +4955,7 @@ Galindo
 .. date: 2024-06-28-23-17-22
 .. gh-issue: 121381
 .. nonce: i2xL7P
-.. section: Core and Builtins
+.. section: Library
 
 Remove ``subprocess._USE_VFORK`` escape hatch code and documentation. It was
 added just in case, and doesn't have any known cases that require it.
@@ -5115,7 +5115,7 @@ and identities of :class:`str` objects.
 .. date: 2024-06-14-07-52-00
 .. gh-issue: 120485
 .. nonce: yy4K4b
-.. section: Core and Builtins
+.. section: Library
 
 Add an override of ``allow_reuse_port`` on classes subclassing
 ``socketserver.TCPServer`` where ``allow_reuse_address`` is also overridden.
@@ -5147,7 +5147,7 @@ after exception handlers are moved to the end of the code.
 .. date: 2024-06-12-18-23-15
 .. gh-issue: 120380
 .. nonce: edtqjq
-.. section: Core and Builtins
+.. section: Library
 
 Fix Python implementation of :class:`pickle.Pickler` for :class:`bytes` and
 :class:`bytearray` objects when using protocol version 5. Patch by Bénédikt
@@ -5625,7 +5625,7 @@ in the future.
 .. date: 2024-04-27-18-36-46
 .. gh-issue: 115801
 .. nonce: SVeHSy
-.. section: Core and Builtins
+.. section: Library
 
 Raise ``TypeError`` when passing a string to :func:`difflib.unified_diff`
 and :func:`difflib.context_diff`.

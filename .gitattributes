@@ -68,6 +68,7 @@ PCbuild/readme.txt  dos
 **/clinic/*.cpp.h                                   generated
 **/clinic/*.h.h                                     generated
 *_db.h                                              generated
+Doc/_static/tachyon-example-*.html                  generated
 Doc/c-api/lifecycle.dot.svg                         generated
 Doc/data/stable_abi.dat                             generated
 Doc/library/token-list.inc                          generated
@@ -82,12 +83,15 @@ Include/opcode.h                                    generated
 Include/opcode_ids.h                                generated
 Include/token.h                                     generated
 Lib/_opcode_metadata.py                             generated
-Lib/keyword.py                                      generated
 Lib/idlelib/help.html                               generated
+Lib/keyword.py                                      generated
+Lib/pydoc_data/topics.py                            generated
+Lib/pydoc_data/module_docs.py                       generated
 Lib/test/certdata/*.pem                             generated
 Lib/test/certdata/*.0                               generated
 Lib/test/levenshtein_examples.json                  generated
 Lib/test/test_stable_abi_ctypes.py                  generated
+Lib/test/test_zoneinfo/data/*.json                  generated
 Lib/token.py                                        generated
 Misc/sbom.spdx.json                                 generated
 Objects/typeslots.inc                               generated
