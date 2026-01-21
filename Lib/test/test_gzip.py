@@ -31,6 +31,8 @@ data2 = b"""/* zlibmodule.c -- gzip-compatible data compression */
 /* See http://www.winimage.com/zLibDll for Windows */
 """
 
+# A single unsigned short - for testing memoryviews with itemsize > 1
+data3 = array.array('H', [1])
 
 TEMPDIR = os.path.abspath(os_helper.TESTFN) + '-gzdir'
 
@@ -101,6 +103,7 @@ class TestGzip(BaseTest):
         m = memoryview(bytes(range(256)))
         data = m.cast('B', shape=[8,8,4])
         self.write_and_read_back(data)
+        self.write_and_read_back(memoryview(data3))
 
     def test_write_bytearray(self):
         self.write_and_read_back(bytearray(data1 * 50))
@@ -794,6 +797,16 @@ class TestGzip(BaseTest):
     def test_decompress_missing_trailer(self):
         compressed_data = gzip.compress(data1)
         self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
+
+    def roundtrip_compress_decompress(self, data):
+        compressed_data = gzip.compress(data)
+        decompressed_data = gzip.decompress(compressed_data)
+        self.assertEqual(decompressed_data, bytes(data))
+
+    def test_compress_decompress(self):
+        self.roundtrip_compress_decompress(data1)
+        self.roundtrip_compress_decompress(data2)
+        self.roundtrip_compress_decompress(data3)
 
     def test_read_truncated(self):
         data = data1*50
