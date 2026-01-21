@@ -5510,6 +5510,12 @@ can be used interchangeably to index the same dictionary entry.
 
 .. admonition:: Thread safety
 
+   Creating a dictionary with the :class:`dict` constructor is atomic when the
+   argument to it is a :class:`dict` or a :class:`tuple`.  When using the
+   :meth:`dict.fromkeys` method, dictionary creation is atomic when the
+   argument is a :class:`dict`, :class:`tuple`, :class:`set` or
+   :class:`frozenset`.
+
    The following operations and function are lock-free and
    :term:`atomic <atomic operation>`.
 
@@ -5606,13 +5612,38 @@ can be used interchangeably to index the same dictionary entry.
       # NOT atomic: read-modify-write
       d[key] = d[key] + 1
 
-      # NOT atomic: check-then-act
+      # NOT atomic: check-then-act (TOCTOU)
       if key in d:
           del d[key]
 
       # NOT thread-safe: iteration while modifying
-      for key in d:
+      for key, value in d.items():
           process(key)  # another thread may modify d
+
+   To avoid time-of-check to time-of-use (TOCTOU) issues, use atomic
+   operations or handle exceptions:
+
+   .. code-block::
+      :class: good
+
+      # Use pop() with default instead of check-then-delete
+      d.pop(key, None)
+
+      # Or handle the exception
+      try:
+          del d[key]
+      except KeyError:
+          pass
+
+   To safely iterate over a dictionary that may be modified by another
+   thread, iterate over a copy:
+
+   .. code-block::
+      :class: good
+
+      # Make a copy to iterate safely
+      for key, value in d.copy().items():
+          process(key)
 
    Consider external synchronization when sharing :class:`dict` instances
    across threads.  See :ref:`freethreading-python-howto` for more information.
