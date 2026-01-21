@@ -1,4 +1,26 @@
 # This file lists all PySlot values
+# This should only be used as input to Tools/build/generate_slots.py,
+# its format can change at any time (e.g. we can rename it to slots.csv)
+
+# Entries:
+# name: name of the slot
+# kind:
+# - 'type', 'mod': slots to create a particular object
+# - 'slot': special slots applicable to any kind of object
+# - 'compat': old IDs that nneed to be resolved
+# dtype: datat type (tag for the union of sl_ptr, sl_size, etc.)
+# equivalents: for 'compat' slots; the slots to resolve to
+# is_type_field: slot that corresponds to a field in the type object (or in
+#   an array like PyNumberMethods).
+# functype: C function type, where needed
+# duplicates, nulls: How to handle common "problems" -- duplicate slots with
+#   the same ID, and NULL pointers, respectively
+#   - 'allow': not a problem for this slot
+#   - 'deprecated': issue a deprecation warning. Don't use for new slots.
+#      (typically, the problem was disallowed in docs, but allowed in practice)
+#   - 'reject': raise error
+#   The default is 'reject' (except NULL for non-pointer slots)
+
 
 [0]
 name = 'Py_slot_end'
@@ -497,6 +519,7 @@ name = 'Py_tp_methods'
 kind = 'type'
 is_type_field = true
 dtype = 'ptr'
+duplicates = 'deprecated'
 nulls = 'deprecated'
 
 [65]
@@ -567,6 +590,7 @@ name = 'Py_tp_getset'
 kind = 'type'
 is_type_field = true
 dtype = 'ptr'
+duplicates = 'deprecated'
 nulls = 'deprecated'
 
 [74]
@@ -647,6 +671,7 @@ kind = 'type'
 is_type_field = true
 dtype = 'ptr'
 field = 'ht_token'
+duplicates = 'deprecated'
 nulls = 'allow'
 
 [84]
