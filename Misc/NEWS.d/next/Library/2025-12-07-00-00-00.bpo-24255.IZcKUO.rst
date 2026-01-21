@@ -1,0 +1,1 @@
+Replace debug level-related logic in http.client with Python's standard logging module. Patch by Sanyam Khurana.
