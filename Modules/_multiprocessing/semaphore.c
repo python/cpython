@@ -1232,7 +1232,6 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
 static void
 semlock_dealloc(SemLockObject* self)
 {
-    int res = -1;
 
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -1240,7 +1239,8 @@ semlock_dealloc(SemLockObject* self)
         SEM_CLOSE(self->handle);
     }
 
-#ifdef HAVE_BROKEN_SEM_GETVALUE
+    #ifdef HAVE_BROKEN_SEM_GETVALUE
+    int res = -1;
     if (ISSEMAPHORE(self)) {
         if (self->handle_mutex != SEM_FAILED) {
             SEM_CLOSE(self->handle_mutex);

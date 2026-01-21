@@ -25,7 +25,7 @@ int release_lock(SEM_HANDLE sem) {
     return 1;
 }
 
-int exists_lock(SEM_HANDLE sem) {
+int exist_lock(SEM_HANDLE sem) {
     int res = -1 ;
 
     errno = 0;
@@ -64,6 +64,7 @@ puts(__func__);
     if (sem == SEM_FAILED) {
         errno = 0;
         // Semaphore exists, just opens it.
+        printf("Try to open glock '%s'\n", shm_semlock_counters.name_shm_lock);
         sem = sem_open(shm_semlock_counters.name_shm_lock, 0);
         // Not exists, creates it.
         if (force_open && sem == SEM_FAILED) {
@@ -78,50 +79,48 @@ puts(__func__);
     }
 
     // Locks to semaphore.
-    if (sem != SEM_FAILED && ACQUIRE_SHM_LOCK) {
-        printf("Shm Lock ok on %p\n", sem);
-        // connect to Shared mem
-        shm = shm_open(shm_semlock_counters.name_shm, oflag, 0);
-        if (shm != -1) {
-            shm_semlock_counters.handle_shm = shm;
-            printf("Shared Mem ok on '%d'\n", shm);
-            char *ptr = (char *)mmap(NULL,
-                                    size_shm,
-                                    (PROT_WRITE | PROT_READ),
-                                    MAP_SHARED,
-                                    shm_semlock_counters.handle_shm,
-                                    0L);
-            shm_semlock_counters.header = (HeaderObject *)ptr;
-            shm_semlock_counters.counters = (CounterObject *)(ptr+sizeof(HeaderObject));
-            printf("Shared memory size is %lu vs %d\n", size_shm,
-                                                       shm_semlock_counters.header->size_shm);
-            // Initialization is successful.
-            shm_semlock_counters.state_this = THIS_AVAILABLE;
-            header = shm_semlock_counters.header;
-            counter = shm_semlock_counters.counters;
-            if (unlink) {
-                atexit(delete_shm_semlock_counters);
+    ACQUIRE_SHM_LOCK;
+    printf("Shm Lock ok on %p\n", sem);
+    // connect to Shared mem
+    shm = shm_open(shm_semlock_counters.name_shm, oflag, 0);
+    if (shm != -1) {
+        shm_semlock_counters.handle_shm = shm;
+        printf("Shared Mem ok on '%d'\n", shm);
+        char *ptr = (char *)mmap(NULL,
+                                size_shm,
+                                (PROT_WRITE | PROT_READ),
+                                MAP_SHARED,
+                                shm_semlock_counters.handle_shm,
+                                0L);
+        shm_semlock_counters.header = (HeaderObject *)ptr;
+        shm_semlock_counters.counters = (CounterObject *)(ptr+sizeof(HeaderObject));
+        printf("Shared memory size is %lu vs %d\n", size_shm,
+                                                    shm_semlock_counters.header->size_shm);
+        // Initialization is successful.
+        shm_semlock_counters.state_this = THIS_AVAILABLE;
+        header = shm_semlock_counters.header;
+        counter = shm_semlock_counters.counters;
+        if (unlink) {
+            atexit(delete_shm_semlock_counters);
 
-            } else {
-                atexit(delete_shm_semlock_counters_without_unlink);
-            }
-            puts("Ok....");
         } else {
-            printf("The shared memory '%s' does not exist\n", shm_semlock_counters.name_shm);
+            atexit(delete_shm_semlock_counters_without_unlink);
         }
-        RELEASE_SHM_LOCK;
-        printf("Shm Unlock ok on %p\n", sem);
+        puts("Ok....");
     } else {
-        puts("No Semaphore opened !!");
+        printf("The shared memory '%s' does not exist\n", shm_semlock_counters.name_shm);
     }
+    RELEASE_SHM_LOCK;
+    printf("Shm Unlock ok on %p\n", sem);
+
 }
 
-static void _delete_shm_semlock_counters(int unlink) {
+void _delete_shm_semlock_counters(int unlink) {
 
     puts("clean up...");
     if (shm_semlock_counters.state_this == THIS_AVAILABLE) {
         if (shm_semlock_counters.counters) {
-            ACQUIRE_SHM_LOCK;
+            ACQUIRE_SHM_LOCK; 
             // unmmap
             munmap(shm_semlock_counters.counters,
                     shm_semlock_counters.header->size_shm);
@@ -134,7 +133,9 @@ static void _delete_shm_semlock_counters(int unlink) {
     }
     // close lock
     sem_close(shm_semlock_counters.handle_shm_lock);
-    sem_unlink(shm_semlock_counters.name_shm_lock);
+    if (unlink) {
+        sem_unlink(shm_semlock_counters.name_shm_lock);
+    }
 }
 
 

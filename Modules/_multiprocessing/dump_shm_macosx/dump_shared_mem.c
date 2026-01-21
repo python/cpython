@@ -6,10 +6,8 @@
 #include <semaphore.h> // sem_t
 typedef sem_t *SEM_HANDLE;
 
-#define MAX_SEMAPHORES_SHOW  32
-
 #include "../semaphore_macosx.h"
-#include "shared_mem.h"
+#include "./shared_mem.h"
 
 // Static datas for each process.
 CountersWorkaround shm_semlock_counters = {
@@ -24,6 +22,8 @@ CountersWorkaround shm_semlock_counters = {
 
 HeaderObject *header = NULL;
 CounterObject *counter =  NULL;
+
+#define MAX_SEMAPHORES_SHOW  32
 
 static char *show_counter(char *p, CounterObject *counter) {
     sprintf(p, "p:%p, n:%s, v:%d, t:%s", counter,
@@ -63,11 +63,11 @@ int main(int argc, char *argv[]) {
     HeaderObject save = {0};
     int unlink = 0;
     int force_open = 1;
-    int release_lock = 1;
+    int releases_lock = 1;
 
     puts("--------");
     printf("PID:%d, PPID:%d\n", getpid(), getppid());
-    connect_shm_semlock_counters(unlink, force_open, release_lock);
+    connect_shm_semlock_counters(unlink, force_open, releases_lock);
     puts("+++++++++");
     if (argc > 1) {
         sscanf(argv[1], "%d", &repeat);
@@ -86,8 +86,7 @@ int main(int argc, char *argv[]) {
     if (shm_semlock_counters.state_this == THIS_AVAILABLE) {
         memset(&save, '\0', sizeof(save));
         do {
-            //ACQUIRE_SHM_LOCK;
-            acquire_lock(shm_semlock_counters.handle_shm_lock);
+            ACQUIRE_SHM_LOCK;
             if (memcmp(&save, shm_semlock_counters.header, sizeof(HeaderObject)) ) {
                 time_t timestamp = time(NULL);
                 puts(ctime(&timestamp));
@@ -95,8 +94,7 @@ int main(int argc, char *argv[]) {
                 memcpy(&save, shm_semlock_counters.header, sizeof(HeaderObject));
                 puts("==========");
             }
-            //RELEASE_SHM_LOCK;
-            sem_post(shm_semlock_counters.handle_shm_lock);
+            RELEASE_SHM_LOCK;
             usleep(udelay);
         } while(repeat--);
     }
