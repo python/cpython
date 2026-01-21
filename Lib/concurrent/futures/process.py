@@ -99,17 +99,24 @@ def _python_exit():
     global _global_shutdown
     _global_shutdown = True
     items = list(_threads_wakeups.items())
-    for _, thread_wakeup in items:
-        # call not protected by ProcessPoolExecutor._shutdown_lock
-        thread_wakeup.wakeup()
+    for _, (shutdown_lock, thread_wakeup) in items:
+        with shutdown_lock:
+            thread_wakeup.wakeup()
     for t, _ in items:
         t.join()
+
 
 # Register for `_python_exit()` to be called just before joining all
 # non-daemon threads. This is used instead of `atexit.register()` for
 # compatibility with subinterpreters, which no longer support daemon threads.
 # See bpo-39812 for context.
 threading._register_atexit(_python_exit)
+
+
+# With the fork context, _thread_wakeups is propagated to children.
+# Clear it after fork to avoid some situation that can cause some
+# freeze when joining the workers.
+mp.util.register_after_fork(_threads_wakeups, lambda obj: obj.clear())
 
 # Controls how many more calls than processes will be queued in the call queue.
 # A smaller number will mean that processes spend more time idle waiting for
@@ -766,7 +773,8 @@ class ProcessPoolExecutor(_base.Executor):
             self._executor_manager_thread = _ExecutorManagerThread(self)
             self._executor_manager_thread.start()
             _threads_wakeups[self._executor_manager_thread] = \
-                self._executor_manager_thread_wakeup
+                (self._shutdown_lock,
+                 self._executor_manager_thread_wakeup)
 
     def _adjust_process_count(self):
         # gh-132969: avoid error when state is reset and executor is still running,
