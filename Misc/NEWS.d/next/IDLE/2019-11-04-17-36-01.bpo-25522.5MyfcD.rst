@@ -1,0 +1,2 @@
+IDLE now warns when a user attempts to save a file that shadows a module in
+the standard library.
