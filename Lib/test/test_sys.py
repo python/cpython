@@ -1565,8 +1565,6 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(sys.getsizeof(True, -1), size('') + self.longdigit)
 
     def test_objecttypes(self):
-        import _datetime
-
         # check all types defined in Objects/
         calcsize = struct.calcsize
         size = test.support.calcobjsize
@@ -1743,6 +1741,7 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
+        import _datetime
         check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
