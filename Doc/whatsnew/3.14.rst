@@ -1,6 +1,6 @@
 
 ****************************
-  What's new in Python 3.14
+  What's New in Python 3.14
 ****************************
 
 :Editors: Adam Turner and Hugo van Kemenade
@@ -54,7 +54,7 @@ For full details, see the :ref:`changelog <changelog>`.
    :pep:`745` -- Python 3.14 release schedule
 
 
-Summary -- Release highlights
+Summary -- Release Highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.14.
@@ -140,7 +140,7 @@ Release changes:
 * :ref:`Binary releases for Android are now provided <whatsnew314-build-changes>`
 
 
-New features
+New Features
 ============
 
 .. _whatsnew314-deferred-annotations:
@@ -814,7 +814,7 @@ free-threaded build and false for the GIL-enabled build.
 (Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
 
 
-Other language changes
+Other Language Changes
 ======================
 
 * All Windows code pages are now supported as 'cpXXX' codecs on Windows.
@@ -1006,7 +1006,7 @@ Default interactive shell
   (Contributed by Tomas Roun in :gh:`69605`.)
 
 
-New modules
+New Modules
 ===========
 
 * :mod:`annotationlib`:
@@ -1034,7 +1034,7 @@ New modules
   and Pablo Galindo Salgado in :gh:`132661`.)
 
 
-Improved modules
+Improved Modules
 ================
 
 argparse
@@ -2574,7 +2574,7 @@ urllib
 Deprecated
 ==========
 
-New deprecations
+New Deprecations
 ----------------
 
 * Passing a complex number as the *real* or *imag* argument in the
@@ -2727,7 +2727,7 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 
-CPython bytecode changes
+CPython Bytecode Changes
 ========================
 
 * Replaced the opcode :opcode:`!BINARY_SUBSCR` by the :opcode:`BINARY_OP`
@@ -2805,7 +2805,7 @@ Pseudo-instructions
   (Contributed by Mark Shannon in :gh:`122548`.)
 
 
-C API changes
+C API Changes
 =============
 
 .. _whatsnew314-capi-config:
