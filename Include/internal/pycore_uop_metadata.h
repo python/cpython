@@ -323,6 +323,16 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_SWAP] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_GUARD_IS_TRUE_POP] = HAS_EXIT_FLAG,
     [_GUARD_IS_FALSE_POP] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_SET_POP_4] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_SET_POP_5] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_SET_POP_6] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_SET_POP_7] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_SET_POP] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_UNSET_POP_4] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_UNSET_POP_5] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_UNSET_POP_6] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_UNSET_POP_7] = HAS_EXIT_FLAG,
+    [_GUARD_BIT_IS_UNSET_POP] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_GUARD_IS_NONE_POP] = HAS_EXIT_FLAG,
     [_GUARD_IS_NOT_NONE_POP] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_JUMP_TO_TOP] = 0,
@@ -373,6 +383,8 @@ const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS] = { 0, 5 },
     [_COPY] = { 1, 4 },
     [_SWAP] = { 2, 4 },
+    [_GUARD_BIT_IS_SET_POP] = { 4, 8 },
+    [_GUARD_BIT_IS_UNSET_POP] = { 4, 8 },
 };
 
 const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
@@ -2968,6 +2980,96 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 2, _GUARD_IS_FALSE_POP_r32 },
         },
     },
+    [_GUARD_BIT_IS_SET_POP_4] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_SET_POP_4_r00 },
+            { 0, 0, _GUARD_BIT_IS_SET_POP_4_r10 },
+            { 1, 1, _GUARD_BIT_IS_SET_POP_4_r21 },
+            { 2, 2, _GUARD_BIT_IS_SET_POP_4_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_SET_POP_5] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_SET_POP_5_r00 },
+            { 0, 0, _GUARD_BIT_IS_SET_POP_5_r10 },
+            { 1, 1, _GUARD_BIT_IS_SET_POP_5_r21 },
+            { 2, 2, _GUARD_BIT_IS_SET_POP_5_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_SET_POP_6] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_SET_POP_6_r00 },
+            { 0, 0, _GUARD_BIT_IS_SET_POP_6_r10 },
+            { 1, 1, _GUARD_BIT_IS_SET_POP_6_r21 },
+            { 2, 2, _GUARD_BIT_IS_SET_POP_6_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_SET_POP_7] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_SET_POP_7_r00 },
+            { 0, 0, _GUARD_BIT_IS_SET_POP_7_r10 },
+            { 1, 1, _GUARD_BIT_IS_SET_POP_7_r21 },
+            { 2, 2, _GUARD_BIT_IS_SET_POP_7_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_SET_POP] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_SET_POP_r00 },
+            { 0, 0, _GUARD_BIT_IS_SET_POP_r10 },
+            { 1, 1, _GUARD_BIT_IS_SET_POP_r21 },
+            { 2, 2, _GUARD_BIT_IS_SET_POP_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_UNSET_POP_4] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_4_r00 },
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_4_r10 },
+            { 1, 1, _GUARD_BIT_IS_UNSET_POP_4_r21 },
+            { 2, 2, _GUARD_BIT_IS_UNSET_POP_4_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_UNSET_POP_5] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_5_r00 },
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_5_r10 },
+            { 1, 1, _GUARD_BIT_IS_UNSET_POP_5_r21 },
+            { 2, 2, _GUARD_BIT_IS_UNSET_POP_5_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_UNSET_POP_6] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_6_r00 },
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_6_r10 },
+            { 1, 1, _GUARD_BIT_IS_UNSET_POP_6_r21 },
+            { 2, 2, _GUARD_BIT_IS_UNSET_POP_6_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_UNSET_POP_7] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_7_r00 },
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_7_r10 },
+            { 1, 1, _GUARD_BIT_IS_UNSET_POP_7_r21 },
+            { 2, 2, _GUARD_BIT_IS_UNSET_POP_7_r32 },
+        },
+    },
+    [_GUARD_BIT_IS_UNSET_POP] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_r00 },
+            { 0, 0, _GUARD_BIT_IS_UNSET_POP_r10 },
+            { 1, 1, _GUARD_BIT_IS_UNSET_POP_r21 },
+            { 2, 2, _GUARD_BIT_IS_UNSET_POP_r32 },
+        },
+    },
     [_GUARD_IS_NONE_POP] = {
         .best = { 0, 1, 2, 3 },
         .entries = {
@@ -3947,6 +4049,46 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_IS_FALSE_POP_r10] = _GUARD_IS_FALSE_POP,
     [_GUARD_IS_FALSE_POP_r21] = _GUARD_IS_FALSE_POP,
     [_GUARD_IS_FALSE_POP_r32] = _GUARD_IS_FALSE_POP,
+    [_GUARD_BIT_IS_SET_POP_4_r00] = _GUARD_BIT_IS_SET_POP_4,
+    [_GUARD_BIT_IS_SET_POP_4_r10] = _GUARD_BIT_IS_SET_POP_4,
+    [_GUARD_BIT_IS_SET_POP_4_r21] = _GUARD_BIT_IS_SET_POP_4,
+    [_GUARD_BIT_IS_SET_POP_4_r32] = _GUARD_BIT_IS_SET_POP_4,
+    [_GUARD_BIT_IS_SET_POP_5_r00] = _GUARD_BIT_IS_SET_POP_5,
+    [_GUARD_BIT_IS_SET_POP_5_r10] = _GUARD_BIT_IS_SET_POP_5,
+    [_GUARD_BIT_IS_SET_POP_5_r21] = _GUARD_BIT_IS_SET_POP_5,
+    [_GUARD_BIT_IS_SET_POP_5_r32] = _GUARD_BIT_IS_SET_POP_5,
+    [_GUARD_BIT_IS_SET_POP_6_r00] = _GUARD_BIT_IS_SET_POP_6,
+    [_GUARD_BIT_IS_SET_POP_6_r10] = _GUARD_BIT_IS_SET_POP_6,
+    [_GUARD_BIT_IS_SET_POP_6_r21] = _GUARD_BIT_IS_SET_POP_6,
+    [_GUARD_BIT_IS_SET_POP_6_r32] = _GUARD_BIT_IS_SET_POP_6,
+    [_GUARD_BIT_IS_SET_POP_7_r00] = _GUARD_BIT_IS_SET_POP_7,
+    [_GUARD_BIT_IS_SET_POP_7_r10] = _GUARD_BIT_IS_SET_POP_7,
+    [_GUARD_BIT_IS_SET_POP_7_r21] = _GUARD_BIT_IS_SET_POP_7,
+    [_GUARD_BIT_IS_SET_POP_7_r32] = _GUARD_BIT_IS_SET_POP_7,
+    [_GUARD_BIT_IS_SET_POP_r00] = _GUARD_BIT_IS_SET_POP,
+    [_GUARD_BIT_IS_SET_POP_r10] = _GUARD_BIT_IS_SET_POP,
+    [_GUARD_BIT_IS_SET_POP_r21] = _GUARD_BIT_IS_SET_POP,
+    [_GUARD_BIT_IS_SET_POP_r32] = _GUARD_BIT_IS_SET_POP,
+    [_GUARD_BIT_IS_UNSET_POP_4_r00] = _GUARD_BIT_IS_UNSET_POP_4,
+    [_GUARD_BIT_IS_UNSET_POP_4_r10] = _GUARD_BIT_IS_UNSET_POP_4,
+    [_GUARD_BIT_IS_UNSET_POP_4_r21] = _GUARD_BIT_IS_UNSET_POP_4,
+    [_GUARD_BIT_IS_UNSET_POP_4_r32] = _GUARD_BIT_IS_UNSET_POP_4,
+    [_GUARD_BIT_IS_UNSET_POP_5_r00] = _GUARD_BIT_IS_UNSET_POP_5,
+    [_GUARD_BIT_IS_UNSET_POP_5_r10] = _GUARD_BIT_IS_UNSET_POP_5,
+    [_GUARD_BIT_IS_UNSET_POP_5_r21] = _GUARD_BIT_IS_UNSET_POP_5,
+    [_GUARD_BIT_IS_UNSET_POP_5_r32] = _GUARD_BIT_IS_UNSET_POP_5,
+    [_GUARD_BIT_IS_UNSET_POP_6_r00] = _GUARD_BIT_IS_UNSET_POP_6,
+    [_GUARD_BIT_IS_UNSET_POP_6_r10] = _GUARD_BIT_IS_UNSET_POP_6,
+    [_GUARD_BIT_IS_UNSET_POP_6_r21] = _GUARD_BIT_IS_UNSET_POP_6,
+    [_GUARD_BIT_IS_UNSET_POP_6_r32] = _GUARD_BIT_IS_UNSET_POP_6,
+    [_GUARD_BIT_IS_UNSET_POP_7_r00] = _GUARD_BIT_IS_UNSET_POP_7,
+    [_GUARD_BIT_IS_UNSET_POP_7_r10] = _GUARD_BIT_IS_UNSET_POP_7,
+    [_GUARD_BIT_IS_UNSET_POP_7_r21] = _GUARD_BIT_IS_UNSET_POP_7,
+    [_GUARD_BIT_IS_UNSET_POP_7_r32] = _GUARD_BIT_IS_UNSET_POP_7,
+    [_GUARD_BIT_IS_UNSET_POP_r00] = _GUARD_BIT_IS_UNSET_POP,
+    [_GUARD_BIT_IS_UNSET_POP_r10] = _GUARD_BIT_IS_UNSET_POP,
+    [_GUARD_BIT_IS_UNSET_POP_r21] = _GUARD_BIT_IS_UNSET_POP,
+    [_GUARD_BIT_IS_UNSET_POP_r32] = _GUARD_BIT_IS_UNSET_POP,
     [_GUARD_IS_NONE_POP_r00] = _GUARD_IS_NONE_POP,
     [_GUARD_IS_NONE_POP_r10] = _GUARD_IS_NONE_POP,
     [_GUARD_IS_NONE_POP_r21] = _GUARD_IS_NONE_POP,
@@ -4398,6 +4540,56 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r12] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r12",
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r22] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r22",
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r33] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS_r33",
+    [_GUARD_BIT_IS_SET_POP] = "_GUARD_BIT_IS_SET_POP",
+    [_GUARD_BIT_IS_SET_POP_r00] = "_GUARD_BIT_IS_SET_POP_r00",
+    [_GUARD_BIT_IS_SET_POP_r10] = "_GUARD_BIT_IS_SET_POP_r10",
+    [_GUARD_BIT_IS_SET_POP_r21] = "_GUARD_BIT_IS_SET_POP_r21",
+    [_GUARD_BIT_IS_SET_POP_r32] = "_GUARD_BIT_IS_SET_POP_r32",
+    [_GUARD_BIT_IS_SET_POP_4] = "_GUARD_BIT_IS_SET_POP_4",
+    [_GUARD_BIT_IS_SET_POP_4_r00] = "_GUARD_BIT_IS_SET_POP_4_r00",
+    [_GUARD_BIT_IS_SET_POP_4_r10] = "_GUARD_BIT_IS_SET_POP_4_r10",
+    [_GUARD_BIT_IS_SET_POP_4_r21] = "_GUARD_BIT_IS_SET_POP_4_r21",
+    [_GUARD_BIT_IS_SET_POP_4_r32] = "_GUARD_BIT_IS_SET_POP_4_r32",
+    [_GUARD_BIT_IS_SET_POP_5] = "_GUARD_BIT_IS_SET_POP_5",
+    [_GUARD_BIT_IS_SET_POP_5_r00] = "_GUARD_BIT_IS_SET_POP_5_r00",
+    [_GUARD_BIT_IS_SET_POP_5_r10] = "_GUARD_BIT_IS_SET_POP_5_r10",
+    [_GUARD_BIT_IS_SET_POP_5_r21] = "_GUARD_BIT_IS_SET_POP_5_r21",
+    [_GUARD_BIT_IS_SET_POP_5_r32] = "_GUARD_BIT_IS_SET_POP_5_r32",
+    [_GUARD_BIT_IS_SET_POP_6] = "_GUARD_BIT_IS_SET_POP_6",
+    [_GUARD_BIT_IS_SET_POP_6_r00] = "_GUARD_BIT_IS_SET_POP_6_r00",
+    [_GUARD_BIT_IS_SET_POP_6_r10] = "_GUARD_BIT_IS_SET_POP_6_r10",
+    [_GUARD_BIT_IS_SET_POP_6_r21] = "_GUARD_BIT_IS_SET_POP_6_r21",
+    [_GUARD_BIT_IS_SET_POP_6_r32] = "_GUARD_BIT_IS_SET_POP_6_r32",
+    [_GUARD_BIT_IS_SET_POP_7] = "_GUARD_BIT_IS_SET_POP_7",
+    [_GUARD_BIT_IS_SET_POP_7_r00] = "_GUARD_BIT_IS_SET_POP_7_r00",
+    [_GUARD_BIT_IS_SET_POP_7_r10] = "_GUARD_BIT_IS_SET_POP_7_r10",
+    [_GUARD_BIT_IS_SET_POP_7_r21] = "_GUARD_BIT_IS_SET_POP_7_r21",
+    [_GUARD_BIT_IS_SET_POP_7_r32] = "_GUARD_BIT_IS_SET_POP_7_r32",
+    [_GUARD_BIT_IS_UNSET_POP] = "_GUARD_BIT_IS_UNSET_POP",
+    [_GUARD_BIT_IS_UNSET_POP_r00] = "_GUARD_BIT_IS_UNSET_POP_r00",
+    [_GUARD_BIT_IS_UNSET_POP_r10] = "_GUARD_BIT_IS_UNSET_POP_r10",
+    [_GUARD_BIT_IS_UNSET_POP_r21] = "_GUARD_BIT_IS_UNSET_POP_r21",
+    [_GUARD_BIT_IS_UNSET_POP_r32] = "_GUARD_BIT_IS_UNSET_POP_r32",
+    [_GUARD_BIT_IS_UNSET_POP_4] = "_GUARD_BIT_IS_UNSET_POP_4",
+    [_GUARD_BIT_IS_UNSET_POP_4_r00] = "_GUARD_BIT_IS_UNSET_POP_4_r00",
+    [_GUARD_BIT_IS_UNSET_POP_4_r10] = "_GUARD_BIT_IS_UNSET_POP_4_r10",
+    [_GUARD_BIT_IS_UNSET_POP_4_r21] = "_GUARD_BIT_IS_UNSET_POP_4_r21",
+    [_GUARD_BIT_IS_UNSET_POP_4_r32] = "_GUARD_BIT_IS_UNSET_POP_4_r32",
+    [_GUARD_BIT_IS_UNSET_POP_5] = "_GUARD_BIT_IS_UNSET_POP_5",
+    [_GUARD_BIT_IS_UNSET_POP_5_r00] = "_GUARD_BIT_IS_UNSET_POP_5_r00",
+    [_GUARD_BIT_IS_UNSET_POP_5_r10] = "_GUARD_BIT_IS_UNSET_POP_5_r10",
+    [_GUARD_BIT_IS_UNSET_POP_5_r21] = "_GUARD_BIT_IS_UNSET_POP_5_r21",
+    [_GUARD_BIT_IS_UNSET_POP_5_r32] = "_GUARD_BIT_IS_UNSET_POP_5_r32",
+    [_GUARD_BIT_IS_UNSET_POP_6] = "_GUARD_BIT_IS_UNSET_POP_6",
+    [_GUARD_BIT_IS_UNSET_POP_6_r00] = "_GUARD_BIT_IS_UNSET_POP_6_r00",
+    [_GUARD_BIT_IS_UNSET_POP_6_r10] = "_GUARD_BIT_IS_UNSET_POP_6_r10",
+    [_GUARD_BIT_IS_UNSET_POP_6_r21] = "_GUARD_BIT_IS_UNSET_POP_6_r21",
+    [_GUARD_BIT_IS_UNSET_POP_6_r32] = "_GUARD_BIT_IS_UNSET_POP_6_r32",
+    [_GUARD_BIT_IS_UNSET_POP_7] = "_GUARD_BIT_IS_UNSET_POP_7",
+    [_GUARD_BIT_IS_UNSET_POP_7_r00] = "_GUARD_BIT_IS_UNSET_POP_7_r00",
+    [_GUARD_BIT_IS_UNSET_POP_7_r10] = "_GUARD_BIT_IS_UNSET_POP_7_r10",
+    [_GUARD_BIT_IS_UNSET_POP_7_r21] = "_GUARD_BIT_IS_UNSET_POP_7_r21",
+    [_GUARD_BIT_IS_UNSET_POP_7_r32] = "_GUARD_BIT_IS_UNSET_POP_7_r32",
     [_GUARD_CALLABLE_ISINSTANCE] = "_GUARD_CALLABLE_ISINSTANCE",
     [_GUARD_CALLABLE_ISINSTANCE_r03] = "_GUARD_CALLABLE_ISINSTANCE_r03",
     [_GUARD_CALLABLE_ISINSTANCE_r13] = "_GUARD_CALLABLE_ISINSTANCE_r13",
@@ -5731,6 +5923,26 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_IS_TRUE_POP:
             return 1;
         case _GUARD_IS_FALSE_POP:
+            return 1;
+        case _GUARD_BIT_IS_SET_POP_4:
+            return 1;
+        case _GUARD_BIT_IS_SET_POP_5:
+            return 1;
+        case _GUARD_BIT_IS_SET_POP_6:
+            return 1;
+        case _GUARD_BIT_IS_SET_POP_7:
+            return 1;
+        case _GUARD_BIT_IS_SET_POP:
+            return 1;
+        case _GUARD_BIT_IS_UNSET_POP_4:
+            return 1;
+        case _GUARD_BIT_IS_UNSET_POP_5:
+            return 1;
+        case _GUARD_BIT_IS_UNSET_POP_6:
+            return 1;
+        case _GUARD_BIT_IS_UNSET_POP_7:
+            return 1;
+        case _GUARD_BIT_IS_UNSET_POP:
             return 1;
         case _GUARD_IS_NONE_POP:
             return 1;

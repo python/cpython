@@ -153,11 +153,25 @@ class TestExecutorInvalidation(unittest.TestCase):
         f(1, TIER2_THRESHOLD + 1, 1.0)
 
 
+def get_bool_guard_ops():
+    delta = id(True) ^ id(False)
+    for bit in range(4, 8):
+        if delta & (1 << bit):
+            if id(True) & (1 << bit):
+                return f"_GUARD_BIT_IS_UNSET_POP_{bit}", f"_GUARD_BIT_IS_SET_POP_{bit}"
+            else:
+                return f"_GUARD_BIT_IS_SET_POP_{bit}", f"_GUARD_BIT_IS_UNSET_POP_{bit}"
+    return "_GUARD_IS_FALSE_POP", "_GUARD_IS_TRUE_POP"
+
+
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @requires_jit_enabled
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
+
+    def setUp(self):
+        self.guard_is_false, self.guard_is_true = get_bool_guard_ops()
 
     def test_basic_loop(self):
         def testfunc(x):
@@ -250,7 +264,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn(self.guard_is_true, uops)
 
     def test_pop_jump_if_none(self):
         def testfunc(a):
@@ -292,7 +306,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertIn(self.guard_is_false, uops)
 
     def test_jump_backward(self):
         def testfunc(n):
@@ -444,7 +458,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertIn(self.guard_is_false, uops)
 
     def test_for_iter_tier_two(self):
         class MyIter:
@@ -480,6 +494,9 @@ class TestUops(unittest.TestCase):
 @requires_jit_enabled
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
+
+    def setUp(self):
+        self.guard_is_false, self.guard_is_true = get_bool_guard_ops()
 
     def _run_with_optimizer(self, testfunc, arg):
         res = testfunc(arg)
@@ -1501,8 +1518,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # Only one guard remains:
-        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 1)
-        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 0)
+        self.assertEqual(uops.count(self.guard_is_false), 1)
+        self.assertEqual(uops.count(self.guard_is_true), 0)
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
@@ -1532,8 +1549,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # Only one guard remains:
-        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 0)
-        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 1)
+        self.assertEqual(uops.count(self.guard_is_false), 0)
+        self.assertEqual(uops.count(self.guard_is_true), 1)
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
@@ -1564,8 +1581,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # Only one guard remains:
-        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 1)
-        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 0)
+        self.assertEqual(uops.count(self.guard_is_false), 1)
+        self.assertEqual(uops.count(self.guard_is_true), 0)
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
@@ -1597,8 +1614,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # Only one guard remains:
-        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 1)
-        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 0)
+        self.assertEqual(uops.count(self.guard_is_false), 1)
+        self.assertEqual(uops.count(self.guard_is_true), 0)
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
@@ -2196,7 +2213,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_STR_1", uops)
         self.assertNotIn("_TO_BOOL_STR", uops)
-        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn(self.guard_is_true, uops)
 
     def test_call_tuple_1(self):
         def testfunc(n):
@@ -2253,7 +2270,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_TUPLE_1", uops)
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn(self.guard_is_true, uops)
 
     def test_call_len(self):
         def testfunc(n):
@@ -2319,7 +2336,7 @@ class TestUopsOptimization(unittest.TestCase):
         # in this case
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn(self.guard_is_true, uops)
 
     def test_call_builtin_o(self):
         def testfunc(n):
@@ -2413,7 +2430,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn(self.guard_is_true, uops)
 
     def test_call_isinstance_guards_removed(self):
         def testfunc(n):
@@ -2478,7 +2495,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn(self.guard_is_true, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
@@ -2499,7 +2516,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertNotIn(self.guard_is_false, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
@@ -2520,7 +2537,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn(self.guard_is_true, uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
@@ -2544,7 +2561,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn(self.guard_is_true, uops)
 
     def test_call_isinstance_tuple_of_classes(self):
         def testfunc(n):
@@ -2563,7 +2580,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn(self.guard_is_true, uops)
 
     def test_call_isinstance_metaclass(self):
         class EvenNumberMeta(type):
@@ -2588,7 +2605,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertIn(self.guard_is_true, uops)
 
     def test_set_type_version_sets_type(self):
         class C:
