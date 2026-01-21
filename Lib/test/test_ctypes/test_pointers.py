@@ -475,8 +475,8 @@ class PointerTypeCacheTestCase(unittest.TestCase):
 
 class TestPointerStringProto(unittest.TestCase):
     def test_pointer_string_proto_argtypes_error(self):
-
-        BadType = ctypes.POINTER("BugTrigger")
+        with self.assertWarns(DeprecationWarning):
+            BadType = ctypes.POINTER("BugTrigger")
 
         if os.name == "nt":
             libc = ctypes.WinDLL("kernel32.dll")
