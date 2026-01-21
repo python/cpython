@@ -1531,8 +1531,8 @@ def get_ccontent_sequence(value, start):
     """
     return _get_ccontent_content(value, start)
 
-@_deprecate('get_ccontent_sequence')
-def get_qp_ctext(value):
+@_replaced_with('get_ccontent_sequence')
+def _deprecated_get_qp_ctext(value):
     r"""ctext = <printable ascii except \ ( )>
 
     This is not the RFC ctext, since we are handling nested comments in comment
