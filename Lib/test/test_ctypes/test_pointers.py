@@ -3,6 +3,7 @@ import ctypes
 import gc
 import sys
 import unittest
+import os
 from ctypes import (CDLL, CFUNCTYPE, Structure,
                     POINTER, pointer, _Pointer,
                     byref, sizeof,
@@ -471,6 +472,23 @@ class PointerTypeCacheTestCase(unittest.TestCase):
             self.assertIs(ptr._type_, C)
         ptr.set_type(c_int)
         self.assertIs(ptr._type_, c_int)
+
+class TestPointerStringProto(unittest.TestCase):
+    def test_pointer_string_proto_argtypes_error(self):
+
+        BadType = ctypes.POINTER("BugTrigger")
+
+        if os.name == "nt":
+            libc = ctypes.WinDLL("kernel32.dll")
+            func = libc.GetCurrentProcessId
+        else:
+            libc = ctypes.CDLL(None)
+            func = libc.getpid
+
+        func.argtypes = (BadType,)
+
+        with self.assertRaises(ctypes.ArgumentError):
+            func(ctypes.byref(ctypes.c_int(0)))
 
 
 if __name__ == '__main__':
