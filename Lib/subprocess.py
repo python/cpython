@@ -51,7 +51,6 @@ import sys
 import threading
 import warnings
 import contextlib
-import math
 import select
 from time import monotonic as _time
 import types
@@ -2121,7 +2120,7 @@ class Popen:
             try:
                 poller = select.poll()
                 poller.register(pidfd, select.POLLIN)
-                events = poller.poll(math.ceil(timeout * 1000))
+                events = poller.poll(timeout * 1000)
                 if not events:
                     raise TimeoutExpired(self.args, timeout)
                 return True
@@ -2147,7 +2146,7 @@ class Popen:
                 )
                 try:
                     events = kq.control([kev], 1, timeout)  # wait
-                except OSError as err:  # should never happen
+                except OSError:
                     return False
                 else:
                     if not events:

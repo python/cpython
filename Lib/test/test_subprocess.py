@@ -4114,7 +4114,7 @@ class FastWaitTestCase(BaseTestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 p.wait(timeout=0.0001)
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
-        assert m.called
+        self.assertTrue(m.called)
 
     @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
     def test_wait_pidfd_open_error(self):
@@ -4140,7 +4140,7 @@ class FastWaitTestCase(BaseTestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 p.wait(timeout=0.0001)
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
-        assert m.called
+        self.assertTrue(m.called)
 
     def assert_wait_race_condition(self, patch_target, real_func):
         # Call pidfd_open() / kqueue(), then terminate the process.
@@ -4160,7 +4160,7 @@ class FastWaitTestCase(BaseTestCase):
 
         with mock.patch(patch_target, side_effect=wrapper) as m:
             status = p.wait(timeout=support.SHORT_TIMEOUT)
-        assert m.called
+        self.assertTrue(m.called)
         self.assertEqual(status, 0)
 
     @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
