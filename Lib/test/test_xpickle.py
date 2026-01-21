@@ -230,11 +230,15 @@ def load_tests(loader, tests, pattern):
             test_class = make_test(py_version, CPicklePythonCompat)
             tests.addTest(loader.loadTestsFromTestCase(test_class))
 
-    major = sys.version_info.major
-    assert major == 3
-    add_tests((2, 7))
-    for minor in range(2, sys.version_info.minor):
-        add_tests((major, minor))
+    value = support.get_resource_value('xpickle')
+    if value is None:
+        major = sys.version_info.major
+        assert major == 3
+        add_tests((2, 7))
+        for minor in range(2, sys.version_info.minor):
+            add_tests((major, minor))
+    else:
+        add_tests(tuple(map(int, value.split('.'))))
     return tests
 
 

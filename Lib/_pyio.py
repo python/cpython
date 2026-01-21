@@ -949,23 +949,24 @@ class BytesIO(BufferedIOBase):
         return self.read(size)
 
     def write(self, b):
-        if self.closed:
-            raise ValueError("write to closed file")
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
         with memoryview(b) as view:
-            n = view.nbytes  # Size of any bytes-like object
-        if n == 0:
-            return 0
+            if self.closed:
+                raise ValueError("write to closed file")
 
-        with self._lock:
-            pos = self._pos
-            if pos > len(self._buffer):
-                # Pad buffer to pos with null bytes.
-                self._buffer.resize(pos)
-            self._buffer[pos:pos + n] = b
-            self._pos += n
-        return n
+            n = view.nbytes  # Size of any bytes-like object
+            if n == 0:
+                return 0
+
+            with self._lock:
+                pos = self._pos
+                if pos > len(self._buffer):
+                    # Pad buffer to pos with null bytes.
+                    self._buffer.resize(pos)
+                self._buffer[pos:pos + n] = view
+                self._pos += n
+            return n
 
     def seek(self, pos, whence=0):
         if self.closed:

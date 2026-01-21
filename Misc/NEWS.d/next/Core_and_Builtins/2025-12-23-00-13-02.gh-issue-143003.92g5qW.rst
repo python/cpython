@@ -1,2 +1,0 @@
-Fix an overflow of the shared empty buffer in :meth:`bytearray.extend` when
-``__length_hint__()`` returns 0 for non-empty iterator.

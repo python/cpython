@@ -1093,11 +1093,14 @@ Notes:
    still ``0``.
 
 (4)
-   The slice of *s* from *i* to *j* is defined as the sequence of items with index
-   *k* such that ``i <= k < j``.  If *i* or *j* is greater than ``len(s)``, use
-   ``len(s)``.  If *i* is omitted or ``None``, use ``0``.  If *j* is omitted or
-   ``None``, use ``len(s)``.  If *i* is greater than or equal to *j*, the slice is
-   empty.
+   The slice of *s* from *i* to *j* is defined as the sequence of items with
+   index *k* such that ``i <= k < j``.
+
+   * If *i* is omitted or ``None``, use ``0``.
+   * If *j* is omitted or ``None``, use ``len(s)``.
+   * If *i* or *j* is less than ``-len(s)``, use ``0``.
+   * If *i* or *j* is greater than ``len(s)``, use ``len(s)``.
+   * If *i* is greater than or equal to *j*, the slice is empty.
 
 (5)
    The slice of *s* from *i* to *j* with step *k* is defined as the sequence of
@@ -1437,6 +1440,109 @@ application).
          inspect, the list is undefined.  The C implementation of Python makes the
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
+
+.. admonition:: Thread safety
+
+   Reading a single element from a :class:`list` is
+   :term:`atomic <atomic operation>`:
+
+   .. code-block::
+      :class: green
+
+      lst[i]   # list.__getitem__
+
+   The following methods traverse the list and use :term:`atomic <atomic operation>`
+   reads of each item to perform their function. That means that they may
+   return results affected by concurrent modifications:
+
+   .. code-block::
+      :class: maybe
+
+      item in lst
+      lst.index(item)
+      lst.count(item)
+
+   All of the above methods/operations are also lock-free. They do not block
+   concurrent modifications. Other operations that hold a lock will not block
+   these from observing intermediate states.
+
+   All other operations from here on block using the per-object lock.
+
+   Writing a single item via ``lst[i] = x`` is safe to call from multiple
+   threads and will not corrupt the list.
+
+   The following operations return new objects and appear
+   :term:`atomic <atomic operation>` to other threads:
+
+   .. code-block::
+      :class: good
+
+      lst1 + lst2    # concatenates two lists into a new list
+      x * lst        # repeats lst x times into a new list
+      lst.copy()     # returns a shallow copy of the list
+
+   Methods that only operate on a single elements with no shifting required are
+   :term:`atomic <atomic operation>`:
+
+   .. code-block::
+      :class: good
+
+      lst.append(x)  # append to the end of the list, no shifting required
+      lst.pop()      # pop element from the end of the list, no shifting required
+
+   The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
+   Other threads cannot observe elements being removed.
+
+   The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
+   Other threads cannot observe intermediate states during sorting, but the
+   list appears empty for the duration of the sort.
+
+   The following operations may allow lock-free operations to observe
+   intermediate states since they modify multiple elements in place:
+
+   .. code-block::
+      :class: maybe
+
+      lst.insert(idx, item)  # shifts elements
+      lst.pop(idx)           # idx not at the end of the list, shifts elements
+      lst *= x               # copies elements in place
+
+   The :meth:`~list.remove` method may allow concurrent modifications since
+   element comparison may execute arbitrary Python code (via
+   :meth:`~object.__eq__`).
+
+   :meth:`~list.extend` is safe to call from multiple threads.  However, its
+   guarantees depend on the iterable passed to it. If it is a :class:`list`, a
+   :class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
+   :ref:`dictionary view object <dict-views>` (but not their subclasses), the
+   ``extend`` operation is safe from concurrent modifications to the iterable.
+   Otherwise, an iterator is created which can be concurrently modified by
+   another thread.  The same applies to inplace concatenation of a list with
+   other iterables when using ``lst += iterable``.
+
+   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
+   to call from multiple threads, but ``iterable`` is only locked when it is
+   also a :class:`list` (but not its subclasses).
+
+   Operations that involve multiple accesses, as well as iteration, are never
+   atomic. For example:
+
+   .. code-block::
+      :class: bad
+
+      # NOT atomic: read-modify-write
+      lst[i] = lst[i] + 1
+
+      # NOT atomic: check-then-act
+      if lst:
+          item = lst.pop()
+
+      # NOT thread-safe: iteration while modifying
+      for item in lst:
+          process(item)  # another thread may modify lst
+
+   Consider external synchronization when sharing :class:`list` instances
+   across threads.  See :ref:`freethreading-python-howto` for more information.
 
 
 .. _typesseq-tuple:
@@ -2369,7 +2475,9 @@ expression support in the :mod:`re` module).
 
    If the string starts with the *prefix* string, return
    ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
+   string:
+
+   .. doctest::
 
       >>> 'TestHook'.removeprefix('Test')
       'Hook'
@@ -2378,12 +2486,16 @@ expression support in the :mod:`re` module).
 
    .. versionadded:: 3.9
 
+   See also :meth:`removesuffix` and :meth:`startswith`.
+
 
 .. method:: str.removesuffix(suffix, /)
 
    If the string ends with the *suffix* string and that *suffix* is not empty,
    return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
+   original string:
+
+   .. doctest::
 
       >>> 'MiscTests'.removesuffix('Tests')
       'Misc'
@@ -2392,12 +2504,22 @@ expression support in the :mod:`re` module).
 
    .. versionadded:: 3.9
 
+   See also :meth:`removeprefix` and :meth:`endswith`.
+
 
 .. method:: str.replace(old, new, /, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
    *new*.  If *count* is given, only the first *count* occurrences are replaced.
    If *count* is not specified or ``-1``, then all occurrences are replaced.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.replace('spam', 'eggs')
+      'eggs, eggs, eggs'
+      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+      'eggs, spam, spam'
 
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
@@ -2408,6 +2530,16 @@ expression support in the :mod:`re` module).
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rfind('sp')
+      12
+      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+      6
+
+   See also :meth:`find` and :meth:`rindex`.
 
 
 .. method:: str.rindex(sub[, start[, end]])
@@ -2429,6 +2561,19 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    two empty strings, followed by the string itself.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.rpartition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".rpartition(' ')
+      ("Monty Python's Flying", ' ', 'Circus')
+      >>> 'Monty Python'.rpartition('-')
+      ('', '', 'Monty Python')
+
+   See also :meth:`partition`.
 
 
 .. method:: str.rsplit(sep=None, maxsplit=-1)
