@@ -620,10 +620,8 @@ class SymtableTest(unittest.TestCase):
                         return x"""
 
         top=symtable.symtable(code,"?","exec")
-        outer=top.get_children()[0]
-
+        outer = find_block(top, "outer")
         self.assertIn("x",outer.get_cells())
-
         self.assertTrue(outer.lookup("x").is_cell())
         self.assertFalse(outer.lookup("inner").is_cell())
 
