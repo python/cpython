@@ -480,20 +480,29 @@ dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
     int log2size = DK_LOG_SIZE(keys);
     Py_ssize_t ix;
 
-    if (log2size < 8) {
-        ix = LOAD_INDEX(keys, 8, i);
+    if (log2size <= 8) {
+        const uint8_t *indices = (const uint8_t*)(keys->dk_indices);
+        const uint8_t uix = indices[i] + DKIX_TOTAL_RESERVED_VALUES;
+        ix = uix;
     }
-    else if (log2size < 16) {
-        ix = LOAD_INDEX(keys, 16, i);
+    else if (log2size <= 16) {
+        const uint16_t *indices = (const uint16_t*)(keys->dk_indices);
+        const uint16_t uix = indices[i] + DKIX_TOTAL_RESERVED_VALUES;
+        ix = uix;
     }
 #if SIZEOF_VOID_P > 4
     else if (log2size >= 32) {
-        ix = LOAD_INDEX(keys, 64, i);
+        // 64 bits are enough even as a signed number, no need to fiddle.
+        const int64_t *indices = (const int64_t*)(keys->dk_indices);
+        ix = indices[i];
     }
 #endif
     else {
-        ix = LOAD_INDEX(keys, 32, i);
+        const uint32_t *indices = (const uint32_t*)(keys->dk_indices);
+        const uint32_t uix = indices[i] + DKIX_TOTAL_RESERVED_VALUES;
+        ix = uix;
     }
+    ix -= DKIX_TOTAL_RESERVED_VALUES;
     assert(ix >= DKIX_DUMMY);
     return ix;
 }
@@ -507,22 +516,26 @@ dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
     assert(ix >= DKIX_DUMMY);
     assert(keys->dk_version == 0);
 
-    if (log2size < 8) {
-        assert(ix <= 0x7f);
-        STORE_INDEX(keys, 8, i, ix);
+    if (log2size <= 8) {
+        uint8_t *indices = (uint8_t*)(keys->dk_indices);
+        assert(ix + DKIX_TOTAL_RESERVED_VALUES < 0xff);
+        indices[i] = (uint8_t)ix;
     }
-    else if (log2size < 16) {
-        assert(ix <= 0x7fff);
-        STORE_INDEX(keys, 16, i, ix);
+    else if (log2size <= 16) {
+        uint16_t *indices = (uint16_t*)(keys->dk_indices);
+        assert(ix + DKIX_TOTAL_RESERVED_VALUES < 0xffff);
+        indices[i] = (uint16_t)ix;
     }
 #if SIZEOF_VOID_P > 4
-    else if (log2size >= 32) {
-        STORE_INDEX(keys, 64, i, ix);
+    else if (log2size > 32) {
+        int64_t *indices = (int64_t*)(keys->dk_indices);
+        indices[i] = ix;
     }
 #endif
     else {
-        assert(ix <= 0x7fffffff);
-        STORE_INDEX(keys, 32, i, ix);
+        uint32_t *indices = (uint32_t*)(keys->dk_indices);
+        assert(ix + DKIX_TOTAL_RESERVED_VALUES < 0xffffffff);
+        indices[i] = (uint32_t)ix;
     }
 }
 
@@ -760,14 +773,14 @@ new_keys_object(uint8_t log2_size, bool unicode)
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
     usable = USABLE_FRACTION((size_t)1<<log2_size);
-    if (log2_size < 8) {
+    if (log2_size <= 8) {
         log2_bytes = log2_size;
     }
-    else if (log2_size < 16) {
+    else if (log2_size <= 16) {
         log2_bytes = log2_size + 1;
     }
 #if SIZEOF_VOID_P > 4
-    else if (log2_size >= 32) {
+    else if (log2_size > 32) {
         log2_bytes = log2_size + 3;
     }
 #endif
