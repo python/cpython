@@ -1,4 +1,4 @@
-from types import GenericAlias
+4from types import GenericAlias
 
 __all__ = ["TopologicalSorter", "CycleError"]
 
@@ -304,5 +304,5 @@ class TopologicalSorter:
 # version.
 #
 # Worst cases: O(V+E) for time, and O(V) for memory, where V is the
-# number of nodes and E the number edges (which may be quadratic in V!).
-# It requires care to ensure these bounds are met.
+# number of nodes and E the number of edges (which may be quadratic in
+# V!). It requires care to ensure these bounds are met.
