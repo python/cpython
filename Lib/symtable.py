@@ -172,7 +172,6 @@ class SymbolTable:
                 for st in self._table.children]
 
 
-
 def _get_scope(flags):  # like _PyST_GetScope()
     return (flags >> SCOPE_OFF) & SCOPE_MASK
 
