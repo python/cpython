@@ -1,0 +1,3 @@
+Improve support of non-ASCII identifiers in IDLE
+(autoexpanding, autocompletion, undo, etc).y
+
