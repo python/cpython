@@ -214,8 +214,8 @@ slightly different way:
 
 .. awaitablefunction:: set_trace_async(*, header=None, commands=None)
 
-   async version of :func:`set_trace`. This function should be used inside an
-   async function with :keyword:`await`.
+   Asynchronous version of :func:`set_trace`. This function should be used inside
+   a :term:`coroutine function` with :keyword:`await`. For instance:
 
    .. code-block:: python
 
