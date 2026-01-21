@@ -2221,7 +2221,7 @@ class GeneralModuleTests(unittest.TestCase):
                 lambda C: C.isupper() and C.startswith('AI_'),
                 source=_socket)
         enum._test_simple_enum(CheckedAddressInfo, socket.AddressInfo)
-    
+
     @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),"sendmsg not supported")
     def test_sendmsg_reentrant_ancillary_mutation(self):
 
