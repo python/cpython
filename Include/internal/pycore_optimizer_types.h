@@ -16,6 +16,10 @@ extern "C" {
 
 #define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * 5)
 
+// Maximum slots per object tracked symbolically
+#define MAX_SYMBOLIC_SLOTS_SIZE 16
+#define SLOTS_ARENA_SIZE (MAX_SYMBOLIC_SLOTS_SIZE * 100)
+
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (16)
 
@@ -77,8 +81,6 @@ typedef struct {
     uint8_t tag;
 } JitOptCompactInt;
 
-#define MAX_SYMBOLIC_SLOTS_SIZE 4
-
 typedef struct {
     uint16_t slot_index;
     uint16_t symbol;
@@ -88,7 +90,7 @@ typedef struct _jit_opt_slots {
     uint8_t tag;
     uint8_t num_slots;
     uint32_t type_version;
-    JitOptSlotMapping slots[MAX_SYMBOLIC_SLOTS_SIZE];
+    JitOptSlotMapping *slots;
 } JitOptSlotsObject;
 
 typedef union _jit_opt_symbol {
@@ -128,6 +130,12 @@ typedef struct ty_arena {
     JitOptSymbol arena[TY_ARENA_SIZE];
 } ty_arena;
 
+typedef struct slots_arena {
+    int slots_curr_number;
+    int slots_max_number;
+    JitOptSlotMapping arena[SLOTS_ARENA_SIZE];
+} slots_arena;
+
 typedef struct _JitOptContext {
     char done;
     char out_of_space;
@@ -141,6 +149,9 @@ typedef struct _JitOptContext {
 
     // Arena for the symbolic types.
     ty_arena t_arena;
+
+    // Arena for slots mappings.
+    slots_arena s_arena;
 
     JitOptRef *n_consumed;
     JitOptRef *limit;

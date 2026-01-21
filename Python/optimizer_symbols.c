@@ -114,7 +114,12 @@ _PyUOpSymPrint(JitOptRef ref)
             printf("<compact_int at %p>", (void *)sym);
             break;
         case JIT_SYM_SLOTS_TAG:
-            printf("<slots[%d] v%u at %p>", sym->slots.num_slots, sym->slots.type_version, (void *)sym);
+            PyTypeObject *slots_type = _PyType_LookupByVersion(sym->slots.type_version);
+            if (slots_type) {
+                printf("<%s slots[%d] v%u at %p>", slots_type->tp_name, sym->slots.num_slots, sym->slots.type_version, (void *)sym);
+            } else {
+                printf("<slots[%d] v%u at %p>", sym->slots.num_slots, sym->slots.type_version, (void *)sym);
+            }
             break;
         default:
             printf("<tag=%d at %p>", sym->tag, (void *)sym);
@@ -890,6 +895,7 @@ _Py_uop_sym_new_slots_object(JitOptContext *ctx, unsigned int type_version)
     }
     res->tag = JIT_SYM_SLOTS_TAG;
     res->slots.num_slots = 0;
+    res->slots.slots = NULL;
     res->slots.type_version = type_version;
     return PyJitRef_Wrap(res);
 }
@@ -899,8 +905,7 @@ _Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
 
-    if (sym->tag == JIT_SYM_SLOTS_TAG) {
-        // Linear search through the mapping array
+    if (sym->tag == JIT_SYM_SLOTS_TAG && sym->slots.slots != NULL) {
         for (int i = 0; i < sym->slots.num_slots; i++) {
             if (sym->slots.slots[i].slot_index == slot_index) {
                 return PyJitRef_Wrap(allocation_base(ctx) + sym->slots.slots[i].symbol);
@@ -908,8 +913,18 @@ _Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index
         }
     }
 
-    // Not found, return not_null
     return _Py_uop_sym_new_not_null(ctx);
+}
+
+static JitOptSlotMapping *
+slots_arena_alloc(JitOptContext *ctx)
+{
+    if (ctx->s_arena.slots_curr_number + MAX_SYMBOLIC_SLOTS_SIZE > ctx->s_arena.slots_max_number) {
+        return NULL;
+    }
+    JitOptSlotMapping *slots = &ctx->s_arena.arena[ctx->s_arena.slots_curr_number];
+    ctx->s_arena.slots_curr_number += MAX_SYMBOLIC_SLOTS_SIZE;
+    return slots;
 }
 
 void
@@ -922,31 +937,44 @@ _Py_uop_sym_slots_setattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index
         sym->tag = JIT_SYM_SLOTS_TAG;
         sym->slots.type_version = version;
         sym->slots.num_slots = 0;
+        sym->slots.slots = slots_arena_alloc(ctx);
+        if (sym->slots.slots == NULL) {
+            return;
+        }
     }
     else if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
         uint32_t version = sym->cls.version;
         sym->tag = JIT_SYM_SLOTS_TAG;
         sym->slots.type_version = version;
         sym->slots.num_slots = 0;
+        sym->slots.slots = slots_arena_alloc(ctx);
+        if (sym->slots.slots == NULL) {
+            return;
+        }
     }
     else if (sym->tag != JIT_SYM_SLOTS_TAG) {
         return;
     }
-
-    if (sym->slots.num_slots >= MAX_SYMBOLIC_SLOTS_SIZE) {
-        return;
+    // Check if have arena space allocated
+    if (sym->slots.slots == NULL) {
+        sym->slots.slots = slots_arena_alloc(ctx);
+        if (sym->slots.slots == NULL) {
+            return;
+        }
     }
-
+    // Check if the slot already exists
     for (int i = 0; i < sym->slots.num_slots; i++) {
         if (sym->slots.slots[i].slot_index == slot_index) {
             sym->slots.slots[i].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
             return;
         }
     }
-
-    int idx = sym->slots.num_slots++;
-    sym->slots.slots[idx].slot_index = slot_index;
-    sym->slots.slots[idx].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
+    // Add new mapping if there's space
+    if (sym->slots.num_slots < MAX_SYMBOLIC_SLOTS_SIZE) {
+        int idx = sym->slots.num_slots++;
+        sym->slots.slots[idx].slot_index = slot_index;
+        sym->slots.slots[idx].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
+    }
 }
 
 // 0 on success, -1 on error.
@@ -1037,6 +1065,10 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
     // Setup the arena for sym expressions.
     ctx->t_arena.ty_curr_number = 0;
     ctx->t_arena.ty_max_number = TY_ARENA_SIZE;
+
+    // Setup the arena for slot mappings.
+    ctx->s_arena.slots_curr_number = 0;
+    ctx->s_arena.slots_max_number = SLOTS_ARENA_SIZE;
 
     // Frame setup
     ctx->curr_frame_depth = 0;
