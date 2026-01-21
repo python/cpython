@@ -9,7 +9,11 @@ written by Barry Warsaw.
 # existence of which force quoting of the parameter value.
 import re
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
-_control_chars_re = re.compile(r'[\x00-\x1F\x7F]')
+# Disallowed characters for headers and values.
+# HTAB (\x09) is allowed in header values, but
+# not in header names. (RFC 9110 Section 5.5)
+_name_disallowed_re = re.compile(r'[\x00-\x1F\x7F]')
+_value_disallowed_re = re.compile(r'[\x00-\x08\x0A-\x1F\x7F]')
 
 def _formatparam(param, value=None, quote=1):
     """Convenience function to format and return a key=value pair.
@@ -36,13 +40,13 @@ class Headers:
         self._headers = headers
         if __debug__:
             for k, v in headers:
-                self._convert_string_type(k)
+                self._convert_string_type(k, name=True)
                 self._convert_string_type(v)
 
-    def _convert_string_type(self, value):
+    def _convert_string_type(self, value, *, name=False):
         """Convert/check value type."""
         if type(value) is str:
-            if _control_chars_re.search(value):
+            if (_name_disallowed_re if name else _value_disallowed_re).search(value):
                 raise ValueError("Control characters not allowed in headers")
             return value
         raise AssertionError("Header names/values must be"
@@ -56,14 +60,14 @@ class Headers:
         """Set the value of a header."""
         del self[name]
         self._headers.append(
-            (self._convert_string_type(name), self._convert_string_type(val)))
+            (self._convert_string_type(name, name=True), self._convert_string_type(val)))
 
     def __delitem__(self,name):
         """Delete all occurrences of a header, if present.
 
         Does *not* raise an exception if the header is missing.
         """
-        name = self._convert_string_type(name.lower())
+        name = self._convert_string_type(name.lower(), name=True)
         self._headers[:] = [kv for kv in self._headers if kv[0].lower() != name]
 
     def __getitem__(self,name):
@@ -90,13 +94,13 @@ class Headers:
         fields deleted and re-inserted are always appended to the header list.
         If no fields exist with the given name, returns an empty list.
         """
-        name = self._convert_string_type(name.lower())
+        name = self._convert_string_type(name.lower(), name=True)
         return [kv[1] for kv in self._headers if kv[0].lower()==name]
 
 
     def get(self,name,default=None):
         """Get the first header value for 'name', or return 'default'"""
-        name = self._convert_string_type(name.lower())
+        name = self._convert_string_type(name.lower(), name=True)
         for k,v in self._headers:
             if k.lower()==name:
                 return v
@@ -151,7 +155,7 @@ class Headers:
         and value 'value'."""
         result = self.get(name)
         if result is None:
-            self._headers.append((self._convert_string_type(name),
+            self._headers.append((self._convert_string_type(name, name=True),
                 self._convert_string_type(value)))
             return value
         else:
@@ -178,10 +182,10 @@ class Headers:
             _value = self._convert_string_type(_value)
             parts.append(_value)
         for k, v in _params.items():
-            k = self._convert_string_type(k)
+            k = self._convert_string_type(k, name=True)
             if v is None:
                 parts.append(k.replace('_', '-'))
             else:
                 v = self._convert_string_type(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        self._headers.append((self._convert_string_type(_name), "; ".join(parts)))
+        self._headers.append((self._convert_string_type(_name, name=True), "; ".join(parts)))
