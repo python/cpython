@@ -1,2 +1,0 @@
-Factor out tracing and optimization heuristics into a single object.
-Patch by Donghee Na.
