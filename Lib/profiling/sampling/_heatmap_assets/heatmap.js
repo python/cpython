@@ -15,33 +15,11 @@ let coldCodeHidden = false;
 // ============================================================================
 
 function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('heatmap-theme', next);
-
-    // Update theme button icon
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
-    }
+    toggleAndSaveTheme();
     applyLineColors();
 
     // Rebuild scroll marker with new theme colors
     buildScrollMarker();
-}
-
-function restoreUIState() {
-    // Restore theme
-    const savedTheme = localStorage.getItem('heatmap-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const btn = document.getElementById('theme-btn');
-        if (btn) {
-            btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
-        }
-    }
 }
 
 // ============================================================================
@@ -540,20 +518,23 @@ function toggleBytecode(button) {
     const lineId = lineDiv.id;
     const lineNum = lineId.replace('line-', '');
     const panel = document.getElementById(`bytecode-${lineNum}`);
+    const wrapper = document.getElementById(`bytecode-wrapper-${lineNum}`);
 
-    if (!panel) return;
+    if (!panel || !wrapper) return;
 
-    const isExpanded = panel.style.display !== 'none';
+    const isExpanded = panel.classList.contains('expanded');
 
     if (isExpanded) {
-        panel.style.display = 'none';
+        panel.classList.remove('expanded');
+        wrapper.classList.remove('expanded');
         button.classList.remove('expanded');
         button.innerHTML = '&#9654;';  // Right arrow
     } else {
         if (!panel.dataset.populated) {
             populateBytecodePanel(panel, button);
         }
-        panel.style.display = 'block';
+        panel.classList.add('expanded');
+        wrapper.classList.add('expanded');
         button.classList.add('expanded');
         button.innerHTML = '&#9660;';  // Down arrow
     }
@@ -596,10 +577,12 @@ function populateBytecodePanel(panel, button) {
         else if (specPct >= 33) specClass = 'medium';
 
         // Build specialization summary
+        const instruction_word = instructions.length === 1 ? 'instruction' : 'instructions';
+        const sample_word = totalSamples === 1 ? 'sample' : 'samples';
         let html = `<div class="bytecode-spec-summary ${specClass}">
             <span class="spec-pct">${specPct}%</span>
             <span class="spec-label">specialized</span>
-            <span class="spec-detail">(${specializedCount}/${instructions.length} instructions, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} samples)</span>
+            <span class="spec-detail">(${specializedCount}/${instructions.length} ${instruction_word}, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} ${sample_word})</span>
         </div>`;
 
         html += '<div class="bytecode-header">' +

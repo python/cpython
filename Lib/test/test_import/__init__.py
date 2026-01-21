@@ -1255,15 +1255,23 @@ os.does_not_exist
 
     def test_create_builtin(self):
         class Spec:
-            name = None
+            pass
         spec = Spec()
 
+        spec.name = "sys"
+        self.assertIs(_imp.create_builtin(spec), sys)
+
+        spec.name = None
         with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
             _imp.create_builtin(spec)
 
-        spec.name = ""
+        # gh-142029
+        spec.name = "nonexistent_lib"
+        with self.assertRaises(ModuleNotFoundError):
+            _imp.create_builtin(spec)
 
         # gh-142029
+        spec.name = ""
         with self.assertRaisesRegex(ValueError, 'name must not be empty'):
             _imp.create_builtin(spec)
 

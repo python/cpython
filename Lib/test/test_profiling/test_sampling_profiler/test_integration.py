@@ -17,22 +17,21 @@ try:
     import profiling.sampling.sample
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import CollapsedStackCollector
-    from profiling.sampling.sample import SampleProfiler
+    from profiling.sampling.sample import SampleProfiler, _is_process_running
+    from profiling.sampling.cli import main
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
     )
 
 from test.support import (
-    requires_subprocess,
+    requires_remote_subprocess_debugging,
     SHORT_TIMEOUT,
 )
 
 from .helpers import (
     test_subprocess,
     close_and_unlink,
-    skip_if_not_supported,
-    PROCESS_VM_READV_SUPPORTED,
 )
 from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
 
@@ -43,11 +42,7 @@ PROFILING_TIMEOUT = str(int(SHORT_TIMEOUT))
 PROFILING_DURATION_SEC = 2
 
 
-@skip_if_not_supported
-@unittest.skipIf(
-    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
-    "Test only runs on Linux with process_vm_readv support",
-)
+@requires_remote_subprocess_debugging()
 class TestRecursiveFunctionProfiling(unittest.TestCase):
     """Test profiling of recursive functions and complex call patterns."""
 
@@ -385,8 +380,7 @@ def do_work():
 '''
 
 
-@requires_subprocess()
-@skip_if_not_supported
+@requires_remote_subprocess_debugging()
 class TestSampleProfilerIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -410,16 +404,13 @@ do_work()
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=PROFILING_DURATION_SEC,
-                )
-                collector.print_stats(show_summary=False)
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=PROFILING_DURATION_SEC,
+            )
+            collector.print_stats(show_summary=False)
 
             output = captured_output.getvalue()
 
@@ -443,18 +434,13 @@ do_work()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=10000, skip_idle=False)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=PROFILING_DURATION_SEC,
-                    )
-                    collector.export(pstats_out.name)
-                except PermissionError:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=10000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=PROFILING_DURATION_SEC,
+                )
+                collector.export(pstats_out.name)
 
             # Verify file was created and contains valid data
             self.assertTrue(os.path.exists(pstats_out.name))
@@ -489,18 +475,13 @@ do_work()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = CollapsedStackCollector(1000, skip_idle=False)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=PROFILING_DURATION_SEC,
-                    )
-                    collector.export(collapsed_file.name)
-                except PermissionError:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = CollapsedStackCollector(1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=PROFILING_DURATION_SEC,
+                )
+                collector.export(collapsed_file.name)
 
             # Verify file was created and contains valid data
             self.assertTrue(os.path.exists(collapsed_file.name))
@@ -537,17 +518,14 @@ do_work()
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                collector = PstatsCollector(sample_interval_usec=10000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=PROFILING_DURATION_SEC,
-                    all_threads=True,
-                )
-                collector.print_stats(show_summary=False)
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            collector = PstatsCollector(sample_interval_usec=10000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=PROFILING_DURATION_SEC,
+                all_threads=True,
+            )
+            collector.print_stats(show_summary=False)
 
         # Just verify that sampling completed without error
         # We're not testing output format here
@@ -570,11 +548,7 @@ do_work()
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                from profiling.sampling.cli import main
-                main()
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            main()
 
             output = captured_output.getvalue()
 
@@ -611,11 +585,7 @@ do_work()
             # Change to temp directory so subprocess can find the module
             contextlib.chdir(tempdir.name),
         ):
-            try:
-                from profiling.sampling.cli import main
-                main()
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            main()
 
             output = captured_output.getvalue()
 
@@ -628,14 +598,10 @@ do_work()
         self.assertIn("slow_fibonacci", output)
 
 
-@skip_if_not_supported
-@unittest.skipIf(
-    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
-    "Test only runs on Linux with process_vm_readv support",
-)
+@requires_remote_subprocess_debugging()
 class TestSampleProfilerErrorHandling(unittest.TestCase):
     def test_invalid_pid(self):
-        with self.assertRaises((OSError, RuntimeError)):
+        with self.assertRaises((SystemExit, PermissionError)):
             collector = PstatsCollector(sample_interval_usec=100, skip_idle=False)
             profiling.sampling.sample.sample(-1, collector, duration_sec=1)
 
@@ -649,17 +615,12 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=50000, skip_idle=False)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=2,  # Longer than process lifetime
-                    )
-                except PermissionError:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=50000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2,  # Longer than process lifetime
+                )
 
                 output = captured_output.getvalue()
 
@@ -671,17 +632,12 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             "import time; time.sleep(1000)",
             wait_for_working=False
         ) as subproc:
-            try:
-                profiler = SampleProfiler(
-                    pid=subproc.process.pid,
-                    sample_interval_usec=1000,
-                    all_threads=False,
-                )
-            except PermissionError:
-                self.skipTest(
-                    "Insufficient permissions to read the stack trace"
-                )
-            self.assertTrue(profiler._is_process_running())
+            profiler = SampleProfiler(
+                pid=subproc.process.pid,
+                sample_interval_usec=1000,
+                all_threads=False,
+            )
+            self.assertTrue(_is_process_running(profiler.pid))
             self.assertIsNotNone(profiler.unwinder.get_stack_trace())
             subproc.process.kill()
             subproc.process.wait()
@@ -690,7 +646,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             )
 
         # Exit the context manager to ensure the process is terminated
-        self.assertFalse(profiler._is_process_running())
+        self.assertFalse(_is_process_running(profiler.pid))
         self.assertRaises(
             ProcessLookupError, profiler.unwinder.get_stack_trace
         )
@@ -702,14 +658,9 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             "import time; time.sleep(1000)",
             wait_for_working=False
         ) as subproc:
-            try:
-                unwinder = _remote_debugging.RemoteUnwinder(
-                    subproc.process.pid
-                )
-            except PermissionError:
-                self.skipTest(
-                    "Insufficient permissions to read the stack trace"
-                )
+            unwinder = _remote_debugging.RemoteUnwinder(
+                subproc.process.pid
+            )
             initial_trace = unwinder.get_stack_trace()
             self.assertIsNotNone(initial_trace)
 
@@ -744,8 +695,6 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         )
         output = result.stdout + result.stderr
 
-        if "PermissionError" in output:
-            self.skipTest("Insufficient permissions for remote profiling")
         self.assertNotIn("Script file not found", output)
         self.assertIn(
             "No such file or directory: 'nonexistent_file.txt'", output
@@ -764,8 +713,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 test_args = ["profiling.sampling.cli", "run", "--live"] + args + ["test.py"]
                 with mock.patch("sys.argv", test_args):
                     with self.assertRaises(SystemExit) as cm:
-                        from profiling.sampling.cli import main
-                        main()
+                                    main()
                     self.assertNotEqual(cm.exception.code, 0)
 
     def test_live_incompatible_with_multiple_pstats_options(self):
@@ -777,8 +725,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
         with mock.patch("sys.argv", test_args):
             with self.assertRaises(SystemExit) as cm:
-                from profiling.sampling.cli import main
-                main()
+                    main()
             self.assertNotEqual(cm.exception.code, 0)
 
     def test_live_incompatible_with_pstats_default_values(self):
@@ -788,8 +735,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
         with mock.patch("sys.argv", test_args):
             with self.assertRaises(SystemExit) as cm:
-                from profiling.sampling.cli import main
-                main()
+                    main()
             self.assertNotEqual(cm.exception.code, 0)
 
         # Test with --limit=15 (the default value)
@@ -797,17 +743,11 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
         with mock.patch("sys.argv", test_args):
             with self.assertRaises(SystemExit) as cm:
-                from profiling.sampling.cli import main
-                main()
+                    main()
             self.assertNotEqual(cm.exception.code, 0)
 
 
-@requires_subprocess()
-@skip_if_not_supported
-@unittest.skipIf(
-    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
-    "Test only runs on Linux with process_vm_readv support",
-)
+@requires_remote_subprocess_debugging()
 class TestAsyncAwareProfilingIntegration(unittest.TestCase):
     """Integration tests for async-aware profiling mode."""
 
@@ -849,16 +789,13 @@ asyncio.run(supervisor())
         Returns a dict mapping function names to their sample counts.
         """
         with test_subprocess(self.async_script, wait_for_working=True) as subproc:
-            try:
-                collector = CollapsedStackCollector(1000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=PROFILING_DURATION_SEC,
-                    async_aware=async_aware_mode,
-                )
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            collector = CollapsedStackCollector(1000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=PROFILING_DURATION_SEC,
+                async_aware=async_aware_mode,
+            )
 
         # Count samples per function from collapsed stacks
         # stack_counter keys are (call_tree, thread_id) where call_tree
@@ -921,3 +858,98 @@ asyncio.run(supervisor())
         self.assertGreater(cpu_percentage, 90.0,
             f"cpu_leaf should dominate samples in 'running' mode, "
             f"got {cpu_percentage:.1f}% ({cpu_leaf_samples}/{total})")
+
+
+def _generate_deep_generators_script(chain_depth=20, recurse_depth=150):
+    """Generate a script with deep nested generators for stress testing."""
+    lines = [
+        'import sys',
+        'sys.setrecursionlimit(5000)',
+        '',
+    ]
+    # Generate chain of yield-from functions
+    for i in range(chain_depth - 1):
+        lines.extend([
+            f'def deep_yield_chain_{i}(n):',
+            f'    yield ("L{i}", n)',
+            f'    yield from deep_yield_chain_{i + 1}(n)',
+            '',
+        ])
+    # Last chain function calls recursive_diver
+    lines.extend([
+        f'def deep_yield_chain_{chain_depth - 1}(n):',
+        f'    yield ("L{chain_depth - 1}", n)',
+        f'    yield from recursive_diver(n, {chain_depth})',
+        '',
+        'def recursive_diver(n, depth):',
+        '    yield (f"DIVE_{depth}", n)',
+        f'    if depth < {recurse_depth}:',
+        '        yield from recursive_diver(n, depth + 1)',
+        '    else:',
+        '        for i in range(5):',
+        '            yield (f"BOTTOM_{depth}", i)',
+        '',
+        'def oscillating_generator(iterations=1000):',
+        '    for i in range(iterations):',
+        '        yield ("OSCILLATE", i)',
+        '        yield from deep_yield_chain_0(i)',
+        '',
+        'def run_forever():',
+        '    while True:',
+        '        for _ in oscillating_generator(10):',
+        '            pass',
+        '',
+        '_test_sock.sendall(b"working")',
+        'run_forever()',
+    ])
+    return '\n'.join(lines)
+
+
+@requires_remote_subprocess_debugging()
+class TestDeepGeneratorFrameCache(unittest.TestCase):
+    """Test frame cache consistency with deep oscillating generator stacks."""
+
+    def test_all_stacks_share_same_base_frame(self):
+        """Verify all sampled stacks reach the entry point function.
+
+        When profiling deep generators that oscillate up and down the call
+        stack, every sample should include the entry point function
+        (run_forever) in its call chain. If the frame cache stores
+        incomplete stacks, some samples will be missing this base function,
+        causing broken flamegraphs.
+        """
+        script = _generate_deep_generators_script()
+        with test_subprocess(script, wait_for_working=True) as subproc:
+            collector = CollapsedStackCollector(sample_interval_usec=1, skip_idle=False)
+
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2,
+                )
+
+        samples_with_entry_point = 0
+        samples_without_entry_point = 0
+        total_samples = 0
+
+        for (call_tree, _thread_id), count in collector.stack_counter.items():
+            total_samples += count
+            if call_tree:
+                has_entry_point = call_tree and call_tree[0][2] == "<module>"
+                if has_entry_point:
+                    samples_with_entry_point += count
+                else:
+                    samples_without_entry_point += count
+
+        self.assertGreater(total_samples, 100,
+            f"Expected at least 100 samples, got {total_samples}")
+
+        self.assertEqual(samples_without_entry_point, 0,
+            f"Found {samples_without_entry_point}/{total_samples} samples "
+            f"missing the entry point function 'run_forever'. This indicates "
+            f"incomplete stacks are being returned, likely due to frame cache "
+            f"storing partial stack traces.")

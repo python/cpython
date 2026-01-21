@@ -76,6 +76,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
         PyErr_SetString(PyExc_RuntimeError, "TLBC array size exceeds maximum limit");
         return 0; // Invalid size
     }
+    assert(tlbc_size > 0 && tlbc_size <= MAX_TLBC_SIZE);
 
     // Allocate and read the entire TLBC array
     size_t array_data_size = tlbc_size * sizeof(void*);
@@ -122,42 +123,75 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
  * LINE TABLE PARSING FUNCTIONS
  * ============================================================================ */
 
-static int
-scan_varint(const uint8_t **ptr)
+// Inline helper for bounds-checked byte reading (no function call overhead)
+static inline int
+read_byte(const uint8_t **ptr, const uint8_t *end, uint8_t *out)
 {
-    unsigned int read = **ptr;
-    *ptr = *ptr + 1;
-    unsigned int val = read & 63;
-    unsigned int shift = 0;
-    while (read & 64) {
-        read = **ptr;
-        *ptr = *ptr + 1;
-        shift += 6;
-        val |= (read & 63) << shift;
+    if (*ptr >= end) {
+        return -1;
     }
-    return val;
+    *out = *(*ptr)++;
+    return 0;
 }
 
 static int
-scan_signed_varint(const uint8_t **ptr)
+scan_varint(const uint8_t **ptr, const uint8_t *end)
 {
-    unsigned int uval = scan_varint(ptr);
+    uint8_t read;
+    if (read_byte(ptr, end, &read) < 0) {
+        return -1;
+    }
+    unsigned int val = read & 63;
+    unsigned int shift = 0;
+    while (read & 64) {
+        if (read_byte(ptr, end, &read) < 0) {
+            return -1;
+        }
+        shift += 6;
+        // Prevent infinite loop on malformed data (shift overflow)
+        if (shift > 28) {
+            return -1;
+        }
+        val |= (read & 63) << shift;
+    }
+    return (int)val;
+}
+
+static int
+scan_signed_varint(const uint8_t **ptr, const uint8_t *end)
+{
+    int uval = scan_varint(ptr, end);
+    if (uval < 0) {
+        return INT_MIN;  // Error sentinel (valid signed varints won't be INT_MIN)
+    }
     if (uval & 1) {
-        return -(int)(uval >> 1);
+        return -(int)((unsigned int)uval >> 1);
     }
     else {
-        return uval >> 1;
+        return (int)((unsigned int)uval >> 1);
     }
 }
 
 bool
-parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, LocationInfo* info)
+parse_linetable(const uintptr_t addrq, const char* linetable, Py_ssize_t linetable_size,
+                int firstlineno, LocationInfo* info)
 {
+    // Reject garbage: zero or negative size
+    if (linetable_size <= 0) {
+        return false;
+    }
+
     const uint8_t* ptr = (const uint8_t*)(linetable);
+    const uint8_t* end = ptr + linetable_size;
     uintptr_t addr = 0;
     int computed_line = firstlineno;  // Running accumulator, separate from output
+    int val;  // Temporary for varint results
+    uint8_t byte;  // Temporary for byte reads
+    const size_t MAX_LINETABLE_ENTRIES = 65536;
+    size_t entry_count = 0;
 
-    while (*ptr != '\0') {
+    while (ptr < end && *ptr != '\0' && entry_count < MAX_LINETABLE_ENTRIES) {
+        entry_count++;
         uint8_t first_byte = *(ptr++);
         uint8_t code = (first_byte >> 3) & 15;
         size_t length = (first_byte & 7) + 1;
@@ -169,14 +203,34 @@ parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, L
                 info->column = info->end_column = -1;
                 break;
             case PY_CODE_LOCATION_INFO_LONG:
-                computed_line += scan_signed_varint(&ptr);
+                val = scan_signed_varint(&ptr, end);
+                if (val == INT_MIN) {
+                    return false;
+                }
+                computed_line += val;
                 info->lineno = computed_line;
-                info->end_lineno = computed_line + scan_varint(&ptr);
-                info->column = scan_varint(&ptr) - 1;
-                info->end_column = scan_varint(&ptr) - 1;
+                val = scan_varint(&ptr, end);
+                if (val < 0) {
+                    return false;
+                }
+                info->end_lineno = computed_line + val;
+                val = scan_varint(&ptr, end);
+                if (val < 0) {
+                    return false;
+                }
+                info->column = val - 1;
+                val = scan_varint(&ptr, end);
+                if (val < 0) {
+                    return false;
+                }
+                info->end_column = val - 1;
                 break;
             case PY_CODE_LOCATION_INFO_NO_COLUMNS:
-                computed_line += scan_signed_varint(&ptr);
+                val = scan_signed_varint(&ptr, end);
+                if (val == INT_MIN) {
+                    return false;
+                }
+                computed_line += val;
                 info->lineno = info->end_lineno = computed_line;
                 info->column = info->end_column = -1;
                 break;
@@ -185,17 +239,25 @@ parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, L
             case PY_CODE_LOCATION_INFO_ONE_LINE2:
                 computed_line += code - 10;
                 info->lineno = info->end_lineno = computed_line;
-                info->column = *(ptr++);
-                info->end_column = *(ptr++);
+                if (read_byte(&ptr, end, &byte) < 0) {
+                    return false;
+                }
+                info->column = byte;
+                if (read_byte(&ptr, end, &byte) < 0) {
+                    return false;
+                }
+                info->end_column = byte;
                 break;
             default: {
-                uint8_t second_byte = *(ptr++);
-                if ((second_byte & 128) != 0) {
+                if (read_byte(&ptr, end, &byte) < 0) {
+                    return false;
+                }
+                if ((byte & 128) != 0) {
                     return false;
                 }
                 info->lineno = info->end_lineno = computed_line;
-                info->column = code << 3 | (second_byte >> 4);
-                info->end_column = info->column + (second_byte & 15);
+                info->column = code << 3 | (byte >> 4);
+                info->end_column = info->column + (byte & 15);
                 break;
             }
         }
@@ -277,12 +339,9 @@ make_frame_info(RemoteUnwinderObject *unwinder, PyObject *file, PyObject *locati
 int
 parse_code_object(RemoteUnwinderObject *unwinder,
                   PyObject **result,
-                  uintptr_t address,
-                  uintptr_t instruction_pointer,
-                  uintptr_t *previous_frame,
-                  int32_t tlbc_index)
+                  const CodeObjectContext *ctx)
 {
-    void *key = (void *)address;
+    void *key = (void *)ctx->code_addr;
     CachedCodeMetadata *meta = NULL;
     PyObject *func = NULL;
     PyObject *file = NULL;
@@ -291,9 +350,9 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 #ifdef Py_GIL_DISABLED
     // In free threading builds, code object addresses might have the low bit set
     // as a flag, so we need to mask it off to get the real address
-    uintptr_t real_address = address & (~1);
+    uintptr_t real_address = ctx->code_addr & (~1);
 #else
-    uintptr_t real_address = address;
+    uintptr_t real_address = ctx->code_addr;
 #endif
 
     if (unwinder && unwinder->code_object_cache != NULL) {
@@ -360,12 +419,12 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         linetable = NULL;
     }
 
-    uintptr_t ip = instruction_pointer;
+    uintptr_t ip = ctx->instruction_pointer;
     ptrdiff_t addrq;
 
 #ifdef Py_GIL_DISABLED
     // Handle thread-local bytecode (TLBC) in free threading builds
-    if (tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
+    if (ctx->tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
         // No TLBC or no unwinder - use main bytecode directly
         addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
         goto done_tlbc;
@@ -383,10 +442,18 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
     }
 
-    if (tlbc_entry && tlbc_index < tlbc_entry->tlbc_array_size) {
+    // Validate tlbc_index and check TLBC cache
+    if (tlbc_entry) {
+        // Validate index bounds (also catches negative values since tlbc_index is signed)
+        if (ctx->tlbc_index < 0 || ctx->tlbc_index >= tlbc_entry->tlbc_array_size) {
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid tlbc_index (corrupted remote memory)");
+            goto error;
+        }
+        assert(tlbc_entry->tlbc_array_size > 0);
         // Use cached TLBC data
         uintptr_t *entries = (uintptr_t *)((char *)tlbc_entry->tlbc_array + sizeof(Py_ssize_t));
-        uintptr_t tlbc_bytecode_addr = entries[tlbc_index];
+        uintptr_t tlbc_bytecode_addr = entries[ctx->tlbc_index];
 
         if (tlbc_bytecode_addr != 0) {
             // Calculate offset from TLBC bytecode
@@ -395,19 +462,18 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         }
     }
 
-    // Fall back to main bytecode
+    // Fall back to main bytecode (no tlbc_entry or tlbc_bytecode_addr was 0)
     addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
 
 done_tlbc:
 #else
     // Non-free-threaded build, always use the main bytecode
-    (void)tlbc_index; // Suppress unused parameter warning
-    (void)unwinder;   // Suppress unused parameter warning
     addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
 #endif
     ;  // Empty statement to avoid C23 extension warning
     LocationInfo info = {0};
     bool ok = parse_linetable(addrq, PyBytes_AS_STRING(meta->linetable),
+                              PyBytes_GET_SIZE(meta->linetable),
                               meta->first_lineno, &info);
     if (!ok) {
         info.lineno = -1;

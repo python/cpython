@@ -1,3 +1,0 @@
-Remove the *debug_override* parameter from
-:func:`importlib.util.cache_from_source` which has been deprecated since
-Python 3.5.
