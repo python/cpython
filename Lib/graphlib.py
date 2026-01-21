@@ -256,6 +256,7 @@ class TopologicalSorter:
 
     __class_getitem__ = classmethod(GenericAlias)
 
+
 # On Finding Cycles
 # -----------------
 # There is a (at least one) total order if and only if the graph is
