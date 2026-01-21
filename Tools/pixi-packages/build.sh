@@ -23,6 +23,7 @@ case ${MACOSX_DEPLOYMENT_TARGET:-10.12} in
     10.12|10.13|10.14|10.15|10.16)
         ;;
     10.*)
+        export CPPFLAGS=${CPPFLAGS/-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}/-mmacosx-version-min=10.12}
         export MACOSX_DEPLOYMENT_TARGET=10.12
         ;;
     *)
