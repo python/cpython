@@ -95,6 +95,10 @@ the uop interpreter at `tier2_dispatch`, the executor runs the function
 that `jit_code` points to. This function returns the instruction pointer
 of the next Tier 1 instruction that needs to execute.
 
+The JIT uses platform-specific calling conventions and optimizations:
+- On x86-64: Uses the `preserve_none` calling convention for efficiency
+- On ARM64: Leverages guaranteed tail calls (`musttail`) for continuation-passing style
+
 The generation of the jitted functions uses the copy-and-patch technique
 which is described in
 [Haoran Xu's article](https://sillycross.github.io/2023/05/12/2023-05-12/).
@@ -123,8 +127,118 @@ their implementations do not require changes related to the stencils,
 because everything is automatically generated from
 [`Python/bytecodes.c`](../Python/bytecodes.c) at build time.
 
+## Architecture-Specific Implementation
+
+The JIT compiler supports multiple architectures with platform-specific optimizations:
+
+### Supported Platforms
+
+The JIT currently supports the following target triples:
+- **ARM64/AArch64**: `aarch64-apple-darwin`, `aarch64-pc-windows-msvc`, `aarch64-unknown-linux-gnu`
+- **x86-64**: `x86_64-apple-darwin`, `x86_64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`
+- **x86**: `i686-pc-windows-msvc`
+
+### ARM AArch64 Implementation Details
+
+The ARM64 JIT implementation uses sophisticated instruction patching and relocation techniques:
+
+#### Instruction Encoding and Patching
+
+The JIT manipulates several AArch64 instruction formats (defined in [`Python/jit.c`](../Python/jit.c)):
+- **ADRP** (Address of Page): Used for 21-bit page-relative addressing
+- **LDR/STR**: Load/store with 12-bit immediate offsets
+- **MOV**: Move with 16-bit immediate values
+- **Branch instructions**: 28-bit relative branches
+
+#### Relocation Types
+
+The ARM64 JIT handles multiple relocation types:
+
+1. **12-bit relocations** (`patch_aarch64_12`): Low 12 bits of addresses, used with LDR/STR and ADD/SUB
+2. **16-bit relocations** (`patch_aarch64_16a/b/c/d`): Four-part 64-bit address construction using MOV instructions
+3. **21-bit page relocations** (`patch_aarch64_21r`): Page count between current and target pages
+4. **26-bit branch relocations** (`patch_aarch64_26r`): Direct branch instructions with ±128MB range
+5. **Relaxable relocations** (`patch_aarch64_12x`, `patch_aarch64_21rx`): Can be optimized to immediate values
+
+#### Trampolines
+
+For branches beyond the 128MB range, the JIT generates trampolines:
+```
+ldr x8, [pc + 8]  ; Load 64-bit address
+br  x8            ; Branch to address
+.quad target_addr ; 64-bit target address
+```
+Each trampoline is 16 bytes on ARM64 (vs. no trampolines needed on x86).
+
+#### GOT Load Relaxation
+
+The JIT optimizes Global Offset Table (GOT) loads when possible:
+- Pairs of ADRP + LDR instructions can be relaxed to ADRP + ADD for known addresses
+- This optimization (`patch_aarch64_33rx`) reduces memory accesses
+
+### Build Process and Dependencies
+
+#### LLVM Requirement
+
+The JIT requires LLVM 19+ for compilation because:
+- **Clang** is the only C compiler supporting guaranteed tail calls (`musttail`)
+- **llvm-readobj** is used for extracting object file information
+- **llvm-objdump** provides disassembly for debugging
+
+#### Stencil Generation
+
+The build process ([`Tools/jit/build.py`](../Tools/jit/build.py)):
+1. Compiles each micro-op implementation to object code using platform-specific flags
+2. Extracts relocations and symbol information using LLVM tools
+3. Generates stencils (code templates) in `jit_stencils.h`
+4. Platform selection happens at compile time based on target conditions
+
+Platform-specific compilation flags:
+- **aarch64-linux**: `-fpic -mno-outline-atomics` (position-independent code, avoid atomic intrinsics)
+- **aarch64-darwin**: Optimizer uses `OptimizerAArch64` class
+- **aarch64-windows**: `-fms-runtime-lib=dll -fplt` (DLL runtime, PLT usage)
+
+### Memory Management
+
+The JIT uses platform-specific memory allocation:
+
+#### Memory Allocation
+- **Unix/Linux**: Uses `mmap()` with `MAP_ANONYMOUS | MAP_PRIVATE`
+- **Windows**: Uses `VirtualAlloc()` with `MEM_COMMIT | MEM_RESERVE`
+- **Page size**: Determined via `sysconf(_SC_PAGESIZE)` or `GetSystemInfo()`
+
+#### Memory Layout
+```
+[Executable Code] [Trampolines] [Padding] [Data Section] [Page Padding]
+```
+- Code section: Contains emitted machine code
+- Trampoline section: Platform-specific size (16 bytes per trampoline on ARM64)
+- Data alignment: 8 bytes on ARM64, 1 byte on x86
+- Total allocation: Rounded up to page size
+
+#### Protection and Execution
+After code emission, memory protection is set:
+- Unix: `mprotect()` with `PROT_EXEC | PROT_READ`
+- Windows: `VirtualProtect()` with `PAGE_EXECUTE_READ`
+
+### Optimization Passes
+
+The JIT includes architecture-specific optimizers ([`Tools/jit/_optimizers.py`](../Tools/jit/_optimizers.py)):
+
+#### OptimizerAArch64
+- Recognizes ARM64 branch pattern: `b <target>`
+- No branch inversion (unlike x86)
+- Focuses on trampoline optimization
+
+#### OptimizerX86
+- Handles extensive branch inversion (JE ↔ JNE, etc.)
+- Recognizes `jmp` and `ret` instructions
+- More complex control flow optimization
+
 See Also:
 
 * [Copy-and-Patch Compilation: A fast compilation algorithm for high-level languages and bytecode](https://arxiv.org/abs/2011.13127)
 
 * [PyCon 2024: Building a JIT compiler for CPython](https://www.youtube.com/watch?v=kMO3Ju0QCDo)
+
+* [ARM64 Instruction Set Reference](https://developer.arm.com/documentation/ddi0602/latest/)
