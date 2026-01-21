@@ -913,29 +913,6 @@ def requireSocket(*args):
 
 class GeneralModuleTests(unittest.TestCase):
 
-    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),"sendmsg not supported")
-    def test_sendmsg_reentrant_ancillary_mutation(self):
-
-        class Mut:
-            def __index__(self):
-                seq.clear()
-                return 0
-
-        seq = [
-            (socket.SOL_SOCKET, Mut(), b'x'),
-            (socket.SOL_SOCKET, 0, b'x'),
-        ]
-
-        left, right = socket.socketpair()
-        self.addCleanup(left.close)
-        self.addCleanup(right.close)
-        self.assertRaises(
-            (TypeError, OSError),
-            left.sendmsg,
-            [b'x'],
-            seq,
-        )
-
     @unittest.skipUnless(_socket is not None, 'need _socket module')
     def test_socket_type(self):
         self.assertTrue(gc.is_tracked(_socket.socket))
@@ -2244,6 +2221,29 @@ class GeneralModuleTests(unittest.TestCase):
                 lambda C: C.isupper() and C.startswith('AI_'),
                 source=_socket)
         enum._test_simple_enum(CheckedAddressInfo, socket.AddressInfo)
+    
+    @unittest.skipUnless(hasattr(socket.socket, "sendmsg"),"sendmsg not supported")
+    def test_sendmsg_reentrant_ancillary_mutation(self):
+
+        class Mut:
+            def __index__(self):
+                seq.clear()
+                return 0
+
+        seq = [
+            (socket.SOL_SOCKET, Mut(), b'x'),
+            (socket.SOL_SOCKET, 0, b'x'),
+        ]
+
+        left, right = socket.socketpair()
+        self.addCleanup(left.close)
+        self.addCleanup(right.close)
+        self.assertRaises(
+            (TypeError, OSError),
+            left.sendmsg,
+            [b'x'],
+            seq,
+        )
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
