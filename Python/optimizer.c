@@ -1514,11 +1514,7 @@ uop_optimize(
     _PyBloomFilter *dependencies = &_tstate->jit_tracer_state->prev_state.dependencies;
     _PyUOpInstruction *buffer = _tstate->jit_tracer_state->code_buffer;
     OPT_STAT_INC(attempts);
-    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    bool is_noopt = true;
-    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
-        is_noopt = false;
-    }
+    bool is_noopt = !tstate->interp->opt_config.uops_optimize_enabled;
     int curr_stackentries = _tstate->jit_tracer_state->initial_state.stack_depth;
     int length = _tstate->jit_tracer_state->prev_state.code_curr_size;
     if (length <= CODE_SIZE_NO_PROGRESS) {
