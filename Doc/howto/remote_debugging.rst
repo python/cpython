@@ -13,44 +13,90 @@ Most platforms require elevated privileges to attach to another Python process.
 Permission requirements
 =======================
 
-Attaching to a running Python process for remote debugging requires elevated
-privileges on most platforms. The specific requirements and troubleshooting
+Attaching to a running Python process for remote debugging requires special
+configuration on most platforms. The specific requirements and troubleshooting
 steps depend on your operating system:
 
 .. rubric:: Linux
 
-The tracer process must have the ``CAP_SYS_PTRACE`` capability or equivalent
-privileges. You can only trace processes you own and can signal. Tracing may
-fail if the process is already being traced, or if it is running with
-set-user-ID or set-group-ID. Security modules like Yama may further restrict
-tracing.
+In general, you can debug your own processes, but there are several common
+configurations that may disable this. Some Linux distributions enable **ptrace
+restrictions**, aka "Yama," as a form of system hardening. Recent versions of
+the ``setpriv`` command (util-linux 2.41, released June 2025) let you loosen
+ptrace restrictions on a per-process basis:
 
-To temporarily relax ptrace restrictions (until reboot), run:
+  ``setpriv --ptracer any python3``
+
+(This is configured on the process *being debugged*.) You can also turn off
+ptrace restrictions for all processes until reboot with:
 
   ``echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope``
+
+This can also be configured persistently, usually in ``/etc/sysctl.d``.
 
 .. note::
 
    Disabling ``ptrace_scope`` reduces system hardening and should only be done
-   in trusted environments.
+   in low-security environments.
 
-If running inside a container, use ``--cap-add=SYS_PTRACE`` or
-``--privileged``, and run as root if needed.
+It is also possible that the ``ptrace`` system call is disabled because of a
+security filter. In particular, this was common with older versions of some
+container software. Docker 19.03 or newer (released 2019) and containerd 1.6.7
+or newer (released 2022) will automatically allow usage of the ``ptrace``
+system call inside containers, when running on Linux kernel 4.8 or higher. If
+you cannot upgrade to these versions, you can create your container with an
+option like ``--security-opt seccomp=unconfined`` to disable the system call
+security filter for that container.
 
-Try re-running the command with elevated privileges:
+If you need to trace a process that you *do not* own, you will need superuser
+access or equivalent. This also applies to processes that have changed their
+security credentials, e.g., set-user-ID or set-group-ID processes (though this
+is unusual for Python). Try running the debugging command with ``sudo -E``.
 
-  ``sudo -E !!``
+.. note::
 
+    The ``CAP_SYS_PTRACE`` capability is equivalent to superuser access, in
+    that it allows debugging *any* process, not just your own. You may see
+    advice on the internet suggesting using it to work around ptrace
+    restrictions or system call filters. This may work in practice, as would
+    ``sudo``, but this gives the debugging process much more access than it
+    needs and should only be done in low-security environments.
+
+Finally, note that a process can only have one tracer at a time. If you are
+have already attached to Python process under ``strace``, ``gdb``, etc., you
+won't be able to simultaneously use remote debugging. (Superuser access cannot
+get around this restriction.)
 
 .. rubric:: macOS
 
-To attach to another process, you typically need to run your debugging tool
-with elevated privileges. This can be done by using ``sudo`` or running as
-root.
+By default, macOS disables the ability to debug other processes.
 
-Even when attaching to processes you own, macOS may block debugging unless
-the debugger is run with root privileges due to system security restrictions.
+You can modify your Python binary to opt in to being debugged by giving it an
+**ad-hoc code signature** with an **entitlement** enabling it to be debugged.
+(An ad-hoc "signature" is just a configuration without any actual cryptographic
+signature or a need for a certificate or anything else such as an Apple
+developer program membership.)
 
+The following commands will create a file ``get-task-allow.plist`` with the
+necessary entitlement and add it to the Python binary:
+
+.. code-block:: sh
+
+    echo '{"com.apple.security.get-task-allow": true}' | plutil -convert xml1 -o get-task-allow.plist -
+    codesign --sign - --entitlements get-task-allow.plist path/to/bin/python3
+
+where ``path/to/bin/python3`` is the path to your Python binary, which you can
+find by e.g. running ``which python3`` or evaluating ``sys.base_executable`` at
+the Python REPL. (These instructions are for a non-framework build of Python.
+Framework builds may need to be configured differently.)
+
+You should then be able to debug your own Python processes started with that
+binary.
+
+Alternatively, much as with Linux, processes with superuser privileges e.g. ``sudo``
+are not subject to this check and can debug any user's process on the system
+(though there are additional checks on specific binaries, such as OS-provided
+commands, due to System Integrity Protection).
 
 .. rubric:: Windows
 
