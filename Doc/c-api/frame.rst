@@ -256,7 +256,7 @@ Unless using :pep:`523`, you will not need this.
    debugging and tracing.
 
    Tools like debuggers and profilers can use this to identify the type of execution
-   context associated with a frame (e.g. to filter out internal frames).
+   context associated with a frame (For example: to filter out internal frames).
    The entries are indexed by the following constants:
 
    .. list-table::
@@ -266,11 +266,9 @@ Unless using :pep:`523`, you will not need this.
       * - Constant
         - Description
       * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
-        - The frame is internal (e.g. inlined) and should be skipped by tools.
+        - The frame is internal (For example: inlined) and should be skipped by tools.
       * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
         - The frame corresponds to a standard Python function.
-
-   .. versionadded:: 3.13
 
    Example usage:
 
@@ -282,6 +280,8 @@ Unless using :pep:`523`, you will not need this.
           // Tools should ignore it.
           continue;
       }
+
+   .. versionadded:: 3.13
 
 
 .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
