@@ -61,13 +61,13 @@ uop_buffer_last(_PyJitUopBuffer *trace)
 static inline int
 uop_buffer_length(_PyJitUopBuffer *trace)
 {
-    return trace->next - trace->start;
+    return (int)(trace->next - trace->start);
 }
 
 static inline int
 uop_buffer_remaining_space(_PyJitUopBuffer *trace)
 {
-    return trace->end - trace->next;
+    return (int)(trace->end - trace->next);
 }
 
 typedef struct _PyJitTracerInitialState {
