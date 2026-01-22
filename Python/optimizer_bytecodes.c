@@ -514,7 +514,22 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        /* Comparison oparg masks */
+        const int COMPARE_LT_MASK = 2;
+        const int COMPARE_GT_MASK = 4;
+        const int COMPARE_EQ_MASK = 8;
+
+        int cmp_mask = oparg & (COMPARE_LT_MASK | COMPARE_GT_MASK | COMPARE_EQ_MASK);
+
+        if (cmp_mask == COMPARE_EQ_MASK) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_EQ);
+        }
+        else if (cmp_mask == (COMPARE_LT_MASK | COMPARE_GT_MASK)) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_NE);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);

@@ -875,9 +875,11 @@ _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool br
 
     bool narrow = false;
     switch(pred.kind) {
+        case JIT_PRED_EQ:
         case JIT_PRED_IS:
             narrow = branch_is_true;
             break;
+        case JIT_PRED_NE:
         case JIT_PRED_IS_NOT:
             narrow = !branch_is_true;
             break;
@@ -1300,7 +1302,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (None)");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == Py_None, "predicate narrowing did not narrow subject to None");
 
-    // Test narrowing subject to numerical constant
+    // Test narrowing subject to numerical constant from is comparison
     subject = _Py_uop_sym_new_unknown(ctx);
     PyObject *one_obj = PyLong_FromLong(1);
     JitOptRef const_one = _Py_uop_sym_new_const(ctx, one_obj);
@@ -1314,6 +1316,56 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (1)");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == one_obj, "predicate narrowing did not narrow subject to 1");
+    
+    // Test narrowing subject to numerical constant from EQ predicate
+    subject = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_one)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_EQ);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (1)");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == one_obj, "predicate narrowing did not narrow subject to 1");
+
+    // Resolving EQ predicate to False should not narrow subject
+    subject = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(subject)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_EQ);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, false);
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, subject), "predicate narrowing incorrectly narrowed subject (inverted/true)");
+
+    // Test narrowing subject to numerical constant from NE predicate
+    subject = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_one)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_NE);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, false);
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (1)");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == one_obj, "predicate narrowing did not narrow subject to 1");
+
+    // Resolving NE predicate to true should not narrow subject
+    subject = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(subject)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_NE);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, subject), "predicate narrowing incorrectly narrowed subject (inverted/true)");
 
     val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
     if (val_big == NULL) {
