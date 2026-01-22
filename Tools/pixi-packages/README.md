@@ -39,9 +39,6 @@ Each package definition is contained in a subdirectory, but they share the build
 - Using a single `pixi.toml` and `recipe.yaml` for all package variants is blocked on
   [pixi-build-backends#532](https://github.com/prefix-dev/pixi-build-backends/pull/532)
   and [pixi#5248](https://github.com/prefix-dev/pixi/issues/5248)
-- A workaround can be removed from the build script once
-  [rattler-build#2012](https://github.com/prefix-dev/rattler-build/issues/2012) is
-  resolved
 
 ## Troubleshooting
 
