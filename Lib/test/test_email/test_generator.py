@@ -313,7 +313,7 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
         self.assertEqual(s.getvalue(), self.typ(expected))
 
     def test_verify_generated_headers(self):
-        """gh-121650: by default the generator prevents header injection"""
+        # gh-121650: by default the generator prevents header injection
         class LiteralHeader(str):
             name = 'Header'
             def fold(self, **kwargs):

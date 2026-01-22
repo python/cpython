@@ -296,7 +296,7 @@ class PolicyAPITests(unittest.TestCase):
                     policy.fold("Subject", subject)
 
     def test_verify_generated_headers(self):
-        """Turning protection off allows header injection"""
+        # Turning protection off allows header injection
         policy = email.policy.default.clone(verify_generated_headers=False)
         for text in (
             'Header: Value\r\nBad: Injection\r\n',
