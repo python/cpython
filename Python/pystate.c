@@ -522,6 +522,13 @@ is_env_enabled(const char *env_name)
     return env && *env != '\0' && *env != '0';
 }
 
+static inline bool
+is_env_disabled(const char *env_name)
+{
+    char *env = Py_GETENV(env_name);
+    return env != NULL && *env == '0';
+}
+
 static inline void
 init_policy(uint16_t *target, const char *env_name, uint16_t default_value,
             long min_value, long max_value)
@@ -619,6 +626,7 @@ init_interpreter(PyInterpreterState *interp,
                 SIDE_EXIT_INITIAL_BACKOFF, 0, MAX_BACKOFF);
 
     interp->opt_config.specialization_enabled = !is_env_enabled("PYTHON_SPECIALIZATION_OFF");
+    interp->opt_config.uops_optimize_enabled = !is_env_disabled("PYTHON_UOPS_OPTIMIZE");
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
