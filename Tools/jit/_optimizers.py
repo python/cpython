@@ -1,13 +1,14 @@
 """Low-level optimization of textual assembly."""
-
 import dataclasses
 import enum
 import pathlib
 import re
 import typing
+from collections import defaultdict
 
 # Same as saying "not string.startswith('')":
 _RE_NEVER_MATCH = re.compile(r"(?!)")
+
 # Dictionary mapping branch instructions to their inverted branch instructions.
 # If a branch cannot be inverted, the value is None:
 _X86_BRANCH_NAMES = {
@@ -37,8 +38,10 @@ _X86_BRANCH_NAMES = {
     "loopnz": None,
     "loopz": None,
 }
+
 # Update with all of the inverted branches, too:
 _X86_BRANCH_NAMES |= {v: k for k, v in _X86_BRANCH_NAMES.items() if v}
+
 # No custom relocations needed
 _X86_BRANCHES: dict[str, tuple[str | None, str | None]] = {
     k: (v, None) for k, v in _X86_BRANCH_NAMES.items()
@@ -63,6 +66,7 @@ _AARCH64_COND_CODES = {
     "hi": "ls",
     "ls": "hi",
 }
+
 # MyPy doesn't understand that a invariant variable can be initialized by a covariant value
 CUSTOM_AARCH64_BRANCH19: str | None = "CUSTOM_AARCH64_BRANCH19"
 
@@ -91,7 +95,6 @@ _AARCH64_BRANCHES: dict[str, tuple[str | None, str | None]] = (
 
 @enum.unique
 class InstructionKind(enum.Enum):
-
     JUMP = enum.auto()
     LONG_BRANCH = enum.auto()
     SHORT_BRANCH = enum.auto()
@@ -99,6 +102,9 @@ class InstructionKind(enum.Enum):
     RETURN = enum.auto()
     SMALL_CONST_1 = enum.auto()
     SMALL_CONST_2 = enum.auto()
+    MOVE = enum.auto()  # NEW: For move instructions
+    ARITHMETIC = enum.auto()  # NEW: For arithmetic operations
+    COMPARE = enum.auto()  # NEW: For comparison operations
     OTHER = enum.auto()
 
 
@@ -108,16 +114,24 @@ class Instruction:
     name: str
     text: str
     target: str | None
-
+    # NEW: Additional metadata for optimizations
+    reads: set[str] = dataclasses.field(default_factory=set)  # Registers read
+    writes: set[str] = dataclasses.field(default_factory=set)  # Registers written
+    
     def is_branch(self) -> bool:
         return self.kind in (InstructionKind.LONG_BRANCH, InstructionKind.SHORT_BRANCH)
-
+    
+    def is_nop(self) -> bool:
+        """Check if instruction is effectively a no-op."""
+        return self.name in ("nop", "nopw", "nopl")
+    
     def update_target(self, target: str) -> "Instruction":
         assert self.target is not None
         return Instruction(
-            self.kind, self.name, self.text.replace(self.target, target), target
+            self.kind, self.name, self.text.replace(self.target, target), target,
+            self.reads, self.writes
         )
-
+    
     def update_name_and_target(self, name: str, target: str) -> "Instruction":
         assert self.target is not None
         return Instruction(
@@ -125,6 +139,8 @@ class Instruction:
             name,
             self.text.replace(self.name, name).replace(self.target, target),
             target,
+            self.reads,
+            self.writes
         )
 
 
@@ -143,7 +159,13 @@ class _Block:
     fallthrough: bool = True
     # Whether this block can eventually reach the next uop (_JIT_CONTINUE):
     hot: bool = False
-
+    # NEW: Live registers at block entry (for liveness analysis)
+    live_in: set[str] = dataclasses.field(default_factory=set)
+    # NEW: Live registers at block exit
+    live_out: set[str] = dataclasses.field(default_factory=set)
+    # NEW: Available expressions (for common subexpression elimination)
+    available_in: set[str] = dataclasses.field(default_factory=set)
+    
     def resolve(self) -> typing.Self:
         """Find the first non-empty block reachable from this one."""
         block = self
@@ -155,7 +177,7 @@ class _Block:
 @dataclasses.dataclass
 class Optimizer:
     """Several passes of analysis and optimization for textual assembly."""
-
+    
     path: pathlib.Path
     _: dataclasses.KW_ONLY
     # Prefixes used to mangle local labels and symbols:
@@ -165,6 +187,9 @@ class Optimizer:
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
+    # NEW: Optimization statistics
+    _stats: dict[str, int] = dataclasses.field(init=False, default_factory=lambda: defaultdict(int))
+    
     # No groups:
     _re_noninstructions: typing.ClassVar[re.Pattern[str]] = re.compile(
         r"\s*(?:\.|#|//|;|$)"
@@ -173,6 +198,7 @@ class Optimizer:
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
         r'\s*(?P<label>[\w."$?@]+):'
     )
+    
     # Override everything that follows in subclasses:
     _supports_external_relocations = True
     supports_small_constants = False
@@ -188,12 +214,13 @@ class Optimizer:
     _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # No groups:
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    
     text: str = ""
     globals: set[str] = dataclasses.field(default_factory=set)
     _re_small_const_1 = _RE_NEVER_MATCH
     _re_small_const_2 = _RE_NEVER_MATCH
     const_reloc = "<Not supported>"
-
+    
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
         # optional label, followed by zero or more non-instruction lines,
@@ -242,7 +269,7 @@ class Optimizer:
                 # A block ending in a return has no target and fallthrough:
                 assert not block.target
                 block.fallthrough = False
-
+    
     def _preprocess(self, text: str) -> str:
         # Override this method to do preprocessing of the textual assembly.
         # In all cases, replace references to the _JIT_CONTINUE symbol with
@@ -250,7 +277,7 @@ class Optimizer:
         continue_symbol = rf"\b{re.escape(self.symbol_prefix)}_JIT_CONTINUE\b"
         continue_label = f"{self.label_prefix}_JIT_CONTINUE"
         return re.sub(continue_symbol, continue_label, text)
-
+    
     def _parse_instruction(self, line: str) -> Instruction:
         target = None
         if match := self._re_branch.match(line):
@@ -282,8 +309,23 @@ class Optimizer:
         else:
             name, *_ = line.split(" ")
             kind = InstructionKind.OTHER
-        return Instruction(kind, name, line, target)
-
+        
+        inst = Instruction(kind, name, line, target)
+        # NEW: Analyze register usage
+        self._analyze_register_usage(inst)
+        return inst
+    
+    def _analyze_register_usage(self, inst: Instruction) -> None:
+        """Analyze which registers are read/written by this instruction."""
+        # This is a simplified version - subclasses should override for accuracy
+        # For now, just extract potential register names
+        tokens = inst.text.split()
+        for token in tokens:
+            token = token.strip(',()[]')
+            if token.startswith('%') or token.startswith('r') or token.startswith('x'):
+                # Heuristic: assume it's read
+                inst.reads.add(token)
+    
     def _invert_branch(self, inst: Instruction, target: str) -> Instruction | None:
         assert inst.is_branch()
         if inst.kind == InstructionKind.SHORT_BRANCH and self._is_far_target(target):
@@ -295,21 +337,21 @@ class Optimizer:
         if not inverted:
             return None
         return inst.update_name_and_target(inverted, target)
-
+    
     def _lookup_label(self, label: str) -> _Block:
         if label not in self._labels:
             self._labels[label] = _Block(label)
         return self._labels[label]
-
+    
     def _is_far_target(self, label: str) -> bool:
         return not label.startswith(self.label_prefix)
-
+    
     def _blocks(self) -> typing.Generator[_Block, None, None]:
         block: _Block | None = self._root
         while block:
             yield block
             block = block.link
-
+    
     def _body(self) -> str:
         lines = ["#" + line for line in self.text.splitlines()]
         hot = True
@@ -321,14 +363,30 @@ class Optimizer:
             lines.extend(block.noninstructions)
             for inst in block.instructions:
                 lines.append(inst.text)
+        
+        # NEW: Add optimization statistics as comments
+        if self._stats:
+            lines.append("")
+            lines.append("# Optimization Statistics ".ljust(80, "#"))
+            for opt_name, count in sorted(self._stats.items()):
+                if count > 0:
+                    lines.append(f"# {opt_name}: {count}")
+        
         return "\n".join(lines)
-
+    
     def _predecessors(self, block: _Block) -> typing.Generator[_Block, None, None]:
         # This is inefficient, but it's never wrong:
         for pre in self._blocks():
             if pre.target is block or pre.fallthrough and pre.link is block:
                 yield pre
-
+    
+    def _successors(self, block: _Block) -> typing.Generator[_Block, None, None]:
+        """NEW: Get all successor blocks of a given block."""
+        if block.target:
+            yield block.target
+        if block.fallthrough and block.link:
+            yield block.link
+    
     def _insert_continue_label(self) -> None:
         # Find the block with the last instruction:
         for end in reversed(list(self._blocks())):
@@ -344,7 +402,7 @@ class Optimizer:
         assert continuation.label
         continuation.noninstructions.append(f"{continuation.label}:")
         end.link, continuation.link = continuation, end.link
-
+    
     def _mark_hot_blocks(self) -> None:
         # Start with the last block, and perform a DFS to find all blocks that
         # can eventually reach it:
@@ -353,7 +411,7 @@ class Optimizer:
             block = todo.pop()
             block.hot = True
             todo.extend(pre for pre in self._predecessors(block) if not pre.hot)
-
+    
     def _invert_hot_branches(self) -> None:
         for branch in self._blocks():
             link = branch.link
@@ -392,7 +450,8 @@ class Optimizer:
                 )
                 branch.target, jump.target = jump.target, branch.target
                 jump.hot = True
-
+                self._stats['branches_inverted'] += 1
+    
     def _remove_redundant_jumps(self) -> None:
         # Zero-length jumps can be introduced by _insert_continue_label and
         # _invert_hot_branches:
@@ -410,6 +469,7 @@ class Optimizer:
                 block.target = None
                 block.fallthrough = True
                 block.instructions.pop()
+                self._stats['redundant_jumps_removed'] += 1
             # Before:
             #    branch  FOO:
             #    ...
@@ -434,7 +494,8 @@ class Optimizer:
                 block.instructions[-1] = block.instructions[-1].update_target(
                     target.target.label
                 )
-
+                self._stats['jump_chains_collapsed'] += 1
+    
     def _find_live_blocks(self) -> set[_Block]:
         live: set[_Block] = set()
         # Externally reachable blocks are live
@@ -450,7 +511,7 @@ class Optimizer:
             if next is not None and next not in live:
                 todo.add(next)
         return live
-
+    
     def _remove_unreachable(self) -> None:
         live = self._find_live_blocks()
         continuation = self._lookup_label(f"{self.label_prefix}_JIT_CONTINUE")
@@ -458,16 +519,123 @@ class Optimizer:
         # metadata that the assembler needs
         prev: _Block | None = None
         block = self._root
+        dead_count = 0
         while block is not continuation:
             next = block.link
             assert next is not None
             if not block in live and prev:
                 prev.link = next
+                dead_count += 1
             else:
                 prev = block
             block = next
             assert prev.link is block
-
+        if dead_count > 0:
+            self._stats['dead_blocks_removed'] = dead_count
+    
+    # NEW: Dead code elimination
+    def _remove_dead_code(self) -> None:
+        """Remove instructions that write to registers never read."""
+        for block in self._blocks():
+            if not block.instructions:
+                continue
+            
+            # Build use-def chains
+            live_regs = set(block.live_out)
+            new_instructions = []
+            
+            # Process instructions in reverse order
+            for inst in reversed(block.instructions):
+                # If instruction writes to a register that's never used, remove it
+                if inst.writes and not (inst.writes & live_regs):
+                    # Don't remove branches, calls, returns, or instructions with side effects
+                    if inst.kind in (InstructionKind.OTHER, InstructionKind.MOVE, 
+                                    InstructionKind.ARITHMETIC):
+                        self._stats['dead_instructions_removed'] += 1
+                        continue
+                
+                # Update live registers
+                live_regs |= inst.reads
+                live_regs -= inst.writes
+                new_instructions.append(inst)
+            
+            block.instructions = list(reversed(new_instructions))
+    
+    # NEW: Constant propagation
+    def _propagate_constants(self) -> None:
+        """Propagate constant values through the code."""
+        for block in self._blocks():
+            constants: dict[str, str] = {}
+            new_instructions = []
+            
+            for inst in block.instructions:
+                # Simple pattern: mov $const, %reg
+                if inst.kind == InstructionKind.MOVE and inst.target:
+                    # Track constant assignment
+                    for write_reg in inst.writes:
+                        if inst.target.startswith('$'):
+                            constants[write_reg] = inst.target
+                        else:
+                            constants.pop(write_reg, None)
+                
+                # Invalidate constants for written registers
+                for write_reg in inst.writes:
+                    constants.pop(write_reg, None)
+                
+                new_instructions.append(inst)
+            
+            block.instructions = new_instructions
+    
+    # NEW: Peephole optimization
+    def _peephole_optimize(self) -> None:
+        """Apply simple peephole optimizations."""
+        for block in self._blocks():
+            if len(block.instructions) < 2:
+                continue
+            
+            new_instructions = []
+            i = 0
+            
+            while i < len(block.instructions):
+                if i + 1 < len(block.instructions):
+                    inst1 = block.instructions[i]
+                    inst2 = block.instructions[i + 1]
+                    
+                    # Pattern: mov %r1, %r2; mov %r2, %r1 -> mov %r1, %r2
+                    if (inst1.kind == InstructionKind.MOVE and 
+                        inst2.kind == InstructionKind.MOVE):
+                        if (inst1.writes & inst2.reads and 
+                            inst1.reads & inst2.writes):
+                            new_instructions.append(inst1)
+                            i += 2
+                            self._stats['redundant_moves_eliminated'] += 1
+                            continue
+                    
+                    # Pattern: Remove consecutive NOPs
+                    if inst1.is_nop() and inst2.is_nop():
+                        new_instructions.append(inst1)
+                        i += 2
+                        self._stats['nops_removed'] += 1
+                        continue
+                
+                new_instructions.append(block.instructions[i])
+                i += 1
+            
+            block.instructions = new_instructions
+    
+    # NEW: Remove empty blocks
+    def _remove_empty_blocks(self) -> None:
+        """Remove blocks that contain no instructions."""
+        for block in self._blocks():
+            if not block.instructions and block.link and not block.label:
+                # Redirect predecessors to skip this block
+                for pred in self._predecessors(block):
+                    if pred.target is block:
+                        pred.target = block.link
+                    if pred.fallthrough and pred.link is block:
+                        pred.link = block.link
+                self._stats['empty_blocks_removed'] += 1
+    
     def _fixup_external_labels(self) -> None:
         if self._supports_external_relocations:
             # Nothing to fix up
@@ -488,11 +656,11 @@ class Optimizer:
                         InstructionKind.OTHER, "", label, None
                     )
                     block.instructions.append(branch.update_target("0"))
-
+    
     def _make_temp_label(self, index: int) -> Instruction:
         marker = f"jit_temp_{index}:"
         return Instruction(InstructionKind.OTHER, "", marker, None)
-
+    
     def _fixup_constants(self) -> None:
         if not self.supports_small_constants:
             return
@@ -543,16 +711,16 @@ class Optimizer:
                 else:
                     fixed.append(inst)
             block.instructions = fixed
-
+    
     def _small_const_1(self, inst: Instruction) -> tuple[str, Instruction | None]:
         raise NotImplementedError()
-
+    
     def _small_const_2(self, inst: Instruction) -> tuple[str, Instruction | None]:
         raise NotImplementedError()
-
+    
     def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
         raise NotImplementedError()
-
+    
     def run(self) -> None:
         """Run this optimizer."""
         self._insert_continue_label()
@@ -570,7 +738,6 @@ class Optimizer:
 
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     """aarch64-pc-windows-msvc/aarch64-apple-darwin/aarch64-unknown-linux-gnu"""
-
     _branches = _AARCH64_BRANCHES
     _short_branches = _AARCH64_SHORT_BRANCHES
     # Mach-O does not support the 19 bit branch locations needed for branch reordering
@@ -579,14 +746,12 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_branch_patterns)})\s+(.+,\s+)*(?P<target>[\w.]+)"
     )
-
     # https://developer.arm.com/documentation/ddi0406/b/Application-Level-Architecture/Instruction-Details/Alphabetical-list-of-instructions/BL--BLX--immediate-
     _re_call = re.compile(r"\s*blx?\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
     _re_return = re.compile(r"\s*ret\b")
-
     supports_small_constants = True
     _re_small_const_1 = re.compile(
         r"\s*(?P<instruction>adrp)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
@@ -595,12 +760,12 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         r"\s*(?P<instruction>ldr)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
     )
     const_reloc = "CUSTOM_AARCH64_CONST"
-
+    
     def _get_reg(self, inst: Instruction) -> str:
         _, rest = inst.text.split(inst.name)
         reg, *_ = rest.split(",")
         return reg.strip()
-
+    
     def _small_const_1(self, inst: Instruction) -> tuple[str, Instruction | None]:
         assert inst.kind is InstructionKind.SMALL_CONST_1
         assert inst.target is not None
@@ -610,7 +775,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
         return "16a", Instruction(
             InstructionKind.OTHER, "movz", f"{pre}movz {self._get_reg(inst)}, 0", None
         )
-
+    
     def _small_const_2(self, inst: Instruction) -> tuple[str, Instruction | None]:
         assert inst.kind is InstructionKind.SMALL_CONST_2
         assert inst.target is not None
@@ -629,7 +794,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
                 f"{pre}movk {self._get_reg(inst)}, 0, lsl #16",
                 None,
             )
-
+    
     def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
         reg1 = self._get_reg(inst1)
         reg2 = self._get_reg(inst2)
@@ -638,7 +803,6 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
 
 class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     """i686-pc-windows-msvc/x86_64-apple-darwin/x86_64-unknown-linux-gnu"""
-
     _branches = _X86_BRANCHES
     _short_branches = {}
     _re_branch = re.compile(
