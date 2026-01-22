@@ -1557,7 +1557,7 @@
                         ctx->frame->globals_watched = true;
                     }
                     if (ctx->frame->globals_checked_version != version && this_instr[-1].opcode == _NOP) {
-                        REPLACE_OP(&ctx->out_buffer[ctx->out_len - 1], _GUARD_GLOBALS_VERSION, 0, version);
+                        REPLACE_OP(uop_buffer_last(&ctx->out_buffer), _GUARD_GLOBALS_VERSION, 0, version);
                         ctx->frame->globals_checked_version = version;
                     }
                     if (ctx->frame->globals_checked_version == version) {
@@ -2293,7 +2293,7 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            b = sym_new_type(ctx, &PyBool_Type);
+            b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
@@ -2861,7 +2861,7 @@
             if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
                 assert(PyFunction_Check(sym_get_const(ctx, callable)));
                 ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                ctx->out_buffer[ctx->out_len - 1].operand1 = (uintptr_t)sym_get_const(ctx, callable);
+                uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)sym_get_const(ctx, callable);
             }
             sym_set_type(callable, &PyFunction_Type);
             break;
@@ -2879,7 +2879,7 @@
                 PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
                 assert(PyMethod_Check(method));
                 ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                ctx->out_buffer[ctx->out_len - 1].operand1 = (uintptr_t)method->im_func;
+                uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)method->im_func;
             }
             sym_set_type(callable, &PyMethod_Type);
             break;
@@ -3715,6 +3715,7 @@
         case _GUARD_IS_TRUE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, true);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
@@ -3739,6 +3740,7 @@
         case _GUARD_IS_FALSE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, false);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
