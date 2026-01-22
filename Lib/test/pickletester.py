@@ -4133,6 +4133,18 @@ class AbstractPickleTests:
                 unpickled = self.loads(self.dumps(obj.get_staticmethod(), proto))
                 self.assertEqual(unpickled(), 44)
 
+    def test_private_nested_classes(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        cls1 = PrivateNestedClasses.get_nested()
+        cls2 = cls1.get_nested2()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(cls1, proto))
+                self.assertIs(unpickled, cls1)
+                unpickled = self.loads(self.dumps(cls2, proto))
+                self.assertIs(unpickled, cls2)
+
     def test_object_with_attrs(self):
         obj = Object()
         obj.a = 1

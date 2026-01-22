@@ -141,25 +141,19 @@ method___reduce___impl(PyMethodObject *self)
     PyObject *funcself = PyMethod_GET_SELF(self);
     PyObject *func = PyMethod_GET_FUNCTION(self);
     PyObject *funcname = PyObject_GetAttr(func, &_Py_ID(__name__));
-    Py_ssize_t len;
     if (funcname == NULL) {
         return NULL;
     }
-    if (PyUnicode_Check(funcname) &&
-        (len = PyUnicode_GET_LENGTH(funcname)) > 2 &&
-        PyUnicode_READ_CHAR(funcname, 0) == '_' &&
-        PyUnicode_READ_CHAR(funcname, 1) == '_' &&
-        !(PyUnicode_READ_CHAR(funcname, len-1) == '_' &&
-          PyUnicode_READ_CHAR(funcname, len-2) == '_'))
-    {
-        PyObject *name = PyObject_GetAttr((PyObject *)Py_TYPE(funcself),
-                                          &_Py_ID(__name__));
-        if (name == NULL) {
+    if (_Py_IsPrivateName(funcname)) {
+        PyObject *classname = PyType_Check(funcself)
+            ? PyType_GetName((PyTypeObject *)funcself)
+            : PyType_GetName(Py_TYPE(funcself));
+        if (classname == NULL) {
             Py_DECREF(funcname);
             return NULL;
         }
-        Py_SETREF(funcname, _Py_Mangle(name, funcname));
-        Py_DECREF(name);
+        Py_SETREF(funcname, _Py_Mangle(classname, funcname));
+        Py_DECREF(classname);
         if (funcname == NULL) {
             return NULL;
         }

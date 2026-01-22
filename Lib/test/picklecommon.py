@@ -419,3 +419,17 @@ class PrivateMethods:
     @classmethod
     def get_staticmethod(cls):
         return cls.__private_staticmethod
+
+# For test_private_nested_classes
+class PrivateNestedClasses:
+    @classmethod
+    def get_nested(cls):
+        return cls.__Nested
+
+    class __Nested:
+        @classmethod
+        def get_nested2(cls):
+            return cls.__Nested2
+
+        class __Nested2:
+            pass
