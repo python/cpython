@@ -3715,12 +3715,12 @@
         case _GUARD_IS_TRUE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, true);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, ctx, value != Py_True);
             }
-            sym_apply_predicate_narrowing(ctx, flag, true);
             else {
                 int bit = get_test_bit_for_bools();
                 if (bit) {
@@ -3740,12 +3740,12 @@
         case _GUARD_IS_FALSE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, false);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, ctx, value != Py_False);
             }
-            sym_apply_predicate_narrowing(ctx, flag, false);
             else {
                 int bit = get_test_bit_for_bools();
                 if (bit) {
