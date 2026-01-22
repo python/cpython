@@ -297,11 +297,11 @@ typedef struct _Py_DebugOffsets {
     }, \
     .interpreter_frame = { \
         .size = sizeof(_PyInterpreterFrame), \
-        .previous = offsetof(_PyInterpreterFrame, previous), \
-        .executable = offsetof(_PyInterpreterFrame, f_executable), \
+        .previous = offsetof(_PyInterpreterFrameCore, previous), \
+        .executable = offsetof(_PyInterpreterFrameCore, f_executable), \
         .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
         .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
-        .owner = offsetof(_PyInterpreterFrame, owner), \
+        .owner = offsetof(_PyInterpreterFrameCore, owner), \
         .stackpointer = offsetof(_PyInterpreterFrame, stackpointer), \
         .tlbc_index = _Py_Debug_interpreter_frame_tlbc_index, \
     }, \

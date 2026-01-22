@@ -108,7 +108,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
     // value_ptr should only be given if we are reading the value
     assert(read || value_ptr == NULL);
 
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame->f_frame));
 
     // Ensure that the key is hashable.
     Py_hash_t key_hash = PyObject_Hash(key);
@@ -248,7 +248,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     /* Merge locals into fast locals */
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame->f_frame));
 
     int i = framelocalsproxy_getkeyindex(frame, key, false, NULL);
     if (i == -2) {
@@ -373,7 +373,7 @@ static PyObject *
 framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame->f_frame));
     PyObject *names = PyList_New(0);
     if (names == NULL) {
         return NULL;
@@ -582,7 +582,7 @@ static PyObject *
 framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame->f_frame));
     PyObject *values = PyList_New(0);
     if (values == NULL) {
         return NULL;
@@ -620,7 +620,7 @@ static PyObject *
 framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame->f_frame));
     PyObject *items = PyList_New(0);
     if (items == NULL) {
         return NULL;
@@ -679,7 +679,7 @@ static Py_ssize_t
 framelocalsproxy_length(PyObject *self)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame->f_frame));
     Py_ssize_t size = 0;
 
     if (frame->f_extra_locals != NULL) {
@@ -978,9 +978,9 @@ static PyObject *
 frame_locals_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=b4ace8bb4cae71f4 input=7bd444d0dc8ddf44]*/
 {
-    assert(!_PyFrame_IsIncomplete(self->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(self->f_frame)));
 
-    PyCodeObject *co = _PyFrame_GetCode(self->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(self->f_frame));
 
     if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(self->f_frame)) {
         if (self->f_frame->f_locals == NULL) {
@@ -1005,7 +1005,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
     if (f->f_lineno == -1) {
         // We should calculate it once. If we can't get the line number,
         // set f->f_lineno to 0.
-        f->f_lineno = PyUnstable_InterpreterFrame_GetLine(f->f_frame);
+        f->f_lineno = PyUnstable_InterpreterFrame_GetLine(_PyFrame_Core(f->f_frame));
         if (f->f_lineno < 0) {
             f->f_lineno = 0;
             return -1;
@@ -1015,7 +1015,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
     if (f->f_lineno > 0) {
         return f->f_lineno;
     }
-    return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
+    return PyUnstable_InterpreterFrame_GetLine(_PyFrame_Core(f->f_frame));
 }
 
 /*[clinic input]
@@ -1049,7 +1049,7 @@ static PyObject *
 frame_lasti_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=03275b4f0327d1a2 input=0225ed49cb1fbeeb]*/
 {
-    int lasti = _PyInterpreterFrame_LASTI(self->f_frame);
+    int lasti = _PyInterpreterFrame_LASTI(_PyFrame_Core(self->f_frame));
     if (lasti < 0) {
         return PyLong_FromLong(-1);
     }
@@ -1625,8 +1625,8 @@ first_line_not_before(int *lines, int len, int line)
 
 static bool frame_is_suspended(PyFrameObject *frame)
 {
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
+    if (_PyFrame_Core(frame->f_frame)->owner & FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame->f_frame);
         return FRAME_STATE_SUSPENDED(gen->gi_frame_state);
     }
@@ -1657,7 +1657,7 @@ static int
 frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 /*[clinic end generated code: output=e64c86ff6be64292 input=36ed3c896b27fb91]*/
 {
-    PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
+    PyCodeObject *code = _PyFrame_GetCode(_PyFrame_Core(self->f_frame));
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
@@ -1769,7 +1769,7 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 
     int64_t best_stack = OVERFLOWED;
     int best_addr = -1;
-    int64_t start_stack = stacks[_PyInterpreterFrame_LASTI(self->f_frame)];
+    int64_t start_stack = stacks[_PyInterpreterFrame_LASTI(_PyFrame_Core(self->f_frame))];
     int err = -1;
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
@@ -1847,7 +1847,7 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
     }
     /* Finally set the new lasti and return OK. */
     self->f_lineno = 0;
-    self->f_frame->instr_ptr = _PyFrame_GetBytecode(self->f_frame) + best_addr;
+    self->f_frame->instr_ptr = _PyFrame_GetBytecode(_PyFrame_Core(self->f_frame)) + best_addr;
     return 0;
 }
 
@@ -1906,7 +1906,7 @@ static PyObject *
 frame_generator_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=97aeb2392562e55b input=00a2bd008b239ab0]*/
 {
-    if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+    if (_PyFrame_Core(self->f_frame)->owner & FRAME_OWNED_BY_GENERATOR) {
         PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(self->f_frame);
         return Py_NewRef(gen);
     }
@@ -1942,15 +1942,16 @@ frame_dealloc(PyObject *op)
      * nesting depth for deallocations, the trashcan may have delayed this
      * deallocation until after f->f_frame is freed. Avoid dereferencing
      * f->f_frame unless we know it still points to valid memory. */
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)f->_f_frame_data;
+    _PyInterpreterFrameCore *frame = (_PyInterpreterFrameCore *)f->_f_frame_data;
 
     /* Kill all local variables including specials, if we own them */
-    if (f->f_frame == frame && frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
+    if (_PyFrame_Core(f->f_frame) == frame && frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
+        _PyInterpreterFrame *ff = _PyFrame_Full(frame);
         PyStackRef_CLEAR(frame->f_executable);
-        PyStackRef_CLEAR(frame->f_funcobj);
-        Py_CLEAR(frame->f_locals);
-        _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
-        _PyStackRef *sp = frame->stackpointer;
+        PyStackRef_CLEAR(ff->f_funcobj);
+        Py_CLEAR(ff->f_locals);
+        _PyStackRef *locals = _PyFrame_GetLocalsArray(ff);
+        _PyStackRef *sp = ff->stackpointer;
         while (sp > locals) {
             sp--;
             PyStackRef_CLEAR(*sp);
@@ -1973,7 +1974,7 @@ frame_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(f->f_extra_locals);
     Py_VISIT(f->f_locals_cache);
     Py_VISIT(f->f_overwritten_fast_locals);
-    if (f->f_frame->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
+    if (_PyFrame_Core(f->f_frame)->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
         return 0;
     }
     assert(f->f_frame->frame_obj == NULL);
@@ -2013,19 +2014,20 @@ static PyObject *
 frame_clear_impl(PyFrameObject *self)
 /*[clinic end generated code: output=864c662f16e9bfcc input=c358f9cff5f9b681]*/
 {
-    if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+    if (_PyFrame_Core(self->f_frame)->owner & FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(self->f_frame);
         if (_PyGen_ClearFrame(gen) < 0) {
             return NULL;
         }
     }
-    else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD) {
+    else if (_PyFrame_Core(self->f_frame)->owner == FRAME_OWNED_BY_THREAD ||
+             _PyFrame_IsExternalFrame(_PyFrame_Core(self->f_frame))) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;
     }
     else {
-        assert(self->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
+        assert(_PyFrame_Core(self->f_frame)->owner == FRAME_OWNED_BY_FRAME_OBJECT);
         (void)frame_tp_clear((PyObject *)self);
     }
     Py_RETURN_NONE;
@@ -2044,7 +2046,7 @@ frame___sizeof___impl(PyFrameObject *self)
 {
     Py_ssize_t res;
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
-    PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
+    PyCodeObject *code = _PyFrame_GetCode(_PyFrame_Core(self->f_frame));
     res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
@@ -2054,7 +2056,7 @@ frame_repr(PyObject *op)
 {
     PyFrameObject *f = PyFrameObject_CAST(op);
     int lineno = PyFrame_GetLineNumber(f);
-    PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
+    PyCodeObject *code = _PyFrame_GetCode(_PyFrame_Core(f->f_frame));
     return PyUnicode_FromFormat(
         "<frame at %p, file %R, line %d, code %S>",
         f, code->co_filename, lineno, code->co_name);
@@ -2162,10 +2164,10 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     }
     init_frame(tstate, (_PyInterpreterFrame *)f->_f_frame_data, func, locals);
     f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
-    f->f_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    _PyFrame_Core(f->f_frame)->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     // This frame needs to be "complete", so pretend that the first RESUME ran:
     f->f_frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(f->f_frame)));
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
     return f;
@@ -2177,10 +2179,11 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
 {
     // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
     // here:
-    PyCodeObject *co = _PyFrame_GetCode(frame);
-    int lasti = _PyInterpreterFrame_LASTI(frame);
+    _PyInterpreterFrameCore *f = _PyFrame_Core(frame);
+    PyCodeObject *co = _PyFrame_GetCode(f);
+    int lasti = _PyInterpreterFrame_LASTI(f);
     if (!(lasti < 0
-          && _PyFrame_GetBytecode(frame)->op.code == COPY_FREE_VARS
+          && _PyFrame_GetBytecode(f)->op.code == COPY_FREE_VARS
           && PyStackRef_FunctionCheck(frame->f_funcobj)))
     {
         /* Free vars are initialized */
@@ -2188,7 +2191,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     }
 
     /* Free vars have not been initialized -- Do that */
-    PyFunctionObject *func = _PyFrame_GetFunction(frame);
+    PyFunctionObject *func = _PyFrame_GetFunction(f);
     PyObject *closure = func->func_closure;
     int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
@@ -2196,7 +2199,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
         frame->localsplus[offset + i] = PyStackRef_FromPyObjectNew(o);
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
-    frame->instr_ptr = _PyFrame_GetBytecode(frame);
+    frame->instr_ptr = _PyFrame_GetBytecode(f);
 }
 
 
@@ -2229,7 +2232,7 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         else if (kind & CO_FAST_CELL) {
             if (value != NULL) {
                 if (PyCell_Check(value)) {
-                    assert(!_PyFrame_IsIncomplete(frame));
+                    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame)));
                     value = PyCell_GetRef((PyCellObject *)value);
                 }
                 else {
@@ -2256,7 +2259,7 @@ _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
      * This function returns if there are hidden locals introduced by PEP 709,
      * which are the isolated fast locals for inline comprehensions
      */
-    PyCodeObject* co = _PyFrame_GetCode(frame);
+    PyCodeObject* co = _PyFrame_GetCode(_PyFrame_Core(frame));
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
@@ -2273,28 +2276,28 @@ _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
 
 
 PyObject *
-_PyFrame_GetLocals(_PyInterpreterFrame *frame)
+_PyFrame_GetLocals(_PyInterpreterFrameCore *frame)
 {
+    _PyInterpreterFrame *f = _PyFrame_EnsureFrameFullyInitialized(frame);
+
     // We should try to avoid creating the FrameObject if possible.
     // So we check if the frame is a module or class level scope
     PyCodeObject *co = _PyFrame_GetCode(frame);
 
-    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(frame)) {
-        if (frame->f_locals == NULL) {
+    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(f)) {
+        if (f->f_locals == NULL) {
             // We found cases when f_locals is NULL for non-optimized code.
             // We fill the f_locals with an empty dict to avoid crash until
             // we find the root cause.
-            frame->f_locals = PyDict_New();
-            if (frame->f_locals == NULL) {
+            f->f_locals = PyDict_New();
+            if (f->f_locals == NULL) {
                 return NULL;
             }
         }
-        return Py_NewRef(frame->f_locals);
+        return Py_NewRef(f->f_locals);
     }
 
-    PyFrameObject* f = _PyFrame_GetFrameObject(frame);
-
-    return _PyFrameLocalsProxy_New(f);
+    return _PyFrameLocalsProxy_New(_PyFrame_GetFrameObject(frame));
 }
 
 
@@ -2310,7 +2313,7 @@ PyFrame_GetVar(PyFrameObject *frame_obj, PyObject *name)
     _PyInterpreterFrame *frame = frame_obj->f_frame;
     frame_init_get_vars(frame);
 
-    PyCodeObject *co = _PyFrame_GetCode(frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame));
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *var_name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         if (!_PyUnicode_Equal(var_name, name)) {
@@ -2373,7 +2376,7 @@ int
 _PyFrame_IsEntryFrame(PyFrameObject *frame)
 {
     assert(frame != NULL);
-    _PyInterpreterFrame *f = frame->f_frame;
+    _PyInterpreterFrameCore *f = _PyFrame_Core(frame->f_frame);
     assert(!_PyFrame_IsIncomplete(f));
     return f->previous && f->previous->owner == FRAME_OWNED_BY_INTERPRETER;
 }
@@ -2384,8 +2387,8 @@ PyFrame_GetCode(PyFrameObject *frame)
     assert(frame != NULL);
     PyObject *code;
     Py_BEGIN_CRITICAL_SECTION(frame);
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    code = Py_NewRef(_PyFrame_GetCode(frame->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
+    code = Py_NewRef(_PyFrame_GetCode(_PyFrame_Core(frame->f_frame)));
     Py_END_CRITICAL_SECTION();
     return (PyCodeObject *)code;
 }
@@ -2395,11 +2398,10 @@ PyFrameObject*
 PyFrame_GetBack(PyFrameObject *frame)
 {
     assert(frame != NULL);
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
     PyFrameObject *back = frame->f_back;
     if (back == NULL) {
-        _PyInterpreterFrame *prev = frame->f_frame->previous;
-        prev = _PyFrame_GetFirstComplete(prev);
+        _PyInterpreterFrameCore *prev = _PyFrame_GetFirstComplete(_PyFrame_Core(frame->f_frame)->previous);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
         }
@@ -2410,21 +2412,21 @@ PyFrame_GetBack(PyFrameObject *frame)
 PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
     return frame_locals_get((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetGlobals(PyFrameObject *frame)
 {
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
     return frame_globals_get((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetBuiltins(PyFrameObject *frame)
 {
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
     return frame_builtins_get((PyObject *)frame, NULL);
 }
 
@@ -2433,8 +2435,8 @@ PyFrame_GetLasti(PyFrameObject *frame)
 {
     int ret;
     Py_BEGIN_CRITICAL_SECTION(frame);
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    int lasti = _PyInterpreterFrame_LASTI(frame->f_frame);
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
+    int lasti = _PyInterpreterFrame_LASTI(_PyFrame_Core(frame->f_frame));
     ret = lasti < 0 ? -1 : lasti * (int)sizeof(_Py_CODEUNIT);
     Py_END_CRITICAL_SECTION();
     return ret;
@@ -2443,6 +2445,6 @@ PyFrame_GetLasti(PyFrameObject *frame)
 PyObject *
 PyFrame_GetGenerator(PyFrameObject *frame)
 {
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    assert(!_PyFrame_IsIncomplete(_PyFrame_Core(frame->f_frame)));
     return frame_generator_get((PyObject *)frame, NULL);
 }

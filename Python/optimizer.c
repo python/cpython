@@ -927,11 +927,11 @@ _PyJit_translate_single_bytecode_to_trace(
                         Py_FatalError("garbled expansion");
                 }
                 if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
-                    PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+                    PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(_PyFrame_Core(frame)->f_executable);
                     PyFunctionObject *new_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
 
                     operand = 0;
-                    if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
+                    if (_PyFrame_Core(frame)->owner < FRAME_OWNED_BY_INTERPRETER) {
                         // Don't add nested code objects to the dependency.
                         // It causes endless re-traces.
                         if (new_func != NULL && !Py_IsNone((PyObject*)new_func) && !(new_code->co_flags & CO_NESTED)) {
@@ -946,7 +946,7 @@ _PyJit_translate_single_bytecode_to_trace(
                         }
                     }
                     ADD_TO_TRACE(uop, oparg, operand, target);
-                    uop_buffer_last(trace)->operand1 = PyStackRef_IsNone(frame->f_executable) ? 2 : ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
+                    uop_buffer_last(trace)->operand1 = PyStackRef_IsNone(_PyFrame_Core(frame)->f_executable) ? 2 : ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
                     break;
                 }
                 if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
@@ -1021,7 +1021,7 @@ _PyJit_TryInitializeTracing(
     if (func == NULL) {
         return 0;
     }
-    PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyCodeObject *code = _PyFrame_GetCode(_PyFrame_Core(frame));
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
@@ -1052,7 +1052,7 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.chain_depth = chain_depth;
     tracer->prev_state.instr_frame = frame;
     tracer->prev_state.dependencies_still_valid = true;
-    tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+    tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(_PyFrame_Core(frame)));
     tracer->prev_state.instr = curr_instr;
     tracer->prev_state.instr_frame = frame;
     tracer->prev_state.instr_oparg = oparg;

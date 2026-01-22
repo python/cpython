@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyInterpreterFrameCore
 #include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef

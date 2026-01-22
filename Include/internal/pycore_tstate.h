@@ -33,7 +33,7 @@ typedef struct _PyThreadStateImpl {
 
     // Embedded base frame - sentinel at the bottom of the frame stack.
     // Used by profiling/sampling to detect incomplete stack traces.
-    _PyInterpreterFrame base_frame;
+    _PyInterpreterFrameCore base_frame;
 
     // The reference count field is used to synchronize deallocation of the
     // thread state during runtime finalization.

@@ -140,8 +140,8 @@ def uses_this(inst: Instruction) -> bool:
 UNKNOWN_OPCODE_HANDLER ="""\
 _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",
-              _PyFrame_GetCode(frame)->co_filename,
-              PyUnstable_InterpreterFrame_GetLine(frame),
+              FRAME_CODE->co_filename,
+              PyUnstable_InterpreterFrame_GetLine(FRAME_CORE),
               opcode);
 JUMP_TO_LABEL(error);
 """

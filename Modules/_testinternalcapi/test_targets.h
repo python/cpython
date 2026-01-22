@@ -764,8 +764,8 @@ static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_PARAMS)
     int opcode = next_instr->op.code;
     _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",
-              _PyFrame_GetCode(frame)->co_filename,
-              PyUnstable_InterpreterFrame_GetLine(frame),
+              FRAME_CODE->co_filename,
+              PyUnstable_InterpreterFrame_GetLine(FRAME_CORE),
               opcode);
 JUMP_TO_LABEL(error);
 }

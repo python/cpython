@@ -54,7 +54,7 @@ static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
 /* Returns a borrowed reference */
 static inline PyCodeObject *
 _PyGen_GetCode(PyGenObject *gen) {
-    return _PyFrame_GetCode(&gen->gi_iframe);
+    return _PyFrame_GetCode(_PyFrame_Core(&gen->gi_iframe));
 }
 
 PyCodeObject *
@@ -74,7 +74,7 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
     if (gen->gi_frame_state != FRAME_CLEARED) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
         assert(frame->frame_obj == NULL ||
-               frame->frame_obj->f_frame->owner == FRAME_OWNED_BY_GENERATOR);
+               _PyFrame_Core(frame->frame_obj->f_frame)->owner & FRAME_OWNED_BY_GENERATOR);
         int err = _PyFrame_Traverse(frame, visit, arg);
         if (err) {
             return err;
@@ -83,7 +83,7 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
     else {
         // We still need to visit the code object when the frame is cleared to
         // ensure that it's kept alive if the reference is deferred.
-        _Py_VISIT_STACKREF(gen->gi_iframe.f_executable);
+        _Py_VISIT_STACKREF(_PyFrame_Core(&gen->gi_iframe)->f_executable);
     }
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */
@@ -155,7 +155,7 @@ gen_clear_frame(PyGenObject *gen)
 {
     assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_CLEARED);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
-    frame->previous = NULL;
+    _PyFrame_Core(frame)->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
 }
@@ -217,7 +217,7 @@ gen_dealloc(PyObject *self)
         gen_clear_frame(gen);
     }
     assert(gen->gi_exc_state.exc_value == NULL);
-    PyStackRef_CLEAR(gen->gi_iframe.f_executable);
+    PyStackRef_CLEAR(_PyFrame_Core(&gen->gi_iframe)->f_executable);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
 
@@ -268,7 +268,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
     assert(tstate->exc_info == prev_exc_info);
 #ifndef Py_GIL_DISABLED
     assert(gen->gi_exc_state.previous_item == NULL);
-    assert(frame->previous == NULL);
+    assert(_PyFrame_Core(frame)->previous == NULL);
     assert(gen->gi_frame_state != FRAME_EXECUTING);
 #endif
 
@@ -662,15 +662,15 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             /* Link frame into the stack to enable complete backtraces. */
             /* XXX We should probably be updating the current frame somewhere in
                ceval.c. */
-            _PyInterpreterFrame *prev = tstate->current_frame;
-            frame->previous = prev;
-            tstate->current_frame = frame;
+            _PyInterpreterFrameCore *prev = tstate->current_frame;
+            _PyFrame_Core(frame)->previous = prev;
+            tstate->current_frame = _PyFrame_Core(frame);
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
             tstate->current_frame = prev;
-            frame->previous = NULL;
+            _PyFrame_Core(frame)->previous = NULL;
         }
         else {
             /* `yf` is an iterator or a coroutine-like object. */
@@ -685,12 +685,12 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                 goto throw_here;
             }
 
-            _PyInterpreterFrame *prev = tstate->current_frame;
-            frame->previous = prev;
-            tstate->current_frame = frame;
+            _PyInterpreterFrameCore *prev = tstate->current_frame;
+            _PyFrame_Core(frame)->previous = prev;
+            tstate->current_frame = _PyFrame_Core(frame);
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
             tstate->current_frame = prev;
-            frame->previous = NULL;
+            _PyFrame_Core(frame)->previous = NULL;
             Py_DECREF(meth);
         }
         Py_DECREF(yf);
@@ -912,7 +912,7 @@ _gen_getframe(PyGenObject *gen, const char *const name)
         Py_RETURN_NONE;
     }
     // TODO: still not thread-safe with free threading
-    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(&gen->gi_iframe));
+    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(_PyFrame_Core(&gen->gi_iframe)));
 }
 
 static PyObject *
@@ -1053,7 +1053,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
-    gen->gi_iframe.f_executable = PyStackRef_None;
+    _PyFrame_Core(&gen->gi_iframe)->f_executable = PyStackRef_None;
     assert(func->func_name != NULL);
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
@@ -1063,7 +1063,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
 }
 
 static PyObject *
-compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame);
+compute_cr_origin(int origin_depth, _PyInterpreterFrameCore *current_frame);
 
 PyObject *
 _Py_MakeCoro(PyFunctionObject *func)
@@ -1098,7 +1098,7 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        _PyInterpreterFrame *frame = tstate->current_frame;
+        _PyInterpreterFrameCore *frame = tstate->current_frame;
         assert(frame);
         assert(_PyFrame_IsIncomplete(frame));
         frame = _PyFrame_GetFirstComplete(frame->previous);
@@ -1116,7 +1116,7 @@ static PyObject *
 gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
-    PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
+    PyCodeObject *code = _PyFrame_GetCode(_PyFrame_Core(f->f_frame));
     int size = code->co_nlocalsplus + code->co_stacksize;
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
     if (gen == NULL) {
@@ -1125,13 +1125,13 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     }
     /* Copy the frame */
     assert(f->f_frame->frame_obj == NULL);
-    assert(f->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
+    assert(_PyFrame_Core(f->f_frame)->owner == FRAME_OWNED_BY_FRAME_OBJECT);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     _PyFrame_Copy((_PyInterpreterFrame *)f->_f_frame_data, frame);
     gen->gi_frame_state = FRAME_CREATED;
     assert(frame->frame_obj == f);
     f->f_frame = frame;
-    frame->owner = FRAME_OWNED_BY_GENERATOR;
+    _PyFrame_Core(frame)->owner = FRAME_OWNED_BY_GENERATOR;
     assert(PyObject_GC_IsTracked((PyObject *)f));
     Py_DECREF(f);
     gen->gi_weakreflist = NULL;
@@ -1466,9 +1466,9 @@ PyTypeObject _PyCoroWrapper_Type = {
 };
 
 static PyObject *
-compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
+compute_cr_origin(int origin_depth, _PyInterpreterFrameCore *current_frame)
 {
-    _PyInterpreterFrame *frame = current_frame;
+    _PyInterpreterFrameCore *frame = current_frame;
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {

@@ -187,9 +187,9 @@ dummy_func(
             #endif
             if (check_instrumentation) {
                 uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
-                uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+                uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCodeFull(frame)->_co_instrumentation_version);
                 if (code_version != global_version) {
-                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                    int err = _Py_Instrument(_PyFrame_GetCodeFull(frame), tstate->interp);
                     if (err) {
                         ERROR_NO_POP();
                     }
@@ -204,9 +204,9 @@ dummy_func(
             if (frame->tlbc_index !=
                 ((_PyThreadStateImpl *)tstate)->tlbc_index) {
                 _Py_CODEUNIT *bytecode =
-                    _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
+                    _PyEval_GetExecutableCode(tstate, _PyFrame_GetCodeFull(frame));
                 ERROR_IF(bytecode == NULL);
-                ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
+                ptrdiff_t off = this_instr - _PyFrame_GetBytecodeFull(frame);
                 frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                 frame->instr_ptr = bytecode + off;
                 // Make sure this_instr gets reset correctly for any uops that
@@ -229,7 +229,7 @@ dummy_func(
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+            uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCodeFull(frame)->_co_instrumentation_version);
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version);
             #ifdef Py_GIL_DISABLED
@@ -263,7 +263,7 @@ dummy_func(
             if (PyStackRef_IsNull(value_s)) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+                    PyTuple_GetItem(_PyFrame_GetCodeFull(frame)->co_localsplusnames, oparg)
                 );
                 ERROR_IF(true);
             }
@@ -1238,10 +1238,10 @@ dummy_func(
         }
 
         tier1 inst(INTERPRETER_EXIT, (retval --)) {
-            assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
-            assert(_PyFrame_IsIncomplete(frame));
+            assert(FRAME_CORE->owner == FRAME_OWNED_BY_INTERPRETER);
+            assert(_PyFrame_IsIncomplete(FRAME_CORE));
             /* Restore previous frame and return. */
-            tstate->current_frame = frame->previous;
+            tstate->current_frame = FRAME_CORE->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
 #if !_Py_TAIL_CALL_INTERP
@@ -1263,7 +1263,7 @@ dummy_func(
         // retval is popped from the stack, but res
         // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            assert(FRAME_CORE->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
             DEAD(retval);
             SAVE_STACK();
@@ -1271,7 +1271,7 @@ dummy_func(
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = tstate->current_frame = dying->previous;
+            frame = (_PyInterpreterFrame *)(tstate->current_frame = _PyFrame_Core(dying)->previous);
             _PyEval_FrameClearAndPop(tstate, dying);
             RELOAD_STACK();
             LOAD_IP(frame->return_offset);
@@ -1360,7 +1360,7 @@ dummy_func(
         op(_SEND, (receiver, v -- receiver, retval)) {
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
             PyObject *retval_o;
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            assert(FRAME_CORE->owner != FRAME_OWNED_BY_INTERPRETER);
             if (!IS_PEP523_HOOKED(tstate) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                 gen_try_set_executing((PyGenObject *)receiver_o))
@@ -1374,8 +1374,8 @@ dummy_func(
                 tstate->exc_info = &gen->gi_exc_state;
                 assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
                 frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
-                assert(gen_frame->previous == NULL);
-                gen_frame->previous = frame;
+                assert(_PyFrame_Core(gen_frame)->previous == NULL);
+                _PyFrame_Core(gen_frame)->previous = FRAME_CORE;
                 DISPATCH_INLINED(gen_frame);
             }
             if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
@@ -1419,7 +1419,7 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
             frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
-            pushed_frame->previous = frame;
+            _PyFrame_Core(pushed_frame)->previous = FRAME_CORE;
             gen_frame = PyStackRef_Wrap(pushed_frame);
         }
 
@@ -1433,7 +1433,7 @@ dummy_func(
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            assert(FRAME_CORE->owner != FRAME_OWNED_BY_INTERPRETER);
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
@@ -1445,8 +1445,8 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
-            frame = tstate->current_frame = frame->previous;
-            gen_frame->previous = NULL;
+            frame = (_PyInterpreterFrame *)(tstate->current_frame = FRAME_CORE->previous);
+            _PyFrame_Core(gen_frame)->previous = NULL;
             ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
             FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
             /* We don't know which of these is relevant here, so keep them equal */
@@ -1494,7 +1494,7 @@ dummy_func(
 
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyStackRef_UntagInt(values[0]);
+                frame->instr_ptr = _PyFrame_GetBytecodeFull(frame) + PyStackRef_UntagInt(values[0]);
             }
             assert(exc && PyExceptionInstance_Check(exc));
             _PyErr_SetRaisedException(tstate, exc);
@@ -1915,7 +1915,7 @@ dummy_func(
             if (PyStackRef_IsNull(v)) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+                    PyTuple_GetItem(_PyFrame_GetCodeFull(frame)->co_localsplusnames, oparg)
                 );
                 ERROR_IF(true);
             }
@@ -1943,7 +1943,7 @@ dummy_func(
             // Fortunately we don't need its superpower.
             PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
             if (oldobj == NULL) {
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCodeFull(frame), oparg);
                 ERROR_NO_POP();
             }
             Py_DECREF(oldobj);
@@ -1954,8 +1954,8 @@ dummy_func(
             PyObject *class_dict = PyStackRef_AsPyObjectBorrow(class_dict_st);
 
             assert(class_dict);
-            assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
-            name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
+            assert(oparg >= 0 && oparg < _PyFrame_GetCodeFull(frame)->co_nlocalsplus);
+            name = PyTuple_GET_ITEM(_PyFrame_GetCodeFull(frame)->co_localsplusnames, oparg);
             int err;
             PyObject* value_o = _PyMapping_GetOptionalItem2(class_dict, name, &err);
             if (err < 0) {
@@ -1965,7 +1965,7 @@ dummy_func(
                 PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
                 value_o = PyCell_GetRef(cell);
                 if (value_o == NULL) {
-                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCodeFull(frame), oparg);
                     ERROR_NO_POP();
                 }
             }
@@ -1977,7 +1977,7 @@ dummy_func(
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             value = _PyCell_GetStackRef(cell);
             if (PyStackRef_IsNull(value)) {
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCodeFull(frame), oparg);
                 ERROR_IF(true);
             }
         }
@@ -1989,7 +1989,7 @@ dummy_func(
 
         inst(COPY_FREE_VARS, (--)) {
             /* Copy closure variables to free variables */
-            PyCodeObject *co = _PyFrame_GetCode(frame);
+            PyCodeObject *co = _PyFrame_GetCodeFull(frame);
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             PyObject *closure = func->func_closure;
@@ -2966,7 +2966,7 @@ dummy_func(
 
          inst(IMPORT_NAME, (level, fromlist -- res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
+            PyObject *res_o = _PyEval_ImportName(tstate, FRAME_CORE, name,
                               PyStackRef_AsPyObjectBorrow(fromlist),
                               PyStackRef_AsPyObjectBorrow(level));
             DECREF_INPUTS();
@@ -3069,7 +3069,7 @@ dummy_func(
                 next_instr = this_instr;
                 goto stop_tracing;
             }
-            PyCodeObject *code = _PyFrame_GetCode(frame);
+            PyCodeObject *code = _PyFrame_GetCodeFull(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
@@ -3212,7 +3212,7 @@ dummy_func(
             PyObject *iterable_o = PyStackRef_AsPyObjectBorrow(iterable);
             if (PyCoro_CheckExact(iterable_o)) {
                 /* `iterable` is a coroutine */
-                if (!(_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
+                if (!(_PyFrame_GetCodeFull(frame)->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
                     /* and it is used in a 'yield from' expression of a
                        regular generator. */
                     _PyErr_SetString(tstate, PyExc_TypeError,
@@ -3492,7 +3492,7 @@ dummy_func(
             _PyFrame_StackPush(pushed_frame, PyStackRef_None);
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            pushed_frame->previous = frame;
+            _PyFrame_Core(pushed_frame)->previous = FRAME_CORE;
             // oparg is the return offset from the next instruction.
             frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
             gen_frame = PyStackRef_Wrap(pushed_frame);
@@ -3778,7 +3778,7 @@ dummy_func(
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, callable, locals,
-                    arguments, total_args, NULL, frame
+                    arguments, total_args, NULL, FRAME_CORE
                 );
                 DEAD(args);
                 DEAD(self_or_null);
@@ -3847,7 +3847,7 @@ dummy_func(
             PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
             _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                 tstate, callable, locals,
-                args, total_args, NULL, frame
+                args, total_args, NULL, FRAME_CORE
             );
             // The frame has stolen all the arguments from the stack.
             INPUTS_DEAD();
@@ -4004,9 +4004,10 @@ dummy_func(
             DEAD(new_frame);
             SYNC_SP();
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            assert(temp->previous == frame || temp->previous->previous == frame);
+            assert(_PyFrame_Core(temp)->previous == FRAME_CORE || _PyFrame_Core(temp)->previous->previous == FRAME_CORE);
             CALL_STAT_INC(inlined_py_calls);
-            frame = tstate->current_frame = temp;
+            frame = temp;
+            tstate->current_frame = _PyFrame_Core(temp);
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP(0);
@@ -4156,13 +4157,13 @@ dummy_func(
 
         op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
-                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
-            assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
-            assert(_PyFrame_GetBytecode(shim)[1].op.code == RETURN_VALUE);
+                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, FRAME_CORE);
+            assert(_PyFrame_GetBytecodeFull(shim)[0].op.code == EXIT_INIT_CHECK);
+            assert(_PyFrame_GetBytecodeFull(shim)[1].op.code == RETURN_VALUE);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self);
             _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
-                tstate, init, NULL, args-1, oparg+1, NULL, shim);
+                tstate, init, NULL, args-1, oparg+1, NULL, _PyFrame_Core(shim));
             DEAD(init);
             DEAD(self);
             DEAD(args);
@@ -4639,7 +4640,7 @@ dummy_func(
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, callable, locals,
-                    arguments, positional_args, kwnames_o, frame
+                    arguments, positional_args, kwnames_o, FRAME_CORE
                 );
                 DEAD(args);
                 DEAD(self_or_null);
@@ -4690,7 +4691,7 @@ dummy_func(
             PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
             _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                 tstate, callable, locals,
-                arguments, positional_args, kwnames_o, frame
+                arguments, positional_args, kwnames_o, FRAME_CORE
             );
             PyStackRef_CLOSE(kwnames);
             // The frame has stolen all the arguments from the stack,
@@ -4888,7 +4889,7 @@ dummy_func(
 
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(
                         tstate, func_st, locals,
-                        nargs, callargs, kwargs, frame);
+                        nargs, callargs, kwargs, FRAME_CORE);
                     // Need to sync the stack since we exit with DISPATCH_INLINED.
                     INPUTS_DEAD();
                     SYNC_SP();
@@ -4951,7 +4952,7 @@ dummy_func(
 
             _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(
                 tstate, func_st, locals,
-                nargs, callargs, kwargs, frame);
+                nargs, callargs, kwargs, FRAME_CORE);
             INPUTS_DEAD();
             SYNC_SP();
             if (new_frame == NULL) {
@@ -5042,11 +5043,11 @@ dummy_func(
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
-            gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
+            _PyFrame_Core(gen_frame)->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *prev = frame->previous;
-            _PyThreadState_PopFrame(tstate, frame);
-            frame = tstate->current_frame = prev;
+            _PyInterpreterFrameCore *prev = FRAME_CORE->previous;
+            _PyThreadState_PopFrame(tstate, FRAME_CORE);
+            frame = (_PyInterpreterFrame *)(tstate->current_frame = prev);
             LOAD_IP(frame->return_offset);
             RELOAD_STACK();
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
@@ -5139,8 +5140,8 @@ dummy_func(
         inst(INSTRUMENTED_LINE, ( -- )) {
             int original_opcode = 0;
             if (tstate->tracing) {
-                PyCodeObject *code = _PyFrame_GetCode(frame);
-                int index = (int)(this_instr - _PyFrame_GetBytecode(frame));
+                PyCodeObject *code = _PyFrame_GetCodeFull(frame);
+                int index = (int)(this_instr - _PyFrame_GetBytecodeFull(frame));
                 original_opcode = code->_co_monitoring->lines->data[index*code->_co_monitoring->lines->bytes_per_entry];
                 next_instr = this_instr;
             } else {
@@ -5336,8 +5337,8 @@ dummy_func(
         tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
-            const _Py_CODEUNIT *target = ((frame->owner == FRAME_OWNED_BY_INTERPRETER)
-                ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame))
+            const _Py_CODEUNIT *target = ((FRAME_CORE->owner == FRAME_OWNED_BY_INTERPRETER)
+                ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecodeFull(frame))
                 + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 3) {
@@ -5345,7 +5346,7 @@ dummy_func(
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %tu, temp %d, target %d -> %s, is_control_flow %d]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
-                    (int)(target - _PyFrame_GetBytecode(frame)),
+                    (int)(target - _PyFrame_GetBytecodeFull(frame)),
                     _PyOpcode_OpName[target->op.code], exit->is_control_flow);
             }
         #endif
@@ -5363,7 +5364,7 @@ dummy_func(
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %tu, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
-                    (int)(target - _PyFrame_GetBytecode(frame)),
+                    (int)(target - _PyFrame_GetBytecodeFull(frame)),
                     _PyOpcode_OpName[target->op.code]);
             }
     #endif
@@ -5508,21 +5509,21 @@ dummy_func(
 
         tier2 op(_DEOPT, (--)) {
             SYNC_SP();
-            GOTO_TIER_ONE((frame->owner == FRAME_OWNED_BY_INTERPRETER)
-                ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            GOTO_TIER_ONE((FRAME_CORE->owner == FRAME_OWNED_BY_INTERPRETER)
+                ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecodeFull(frame) + CURRENT_TARGET());
             Py_UNREACHABLE();
         }
 
         tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
             SYNC_SP();
             int err = _Py_HandlePending(tstate);
-            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecodeFull(frame) + CURRENT_TARGET());
             Py_UNREACHABLE();
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
             assert(oparg == 0);
-            frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
+            frame->instr_ptr = _PyFrame_GetBytecodeFull(frame) + target;
             SYNC_SP();
             GOTO_TIER_ONE(NULL);
             Py_UNREACHABLE();
@@ -5540,18 +5541,18 @@ dummy_func(
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             HANDLE_PENDING_AND_DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
-            assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCodeFull(frame)->_co_instrumentation_version));
         }
 
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
-            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
+            assert(FRAME_CORE->owner < FRAME_OWNED_BY_INTERPRETER);
+            _Py_CODEUNIT *target = _PyFrame_GetBytecodeFull(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
-                PyCodeObject *code = _PyFrame_GetCode(frame);
+                PyCodeObject *code = _PyFrame_GetCodeFull(frame);
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
                 assert(tstate->jit_exit == exit);
@@ -5649,9 +5650,9 @@ dummy_func(
             RELOAD_STACK();
 
             /* Log traceback info. */
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            if (!_PyFrame_IsIncomplete(frame)) {
-                PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+            assert(FRAME_CORE->owner != FRAME_OWNED_BY_INTERPRETER);
+            if (!_PyFrame_IsIncomplete(FRAME_CORE)) {
+                PyFrameObject *f = _PyFrame_GetFrameObjectFull(frame);
                 if (f != NULL) {
                     PyTraceBack_Here(f);
                 }
@@ -5667,7 +5668,7 @@ dummy_func(
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
-            int handled = get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti);
+            int handled = get_exception_handler(_PyFrame_GetCodeFull(frame), offset, &level, &handler, &lasti);
             if (handled == 0) {
                 // No handlers, so exit.
                 assert(_PyErr_Occurred(tstate));
@@ -5688,7 +5689,7 @@ dummy_func(
                 PyStackRef_XCLOSE(ref);
             }
             if (lasti) {
-                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
+                int frame_lasti = _PyInterpreterFrame_LASTI_FULL(frame);
                 _PyStackRef lasti = PyStackRef_TagInt(frame_lasti);
                 _PyFrame_StackPush(frame, lasti);
             }
@@ -5699,7 +5700,7 @@ dummy_func(
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyFrame_GetBytecode(frame) + handler;
+            next_instr = _PyFrame_GetBytecodeFull(frame) + handler;
 
             int err = monitor_handled(tstate, frame, next_instr, exc);
             if (err < 0) {
@@ -5721,15 +5722,15 @@ dummy_func(
         spilled label(exit_unwind) {
             assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            assert(FRAME_CORE->owner != FRAME_OWNED_BY_INTERPRETER);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = tstate->current_frame = dying->previous;
+            frame = (_PyInterpreterFrame *)(tstate->current_frame = _PyFrame_Core(dying)->previous);
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->return_offset = 0;
-            if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+            if (FRAME_CORE->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
-                tstate->current_frame = frame->previous;
+                tstate->current_frame = FRAME_CORE->previous;
 #if !_Py_TAIL_CALL_INTERP
                 assert(frame == &entry.frame);
 #endif
@@ -5801,14 +5802,14 @@ dummy_func(
             _PyJitTracerState *tracer = _tstate->jit_tracer_state;
             assert(tracer != NULL);
             tracer->prev_state.instr = next_instr;
-            PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *prev_code = PyStackRef_AsPyObjectBorrow(FRAME_CORE->f_executable);
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
                 Py_SETREF(tracer->prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
             }
 
             tracer->prev_state.instr_frame = frame;
             tracer->prev_state.instr_oparg = oparg;
-            tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(FRAME_CORE->f_executable) ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }

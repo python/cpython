@@ -99,7 +99,7 @@ Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
 #From pycore_frame.h
-FRAME_OWNED_BY_INTERPRETER = 3
+FRAME_OWNED_BY_INTERPRETER = 8
 
 MAX_OUTPUT_LEN=1024
 
@@ -1081,7 +1081,7 @@ class PyFramePtr:
         current_frame = thread_state['current_frame']
         if int(current_frame) == 0:
             return None
-        return PyFramePtr(current_frame)
+        return PyFramePtr(current_frame.cast(gdb.lookup_type("_PyInterpreterFrame").pointer()))
 
     def is_optimized_out(self):
         return self._gdbval.is_optimized_out
@@ -1116,10 +1116,12 @@ class PyFramePtr:
         return self._f_special("f_builtins")
 
     def _f_code(self):
-        return self._f_special("f_executable", PyCodeObjectPtr.from_pyobject_ptr)
+        exc = self._f_executable()
+        res = PyCodeObjectPtr.from_pyobject_ptr(exc)
+        return res
 
     def _f_executable(self):
-        return self._f_special("f_executable")
+        return self.core()['f_executable']
 
     def _f_nlocalsplus(self):
         return self._f_special("nlocalsplus", int_from_int)
@@ -1135,13 +1137,19 @@ class PyFramePtr:
             first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
         return int(instr_ptr - first_instr)
 
+    def core(self):
+        return self._gdbval['core']
+
     def is_shim(self):
-        return self._f_special("owner", int) == FRAME_OWNED_BY_INTERPRETER
+        return int(self.core()['owner']) == FRAME_OWNED_BY_INTERPRETER
 
     def previous(self):
-        if int(self._gdbval['previous']) == 0:
+        prev = self.core()['previous']
+        if int(prev) == 0:
             return None
-        return self._f_special("previous", PyFramePtr)
+        casted = prev.cast(gdb.lookup_type("_PyInterpreterFrame").pointer())
+        res = PyFramePtr(casted)
+        return res
 
     def iter_globals(self):
         '''

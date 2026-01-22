@@ -1141,11 +1141,12 @@ static const char *const event_names [] = {
 static int
 call_instrumentation_vector(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *arg2, Py_ssize_t nargs, PyObject *args[])
+    _PyInterpreterFrame *f, _Py_CODEUNIT *arg2, Py_ssize_t nargs, PyObject *args[])
 {
     if (tstate->tracing) {
         return 0;
     }
+    _PyInterpreterFrameCore *frame = _PyFrame_Core(f);
     assert(!_PyErr_Occurred(tstate));
     assert(args[0] == NULL);
     PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -1238,7 +1239,7 @@ _Py_call_instrumentation_jump(
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
            event == PY_MONITORING_EVENT_BRANCH_LEFT);
-    int to = (int)(dest - _PyFrame_GetBytecode(frame));
+    int to = (int)(dest - _PyFrame_GetBytecode(_PyFrame_Core(frame)));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return NULL;
@@ -1298,8 +1299,9 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
 }
 
 Py_NO_INLINE int
-_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
+_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* f, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
+    _PyInterpreterFrameCore *frame = _PyFrame_Core(f);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(tstate->tracing == 0);
     assert(debug_check_sanity(tstate->interp, code));
@@ -1401,8 +1403,9 @@ done:
 }
 
 Py_NO_INLINE int
-_Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
+_Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* f, _Py_CODEUNIT *instr)
 {
+    _PyInterpreterFrameCore *frame = _PyFrame_Core(f);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     int offset = (int)(instr - _PyFrame_GetBytecode(frame));
     _PyCoMonitoringData *instrumentation_data = code->_co_monitoring;
@@ -1948,7 +1951,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp)
 
     int err = 0;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, ts) {
-        _PyInterpreterFrame *frame = ts->current_frame;
+        _PyInterpreterFrameCore *frame = ts->current_frame;
         while (frame) {
             if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
                 err = instrument_lock_held(_PyFrame_GetCode(frame), interp);

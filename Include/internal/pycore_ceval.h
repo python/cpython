@@ -14,7 +14,7 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_stats.h"         // EVAL_CALL_STAT_INC()
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyInterpreterFrameCore
 
 
 /* Forward declarations */
@@ -268,7 +268,7 @@ PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
 static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
-extern _PyInterpreterFrame* _PyEval_GetFrame(void);
+extern _PyInterpreterFrameCore* _PyEval_GetFrame(void);
 
 extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
 extern int _PyEval_EnsureBuiltins(
@@ -310,7 +310,7 @@ PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc,
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
 PyAPI_FUNC(PyObject *) _PyEval_ImportFrom(PyThreadState *, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrame *, PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrameCore *, PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);

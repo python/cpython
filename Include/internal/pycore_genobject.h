@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_interpframe_structs.h" // _PyGenObject
+#include "pycore_interpframe.h"         // _PyFrame_Core
+#include "pycore_interpframe_structs.h" // _PyInterpreterFrame
 
 #include <stddef.h>               // offsetof()
 
@@ -16,7 +17,7 @@ extern "C" {
 static inline
 PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
 {
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    assert(_PyFrame_Core(frame)->owner & FRAME_OWNED_BY_GENERATOR);
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }

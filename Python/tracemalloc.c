@@ -3,7 +3,7 @@
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
-#include "pycore_interpframe.h"   // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyInterpreterFrameCore
 #include "pycore_lock.h"          // PyMutex_LockFlags()
 #include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
@@ -219,9 +219,8 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 
 
 static void
-tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
+tracemalloc_get_frame(_PyInterpreterFrameCore *pyframe, frame_t *frame)
 {
-    assert(PyStackRef_CodeCheck(pyframe->f_executable));
     frame->filename = &_Py_STR(anon_unknown);
 
     int lineno = PyUnstable_InterpreterFrame_GetLine(pyframe);
@@ -301,7 +300,7 @@ traceback_get_frames(traceback_t *traceback)
     PyThreadState *tstate = _PyThreadState_GET();
     assert(tstate != NULL);
 
-    _PyInterpreterFrame *pyframe = _PyThreadState_GetFrame(tstate);
+    _PyInterpreterFrameCore *pyframe = _PyThreadState_GetFrame(tstate);
     while (pyframe) {
         if (traceback->nframe < tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);

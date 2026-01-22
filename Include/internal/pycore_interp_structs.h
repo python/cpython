@@ -224,7 +224,7 @@ struct _gc_runtime_state {
     int collecting;
     // The frame that started the current collection. It might be NULL even when
     // collecting (if no Python frame is running):
-    _PyInterpreterFrame *frame;
+    _PyInterpreterFrameCore *frame;
     /* list of uncollectable objects */
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */

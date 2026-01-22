@@ -153,7 +153,7 @@ _PyEval_SetOpcodeTrace(PyFrameObject *frame, bool enable)
 {
     assert(frame != NULL);
 
-    PyCodeObject *code = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *code = _PyFrame_GetCode(_PyFrame_Core(frame->f_frame));
 
 #ifdef Py_GIL_DISABLED
     // First check if a change is necessary outside of the stop-the-world pause
@@ -360,7 +360,7 @@ sys_trace_line_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    assert(args[0] == (PyObject *)_PyFrame_GetCode(frame->f_frame));
+    assert(args[0] == (PyObject *)_PyFrame_GetCode(_PyFrame_Core(frame->f_frame)));
     return trace_line(tstate, self, frame, line);
 }
 
@@ -675,11 +675,11 @@ set_monitoring_trace_events(PyInterpreterState *interp)
 static int
 maybe_set_opcode_trace(PyThreadState *tstate)
 {
-    _PyInterpreterFrame *iframe = tstate->current_frame;
-    if (iframe == NULL) {
+    _PyInterpreterFrameCore *iframe = tstate->current_frame;
+    if (iframe == NULL || _PyFrame_IsExternalFrame(iframe)) {
         return 0;
     }
-    PyFrameObject *frame = iframe->frame_obj;
+    PyFrameObject *frame = _PyFrame_Full(iframe)->frame_obj;
     if (frame == NULL || !frame->f_trace_opcodes) {
         return 0;
     }

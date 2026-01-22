@@ -220,14 +220,15 @@ do { \
         DISPATCH_GOTO_NON_TRACING(); \
     }
 
-#define DISPATCH_INLINED(NEW_FRAME)                     \
-    do {                                                \
-        assert(tstate->interp->eval_frame == NULL);     \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame);         \
-        frame = tstate->current_frame = (NEW_FRAME);     \
-        CALL_STAT_INC(inlined_py_calls);                \
-        JUMP_TO_LABEL(start_frame);                      \
+#define DISPATCH_INLINED(NEW_FRAME)                                 \
+    do {                                                            \
+        assert(tstate->interp->eval_frame == NULL);                 \
+        _PyFrame_SetStackPointer(frame, stack_pointer);             \
+        assert(_PyFrame_Core((NEW_FRAME))->previous == FRAME_CORE); \
+        tstate->current_frame = _PyFrame_Core((NEW_FRAME));         \
+        frame = (NEW_FRAME);                                        \
+        CALL_STAT_INC(inlined_py_calls);                            \
+        JUMP_TO_LABEL(start_frame);                                 \
     } while (0)
 
 /* Tuple access macros */
@@ -244,10 +245,16 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 }
 #endif
 
+/* Data access macros */
+#define FRAME_CORE      (&frame->core)
+#define FRAME_CODE      (_PyFrame_GetCodeFull(frame))
+#define FRAME_CO_CONSTS (_PyFrame_GetCodeFull(frame)->co_consts)
+#define FRAME_CO_NAMES  (_PyFrame_GetCodeFull(frame)->co_names)
+
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecode(frame)))
+#define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecodeFull(frame)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
@@ -262,22 +269,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define SKIP_OVER(x)    (next_instr += (x))
 
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
-#define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
+#define STACK_SIZE()      (_PyFrame_GetCodeFull(frame)->co_stacksize)
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (FRAME_CORE->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
 // This allows temporary stack "overflows", provided it's all in the cache at any point of time.
 #define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+   (_PyFrame_Core(frame)->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
 #else
 #define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
 #endif
-
-/* Data access macros */
-#define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
-#define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
 
 /* Local variable macros */
 
@@ -326,8 +329,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
-#define CONSTS() _PyFrame_GetCode(frame)->co_consts
-#define NAMES() _PyFrame_GetCode(frame)->co_names
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
@@ -422,7 +423,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
-    frame = tstate->current_frame;                     \
+    frame = (_PyInterpreterFrame *)(tstate->current_frame);      \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
     next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) & (~1)); \

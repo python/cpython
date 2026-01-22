@@ -428,7 +428,7 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
         perf_status == PERF_STATUS_NO_INIT) {
         goto default_eval;
     }
-    PyCodeObject *co = _PyFrame_GetCode(frame);
+    PyCodeObject *co = _PyFrame_GetCode(_PyFrame_Core(frame));
     py_trampoline f = NULL;
     assert(extra_code_index != -1);
     int ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);

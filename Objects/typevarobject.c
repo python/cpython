@@ -1,6 +1,6 @@
 // TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
-#include "pycore_interpframe.h"   // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyInterpreterFrameCore
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
@@ -385,10 +385,11 @@ make_union(PyObject *self, PyObject *other)
 static PyObject *
 caller(void)
 {
-    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
-    if (f == NULL) {
+    _PyInterpreterFrameCore *frame = _PyThreadState_GET()->current_frame;
+    if (frame == NULL) {
         Py_RETURN_NONE;
     }
+    _PyInterpreterFrame *f = _PyFrame_EnsureFrameFullyInitialized(frame);
     if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
         Py_RETURN_NONE;
     }

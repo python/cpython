@@ -22,24 +22,26 @@ PyAPI_FUNC(PyObject*) PyFrame_GetVarString(PyFrameObject *frame, const char *nam
 /* The following functions are for use by debuggers and other tools
  * implementing custom frame evaluators with PEP 523. */
 
+struct _PyInterpreterFrameCore;
 struct _PyInterpreterFrame;
 
 /* Returns the code object of the frame (strong reference).
  * Does not raise an exception. */
-PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrameCore *frame);
 
 /* Returns a byte offset into the last executed instruction.
  * Does not raise an exception. */
-PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrameCore *frame);
 
 /* Returns the currently executing line number, or -1 if there is no line number.
  * Does not raise an exception. */
-PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrameCore *frame);
 
 #define PyUnstable_EXECUTABLE_KIND_SKIP 0
 #define PyUnstable_EXECUTABLE_KIND_PY_FUNCTION 1
 #define PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION 3
 #define PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
-#define PyUnstable_EXECUTABLE_KINDS 5
+#define PyUnstable_EXECUTABLE_KIND_JIT 5
+#define PyUnstable_EXECUTABLE_KINDS 6
 
 PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1];
