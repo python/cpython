@@ -285,8 +285,7 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(self.internal.lookup("x").is_free())
 
     def test_cells(self):
-        #test for addition of is_cell() and get_cells()
-        #see https://github.com/python/cpython/issues/143504
+
         code="""def outer():
                     x=1
                     def inner():
@@ -294,7 +293,7 @@ class SymtableTest(unittest.TestCase):
 
         top=symtable.symtable(code,"?","exec")
         outer = find_block(top, "outer")
-        self.assertIn("x",outer.get_cells())
+        self.assertEqual(outer.get_cells(), ["x"])
         self.assertTrue(outer.lookup("x").is_cell())
         self.assertFalse(outer.lookup("inner").is_cell())
 

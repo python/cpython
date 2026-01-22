@@ -184,6 +184,7 @@ class Function(SymbolTable):
     __frees = None
     __globals = None
     __nonlocals = None
+    __cells = None
 
     def __idents_matching(self, test_func):
         return tuple(ident for ident in self.get_identifiers()
@@ -230,8 +231,11 @@ class Function(SymbolTable):
         return self.__frees
 
     def get_cells(self):
-        """Return a list of cell variable names in the table."""
-        return [s.get_name() for s in self.get_symbols() if s.is_cell()]
+        """Return a list of cell variable names in the table.
+        """
+        if self.__cells is None:
+            self.__cells = [s.get_name() for s in self.get_symbols() if s.is_cell()]
+        return self.__cells
 
 
 class Class(SymbolTable):
