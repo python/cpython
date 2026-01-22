@@ -247,6 +247,8 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_predicate _Py_uop_sym_new_predicate
+#define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
 #define JUMP_TO_LABEL(label) goto label;
 

@@ -2293,7 +2293,7 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            b = sym_new_type(ctx, &PyBool_Type);
+            b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
@@ -3715,6 +3715,7 @@
         case _GUARD_IS_TRUE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, true);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
@@ -3739,6 +3740,7 @@
         case _GUARD_IS_FALSE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, false);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);

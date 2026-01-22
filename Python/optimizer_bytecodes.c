@@ -38,6 +38,8 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_predicate _Py_uop_sym_new_predicate
+#define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
 extern int
 optimize_to_bool(
@@ -533,7 +535,7 @@ dummy_func(void) {
     }
 
     op(_IS_OP, (left, right -- b, l, r)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
         l = left;
         r = right;
     }
@@ -1173,6 +1175,8 @@ dummy_func(void) {
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
+        sym_apply_predicate_narrowing(ctx, flag, true);
+
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
             assert(value != NULL);
@@ -1191,6 +1195,8 @@ dummy_func(void) {
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
+        sym_apply_predicate_narrowing(ctx, flag, false);
+
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
             assert(value != NULL);
