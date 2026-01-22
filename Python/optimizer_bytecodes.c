@@ -38,6 +38,8 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_predicate _Py_uop_sym_new_predicate
+#define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
 extern int
 optimize_to_bool(
@@ -533,7 +535,7 @@ dummy_func(void) {
     }
 
     op(_IS_OP, (left, right -- b, l, r)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
         l = left;
         r = right;
     }
@@ -1136,15 +1138,6 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_IS_TRUE_POP, (flag -- )) {
-        if (sym_is_const(ctx, flag)) {
-            PyObject *value = sym_get_const(ctx, flag);
-            assert(value != NULL);
-            eliminate_pop_guard(this_instr, ctx, value != Py_True);
-        }
-        sym_set_const(flag, Py_True);
-    }
-
     op(_CALL_LIST_APPEND, (callable, self, arg -- none, c, s)) {
         (void)(arg);
         c = callable;
@@ -1181,11 +1174,42 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_IS_TRUE_POP, (flag -- )) {
+        sym_apply_predicate_narrowing(ctx, flag, true);
+
+        if (sym_is_const(ctx, flag)) {
+            PyObject *value = sym_get_const(ctx, flag);
+            assert(value != NULL);
+            eliminate_pop_guard(this_instr, ctx, value != Py_True);
+        }
+        else {
+            int bit = get_test_bit_for_bools();
+            if (bit) {
+                REPLACE_OP(this_instr,
+                    test_bit_set_in_true(bit) ?
+                    _GUARD_BIT_IS_SET_POP :
+                    _GUARD_BIT_IS_UNSET_POP, bit, 0);
+            }
+        }
+        sym_set_const(flag, Py_True);
+    }
+
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
+        sym_apply_predicate_narrowing(ctx, flag, false);
+
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
             assert(value != NULL);
             eliminate_pop_guard(this_instr, ctx, value != Py_False);
+        }
+        else {
+            int bit = get_test_bit_for_bools();
+            if (bit) {
+                REPLACE_OP(this_instr,
+                    test_bit_set_in_true(bit) ?
+                    _GUARD_BIT_IS_UNSET_POP :
+                    _GUARD_BIT_IS_SET_POP, bit, 0);
+            }
         }
         sym_set_const(flag, Py_False);
     }

@@ -2293,7 +2293,7 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            b = sym_new_type(ctx, &PyBool_Type);
+            b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
@@ -3715,10 +3715,20 @@
         case _GUARD_IS_TRUE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, true);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, ctx, value != Py_True);
+            }
+            else {
+                int bit = get_test_bit_for_bools();
+                if (bit) {
+                    REPLACE_OP(this_instr,
+                           test_bit_set_in_true(bit) ?
+                           _GUARD_BIT_IS_SET_POP :
+                        _GUARD_BIT_IS_UNSET_POP, bit, 0);
+                }
             }
             sym_set_const(flag, Py_True);
             CHECK_STACK_BOUNDS(-1);
@@ -3730,12 +3740,36 @@
         case _GUARD_IS_FALSE_POP: {
             JitOptRef flag;
             flag = stack_pointer[-1];
+            sym_apply_predicate_narrowing(ctx, flag, false);
             if (sym_is_const(ctx, flag)) {
                 PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, ctx, value != Py_False);
             }
+            else {
+                int bit = get_test_bit_for_bools();
+                if (bit) {
+                    REPLACE_OP(this_instr,
+                           test_bit_set_in_true(bit) ?
+                           _GUARD_BIT_IS_UNSET_POP :
+                        _GUARD_BIT_IS_SET_POP, bit, 0);
+                }
+            }
             sym_set_const(flag, Py_False);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_BIT_IS_SET_POP: {
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_BIT_IS_UNSET_POP: {
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
