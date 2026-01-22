@@ -4188,8 +4188,8 @@ class FastWaitTestCase(BaseTestCase):
                 with self.assertRaises(subprocess.TimeoutExpired):
                     p.wait(self.WAIT_TIMEOUT)
                 self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
-        assert m1.called
-        assert m2.called
+        self.assertTrue(m1.called)
+        self.assertTrue(m2.called)
 
     @unittest.skipIf(not CAN_USE_PIDFD_OPEN, reason="needs pidfd_open()")
     def test_pidfd_open_notification_without_immediate_reap(self):
@@ -4211,7 +4211,7 @@ class FastWaitTestCase(BaseTestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
-        assert not m.called
+        self.assertFalse(m.called)
 
 if __name__ == "__main__":
     unittest.main()
