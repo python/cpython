@@ -67,6 +67,25 @@ class MiscTest(unittest.TestCase):
         a += a
         self.assertEqual(len(a), 0)
 
+    def test_fromlist_reentrant_index_mutation(self):
+
+        class Evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __index__(self):
+                self.lst.clear()
+                return "not an int"
+
+        for typecode in ('I', 'L', 'Q'):
+            lst = []
+            e = Evil(lst)
+            lst.append(e)
+            del e
+            a = array.array(typecode)
+            with self.assertRaises(TypeError):
+                a.fromlist(lst)
+
+
 
 # Machine format codes.
 #

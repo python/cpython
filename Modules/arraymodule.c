@@ -408,7 +408,10 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
+        PyObject *orig_v = v;
+        Py_INCREF(orig_v);
         v = _PyNumber_Index(v);
+        Py_DECREF(orig_v);
         if (NULL == v) {
             return -1;
         }
@@ -468,7 +471,10 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
+        PyObject *orig_v = v;
+        Py_INCREF(orig_v);
         v = _PyNumber_Index(v);
+        Py_DECREF(orig_v);
         if (NULL == v) {
             return -1;
         }
@@ -521,7 +527,10 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
+        PyObject *orig_v = v;
+        Py_INCREF(orig_v);
         v = _PyNumber_Index(v);
+        Py_DECREF(orig_v);
         if (NULL == v) {
             return -1;
         }
