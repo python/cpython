@@ -247,6 +247,8 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_predicate _Py_uop_sym_new_predicate
+#define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
 #define JUMP_TO_LABEL(label) goto label;
 
@@ -361,6 +363,34 @@ static PyObject *
 get_co_name(JitOptContext *ctx, int index)
 {
     return PyTuple_GET_ITEM(get_current_code_object(ctx)->co_names, index);
+}
+
+static int
+get_test_bit_for_bools(void) {
+#ifdef Py_STACKREF_DEBUG
+    uintptr_t false_bits = _Py_STACKREF_FALSE_INDEX;
+    uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+#else
+    uintptr_t false_bits = (uintptr_t)&_Py_FalseStruct;
+    uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+#endif
+    for (int i = 4; i < 8; i++) {
+        if ((true_bits ^ false_bits) & (1 << i)) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+static int
+test_bit_set_in_true(int bit) {
+#ifdef Py_STACKREF_DEBUG
+    uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+#else
+    uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+#endif
+    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (1 << bit));
+    return true_bits & (1 << bit);
 }
 
 #ifdef Py_DEBUG
