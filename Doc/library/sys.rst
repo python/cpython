@@ -1997,6 +1997,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
+   See :ref:`remote-debugging` for more information about the remote debugging
+   mechanism.
+
    .. audit-event:: sys.remote_exec pid script_path
 
       When the code is executed in the remote process, an
@@ -2015,6 +2018,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
+      See :pep:`768` for more details.
 
 
 .. function:: _enablelegacywindowsfsencoding()
