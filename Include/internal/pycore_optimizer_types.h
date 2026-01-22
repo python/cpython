@@ -44,7 +44,8 @@ typedef enum _JitSymType {
     JIT_SYM_TUPLE_TAG = 8,
     JIT_SYM_TRUTHINESS_TAG = 9,
     JIT_SYM_COMPACT_INT = 10,
-    JIT_SYM_SLOTS_TAG = 11,
+    JIT_SYM_PREDICATE_TAG = 11,
+    JIT_SYM_SLOTS_TAG = 12,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -77,6 +78,18 @@ typedef struct {
     uint16_t value;
 } JitOptTruthiness;
 
+typedef enum {
+    JIT_PRED_IS,
+    JIT_PRED_IS_NOT,
+} JitOptPredicateKind;
+
+typedef struct {
+    uint8_t tag;
+    uint8_t kind;
+    uint16_t lhs;
+    uint16_t rhs;
+} JitOptPredicate;
+
 typedef struct {
     uint8_t tag;
 } JitOptCompactInt;
@@ -102,6 +115,7 @@ typedef union _jit_opt_symbol {
     JitOptTruthiness truthiness;
     JitOptCompactInt compact;
     JitOptSlotsObject slots;
+    JitOptPredicate predicate;
 } JitOptSymbol;
 
 // This mimics the _PyStackRef API
@@ -135,31 +149,6 @@ typedef struct slots_arena {
     int slots_max_number;
     JitOptSlotMapping arena[SLOTS_ARENA_SIZE];
 } slots_arena;
-
-typedef struct _JitOptContext {
-    char done;
-    char out_of_space;
-    bool contradiction;
-    // Has the builtins dict been watched?
-    bool builtins_watched;
-    // The current "executing" frame.
-    _Py_UOpsAbstractFrame *frame;
-    _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
-    int curr_frame_depth;
-
-    // Arena for the symbolic types.
-    ty_arena t_arena;
-
-    // Arena for slots mappings.
-    slots_arena s_arena;
-
-    JitOptRef *n_consumed;
-    JitOptRef *limit;
-    JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
-    _PyUOpInstruction *out_buffer;
-    int out_len;
-} JitOptContext;
-
 
 #ifdef __cplusplus
 }
