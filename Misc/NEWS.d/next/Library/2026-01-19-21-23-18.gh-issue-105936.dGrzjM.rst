@@ -1,4 +1,5 @@
-When both *frozen* and *slots* are set to ``True``
-in :func:`~dataclasses.dataclass`, added methods
-``__setattr__`` and ``__delattr__`` were still referencing the original class,
-preventing it from being garbage collected and causing unexpected exceptions.
+Attempting to mutate non-field attributes of :mod:`dataclasses`
+with both *frozen* and *slots* being ``True`` now raises
+:class:`~dataclasses.FrozenInstanceError` instead of :class:`TypeError`.
+Their non-dataclass subclasses can now freely mutate non-field attributes,
+and the original non-slotted class can be garbage collected.
