@@ -932,6 +932,49 @@ class TestUopsOptimization(unittest.TestCase):
         # v + 1 should be constant folded
         self.assertLessEqual(count_ops(ex, "_BINARY_OP_ADD_INT"), 1)
 
+    def test_compare_float_eq_narrows_to_constant(self):
+        def f(n):
+            def return_tenth():
+                return 0.1
+
+            hits = 0
+            v = return_tenth()
+            for _ in range(n):
+                if v == 0.1:
+                    if v == 0.1:
+                        hits += 1
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_FLOAT"), 1)
+
+
+    def test_compare_float_ne_narrows_to_constant(self):
+        def f(n):
+            def return_tenth():
+                return 0.1
+
+            hits = 0
+            v = return_tenth()
+            for _ in range(n):
+                if v != 0.1:
+                    hits += 1000
+                else:
+                    if v == 0.1:
+                        hits += 1
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_FLOAT"), 1)
+
     @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_sequential(self):
         def dummy12(x):
