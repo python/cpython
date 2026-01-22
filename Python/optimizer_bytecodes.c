@@ -1196,7 +1196,7 @@ dummy_func(void) {
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
         sym_apply_predicate_narrowing(ctx, flag, false);
-        
+
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
             assert(value != NULL);
