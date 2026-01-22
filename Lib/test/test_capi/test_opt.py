@@ -899,16 +899,17 @@ class TestUopsOptimization(unittest.TestCase):
             v = return_1()
             for _ in range(n):
                 if v == 1:
-                    hits += v + 1
+                    if v == 1:
+                        hits += 1
             return hits
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
 
-        # v + 1 should be constant folded
-        self.assertLessEqual(count_ops(ex, "_BINARY_OP_ADD_INT"), 1)
+        # Constant narrowing allows constant folding for second comparison
+        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_INT"), 1)
 
     def test_compare_int_ne_narrows_to_constant(self):
         def f(n):
@@ -921,7 +922,8 @@ class TestUopsOptimization(unittest.TestCase):
                 if v != 1:
                     hits += 1000
                 else:
-                    hits += v + 1
+                    if v == 1:
+                        hits += v + 1
             return hits
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
@@ -929,8 +931,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
 
-        # v + 1 should be constant folded
-        self.assertLessEqual(count_ops(ex, "_BINARY_OP_ADD_INT"), 1)
+        # Constant narrowing allows constant folding for second comparison
+        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_INT"), 1)
 
     def test_compare_float_eq_narrows_to_constant(self):
         def f(n):
@@ -950,6 +952,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
 
+        # Constant narrowing allows constant folding for second comparison
         self.assertLessEqual(count_ops(ex, "_COMPARE_OP_FLOAT"), 1)
 
     def test_compare_float_ne_narrows_to_constant(self):
@@ -972,6 +975,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
 
+        # Constant narrowing allows constant folding for second comparison
         self.assertLessEqual(count_ops(ex, "_COMPARE_OP_FLOAT"), 1)
 
     @unittest.skip("gh-139109 WIP")
