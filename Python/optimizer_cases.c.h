@@ -3287,13 +3287,37 @@
                 stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 Py_DECREF(temp);
-                stack_pointer += 2;
+            }
+            else if (sym_is_const(ctx, arg)) {
+                PyObject *const_val = sym_get_const(ctx, arg);
+                if (const_val != NULL && PyUnicode_CheckExact(const_val)) {
+                    Py_ssize_t length = PyUnicode_GET_LENGTH(const_val);
+                    PyObject *temp = PyLong_FromSsize_t(length);
+                    if (temp == NULL) {
+                        goto error;
+                    }
+                    if (_Py_IsImmortal(temp)) {
+                        REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
+                               0, (uintptr_t)temp);
+                    }
+                    res = sym_new_const(ctx, temp);
+                    CHECK_STACK_BOUNDS(-2);
+                    stack_pointer[-3] = res;
+                    stack_pointer += -2;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    Py_DECREF(temp);
+                    stack_pointer += 2;
+                }
+                stack_pointer += -2;
             }
             a = arg;
             c = callable;
-            stack_pointer[-3] = res;
-            stack_pointer[-2] = a;
-            stack_pointer[-1] = c;
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = a;
+            stack_pointer[1] = c;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

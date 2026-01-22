@@ -2269,6 +2269,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
+    
+    def test_call_len_string(self):
+        def testfunc(n):
+            for _ in range(n):
+                _ = len("abc")
+                d = ''
+                _ = len(d)
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        print(uops)
+        self.assertNotIn("_CALL_LEN", uops)
+        self.assertIn("_SHUFFLE_3_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.

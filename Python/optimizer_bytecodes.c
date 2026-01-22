@@ -1394,12 +1394,25 @@ dummy_func(void) {
 
     op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
         res = sym_new_type(ctx, &PyLong_Type);
-        Py_ssize_t tuple_length = sym_tuple_length(arg);
-        if (tuple_length >= 0) {
-            PyObject *temp = PyLong_FromSsize_t(tuple_length);
+        PyObject *temp = NULL;
+
+        Py_ssize_t length = sym_tuple_length(arg);
+        if (length >= 0) {
+            temp = PyLong_FromSsize_t(length);
             if (temp == NULL) {
                 goto error;
             }
+        }
+        else if (sym_is_const(ctx, arg)) {
+            PyObject *const_val = sym_get_const(ctx, arg);
+            if (const_val != NULL && PyUnicode_CheckExact(const_val)) {
+                temp = PyLong_FromSsize_t(PyUnicode_GET_LENGTH(const_val));
+                if (temp == NULL) {
+                    goto error;
+                }
+            }
+        }
+        if (temp != NULL) {
             if (_Py_IsImmortal(temp)) {
                 REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
