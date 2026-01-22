@@ -604,7 +604,7 @@ new ABC for access to, opening, and reading *resources* inside packages.
 Resources are roughly similar to files inside packages, but they needn't
 be actual files on the physical file system.  Module loaders can provide a
 :meth:`!get_resource_reader` function which returns
-a :class:`importlib.abc.ResourceReader` instance to support this
+a :class:`!importlib.abc.ResourceReader` instance to support this
 new API.  Built-in file path loaders and zip file loaders both support this.
 
 Contributed by Barry Warsaw and Brett Cannon in :issue:`32248`.
@@ -1043,7 +1043,7 @@ window are shown and hidden in the Options menu.
 importlib
 ---------
 
-The :class:`importlib.abc.ResourceReader` ABC was introduced to
+The :class:`!importlib.abc.ResourceReader` ABC was introduced to
 support the loading of resources from packages.  See also
 :ref:`whatsnew37_importlib_resources`.
 (Contributed by Barry Warsaw, Brett Cannon in :issue:`32248`.)
@@ -2032,7 +2032,7 @@ both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`.
 (Contributed by Matthias Bussonnier in :issue:`29576`.)
 
 The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
-favour of :class:`importlib.abc.ResourceReader`.
+favour of :class:`!importlib.abc.ResourceReader`.
 
 
 locale
