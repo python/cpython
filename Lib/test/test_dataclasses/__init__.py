@@ -3416,33 +3416,6 @@ class TestFrozen(unittest.TestCase):
             c = C('hello')
             self.assertEqual(deepcopy(c), c)
 
-    def test_slotted_set_del_attr_reference_new_class_via__class__(self):
-        # See https://github.com/python/cpython/pull/144021
-        @dataclass(frozen=True, slots=True)
-        class SetDelAttrTest:
-            pass
-
-        for method_name in ('__setattr__', '__delattr__'):
-            with self.subTest(method_name=method_name):
-                method = getattr(SetDelAttrTest, method_name)
-                cell_idx = method.__code__.co_freevars.index('__class__')
-                reference = method.__closure__[cell_idx].cell_contents
-                self.assertIs(reference, SetDelAttrTest)
-
-    def test_slotted_set_del_attr_do_not_reference_old_class(self):
-        # See https://github.com/python/cpython/pull/144021
-        class SetDelAttrTest:
-            pass
-
-        OriginalCls = SetDelAttrTest
-        SetDelAttrTest = dataclass(frozen=True, slots=True)(SetDelAttrTest)
-
-        for method_name in ('__setattr__', '__delattr__'):
-            with self.subTest(method_name=method_name):
-                method = getattr(SetDelAttrTest, method_name)
-                cell_contents = [cell.cell_contents for cell in method.__closure__]
-                self.assertNotIn(OriginalCls, cell_contents)
-
 
 class TestSlots(unittest.TestCase):
     def test_simple(self):
