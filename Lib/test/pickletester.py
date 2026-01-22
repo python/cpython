@@ -33,6 +33,7 @@ from test.support import (
 from test.support.import_helper import forget
 from test.support.os_helper import TESTFN
 from test.support import threading_helper
+from test.support.testcase import ExtraAssertions
 from test.support.warnings_helper import save_restore_warnings_filters
 from test import picklecommon
 from test.picklecommon import *
@@ -2023,7 +2024,7 @@ class AbstractPicklingErrorTests:
         check(-2**1000, (OverflowError, struct.error))
 
 
-class AbstractPickleTests:
+class AbstractPickleTests(ExtraAssertions):
     # Subclass must define self.dumps, self.loads.
 
     py_version = sys.version_info  # for test_xpickle
