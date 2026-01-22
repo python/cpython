@@ -265,20 +265,23 @@ Unless using :pep:`523`, you will not need this.
 
       * - Constant
         - Description
-      * - :c:macro:`PyUnstable_EXECUTABLE_KIND_SKIP`
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
         - The frame is internal (e.g. inlined) and should be skipped by tools.
-      * - :c:macro:`PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
         - The frame corresponds to a standard Python function.
 
    .. versionadded:: 3.13
 
+   Example usage:
 
-.. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
+   .. code-block:: c
 
-   Index for the "skip" kind in :c:data:`PyUnstable_ExecutableKinds`.
-   Indicates that the frame's code object should be skipped.
-
-   .. versionadded:: 3.13
+      // Check if a frame should be skipped
+      if (kind == PyUnstable_EXECUTABLE_KIND_SKIP) {
+          // This is an internal frame (like a Tier 2 optimizer frame)
+          // Tools should ignore it.
+          continue;
+      }
 
 
 .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
