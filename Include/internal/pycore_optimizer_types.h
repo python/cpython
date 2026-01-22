@@ -40,6 +40,7 @@ typedef enum _JitSymType {
     JIT_SYM_TUPLE_TAG = 8,
     JIT_SYM_TRUTHINESS_TAG = 9,
     JIT_SYM_COMPACT_INT = 10,
+    JIT_SYM_PREDICATE_TAG = 11,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -72,6 +73,18 @@ typedef struct {
     uint16_t value;
 } JitOptTruthiness;
 
+typedef enum {
+    JIT_PRED_IS,
+    JIT_PRED_IS_NOT,
+} JitOptPredicateKind;
+
+typedef struct {
+    uint8_t tag;
+    uint8_t kind;
+    uint16_t lhs;
+    uint16_t rhs;
+} JitOptPredicate;
+
 typedef struct {
     uint8_t tag;
 } JitOptCompactInt;
@@ -84,6 +97,7 @@ typedef union _jit_opt_symbol {
     JitOptTuple tuple;
     JitOptTruthiness truthiness;
     JitOptCompactInt compact;
+    JitOptPredicate predicate;
 } JitOptSymbol;
 
 // This mimics the _PyStackRef API

@@ -25,24 +25,24 @@ state represents no information, and the BOTTOM state represents contradictory
 information. Though symbols logically progress through all intermediate nodes,
 we often skip in-between states for convenience:
 
-   UNKNOWN
-   |     |
-NULL     |
-|        |                <- Anything below this level is an object.
-|        NON_NULL-+
-|          |      |       <- Anything below this level has a known type version.
-|    TYPE_VERSION |
-|    |            |       <- Anything below this level has a known type.
-|    KNOWN_CLASS  |
-|    |  |  |   |  |
-|    |  | INT* |  |
-|    |  |  |   |  |       <- Anything below this level has a known truthiness.
-|    |  |  |   |  TRUTHINESS
-|    |  |  |   |  |
-| TUPLE |  |   |  |
-|    |  |  |   |  |       <- Anything below this level is a known constant.
-|    KNOWN_VALUE--+
-|    |                    <- Anything below this level is unreachable.
+   UNKNOWN-------------------+
+   |     |                   |
+NULL     |                   |
+|        |                   |   <- Anything below this level is an object.
+|        NON_NULL-+          |
+|          |      |          |   <- Anything below this level has a known type version.
+|    TYPE_VERSION |          |
+|    |            |          |   <- Anything below this level has a known type.
+|    KNOWN_CLASS  |          |
+|    |  |  |   |  |          PREDICATE
+|    |  | INT* |  |          |
+|    |  |  |   |  |          |   <- Anything below this level has a known truthiness.
+|    |  |  |   |  TRUTHINESS |
+|    |  |  |   |  |          |
+| TUPLE |  |   |  |          |
+|    |  |  |   |  |          |   <- Anything below this level is a known constant.
+|    KNOWN_VALUE--+----------+
+|    |                           <- Anything below this level is unreachable.
 BOTTOM
 
 For example, after guarding that the type of an UNKNOWN local is int, we can
@@ -309,6 +309,7 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
             sym->cls.version = 0;
             sym->cls.type = typ;
             return;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             if (typ != &PyBool_Type) {
                 sym_set_bottom(ctx, sym);
@@ -370,6 +371,7 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
             sym->tag = JIT_SYM_TYPE_VERSION_TAG;
             sym->version.version = version;
             return true;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             if (version != PyBool_Type.tp_version_tag) {
                 sym_set_bottom(ctx, sym);
@@ -434,6 +436,13 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             return;
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
+            make_const(sym, const_val);
+            return;
+        case JIT_SYM_PREDICATE_TAG:
+            if (!PyBool_Check(const_val)) {
+                sym_set_bottom(ctx, sym);
+                return;
+            }
             make_const(sym, const_val);
             return;
         case JIT_SYM_TRUTHINESS_TAG:
@@ -589,6 +598,7 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return _PyType_LookupByVersion(sym->version.version);
         case JIT_SYM_TUPLE_TAG:
             return &PyTuple_Type;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             return &PyBool_Type;
         case JIT_SYM_COMPACT_INT:
@@ -617,6 +627,7 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
             return Py_TYPE(sym->value.value)->tp_version_tag;
         case JIT_SYM_TUPLE_TAG:
             return PyTuple_Type.tp_version_tag;
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             return PyBool_Type.tp_version_tag;
         case JIT_SYM_COMPACT_INT:
@@ -810,6 +821,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
             }
             return;
         case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
             sym_set_bottom(ctx, sym);
             return;
@@ -821,6 +833,70 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
             sym->tag = JIT_SYM_COMPACT_INT;
             return;
     }
+}
+
+JitOptRef
+_Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind)
+{
+    JitOptSymbol *lhs = PyJitRef_Unwrap(lhs_ref);
+    JitOptSymbol *rhs = PyJitRef_Unwrap(rhs_ref);
+
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space_ref(ctx);
+    }
+
+    res->tag = JIT_SYM_PREDICATE_TAG;
+    res->predicate.kind = kind;
+    res->predicate.lhs = (uint16_t)(lhs - allocation_base(ctx));
+    res->predicate.rhs = (uint16_t)(rhs - allocation_base(ctx));
+
+    return PyJitRef_Wrap(res);
+}
+
+void
+_Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef ref, bool branch_is_true)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag != JIT_SYM_PREDICATE_TAG) {
+        return;
+    }
+
+    JitOptPredicate pred = sym->predicate;
+
+    JitOptRef lhs_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.lhs);
+    JitOptRef rhs_ref = PyJitRef_Wrap(allocation_base(ctx) + pred.rhs);
+
+    bool lhs_is_const = _Py_uop_sym_is_const(ctx, lhs_ref);
+    bool rhs_is_const = _Py_uop_sym_is_const(ctx, rhs_ref);
+    if (!lhs_is_const && !rhs_is_const) {
+        return;
+    }
+
+    bool narrow = false;
+    switch(pred.kind) {
+        case JIT_PRED_IS:
+            narrow = branch_is_true;
+            break;
+        case JIT_PRED_IS_NOT:
+            narrow = !branch_is_true;
+            break;
+        default:
+            return;
+    }
+    if (!narrow) {
+        return;
+    }
+
+    JitOptRef subject_ref = lhs_is_const ? rhs_ref : lhs_ref;
+    JitOptRef const_ref = lhs_is_const ? lhs_ref : rhs_ref;
+
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, const_ref);
+    if (const_val == NULL) {
+        return;
+    }
+    _Py_uop_sym_set_const(ctx, subject_ref, const_val);
+    assert(_Py_uop_sym_is_const(ctx, subject_ref));
 }
 
 JitOptRef
@@ -1159,6 +1235,85 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == Py_True, "value is not True");
 
+    // Resolving predicate result to True should narrow subject to True
+    JitOptRef subject = _Py_uop_sym_new_unknown(ctx);
+    JitOptRef const_true = _Py_uop_sym_new_const(ctx, Py_True);
+    if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_true)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == Py_True, "predicate narrowing did not narrow subject to True");
+
+    // Resolving predicate result to False should not narrow subject
+    subject = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(subject)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, false);
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, subject), "predicate narrowing incorrectly narrowed subject");
+
+    // Resolving inverted predicate to False should narrow subject to True
+    subject = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(subject)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS_NOT);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, false);
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing (inverted) did not const-narrow subject");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == Py_True, "predicate narrowing (inverted) did not narrow subject to True");
+
+    // Resolving inverted predicate to True should not narrow subject
+    subject = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(subject)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_true, JIT_PRED_IS_NOT);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, subject), "predicate narrowing incorrectly narrowed subject (inverted/true)");
+
+    // Test narrowing subject to None
+    subject = _Py_uop_sym_new_unknown(ctx);
+    JitOptRef const_none = _Py_uop_sym_new_const(ctx, Py_None);
+    if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_none)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_none, JIT_PRED_IS);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (None)");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == Py_None, "predicate narrowing did not narrow subject to None");
+
+    // Test narrowing subject to numerical constant
+    subject = _Py_uop_sym_new_unknown(ctx);
+    PyObject *one_obj = PyLong_FromLong(1);
+    JitOptRef const_one = _Py_uop_sym_new_const(ctx, one_obj);
+    if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(const_one)) {
+        goto fail;
+    }
+    ref = _Py_uop_sym_new_predicate(ctx, subject, const_one, JIT_PRED_IS);
+    if (PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, subject), "predicate narrowing did not const-narrow subject (1)");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, subject) == one_obj, "predicate narrowing did not narrow subject to 1");
 
     val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
     if (val_big == NULL) {
