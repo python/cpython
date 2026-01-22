@@ -1,0 +1,2 @@
+Fix `urllib.parse.urljoin` for the case when the base path is relative
+and the relative reference path starts with '..'.

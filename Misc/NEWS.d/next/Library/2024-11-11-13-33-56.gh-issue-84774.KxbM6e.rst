@@ -1,0 +1,1 @@
+Preserve double slashes in the path in :func:`urllib.parse.urljoin`.
