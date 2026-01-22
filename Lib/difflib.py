@@ -32,10 +32,109 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
 
 from _colorize import can_colorize, get_theme
 from heapq import nlargest as _nlargest
-from collections import namedtuple as _namedtuple
+from collections import Counter as _Counter, namedtuple as _namedtuple
 from types import GenericAlias
 
 Match = _namedtuple('Match', 'a b size')
+
+_LENGTH = 0
+_LINK = 1
+_NEXT = 2
+_POS = 3
+
+
+class _LCSUBAutomaton:
+    """Suffix Automaton for finding longest common substring."""
+
+    def __init__(self, s2, start2=0, stop2=None, *, junk=()):
+        if stop2 is None:
+            stop2 = len(s2)
+
+        self.start2 = start2
+        self.stop2 = stop2
+        self.junk = frozenset(junk)
+        self.root = root = [0, None, {}, -1]  # [length, link, next, end_pos]
+
+        last_len = 0
+        last = root
+        for j in range(start2, stop2):
+            c = s2[j]
+            if c in junk:
+                last_len = 0
+                last = root
+            else:
+                last_len += 1
+                curr = [last_len, None, {}, j]
+
+                p = last
+                p_next = p[_NEXT]
+                while c not in p_next:
+                    p_next[c] = curr
+                    if p is root:
+                        curr[_LINK] = root
+                        break
+                    p = p[_LINK]
+                    p_next = p[_NEXT]
+                else:
+                    q = p_next[c]
+                    p_length_p1 = p[_LENGTH] + 1
+                    if p_length_p1 == q[_LENGTH]:
+                        curr[_LINK] = q
+                    else:
+                        clone = [p_length_p1, q[_LINK], q[_NEXT].copy(), q[_POS]]
+                        while (p_next := p[_NEXT]).get(c) is q:
+                            p_next[c] = clone
+                            if p is root:
+                                break
+                            p = p[_LINK]
+
+                        q[_LINK] = curr[_LINK] = clone
+
+                last = curr
+
+    def find(self, s1, start1=0, stop1=None):
+        if stop1 is None:
+            stop1 = len(s1)
+        root = self.root
+        junk = self.junk
+        v = root
+        l = 0
+        best_len = 0
+        best_state = None
+        best_pos = 0
+
+        for i in range(start1, stop1):
+            c = s1[i]
+            if c in junk:
+                v = root
+                l = 0
+            else:
+                while v is not root and c not in v[_NEXT]:
+                    v = v[_LINK]
+                    l = v[_LENGTH]
+
+                v_next = v[_NEXT]
+                if c in v_next:
+                    v = v_next[c]
+                    l += 1
+                    if l > best_len:
+                        best_len = l
+                        best_state = v
+                        best_pos = i
+
+        if not best_len:
+            return (start1, self.start2, 0)
+
+        start_in_s1 = best_pos + 1 - best_len
+        end_in_s2 = best_state[_POS]
+        start_in_s2 = end_in_s2 + 1 - best_len
+        return (start_in_s1, start_in_s2, best_len)
+
+
+def longest_common_substring(s1, s2, start1=0, stop1=None, start2=0, stop2=None,
+                             *, junk=()):
+    return _LCSUBAutomaton(s2, start2, stop2, junk=junk).find(s1, start1, stop1)
+
 
 def _calculate_ratio(matches, length):
     if length:
@@ -276,32 +375,42 @@ class SequenceMatcher:
         # out the junk later is much cheaper than building b2j "right"
         # from the start.
         b = self.b
-        self.b2j = b2j = {}
-
-        for i, elt in enumerate(b):
-            indices = b2j.setdefault(elt, [])
-            indices.append(i)
-
-        # Purge junk elements
-        self.bjunk = junk = set()
         isjunk = self.isjunk
-        if isjunk:
-            for elt in b2j.keys():
-                if isjunk(elt):
-                    junk.add(elt)
-            for elt in junk: # separate loop avoids separate list of keys
-                del b2j[elt]
-
-        # Purge popular elements that are not junk
+        self.bjunk = junk = set()
+        autojunk = self.autojunk
         self.bpopular = popular = set()
-        n = len(b)
-        if self.autojunk and n >= 200:
-            ntest = n // 100 + 1
-            for elt, idxs in b2j.items():
-                if len(idxs) > ntest:
-                    popular.add(elt)
-            for elt in popular: # ditto; as fast for 1% deletion
-                del b2j[elt]
+        self.b2j = b2j = {}
+        if autojunk:
+            for i, elt in enumerate(b):
+                indices = b2j.setdefault(elt, [])
+                indices.append(i)
+
+            # Purge junk elements
+            if isjunk:
+                for elt in b2j.keys():
+                    if isjunk(elt):
+                        junk.add(elt)
+                for elt in junk: # separate loop avoids separate list of keys
+                    del b2j[elt]
+
+            # Purge popular elements that are not junk
+            n = len(b)
+            if autojunk and n >= 200:
+                ntest = n // 100 + 1
+                for elt, idxs in b2j.items():
+                    if len(idxs) > ntest:
+                        popular.add(elt)
+                for elt in popular: # ditto; as fast for 1% deletion
+                    del b2j[elt]
+        else:
+            # Prepare LCSUB Automaton
+            if isjunk:
+                bcounts = _Counter(b)
+                junk.update(filter(isjunk, bcounts))
+                for elt in junk:
+                    del bcounts[elt]
+            self.aut_cache = (None, None)     # Cache last automaton
+            self.all_junk = junk | popular
 
     def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
@@ -361,32 +470,43 @@ class SequenceMatcher:
         # Windiff ends up at the same place as diff, but by pairing up
         # the unique 'b's and then matching the first two 'a's.
 
-        a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
+        a, b, isbjunk = self.a, self.b, self.bjunk.__contains__
         if ahi is None:
             ahi = len(a)
         if bhi is None:
             bhi = len(b)
-        besti, bestj, bestsize = alo, blo, 0
-        # find longest junk-free match
-        # during an iteration of the loop, j2len[j] = length of longest
-        # junk-free match ending with a[i-1] and b[j]
-        j2len = {}
-        nothing = []
-        for i in range(alo, ahi):
-            # look at all instances of a[i] in b; note that because
-            # b2j has no junk keys, the loop is skipped if a[i] is junk
-            j2lenget = j2len.get
-            newj2len = {}
-            for j in b2j.get(a[i], nothing):
-                # a[i] matches b[j]
-                if j < blo:
-                    continue
-                if j >= bhi:
-                    break
-                k = newj2len[j] = j2lenget(j-1, 0) + 1
-                if k > bestsize:
-                    besti, bestj, bestsize = i-k+1, j-k+1, k
-            j2len = newj2len
+        if alo >= ahi:
+            besti, bestj, bestsize = alo, blo, 0
+        elif self.autojunk:
+            b2j = self.b2j
+            besti, bestj, bestsize = alo, blo, 0
+            # find longest junk-free match
+            # during an iteration of the loop, j2len[j] = length of longest
+            # junk-free match ending with a[i-1] and b[j]
+            j2len = {}
+            nothing = []
+            for i in range(alo, ahi):
+                # look at all instances of a[i] in b; note that because
+                # b2j has no junk keys, the loop is skipped if a[i] is junk
+                j2lenget = j2len.get
+                newj2len = {}
+                for j in b2j.get(a[i], nothing):
+                    # a[i] matches b[j]
+                    if j < blo:
+                        continue
+                    if j >= bhi:
+                        break
+                    k = newj2len[j] = j2lenget(j-1, 0) + 1
+                    if k > bestsize:
+                        besti, bestj, bestsize = i-k+1, j-k+1, k
+                j2len = newj2len
+        else:
+            # Without autojunk, run LCSUB Automaton
+            blo_bhi, aut = self.aut_cache
+            if aut is None or blo_bhi != (blo, bhi):
+                aut = _LCSUBAutomaton(b, blo, bhi, junk=self.all_junk)
+                self.aut_cache = ((blo, bhi), aut)
+            besti, bestj, bestsize = aut.find(a, alo, ahi)
 
         # Extend the best by non-junk elements on each end.  In particular,
         # "popular" non-junk elements aren't in b2j, which greatly speeds
