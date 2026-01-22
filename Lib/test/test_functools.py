@@ -3655,6 +3655,16 @@ class TestCachedProperty(unittest.TestCase):
                           if support.HAVE_PY_DOCSTRINGS
                           else None))
 
+    def test_annotations(self):
+        class Foo:
+            attr: int = 1
+
+            @property
+            def cached_prop(self) -> int:
+                return 2
+
+        self.assertEqual(Foo.__annotations__['attr'], Foo.__annotations__['cached_prop'])
+
     def test_module(self):
         self.assertEqual(CachedCostItem.cost.__module__, CachedCostItem.__module__)
 
