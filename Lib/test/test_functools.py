@@ -3337,7 +3337,7 @@ class TestSingleDispatch(unittest.TestCase):
             with self.assertRaisesRegex(TypeError, no_positional_re % "function"):
                 @d.register
                 def _() -> None:
-                    """I am not a incorrect method."""
+                    """I am an incorrect method."""
                     return 42
 
             with self.assertRaisesRegex(TypeError, no_positional_re % "function"):
