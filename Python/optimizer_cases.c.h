@@ -3271,12 +3271,24 @@
             arg = stack_pointer[-1];
             callable = stack_pointer[-3];
             res = sym_new_type(ctx, &PyLong_Type);
-            Py_ssize_t tuple_length = sym_tuple_length(arg);
-            if (tuple_length >= 0) {
-                PyObject *temp = PyLong_FromSsize_t(tuple_length);
+            PyObject *temp = NULL;
+            Py_ssize_t length = sym_tuple_length(arg);
+            if (length >= 0) {
+                temp = PyLong_FromSsize_t(length);
                 if (temp == NULL) {
                     goto error;
                 }
+            }
+            else if (sym_is_const(ctx, arg)) {
+                PyObject *const_val = sym_get_const(ctx, arg);
+                if (const_val != NULL && PyUnicode_CheckExact(const_val)) {
+                    temp = PyLong_FromSsize_t(PyUnicode_GET_LENGTH(const_val));
+                    if (temp == NULL) {
+                        goto error;
+                    }
+                }
+            }
+            if (temp != NULL) {
                 if (_Py_IsImmortal(temp)) {
                     REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
@@ -3287,37 +3299,13 @@
                 stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 Py_DECREF(temp);
-            }
-            else if (sym_is_const(ctx, arg)) {
-                PyObject *const_val = sym_get_const(ctx, arg);
-                if (const_val != NULL && PyUnicode_CheckExact(const_val)) {
-                    Py_ssize_t length = PyUnicode_GET_LENGTH(const_val);
-                    PyObject *temp = PyLong_FromSsize_t(length);
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    if (_Py_IsImmortal(temp)) {
-                        REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
-                               0, (uintptr_t)temp);
-                    }
-                    res = sym_new_const(ctx, temp);
-                    CHECK_STACK_BOUNDS(-2);
-                    stack_pointer[-3] = res;
-                    stack_pointer += -2;
-                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                    Py_DECREF(temp);
-                    stack_pointer += 2;
-                }
-                stack_pointer += -2;
+                stack_pointer += 2;
             }
             a = arg;
             c = callable;
-            CHECK_STACK_BOUNDS(2);
-            stack_pointer[-1] = res;
-            stack_pointer[0] = a;
-            stack_pointer[1] = c;
-            stack_pointer += 2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-3] = res;
+            stack_pointer[-2] = a;
+            stack_pointer[-1] = c;
             break;
         }
 
