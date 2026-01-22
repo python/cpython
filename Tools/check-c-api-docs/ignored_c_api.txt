@@ -75,14 +75,6 @@ Py_UniversalNewlineFgets
 PyUnstable_CopyPerfMapFile
 PyUnstable_PerfTrampoline_CompileCode
 PyUnstable_PerfTrampoline_SetPersistAfterFork
-# cpython/genobject.h
-PyAsyncGenASend_CheckExact
-# cpython/longintrepr.h
-PyLong_BASE
-PyLong_MASK
-PyLong_SHIFT
-# cpython/pyerrors.h
-PyException_HEAD
 # cpython/pylifecycle.h
 Py_FrozenMain
 # pythonrun.h
