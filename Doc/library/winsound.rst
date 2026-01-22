@@ -8,6 +8,8 @@
 .. moduleauthor:: Toby Dickenson <htrd90@zepler.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`PC/winsound.c`
+
 --------------
 
 The :mod:`winsound` module provides access to the basic sound-playing machinery
@@ -15,6 +17,9 @@ provided by Windows platforms.  It includes functions and several constants.
 
 .. availability:: Windows.
 
+
+Functions
+---------
 
 .. function:: Beep(frequency, duration)
 
@@ -45,6 +50,9 @@ provided by Windows platforms.  It includes functions and several constants.
    fallback if a sound cannot be played otherwise.  If the system indicates an
    error, :exc:`RuntimeError` is raised.
 
+
+Constants
+---------
 
 .. data:: SND_FILENAME
 
