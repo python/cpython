@@ -952,7 +952,6 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertLessEqual(count_ops(ex, "_COMPARE_OP_FLOAT"), 1)
 
-
     def test_compare_float_ne_narrows_to_constant(self):
         def f(n):
             def return_tenth():
