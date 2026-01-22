@@ -3068,6 +3068,9 @@ class TestFrozen(unittest.TestCase):
                 with self.assertRaises(FrozenInstanceError):
                     c.i = 5
                 self.assertEqual(c.i, 10)
+                with self.assertRaises(FrozenInstanceError):
+                    del c.i
+                self.assertEqual(c.i, 10)
 
     def test_frozen_empty(self):
         for slots in (False, True):
