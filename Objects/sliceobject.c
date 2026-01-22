@@ -19,6 +19,7 @@ this type and there is exactly one in existence.
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 
 
 #define _PySlice_CAST(op) _Py_CAST(PySliceObject*, (op))

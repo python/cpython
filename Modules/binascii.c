@@ -272,6 +272,32 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
     return Py_CLEANUP_SUPPORTED;
 }
 
+/* The function inserts '\n' each width characters, moving the data right.
+ * It assumes that we allocated enough space for all of the newlines in data.
+ * Returns the size of the data including the newlines.
+ */
+static Py_ssize_t
+wraplines(unsigned char *data, Py_ssize_t size, size_t width)
+{
+    if ((size_t)size <= width) {
+        return size;
+    }
+    unsigned char *src = data + size;
+    Py_ssize_t newlines = (size - 1) / width;
+    Py_ssize_t line_len = size - newlines * width;
+    size += newlines;
+    unsigned char *dst = data + size;
+
+    while ((src -= line_len) != data) {
+        dst -= line_len;
+        memmove(dst, src, line_len);
+        *--dst = '\n';
+        line_len = width;
+    }
+    assert(dst == data + width);
+    return size;
+}
+
 #include "clinic/binascii.c.h"
 
 /*[clinic input]
@@ -622,39 +648,44 @@ binascii.b2a_base64
     data: Py_buffer
     /
     *
+    wrapcol: size_t = 0
     newline: bool = True
 
 Base64-code line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
-/*[clinic end generated code: output=4ad62c8e8485d3b3 input=0e20ff59c5f2e3e1]*/
+binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
+                         int newline)
+/*[clinic end generated code: output=2edc7311a9515eac input=2ee4214e6d489e2e]*/
 {
-    const unsigned char *bin_data;
-    Py_ssize_t bin_len;
-    binascii_state *state;
-
-    bin_data = data->buf;
-    bin_len = data->len;
-
+    const unsigned char *bin_data = data->buf;
+    Py_ssize_t bin_len = data->len;
     assert(bin_len >= 0);
 
-    if ( bin_len > BASE64_MAXBIN ) {
-        state = get_binascii_state(module);
-        if (state == NULL) {
-            return NULL;
-        }
-        PyErr_SetString(state->Error, "Too much data for base64 line");
-        return NULL;
+    /* Each group of 3 bytes (rounded up) gets encoded as 4 characters,
+     * not counting newlines.
+     * Note that 'b' gets encoded as 'Yg==' (1 in, 4 out).
+     *
+     * Use unsigned integer arithmetic to avoid signed integer overflow.
+     */
+    size_t out_len = ((size_t)bin_len + 2u) / 3u * 4u;
+    if (out_len > PY_SSIZE_T_MAX) {
+        goto toolong;
     }
-
-    /* We're lazy and allocate too much (fixed up later).
-       "+2" leaves room for up to two pad characters.
-       Note that 'b' gets encoded as 'Yg==\n' (1 in, 5 out). */
-    Py_ssize_t out_len = bin_len*2 + 2;
+    if (wrapcol && out_len) {
+        /* Each line should encode a whole number of bytes. */
+        wrapcol = wrapcol < 4 ? 4 : wrapcol / 4 * 4;
+        out_len += (out_len - 1u) / wrapcol;
+        if (out_len > PY_SSIZE_T_MAX) {
+            goto toolong;
+        }
+    }
     if (newline) {
         out_len++;
+        if (out_len > PY_SSIZE_T_MAX) {
+            goto toolong;
+        }
     }
     PyBytesWriter *writer = PyBytesWriter_Create(out_len);
     if (writer == NULL) {
@@ -687,10 +718,22 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
         *ascii_data++ = BASE64_PAD;
     }
 
+    if (wrapcol) {
+        unsigned char *start = PyBytesWriter_GetData(writer);
+        ascii_data = start + wraplines(start, ascii_data - start, wrapcol);
+    }
     if (newline)
         *ascii_data++ = '\n';       /* Append a courtesy newline */
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
+
+toolong:;
+    binascii_state *state = get_binascii_state(module);
+    if (state == NULL) {
+        return NULL;
+    }
+    PyErr_SetString(state->Error, "Too much data for base64");
+    return NULL;
 }
 
 
