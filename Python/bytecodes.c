@@ -839,6 +839,7 @@ dummy_func(
 
             PyObject *res_o = d->action(left_o, right_o);
             DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -5273,6 +5274,28 @@ dummy_func(
             int is_false = PyStackRef_IsFalse(flag);
             DEAD(flag);
             AT_END_EXIT_IF(!is_false);
+        }
+
+        replicate(4:8) op (_GUARD_BIT_IS_SET_POP, (flag -- )) {
+#ifdef Py_STACKREF_DEBUG
+            uintptr_t bits = flag.index;
+#else
+            uintptr_t bits = flag.bits;
+#endif
+            uintptr_t set = (1 << oparg) & bits;
+            DEAD(flag);
+            AT_END_EXIT_IF(set == 0);
+        }
+
+        replicate(4:8) op (_GUARD_BIT_IS_UNSET_POP, (flag -- )) {
+#ifdef Py_STACKREF_DEBUG
+            uintptr_t bits = flag.index;
+#else
+            uintptr_t bits = flag.bits;
+#endif
+            uintptr_t set = (1 << oparg) & bits;
+            DEAD(flag);
+            AT_END_EXIT_IF(set != 0);
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
