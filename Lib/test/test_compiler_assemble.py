@@ -1,10 +1,13 @@
 import dis
 import io
+import os
 import textwrap
 import types
 
 from test.support.bytecode_helper import AssemblerTestCase
 
+
+os.environ.setdefault("NO_COLOR", "1")
 
 # Tests for the code-object creation stage of the compiler.
 

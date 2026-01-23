@@ -7,6 +7,7 @@ import functools
 import io
 import itertools
 import opcode
+import os
 import re
 import sys
 import tempfile
@@ -18,6 +19,8 @@ from test.support import (captured_stdout, requires_debug_ranges,
                           os_helper, import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
+
+os.environ.setdefault("NO_COLOR", "1")
 
 CACHE = dis.opmap["CACHE"]
 
