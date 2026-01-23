@@ -1,0 +1,18 @@
+[1mdiff --git a/Doc/library/functions.rst b/Doc/library/functions.rst[m
+[1mindex cd819b8d06..cfa6d9620d 100644[m
+[1m--- a/Doc/library/functions.rst[m
+[1m+++ b/Doc/library/functions.rst[m
+[36m@@ -1352,9 +1352,10 @@[m [mare always available.  They are listed here in alphabetical order.[m
+    :ref:`tut-files` for more examples of how to use this function.[m
+ [m
+    *file* is a :term:`path-like object` giving the pathname (absolute or[m
+[31m-   relative to the current working directory) of the file to be opened or an[m
+[31m-   integer file descriptor of the file to be wrapped.  (If a file descriptor is[m
+[31m-   given, it is closed when the returned I/O object is closed unless *closefd*[m
+[32m+[m[32m   relative to the current working directory) of the file to be opened,[m
+[32m+[m[32m   or an object with a ``name`` attribute, or an integer file descriptor[m
+[32m+[m[32m   of the file to be wrapped. (If a file descriptor is given,[m[41m [m
+[32m+[m[32m   it is closed when the returned I/O object is closed unless *closefd*[m
+    is set to ``False``.)[m
+ [m
+    *mode* is an optional string that specifies the mode in which the file is[m

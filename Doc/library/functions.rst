@@ -1346,7 +1346,7 @@ are always available.  They are listed here in alphabetical order.
    single: file object; open() built-in function
 
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
-
+`
    Open *file* and return a corresponding :term:`file object`.  If the file
    cannot be opened, an :exc:`OSError` is raised. See
    :ref:`tut-files` for more examples of how to use this function.
@@ -1367,7 +1367,7 @@ are always available.  They are listed here in alphabetical order.
    *encoding* is not specified the encoding used is platform-dependent:
    :func:`locale.getencoding` is called to get the current locale encoding.
    (For reading and writing raw bytes use binary mode and leave
-   *encoding* unspecified.)  The available modes are:
+   *encoding* unspecified.)  The available modes are:`
 
    .. _filemodes:
 
