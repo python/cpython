@@ -15,6 +15,7 @@ from test.test_email import (
     )
 from test.test_email.params import (
     C,
+    include_unless,
     params,
     Params,
     params_map,
@@ -1833,6 +1834,54 @@ class TestParser(TestParserMixin, TestEmailBase):
 
 
     # get_cfws
+
+    @params
+    def test_get_cfws(self, s, *args, **kw):
+        kw.setdefault('value', ' ')
+        cfws = self._test_parse(parser.get_cfws, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(cfws, parser.CFWSList)
+        self.assertEqual(cfws.token_type, 'cfws')
+        self.verify_terminal_types(cfws, 'ptext', 'fws')
+
+    # get_cfws should behave exactly the same as get_comment when parsing
+    # values containing just a comment.
+    @params_map(with_namelist=True)
+    def adapt_comment_tests_for_cfws(nl, s, *args, **kw):
+        # Our 'ctree' nested comment check returns a list of comments instead
+        # of just the single nested comment it does for Comment.
+        if 'commenttree' in kw:
+            kw['commenttree'] = [kw['commenttree']]
+        # XXX: get_cfws has the same bug that get_fws has: it does *not* raise
+        # an error if there is no cfws, and it should.
+        # XXX XXX Like get_fws, we'll deprecate this in the refactor.
+        if nl.has_any('empty', 'non_wsp_before_left_paren_is_error'):
+            kw.pop('exception')
+            kw['remainder'] = s
+        yield 'from_test_get_comment', C(s, *args, **kw)
+
+    params_test_get_cfws = old_api_only(
+
+        # get_cfws should behave exactly the same as get_fws when parsing
+        # whitespace only strings, except for the case of ending at a '('
+        # because cfws *doesn't* end there.
+        include_unless(
+            lambda n, *a, **k: 'left_parenthesis' in n,
+            label="from_test_get_fws",
+            )(params_test_get_fws),
+
+        # get_cfws should behave exactly the same as get_comment when parsing
+        # values containing just a comment.  Even the tests with remainders
+        # should pass if the remainder doesn't start with whitespace.
+        include_unless(
+            lambda n, *a, remainder=..., **k:
+                remainder is not ...
+                    and remainder.startswith(tuple(RFC_WSP))
+                or 'wsp_before_left_paren_is_error' in n
+            )(adapt_comment_tests_for_cfws(params_test_get_comment)),
+
+        )
 
     def test_get_cfws_only_ws(self):
         cfws = self._test_get_x(parser.get_cfws,
