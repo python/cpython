@@ -416,8 +416,15 @@
                 assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
                 int next_oparg;
                 #if TIER_ONE
-                assert(next_instr->op.code == STORE_FAST);
                 next_oparg = next_instr->op.arg;
+                #if _Py_TIER2
+
+                if (next_instr->op.code == ENTER_EXECUTOR) {
+                    _PyExecutorObject *exec = _PyFrame_GetCode(frame)->co_executors->executors[next_oparg];
+                    next_oparg = exec->vm_data.oparg;
+                }
+                #endif
+                assert(next_instr->op.code == STORE_FAST || next_instr->op.code == ENTER_EXECUTOR);
                 #else
                 next_oparg = (int)CURRENT_OPERAND0_16();
                 #endif

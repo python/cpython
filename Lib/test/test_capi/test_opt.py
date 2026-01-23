@@ -3849,6 +3849,67 @@ class TestUopsOptimization(unittest.TestCase):
         """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_143820(self):
+        # https://github.com/python/cpython/issues/143358
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        import sys
+        import random
+        
+        int_v1 = 981679
+        int_v2 = -3791744241805517
+        any_v3 = 939.217
+        
+        def f1(): int_v1 ^ int_v1
+        
+        for i_f1 in range(300):
+            f1()
+        
+        def f2():
+            class Int(int):
+                def __index__(self):...
+        
+            inf = float('inf')
+            nzero = -0
+            zero = 0.0
+            dummy = 0
+            print('', file=sys.stderr)
+        
+            def f_0_dc_6103(p): return p + 1
+            def f_1_dc_6103(p): return f_0_dc_6103(p) + 1
+            def f_2_dc_6103(p): return f_1_dc_6103(p) + 1
+            def f_3_dc_6103(p): return f_2_dc_6103(p) + 1
+            def f_4_dc_6103(p): return f_3_dc_6103(p) + 1
+            def f_5_dc_6103(p): return f_4_dc_6103(p) + 1
+            def f_6_dc_6103(p): return f_5_dc_6103(p) + 1
+            def f_7_dc_6103(p): return f_6_dc_6103(p) + 1
+            def f_8_dc_6103(p): return f_7_dc_6103(p) + 1
+            def f_9_dc_6103(p): return f_8_dc_6103(p) + 1
+        
+            if inf == inf: dummy += 1
+            s = ''
+            try:
+                for _ in range(10):
+                    s += ''
+                s += 'y'
+            except Exception: pass
+            int_v1 ^ int_v1
+            int_v1 ^ int_v1
+            int_v1 ^ int_v1
+            int_v2 - int_v1
+            int_v2 - int_v1
+            int_v2 - int_v1
+            int_v2 - int_v1
+            int_v2 - int_v1
+            not any_v3
+            not any_v3
+            not any_v3
+        
+        for i_f2 in range(300):
+            f2()
+        """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
+        self.assertEqual(result[0].rc, 0, result)
+
 def global_identity(x):
     return x
 
