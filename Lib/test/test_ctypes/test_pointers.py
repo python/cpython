@@ -404,6 +404,16 @@ class PointersTestCase(unittest.TestCase):
         self.assertEqual(len(ws_typ), 0, ws_typ)
         self.assertEqual(len(ws_ptr), 0, ws_ptr)
 
+    def test_pointer_proto_missing_argtypes_error(self):
+        class BadType(ctypes._Pointer):
+            # _type_ is intentionally missing
+            pass
+
+        func = ctypes.pythonapi.Py_GetVersion
+        func.argtypes = (BadType,)
+
+        with self.assertRaises(ctypes.ArgumentError):
+            func(None)
 
 class PointerTypeCacheTestCase(unittest.TestCase):
     # dummy tests to check warnings and base behavior
@@ -472,23 +482,6 @@ class PointerTypeCacheTestCase(unittest.TestCase):
             self.assertIs(ptr._type_, C)
         ptr.set_type(c_int)
         self.assertIs(ptr._type_, c_int)
-
-class TestPointerStringProto(unittest.TestCase):
-    def test_pointer_string_proto_argtypes_error(self):
-        with self.assertWarns(DeprecationWarning):
-            BadType = ctypes.POINTER("BugTrigger")
-
-        if os.name == "nt":
-            libc = ctypes.WinDLL("kernel32.dll")
-            func = libc.GetCurrentProcessId
-        else:
-            libc = ctypes.CDLL(None)
-            func = libc.getpid
-
-        func.argtypes = (BadType,)
-
-        with self.assertRaises(ctypes.ArgumentError):
-            func(ctypes.byref(ctypes.c_int(0)))
 
 
 if __name__ == '__main__':
