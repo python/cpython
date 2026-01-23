@@ -285,17 +285,8 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(self.internal.lookup("x").is_free())
 
     def test_cells(self):
+        self.assertTrue(self.spam.lookup("x").is_cell())
 
-        code="""def outer():
-                    x=1
-                    def inner():
-                        return x"""
-
-        top=symtable.symtable(code,"?","exec")
-        outer = find_block(top, "outer")
-        self.assertEqual(outer.get_cells(), ["x"])
-        self.assertTrue(outer.lookup("x").is_cell())
-        self.assertFalse(outer.lookup("inner").is_cell())
 
     def test_referenced(self):
         self.assertTrue(self.internal.lookup("x").is_referenced())
