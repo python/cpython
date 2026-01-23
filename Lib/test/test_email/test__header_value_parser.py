@@ -1882,7 +1882,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 or 'wsp_before_left_paren_is_error' in n
             )(adapt_comment_tests_for_cfws(params_test_get_comment)),
 
-        test_get_cfws_only_mixed = C(
+        only_mixed = C(
             ' (foo )  ( bar) ',
             ' (foo )  ( bar) ',
             ' ',
@@ -1893,7 +1893,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             #self.assertEqual(cfws[1].content, 'foo ')
             #self.assertEqual(cfws[3].content, ' bar')
 
-        test_get_cfws_ends_at_non_leader = C(
+        ends_at_non_leader = C(
             '(foo) bar',
             '(foo) ',
             ' ',
@@ -1903,7 +1903,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
             #self.assertEqual(cfws[0].content, 'foo')
 
-        test_get_cfws_ends_at_non_printable = C(
+        ends_at_non_printable = C(
             '(foo) \x07',
             '(foo) ',
             ' ',
@@ -1913,7 +1913,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
             #self.assertEqual(cfws[0].content, 'foo')
 
-        test_get_cfws_header_ends_in_comment = C(
+        header_ends_in_comment = C(
             '  (foo ',
             '  (foo )',
             ' ',
@@ -1923,7 +1923,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
             #self.assertEqual(cfws[1].content, 'foo ')
 
-        test_get_cfws_multiple_nested_comments = C(
+        multiple_nested_comments = C(
             '(foo (bar)) ((a)(a))',
             '(foo (bar)) ((a)(a))',
             ' ',
