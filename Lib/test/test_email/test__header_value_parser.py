@@ -2833,15 +2833,25 @@ class TestParser(TestParserMixin, TestEmailBase):
         # of just the single nested comment it does for Comment.
         if 'commenttree' in kw:
             kw['commenttree'] = [kw['commenttree']]
-        # XXX: get_cfws has the same bug that get_fws has: it does *not* raise
-        # an error if there is no cfws, and it should.
-        # XXX XXX Like get_fws, we'll deprecate this in the refactor.
-        if nl.has_any('empty', 'non_wsp_before_left_paren_is_error'):
+        # XXX POSTDEP: delete from here...
+        #   get_cfws had the same bug that get_fws had: it did *not*
+        #   raise an error if there is no cfws, and it should.  For backward
+        #   compatibility we continue to not raise under the old api.
+        if ('oldapi' in nl
+                and nl.has_any('empty', 'non_wsp_before_left_paren_is_error')
+            ):
             kw.pop('exception')
             kw['remainder'] = s
+            kw['warnings'] = kw.get('warnings', []) + [
+                (
+                    DeprecationWarning,
+                    r'(?i)(?=.*no whitespace)(?=.*comment)(?=.*raise)',
+                    )
+                ]
+        # XXX POSTDEP: ...to here
         yield 'from_test_get_comment', C(s, *args, **kw)
 
-    params_test_get_cfws = old_api_only(
+    params_test_get_cfws = for_each_api(
 
         # get_cfws should behave exactly the same as get_fws when parsing
         # whitespace only strings, except for the case of ending at a '('
@@ -2901,8 +2911,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified=' (a) (foo (bar))',
             comments=['a', 'foo (bar)'],
             commenttree=[['a'], ['foo ', ['bar']]],
-            # XXX XXX this index will change during refactor.
-            ew_indexes=[6],
+            ew_indexes=[11],
             ),
 
         ew_missing_whitespace = C(
