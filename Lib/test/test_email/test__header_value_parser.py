@@ -1883,35 +1883,56 @@ class TestParser(TestParserMixin, TestEmailBase):
             )(adapt_comment_tests_for_cfws(params_test_get_comment)),
 
         test_get_cfws_only_mixed = C(
-            ' (foo )  ( bar) ', ' (foo )  ( bar) ', ' ', [], '',
-                ['foo ', ' bar'])
-                ,
-       #self.assertEqual(cfws[1].content, 'foo ')
-       #self.assertEqual(cfws[3].content, ' bar')
+            ' (foo )  ( bar) ',
+            ' (foo )  ( bar) ',
+            ' ',
+            [],
+            '',
+            ['foo ', ' bar'],
+            ),
+            #self.assertEqual(cfws[1].content, 'foo ')
+            #self.assertEqual(cfws[3].content, ' bar')
 
         test_get_cfws_ends_at_non_leader = C(
-            '(foo) bar', '(foo) ', ' ', [], 'bar', ['foo'])
-            ,
-       #self.assertEqual(cfws[0].content, 'foo')
+            '(foo) bar',
+            '(foo) ',
+            ' ',
+            [],
+            'bar',
+            ['foo'],
+            ),
+            #self.assertEqual(cfws[0].content, 'foo')
 
         test_get_cfws_ends_at_non_printable = C(
-            '(foo) \x07', '(foo) ', ' ', [], '\x07', ['foo'])
-            ,
-       #self.assertEqual(cfws[0].content, 'foo')
+            '(foo) \x07',
+            '(foo) ',
+            ' ',
+            [],
+            '\x07',
+            ['foo'],
+            ),
+            #self.assertEqual(cfws[0].content, 'foo')
 
         test_get_cfws_header_ends_in_comment = C(
-            '  (foo ', '  (foo )', ' ',
-            [errors.InvalidHeaderDefect], '', ['foo '])
-            ,
-       #self.assertEqual(cfws[1].content, 'foo ')
+            '  (foo ',
+            '  (foo )',
+            ' ',
+            [errors.InvalidHeaderDefect],
+            '',
+            ['foo '],
+            ),
+            #self.assertEqual(cfws[1].content, 'foo ')
 
         test_get_cfws_multiple_nested_comments = C(
-            '(foo (bar)) ((a)(a))', '(foo (bar)) ((a)(a))', ' ', [],
-                '', ['foo (bar)', '(a)(a)'])
-                ,
-       #self.assertEqual(cfws[0].comments, ['foo (bar)'])
-       #self.assertEqual(cfws[2].comments, ['(a)(a)'])
-
+            '(foo (bar)) ((a)(a))',
+            '(foo (bar)) ((a)(a))',
+            ' ',
+            [],
+                '',
+            ['foo (bar)', '(a)(a)'],
+            ),
+            #self.assertEqual(cfws[0].comments, ['foo (bar)'])
+            #self.assertEqual(cfws[2].comments, ['(a)(a)'])
 
         )
 
