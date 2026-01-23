@@ -1422,7 +1422,7 @@ PyCPointerType_from_param_impl(PyObject *type, PyTypeObject *cls,
     if(typeinfo->proto == NULL){
         PyErr_SetString(
             PyExc_TypeError,
-            "cannot convert argument: POINTER target type is unresolved"
+            "cannot convert argument: POINTER _type_ type is not set"
         );
         return NULL;
     }
