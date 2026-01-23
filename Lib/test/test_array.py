@@ -77,13 +77,14 @@ class MiscTest(unittest.TestCase):
                 return "not an int"
 
         for typecode in ('I', 'L', 'Q'):
-            lst = []
-            e = Evil(lst)
-            lst.append(e)
-            del e
-            a = array.array(typecode)
-            with self.assertRaises(TypeError):
-                a.fromlist(lst)
+            with self.subTest(typecode=typecode):
+                lst = []
+                e = Evil(lst)
+                lst.append(e)
+                del e
+                a = array.array(typecode)
+                with self.assertRaises(TypeError):
+                    a.fromlist(lst)
 
 
 
