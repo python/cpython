@@ -2434,27 +2434,6 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
-
-
-static PyObject *
-// Interface to PySet_Add, returning the set
-pyset_add(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
-{
-    Py_ssize_t nargs = _PyVectorcall_NARGS(nargsf);
-    if (nargs != 2) {
-        PyErr_SetString(PyExc_ValueError, "pyset_add requires exactly two arguments");
-        return NULL;
-    }
-    PyObject *set = args[0];
-    PyObject *item = args[1];
-
-    int return_value = PySet_Add(set, item);
-    if (return_value < 0) {
-        return NULL;
-    }
-    return Py_NewRef(set);
-}
-
 // Used by `finalize_thread_hang`.
 #if defined(_POSIX_THREADS) && !defined(__wasi__)
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
@@ -2699,7 +2678,6 @@ static PyMethodDef TestMethods[] = {
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
-    {"pyset_add", _PyCFunction_CAST(pyset_add), METH_FASTCALL, NULL},
     {"settrace_to_error", settrace_to_error, METH_O, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},

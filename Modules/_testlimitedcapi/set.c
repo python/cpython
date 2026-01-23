@@ -200,6 +200,22 @@ test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_U
     return NULL;
 }
 
+// Interface to PySet_Add, returning the set
+static PyObject *
+pyset_add(PyObject *self, PyObject *args)
+{
+    PyObject *set, *item;
+    if (!PyArg_ParseTuple(args, "OO", &set, &item)) {
+        return NULL;
+    }
+
+    int return_value = PySet_Add(set, item);
+    if (return_value < 0) {
+        return NULL;
+    }
+    return Py_NewRef(set);
+}
+
 static PyMethodDef test_methods[] = {
     {"set_check", set_check, METH_O},
     {"set_checkexact", set_checkexact, METH_O},
@@ -221,6 +237,7 @@ static PyMethodDef test_methods[] = {
     {"test_frozenset_add_in_capi", test_frozenset_add_in_capi, METH_NOARGS},
     {"test_set_contains_does_not_convert_unhashable_key",
      test_set_contains_does_not_convert_unhashable_key, METH_NOARGS},
+    {"pyset_add", pyset_add, METH_VARARGS},
 
     {NULL},
 };

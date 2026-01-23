@@ -9,7 +9,6 @@ import unittest
 import warnings
 import weakref
 from random import randrange, shuffle
-import _testcapi
 from test import support
 from test.support import warnings_helper
 
@@ -2212,32 +2211,6 @@ class TestGraphs(unittest.TestCase):
             self.assertEqual(len(edge), 2)      # Two cube vertices define an edge
             for cubevert in edge:
                 self.assertIn(cubevert, g)
-
-class TestPySet_Add(unittest.TestCase):
-    def test_set(self):
-        # Test the PySet_Add c-api for set objects
-        s = set()
-        self.assertEqual(_testcapi.pyset_add(s, 1), {1})
-        self.assertRaises(TypeError, _testcapi.pyset_add, s, [])
-
-    def test_frozenset(self):
-        # Test the PySet_Add c-api for frozenset objects
-        self.assertEqual(_testcapi.pyset_add(frozenset(), 1), frozenset([1]))
-        frozen_set = frozenset()
-        # if the argument to PySet_Add is a frozenset that is not uniquely references an error is generated
-        self.assertRaises(SystemError, _testcapi.pyset_add, frozen_set, 1)
-
-    def test_frozenset_gc_tracking(self):
-        # see gh-140234
-        class TrackedHashableClass():
-            pass
-
-        a = TrackedHashableClass()
-        result_set = _testcapi.pyset_add(frozenset(), 1)
-        self.assertFalse(gc.is_tracked(result_set))
-        result_set = _testcapi.pyset_add(frozenset(), a)
-        self.assertTrue(gc.is_tracked(result_set))
-
 
 #==============================================================================
 
