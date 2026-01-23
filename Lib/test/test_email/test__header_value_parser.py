@@ -52,6 +52,9 @@ RFC_ATEXT = ''.join((
 # https://datatracker.ietf.org/doc/html/rfc5322#section-3.2.3
 RFC_SPECIALS = r'()<>[]:;@\,."'
 
+# This isn't an RFC concept, but it is as useful in tests as it is in the code.
+CFWS_LEADER = RFC_WSP + '('
+
 ALL_ASCII = bytes(range(0, 128)).decode('ascii')
 
 
@@ -1881,30 +1884,30 @@ class TestParser(TestParserMixin, TestEmailBase):
                 or 'wsp_before_left_paren_is_error' in n
             )(adapt_comment_tests_for_cfws(params_test_get_comment)),
 
-        only_mixed = C(
+        mixed_comments_and_wsp = C(
             ' (foo )  ( bar) ',
             comments=['foo ', ' bar'],
             commenttree=[['foo '], [' bar']],
             ),
 
-        ends_at_non_leader = C(
-            '(foo) bar',
-            remainder='bar',
-            comments=['foo'],
-            commenttree=[['foo']],
-            ),
-
-        ends_at_non_printable = C(
-            '(foo) \x07',
-            remainder='\x07',
-            comments=['foo'],
-            commenttree=[['foo']],
+        **for_each_character(
+                ALL_ASCII,
+                # XXX XXX skip things split considers whitespace. This is buggy.
+                #                             US  RS  GS  FS
+                skip=CFWS_LEADER + '\r\n\v\f\x1f\x1e\x1d\x1c',
+                )(
+            ends_at_non_comment_non_ws = C(
+                '(foo) {char}',
+                remainder='{char}',
+                comments=['foo'],
+                commenttree=[['foo']],
+                ),
             ),
 
         header_ends_in_comment = C(
             '  (foo ',
             stringified='  (foo )',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_comment_defect],
             comments=['foo '],
             commenttree=[['foo ']],
             ),
@@ -1913,6 +1916,39 @@ class TestParser(TestParserMixin, TestEmailBase):
             '(foo (bar)) ((a)(a))',
             comments=['foo (bar)', '(a)(a)'],
             commenttree=[['foo ', ['bar']], [['a'], ['a']]],
+            ),
+
+        ew_after_comment_no_ws = C(
+            '  (bar)  (foo)=?UTF-8?q?foo?=',
+            comments=['bar', 'foo'],
+            remainder='=?UTF-8?q?foo?=',
+            ),
+
+        # XXX XXX these will get decoded after refactor is done.
+
+        ew_in_nested_comment = C(
+            ' (a) (foo (=?UTF-8?q?bar?=))',
+            #stringified=' (a) (foo (bar))',
+            comments=['a', 'foo (=?UTF-8?q?bar?=)'],
+            #comments=['a', 'foo (bar)'],
+            #commenttree=[('a', []), ('foo (bar)', [('bar', [])])],
+            ),
+
+        ew_missing_whitespace = C(
+            '(=?UTF-8?q?foo?==?UTF-8?q?bar?=) (b)',
+            #stringified='(foobar) (b)',
+            comments=['=?UTF-8?q?foo?==?UTF-8?q?bar?=', 'b'],
+            #comments=['foobar', 'b'],
+            #defects=[
+            #    missing_whitespace_after_ew_defect,
+            #    missing_whitespace_before_ew_defect,
+            #    ],
+            ),
+
+        nested_and_unnested_empty_comments = C(
+            '()  (()) ( () ) ( ( ) )',
+            comments=['', '()', ' () ', ' ( ) '],
+            commenttree=[[''], [['']], [' ', [''], ' '], [' ', [' '], ' ']],
             ),
 
         )
