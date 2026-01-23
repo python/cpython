@@ -16,11 +16,101 @@ extern "C" {
 #include <stdbool.h>
 
 
+typedef struct _PyJitUopBuffer {
+    _PyUOpInstruction *start;
+    _PyUOpInstruction *next;
+    _PyUOpInstruction *end;
+} _PyJitUopBuffer;
+
+
+typedef struct _JitOptContext {
+    char done;
+    char out_of_space;
+    bool contradiction;
+    // Has the builtins dict been watched?
+    bool builtins_watched;
+    // The current "executing" frame.
+    _Py_UOpsAbstractFrame *frame;
+    _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
+    int curr_frame_depth;
+
+    // Arena for the symbolic types.
+    ty_arena t_arena;
+
+    JitOptRef *n_consumed;
+    JitOptRef *limit;
+    JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+    _PyJitUopBuffer out_buffer;
+} JitOptContext;
+
+
+static inline void
+uop_buffer_init(_PyJitUopBuffer *trace, _PyUOpInstruction *start, uint32_t size)
+{
+    trace->next = trace->start = start;
+    trace->end = start + size;
+}
+
+static inline _PyUOpInstruction *
+uop_buffer_last(_PyJitUopBuffer *trace)
+{
+    assert(trace->next > trace->start);
+    return trace->next-1;
+}
+
+static inline int
+uop_buffer_length(_PyJitUopBuffer *trace)
+{
+    return (int)(trace->next - trace->start);
+}
+
+static inline int
+uop_buffer_remaining_space(_PyJitUopBuffer *trace)
+{
+    return (int)(trace->end - trace->next);
+}
+
+typedef struct _PyJitTracerInitialState {
+    int stack_depth;
+    int chain_depth;
+    struct _PyExitData *exit;
+    PyCodeObject *code; // Strong
+    PyFunctionObject *func; // Strong
+    struct _PyExecutorObject *executor; // Strong
+    _Py_CODEUNIT *start_instr;
+    _Py_CODEUNIT *close_loop_instr;
+    _Py_CODEUNIT *jump_backward_instr;
+} _PyJitTracerInitialState;
+
+typedef struct _PyJitTracerPreviousState {
+    bool dependencies_still_valid;
+    int instr_oparg;
+    int instr_stacklevel;
+    _Py_CODEUNIT *instr;
+    PyCodeObject *instr_code; // Strong
+    struct _PyInterpreterFrame *instr_frame;
+    _PyBloomFilter dependencies;
+} _PyJitTracerPreviousState;
+
+typedef struct _PyJitTracerTranslatorState {
+    int jump_backward_seen;
+} _PyJitTracerTranslatorState;
+
+typedef struct _PyJitTracerState {
+    bool is_tracing;
+    _PyJitTracerInitialState initial_state;
+    _PyJitTracerPreviousState prev_state;
+    _PyJitTracerTranslatorState translator_state;
+    JitOptContext opt_context;
+    _PyJitUopBuffer code_buffer;
+    _PyJitUopBuffer out_buffer;
+    _PyUOpInstruction uop_array[2 * UOP_MAX_TRACE_LENGTH];
+} _PyJitTracerState;
+
 typedef struct _PyExecutorLinkListNode {
     struct _PyExecutorObject *next;
     struct _PyExecutorObject *previous;
 } _PyExecutorLinkListNode;
-
 
 typedef struct {
     uint8_t opcode;
@@ -86,8 +176,8 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 
 int _Py_uop_analyze_and_optimize(
     _PyThreadStateImpl *tstate,
-    _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
-    _PyBloomFilter *dependencies);
+    _PyUOpInstruction *input, int trace_len, int curr_stackentries,
+    _PyUOpInstruction *output, _PyBloomFilter *dependencies);
 
 extern PyTypeObject _PyUOpExecutor_Type;
 
@@ -205,6 +295,8 @@ extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value,
 extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
 extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind);
+extern void _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef sym, bool branch_is_true);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
