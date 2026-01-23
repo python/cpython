@@ -1884,38 +1884,36 @@ class TestParser(TestParserMixin, TestEmailBase):
         only_mixed = C(
             ' (foo )  ( bar) ',
             comments=['foo ', ' bar'],
+            commenttree=[['foo '], [' bar']],
             ),
-            #self.assertEqual(cfws[1].content, 'foo ')
-            #self.assertEqual(cfws[3].content, ' bar')
 
         ends_at_non_leader = C(
             '(foo) bar',
             remainder='bar',
             comments=['foo'],
+            commenttree=[['foo']],
             ),
-            #self.assertEqual(cfws[0].content, 'foo')
 
         ends_at_non_printable = C(
             '(foo) \x07',
             remainder='\x07',
             comments=['foo'],
+            commenttree=[['foo']],
             ),
-            #self.assertEqual(cfws[0].content, 'foo')
 
         header_ends_in_comment = C(
             '  (foo ',
             stringified='  (foo )',
             defects=[errors.InvalidHeaderDefect],
             comments=['foo '],
+            commenttree=[['foo ']],
             ),
-            #self.assertEqual(cfws[1].content, 'foo ')
 
         multiple_nested_comments = C(
             '(foo (bar)) ((a)(a))',
             comments=['foo (bar)', '(a)(a)'],
+            commenttree=[['foo ', ['bar']], [['a'], ['a']]],
             ),
-            #self.assertEqual(cfws[0].comments, ['foo (bar)'])
-            #self.assertEqual(cfws[2].comments, ['(a)(a)'])
 
         )
 
