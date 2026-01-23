@@ -1352,9 +1352,10 @@ are always available.  They are listed here in alphabetical order.
    :ref:`tut-files` for more examples of how to use this function.
 
    *file* is a :term:`path-like object` giving the pathname (absolute or
-   relative to the current working directory) of the file to be opened or an
-   integer file descriptor of the file to be wrapped.  (If a file descriptor is
-   given, it is closed when the returned I/O object is closed unless *closefd*
+   relative to the current working directory) of the file to be opened,
+   or an object with a ``name`` attribute, or an integer file descriptor
+   of the file to be wrapped. (If a file descriptor is given, 
+   it is closed when the returned I/O object is closed unless *closefd*
    is set to ``False``.)
 
    *mode* is an optional string that specifies the mode in which the file is
