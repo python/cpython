@@ -363,6 +363,14 @@ I/O Base Classes
       As a convenience, it is allowed to call this method more than once;
       only the first call, however, will have an effect.
 
+   .. attribute:: name
+
+      The name of the underlying file if it has one.
+      This is the *file* argument as passed to :func:`open` or the constructor.
+      The type of this attribute depends on what was originally passed - it may
+      be a string, bytes, integer file descriptor, or other object representation.
+      If there is no underlying file, the attribute may be ``None``.
+
    .. attribute:: closed
 
       ``True`` if the stream is closed.
@@ -700,8 +708,11 @@ Raw File I/O
 
    .. attribute:: name
 
-      The file name.  This is the file descriptor of the file when no name is
-      given in the constructor.
+      The file name.  This is the *name* argument as passed to the constructor.
+      Depending on the type of object that was passed, this may be a string,
+      bytes, integer file descriptor, or other object representation.
+      If the file was opened using a file descriptor, the *name* attribute
+      will contain the file descriptor value.
 
 
 Buffered Streams
