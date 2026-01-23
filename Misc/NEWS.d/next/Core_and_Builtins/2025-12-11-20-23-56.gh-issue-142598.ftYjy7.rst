@@ -1,0 +1,1 @@
+Adds a new executable type for _PyInterpreterFrame.f_executable PEP 523 JITs to plug in and have their frames visible to external introspection tools.
