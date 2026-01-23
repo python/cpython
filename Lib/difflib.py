@@ -55,19 +55,25 @@ class _LCSUBSimple:
             junk = frozenset(junk)
         self.seq2 = seq2
         self.junk = junk
-        self.pos2 = pos2 = {}   # positions of each element in seq2
-        for i, elt in enumerate(seq2):
-            indices = pos2.setdefault(elt, [])
-            indices.append(i)
-        if junk:
-            for elt in junk:
-                del pos2[elt]
+        self.pos2 = None
+
+    def _build(self):
+        if self.pos2 is None:
+            self.pos2 = pos2 = {}   # positions of each element in seq2
+            for i, elt in enumerate(self.seq2):
+                indices = pos2.setdefault(elt, [])
+                indices.append(i)
+            junk = self.junk
+            if junk:
+                for elt in junk:
+                    del pos2[elt]
 
     def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
         if stop1 is None:
             stop1 = len(seq1)
         if stop2 is None:
             stop2 = len(self.seq2)
+        self._build()
         pos2 = self.pos2
         j2len = {}
         nothing = []
@@ -129,6 +135,12 @@ class _LCSUBAutomaton:
         """
         Automaton needs to rebuild for every (start2, stop2)
         This is made to cache the last one and only rebuild on new values
+
+        Note that to construct Automaton that can be queried for any
+            (start2, stop2), each node would need to store a store a set of
+            indices. And this is prone to O(n^2) memory explosion.
+            Current approach maintains reasonable memory guarantees
+            and is also much simpler in comparison.
         """
         if self.root is not None and self.cache == (start2, stop2):
             return
@@ -480,24 +492,17 @@ class SequenceMatcher:
                 del bcounts[elt]
 
         self._max_bcount = max(bcounts.values()) if bcounts else 0
-        self._all_junk = frozenset(junk | popular)
-        self._lcsub_automaton = None    # _LCSUBAutomaton instance
-        self._lcsub_simple = None       # _LCSUBSimple instanct
-
-    def _get_lcsub_calculator(self, automaton=False):
-        if automaton:
-            if self._lcsub_automaton is None:
-                self._lcsub_automaton = _LCSUBAutomaton(self.b, self._all_junk)
-            return self._lcsub_automaton
-        else:
-            if self._lcsub_simple is None:
-                self._lcsub_simple = _LCSUBSimple(self.b, self._all_junk)
-            return self._lcsub_simple
+        self._all_junk = all_junk = frozenset(junk | popular)
+        self._lcsub_simple = _LCSUBSimple(b, all_junk)
+        self._lcsub_automaton = _LCSUBAutomaton(b, all_junk)
 
     @property
     def b2j(self):
         # NOTE: For backwards compatibility
-        return self._get_lcsub_calculator(automaton=False).pos2
+        simple_calc = self._lcsub_simple
+        if simple_calc.pos2 is None:
+            simple_calc._build()
+        return simple_calc.pos2
 
     def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
@@ -568,17 +573,54 @@ class SequenceMatcher:
         if asize <= 0 and bsize <= 0:
             besti, bestj, bestsize = alo, blo, 0
         else:
-            # Constant to contruct automaton is roughly 6.
-            # Constant to run automaton is roughly 2.
-            # This has been tested on a range of data sets.
-            # For that specific set it gave selection accuracy of 95%.
-            # Weak spot in this is cases with little or no element overlap at all.
-            # However, such check would have more cost than benefit.
-            automaton_cost = bsize * 6 + asize * 2
-            simple_cost = self._max_bcount * asize
-            use_automaton = simple_cost > automaton_cost
-            calc = self._get_lcsub_calculator(use_automaton)
-            besti, bestj, bestsize = calc.find(a, alo, ahi, blo, bhi)
+            # Can trim a from both ends while characters are not in b
+            # This is cheap and we have bcounts at all times
+            bcounts = self._bcounts
+            tmp_alo = alo
+            tmp_ahi = ahi
+            while tmp_alo < tmp_ahi and a[tmp_alo] not in bcounts:
+                tmp_alo += 1
+            while tmp_alo < tmp_ahi and a[tmp_ahi - 1] not in bcounts:
+                tmp_ahi -= 1
+            tmp_asize = tmp_ahi - tmp_alo
+            if tmp_asize <= 0:
+                besti, bestj, bestsize = alo, blo, 0
+            else:
+                # Constant to contruct automaton is roughly - 6.
+                # Constant to run automaton is roughly - 1.
+                # This has been tested on a range of data sets.
+                # It gave selection accuracy of ~95%.
+                # Weak spot is cases with little or no element overlap at all.
+                # However, such check would likely have more cost than benefit.
+                simple_calc = self._lcsub_simple
+                automaton = self._lcsub_automaton
+
+                automaton_cost = tmp_asize
+                if automaton.cache != (blo, bhi):
+                    automaton_cost += bsize * 6
+                simple_cost = self._max_bcount * tmp_asize
+                if simple_calc.pos2 is None:
+                    simple_cost += bsize
+                if simple_cost < automaton_cost:
+                    calc = simple_calc
+                else:
+                    calc = automaton
+                besti, bestj, bestsize = calc.find(a, tmp_alo, tmp_ahi, blo, bhi)
+
+        # NOTE: Doing it at the same time results in bigger matches!
+        # # If bjunk or bpopular were omitted in matching (performance reasons)
+        # # We now extend the match to capture as much as we can
+        # if self.bjunk or self.bpopular:
+        #     while besti > alo and bestj > blo and a[besti-1] == b[bestj-1]:
+        #         besti -= 1
+        #         bestj -= 1
+        #         bestsize += 1
+        #     lasti = besti + bestsize
+        #     lastj = bestj + bestsize
+        #     while lasti < ahi and lastj < bhi and a[lasti] == b[lastj]:
+        #         lasti += 1
+        #         lastj += 1
+        #         bestsize += 1
 
         if self.bpopular:
             # Extend the best by non-junk elements on each end.  In particular,
