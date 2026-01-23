@@ -1712,18 +1712,42 @@ def get_comment(value, start):
         return comment, start
     return comment, start + 1
 
-def get_cfws(value):
+@_deprecate_old_api_and_lack_of_raise_on_invalid_input
+def get_cfws(value, start):
     """CFWS = (1*([FWS] comment) [FWS]) / FWS
+
+    Raise an error if start does not point to either whitespace or an open
+    parenthesis in value.  Otherwise return a CFWSList containing any
+    whitespace or comments up to the next non-CFWS character outside of a
+    comment (or the end of value), and the index of that next character (or the
+    len of value).
 
     """
     cfws = CFWSList()
-    while value and value[0] in CFWS_LEADER:
-        if value[0] in WSP:
-            token, value = get_fws(value)
+    vlen = len(value)
+    while start < vlen:
+        if (c := value[start]) in WSP:
+            token, start = get_fws(value, start)
+        elif c == '(':
+            token, start = get_comment(value, start)
         else:
-            token, value = get_comment(value)
+            break
         cfws.append(token)
-    return cfws, value
+    if not cfws:
+        # XXX POSTDEP: change this to raise the exception.
+        return (
+            cfws,
+            start,
+            errors.HeaderParseError(
+                f'expected cfws but found {value[start:]!r}'
+                ),
+            (
+                "Calling get_cfws when there is no whitespace or comment at"
+                " the start is deprecated and will raise an error in the"
+                " future."
+                ),
+            )
+    return cfws, start
 
 def get_quoted_string(value):
     """quoted-string = [CFWS] <bare-quoted-string> [CFWS]
