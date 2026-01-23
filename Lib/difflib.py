@@ -142,7 +142,8 @@ class _LCSUBAutomaton:
             Current approach maintains reasonable memory guarantees
             and is also much simpler in comparison.
         """
-        if self.root is not None and self.cache == (start2, stop2):
+        key = (start2, stop2)
+        if self.root is not None and self.cache == key:
             return
 
         self.root = root = [0, None, {}, -1]
@@ -186,7 +187,7 @@ class _LCSUBAutomaton:
 
                 last = curr
 
-        self.cache = (start2, stop2)
+        self.cache = key
 
     def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
         size1 = len(seq1)
@@ -607,57 +608,34 @@ class SequenceMatcher:
                     calc = automaton
                 besti, bestj, bestsize = calc.find(a, tmp_alo, tmp_ahi, blo, bhi)
 
-        # NOTE: Doing it at the same time results in bigger matches!
-        # # If bjunk or bpopular were omitted in matching (performance reasons)
-        # # We now extend the match to capture as much as we can
-        # if self.bjunk or self.bpopular:
-        #     while besti > alo and bestj > blo and a[besti-1] == b[bestj-1]:
-        #         besti -= 1
-        #         bestj -= 1
-        #         bestsize += 1
-        #     lasti = besti + bestsize
-        #     lastj = bestj + bestsize
-        #     while lasti < ahi and lastj < bhi and a[lasti] == b[lastj]:
-        #         lasti += 1
-        #         lastj += 1
-        #         bestsize += 1
+        # Extend the best by non-junk elements on each end.  In particular,
+        # "popular" non-junk elements aren't in b2j, which greatly speeds
+        # the inner loop above, but also means "the best" match so far
+        # doesn't contain any junk *or* popular non-junk elements.
+        while besti > alo and bestj > blo and \
+              not isbjunk(b[bestj-1]) and \
+              a[besti-1] == b[bestj-1]:
+            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
+        while besti+bestsize < ahi and bestj+bestsize < bhi and \
+              not isbjunk(b[bestj+bestsize]) and \
+              a[besti+bestsize] == b[bestj+bestsize]:
+            bestsize += 1
 
-        if self.bpopular:
-            # Extend the best by non-junk elements on each end.  In particular,
-            # "popular" non-junk elements aren't in b2j, which greatly speeds
-            # the inner loop above, but also means "the best" match so far
-            # doesn't contain any junk *or* popular non-junk elements.
-            while besti > alo and bestj > blo and \
-                  not isbjunk(b[bestj-1]) and \
-                  a[besti-1] == b[bestj-1]:
-                besti -= 1
-                bestj -= 1
-                bestsize += 1
-
-            while besti+bestsize < ahi and bestj+bestsize < bhi and \
-                  not isbjunk(b[bestj+bestsize]) and \
-                  a[besti+bestsize] == b[bestj+bestsize]:
-                bestsize += 1
-
-        if self.bjunk:
-            # Now that we have a wholly interesting match (albeit possibly
-            # empty!), we may as well suck up the matching junk on each
-            # side of it too.  Can't think of a good reason not to, and it
-            # saves post-processing the (possibly considerable) expense of
-            # figuring out what to do with it.  In the case of an empty
-            # interesting match, this is clearly the right thing to do,
-            # because no other kind of match is possible in the regions.
-            while besti > alo and bestj > blo and \
-                  isbjunk(b[bestj-1]) and \
-                  a[besti-1] == b[bestj-1]:
-                besti -= 1
-                bestj -= 1
-                bestsize += 1
-
-            while besti+bestsize < ahi and bestj+bestsize < bhi and \
-                  isbjunk(b[bestj+bestsize]) and \
-                  a[besti+bestsize] == b[bestj+bestsize]:
-                bestsize = bestsize + 1
+        # Now that we have a wholly interesting match (albeit possibly
+        # empty!), we may as well suck up the matching junk on each
+        # side of it too.  Can't think of a good reason not to, and it
+        # saves post-processing the (possibly considerable) expense of
+        # figuring out what to do with it.  In the case of an empty
+        # interesting match, this is clearly the right thing to do,
+        # because no other kind of match is possible in the regions.
+        while besti > alo and bestj > blo and \
+              isbjunk(b[bestj-1]) and \
+              a[besti-1] == b[bestj-1]:
+            besti, bestj, bestsize = besti-1, bestj-1, bestsize+1
+        while besti+bestsize < ahi and bestj+bestsize < bhi and \
+              isbjunk(b[bestj+bestsize]) and \
+              a[besti+bestsize] == b[bestj+bestsize]:
+            bestsize = bestsize + 1
 
         return Match(besti, bestj, bestsize)
 
