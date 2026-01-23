@@ -141,8 +141,9 @@ class EditorWindow:
         text.bind("<<smart-backspace>>",self.smart_backspace_event)
         text.bind("<<newline-and-indent>>",self.newline_and_indent_event)
         text.bind("<<smart-indent>>",self.smart_indent_event)
+        text.bind("<<smart-dedent>>", self.smart_dedent_event)
         self.fregion = fregion = self.FormatRegion(self)
-        # self.fregion used in smart_indent_event to access indent_region.
+        # self.fregion used in smart-x-events to access region.
         text.bind("<<indent-region>>", fregion.indent_region_event)
         text.bind("<<dedent-region>>", fregion.dedent_region_event)
         text.bind("<<comment-region>>", fregion.comment_region_event)
@@ -1372,6 +1373,27 @@ class EditorWindow:
             return "break"
         finally:
             text.undo_block_stop()
+
+    def smart_dedent_event(self, event):
+        # if selection:
+        #     do dedent-region
+        # elif only whitespace to the left:
+        #      dedent one level
+        first, last = self.get_selection_indices()
+        self.text.undo_block_start()
+        try:
+            if first and last:
+                if index2line(first) != index2line(last):
+                    return self.dedent_region_event(event)
+            prefix = self.text.get('insert linestart', 'insert')
+            raw, effective = get_line_indent(prefix, self.tabwidth)
+            if raw == len(prefix):
+                # Only whitespace to the left
+                self.reindent_to(effective - self.indentwidth)
+            self.text.see('insert')
+            return 'break'
+        finally:
+            self.text.undo_block_stop()
 
     def newline_and_indent_event(self, event):
         """Insert a newline and indentation after Enter keypress event.
