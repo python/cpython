@@ -79,9 +79,7 @@ class MiscTest(unittest.TestCase):
         for typecode in ('I', 'L', 'Q'):
             with self.subTest(typecode=typecode):
                 lst = []
-                e = Evil(lst)
-                lst.append(e)
-                del e
+                lst.append(Evil(lst))
                 a = array.array(typecode)
                 with self.assertRaises(TypeError):
                     a.fromlist(lst)
