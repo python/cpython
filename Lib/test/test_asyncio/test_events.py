@@ -287,6 +287,7 @@ class EventLoopTestsMixin:
         ):
             self.assertRaises(
                 RuntimeError, self.loop.run_until_complete, coro2())
+            support.gc_collect()
 
     # Note: because of the default Windows timing granularity of
     # 15.6 msec, we use fairly long sleep times here (~100 msec).
