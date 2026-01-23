@@ -408,13 +408,13 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        PyObject *orig_v = v;
-        Py_INCREF(orig_v);
-        v = _PyNumber_Index(orig_v);
-        Py_DECREF(orig_v);
-        if (NULL == v) {
+        Py_INCREF(v);
+        PyObject *res = _PyNumber_Index(v);
+        Py_DECREF(v);
+        if (NULL == res) {
             return -1;
         }
+        v=res;
         do_decref = 1;
     }
     x = PyLong_AsUnsignedLong(v);
@@ -471,13 +471,13 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        PyObject *orig_v = v;
-        Py_INCREF(orig_v);
-        v = _PyNumber_Index(orig_v);
-        Py_DECREF(orig_v);
-        if (NULL == v) {
+        Py_INCREF(v);
+        PyObject *res = _PyNumber_Index(v);
+        Py_DECREF(v);
+        if (NULL == res) {
             return -1;
         }
+        v=res;
         do_decref = 1;
     }
     x = PyLong_AsUnsignedLong(v);
@@ -527,13 +527,13 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        PyObject *orig_v = v;
-        Py_INCREF(orig_v);
-        v = _PyNumber_Index(orig_v);
-        Py_DECREF(orig_v);
-        if (NULL == v) {
+        Py_INCREF(v);
+        PyObject *res = _PyNumber_Index(v);
+        Py_DECREF(v);
+        if (NULL == res) {
             return -1;
         }
+        v=res;
         do_decref = 1;
     }
     x = PyLong_AsUnsignedLongLong(v);

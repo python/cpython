@@ -85,7 +85,6 @@ class MiscTest(unittest.TestCase):
                     a.fromlist(lst)
 
 
-
 # Machine format codes.
 #
 # Search for "enum machine_format_code" in Modules/arraymodule.c to get the
