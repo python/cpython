@@ -2293,12 +2293,14 @@ class TestUopsOptimization(unittest.TestCase):
                 _ = len("abc")
                 d = ''
                 _ = len(d)
+                _ = len(b"def")
+                _ = len(b"")
 
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertIn("_SHUFFLE_3_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertEqual(count_ops(ex, "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW"), 4)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
