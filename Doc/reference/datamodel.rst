@@ -556,6 +556,10 @@ Special read-only attributes
    * - Attribute
      - Meaning
 
+   * - .. attribute:: function.__builtins__
+     - A reference to the :class:`dictionary <dict>` that holds the function's
+       builtins namespace.
+
    * - .. attribute:: function.__globals__
      - A reference to the :class:`dictionary <dict>` that holds the function's
        :ref:`global variables <naming>` -- the global namespace of the module
@@ -568,6 +572,10 @@ Special read-only attributes
 
        A cell object has the attribute ``cell_contents``.
        This can be used to get the value of the cell, as well as set the value.
+
+.. versionchanged:: 3.10
+
+   Add ``__builtins__`` attribute to functions.
 
 Special writable attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
