@@ -38,6 +38,14 @@ from types import GenericAlias
 Match = _namedtuple('Match', 'a b size')
 
 
+def _adjust_indices(seq, start, stop):
+    assert start >= 0
+    size = len(seq)
+    if stop is None or stop > size:
+        stop = size
+    return start, stop
+
+
 class _LCSUBSimple:
     """Simple dict method for finding longest common substring.
 
@@ -46,51 +54,61 @@ class _LCSUBSimple:
         S: O(n2)
 
     Members:
-        pos2    for x in seq2, pos2[x] is a list of the indices (into seq2)
+        b2j    for x in b, b2j[x] is a list of the indices (into b)
                 at which x appears; junk elements do not appear
     """
 
-    def __init__(self, seq2, junk=()):
+    def __init__(self, b, junk=()):
         if not isinstance(junk, frozenset):
             junk = frozenset(junk)
-        self.seq2 = seq2
+        self.b = b
         self.junk = junk
-        self.pos2 = None
+        self._b2j = None
 
-    def _build(self):
-        if self.pos2 is None:
-            self.pos2 = pos2 = {}   # positions of each element in seq2
-            for i, elt in enumerate(self.seq2):
-                indices = pos2.setdefault(elt, [])
+    def isbuilt(self, blo, bhi):
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if blo >= bhi:
+            return True
+        return self._b2j is not None
+
+    def _get_b2j(self):
+        b2j = self._b2j
+        if b2j is None:
+            b2j = {}   # positions of each element in b
+            for i, elt in enumerate(self.b):
+                indices = b2j.setdefault(elt, [])
                 indices.append(i)
             junk = self.junk
             if junk:
                 for elt in junk:
-                    del pos2[elt]
+                    del b2j[elt]
+            self._b2j = b2j
 
-    def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
-        if stop1 is None:
-            stop1 = len(seq1)
-        if stop2 is None:
-            stop2 = len(self.seq2)
-        self._build()
-        pos2 = self.pos2
+        return b2j
+
+    def find(self, a, alo=0, ahi=None, blo=0, bhi=None):
+        alo, ahi = _adjust_indices(a, alo, ahi)
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if alo >= ahi or blo >= bhi:
+            return (alo, blo, 0)
+
+        b2j = self._get_b2j()
         j2len = {}
         nothing = []
-        besti, bestj, bestsize = start1, start2, 0
+        besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
-        # junk-free match ending with seq1[i-1] and seq2[j]
-        for i in range(start1, stop1):
-            # look at all instances of seq1[i] in seq2; note that because
-            # pos2 has no junk keys, the loop is skipped if seq1[i] is junk
+        # junk-free match ending with a[i-1] and b[j]
+        for i in range(alo, ahi):
+            # look at all instances of a[i] in b; note that because
+            # b2j has no junk keys, the loop is skipped if a[i] is junk
             j2lenget = j2len.get
             newj2len = {}
-            for j in pos2.get(seq1[i], nothing):
-                # seq1[i] matches seq2[j]
-                if j < start2:
+            for j in b2j.get(a[i], nothing):
+                # a[i] matches b[j]
+                if j < blo:
                     continue
-                if j >= stop2:
+                if j >= bhi:
                     break
                 k = newj2len[j] = j2lenget(j-1, 0) + 1
                 if k > bestsize:
@@ -123,81 +141,87 @@ class _LCSUBAutomaton:
             end_pos - end position of first occurrence (used for result)
     """
 
-    def __init__(self, seq2, junk=()):
+    def __init__(self, b, junk=()):
         if not isinstance(junk, frozenset):
             junk = frozenset(junk)
-        self.seq2 = seq2
+        self.b = b
         self.junk = junk
-        self.root = None
-        self.cache = (None, None)
+        self._root = None
+        self._cache = (None, None)
 
-    def _build(self, start2, stop2):
+    def isbuilt(self, blo, bhi):
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if blo >= bhi:
+            return True
+        return self._root is not None and self._cache == (blo, bhi)
+
+    def _get_root(self, blo, bhi):
         """
-        Automaton needs to rebuild for every (start2, stop2)
+        Automaton needs to rebuild for every (blo, bhi)
         This is made to cache the last one and only rebuild on new values
 
         Note that to construct Automaton that can be queried for any
-            (start2, stop2), each node would need to store a store a set of
+            (blo, bhi), each node would need to store a store a set of
             indices. And this is prone to O(n^2) memory explosion.
             Current approach maintains reasonable memory guarantees
             and is also much simpler in comparison.
         """
-        key = (start2, stop2)
-        if self.root is not None and self.cache == key:
-            return
-
-        self.root = root = [0, None, {}, -1]
-        seq2 = self.seq2
-        junk = self.junk
-        last_len = 0
-        last = root
-        for j in range(start2, stop2):
-            c = seq2[j]
-            if c in junk:
-                last_len = 0
-                last = root
-            else:
-                last_len += 1
-                curr = [last_len, None, {}, j]
-
-                p = last
-                p_next = p[_NEXT]
-                while c not in p_next:
-                    p_next[c] = curr
-                    if p is root:
-                        curr[_LINK] = root
-                        break
-                    p = p[_LINK]
-                    p_next = p[_NEXT]
+        key = (blo, bhi)
+        root = self._root
+        if root is None or self._cache != key:
+            root = [0, None, {}, -1]
+            b = self.b
+            junk = self.junk
+            last_len = 0
+            last = root
+            for j in range(blo, bhi):
+                c = b[j]
+                if c in junk:
+                    last_len = 0
+                    last = root
                 else:
-                    q = p_next[c]
-                    p_length_p1 = p[_LENGTH] + 1
-                    if p_length_p1 == q[_LENGTH]:
-                        curr[_LINK] = q
+                    last_len += 1
+                    curr = [last_len, None, {}, j]
+
+                    p = last
+                    p_next = p[_NEXT]
+                    while c not in p_next:
+                        p_next[c] = curr
+                        if p is root:
+                            curr[_LINK] = root
+                            break
+                        p = p[_LINK]
+                        p_next = p[_NEXT]
                     else:
-                        # Copy `q[_POS]` to ensure leftmost match in seq2
-                        clone = [p_length_p1, q[_LINK], q[_NEXT].copy(), q[_POS]]
-                        while (p_next := p[_NEXT]).get(c) is q:
-                            p_next[c] = clone
-                            if p is root:
-                                break
-                            p = p[_LINK]
+                        q = p_next[c]
+                        p_length_p1 = p[_LENGTH] + 1
+                        if p_length_p1 == q[_LENGTH]:
+                            curr[_LINK] = q
+                        else:
+                            # Copy `q[_POS]` to ensure leftmost match in b
+                            clone = [p_length_p1, q[_LINK], q[_NEXT].copy(), q[_POS]]
+                            while (p_next := p[_NEXT]).get(c) is q:
+                                p_next[c] = clone
+                                if p is root:
+                                    break
+                                p = p[_LINK]
 
-                        q[_LINK] = curr[_LINK] = clone
+                            q[_LINK] = curr[_LINK] = clone
 
-                last = curr
+                    last = curr
 
-        self.cache = key
+            self._root = root
+            self._cache = key
 
-    def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
-        size1 = len(seq1)
-        size2 = len(self.seq2)
-        if stop1 is None or stop1 > size1:
-            stop1 = size1
-        if stop2 is None or stop2 > size2:
-            stop2 = size2
-        self._build(start2, stop2)
-        root = self.root
+        return root
+
+    def find(self, a, alo=0, ahi=None, blo=0, bhi=None):
+        alo, ahi = _adjust_indices(a, alo, ahi)
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if alo >= ahi or blo >= bhi:
+            return (alo, blo, 0)
+
+        root = self._get_root(blo, bhi)
         junk = self.junk
         v = root
         l = 0
@@ -205,8 +229,8 @@ class _LCSUBAutomaton:
         best_state = None
         best_pos = 0
 
-        for i in range(start1, stop1):
-            c = seq1[i]
+        for i in range(alo, ahi):
+            c = a[i]
             if c in junk:
                 v = root
                 l = 0
@@ -225,7 +249,7 @@ class _LCSUBAutomaton:
                         best_pos = i
 
         if not best_len:
-            return (start1, start2, 0)
+            return (alo, blo, 0)
 
         start_in_s1 = best_pos + 1 - best_len
         end_in_s2 = best_state[_POS]
@@ -492,7 +516,14 @@ class SequenceMatcher:
             for elt in popular: # ditto; as fast for 1% deletion
                 del bcounts[elt]
 
-        self._max_bcount = max(bcounts.values()) if bcounts else 0
+        if not bcounts:
+            self._bcount_thres = 0
+        else:
+            sum_bcount = sum(bcounts.values())
+            avg_bcount = sum(c * c for c in bcounts.values()) / sum_bcount
+            max_bcount = max(bcounts.values())
+            self._bcount_thres = avg_bcount * 0.8 + max_bcount * 0.2
+
         self._all_junk = all_junk = frozenset(junk | popular)
         self._lcsub_simple = _LCSUBSimple(b, all_junk)
         self._lcsub_automaton = _LCSUBAutomaton(b, all_junk)
@@ -500,10 +531,7 @@ class SequenceMatcher:
     @property
     def b2j(self):
         # NOTE: For backwards compatibility
-        simple_calc = self._lcsub_simple
-        if simple_calc.pos2 is None:
-            simple_calc._build()
-        return simple_calc.pos2
+        return self._lcsub_simple._get_b2j()
 
     def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
@@ -596,12 +624,14 @@ class SequenceMatcher:
                 simple_calc = self._lcsub_simple
                 automaton = self._lcsub_automaton
 
-                automaton_cost = tmp_asize
-                if automaton.cache != (blo, bhi):
-                    automaton_cost += bsize * 6
-                simple_cost = self._max_bcount * tmp_asize
-                if simple_calc.pos2 is None:
+                simple_cost = self._bcount_thres * tmp_asize
+                if not simple_calc.isbuilt(blo, bhi):
                     simple_cost += bsize
+
+                automaton_cost = tmp_asize
+                if not automaton.isbuilt(blo, bhi):
+                    automaton_cost += bsize * 6
+
                 if simple_cost < automaton_cost:
                     calc = simple_calc
                 else:
