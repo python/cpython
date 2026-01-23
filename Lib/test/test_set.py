@@ -2212,6 +2212,7 @@ class TestGraphs(unittest.TestCase):
             for cubevert in edge:
                 self.assertIn(cubevert, g)
 
+
 #==============================================================================
 
 if __name__ == "__main__":
