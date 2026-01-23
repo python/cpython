@@ -67,6 +67,9 @@ outputs:
           - libuuid
       - libmpdec-devel
       - expat
+      - if: linux and "san" in variant
+        then:
+          - libsanitizer
       - if: osx and "san" in variant
         then:
           - libcompiler-rt
