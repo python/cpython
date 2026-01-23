@@ -2237,11 +2237,15 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
         /* If no deletions are required, use faster code */
         for (i = inlen; --i >= 0; ) {
             c = Py_CHARMASK(*input++);
-            if (Py_CHARMASK((*output++ = table_chars[c])) != c)
-                changed = 1;
+            *output++ = table_chars[c];
         }
-        if (!changed && PyBytes_CheckExact(input_obj)) {
-            Py_SETREF(result, Py_NewRef(input_obj));
+        /* Check if anything changed (for returning original object) */
+        /* We save this check until the end so that the compiler will */
+        /* unroll the loop above leading to MUCH faster code. */
+        if (PyBytes_CheckExact(input_obj)) {
+            if (memcmp(PyBytes_AS_STRING(input_obj), output_start, inlen) == 0) {
+                Py_SETREF(result, Py_NewRef(input_obj));
+            }
         }
         PyBuffer_Release(&del_table_view);
         PyBuffer_Release(&table_view);
