@@ -38,8 +38,8 @@ from types import GenericAlias
 Match = _namedtuple('Match', 'a b size')
 
 
-class _LCSUBDict:
-    """Dict method for finding longest common substring.
+class _LCSUBSimple:
+    """Simple dict method for finding longest common substring.
 
     Complexity:
         T: O(n1 + n2) best, O(n1 × n2) worst
@@ -481,18 +481,18 @@ class SequenceMatcher:
 
         self._max_bcount = max(bcounts.values()) if bcounts else 0
         self._all_junk = frozenset(junk | popular)
-        self._lcsub_aut = None       # _LCSUBAutomaton instance
-        self._lcsub_dict = None      # _LCSUBDict instanct
+        self._lcsub_automaton = None    # _LCSUBAutomaton instance
+        self._lcsub_simple = None       # _LCSUBSimple instanct
 
     def _get_lcsub_calculator(self, automaton=False):
         if automaton:
-            if self._lcsub_aut is None:
-                self._lcsub_aut = _LCSUBAutomaton(self.b, self._all_junk)
-            return self._lcsub_aut
+            if self._lcsub_automaton is None:
+                self._lcsub_automaton = _LCSUBAutomaton(self.b, self._all_junk)
+            return self._lcsub_automaton
         else:
-            if self._lcsub_dict is None:
-                self._lcsub_dict = _LCSUBDict(self.b, self._all_junk)
-            return self._lcsub_dict
+            if self._lcsub_simple is None:
+                self._lcsub_simple = _LCSUBSimple(self.b, self._all_junk)
+            return self._lcsub_simple
 
     @property
     def b2j(self):
@@ -574,7 +574,9 @@ class SequenceMatcher:
             # For that specific set it gave selection accuracy of 95%.
             # Weak spot in this is cases with little or no element overlap at all.
             # However, such check would have more cost than benefit.
-            use_automaton = self._max_bcount * asize > bsize * 6 + asize * 2
+            automaton_cost = bsize * 6 + asize * 2
+            simple_cost = self._max_bcount * asize
+            use_automaton = simple_cost > automaton_cost
             calc = self._get_lcsub_calculator(use_automaton)
             besti, bestj, bestsize = calc.find(a, alo, ahi, blo, bhi)
 
