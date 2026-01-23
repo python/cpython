@@ -2297,7 +2297,6 @@ class TestUopsOptimization(unittest.TestCase):
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        print(uops)
         self.assertNotIn("_CALL_LEN", uops)
         self.assertIn("_SHUFFLE_3_LOAD_CONST_INLINE_BORROW", uops)
 
