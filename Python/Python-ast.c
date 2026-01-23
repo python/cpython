@@ -5249,7 +5249,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else if (contains == 0) {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                        "%.400s.__init__ got an unexpected keyword argument %R. "
                         "Support for arbitrary keyword arguments is deprecated "
                         "and will be removed in Python 3.15.",
                         Py_TYPE(self)->tp_name, key

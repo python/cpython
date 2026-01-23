@@ -489,6 +489,10 @@ class AST_Tests(unittest.TestCase):
         # Arbitrary keyword arguments are supported (but deprecated)
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        # gh-144169: non-string keys must not crash
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
+                ast.Constant(1, **{object(): 'bar'})
 
         with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
             ast.Constant(1, value=2)
