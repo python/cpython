@@ -1955,6 +1955,65 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_quoted_string
 
+    @params
+    def test_get_quoted_string(self, s, *args, quoted_value, **kw):
+        qs = self._test_parse(parser.get_quoted_string, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertEqual(qs.quoted_value, quoted_value)
+        self.assertIsInstance(qs, parser.QuotedString)
+        self.assertEqual(qs.token_type, 'quoted-string')
+        self.verify_terminal_types(qs, 'ptext', 'fws')
+
+    # get_quoted_string should pass any get_bare_quoted_string test that
+    # doesn't involve leading or trailing whitespace.
+    @params_map
+    def adapt_bare_quoted_string_tests_for_get_quoted_string(s, *args, **kw):
+        r = kw.get('remainder', '')
+        if s.startswith(tuple(RFC_WSP)) or r.startswith(tuple(RFC_WSP)):
+            return
+        kw['quoted_value'] = kw.get('stringified', s[:-len(r)] if r else s)
+        yield 'from_test_bare_quoted_string', C(s, *args, **kw)
+
+    # If there is no remainder a cfws test string should be valid as a quoted
+    # string prefix or suffix, with a few exceptions that test for what happens
+    # if closing parens are missing.
+    @params_map(with_namelist=True)
+    def adapt_get_cfws_tests_for_get_quoted_string(
+            nl,
+            s,
+            *args,
+            stringified=None,
+            remainder=None,
+            **kw,
+        ):
+        if remainder or nl.has_any(
+                'multiple_mesting_missing_two_right_parens',
+                'no_right_paren_after_non_ws',
+                'no_right_paren_after_ws',
+                'header_ends_in_comment',
+            ):
+            return
+        new_s = f'{s} "foo" {s}'
+        if stringified:
+            kw['stringified'] = f'{stringified} "foo" {stringified}'
+        kw['value'] = ' foo '
+        kw['quoted_value'] = ' "foo" '
+        for k in ('comments', 'commenttree', 'defects'):
+            if (v := kw.get(k)):
+                kw[k] = v * 2
+        yield 'adapted_from_get_cfws', C(new_s, **kw)
+
+    params_test_get_quoted_string = old_api_only(
+
+        adapt_bare_quoted_string_tests_for_get_quoted_string(
+            params_test_get_bare_quoted_string,
+            ),
+
+        adapt_get_cfws_tests_for_get_quoted_string(params_test_get_cfws),
+
+        )
+
     def test_get_quoted_string_only(self):
         qs = self._test_get_x(parser.get_quoted_string,
             '"bob"', '"bob"', 'bob', [], '')
