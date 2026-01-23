@@ -2434,6 +2434,7 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+
 // Used by `finalize_thread_hang`.
 #if defined(_POSIX_THREADS) && !defined(__wasi__)
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
