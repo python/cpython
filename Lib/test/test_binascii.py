@@ -199,10 +199,10 @@ class BinASCIITest(unittest.TestCase):
         assertNonBase64Data(b'abc=:', b'i\xb7', ignorechars=b':')
         assertNonBase64Data(b'ab==\n', b'i', ignorechars=b'\n')
         assertNonBase64Data(b'ab=:=', b'i', ignorechars=b':')
+        assertNonBase64Data(b'a\nb==', b'i', ignorechars=bytearray(b'\n'))
+        assertNonBase64Data(b'a\nb==', b'i', ignorechars=memoryview(b'\n'))
 
         data = self.type2test(b'a\nb==')
-        with self.assertRaises(TypeError):
-            binascii.a2b_base64(data, ignorechars=bytearray())
         with self.assertRaises(TypeError):
             binascii.a2b_base64(data, ignorechars='')
         with self.assertRaises(TypeError):

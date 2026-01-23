@@ -85,9 +85,10 @@ POST request.
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *ignorechars* is specified, it should be a byte string containing
-   characters to ignore from the input, and *validate* is ``True`` by default.
-   Otherwise *validate* is ``False`` by default.
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *validate* is true.
+   The default value of *validate* is ``True`` if *ignorechars* is specified,
+   ``False`` otherwise.
 
    If *validate* is false, characters that are neither
    in the normal base-64 alphabet nor the alternative alphabet are

@@ -54,9 +54,9 @@ The :mod:`binascii` module defines the following functions:
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
 
-   If *ignorechars* is specified, it should be a byte string containing
-   characters to ignore from the input when *strict_mode* is true.
-   *strict_mode* is ``True`` by default, if *ignorechars* is specified,
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *strict_mode* is true.
+   The default value of *strict_mode* is ``True`` if *ignorechars* is specified,
    ``False`` otherwise.
 
    If *strict_mode* is true, only valid base64 data will be converted. Invalid base64

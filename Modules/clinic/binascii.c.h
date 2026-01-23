@@ -135,7 +135,7 @@ PyDoc_STRVAR(binascii_a2b_base64__doc__,
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
-                         PyBytesObject *ignorechars);
+                         Py_buffer *ignorechars);
 
 static PyObject *
 binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -172,7 +172,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int strict_mode = -1;
-    PyBytesObject *ignorechars = NULL;
+    Py_buffer ignorechars = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -194,18 +194,20 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
             goto skip_optional_kwonly;
         }
     }
-    if (!PyBytes_Check(args[2])) {
-        _PyArg_BadArgument("a2b_base64", "argument 'ignorechars'", "bytes", args[2]);
+    if (PyObject_GetBuffer(args[2], &ignorechars, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    ignorechars = (PyBytesObject *)args[2];
 skip_optional_kwonly:
-    return_value = binascii_a2b_base64_impl(module, &data, strict_mode, ignorechars);
+    return_value = binascii_a2b_base64_impl(module, &data, strict_mode, &ignorechars);
 
 exit:
     /* Cleanup for data */
     if (data.obj)
        PyBuffer_Release(&data);
+    /* Cleanup for ignorechars */
+    if (ignorechars.obj) {
+       PyBuffer_Release(&ignorechars);
+    }
 
     return return_value;
 }
@@ -840,4 +842,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=8b16c7f676dfbc40 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13f0a4b0f5d3fcb4 input=a9049054013a1b77]*/

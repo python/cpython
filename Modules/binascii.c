@@ -471,11 +471,10 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
 
 
 static int
-ignorechar(unsigned char c, PyBytesObject *ignorechars)
+ignorechar(unsigned char c, Py_buffer *ignorechars)
 {
-    return (ignorechars != NULL &&
-            memchr(PyBytes_AS_STRING(ignorechars), c,
-                   PyBytes_GET_SIZE(ignorechars)));
+    return (ignorechars->buf != NULL &&
+            memchr(ignorechars->buf, c, ignorechars->len));
 }
 
 /*[clinic input]
@@ -488,7 +487,7 @@ binascii.a2b_base64
         When set to true, bytes that are not part of the base64 standard are
         not allowed.  The same applies to excess data after padding (= / ==).
         Set to True by default if ignorechars is specified, False otherwise.
-    ignorechars: PyBytesObject = NULL
+    ignorechars: Py_buffer(py_default="<unrepresentable>") = None
         A byte string containing characters to ignore from the input when
         strict_mode is true.
 
@@ -497,8 +496,8 @@ Decode a line of base64 data.
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
-                         PyBytesObject *ignorechars)
-/*[clinic end generated code: output=b1868e0d886cd8cf input=e2d2e48c986e2afb]*/
+                         Py_buffer *ignorechars)
+/*[clinic end generated code: output=eab37aea4cfa6daa input=3be4937d72943835]*/
 {
     assert(data->len >= 0);
 
@@ -507,7 +506,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
     binascii_state *state = NULL;
 
     if (strict_mode == -1) {
-        strict_mode = (ignorechars != NULL);
+        strict_mode = (ignorechars->buf != NULL);
     }
 
     /* Allocate the buffer */

@@ -307,7 +307,11 @@ class BaseXYTestCase(unittest.TestCase):
                  (b'@@', b'', b'@!'),
                  (b'!', b'', b'@!'),
                  (b"YWJj\n", b"abc", b'\n'),
-                 (b'YWJj\nYWI=', b'abcab', b'\n'))
+                 (b'YWJj\nYWI=', b'abcab', b'\n'),
+                 (b'YW\nJj', b'abc', b'\n'),
+                 (b'YW\nJj', b'abc', bytearray(b'\n')),
+                 (b'YW\nJj', b'abc', memoryview(b'\n')),
+        )
         funcs = (
             base64.b64decode,
             base64.standard_b64decode,
@@ -329,8 +333,6 @@ class BaseXYTestCase(unittest.TestCase):
                     base64.b64decode(bstr, ignorechars=ignorechars),
                                  res)
 
-        with self.assertRaises(TypeError):
-            base64.b64decode(b'', ignorechars=bytearray())
         with self.assertRaises(TypeError):
             base64.b64decode(b'', ignorechars='')
         with self.assertRaises(TypeError):
