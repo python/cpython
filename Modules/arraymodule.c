@@ -414,7 +414,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         if (NULL == res) {
             return -1;
         }
-        v=res;
+        v = res;
         do_decref = 1;
     }
     x = PyLong_AsUnsignedLong(v);
