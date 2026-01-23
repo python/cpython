@@ -2897,7 +2897,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
-<<<<<<< HEAD
     def test_binary_op_refcount_elimination(self):
         class CustomAdder:
             def __init__(self, val):
@@ -2918,7 +2917,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP", uops)
-=======
+
     def test_binary_op_extend_float_long_add_refcount_elimination(self):
         def testfunc(n):
             a = 1.5
@@ -2933,9 +2932,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_EXTEND", uops)
->>>>>>> upstream/main
-        self.assertIn("_POP_TOP_NOP", uops)
-        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_remove_guard_for_slice_list(self):
         def f(n):
