@@ -412,7 +412,7 @@ class PointersTestCase(unittest.TestCase):
         func.argtypes = (BadType,)
 
         with self.assertRaises(ctypes.ArgumentError):
-            func(None)
+            func(object())
 
 class PointerTypeCacheTestCase(unittest.TestCase):
     # dummy tests to check warnings and base behavior
