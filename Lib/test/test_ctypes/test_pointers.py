@@ -3,7 +3,6 @@ import ctypes
 import gc
 import sys
 import unittest
-import os
 from ctypes import (CDLL, CFUNCTYPE, Structure,
                     POINTER, pointer, _Pointer,
                     byref, sizeof,
