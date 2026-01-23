@@ -67,10 +67,7 @@ outputs:
           - libuuid
       - libmpdec-devel
       - expat
-      - if: c_compiler == "gcc" and "san" in variant
-        then:
-          - libsanitizer
-      - if: c_compiler == "clang" and "san" in variant
+      - if: osx and "san" in variant
         then:
           - libcompiler-rt
 
