@@ -30,6 +30,26 @@ def iterallchars():
     maxunicode = 0xffff if quicktest else sys.maxunicode
     return map(chr, range(maxunicode + 1))
 
+
+def check_version(testfile):
+    hdr = testfile.readline()
+    return unicodedata.unidata_version in hdr
+
+
+def download_test_data_file(filename):
+    TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{filename}"
+
+    try:
+        return open_urlresource(TESTDATAURL, encoding="utf-8", check=check_version)
+    except PermissionError:
+        raise unittest.SkipTest(
+            f"Permission error when downloading {TESTDATAURL} "
+            f"into the test data directory"
+        )
+    except (OSError, HTTPException) as exc:
+        raise unittest.SkipTest(f"Failed to download {TESTDATAURL}: {exc}")
+
+
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
@@ -957,11 +977,6 @@ class UnicodeMiscTest(unittest.TestCase):
 
 class NormalizationTest(unittest.TestCase):
     @staticmethod
-    def check_version(testfile):
-        hdr = testfile.readline()
-        return unicodedata.unidata_version in hdr
-
-    @staticmethod
     def unistr(data):
         data = [int(x, 16) for x in data.split(" ")]
         return "".join([chr(x) for x in data])
@@ -970,17 +985,7 @@ class NormalizationTest(unittest.TestCase):
     @requires_resource('cpu')
     def test_normalization(self):
         TESTDATAFILE = "NormalizationTest.txt"
-        TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"
-
-        # Hit the exception early
-        try:
-            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
-                                        check=self.check_version)
-        except PermissionError:
-            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
-                          f"into the test data directory")
-        except (OSError, HTTPException) as exc:
-            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
+        testdata = download_test_data_file(TESTDATAFILE)
 
         with testdata:
             self.run_normalization_tests(testdata, unicodedata)
@@ -1077,25 +1082,10 @@ class NormalizationTest(unittest.TestCase):
 
 
 class GraphemeBreakTest(unittest.TestCase):
-    @staticmethod
-    def check_version(testfile):
-        hdr = testfile.readline()
-        return unicodedata.unidata_version in hdr
-
     @requires_resource('network')
     def test_grapheme_break(self):
-        TESTDATAFILE = "auxiliary/GraphemeBreakTest.txt"
-        TESTDATAURL = f"https://www.unicode.org/Public/{unicodedata.unidata_version}/ucd/{TESTDATAFILE}"
-
-        # Hit the exception early
-        try:
-            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
-                                        check=self.check_version)
-        except PermissionError:
-            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
-                          f"into the test data directory")
-        except (OSError, HTTPException) as exc:
-            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
+        TESTDATAFILE = "GraphemeBreakTest.txt"
+        testdata = download_test_data_file(TESTDATAFILE)
 
         with testdata:
             self.run_grapheme_break_tests(testdata)
