@@ -180,6 +180,10 @@ Examining Symbol Tables
       Return a tuple containing names of :term:`free (closure) variables <closure variable>`
       in this function.
 
+   .. method:: get_cells()
+
+      Return a tuple containing the names of cell variables in this table.
+
 
 .. class:: Class
 
@@ -352,6 +356,12 @@ Examining Symbol Tables
 
       Return the namespace bound to this name. If more than one or no namespace
       is bound to this name, a :exc:`ValueError` is raised.
+
+   .. method:: is_cell()
+
+      Return ``True`` if the symbol is a cell variable.
+
+      .. versionadded:: 3.15
 
 
 .. _symtable-cli:

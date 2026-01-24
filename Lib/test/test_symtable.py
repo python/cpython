@@ -255,6 +255,7 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(sorted(func.get_locals()), expected)
         self.assertEqual(sorted(func.get_globals()), ["bar", "glob", "some_assigned_global_var"])
         self.assertEqual(self.internal.get_frees(), ("x",))
+        self.assertEqual(self.spam.get_cells(), ("some_var", "x",))
 
     def test_globals(self):
         self.assertTrue(self.spam.lookup("glob").is_global())
