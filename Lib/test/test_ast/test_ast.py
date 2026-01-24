@@ -1445,7 +1445,8 @@ class CopyTests(unittest.TestCase):
 
     def test_replace_non_str_kwarg(self):
         node = ast.Name(id="x")
-        with self.assertRaisesRegex(TypeError, "got an unexpected keyword argument <object object"):
+        errmsg = "got an unexpected keyword argument <object object"
+        with self.assertRaisesRegex(TypeError, errmsg):
             node.__replace__(**{object(): "y"})
 
 
@@ -3311,9 +3312,10 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(obj.b, [])
 
     def test_non_str_kwarg(self):
+        warn_msg = "got an unexpected keyword argument <object object"
         with (
             self.assertRaises(TypeError),
-            self.assertWarnsRegex(DeprecationWarning, "got an unexpected keyword argument <object object"),
+            self.assertWarnsRegex(DeprecationWarning, warn_msg),
         ):
             ast.Name(**{object(): 'y'})
 
