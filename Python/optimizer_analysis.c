@@ -250,6 +250,11 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
+/* Comparison oparg masks */
+#define COMPARE_LT_MASK 2
+#define COMPARE_GT_MASK 4
+#define COMPARE_EQ_MASK 8
+
 #define JUMP_TO_LABEL(label) goto label;
 
 static int
@@ -507,7 +512,7 @@ optimize_uops(
             *(ctx->out_buffer.next++) = *this_instr;
         }
         assert(ctx->frame != NULL);
-        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+        if (!CURRENT_FRAME_IS_INIT_SHIM() && !ctx->done) {
             DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
             ctx->frame->stack_pointer = stack_pointer;
             assert(STACK_LEVEL() >= 0);

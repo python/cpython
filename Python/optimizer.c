@@ -1050,7 +1050,6 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.exit = exit;
     tracer->initial_state.stack_depth = curr_stackdepth;
     tracer->initial_state.chain_depth = chain_depth;
-    tracer->prev_state.instr_frame = frame;
     tracer->prev_state.dependencies_still_valid = true;
     tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
     tracer->prev_state.instr = curr_instr;
