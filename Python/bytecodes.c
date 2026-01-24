@@ -834,7 +834,7 @@ dummy_func(
             DEOPT_IF(!res);
         }
 
-       op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
+       op(_BINARY_OP_EXTEND, (descr/4, left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
@@ -843,12 +843,18 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
 
             PyObject *res_o = d->action(left_o, right_o);
-            DECREF_INPUTS();
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            l = left;
+            r = right;
+            DEAD(left);
+            DEAD(right);
         }
 
         macro(BINARY_OP_EXTEND) =
-            unused/1 + _GUARD_BINARY_OP_EXTEND + rewind/-4 + _BINARY_OP_EXTEND;
+            unused/1 + _GUARD_BINARY_OP_EXTEND + rewind/-4 + _BINARY_OP_EXTEND + POP_TOP + POP_TOP;
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
             _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_INPLACE_ADD_UNICODE;
@@ -3196,14 +3202,15 @@ dummy_func(
             #ifdef Py_STATS
             _Py_GatherStats_GetIter(iterable);
             #endif
-            /* before: [obj]; after [getiter(obj)] */
             PyTypeObject *tp = PyStackRef_TYPE(iterable);
             if (tp == &PyTuple_Type || tp == &PyList_Type) {
+                /* Leave iterable on stack and pushed tagged 0 */
                 iter = iterable;
                 DEAD(iterable);
                 index_or_null = PyStackRef_TagInt(0);
             }
             else {
+                /* Pop iterable, and push iterator then NULL */
                 PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
                 PyStackRef_CLOSE(iterable);
                 ERROR_IF(iter_o == NULL);
@@ -5040,7 +5047,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             ERROR_IF(gen == NULL);
-            assert(STACK_LEVEL() == 0);
+            assert(STACK_LEVEL() <= 2);
             SAVE_STACK();
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
@@ -5119,7 +5126,7 @@ dummy_func(
             assert(oparg <= NB_OPARG_LAST);
         }
 
-        op(_BINARY_OP, (lhs, rhs -- res)) {
+        op(_BINARY_OP, (lhs, rhs -- res, l, r)) {
             PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
             PyObject *rhs_o = PyStackRef_AsPyObjectBorrow(rhs);
 
@@ -5129,10 +5136,13 @@ dummy_func(
                 ERROR_NO_POP();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
-            DECREF_INPUTS();
+            l = lhs;
+            r = rhs;
+            DEAD(lhs);
+            DEAD(rhs);
         }
 
-        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
+        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP + POP_TOP + POP_TOP;
 
         pure replicate(2:4) inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
@@ -5276,6 +5286,28 @@ dummy_func(
             int is_false = PyStackRef_IsFalse(flag);
             DEAD(flag);
             AT_END_EXIT_IF(!is_false);
+        }
+
+        replicate(4:8) op (_GUARD_BIT_IS_SET_POP, (flag -- )) {
+#ifdef Py_STACKREF_DEBUG
+            uintptr_t bits = flag.index;
+#else
+            uintptr_t bits = flag.bits;
+#endif
+            uintptr_t set = (1 << oparg) & bits;
+            DEAD(flag);
+            AT_END_EXIT_IF(set == 0);
+        }
+
+        replicate(4:8) op (_GUARD_BIT_IS_UNSET_POP, (flag -- )) {
+#ifdef Py_STACKREF_DEBUG
+            uintptr_t bits = flag.index;
+#else
+            uintptr_t bits = flag.bits;
+#endif
+            uintptr_t set = (1 << oparg) & bits;
+            DEAD(flag);
+            AT_END_EXIT_IF(set != 0);
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {

@@ -1087,14 +1087,14 @@ struct opcode_metadata {
     uint32_t flags;
 };
 
-extern const struct opcode_metadata _PyOpcode_opcode_metadata[267];
+PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[267];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [BINARY_OP] = { true, INSTR_FMT_IBC0000, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG },
     [BINARY_OP_ADD_UNICODE] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
-    [BINARY_OP_EXTEND] = { true, INSTR_FMT_IXC0000, HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_EXTEND] = { true, INSTR_FMT_IXC0000, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IXC0000, HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_MULTIPLY_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG },
@@ -1343,11 +1343,11 @@ extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion
 _PyOpcode_macro_expansion[256] = {
-    [BINARY_OP] = { .nuops = 1, .uops = { { _BINARY_OP, OPARG_SIMPLE, 4 } } },
+    [BINARY_OP] = { .nuops = 3, .uops = { { _BINARY_OP, OPARG_SIMPLE, 4 }, { _POP_TOP, OPARG_SIMPLE, 4 }, { _POP_TOP, OPARG_SIMPLE, 4 } } },
     [BINARY_OP_ADD_FLOAT] = { .nuops = 5, .uops = { { _GUARD_TOS_FLOAT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_FLOAT, OPARG_SIMPLE, 0 }, { _BINARY_OP_ADD_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_ADD_INT] = { .nuops = 5, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_INT, OPARG_SIMPLE, 0 }, { _BINARY_OP_ADD_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_ADD_UNICODE] = { .nuops = 5, .uops = { { _GUARD_TOS_UNICODE, OPARG_SIMPLE, 0 }, { _GUARD_NOS_UNICODE, OPARG_SIMPLE, 0 }, { _BINARY_OP_ADD_UNICODE, OPARG_SIMPLE, 5 }, { _POP_TOP_UNICODE, OPARG_SIMPLE, 5 }, { _POP_TOP_UNICODE, OPARG_SIMPLE, 5 } } },
-    [BINARY_OP_EXTEND] = { .nuops = 2, .uops = { { _GUARD_BINARY_OP_EXTEND, 4, 1 }, { _BINARY_OP_EXTEND, 4, 1 } } },
+    [BINARY_OP_EXTEND] = { .nuops = 4, .uops = { { _GUARD_BINARY_OP_EXTEND, 4, 1 }, { _BINARY_OP_EXTEND, 4, 1 }, { _POP_TOP, OPARG_SIMPLE, 5 }, { _POP_TOP, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_INPLACE_ADD_UNICODE] = { .nuops = 3, .uops = { { _GUARD_TOS_UNICODE, OPARG_SIMPLE, 0 }, { _GUARD_NOS_UNICODE, OPARG_SIMPLE, 0 }, { _BINARY_OP_INPLACE_ADD_UNICODE, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_MULTIPLY_FLOAT] = { .nuops = 5, .uops = { { _GUARD_TOS_FLOAT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_FLOAT, OPARG_SIMPLE, 0 }, { _BINARY_OP_MULTIPLY_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_MULTIPLY_INT] = { .nuops = 5, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_INT, OPARG_SIMPLE, 0 }, { _BINARY_OP_MULTIPLY_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 } } },
@@ -1534,7 +1534,7 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
-extern const char *_PyOpcode_OpName[267];
+PyAPI_DATA(const char) *_PyOpcode_OpName[267];
 #ifdef NEED_OPCODE_METADATA
 const char *_PyOpcode_OpName[267] = {
     [ANNOTATIONS_PLACEHOLDER] = "ANNOTATIONS_PLACEHOLDER",
@@ -1780,7 +1780,7 @@ const char *_PyOpcode_OpName[267] = {
 };
 #endif
 
-extern const uint8_t _PyOpcode_Caches[256];
+PyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
     [TO_BOOL] = 3,
@@ -1806,7 +1806,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 };
 #endif
 
-extern const uint8_t _PyOpcode_Deopt[256];
+PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
     [121] = 121,

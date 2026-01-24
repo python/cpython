@@ -2150,7 +2150,7 @@ Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 regen-cases: \
         regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
 		regen-generated-cases regen-executor-cases regen-optimizer-cases \
-		regen-opcode-metadata regen-uop-metadata
+		regen-opcode-metadata regen-uop-metadata regen-test-cases regen-test-opcode-targets
 
 .PHONY: regen-opcode-ids
 regen-opcode-ids:
@@ -2181,6 +2181,20 @@ regen-generated-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+
+.PHONY: regen-test-cases
+regen-test-cases:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
+	    -o $(srcdir)/Modules/_testinternalcapi/test_cases.c.h.new $(srcdir)/Python/bytecodes.c \
+		$(srcdir)/Modules/_testinternalcapi/testbytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Modules/_testinternalcapi/test_cases.c.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h.new
+
+.PHONY: regen-test-opcode-targets
+regen-test-opcode-targets:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/target_generator.py \
+	    -o $(srcdir)/Modules/_testinternalcapi/test_targets.h.new $(srcdir)/Python/bytecodes.c \
+		$(srcdir)/Modules/_testinternalcapi/testbytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_targets.h.new
 
 .PHONY: regen-executor-cases
 regen-executor-cases:
@@ -3428,7 +3442,7 @@ MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
-MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h
+MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 MODULE__ZSTD_DEPS=$(srcdir)/Modules/_zstd/_zstdmodule.h $(srcdir)/Modules/_zstd/buffer.h $(srcdir)/Modules/_zstd/zstddict.h
 

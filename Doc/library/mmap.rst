@@ -241,7 +241,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          specified alone, and the flush operation will extend from *offset*
          to the end of the mmap.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Added *flags* parameter to control synchronization behavior.
 
 
@@ -488,4 +488,4 @@ MS_* Constants
     * :data:`MS_INVALIDATE` - Invalidate cached data: invalidates other mappings
       of the same file so they can see the changes.
 
-    .. versionadded:: next
+    .. versionadded:: 3.15
