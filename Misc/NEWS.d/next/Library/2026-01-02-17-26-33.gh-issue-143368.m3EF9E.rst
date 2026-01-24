@@ -1,3 +1,0 @@
-Fix endless retry loop in :mod:`profiling.sampling` blocking mode when
-threads cannot be seized due to ``EPERM``. Such threads are now skipped
-instead of causing repeated error messages. Patch by Pablo Galindo.

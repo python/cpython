@@ -1,1 +1,0 @@
-Performance optimisations for :func:`difflib.get_close_matches`

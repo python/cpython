@@ -2369,7 +2369,7 @@ These functions and classes should not be used directly as annotations.
 Their intended purpose is to be building blocks for creating and declaring
 types.
 
-.. function:: NamedTuple
+.. class:: NamedTuple
 
    Typed version of :func:`collections.namedtuple`.
 
@@ -2589,7 +2589,7 @@ types.
       for more details.
 
 
-.. function:: TypedDict
+.. class:: TypedDict(dict)
 
    Special construct to add type hints to a dictionary.
    At runtime ":class:`!TypedDict` instances" are simply :class:`dicts <dict>`.
