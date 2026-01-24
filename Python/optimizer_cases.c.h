@@ -3309,15 +3309,30 @@
             arg = stack_pointer[-1];
             callable = stack_pointer[-3];
             res = sym_new_type(ctx, &PyLong_Type);
-            Py_ssize_t tuple_length = sym_tuple_length(arg);
-            if (tuple_length >= 0) {
-                PyObject *temp = PyLong_FromSsize_t(tuple_length);
+            Py_ssize_t length = sym_tuple_length(arg);
+            if (length < 0 && sym_is_const(ctx, arg)) {
+                PyObject *const_val = sym_get_const(ctx, arg);
+                if (const_val != NULL) {
+                    if (PyUnicode_CheckExact(const_val)) {
+                        length = PyUnicode_GET_LENGTH(const_val);
+                    }
+                    else if (PyBytes_CheckExact(const_val)) {
+                        CHECK_STACK_BOUNDS(-2);
+                        stack_pointer[-3] = res;
+                        stack_pointer += -2;
+                        ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                        length = PyBytes_GET_SIZE(const_val);
+                        stack_pointer += 2;
+                    }
+                }
+            }
+            if (length >= 0) {
+                PyObject *temp = PyLong_FromSsize_t(length);
                 if (temp == NULL) {
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
-                       0, (uintptr_t)temp);
+                    ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
                 }
                 res = sym_new_const(ctx, temp);
                 CHECK_STACK_BOUNDS(-2);
