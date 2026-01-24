@@ -1,5 +1,11 @@
+#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+   // Need limited C API for METH_FASTCALL
+   #define Py_LIMITED_API 0x030d0000
+#endif
+
 #include "parts.h"
 #include "util.h"
+
 
 static PyObject *
 set_check(PyObject *self, PyObject *obj)
@@ -202,12 +208,15 @@ test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_U
 
 // Interface to PySet_Add, returning the set
 static PyObject *
-pyset_add(PyObject *self, PyObject *args)
+pyset_add(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *set, *item;
-    if (!PyArg_ParseTuple(args, "OO", &set, &item)) {
+    if (nargs != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                        "pyset_add requires exactly 2 arguments");
         return NULL;
     }
+    PyObject *set = args[0];
+    PyObject *item = args[1];
 
     int return_value = PySet_Add(set, item);
     if (return_value < 0) {
@@ -237,7 +246,7 @@ static PyMethodDef test_methods[] = {
     {"test_frozenset_add_in_capi", test_frozenset_add_in_capi, METH_NOARGS},
     {"test_set_contains_does_not_convert_unhashable_key",
      test_set_contains_does_not_convert_unhashable_key, METH_NOARGS},
-    {"pyset_add", pyset_add, METH_VARARGS},
+    {"pyset_add", _PyCFunction_CAST(pyset_add), METH_FASTCALL},
 
     {NULL},
 };
