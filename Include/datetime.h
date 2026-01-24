@@ -196,19 +196,21 @@ typedef struct {
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
-#define PyDateTime_IMPORT \
-    do { \
-        void *val = _Py_atomic_load_ptr(&PyDateTimeAPI); \
-        if (val == NULL) { \
-            PyDateTime_CAPI *capi = (PyDateTime_CAPI *)PyCapsule_Import( \
-                PyDateTime_CAPSULE_NAME, 0); \
-            if (capi != NULL) { \
-                /* it is okay if the compare exchange fails as in that case
-                   another thread would have initialized it */ \
-                _Py_atomic_compare_exchange_ptr(&PyDateTimeAPI, &val, (void *)capi); \
-            } \
-        } \
-    } while (0)
+static inline PyDateTime_CAPI *
+PyDateTime_IMPORT(void) {
+    PyDateTime_CAPI *val = _Py_atomic_load_ptr(&PyDateTimeAPI);
+    if (val == NULL) {
+        PyDateTime_CAPI *capi = (PyDateTime_CAPI *)PyCapsule_Import(
+            PyDateTime_CAPSULE_NAME, 0);
+        if (capi != NULL) {
+            /* if the compare exchange fails then in that case
+               another thread would have initialized it */
+            _Py_atomic_compare_exchange_ptr(&PyDateTimeAPI, &val, (void *)capi);
+            return capi;
+        }
+    }
+    return val;
+}
 
 /* Macro for access to the UTC singleton */
 #define PyDateTime_TimeZone_UTC PyDateTimeAPI->TimeZone_UTC
