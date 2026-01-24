@@ -7,20 +7,17 @@ import functools
 import io
 import itertools
 import opcode
-import os
 import re
 import sys
 import tempfile
 import textwrap
 import types
 import unittest
-from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only,
-                          os_helper, import_helper, reset_code)
+from test.support import (captured_stdout, force_not_colorized_test_class,
+                          requires_debug_ranges, requires_specialization,
+                          cpython_only, os_helper, import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
-
-os.environ.setdefault("NO_COLOR", "1")
 
 CACHE = dis.opmap["CACHE"]
 
@@ -995,6 +992,7 @@ class DisTestBase(unittest.TestCase):
         self.assertEqual(got, expected)
 
 
+@force_not_colorized_test_class
 class DisTests(DisTestBase):
 
     maxDiff = None
@@ -1471,6 +1469,7 @@ class DisTests(DisTestBase):
         self.assertEqual(assem_op, assem_cache)
 
 
+@force_not_colorized_test_class
 class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
@@ -1993,6 +1992,7 @@ class InstructionTestCase(BytecodeTestCase):
         instrs_2 = [instr_2._replace(positions=None, cache_info=None) for instr_2 in instrs_2]
         self.assertEqual(instrs_1, instrs_2)
 
+@force_not_colorized_test_class
 class InstructionTests(InstructionTestCase):
 
     def __init__(self, *args):
@@ -2314,6 +2314,7 @@ class InstructionTests(InstructionTestCase):
 
 # get_instructions has its own tests above, so can rely on it to validate
 # the object oriented API
+@force_not_colorized_test_class
 class BytecodeTests(InstructionTestCase, DisTestBase):
 
     def test_instantiation(self):
@@ -2445,6 +2446,7 @@ class TestFinderMethods(unittest.TestCase):
         self.assertEqual(offsets, [0, 2])
 
 
+@force_not_colorized_test_class
 class TestDisTraceback(DisTestBase):
     def setUp(self) -> None:
         try:  # We need to clean up existing tracebacks
@@ -2482,6 +2484,7 @@ class TestDisTraceback(DisTestBase):
         self.do_disassembly_compare(self.get_disassembly(tb), dis_traceback)
 
 
+@force_not_colorized_test_class
 class TestDisTracebackWithFile(TestDisTraceback):
     # Run the `distb` tests again, using the file arg instead of print
     def get_disassembly(self, tb):
@@ -2516,6 +2519,7 @@ def _unroll_caches_as_Instructions(instrs, show_caches=False):
                                 False, None, None, instr.positions)
 
 
+@force_not_colorized_test_class
 class TestDisCLI(unittest.TestCase):
 
     def setUp(self):

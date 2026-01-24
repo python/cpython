@@ -1,13 +1,10 @@
 import dis
 import io
-import os
 import textwrap
 import types
 
 from test.support.bytecode_helper import AssemblerTestCase
-
-
-os.environ.setdefault("NO_COLOR", "1")
+from test.support import force_not_colorized
 
 # Tests for the code-object creation stage of the compiler.
 
@@ -118,6 +115,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
         self.assemble_test(instructions, metadata, expected)
 
 
+    @force_not_colorized
     def test_exception_table(self):
         metadata = {
             'filename' : 'exc.py',
