@@ -1216,6 +1216,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
 
     if base_dir is None:
         base_dir = os.curdir
+    else:
+        base_dir = os.fspath(base_dir)
 
     supports_root_dir = getattr(func, 'supports_root_dir', False)
     save_cwd = None
