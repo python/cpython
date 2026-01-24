@@ -270,6 +270,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/jp2", ".jp2"),
                 ("image/jpeg", ".jpg"),
                 ("image/jpm", ".jpm"),
+                ("image/jxl", ".jxl"),
                 ("image/t38", ".t38"),
                 ("image/tiff", ".tiff"),
                 ("image/tiff-fx", ".tfx"),
