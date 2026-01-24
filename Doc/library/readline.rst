@@ -246,6 +246,15 @@ Startup hooks
    if Python was compiled for a version of the library that supports it.
 
 
+.. function:: get_pre_input_hook()
+
+   Get the current pre-input hook function, or ``None`` if no pre-input hook
+   function has been set.  This function only exists if Python was compiled
+   for a version of the library that supports it.
+
+   .. versionadded:: 3.15
+
+
 .. _readline-completion:
 
 Completion
@@ -394,3 +403,9 @@ support history save/restore. ::
        def save_history(self, histfile):
            readline.set_history_length(1000)
            readline.write_history_file(histfile)
+
+.. note::
+
+   The new :term:`REPL` introduced in version 3.13 doesn't support readline.
+   However, readline can still be used by setting the :envvar:`PYTHON_BASIC_REPL`
+   environment variable.

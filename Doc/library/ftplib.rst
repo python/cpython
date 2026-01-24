@@ -524,14 +524,9 @@ FTP_TLS objects
    :class:`!FTP_TLS` class inherits from :class:`FTP`,
    defining these additional methods and attributes:
 
-   .. attribute:: FTP_TLS.ssl_version
-
-      The SSL version to use (defaults to :data:`ssl.PROTOCOL_SSLv23`).
-
    .. method:: FTP_TLS.auth()
 
-      Set up a secure control connection by using TLS or SSL, depending on what
-      is specified in the :attr:`ssl_version` attribute.
+      Set up a secure control connection by using TLS.
 
       .. versionchanged:: 3.4
          The method now supports hostname check with
@@ -548,7 +543,7 @@ FTP_TLS objects
 
    .. method:: FTP_TLS.prot_p()
 
-      Set up secure data connection.
+      Set up secure data connection by using TLS.
 
    .. method:: FTP_TLS.prot_c()
 

@@ -100,7 +100,7 @@ Fix bug where an :exc:`ExceptionGroup` subclass can wrap a
 .. date: 2022-11-16-21-35-30
 .. gh-issue: 99547
 .. nonce: p_c_bp
-.. section: Core and Builtins
+.. section: Library
 
 Add a function to os.path to check if a path is a junction: isjunction. Add
 similar functionality to pathlib.Path as is_junction.
@@ -110,7 +110,7 @@ similar functionality to pathlib.Path as is_junction.
 .. date: 2022-11-12-01-39-57
 .. gh-issue: 99370
 .. nonce: _cu32j
-.. section: Core and Builtins
+.. section: Library
 
 Fix zip path for venv created from a non-installed python on POSIX
 platforms.

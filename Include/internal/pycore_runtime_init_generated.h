@@ -1607,6 +1607,7 @@ extern "C" {
     INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
     INIT_ID(c_stack), \
+    INIT_ID(cache_frames), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
@@ -1650,9 +1651,11 @@ extern "C" {
     INIT_ID(co_varnames), \
     INIT_ID(code), \
     INIT_ID(col_offset), \
+    INIT_ID(collector), \
     INIT_ID(command), \
     INIT_ID(comment_factory), \
     INIT_ID(compile_mode), \
+    INIT_ID(compression), \
     INIT_ID(config), \
     INIT_ID(consts), \
     INIT_ID(context), \
@@ -1715,7 +1718,9 @@ extern "C" {
     INIT_ID(event), \
     INIT_ID(eventmask), \
     INIT_ID(exc), \
+    INIT_ID(exc_tb), \
     INIT_ID(exc_type), \
+    INIT_ID(exc_val), \
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
@@ -1934,6 +1939,7 @@ extern "C" {
     INIT_ID(only_keys), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
+    INIT_ID(opcodes), \
     INIT_ID(open), \
     INIT_ID(opener), \
     INIT_ID(operation), \
@@ -1970,6 +1976,7 @@ extern "C" {
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \
+    INIT_ID(progress_callback), \
     INIT_ID(progress_routine), \
     INIT_ID(proto), \
     INIT_ID(protocol), \
@@ -1990,6 +1997,7 @@ extern "C" {
     INIT_ID(readline), \
     INIT_ID(readonly), \
     INIT_ID(real), \
+    INIT_ID(recursive), \
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
@@ -2009,6 +2017,7 @@ extern "C" {
     INIT_ID(reversed), \
     INIT_ID(rounding), \
     INIT_ID(salt), \
+    INIT_ID(sample_interval_us), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
     INIT_ID(script), \
@@ -2048,9 +2057,12 @@ extern "C" {
     INIT_ID(spam), \
     INIT_ID(src), \
     INIT_ID(src_dir_fd), \
+    INIT_ID(stack_frames), \
     INIT_ID(stacklevel), \
     INIT_ID(start), \
+    INIT_ID(start_time_us), \
     INIT_ID(statement), \
+    INIT_ID(stats), \
     INIT_ID(status), \
     INIT_ID(stderr), \
     INIT_ID(stdin), \
@@ -2089,6 +2101,7 @@ extern "C" {
     INIT_ID(times), \
     INIT_ID(timespec), \
     INIT_ID(timestamp), \
+    INIT_ID(timestamp_us), \
     INIT_ID(timetuple), \
     INIT_ID(timeunit), \
     INIT_ID(top), \
@@ -2127,6 +2140,7 @@ extern "C" {
     INIT_ID(which), \
     INIT_ID(who), \
     INIT_ID(withdata), \
+    INIT_ID(wrapcol), \
     INIT_ID(writable), \
     INIT_ID(write), \
     INIT_ID(write_through), \
