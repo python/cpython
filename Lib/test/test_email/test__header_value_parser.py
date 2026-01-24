@@ -1959,8 +1959,6 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     @params
     def test_get_quoted_string(self, s, *args, quoted_value=None, **kw):
-        # XXX XXX temporary bypass of something not currently tested here
-        kw['comments'] = ...
         qs = self._test_parse(parser.get_quoted_string, C(s), *args, **kw)
         if 'exception' in kw:
             return
@@ -1970,6 +1968,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsInstance(qs, parser.QuotedString)
         self.assertEqual(qs.token_type, 'quoted-string')
         self.verify_terminal_types(qs, 'ptext', 'fws')
+
 
     # get_quoted_string should pass any get_bare_quoted_string test that
     # doesn't involve leading or trailing whitespace.
@@ -2018,85 +2017,122 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         adapt_get_cfws_tests_for_get_quoted_string(params_test_get_cfws),
 
-        test_get_quoted_string_with_wsp = C(
-            '\t "bob"  ', '\t "bob"  ', ' bob ', [], '')
-            ,
-       #self.assertEqual(qs.quoted_value, ' "bob" ')
-       #self.assertEqual(qs.content, 'bob')
+        with_wsp = C(
+            '\t "bob"  ',
+            '\t "bob"  ',
+            ' bob ',
+            [],
+            '',
+            ),
+            #self.assertEqual(qs.quoted_value, ' "bob" ')
+            #self.assertEqual(qs.content, 'bob')
 
-        test_get_quoted_string_with_comments_and_wsp = C(
-            ' (foo) "bob"(bar)', ' (foo) "bob"(bar)', ' bob ', [], '')
-            ,
-       #self.assertEqual(qs[0][1].content, 'foo')
-       #self.assertEqual(qs[2][0].content, 'bar')
-       #self.assertEqual(qs.content, 'bob')
-       #self.assertEqual(qs.quoted_value, ' "bob" ')
+        with_comments_and_wsp = C(
+            ' (foo) "bob"(bar)',
+            ' (foo) "bob"(bar)',
+            ' bob ',
+            [],
+            '',
+            ['foo', 'bar'],
+            ),
+            #self.assertEqual(qs[0][1].content, 'foo')
+            #self.assertEqual(qs[2][0].content, 'bar')
+            #self.assertEqual(qs.content, 'bob')
+            #self.assertEqual(qs.quoted_value, ' "bob" ')
 
-        test_get_quoted_string_with_multiple_comments = C(
-            ' (foo) (bar) "bob"(bird)', ' (foo) (bar) "bob"(bird)', ' bob ',
-                [], '')
-                ,
-       #self.assertEqual(qs[0].comments, ['foo', 'bar'])
-       #self.assertEqual(qs[2].comments, ['bird'])
-       #self.assertEqual(qs.content, 'bob')
-       #self.assertEqual(qs.quoted_value, ' "bob" ')
+        with_multiple_comments = C(
+            ' (foo) (bar) "bob"(bird)',
+            ' (foo) (bar) "bob"(bird)',
+            ' bob ',
+            [],
+            '',
+            ['foo', 'bar', 'bird'],
+            ),
+            #self.assertEqual(qs[0].comments, ['foo', 'bar'])
+            #self.assertEqual(qs[2].comments, ['bird'])
+            #self.assertEqual(qs.content, 'bob')
+            #self.assertEqual(qs.quoted_value, ' "bob" ')
 
-        test_get_quoted_string_non_printable_in_comment = C(
-            ' (\x0A) "bob"', ' (\x0A) "bob"', ' bob',
-                [errors.NonPrintableDefect], '')
-                ,
-       #self.assertEqual(qs[0].comments, ['\x0A'])
-       #self.assertEqual(qs.content, 'bob')
-       #self.assertEqual(qs.quoted_value, ' "bob"')
+        non_printable_in_comment = C(
+            ' (\x0A) "bob"',
+            ' (\x0A) "bob"',
+            ' bob',
+            [errors.NonPrintableDefect],
+            '',
+            ['\x0a'],
+            ),
+            #self.assertEqual(qs[0].comments, ['\x0A'])
+            #self.assertEqual(qs.content, 'bob')
+            #self.assertEqual(qs.quoted_value, ' "bob"')
 
-        test_get_quoted_string_non_printable_in_qcontent = C(
-            ' (a) "a\x0B"', ' (a) "a\x0B"', ' a\x0B',
-                [errors.NonPrintableDefect], '')
-                ,
-       #self.assertEqual(qs[0].comments, ['a'])
-       #self.assertEqual(qs.content, 'a\x0B')
-       #self.assertEqual(qs.quoted_value, ' "a\x0B"')
+        non_printable_in_qcontent = C(
+            ' (a) "a\x0B"',
+            ' (a) "a\x0B"',
+            ' a\x0B',
+            [errors.NonPrintableDefect],
+            '',
+            ['a'],
+            ),
+            #self.assertEqual(qs[0].comments, ['a'])
+            #self.assertEqual(qs.content, 'a\x0B')
+            #self.assertEqual(qs.quoted_value, ' "a\x0B"')
 
-        test_get_quoted_string_internal_ws = C(
-            ' (a) "foo  bar "', ' (a) "foo  bar "', ' foo  bar ',
-                [], '')
-                ,
-       #self.assertEqual(qs[0].comments, ['a'])
-       #self.assertEqual(qs.content, 'foo  bar ')
-       #self.assertEqual(qs.quoted_value, ' "foo  bar "')
+        internal_ws = C(
+            ' (a) "foo  bar "',
+            ' (a) "foo  bar "',
+            ' foo  bar ',
+            [],
+            '',
+            ['a'],
+            ),
+            #self.assertEqual(qs[0].comments, ['a'])
+            #self.assertEqual(qs.content, 'foo  bar ')
+            #self.assertEqual(qs.quoted_value, ' "foo  bar "')
 
-        test_get_quoted_string_header_ends_in_comment = C(
-            ' (a) "bob" (a', ' (a) "bob" (a)', ' bob ',
-                [errors.InvalidHeaderDefect], '')
-                ,
-       #self.assertEqual(qs[0].comments, ['a'])
-       #self.assertEqual(qs[2].comments, ['a'])
-       #self.assertEqual(qs.content, 'bob')
-       #self.assertEqual(qs.quoted_value, ' "bob" ')
+        header_ends_in_comment = C(
+            ' (a) "bob" (a',
+            ' (a) "bob" (a)',
+            ' bob ',
+            [errors.InvalidHeaderDefect],
+            '',
+            ['a', 'a'],
+            ),
+            #self.assertEqual(qs[0].comments, ['a'])
+            #self.assertEqual(qs[2].comments, ['a'])
+            #self.assertEqual(qs.content, 'bob')
+            #self.assertEqual(qs.quoted_value, ' "bob" ')
 
-        test_get_quoted_string_header_ends_in_qcontent = C(
-            ' (a) "bob', ' (a) "bob"', ' bob',
-                [errors.InvalidHeaderDefect], '')
-                ,
-       #self.assertEqual(qs[0].comments, ['a'])
-       #self.assertEqual(qs.content, 'bob')
-       #self.assertEqual(qs.quoted_value, ' "bob"')
+        header_ends_in_qcontent = C(
+            ' (a) "bob',
+            ' (a) "bob"',
+            ' bob',
+            [errors.InvalidHeaderDefect],
+            '',
+            ['a'],
+            ),
+            #self.assertEqual(qs[0].comments, ['a'])
+            #self.assertEqual(qs.content, 'bob')
+            #self.assertEqual(qs.quoted_value, ' "bob"')
 
-        test_get_quoted_string_cfws_only_raises = C(
-                                      '(foo) ',
+        cfws_only_raises = C(
+            '(foo) ',
             exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_quoted_string_no_quoted_string = C(
-                                      '(ab) xyz',
+        no_quoted_string = C(
+            '(ab) xyz',
             exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_quoted_string_qs_ends_at_noncfws = C(
-            '\t "bob" fee', '\t "bob" ', ' bob ', [], 'fee')
-            ,
-       #self.assertEqual(qs.content, 'bob')
-       #self.assertEqual(qs.quoted_value, ' "bob" ')
+        qs_ends_at_noncfws = C(
+            '\t "bob" fee',
+            '\t "bob" ',
+            ' bob ',
+            [],
+            'fee',
+            ),
+            #self.assertEqual(qs.content, 'bob')
+            #self.assertEqual(qs.quoted_value, ' "bob" ')
 
         )
 
