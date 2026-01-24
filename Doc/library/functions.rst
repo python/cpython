@@ -1097,13 +1097,13 @@ are always available.  They are listed here in alphabetical order.
       *classinfo* can be a :ref:`types-union`.
 
 
-.. function:: issubclass(class, classinfo, /)
+.. function:: issubclass(cls, classinfo, /)
 
-   Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
+   Return ``True`` if *cls* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects (or recursively, other such tuples)
-   or a :ref:`types-union`, in which case return ``True`` if *class* is a
+   or a :ref:`types-union`, in which case return ``True`` if *cls* is a
    subclass of any entry in *classinfo*.  In any other case, a :exc:`TypeError`
    exception is raised.
 
