@@ -1,2 +1,2 @@
-Add :meth:`symtable.SymbolTable.get_cells` and
-:meth:`symtable.Symbol.is_cell` methods.
+Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+
