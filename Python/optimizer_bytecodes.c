@@ -211,7 +211,9 @@ dummy_func(void) {
         sym_set_type(left, &PyFloat_Type);
     }
 
-    op(_BINARY_OP, (lhs, rhs -- res)) {
+    op(_BINARY_OP, (lhs, rhs -- res, l, r)) {
+        l = lhs;
+        r = rhs;
         REPLACE_OPCODE_IF_EVALUATES_PURE(lhs, rhs, res);
         bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
@@ -307,6 +309,12 @@ dummy_func(void) {
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyUnicode_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_EXTEND, (left, right -- res, l, r)) {
+        res = sym_new_not_null(ctx);
         l = left;
         r = right;
     }
