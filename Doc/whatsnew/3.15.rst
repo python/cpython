@@ -740,7 +740,7 @@ ssl
 symtable
 --------
 
-* Add :meth:`symtable.SymbolTable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
 
   (Contributed by Yashp002 in :gh:`143504`.)
 
