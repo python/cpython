@@ -1753,6 +1753,8 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Note that interned strings are not “immortal”.
    You must keep a reference to the result to benefit from interning.
 
+   .. note::
+      In the free-threaded build, all interned strings are :term:`immortal`.
 
 .. c:function:: PyObject* PyUnicode_InternFromString(const char *str)
 

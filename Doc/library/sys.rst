@@ -1325,6 +1325,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    Interned strings are not :term:`immortal`; you must keep a reference to the
    return value of :func:`intern` around to benefit from it.
 
+   .. note::
+
+      In the free-threaded build, all interned strings are :term:`immortal`.
 
 .. function:: _is_gil_enabled()
 
