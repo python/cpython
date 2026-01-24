@@ -250,6 +250,11 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
+/* Comparison oparg masks */
+#define COMPARE_LT_MASK 2
+#define COMPARE_GT_MASK 4
+#define COMPARE_EQ_MASK 8
+
 #define JUMP_TO_LABEL(label) goto label;
 
 static int
