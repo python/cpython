@@ -182,7 +182,7 @@ Examining Symbol Tables
 
    .. method:: get_cells()
 
-      Return a tuple containing the names of cell variables in this table.
+      Return a tuple containing names of :term:`cell variables <closure variable>` in this table.
 
 
 .. class:: Class
@@ -295,6 +295,12 @@ Examining Symbol Tables
       Return ``True`` if the symbol is referenced in its block, but not assigned
       to.
 
+   .. method:: is_cell()
+
+      Return ``True`` if the symbol is a cell variable.
+
+      .. versionadded:: 3.15
+
    .. method:: is_free_class()
 
       Return *True* if a class-scoped symbol is free from
@@ -356,12 +362,6 @@ Examining Symbol Tables
 
       Return the namespace bound to this name. If more than one or no namespace
       is bound to this name, a :exc:`ValueError` is raised.
-
-   .. method:: is_cell()
-
-      Return ``True`` if the symbol is a cell variable.
-
-      .. versionadded:: 3.15
 
 
 .. _symtable-cli:
