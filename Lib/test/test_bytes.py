@@ -792,16 +792,16 @@ class BaseBytesTest:
         pi = PseudoFloat(3.1415)
 
         exceptions_params = [
-            ('%x format: an integer is required, not float', b'%x', 3.14),
-            ('%X format: an integer is required, not float', b'%X', 2.11),
-            ('%o format: an integer is required, not float', b'%o', 1.79),
-            ('%x format: an integer is required, not PseudoFloat', b'%x', pi),
-            ('%x format: an integer is required, not complex', b'%x', 3j),
-            ('%X format: an integer is required, not complex', b'%X', 2j),
-            ('%o format: an integer is required, not complex', b'%o', 1j),
-            ('%u format: a real number is required, not complex', b'%u', 3j),
-            ('%i format: a real number is required, not complex', b'%i', 2j),
-            ('%d format: a real number is required, not complex', b'%d', 2j),
+            ('%x requires an integer, not float', b'%x', 3.14),
+            ('%X requires an integer, not float', b'%X', 2.11),
+            ('%o requires an integer, not float', b'%o', 1.79),
+            (r'%x requires an integer, not .*\.PseudoFloat', b'%x', pi),
+            ('%x requires an integer, not complex', b'%x', 3j),
+            ('%X requires an integer, not complex', b'%X', 2j),
+            ('%o requires an integer, not complex', b'%o', 1j),
+            ('%u requires a real number, not complex', b'%u', 3j),
+            ('%i requires a real number, not complex', b'%i', 2j),
+            ('%d requires a real number, not complex', b'%d', 2j),
             (
                 r'%c requires an integer in range\(256\)'
                 r' or a single byte, not .*\.PseudoFloat',
@@ -810,7 +810,7 @@ class BaseBytesTest:
         ]
 
         for msg, format_bytes, value in exceptions_params:
-            with self.assertRaisesRegex(TypeError, msg):
+            with self.assertRaisesRegex(TypeError, 'format argument: ' + msg):
                 operator.mod(format_bytes, value)
 
     def test_memory_leak_gh_140939(self):

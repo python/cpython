@@ -404,26 +404,44 @@ PyBytes_FromFormat(const char *format, ...)
 
 /* Helpers for formatstring */
 
+#define FORMAT_ERROR(EXC, FMT, ...) do {                                    \
+    if (key != NULL) {                                                      \
+        PyErr_Format((EXC), "format argument %R: " FMT,                     \
+                     key, __VA_ARGS__);                                     \
+    }                                                                       \
+    else if (argidx >= 0) {                                                 \
+        PyErr_Format((EXC), "format argument %zd: " FMT,                    \
+                     argidx, __VA_ARGS__);                                  \
+    }                                                                       \
+    else {                                                                  \
+        PyErr_Format((EXC), "format argument: " FMT, __VA_ARGS__);          \
+    }                                                                       \
+} while (0)
+
 Py_LOCAL_INLINE(PyObject *)
-getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
+getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx, int allowone)
 {
     Py_ssize_t argidx = *p_argidx;
     if (argidx < arglen) {
         (*p_argidx)++;
-        if (arglen < 0)
-            return args;
-        else
+        if (arglen >= 0) {
             return PyTuple_GetItem(args, argidx);
+        }
+        else if (allowone) {
+            return args;
+        }
     }
-    PyErr_SetString(PyExc_TypeError,
-                    "not enough arguments for format string");
+    PyErr_Format(PyExc_TypeError,
+                 "not enough arguments for format string (got %zd)",
+                 arglen < 0 ? 1 : arglen);
     return NULL;
 }
 
 /* Returns a new reference to a PyBytes object, or NULL on failure. */
 
 static char*
-formatfloat(PyObject *v, int flags, int prec, int type,
+formatfloat(PyObject *v, Py_ssize_t argidx, PyObject *key,
+            int flags, int prec, int type,
             PyObject **p_result, PyBytesWriter *writer, char *str)
 {
     char *p;
@@ -434,8 +452,11 @@ formatfloat(PyObject *v, int flags, int prec, int type,
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
-        PyErr_Format(PyExc_TypeError, "float argument required, "
-                     "not %.200s", Py_TYPE(v)->tp_name);
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            FORMAT_ERROR(PyExc_TypeError,
+                         "%%%c requires a real number, not %T",
+                         type, v);
+        }
         return NULL;
     }
 
@@ -470,7 +491,8 @@ formatfloat(PyObject *v, int flags, int prec, int type,
 }
 
 static PyObject *
-formatlong(PyObject *v, int flags, int prec, int type)
+formatlong(PyObject *v, Py_ssize_t argidx, PyObject *key,
+           int flags, int prec, int type)
 {
     PyObject *result, *iobj;
     if (PyLong_Check(v))
@@ -490,20 +512,21 @@ formatlong(PyObject *v, int flags, int prec, int type)
         if (!PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
     }
-    PyErr_Format(PyExc_TypeError,
-        "%%%c format: %s is required, not %.200s", type,
-        (type == 'o' || type == 'x' || type == 'X') ? "an integer"
-                                                    : "a real number",
-        Py_TYPE(v)->tp_name);
+    FORMAT_ERROR(PyExc_TypeError,
+                 "%%%c requires %s, not %T",
+                 type,
+                 (type == 'o' || type == 'x' || type == 'X') ? "an integer"
+                                                             : "a real number",
+                 v);
     return NULL;
 }
 
 static int
-byte_converter(PyObject *arg, char *p)
+byte_converter(PyObject *arg, Py_ssize_t argidx, PyObject *key, char *p)
 {
     if (PyBytes_Check(arg)) {
         if (PyBytes_GET_SIZE(arg) != 1) {
-            PyErr_Format(PyExc_TypeError,
+            FORMAT_ERROR(PyExc_TypeError,
                          "%%c requires an integer in range(256) or "
                          "a single byte, not a bytes object of length %zd",
                          PyBytes_GET_SIZE(arg));
@@ -514,7 +537,7 @@ byte_converter(PyObject *arg, char *p)
     }
     else if (PyByteArray_Check(arg)) {
         if (PyByteArray_GET_SIZE(arg) != 1) {
-            PyErr_Format(PyExc_TypeError,
+            FORMAT_ERROR(PyExc_TypeError,
                          "%%c requires an integer in range(256) or "
                          "a single byte, not a bytearray object of length %zd",
                          PyByteArray_GET_SIZE(arg));
@@ -531,23 +554,25 @@ byte_converter(PyObject *arg, char *p)
         }
         if (!(0 <= ival && ival <= 255)) {
             /* this includes an overflow in converting to C long */
-            PyErr_SetString(PyExc_OverflowError,
-                            "%c arg not in range(256)");
+            FORMAT_ERROR(PyExc_OverflowError,
+                         "%%c argument not in range(256)%s", "");
             return 0;
         }
         *p = (char)ival;
         return 1;
     }
-    PyErr_Format(PyExc_TypeError,
-        "%%c requires an integer in range(256) or a single byte, not %T",
-        arg);
+    FORMAT_ERROR(PyExc_TypeError,
+                 "%%c requires an integer in range(256) or "
+                 "a single byte, not %T",
+                 arg);
     return 0;
 }
 
 static PyObject *_PyBytes_FromBuffer(PyObject *x);
 
 static PyObject *
-format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
+format_obj(PyObject *v, Py_ssize_t argidx, PyObject *key,
+           const char **pbuf, Py_ssize_t *plen)
 {
     PyObject *func, *result;
     /* is it a bytes object? */
@@ -589,10 +614,10 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         *plen = PyBytes_GET_SIZE(result);
         return result;
     }
-    PyErr_Format(PyExc_TypeError,
+    FORMAT_ERROR(PyExc_TypeError,
                  "%%b requires a bytes-like object, "
-                 "or an object that implements __bytes__, not '%.100s'",
-                 Py_TYPE(v)->tp_name);
+                 "or an object that implements __bytes__, not %T",
+                 v);
     return NULL;
 }
 
@@ -607,6 +632,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     Py_ssize_t fmtcnt;
     int args_owned = 0;
     PyObject *dict = NULL;
+    PyObject *key = NULL;
 
     if (args == NULL) {
         PyErr_BadInternalCall();
@@ -680,15 +706,17 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 fmtcnt--;
                 continue;
             }
+            Py_CLEAR(key);
+            const char *fmtstart = fmt;
             if (*fmt == '(') {
                 const char *keystart;
                 Py_ssize_t keylen;
-                PyObject *key;
                 int pcount = 1;
 
                 if (dict == NULL) {
-                    PyErr_SetString(PyExc_TypeError,
-                             "format requires a mapping");
+                    PyErr_Format(PyExc_TypeError,
+                                 "format requires a mapping, not %T",
+                                 args);
                     goto error;
                 }
                 ++fmt;
@@ -704,8 +732,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 }
                 keylen = fmt - keystart - 1;
                 if (fmtcnt < 0 || pcount > 0) {
-                    PyErr_SetString(PyExc_ValueError,
-                               "incomplete format key");
+                    PyErr_Format(PyExc_ValueError,
+                                 "stray %% or incomplete format key "
+                                 "at position %zd",
+                                 (Py_ssize_t)(fmtstart - format - 1));
                     goto error;
                 }
                 key = PyBytes_FromStringAndSize(keystart,
@@ -717,13 +747,21 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     args_owned = 0;
                 }
                 args = PyObject_GetItem(dict, key);
-                Py_DECREF(key);
                 if (args == NULL) {
                     goto error;
                 }
                 args_owned = 1;
-                arglen = -1;
-                argidx = -2;
+                arglen = -3;
+                argidx = -4;
+            }
+            else {
+                if (arglen < -1) {
+                    PyErr_Format(PyExc_ValueError,
+                                 "format requires a parenthesised mapping key "
+                                 "at position %zd",
+                                 (Py_ssize_t)(fmtstart - format - 1));
+                    goto error;
+                }
             }
 
             /* Parse flags. Example: "%+i" => flags=F_SIGN. */
@@ -740,17 +778,28 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
             /* Parse width. Example: "%10s" => width=10 */
             if (c == '*') {
-                v = getnextarg(args, arglen, &argidx);
+                if (arglen < -1) {
+                    PyErr_Format(PyExc_ValueError,
+                            "* cannot be used with a parenthesised mapping key "
+                            "at position %zd",
+                            (Py_ssize_t)(fmtstart - format - 1));
+                    goto error;
+                }
+                v = getnextarg(args, arglen, &argidx, 0);
                 if (v == NULL)
                     goto error;
                 if (!PyLong_Check(v)) {
-                    PyErr_SetString(PyExc_TypeError,
-                                    "* wants int");
+                    FORMAT_ERROR(PyExc_TypeError, "* requires int, not %T", v);
                     goto error;
                 }
                 width = PyLong_AsSsize_t(v);
-                if (width == -1 && PyErr_Occurred())
+                if (width == -1 && PyErr_Occurred()) {
+                    if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                        FORMAT_ERROR(PyExc_OverflowError,
+                                     "too big for width%s", "");
+                    }
                     goto error;
+                }
                 if (width < 0) {
                     flags |= F_LJUST;
                     width = -width;
@@ -765,9 +814,9 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     if (!Py_ISDIGIT(c))
                         break;
                     if (width > (PY_SSIZE_T_MAX - ((int)c - '0')) / 10) {
-                        PyErr_SetString(
-                            PyExc_ValueError,
-                            "width too big");
+                        PyErr_Format(PyExc_ValueError,
+                                     "width too big at position %zd",
+                                     (Py_ssize_t)(fmtstart - format - 1));
                         goto error;
                     }
                     width = width*10 + (c - '0');
@@ -780,18 +829,29 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 if (--fmtcnt >= 0)
                     c = *fmt++;
                 if (c == '*') {
-                    v = getnextarg(args, arglen, &argidx);
+                    if (arglen < -1) {
+                        PyErr_Format(PyExc_ValueError,
+                                "* cannot be used with a parenthesised mapping key "
+                                "at position %zd",
+                                (Py_ssize_t)(fmtstart - format - 1));
+                        goto error;
+                    }
+                    v = getnextarg(args, arglen, &argidx, 0);
                     if (v == NULL)
                         goto error;
                     if (!PyLong_Check(v)) {
-                        PyErr_SetString(
-                            PyExc_TypeError,
-                            "* wants int");
+                        FORMAT_ERROR(PyExc_TypeError,
+                                     "* requires int, not %T", v);
                         goto error;
                     }
                     prec = PyLong_AsInt(v);
-                    if (prec == -1 && PyErr_Occurred())
+                    if (prec == -1 && PyErr_Occurred()) {
+                        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                            FORMAT_ERROR(PyExc_OverflowError,
+                                         "too big for precision%s", "");
+                        }
                         goto error;
+                    }
                     if (prec < 0)
                         prec = 0;
                     if (--fmtcnt >= 0)
@@ -804,9 +864,9 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                         if (!Py_ISDIGIT(c))
                             break;
                         if (prec > (INT_MAX - ((int)c - '0')) / 10) {
-                            PyErr_SetString(
-                                PyExc_ValueError,
-                                "prec too big");
+                            PyErr_Format(PyExc_ValueError,
+                                "precision too big at position %zd",
+                                (Py_ssize_t)(fmtstart - format - 1));
                             goto error;
                         }
                         prec = prec*10 + (c - '0');
@@ -820,11 +880,12 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 }
             }
             if (fmtcnt < 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "incomplete format");
+                PyErr_Format(PyExc_ValueError,
+                             "stray %% at position %zd",
+                             (Py_ssize_t)(fmtstart - format - 1));
                 goto error;
             }
-            v = getnextarg(args, arglen, &argidx);
+            v = getnextarg(args, arglen, &argidx, 1);
             if (v == NULL)
                 goto error;
 
@@ -852,7 +913,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             case 's':
                 // %s is only for 2/3 code; 3 only code should use %b
             case 'b':
-                temp = format_obj(v, &pbuf, &len);
+                temp = format_obj(v, argidx, key, &pbuf, &len);
                 if (temp == NULL)
                     goto error;
                 if (prec >= 0 && len > prec)
@@ -900,7 +961,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     continue;
                 }
 
-                temp = formatlong(v, flags, prec, c);
+                temp = formatlong(v, argidx, key, flags, prec, c);
                 if (!temp)
                     goto error;
                 assert(PyUnicode_IS_ASCII(temp));
@@ -921,13 +982,13 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     && !(flags & (F_SIGN | F_BLANK)))
                 {
                     /* Fast path */
-                    res = formatfloat(v, flags, prec, c, NULL, writer, res);
+                    res = formatfloat(v, argidx, key, flags, prec, c, NULL, writer, res);
                     if (res == NULL)
                         goto error;
                     continue;
                 }
 
-                if (!formatfloat(v, flags, prec, c, &temp, NULL, res))
+                if (!formatfloat(v, argidx, key, flags, prec, c, &temp, NULL, res))
                     goto error;
                 pbuf = PyBytes_AS_STRING(temp);
                 len = PyBytes_GET_SIZE(temp);
@@ -938,7 +999,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
             case 'c':
                 pbuf = &onechar;
-                len = byte_converter(v, &onechar);
+                len = byte_converter(v, argidx, key, &onechar);
                 if (!len)
                     goto error;
                 if (width == -1) {
@@ -949,11 +1010,36 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 break;
 
             default:
-                PyErr_Format(PyExc_ValueError,
-                  "unsupported format character '%c' (0x%x) "
-                  "at index %zd",
-                  c, c,
-                  (Py_ssize_t)(fmt - 1 - format));
+                if (Py_ISALPHA(c)) {
+                    PyErr_Format(PyExc_ValueError,
+                                 "unsupported format %%%c at position %zd",
+                                 c, (Py_ssize_t)(fmtstart - format - 1));
+                }
+                else if (c == '\'') {
+                    PyErr_Format(PyExc_ValueError,
+                                 "stray %% at position %zd or unexpected "
+                                 "format character \"'\" "
+                                 "at position %zd",
+                                 (Py_ssize_t)(fmtstart - format - 1),
+                                 (Py_ssize_t)(fmt - format - 1));
+                }
+                else if (c >= 32 && c < 127 && c != '\'') {
+                    PyErr_Format(PyExc_ValueError,
+                                 "stray %% at position %zd or unexpected "
+                                 "format character '%c' "
+                                 "at position %zd",
+                                 (Py_ssize_t)(fmtstart - format - 1),
+                                 c, (Py_ssize_t)(fmt - format - 1));
+                }
+                else {
+                    PyErr_Format(PyExc_ValueError,
+                                 "stray %% at position %zd or unexpected "
+                                 "format character with code 0x%02x "
+                                 "at position %zd",
+                                 (Py_ssize_t)(fmtstart - format - 1),
+                                 Py_CHARMASK(c),
+                                 (Py_ssize_t)(fmt - format - 1));
+                }
                 goto error;
             }
 
@@ -1042,6 +1128,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             }
 
             if (dict && (argidx < arglen)) {
+                // XXX: Never happens?
                 PyErr_SetString(PyExc_TypeError,
                            "not all arguments converted during bytes formatting");
                 Py_XDECREF(temp);
@@ -1061,8 +1148,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     } /* until end */
 
     if (argidx < arglen && !dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "not all arguments converted during bytes formatting");
+        PyErr_Format(PyExc_TypeError,
+                     "not all arguments converted during bytes formatting "
+                     "(required %zd, got %zd)",
+                     arglen < 0 ? 0 : argidx,
+                     arglen < 0 ? 1 : arglen);
         goto error;
     }
 
@@ -1072,6 +1162,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     return PyBytesWriter_FinishWithPointer(writer, res);
 
  error:
+    Py_XDECREF(key);
     PyBytesWriter_Discard(writer);
     if (args_owned) {
         Py_DECREF(args);
