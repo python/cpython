@@ -234,7 +234,8 @@ class Function(SymbolTable):
         """Return a list of cell variable names in the table.
         """
         if self.__cells is None:
-            self.__cells = [s.get_name() for s in self.get_symbols() if s.is_cell()]
+            is_cell = lambda x: _get_scope(x) == CELL
+            self.__cells = self.__idents_matching(is_cell)
         return self.__cells
 
 
