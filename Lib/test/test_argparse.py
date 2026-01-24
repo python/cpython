@@ -7663,6 +7663,38 @@ class TestColorized(TestCase):
         help_text = parser.format_help()
         self.assertIn(f'{prog_extra}grep "foo.*bar" | sort{reset}', help_text)
 
+    def test_help_with_format_specifiers(self):
+        # GH-142950: format specifiers like %x should work with color=True
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--hex', type=int, default=255,
+                            help='hex: %(default)x, alt: %(default)#x')
+        parser.add_argument('--zero', type=int, default=7,
+                            help='zero: %(default)05d')
+        parser.add_argument('--str', default='test',
+                            help='str: %(default)s')
+        parser.add_argument('--pct', type=int, default=50,
+                            help='pct: %(default)d%%')
+        parser.add_argument('--literal', help='literal: 100%%')
+        parser.add_argument('--prog', help='prog: %(prog)s')
+        parser.add_argument('--type', type=int, help='type: %(type)s')
+        parser.add_argument('--choices', choices=['a', 'b'],
+                            help='choices: %(choices)s')
+
+        help_text = parser.format_help()
+
+        interp = self.theme.interpolated_value
+        reset = self.theme.reset
+
+        self.assertIn(f'hex: {interp}ff{reset}', help_text)
+        self.assertIn(f'alt: {interp}0xff{reset}', help_text)
+        self.assertIn(f'zero: {interp}00007{reset}', help_text)
+        self.assertIn(f'str: {interp}test{reset}', help_text)
+        self.assertIn(f'pct: {interp}50{reset}%', help_text)
+        self.assertIn('literal: 100%', help_text)
+        self.assertIn(f'prog: {interp}PROG{reset}', help_text)
+        self.assertIn(f'type: {interp}int{reset}', help_text)
+        self.assertIn(f'choices: {interp}a, b{reset}', help_text)
+
     def test_print_help_uses_target_file_for_color_decision(self):
         parser = argparse.ArgumentParser(prog='PROG', color=True)
         parser.add_argument('--opt')

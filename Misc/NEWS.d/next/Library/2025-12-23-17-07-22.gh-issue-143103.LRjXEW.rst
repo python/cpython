@@ -1,1 +1,0 @@
-Add padding support to :func:`base64.z85encode` via the ``pad`` parameter.

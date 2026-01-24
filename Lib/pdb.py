@@ -888,7 +888,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         locals.update(pdb_eval["write_back"])
         eval_result = pdb_eval["result"]
         if eval_result is not None:
-            print(repr(eval_result))
+            self.message(repr(eval_result))
 
         return True
 

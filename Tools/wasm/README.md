@@ -1,18 +1,15 @@
-# Python WebAssembly (WASM) build
+# Python Emscripten (wasm32-emscripten) build
 
-**WASI support is [tier 2](https://peps.python.org/pep-0011/#tier-2).**
 **Emscripten support is [tier 3](https://peps.python.org/pep-0011/#tier-3).**
 
 This directory contains configuration and helpers to facilitate cross
-compilation of CPython to WebAssembly (WASM). Python supports Emscripten
-(*wasm32-emscripten*) and WASI (*wasm32-wasi*) targets. Emscripten builds
-run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
-use WASM runtimes such as *wasmtime*.
+compilation of CPython to WebAssembly (WASM) using Emscripten. Emscripten builds
+run in modern browsers and JavaScript runtimes like *Node.js*.
+
+For WASI builds, see [Platforms/WASI](../../Platforms/WASI/README.md).
 
 **NOTE**: If you are looking for general information about WebAssembly that is
 not directly related to CPython, please see https://github.com/psf/webassembly.
-
-## Emscripten (wasm32-emscripten)
 
 ### Build
 
@@ -192,11 +189,7 @@ await createEmscriptenModule({
 - Test modules are disabled by default. Use ``--enable-test-modules`` build
   test modules like ``_testcapi``.
 
-## WASI (wasm32-wasi)
-
-See [the devguide on how to build and run for WASI](https://devguide.python.org/getting-started/setup-building/#wasi).
-
-## Detecting WebAssembly builds
+## Detecting Emscripten builds
 
 ### Python code
 
@@ -205,9 +198,6 @@ import os, sys
 
 if sys.platform == "emscripten":
     # Python on Emscripten
-    ...
-if sys.platform == "wasi":
-    # Python on WASI
     ...
 
 if os.name == "posix":
@@ -251,31 +241,14 @@ sys._emscripten_info(
 )
 ```
 
-```python
->>> import os, sys
->>> os.uname()
-posix.uname_result(
-    sysname='wasi',
-    nodename='(none)',
-    release='0.0.0',
-    version='0.0.0',
-    machine='wasm32'
-)
->>> os.name
-'posix'
->>> sys.platform
-'wasi'
-```
-
 ### C code
 
-Emscripten SDK and WASI SDK define several built-in macros. You can dump a
-full list of built-ins with ``emcc -dM -E - < /dev/null`` and
-``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
+Emscripten SDK defines several built-in macros. You can dump a full list of
+built-ins with ``emcc -dM -E - < /dev/null``.
 
 * WebAssembly ``__wasm__`` (also ``__wasm``)
 * wasm32 ``__wasm32__`` (also ``__wasm32``)
 * wasm64 ``__wasm64__``
 * Emscripten ``__EMSCRIPTEN__`` (also ``EMSCRIPTEN``)
 * Emscripten version ``__EMSCRIPTEN_major__``, ``__EMSCRIPTEN_minor__``, ``__EMSCRIPTEN_tiny__``
-* WASI ``__wasi__``
+
