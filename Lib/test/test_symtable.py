@@ -287,7 +287,6 @@ class SymtableTest(unittest.TestCase):
     def test_cells(self):
         self.assertTrue(self.spam.lookup("x").is_cell())
 
-
     def test_referenced(self):
         self.assertTrue(self.internal.lookup("x").is_referenced())
         self.assertTrue(self.spam.lookup("internal").is_referenced())
