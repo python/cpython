@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 import contextlib
 import importlib
 import io
@@ -1462,6 +1461,7 @@ class TestPyReplModuleCompleter(TestCase):
             with self.subTest(code=code):
                 self.assertEqual(actual, None)
 
+    @patch.dict(sys.modules)
     def test_suggestions_and_messages(self) -> None:
         # more unitary tests checking the exact suggestions provided
         # (sorting, de-duplication, import action...)
@@ -1522,27 +1522,27 @@ class TestPyReplModuleCompleter(TestCase):
                         new_imports = sys.modules.keys() - _imported
                         self.assertSetEqual(new_imports, expected_imports)
 
+
+# Audit hook used to check for stdlib modules import side-effects
+# Defined globally to avoid adding one hook per test run (refleak)
+_audit_events: set[str] | None = None
+def _hook(name: str, _args: tuple):
+    if _audit_events is not None:  # No-op when not activated
+        _audit_events.add(name)
+sys.addaudithook(_hook)
+
+
+@contextlib.contextmanager
+def _capture_audit_events():
+    global _audit_events
+    _audit_events = set()
+    try:
+        yield _audit_events
+    finally:
+        _audit_events = None
+
+
 class TestModuleCompleterAutomaticImports(TestCase):
-    """Out of TestPyReplModuleCompleter case because it blocks module import."""
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls._audit_events: set[str] | None = None
-        def _hook(name: str, _args: tuple):
-            if cls._audit_events is not None:
-                cls._audit_events.add(name)
-        sys.addaudithook(_hook)
-
-    @classmethod
-    @contextlib.contextmanager
-    def _capture_audit_events(cls) -> Iterator[set[str]]:
-        cls._audit_events = set()
-        try:
-            yield cls._audit_events
-        finally:
-            cls._audit_events = None
-
     def test_no_side_effects(self):
         from test.test___all__ import AllTest  # TODO: extract to a helper?
 
@@ -1551,11 +1551,10 @@ class TestModuleCompleterAutomaticImports(TestCase):
             with self.subTest(modname=modname):
                 with (captured_stdout() as out,
                       captured_stderr() as err,
-                      self._capture_audit_events() as audit_events,
+                      _capture_audit_events() as audit_events,
                       (patch("tkinter._tkinter.create") if tkinter
                        else contextlib.nullcontext()) as tk_mock,
-                      warnings.catch_warnings(action="ignore"),
-                      patch.dict(sys.modules)):
+                      warnings.catch_warnings(action="ignore")):
                     completer._maybe_import_module(modname)
                 # Test no module is imported that
                 # 1. prints any text
