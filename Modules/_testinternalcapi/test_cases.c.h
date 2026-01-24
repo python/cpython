@@ -32,6 +32,9 @@
             _PyStackRef lhs;
             _PyStackRef rhs;
             _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
+            _PyStackRef value;
             // _SPECIALIZE_BINARY_OP
             {
                 rhs = stack_pointer[-1];
@@ -65,18 +68,26 @@
                     JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
+                l = lhs;
+                r = rhs;
+            }
+            // _POP_TOP
+            {
+                value = r;
+                stack_pointer[-2] = res;
+                stack_pointer[-1] = l;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = lhs;
-                lhs = res;
-                stack_pointer[-2] = lhs;
-                PyStackRef_CLOSE(tmp);
-                tmp = rhs;
-                rhs = PyStackRef_NULL;
-                stack_pointer[-1] = rhs;
-                PyStackRef_CLOSE(tmp);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = l;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
         }

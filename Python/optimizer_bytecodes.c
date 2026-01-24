@@ -211,7 +211,9 @@ dummy_func(void) {
         sym_set_type(left, &PyFloat_Type);
     }
 
-    op(_BINARY_OP, (lhs, rhs -- res)) {
+    op(_BINARY_OP, (lhs, rhs -- res, l, r)) {
+        l = lhs;
+        r = rhs;
         REPLACE_OPCODE_IF_EVALUATES_PURE(lhs, rhs, res);
         bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
