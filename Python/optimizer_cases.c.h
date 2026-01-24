@@ -2118,7 +2118,16 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            res = sym_new_type(ctx, &PyBool_Type);
+            int cmp_mask = oparg & (COMPARE_LT_MASK | COMPARE_GT_MASK | COMPARE_EQ_MASK);
+            if (cmp_mask == COMPARE_EQ_MASK) {
+                res = sym_new_predicate(ctx, left, right, JIT_PRED_EQ);
+            }
+            else if (cmp_mask == (COMPARE_LT_MASK | COMPARE_GT_MASK)) {
+                res = sym_new_predicate(ctx, left, right, JIT_PRED_NE);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
             l = left;
             r = right;
             if (
@@ -2178,7 +2187,16 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            res = sym_new_type(ctx, &PyBool_Type);
+            int cmp_mask = oparg & (COMPARE_LT_MASK | COMPARE_GT_MASK | COMPARE_EQ_MASK);
+            if (cmp_mask == COMPARE_EQ_MASK) {
+                res = sym_new_predicate(ctx, left, right, JIT_PRED_EQ);
+            }
+            else if (cmp_mask == (COMPARE_LT_MASK | COMPARE_GT_MASK)) {
+                res = sym_new_predicate(ctx, left, right, JIT_PRED_NE);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
             l = left;
             r = right;
             if (
@@ -2242,7 +2260,16 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            res = sym_new_type(ctx, &PyBool_Type);
+            int cmp_mask = oparg & (COMPARE_LT_MASK | COMPARE_GT_MASK | COMPARE_EQ_MASK);
+            if (cmp_mask == COMPARE_EQ_MASK) {
+                res = sym_new_predicate(ctx, left, right, JIT_PRED_EQ);
+            }
+            else if (cmp_mask == (COMPARE_LT_MASK | COMPARE_GT_MASK)) {
+                res = sym_new_predicate(ctx, left, right, JIT_PRED_NE);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
             l = left;
             r = right;
             if (
