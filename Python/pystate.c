@@ -1843,6 +1843,10 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     _PyThreadState_ClearMimallocHeaps(tstate);
 
+#ifdef _Py_TIER2
+    _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
+#endif
+
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
