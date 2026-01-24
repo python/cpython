@@ -676,13 +676,6 @@ dummy_func(void) {
         }
     }
 
-    op(_POP_TOP_MODULE, (value --)) {
-        if (PyJitRef_IsBorrowed(value) ||
-            sym_is_immortal(PyJitRef_Unwrap(value))) {
-            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
-        }
-    }
-
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;

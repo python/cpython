@@ -8444,11 +8444,13 @@
                 STAT_INC(LOAD_ATTR, hit);
                 o = owner;
             }
-            // _POP_TOP_MODULE
+            // _POP_TOP
             {
                 value = o;
-                assert(PyModule_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-                PyStackRef_CLOSE_SPECIALIZED(value, _PyModule_ExactDealloc);
+                stack_pointer[-1] = attr;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
@@ -8458,7 +8460,6 @@
                     null[0] = PyStackRef_NULL;
                 }
             }
-            stack_pointer[-1] = attr;
             stack_pointer += (oparg & 1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();

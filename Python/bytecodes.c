@@ -371,11 +371,6 @@ dummy_func(
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
         }
 
-        op(_POP_TOP_MODULE, (value --)) {
-            assert(PyModule_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-            PyStackRef_CLOSE_SPECIALIZED(value, _PyModule_ExactDealloc);
-        }
-
         tier2 op(_POP_TWO, (nos, tos --)) {
             PyStackRef_CLOSE(tos);
             PyStackRef_CLOSE(nos);
@@ -2485,7 +2480,7 @@ dummy_func(
         macro(LOAD_ATTR_MODULE) =
             unused/1 +
             _LOAD_ATTR_MODULE +
-            _POP_TOP_MODULE +
+            POP_TOP +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
