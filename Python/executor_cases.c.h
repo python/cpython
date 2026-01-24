@@ -5074,9 +5074,17 @@
                 next_oparg = exec->vm_data.oparg;
             }
             #endif
-            assert(next_instr->op.code == STORE_FAST || next_instr->op.code == ENTER_EXECUTOR);
+            stack_pointer[0] = left;
+            stack_pointer[1] = right;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
+                                      next_instr - _PyFrame_GetBytecode(frame)).op.code == STORE_FAST);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             #else
             next_oparg = (int)CURRENT_OPERAND0_16();
+            stack_pointer += 2;
             #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
@@ -5085,6 +5093,8 @@
                 _tos_cache1 = right;
                 _tos_cache0 = left;
                 SET_CURRENT_CACHED_VALUES(2);
+                stack_pointer += -2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(BINARY_OP, hit);
@@ -5092,6 +5102,8 @@
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
             PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyUnicode_Append(&temp, right_o);
             _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);

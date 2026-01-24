@@ -792,7 +792,8 @@ dummy_func(
                 next_oparg = exec->vm_data.oparg;
             }
 #endif
-            assert(next_instr->op.code == STORE_FAST || next_instr->op.code == ENTER_EXECUTOR);
+            assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
+                next_instr - _PyFrame_GetBytecode(frame)).op.code == STORE_FAST);
         #else
             next_oparg = (int)CURRENT_OPERAND0_16();
         #endif
