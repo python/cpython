@@ -92,13 +92,19 @@ POST request.
 
    If *validate* is false, characters that are neither
    in the normal base-64 alphabet nor the alternative alphabet are
-   discarded prior to the padding check.
+   discarded prior to the padding check, but the ``+`` and ``/`` characters
+   keep their meaning if they are not in *altchars* (they will be discarded
+   in future Python versions).
+
    If *validate* is true, these non-alphabet characters in the input
    result in a :exc:`binascii.Error`.
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
-   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
+   .. deprecated:: next
+      Accepting the ``+`` and ``/`` characters with an alternative alphabet
+      is now deprecated.
+
 
    .. versionchanged:: next
       Added the *ignorechars* parameter.
@@ -132,6 +138,9 @@ POST request.
    alphabet, which substitutes ``-`` instead of ``+`` and ``_`` instead of
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
+
+   .. deprecated:: next
+      Accepting the ``+`` and ``/`` characters is now deprecated.
 
 
 .. function:: b32encode(s)
@@ -256,8 +265,7 @@ Refer to the documentation of the individual functions for more information.
    *adobe* controls whether the input sequence is in Adobe Ascii85 format
    (i.e. is framed with <~ and ~>).
 
-   *ignorechars* should be a :term:`bytes-like object` or ASCII string
-   containing characters to ignore
+   *ignorechars* should be a byte string containing characters to ignore
    from the input. This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
