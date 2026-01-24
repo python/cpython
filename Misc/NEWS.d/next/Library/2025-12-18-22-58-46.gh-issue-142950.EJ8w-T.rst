@@ -1,1 +1,0 @@
-Fix regression in :mod:`argparse` where format specifiers in help strings raised :exc:`ValueError`.
