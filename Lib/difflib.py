@@ -39,7 +39,8 @@ Match = _namedtuple('Match', 'a b size')
 
 
 def _adjust_indices(seq, start, stop):
-    assert start >= 0
+    if start < 0:
+        raise ValueError('Starting index can not be negative')
     size = len(seq)
     if stop is None or stop > size:
         stop = size
@@ -52,9 +53,10 @@ class _LCSUBSimple:
     Complexity:
         T: O(n1 + n2) best, O(n1 × n2) worst
         S: O(n2)
+            , where n1 = len(a), n2 = len(b)
 
     Members:
-        b2j    for x in b, b2j[x] is a list of the indices (into b)
+        _b2j    for x in b, b2j[x] is a list of the indices (into b)
                 at which x appears; junk elements do not appear
     """
 
@@ -73,17 +75,18 @@ class _LCSUBSimple:
 
     def _get_b2j(self):
         b2j = self._b2j
-        if b2j is None:
-            b2j = {}   # positions of each element in b
-            for i, elt in enumerate(self.b):
-                indices = b2j.setdefault(elt, [])
-                indices.append(i)
-            junk = self.junk
-            if junk:
-                for elt in junk:
-                    del b2j[elt]
-            self._b2j = b2j
+        if b2j is not None:
+            return b2j
 
+        b2j = {}   # positions of each element in b
+        for i, elt in enumerate(self.b):
+            indices = b2j.setdefault(elt, [])
+            indices.append(i)
+        junk = self.junk
+        if junk:
+            for elt in junk:
+                del b2j[elt]
+        self._b2j = b2j
         return b2j
 
     def find(self, a, alo=0, ahi=None, blo=0, bhi=None):
@@ -120,18 +123,13 @@ class _LCSUBSimple:
         return besti, bestj, bestsize
 
 
-_LENGTH = 0
-_LINK = 1
-_NEXT = 2
-_POS = 3
-
-
 class _LCSUBAutomaton:
     """Suffix Automaton for finding longest common substring.
 
     Complexity:
         T: O(n1 + n2)   - roughly 2 * n1 + 6 * n2
         S: O(n2)        - maximum nodes: 2 * n2 + 1
+            , where n1 = len(a), n2 = len(b)
 
     Node spec:
         node: list = [length: int, link: list, next: dict, end_pos: int]
@@ -157,62 +155,58 @@ class _LCSUBAutomaton:
 
     def _get_root(self, blo, bhi):
         """
-        Automaton needs to rebuild for every (blo, bhi)
-        This is made to cache the last one and only rebuild on new values
-
-        Note that to construct Automaton that can be queried for any
-            (blo, bhi), each node would need to store a store a set of
-            indices. And this is prone to O(n^2) memory explosion.
-            Current approach maintains reasonable memory guarantees
-            and is also much simpler in comparison.
+        Automaton needs to rebuild for every (start2, stop2)
+        It is made to cache the last one and only rebuilds for new range
         """
         key = (blo, bhi)
         root = self._root
-        if root is None or self._cache != key:
-            root = [0, None, {}, -1]
-            b = self.b
-            junk = self.junk
-            last_len = 0
-            last = root
-            for j in range(blo, bhi):
-                c = b[j]
-                if c in junk:
-                    last_len = 0
-                    last = root
+        if root is not None and self._cache == key:
+            return root
+
+        LEN, LINK, NEXT, EPOS = 0, 1, 2, 3
+        root = [0, None, {}, -1]
+        b = self.b
+        junk = self.junk
+        last_len = 0
+        last = root
+        for j in range(blo, bhi):
+            c = b[j]
+            if c in junk:
+                last_len = 0
+                last = root
+            else:
+                last_len += 1
+                curr = [last_len, None, {}, j]
+
+                p = last
+                p_next = p[NEXT]
+                while c not in p_next:
+                    p_next[c] = curr
+                    if p is root:
+                        curr[LINK] = root
+                        break
+                    p = p[LINK]
+                    p_next = p[NEXT]
                 else:
-                    last_len += 1
-                    curr = [last_len, None, {}, j]
-
-                    p = last
-                    p_next = p[_NEXT]
-                    while c not in p_next:
-                        p_next[c] = curr
-                        if p is root:
-                            curr[_LINK] = root
-                            break
-                        p = p[_LINK]
-                        p_next = p[_NEXT]
+                    q = p_next[c]
+                    p_len_p1 = p[LEN] + 1
+                    if p_len_p1 == q[LEN]:
+                        curr[LINK] = q
                     else:
-                        q = p_next[c]
-                        p_length_p1 = p[_LENGTH] + 1
-                        if p_length_p1 == q[_LENGTH]:
-                            curr[_LINK] = q
-                        else:
-                            # Copy `q[_POS]` to ensure leftmost match in b
-                            clone = [p_length_p1, q[_LINK], q[_NEXT].copy(), q[_POS]]
-                            while (p_next := p[_NEXT]).get(c) is q:
-                                p_next[c] = clone
-                                if p is root:
-                                    break
-                                p = p[_LINK]
+                        # Copy `q[EPOS]` to ensure leftmost match in b
+                        clone = [p_len_p1, q[LINK], q[NEXT].copy(), q[EPOS]]
+                        while (p_next := p[NEXT]).get(c) is q:
+                            p_next[c] = clone
+                            if p is root:
+                                break
+                            p = p[LINK]
 
-                            q[_LINK] = curr[_LINK] = clone
+                        q[LINK] = curr[LINK] = clone
 
-                    last = curr
+                last = curr
 
-            self._root = root
-            self._cache = key
-
+        self._root = root
+        self._cache = key
         return root
 
     def find(self, a, alo=0, ahi=None, blo=0, bhi=None):
@@ -221,6 +215,7 @@ class _LCSUBAutomaton:
         if alo >= ahi or blo >= bhi:
             return (alo, blo, 0)
 
+        LEN, LINK, NEXT, EPOS = 0, 1, 2, 3
         root = self._get_root(blo, bhi)
         junk = self.junk
         v = root
@@ -235,11 +230,11 @@ class _LCSUBAutomaton:
                 v = root
                 l = 0
             else:
-                while v is not root and c not in v[_NEXT]:
-                    v = v[_LINK]
-                    l = v[_LENGTH]
+                while v is not root and c not in v[NEXT]:
+                    v = v[LINK]
+                    l = v[LEN]
 
-                v_next = v[_NEXT]
+                v_next = v[NEXT]
                 if c in v_next:
                     v = v_next[c]
                     l += 1
@@ -252,8 +247,7 @@ class _LCSUBAutomaton:
             return (alo, blo, 0)
 
         start_in_s1 = best_pos + 1 - best_len
-        end_in_s2 = best_state[_POS]
-        start_in_s2 = end_in_s2 + 1 - best_len
+        start_in_s2 = best_state[EPOS] + 1 - best_len
         return (start_in_s1, start_in_s2, best_len)
 
 
