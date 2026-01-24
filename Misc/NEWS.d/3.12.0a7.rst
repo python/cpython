@@ -187,7 +187,7 @@ Improve build support for the Xbox. Patch by Max Bachmann.
 .. date: 2023-02-21-23-42-39
 .. gh-issue: 102027
 .. nonce: fQARG0
-.. section: Library
+.. section: Build
 
 Fix SSE2 and SSE3 detection in ``_blake2`` internal module. Patch by Max
 Bachmann.
