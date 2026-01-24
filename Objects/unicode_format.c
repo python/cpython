@@ -77,6 +77,7 @@ struct unicode_format_arg_t {
 };
 
 
+// Use FORMAT_ERROR("...%s", "") when there is no arguments.
 #define FORMAT_ERROR(EXC, FMT, ...) do {                                    \
     if (arg->key != NULL) {                                                 \
         PyErr_Format((EXC), "format argument %R: " FMT,                     \

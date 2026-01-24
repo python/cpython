@@ -799,7 +799,7 @@ class BaseBytesTest:
         ]
 
         for msg, format_bytes, value in exceptions_params:
-            with self.assertRaisesRegex(TypeError, msg):
+            with self.assertRaisesRegex(TypeError, 'format argument: ' + msg):
                 operator.mod(format_bytes, value)
 
     def test_memory_leak_gh_140939(self):
