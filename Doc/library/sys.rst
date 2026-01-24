@@ -1327,7 +1327,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. note::
 
-      In the free-threaded build, all interned strings are :term:`immortal`.
+      In the free-threaded build, all interned strings **are** :term:`immortal`.
 
 .. function:: _is_gil_enabled()
 
