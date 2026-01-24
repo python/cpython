@@ -99,7 +99,7 @@ This section describes known limitations of the free-threaded CPython build.
 Immortalization
 ---------------
 
-The free-threaded build introduces additional :term:`immortal` objects.
+On the free-threaded build, more objects are made immortal.
 Immortal objects are not deallocated and have reference counts that are
 never modified.  This is done to avoid reference count contention that would
 prevent efficient multi-threaded scaling.
