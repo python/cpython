@@ -297,7 +297,7 @@ Examining Symbol Tables
 
    .. method:: is_cell()
 
-      Return ``True`` if the symbol is a cell variable.
+      Return ``True`` if the symbol is referenced from a nested block.
 
       .. versionadded:: 3.15
 
