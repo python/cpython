@@ -2917,6 +2917,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_binary_op_extend_float_long_add_refcount_elimination(self):
         def testfunc(n):
@@ -2932,6 +2934,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_EXTEND", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_remove_guard_for_slice_list(self):
         def f(n):
