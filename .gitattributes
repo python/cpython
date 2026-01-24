@@ -94,6 +94,8 @@ Lib/test/test_stable_abi_ctypes.py                  generated
 Lib/test/test_zoneinfo/data/*.json                  generated
 Lib/token.py                                        generated
 Misc/sbom.spdx.json                                 generated
+Modules/_testinternalcapi/test_cases.c.h            generated
+Modules/_testinternalcapi/test_targets.h            generated
 Objects/typeslots.inc                               generated
 PC/python3dll.c                                     generated
 Parser/parser.c                                     generated
