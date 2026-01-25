@@ -720,6 +720,11 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         const char *path = line + path_pos;
+        if (path[0] == '[' && path[strlen(path)-1] == ']') {
+            // Skip [heap], [stack], [anon:cpython:pymalloc], etc.
+            continue;
+        }
+
         const char *filename = strrchr(path, '/');
         if (filename) {
             filename++;  // Move past the '/'

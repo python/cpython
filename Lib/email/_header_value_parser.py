@@ -101,6 +101,12 @@ def make_quoted_pairs(value):
     return str(value).replace('\\', '\\\\').replace('"', '\\"')
 
 
+def make_parenthesis_pairs(value):
+    """Escape parenthesis and backslash for use within a comment."""
+    return str(value).replace('\\', '\\\\') \
+        .replace('(', '\\(').replace(')', '\\)')
+
+
 def quote_string(value):
     escaped = make_quoted_pairs(value)
     return f'"{escaped}"'
@@ -874,6 +880,12 @@ class MessageID(MsgID):
 class InvalidMessageID(MessageID):
     token_type = 'invalid-message-id'
 
+class MessageIDList(TokenList):
+    token_type = 'message-id-list'
+
+    @property
+    def message_ids(self):
+        return [x for x in self if x.token_type=='msg-id']
 
 class Header(TokenList):
     token_type = 'header'
@@ -933,7 +945,7 @@ class WhiteSpaceTerminal(Terminal):
         return ' '
 
     def startswith_fws(self):
-        return True
+        return self and self[0] in WSP
 
 
 class ValueTerminal(Terminal):
@@ -2171,6 +2183,32 @@ def parse_message_id(value):
 
     return message_id
 
+def parse_message_ids(value):
+    """in-reply-to     =   "In-Reply-To:" 1*msg-id CRLF
+       references      =   "References:" 1*msg-id CRLF
+    """
+    message_id_list = MessageIDList()
+    while value:
+        if value[0] == ',':
+            # message id list separated with commas - this is invalid,
+            # but happens rather frequently in the wild
+            message_id_list.defects.append(
+                errors.InvalidHeaderDefect("comma in msg-id list"))
+            message_id_list.append(
+                WhiteSpaceTerminal(' ', 'invalid-comma-replacement'))
+            value = value[1:]
+            continue
+        try:
+            token, value = get_msg_id(value)
+            message_id_list.append(token)
+        except errors.HeaderParseError as ex:
+            token = get_unstructured(value)
+            message_id_list.append(InvalidMessageID(token))
+            message_id_list.defects.append(
+                errors.InvalidHeaderDefect("Invalid msg-id: {!r}".format(ex)))
+            break
+    return message_id_list
+
 #
 # XXX: As I begin to add additional header parsers, I'm realizing we probably
 # have two level of parser routines: the get_XXX methods that get a token in
@@ -2927,6 +2965,13 @@ def _refold_parse_tree(parse_tree, *, policy):
                     [ValueTerminal(make_quoted_pairs(p), 'ptext')
                      for p in newparts] +
                     [ValueTerminal('"', 'ptext')])
+            if part.token_type == 'comment':
+                newparts = (
+                    [ValueTerminal('(', 'ptext')] +
+                    [ValueTerminal(make_parenthesis_pairs(p), 'ptext')
+                     if p.token_type == 'ptext' else p
+                     for p in newparts] +
+                    [ValueTerminal(')', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)

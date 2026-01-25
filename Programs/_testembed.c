@@ -2116,15 +2116,20 @@ static int check_use_frozen_modules(const char *rawval)
     if (rawval == NULL) {
         wcscpy(optval, L"frozen_modules");
     }
-    else if (swprintf(optval, 100,
-#if defined(_MSC_VER)
-        L"frozen_modules=%S",
-#else
-        L"frozen_modules=%s",
-#endif
-        rawval) < 0) {
-        error("rawval is too long");
-        return -1;
+    else {
+        wchar_t *val = Py_DecodeLocale(rawval, NULL);
+        if (val == NULL) {
+            error("unable to decode TESTFROZEN");
+            return -1;
+        }
+        wcscpy(optval, L"frozen_modules=");
+        if ((wcslen(optval) + wcslen(val)) >= Py_ARRAY_LENGTH(optval)) {
+            error("TESTFROZEN is too long");
+            PyMem_RawFree(val);
+            return -1;
+        }
+        wcscat(optval, val);
+        PyMem_RawFree(val);
     }
 
     PyConfig config;

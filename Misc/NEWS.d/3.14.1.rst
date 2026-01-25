@@ -1429,7 +1429,7 @@ build.
 .. date: 2025-11-25-13-13-34
 .. gh-issue: 116738
 .. nonce: MnZRdV
-.. section: Core and Builtins
+.. section: Library
 
 Fix thread safety issue with :mod:`re` scanner objects in free-threaded
 builds.
@@ -1520,7 +1520,7 @@ iterator when a non-integer argument is passed. Patch by Sergey Miryanov.
 .. date: 2025-11-10-00-14-20
 .. gh-issue: 116738
 .. nonce: IxliC_
-.. section: Core and Builtins
+.. section: Library
 
 Make csv module thread-safe on the :term:`free threaded <free threading>`
 build.
@@ -1540,7 +1540,7 @@ the ``%*b`` format with a large width that results in a :exc:`MemoryError`.
 .. date: 2025-11-02-15-28-33
 .. gh-issue: 140260
 .. nonce: JNzlGz
-.. section: Core and Builtins
+.. section: Library
 
 Fix :mod:`struct` data race in endian table initialization with
 subinterpreters. Patch by Shamil Abdulaev.
@@ -1622,7 +1622,7 @@ tracking depth is enabled (:func:`sys.set_coroutine_origin_tracking_depth`).
 .. date: 2025-10-21-09-20-03
 .. gh-issue: 140398
 .. nonce: SoABwJ
-.. section: Core and Builtins
+.. section: Library
 
 Fix memory leaks in :mod:`readline` functions
 :func:`~readline.read_init_file`, :func:`~readline.read_history_file`,
@@ -1814,7 +1814,7 @@ with the BOM in a traceback.
 .. date: 2025-09-21-14-33-17
 .. gh-issue: 116738
 .. nonce: vNaI4h
-.. section: Core and Builtins
+.. section: Library
 
 Make :mod:`mmap` thread-safe on the :term:`free threaded <free threading>`
 build.
@@ -1876,7 +1876,7 @@ auto-completion of imports.
 .. date: 2025-08-28-09-29-46
 .. gh-issue: 116738
 .. nonce: yLZJpV
-.. section: Core and Builtins
+.. section: Library
 
 Make :mod:`cProfile` thread-safe on the :term:`free threaded <free
 threading>` build.
@@ -1886,7 +1886,7 @@ threading>` build.
 .. date: 2025-08-21-06-31-42
 .. gh-issue: 138004
 .. nonce: FH2Hre
-.. section: Core and Builtins
+.. section: Library
 
 On Solaris/Illumos platforms, thread names are now encoded as ASCII to avoid
 errors on systems (e.g. OpenIndiana) that don't support non-ASCII names.

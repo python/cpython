@@ -1,0 +1,2 @@
+Set :data:`sys.flags.inspect` to ``1`` when :envvar:`PYTHONINSPECT` is ``0``.
+Previously, it was set to ``0`` in this case.

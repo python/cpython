@@ -247,5 +247,12 @@ class CAPITest(unittest.TestCase):
 
         func(object())
 
+        # Test that a newly created object in C is not considered
+        # a uniquely referenced temporary, because it's not on the stack.
+        # gh-142586: do the test in a loop over a list to test for handling
+        # tagged ints on the stack.
+        for i in [0, 1, 2]:
+            self.assertFalse(_testcapi.pyobject_is_unique_temporary_new_object())
+
 if __name__ == "__main__":
     unittest.main()

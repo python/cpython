@@ -739,11 +739,14 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
         if help is None:
             help = ''
 
-        if '%(default)' not in help:
-            if action.default is not SUPPRESS:
-                defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
-                if action.option_strings or action.nargs in defaulting_nargs:
-                    help += _(' (default: %(default)s)')
+        if (
+            '%(default)' not in help
+            and action.default is not SUPPRESS
+            and not action.required
+        ):
+            defaulting_nargs = (OPTIONAL, ZERO_OR_MORE)
+            if action.option_strings or action.nargs in defaulting_nargs:
+                help += _(' (default: %(default)s)')
         return help
 
 

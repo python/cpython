@@ -79,7 +79,7 @@ Fix crash when inserting into a split table dictionary with a non
 .. date: 2025-12-01-10-03-08
 .. gh-issue: 116738
 .. nonce: 972YsG
-.. section: Core and Builtins
+.. section: Library
 
 Fix :mod:`cmath` data race when initializing trigonometric tables with
 subinterpreters.

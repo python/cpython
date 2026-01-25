@@ -1,0 +1,4 @@
+Forbid reentrant calls of the :class:`pickle.Pickler` and
+:class:`pickle.Unpickler` methods for the C implementation. Previously, this
+could cause crash or data corruption, now concurrent calls of methods of the
+same object raise :exc:`RuntimeError`.

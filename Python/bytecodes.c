@@ -824,6 +824,7 @@ dummy_func(
 
             PyObject *res_o = d->action(left_o, right_o);
             DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 

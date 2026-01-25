@@ -1,0 +1,2 @@
+Avoid reference count operations in garbage collection of :mod:`ctypes`
+objects.

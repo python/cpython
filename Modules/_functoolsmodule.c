@@ -375,7 +375,9 @@ partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
                             PyObject *const *args, size_t nargsf,
                             PyObject *kwnames)
 {
+#ifndef Py_GIL_DISABLED
     pto->vectorcall = NULL;
+#endif
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     return _PyObject_MakeTpCall(tstate, (PyObject *)pto, args, nargs, kwnames);
 }

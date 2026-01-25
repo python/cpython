@@ -1,0 +1,2 @@
+Fix incorrect wrapping of the Base64 data in :class:`!plistlib._PlistWriter`
+when the indent contains a mix of tabs and spaces.

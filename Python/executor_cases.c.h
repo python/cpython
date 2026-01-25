@@ -1193,6 +1193,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
+            if (res_o == NULL) {
+                JUMP_TO_ERROR();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
             stack_pointer += 1;

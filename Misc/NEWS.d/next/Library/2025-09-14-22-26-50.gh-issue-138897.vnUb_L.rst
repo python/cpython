@@ -1,0 +1,2 @@
+Improved :data:`license`/:data:`copyright`/:data:`credits` display in the
+:term:`REPL`: now uses a pager.

@@ -5,7 +5,7 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # GitHub
-.github/**                    @ezio-melotti @hugovk @AA-Turner
+.github/**                    @ezio-melotti @hugovk @AA-Turner @webknjaz
 
 # pre-commit
 .pre-commit-config.yaml       @hugovk

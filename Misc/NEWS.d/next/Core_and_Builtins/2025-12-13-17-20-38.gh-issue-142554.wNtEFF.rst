@@ -1,0 +1,2 @@
+Fix a crash in :func:`divmod` when :func:`!_pylong.int_divmod` does not
+return a tuple of length two exactly. Patch by Bénédikt Tran.

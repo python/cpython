@@ -1,0 +1,2 @@
+Fix edge-cases around already imported modules in the :term:`REPL`
+auto-completion of imports.
