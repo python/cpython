@@ -2898,6 +2898,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn(("_LOAD_ATTR_MODULE", "_POP_TOP_NOP"), itertools.pairwise(uops))
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_load_attr_with_hint(self):
         def testfunc(n):
