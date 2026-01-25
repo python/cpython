@@ -297,16 +297,18 @@ formatter_class
 ^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
-specifying an alternate formatting class.  Currently, there are four such
+specifying an alternate formatting class.  Currently, there are five such
 classes:
 
 .. class:: RawDescriptionHelpFormatter
            RawTextHelpFormatter
+           ParagraphHelpFormatter
            ArgumentDefaultsHelpFormatter
            MetavarTypeHelpFormatter
 
-:class:`RawDescriptionHelpFormatter` and :class:`RawTextHelpFormatter` give
-more control over how textual descriptions are displayed.
+:class:`RawDescriptionHelpFormatter`, :class:`RawTextHelpFormatter`, and
+:class:`ParagraphHelpFormatter` give more control over how textual descriptions
+are displayed.
 By default, :class:`ArgumentParser` objects line-wrap the description_ and
 epilog_ texts in command-line help messages::
 
@@ -360,6 +362,61 @@ should not be line-wrapped::
 including argument descriptions. However, multiple newlines are replaced with
 one. If you wish to preserve multiple blank lines, add spaces between the
 newlines.
+
+:class:`ParagraphHelpFormatter` wraps description and help text like the
+default formatter, while preserving paragraphs. Parapgraphs are separated by
+blank lines. Blocks of text separated by a single return are merged into a
+single paragraph.
+
+Bullet lists are supported. Text for a bullet item is wrapped with appropriate
+indentation. Bullet list items are recognized by markers such as "*", "-", "+",
+or ">" characters, or by alphanumeric sequences followed by "." or ")".::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     prog='PROG',
+   ...     formatter_class=argparse.ParagraphHelpFormatter,
+   ...     description="""
+   ...         The ParagraphHelpFormatter will wrap text within paragraphs
+   ...         when required to in order to make the text fit.
+   ...
+   ...         Paragraphs are preserved.
+   ...
+   ...         It also supports bulleted lists in a number of formats:
+   ...           * stars
+   ...           1. numbers
+   ...           - ... and so on
+   ...         """)
+   >>> parser.add_argument(
+   ...     "argument",
+   ...     help="""
+   ...         Argument help text also supports flexible formatting,
+   ...         with word wrap:
+   ...             * See?
+   ...         """)
+   >>> parser.print_help()
+   usage: PROG [-h] argument
+
+   The ParagraphHelpFormatter will wrap text within paragraphs when required to in
+   order to make the text fit.
+
+   Paragraphs are preserved.
+
+   It also supports bulleted lists in a number of formats:
+     * stars
+     1. numbers
+     - ... and so on
+
+   positional arguments:
+     argument    Argument help text also supports flexible formatting, with word
+                 wrap:
+                     * See?
+
+   options:
+     -h, --help  show this help message and exit
+
+
+.. versionadded:: 3.15
+   :class:`ParagraphHelpFormatter` class was added.
 
 :class:`ArgumentDefaultsHelpFormatter` automatically adds information about
 default values to each of the argument help messages::
