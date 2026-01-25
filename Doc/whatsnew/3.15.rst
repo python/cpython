@@ -603,6 +603,7 @@ math
 mimetypes
 ---------
 
+* Add ``application/dicom`` MIME type for ``.dcm`` extension. (Contributed by Benedikt Johannes in :gh:`144217`.)
 * Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
