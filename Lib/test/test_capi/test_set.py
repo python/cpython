@@ -222,6 +222,10 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
 
 
 class TestPySet_Add(unittest.TestCase):
+    def test_pyset_add(self):
+        # Run C-level tests for PySet_Add
+        _testcapi.test_pyset_add()
+
     def test_set(self):
         # Test the PySet_Add c-api for set objects
         s = set()
