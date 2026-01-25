@@ -1,0 +1,3 @@
+:func:`dis.dis` supports colored output by default which can also be
+controlled through ``NO_COLOR=1`` environment variable. Contributed by
+Abduaziz Ziyodov.

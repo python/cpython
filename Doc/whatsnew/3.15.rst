@@ -534,6 +534,15 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+dis
+---------
+
+  .. _whatsnew315-color-dis:
+
+* :func:`dis.dis` supports colored output by default which can also be controlled through ``NO_COLOR=1`` environment variable.
+  (Contributed by Abduaziz Ziyodov in :gh:`144207`)
+
+
 functools
 ---------
 
