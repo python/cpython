@@ -499,7 +499,7 @@ tracemalloc_alloc(int need_gil, int use_calloc,
 
     // Ignore reentrant call.
     //
-    // For example, PyObjet_Malloc() calls
+    // For example, PyObject_Malloc() calls
     // PyMem_Malloc() for allocations larger than 512 bytes: don't trace the
     // same memory allocation twice.
     //
