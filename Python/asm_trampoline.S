@@ -1,3 +1,5 @@
+#include "asm_trampoline_aarch64.h"
+
     .text
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_start
@@ -29,10 +31,12 @@ _Py_trampoline_func_start:
 #if defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
     // ARM64 little endian, 64bit ABI
     // generate with aarch64-linux-gnu-gcc 12.1
+    SIGN_LR
     stp     x29, x30, [sp, -16]!
     mov     x29, sp
     blr     x3
     ldp     x29, x30, [sp], 16
+    VERIFY_LR
     ret
 #endif
 #ifdef __riscv
