@@ -151,8 +151,7 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool i
     if (insert) {
         if (_Py_IsImmortal(res)) {
             inst->opcode = _INSERT_1_LOAD_CONST_INLINE_BORROW;
-        }
-        else {
+        } else {
             inst->opcode = _INSERT_1_LOAD_CONST_INLINE;
         }
     } else {
@@ -161,10 +160,10 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool i
         } else {
             inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
         }
-    }
-    if (inst->oparg & 1) {
-        assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
-        assert(inst[1].oparg & 1);
+        if (inst->oparg & 1) {
+            assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
+            assert(inst[1].oparg & 1);
+        }
     }
     inst->operand0 = (uint64_t)res;
     return res;
