@@ -1,3 +1,5 @@
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
    // Need limited C API for METH_FASTCALL
    #define Py_LIMITED_API 0x030d0000
