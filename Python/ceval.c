@@ -2076,7 +2076,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    /* Create a dictionary for keyword parameters (**kwags) */
+    /* Create a dictionary for keyword parameters (**kwargs) */
     PyObject *kwdict;
     Py_ssize_t i;
     if (co->co_flags & CO_VARKEYWORDS) {
