@@ -184,6 +184,8 @@ Examining Symbol Tables
 
       Return a tuple containing names of :term:`cell variables <closure variable>` in this table.
 
+      .. versionadded:: next
+
 
 .. class:: Class
 
