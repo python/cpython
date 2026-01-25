@@ -141,7 +141,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     def test_location(self):
         self.assertTrue(os.path.isfile(self.location))
 
-    # Override generic format tests with tests for our specific implemenation.
+    # Override generic format tests with tests for our specific implementation.
 
     @needs_installed_python
     @unittest.skipIf(
