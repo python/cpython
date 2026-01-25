@@ -481,7 +481,7 @@ class Formatter:
                                     False, None, None, instr.positions),
                         False)
 
-    def print_instruction_line(self, instr, mark_as_current) -> None:
+    def print_instruction_line(self, instr, mark_as_current):
         """Format instruction details for inclusion in disassembly output."""
         theme = get_dis_theme()
         lineno_width = self.lineno_width

@@ -425,6 +425,7 @@ class Unittest(ThemeSection):
     fail_info: str = ANSIColors.BOLD_RED
     reset: str = ANSIColors.RESET
 
+
 @dataclass(frozen=True, kw_only=True)
 class Theme:
     """A suite of themes for all sections of Python.
