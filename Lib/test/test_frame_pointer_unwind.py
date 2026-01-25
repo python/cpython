@@ -86,7 +86,9 @@ def _classify_stack(stack, jit_enabled):
 def _annotate_unwind():
     stack = _build_stack_and_unwind()
     jit_enabled = hasattr(sys, "_jit") and sys._jit.is_enabled()
+    jit_backend = _testinternalcapi.get_jit_backend()
     ranges = _testinternalcapi.get_jit_code_ranges() if jit_enabled else []
+    jit_code_ranges = len(ranges)
     if jit_enabled and ranges:
         print("JIT ranges:")
         for start, end in ranges:
@@ -101,6 +103,8 @@ def _annotate_unwind():
         "python_frames": python_frames,
         "jit_frames": jit_frames,
         "other_frames": other_frames,
+        "jit_code_ranges": jit_code_ranges,
+        "jit_backend": jit_backend,
     })
 
 
@@ -163,6 +167,7 @@ class FramePointerUnwindTests(unittest.TestCase):
                 result = _manual_unwind_length(**env)
                 jit_frames = result["jit_frames"]
                 python_frames = result.get("python_frames", 0)
+                jit_backend = result.get("jit_backend")
                 if self.frame_pointers_expected:
                     self.assertGreater(
                         python_frames,
@@ -170,11 +175,19 @@ class FramePointerUnwindTests(unittest.TestCase):
                         f"expected to find Python frames on {self.machine} with env {env}",
                     )
                     if using_jit:
-                        self.assertGreater(
-                            jit_frames,
-                            0,
-                            f"expected to find JIT frames on {self.machine} with env {env}",
-                        )
+                        if jit_backend == "jit":
+                            self.assertGreater(
+                                jit_frames,
+                                0,
+                                f"expected to find JIT frames on {self.machine} with env {env}",
+                            )
+                        else:
+                            # jit_backend is "interpreter" or not present
+                            self.assertEqual(
+                                jit_frames,
+                                0,
+                                f"unexpected JIT frames counted on {self.machine} with env {env}",
+                            )
                     else:
                         self.assertEqual(
                             jit_frames,

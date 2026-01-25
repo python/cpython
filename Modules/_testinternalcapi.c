@@ -307,6 +307,18 @@ get_jit_code_ranges(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
+get_jit_backend(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#ifdef _Py_JIT
+    return PyUnicode_FromString("jit");
+#elif defined(_Py_TIER2)
+    return PyUnicode_FromString("interpreter");
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
+static PyObject *
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
     Py_ssize_t max_depth = 200;
@@ -2828,6 +2840,7 @@ static PyMethodDef module_functions[] = {
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
+    {"get_jit_backend", get_jit_backend, METH_NOARGS},
     {"manual_frame_pointer_unwind", manual_frame_pointer_unwind, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
