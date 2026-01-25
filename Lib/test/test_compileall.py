@@ -4,6 +4,7 @@ import filecmp
 import importlib.util
 import io
 import os
+import re
 import py_compile
 import shutil
 import struct
@@ -13,6 +14,7 @@ import test.test_importlib.util
 import time
 import unittest
 
+from argparse import ArgumentParser, Namespace
 from unittest import mock, skipUnless
 try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
@@ -57,6 +59,7 @@ class CompileallTestsBase:
         self.directory = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.directory)
 
+        self.file_path = os.path.join(self.directory, "filelist.txt")
         self.source_path = os.path.join(self.directory, '_test.py')
         self.bc_path = importlib.util.cache_from_source(self.source_path)
         with open(self.source_path, 'w', encoding="utf-8") as file:
@@ -475,6 +478,349 @@ class CompileallTestsBase:
 
         self.assertTrue(os.path.isfile(allowed_bc))
         self.assertFalse(os.path.isfile(prohibited_bc))
+        
+    def test_read_file_success(self):
+        paths = ["a.py", "b.py", "c/d.py"]
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(paths) + "\n")
+
+        class Args:
+            flist = self.file_path
+            quiet = 0
+
+        compile_dests = []
+        result = compileall.process_flist(Args, compile_dests)
+
+        self.assertIsNone(result)
+        self.assertEqual(compile_dests, paths)
+
+    def test_read_stdin_success(self):
+        input_data = "x.py\ny.py\n"
+        class Args:
+            flist = "-"
+            quiet = 0
+
+        compile_dests = []
+
+        with mock.patch("sys.stdin", io.StringIO(input_data)):
+            result = compileall.process_flist(Args, compile_dests)
+
+        self.assertIsNone(result)
+        self.assertEqual(compile_dests, ["x.py", "y.py"])
+
+    def test_file_not_found(self):
+        class Args:
+            flist = os.path.join(self.directory, "nonexistent.txt")
+            quiet = 0
+
+        compile_dests = []
+
+        with support.captured_stdout() as out:
+            result = compileall.process_flist(Args, compile_dests)
+
+        self.assertFalse(result)
+        self.assertEqual(compile_dests, [])
+        self.assertIn("Error reading file list", out.getvalue())
+
+    def test_quiet_mode_suppresses_output(self):
+        class Args:
+            flist = os.path.join(self.directory, "nonexistent.txt")
+            quiet = 2
+
+        compile_dests= []
+
+        with support.captured_stdout() as stdout:
+            result = compileall.process_flist(Args, compile_dests)
+
+        self.assertFalse(result)
+        self.assertEqual(stdout.getvalue(), "")
+        
+    def make_args(self, **overrides):
+        defaults = dict(
+            rx=None,
+            limit_sl_dest=None,
+            recursion=None,
+            maxlevels=10,
+            opt_levels=None,
+            hardlink_dupes=False,
+            ddir=None,
+            stripdir=None,
+            prependdir=None,
+            invalidation_mode=None,
+        )
+        defaults.update(overrides)
+        return Namespace(**defaults)
+
+    def test_rx_compiled(self):
+        parser = ArgumentParser()
+        args = self.make_args(rx="foo.*")
+
+        maxlevels, invalidation = compileall.prepare_parser_args(parser, args)
+
+        self.assertIsInstance(args.rx, re.Pattern)
+        self.assertEqual(maxlevels, 10)
+        self.assertIsNone(invalidation)
+
+    def test_empty_limit_sl_dest_becomes_none(self):
+        parser = ArgumentParser()
+        args = self.make_args(limit_sl_dest="")
+
+        compileall.prepare_parser_args(parser, args)
+
+        self.assertIsNone(args.limit_sl_dest)
+
+    def test_recursion_overrides_maxlevels(self):
+        parser = ArgumentParser()
+        args = self.make_args(recursion=3, maxlevels=100)
+
+        maxlevels, _ = compileall.prepare_parser_args(parser, args)
+
+        self.assertEqual(maxlevels, 3)
+
+    def test_default_opt_levels(self):
+        parser = ArgumentParser()
+        args = self.make_args(opt_levels=None)
+
+        compileall.prepare_parser_args(parser, args)
+
+        self.assertEqual(args.opt_levels, [-1])
+
+    def test_hardlink_requires_multiple_opt_levels(self):
+        parser = ArgumentParser()
+        args = self.make_args(opt_levels=[1], hardlink_dupes=True)
+
+        with self.assertRaises(SystemExit):
+            compileall.prepare_parser_args(parser, args)
+
+    def test_ddir_incompatible_with_stripdir(self):
+        parser = ArgumentParser()
+        args = self.make_args(ddir="x", stripdir="y")
+
+        with self.assertRaises(SystemExit):
+            compileall.prepare_parser_args(parser, args)
+
+    def test_ddir_incompatible_with_prependdir(self):
+        parser = ArgumentParser()
+        args = self.make_args(ddir="x", prependdir="y")
+
+        with self.assertRaises(SystemExit):
+            compileall.prepare_parser_args(parser, args)
+
+    def test_invalidation_mode_conversion(self):
+        parser = ArgumentParser()
+        args = self.make_args(invalidation_mode="checked-hash")
+
+        _, mode = compileall.prepare_parser_args(parser, args)
+
+        self.assertEqual(mode, py_compile.PycInvalidationMode.CHECKED_HASH)
+        
+        
+class AddParserArgumentsTests(unittest.TestCase):
+
+    def make_parser(self):
+        parser = ArgumentParser()
+        compileall.add_parser_arguments(
+            parser,
+            invalidation_modes=["timestamp", "checked-hash"],
+        )
+        return parser
+
+    def test_basic_flags(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-f", "-b", "--hardlink-dupes"])
+
+        self.assertTrue(args.force)
+        self.assertTrue(args.legacy)
+        self.assertTrue(args.hardlink_dupes)
+
+    def test_quiet_counter(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-qq"])
+
+        self.assertEqual(args.quiet, 2)
+
+    def test_l_sets_maxlevels_zero(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-l"])
+
+        self.assertEqual(args.maxlevels, 0)
+
+    def test_r_sets_recursion(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-r", "5"])
+
+        self.assertEqual(args.recursion, 5)
+
+    def test_compile_dest_positional(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["a.py", "b"])
+
+        self.assertEqual(args.compile_dest, ["a.py", "b"])
+
+    def test_flist(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-i", "files.txt"])
+
+        self.assertEqual(args.flist, "files.txt")
+
+    def test_workers(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-j", "4"])
+
+        self.assertEqual(args.workers, 4)
+
+    def test_opt_levels_multiple(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-o", "1", "-o", "2"])
+
+        self.assertEqual(args.opt_levels, [1, 2])
+
+    def test_strip_and_prepend(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-s", "foo", "-p", "bar"])
+
+        self.assertEqual(args.stripdir, "foo")
+        self.assertEqual(args.prependdir, "bar")
+
+    def test_limit_symlink_dest(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["-e", "/tmp"])
+
+        self.assertEqual(args.limit_sl_dest, "/tmp")
+
+    def test_invalidation_mode_choices(self):
+        parser = self.make_parser()
+
+        args = parser.parse_args(["--invalidation-mode", "checked-hash"])
+
+        self.assertEqual(args.invalidation_mode, "checked-hash")
+
+    def test_invalid_invalidation_mode_rejected(self):
+        parser = self.make_parser()
+
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["--invalidation-mode", "garbage"])
+       
+            
+class RunCompilationTests(unittest.TestCase):
+
+    def make_args(self):
+        class Args:
+            ddir = None
+            force = False
+            rx = None
+            quiet = 0
+            legacy = False
+            stripdir = None
+            prependdir = None
+            opt_levels = [-1]
+            limit_sl_dest = None
+            hardlink_dupes = False
+            workers = 1
+
+        return Args()
+
+    @mock.patch("compileall.compile_file")
+    @mock.patch("compileall.compile_dir")
+    @mock.patch("os.path.isfile")
+    def test_mixed_files_and_dirs(self, isfile, compile_dir, compile_file):
+        args = self.make_args()
+
+        isfile.side_effect = [True, False]
+        compile_file.return_value = True
+        compile_dir.return_value = True
+
+        result = compileall.run_compilation(
+            ["a.py", "somedir"],
+            args,
+            maxlevels=3,
+            invalidation_mode=None,
+        )
+
+        self.assertTrue(result)
+        self.assertEqual(compile_file.call_count, 1)
+        self.assertEqual(compile_dir.call_count, 1)
+
+    @mock.patch("compileall.compile_file")
+    @mock.patch("os.path.isfile", return_value=True)
+    def test_failure_propagates(self, isfile, compile_file):
+        args = self.make_args()
+        compile_file.return_value = False
+
+        result = compileall.run_compilation(
+            ["a.py"],
+            args,
+            maxlevels=1,
+            invalidation_mode=None,
+        )
+
+        self.assertFalse(result)
+
+    @mock.patch("compileall.compile_path")
+    def test_empty_dest_uses_compile_path(self, compile_path):
+        args = self.make_args()
+        compile_path.return_value = True
+
+        result = compileall.run_compilation(
+            [],
+            args,
+            maxlevels=1,
+            invalidation_mode=None,
+        )
+
+        self.assertTrue(result)
+        compile_path.assert_called_once()
+
+    @mock.patch("compileall.compile_file")
+    @mock.patch("os.path.isfile", return_value=True)
+    def test_arguments_forwarded_to_compile_file(self, isfile, compile_file):
+        args = self.make_args()
+        args.force = True
+        args.quiet = 1
+        args.legacy = True
+        args.opt_levels = [0, 1]
+        args.hardlink_dupes = True
+
+        compile_file.return_value = True
+
+        compileall.run_compilation(
+            ["a.py"],
+            args,
+            maxlevels=2,
+            invalidation_mode="MODE",
+        )
+
+        compile_file.assert_called_once()
+        call = compile_file.call_args
+
+        self.assertEqual(call.kwargs["invalidation_mode"], "MODE")
+        self.assertEqual(call.kwargs["optimize"], [0, 1])
+        self.assertTrue(call.kwargs["hardlink_dupes"])
+
+    @mock.patch("compileall.compile_file", side_effect=KeyboardInterrupt)
+    @mock.patch("os.path.isfile", return_value=True)
+    def test_keyboard_interrupt(self, isfile, compile_file):
+        args = self.make_args()
+        args.quiet = 2
+
+        result = compileall.run_compilation(
+            ["a.py"],
+            args,
+            maxlevels=1,
+            invalidation_mode=None,
+        )
+
+        self.assertFalse(result)
 
 
 class CompileallTestsWithSourceEpoch(CompileallTestsBase,
