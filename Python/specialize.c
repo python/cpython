@@ -362,7 +362,7 @@ static uint32_t function_get_version(PyObject *o, int opcode);
 static void
 maybe_enable_deferred_ref_count(PyObject *op)
 {
-    if (!_Py_IsOwnedByCurrentThread(op)) {
+    if (!_Py_IsOwnedByCurrentThread(op) && _PyObject_GC_IS_TRACKED(op)) {
         // For module level variables that are heavily used from multiple
         // threads, deferred reference counting provides good scaling
         // benefits.  The downside is that the object will only be deallocated

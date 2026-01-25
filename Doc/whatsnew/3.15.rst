@@ -737,6 +737,13 @@ ssl
    (Contributed by Ron Frederick in :gh:`138252`.)
 
 
+symtable
+--------
+
+* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+  (Contributed by Yashp002 in :gh:`143504`.)
+
+
 sys
 ---
 
@@ -834,6 +841,18 @@ unittest
 * :func:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+urllib.parse
+------------
+
+* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlparse`,
+  :func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag` functions.
+  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunparse` and
+  :func:`~urllib.parse.urlunsplit` functions.
+  This allows to distinguish between empty and not defined URI components
+  and preserve empty components.
+  (Contributed by Serhiy Storchaka in :gh:`67041`.)
 
 
 venv
@@ -1148,6 +1167,15 @@ Deprecated
 
 New deprecations
 ----------------
+
+* :mod:`base64`:
+
+  * Accepting the ``+`` and ``/`` characters with an alternative alphabet in
+    :func:`~base64.b64decode` and :func:`~base64.urlsafe_b64decode` is now
+    deprecated.
+    In future Python versions they will be errors in the strict mode and
+    discarded in the non-strict mode.
+    (Contributed by Serhiy Storchaka in :gh:`125346`.)
 
 * CLI:
 

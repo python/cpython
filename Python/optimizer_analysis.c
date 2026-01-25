@@ -203,14 +203,14 @@ static inline void
 add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
        uint16_t opcode, uint16_t oparg, uintptr_t operand0)
 {
-    _PyUOpInstruction *out = &ctx->out_buffer[ctx->out_len];
+    _PyUOpInstruction *out = ctx->out_buffer.next;
     out->opcode = (opcode);
     out->format = this_instr->format;
     out->oparg = (oparg);
     out->target = this_instr->target;
     out->operand0 = (operand0);
     out->operand1 = this_instr->operand1;
-    ctx->out_len++;
+    ctx->out_buffer.next++;
 }
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
@@ -247,6 +247,13 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_predicate _Py_uop_sym_new_predicate
+#define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
+
+/* Comparison oparg masks */
+#define COMPARE_LT_MASK 2
+#define COMPARE_GT_MASK 4
+#define COMPARE_EQ_MASK 8
 
 #define JUMP_TO_LABEL(label) goto label;
 
@@ -363,6 +370,34 @@ get_co_name(JitOptContext *ctx, int index)
     return PyTuple_GET_ITEM(get_current_code_object(ctx)->co_names, index);
 }
 
+static int
+get_test_bit_for_bools(void) {
+#ifdef Py_STACKREF_DEBUG
+    uintptr_t false_bits = _Py_STACKREF_FALSE_INDEX;
+    uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+#else
+    uintptr_t false_bits = (uintptr_t)&_Py_FalseStruct;
+    uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+#endif
+    for (int i = 4; i < 8; i++) {
+        if ((true_bits ^ false_bits) & (1 << i)) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+static int
+test_bit_set_in_true(int bit) {
+#ifdef Py_STACKREF_DEBUG
+    uintptr_t true_bits = _Py_STACKREF_TRUE_INDEX;
+#else
+    uintptr_t true_bits = (uintptr_t)&_Py_TrueStruct;
+#endif
+    assert((true_bits ^ ((uintptr_t)&_Py_FalseStruct)) & (1 << bit));
+    return true_bits & (1 << bit);
+}
+
 #ifdef Py_DEBUG
 void
 _Py_opt_assert_within_stack_bounds(
@@ -400,6 +435,7 @@ optimize_uops(
     _PyUOpInstruction *trace,
     int trace_len,
     int curr_stacklen,
+    _PyUOpInstruction *output,
     _PyBloomFilter *dependencies
 )
 {
@@ -410,7 +446,7 @@ optimize_uops(
     JitOptContext *ctx = &tstate->jit_tracer_state->opt_context;
     uint32_t opcode = UINT16_MAX;
 
-    ctx->out_buffer = tstate->jit_tracer_state->out_buffer;
+    uop_buffer_init(&ctx->out_buffer, output, UOP_MAX_TRACE_LENGTH);
 
     // Make sure that watchers are set up
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -428,14 +464,20 @@ optimize_uops(
     ctx->curr_frame_depth++;
     ctx->frame = frame;
 
-    ctx->out_len = 0;
-
     _PyUOpInstruction *this_instr = NULL;
     JitOptRef *stack_pointer = ctx->frame->stack_pointer;
 
-    for (int i = 0; !ctx->done; i++) {
-        assert(i < trace_len);
+    for (int i = 0; i < trace_len; i++) {
         this_instr = &trace[i];
+        if (ctx->done) {
+            // Don't do any more optimization, but
+            // we still need to reach a terminator for corrctness.
+            *(ctx->out_buffer.next++) = *this_instr;
+            if (is_terminator_uop(this_instr)) {
+                break;
+            }
+            continue;
+        }
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
@@ -455,6 +497,8 @@ optimize_uops(
         }
 #endif
 
+        _PyUOpInstruction *out_ptr = ctx->out_buffer.next;
+
         switch (opcode) {
 
 #include "optimizer_cases.c.h"
@@ -464,11 +508,11 @@ optimize_uops(
                 Py_UNREACHABLE();
         }
         // If no ADD_OP was called during this iteration, copy the original instruction
-        if (ctx->out_len == i) {
-            ctx->out_buffer[ctx->out_len++] = *this_instr;
+        if (ctx->out_buffer.next == out_ptr) {
+            *(ctx->out_buffer.next++) = *this_instr;
         }
         assert(ctx->frame != NULL);
-        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+        if (!CURRENT_FRAME_IS_INIT_SHIM() && !ctx->done) {
             DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
             ctx->frame->stack_pointer = stack_pointer;
             assert(STACK_LEVEL() >= 0);
@@ -496,20 +540,11 @@ optimize_uops(
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
     // Check that the trace ends with a proper terminator
-    if (ctx->out_len > 0) {
-        _PyUOpInstruction *last_uop = &ctx->out_buffer[ctx->out_len - 1];
-        if (!is_terminator_uop(last_uop)) {
-            // Copy remaining uops from original trace until we find a terminator
-            for (int i = ctx->out_len; i < trace_len; i++) {
-                ctx->out_buffer[ctx->out_len++] = trace[i];
-                if (is_terminator_uop(&trace[i])) {
-                    break;
-                }
-            }
-        }
+    if (uop_buffer_length(&ctx->out_buffer) > 0) {
+        assert(is_terminator_uop(uop_buffer_last(&ctx->out_buffer)));
     }
 
-    return ctx->out_len;
+    return uop_buffer_length(&ctx->out_buffer);
 
 error:
     DPRINTF(3, "\n");
@@ -666,14 +701,15 @@ _Py_uop_analyze_and_optimize(
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
+    _PyUOpInstruction *output,
     _PyBloomFilter *dependencies
 )
 {
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         tstate, buffer,
-         length, curr_stacklen, dependencies);
+         tstate, buffer, length, curr_stacklen,
+         output, dependencies);
 
     if (length == 0) {
         return length;
@@ -681,7 +717,7 @@ _Py_uop_analyze_and_optimize(
 
     assert(length > 0);
 
-    length = remove_unneeded_uops(tstate->jit_tracer_state->out_buffer, length);
+    length = remove_unneeded_uops(output, length);
     assert(length > 0);
 
     OPT_STAT_INC(optimizer_successes);
