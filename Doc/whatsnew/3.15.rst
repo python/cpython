@@ -737,6 +737,13 @@ ssl
    (Contributed by Ron Frederick in :gh:`138252`.)
 
 
+symtable
+--------
+
+* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+  (Contributed by Yashp002 in :gh:`143504`.)
+
+
 sys
 ---
 
