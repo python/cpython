@@ -564,6 +564,8 @@ def parse_basic_str_escape(
             pos += 1
         pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
         return pos, ""
+    if escape_id == "\\x":
+        return parse_hex_char(src, pos, 2)
     if escape_id == "\\u":
         return parse_hex_char(src, pos, 4)
     if escape_id == "\\U":
