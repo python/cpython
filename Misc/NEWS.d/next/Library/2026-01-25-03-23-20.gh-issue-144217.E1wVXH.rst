@@ -1,1 +1,1 @@
-Added support for DICOM files (for medical imaging) with the official MIME type application/dicom. This feature was added by Benedikt Johannes.
+:mod:`mimetypes`: Add support for DICOM files (for medical imaging) with the official MIME type ``application/dicom``. Patch by Benedikt Johannes.
