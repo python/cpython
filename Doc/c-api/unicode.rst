@@ -1754,7 +1754,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    You must keep a reference to the result to benefit from interning.
 
    .. note::
-      On the free-threaded build, all interned strings are :term:`immortal`.
+      On the :term:`free threaded <free threading>` build, all interned strings are :term:`immortal`.
       This may change in the future.
 
 .. c:function:: PyObject* PyUnicode_InternFromString(const char *str)
