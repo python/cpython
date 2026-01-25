@@ -254,8 +254,7 @@ Refer to the documentation of the individual functions for more information.
    *adobe* controls whether the input sequence is in Adobe Ascii85 format
    (i.e. is framed with <~ and ~>).
 
-   *ignorechars* should be a :term:`bytes-like object` or ASCII string
-   containing characters to ignore
+   *ignorechars* should be a byte string containing characters to ignore
    from the input. This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 

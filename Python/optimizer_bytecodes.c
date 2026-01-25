@@ -38,6 +38,8 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_predicate _Py_uop_sym_new_predicate
+#define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
 extern int
 optimize_to_bool(
@@ -192,7 +194,6 @@ dummy_func(void) {
                     _Py_BloomFilter_Add(dependencies, type);
                 }
             }
-
         }
     }
 
@@ -210,7 +211,9 @@ dummy_func(void) {
         sym_set_type(left, &PyFloat_Type);
     }
 
-    op(_BINARY_OP, (lhs, rhs -- res)) {
+    op(_BINARY_OP, (lhs, rhs -- res, l, r)) {
+        l = lhs;
+        r = rhs;
         REPLACE_OPCODE_IF_EVALUATES_PURE(lhs, rhs, res);
         bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
         bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
@@ -306,6 +309,12 @@ dummy_func(void) {
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyUnicode_Type);
+        l = left;
+        r = right;
+    }
+
+    op(_BINARY_OP_EXTEND, (left, right -- res, l, r)) {
+        res = sym_new_not_null(ctx);
         l = left;
         r = right;
     }
@@ -512,28 +521,58 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        int cmp_mask = oparg & (COMPARE_LT_MASK | COMPARE_GT_MASK | COMPARE_EQ_MASK);
+
+        if (cmp_mask == COMPARE_EQ_MASK) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_EQ);
+        }
+        else if (cmp_mask == (COMPARE_LT_MASK | COMPARE_GT_MASK)) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_NE);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        int cmp_mask = oparg & (COMPARE_LT_MASK | COMPARE_GT_MASK | COMPARE_EQ_MASK);
+
+        if (cmp_mask == COMPARE_EQ_MASK) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_EQ);
+        }
+        else if (cmp_mask == (COMPARE_LT_MASK | COMPARE_GT_MASK)) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_NE);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_COMPARE_OP_STR, (left, right -- res, l, r)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        int cmp_mask = oparg & (COMPARE_LT_MASK | COMPARE_GT_MASK | COMPARE_EQ_MASK);
+
+        if (cmp_mask == COMPARE_EQ_MASK) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_EQ);
+        }
+        else if (cmp_mask == (COMPARE_LT_MASK | COMPARE_GT_MASK)) {
+            res = sym_new_predicate(ctx, left, right, JIT_PRED_NE);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
     }
 
     op(_IS_OP, (left, right -- b, l, r)) {
-        b = sym_new_type(ctx, &PyBool_Type);
+        b = sym_new_predicate(ctx, left, right, (oparg ? JIT_PRED_IS_NOT : JIT_PRED_IS));
         l = left;
         r = right;
     }
@@ -796,7 +835,7 @@ dummy_func(void) {
         if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
             assert(PyFunction_Check(sym_get_const(ctx, callable)));
             ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-            ctx->out_buffer[ctx->out_len - 1].operand1 = (uintptr_t)sym_get_const(ctx, callable);
+            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)sym_get_const(ctx, callable);
         }
         sym_set_type(callable, &PyFunction_Type);
     }
@@ -806,7 +845,7 @@ dummy_func(void) {
             PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
             assert(PyMethod_Check(method));
             ADD_OP(_CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-            ctx->out_buffer[ctx->out_len - 1].operand1 = (uintptr_t)method->im_func;
+            uop_buffer_last(&ctx->out_buffer)->operand1 = (uintptr_t)method->im_func;
         }
         sym_set_type(callable, &PyMethod_Type);
     }
@@ -1173,6 +1212,8 @@ dummy_func(void) {
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
+        sym_apply_predicate_narrowing(ctx, flag, true);
+
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
             assert(value != NULL);
@@ -1191,6 +1232,8 @@ dummy_func(void) {
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
+        sym_apply_predicate_narrowing(ctx, flag, false);
+
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
             assert(value != NULL);
@@ -1412,15 +1455,28 @@ dummy_func(void) {
 
     op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
         res = sym_new_type(ctx, &PyLong_Type);
-        Py_ssize_t tuple_length = sym_tuple_length(arg);
-        if (tuple_length >= 0) {
-            PyObject *temp = PyLong_FromSsize_t(tuple_length);
+        Py_ssize_t length = sym_tuple_length(arg);
+
+        // Not a tuple, check if it's a const string
+        if (length < 0 && sym_is_const(ctx, arg)) {
+            PyObject *const_val = sym_get_const(ctx, arg);
+            if (const_val != NULL) {
+                if (PyUnicode_CheckExact(const_val)) {
+                    length = PyUnicode_GET_LENGTH(const_val);
+                }
+                else if (PyBytes_CheckExact(const_val)) {
+                    length = PyBytes_GET_SIZE(const_val);
+                }
+            }
+        }
+
+        if (length >= 0) {
+            PyObject *temp = PyLong_FromSsize_t(length);
             if (temp == NULL) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
-                           0, (uintptr_t)temp);
+                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
@@ -1564,7 +1620,7 @@ dummy_func(void) {
                     ctx->frame->globals_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != version && this_instr[-1].opcode == _NOP) {
-                    REPLACE_OP(&ctx->out_buffer[ctx->out_len - 1], _GUARD_GLOBALS_VERSION, 0, version);
+                    REPLACE_OP(uop_buffer_last(&ctx->out_buffer), _GUARD_GLOBALS_VERSION, 0, version);
                     ctx->frame->globals_checked_version = version;
                 }
                 if (ctx->frame->globals_checked_version == version) {
