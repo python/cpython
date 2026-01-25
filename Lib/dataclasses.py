@@ -1180,21 +1180,25 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if order:
         # Create and set the ordering methods.
         flds = [f for f in field_list if f.compare]
-        self_tuple = _tuple_str('self', flds)
-        other_tuple = _tuple_str('other', flds)
+        if len(flds) == 1:
+            self_expr = f"self.{flds[0].name}"
+            other_expr = f"other.{flds[0].name}"
+        else:
+            self_expr = _tuple_str('self', flds)
+            other_expr = _tuple_str('other', flds)
         for name, op in [('__lt__', '<'),
                          ('__le__', '<='),
                          ('__gt__', '>'),
                          ('__ge__', '>='),
                          ]:
             # Create a comparison function.  If the fields in the object are
-            # named 'x' and 'y', then self_tuple is the string
-            # '(self.x,self.y)' and other_tuple is the string
+            # named 'x' and 'y', then self_expr is the string
+            # '(self.x,self.y)' and other_expr is the string
             # '(other.x,other.y)'.
             func_builder.add_fn(name,
                             ('self', 'other'),
                             [ '  if other.__class__ is self.__class__:',
-                             f'   return {self_tuple}{op}{other_tuple}',
+                             f'   return {self_expr}{op}{other_expr}',
                               '  return NotImplemented'],
                             overwrite_error='Consider using functools.total_ordering')
 
