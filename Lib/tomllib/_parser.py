@@ -49,6 +49,7 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
         "\\n": "\u000A",  # linefeed
         "\\f": "\u000C",  # form feed
         "\\r": "\u000D",  # carriage return
+        "\\e": "\u001b",  # escape
         '\\"': "\u0022",  # quote
         "\\\\": "\u005C",  # backslash
     }
