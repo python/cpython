@@ -1,0 +1,2 @@
+The :mod:`asyncio` REPL no longer prints copyright and version messages in
+the quiet mode (:option:`-q`). Patch by Bartosz Sławecki.

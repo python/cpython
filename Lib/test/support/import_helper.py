@@ -303,8 +303,8 @@ def ready_to_import(name=None, source=""):
         try:
             sys.path.insert(0, tempdir)
             yield name, path
-            sys.path.remove(tempdir)
         finally:
+            sys.path.remove(tempdir)
             if old_module is not None:
                 sys.modules[name] = old_module
             else:

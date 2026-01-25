@@ -136,8 +136,8 @@ class CProfileTest(ProfileTest):
 
         for func, (cc, nc, _, _, _) in pr.stats.items():
             if func[2] == "<genexpr>":
-                self.assertEqual(cc, 1)
-                self.assertEqual(nc, 1)
+                self.assertEqual(cc, 2)
+                self.assertEqual(nc, 2)
 
     def test_bad_descriptor(self):
         # gh-132250

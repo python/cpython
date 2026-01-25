@@ -59,6 +59,20 @@ class WindowsConsoleTests(TestCase):
     def handle_events_height_3(self, events):
         return self.handle_events(events, height=3)
 
+    def test_no_newline(self):
+        code = "1"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        self.assertNotIn(call(b'\n'), con.out.write.mock_calls)
+        con.restore()
+
+    def test_newline(self):
+        code = "\n"
+        events = code_to_events(code)
+        _, con = self.handle_events(events)
+        con.out.write.assert_any_call(b"\n")
+        con.restore()
+
     def test_simple_addition(self):
         code = "12+34"
         events = code_to_events(code)
@@ -561,6 +575,32 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertEqual(self.get_event(irs, vt_support=True),
                          Event(evt='key', data='up', raw=bytearray(b'\x1b[A')))
         self.assertEqual(self.mock.call_count, 3)
+
+    # All tests above assume that there is always keyboard data to read,
+    # because for simplicity we just use
+    # self.console.wait = MagicMock(return_value=True)
+    def test_wait_empty(self):
+        console = WindowsConsole(encoding='utf-8')
+        console.wait_for_event = MagicMock(return_value=True)
+        self.assertTrue(console.event_queue.empty())
+        timeout = 2.0
+        self.assertTrue(console.wait(timeout))
+        self.assertEqual(console.wait_for_event.call_count, 1)
+        self.assertEqual(console.wait_for_event.mock_calls[0], call(timeout))
+
+        timeout = 1.1
+        console.wait_for_event = MagicMock(return_value=False)
+        self.assertFalse(console.wait(timeout))
+        self.assertEqual(console.wait_for_event.call_count, 1)
+        self.assertEqual(console.wait_for_event.mock_calls[0], call(timeout))
+
+    def test_wait_not_empty(self):
+        console = WindowsConsole(encoding='utf-8')
+        console.wait_for_event = MagicMock(return_value=True)
+        console.event_queue.push(b"a")
+        self.assertFalse(console.event_queue.empty())
+        self.assertTrue(console.wait(0.0))
+        self.assertEqual(console.wait_for_event.call_count, 0)
 
 
 if __name__ == "__main__":

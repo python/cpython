@@ -2,7 +2,7 @@
   What's New In Python 3.4
 ****************************
 
-:Author: R. David Murray <rdmurray@bitdance.com> (Editor)
+:Author: \R. David Murray <rdmurray@bitdance.com> (Editor)
 
 .. Rules for maintenance:
 
@@ -1039,7 +1039,7 @@ As part of the implementation of the new :mod:`enum` module, the
 metaclasses.  (Contributed by Ethan Furman in :issue:`18929` and
 :issue:`19030`.)
 
-:func:`~inspect.getfullargspec` and :func:`~inspect.getargspec`
+:func:`~inspect.getfullargspec` and :func:`!getargspec`
 now use the :func:`~inspect.signature` API. This allows them to
 support a much broader range of callables, including those with
 ``__signature__`` attributes, those with metadata provided by argument

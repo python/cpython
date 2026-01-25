@@ -1,0 +1,4 @@
+Correct behavior of
+:func:`!asyncio.selector_events.BaseSelectorEventLoop._accept_connection`
+in handling :exc:`ConnectionAbortedError` in a loop. This improves
+performance on OpenBSD.

@@ -69,12 +69,13 @@ bound into a function.
       The old name is deprecated, but will remain available until the
       signature changes again.
 
+.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(...)
+   :no-typesetting:
+
 .. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
    The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
-
-   .. index:: single: PyCode_NewWithPosOnlyArgs (C function)
 
    .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
@@ -294,6 +295,9 @@ These functions are part of the unstable C API tier:
 this functionality is a CPython implementation detail, and the API
 may change without deprecation warnings.
 
+.. c:function:: Py_ssize_t _PyEval_RequestCodeExtraIndex(freefunc free)
+   :no-typesetting:
+
 .. c:function:: Py_ssize_t PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
 
    Return a new opaque index value used to adding data to code objects.
@@ -306,8 +310,6 @@ may change without deprecation warnings.
    *free* will be called on non-``NULL`` data stored under the new index.
    Use :c:func:`Py_DecRef` when storing :c:type:`PyObject`.
 
-   .. index:: single: _PyEval_RequestCodeExtraIndex (C function)
-
    .. versionadded:: 3.6 as ``_PyEval_RequestCodeExtraIndex``
 
    .. versionchanged:: 3.12
@@ -315,6 +317,9 @@ may change without deprecation warnings.
      Renamed to ``PyUnstable_Eval_RequestCodeExtraIndex``.
      The old private name is deprecated, but will be available until the API
      changes.
+
+.. c:function:: int _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+   :no-typesetting:
 
 .. c:function:: int PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 
@@ -324,8 +329,6 @@ may change without deprecation warnings.
    If no data was set under the index, set *extra* to ``NULL`` and return
    0 without setting an exception.
 
-   .. index:: single: _PyCode_GetExtra (C function)
-
    .. versionadded:: 3.6 as ``_PyCode_GetExtra``
 
    .. versionchanged:: 3.12
@@ -334,12 +337,13 @@ may change without deprecation warnings.
      The old private name is deprecated, but will be available until the API
      changes.
 
+.. c:function:: int _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+   :no-typesetting:
+
 .. c:function:: int PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 
    Set the extra data stored under the given index to *extra*.
    Return 0 on success. Set an exception and return -1 on failure.
-
-   .. index:: single: _PyCode_SetExtra (C function)
 
    .. versionadded:: 3.6 as ``_PyCode_SetExtra``
 

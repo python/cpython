@@ -383,7 +383,7 @@ def _chain_future(source, destination):
 
     def _call_check_cancel(destination):
         if destination.cancelled():
-            if source_loop is None or source_loop is dest_loop:
+            if source_loop is None or source_loop is events._get_running_loop():
                 source.cancel()
             else:
                 source_loop.call_soon_threadsafe(source.cancel)
@@ -392,7 +392,7 @@ def _chain_future(source, destination):
         if (destination.cancelled() and
                 dest_loop is not None and dest_loop.is_closed()):
             return
-        if dest_loop is None or dest_loop is source_loop:
+        if dest_loop is None or dest_loop is events._get_running_loop():
             _set_state(destination, source)
         else:
             if dest_loop.is_closed():

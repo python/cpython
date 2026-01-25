@@ -232,6 +232,56 @@ class BaseTest(unittest.TestCase):
         self.assertTrue(repr(MyGeneric[[]]).endswith('MyGeneric[[]]'))
         self.assertTrue(repr(MyGeneric[[int, str]]).endswith('MyGeneric[[int, str]]'))
 
+    def test_evil_repr1(self):
+        # gh-143635
+        class Zap:
+            def __init__(self, container):
+                self.container = container
+            def __getattr__(self, name):
+                if name == "__origin__":
+                    self.container.clear()
+                    return None
+                if name == "__args__":
+                    return ()
+                raise AttributeError
+
+        params = []
+        params.append(Zap(params))
+        alias = GenericAlias(list, (params,))
+        repr_str = repr(alias)
+        self.assertTrue(repr_str.startswith("list[["), repr_str)
+
+    def test_evil_repr2(self):
+        class Zap:
+            def __init__(self, container):
+                self.container = container
+            def __getattr__(self, name):
+                if name == "__qualname__":
+                    self.container.clear()
+                    return "abcd"
+                if name == "__module__":
+                    return None
+                raise AttributeError
+
+        params = []
+        params.append(Zap(params))
+        alias = GenericAlias(list, (params,))
+        repr_str = repr(alias)
+        self.assertTrue(repr_str.startswith("list[["), repr_str)
+
+    def test_evil_repr3(self):
+        # gh-143823
+        lst = []
+        class X:
+            def __repr__(self):
+                lst.clear()
+                return "x"
+
+        lst += [X(), 1]
+        ga = GenericAlias(int, lst)
+        with self.assertRaises(IndexError):
+            repr(ga)
+
     def test_exposed_type(self):
         import types
         a = types.GenericAlias(list, int)

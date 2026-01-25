@@ -1011,6 +1011,11 @@ the options available to you.
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
 |                | format this yourself.   | if no exception has occurred, ``None``.       |
 +----------------+-------------------------+-----------------------------------------------+
+| exc_text       | You shouldn't need to   | Exception information formatted as a string.  |
+|                | format this yourself.   | This is set when :meth:`Formatter.format` is  |
+|                |                         | invoked, or ``None`` if no exception has      |
+|                |                         | occurred.                                     |
++----------------+-------------------------+-----------------------------------------------+
 | filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
 +----------------+-------------------------+-----------------------------------------------+
 | funcName       | ``%(funcName)s``        | Name of function containing the logging call. |

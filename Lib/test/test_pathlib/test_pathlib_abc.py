@@ -1630,20 +1630,22 @@ class DummyPathTest(DummyPurePathTest):
 
     def test_read_write_bytes(self):
         p = self.cls(self.base)
-        (p / 'fileA').write_bytes(b'abcdefg')
-        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
+        data  = b'abcdefg'
+        self.assertEqual(len(data), (p / 'fileA').write_bytes(data))
+        self.assertEqual((p / 'fileA').read_bytes(), data)
         # Check that trying to write str does not truncate the file.
         self.assertRaises(TypeError, (p / 'fileA').write_bytes, 'somestr')
-        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
+        self.assertEqual((p / 'fileA').read_bytes(), data)
 
     def test_read_write_text(self):
         p = self.cls(self.base)
-        (p / 'fileA').write_text('äbcdefg', encoding='latin-1')
+        data = 'äbcdefg'
+        self.assertEqual(len(data), (p / 'fileA').write_text(data, encoding='latin-1'))
         self.assertEqual((p / 'fileA').read_text(
             encoding='utf-8', errors='ignore'), 'bcdefg')
         # Check that trying to write bytes does not truncate the file.
         self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
-        self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
+        self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), data)
 
     def test_read_text_with_newlines(self):
         p = self.cls(self.base)

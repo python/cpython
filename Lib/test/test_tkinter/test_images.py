@@ -2,6 +2,7 @@ import unittest
 import tkinter
 from test import support
 from test.support import os_helper
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
 
 support.requires('gui')

@@ -469,6 +469,32 @@ class PydocDocTest(unittest.TestCase):
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
+    def test_online_docs_link(self):
+        import encodings.idna
+        import importlib._bootstrap
+
+        module_docs = {
+            'encodings': 'codecs#module-encodings',
+            'encodings.idna': 'codecs#module-encodings.idna',
+        }
+
+        with unittest.mock.patch('pydoc_data.module_docs.module_docs', module_docs):
+            doc = pydoc.TextDoc()
+
+            basedir = os.path.dirname(encodings.__file__)
+            doc_link = doc.getdocloc(encodings, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings', doc_link)
+            self.assertNotIn('encodings.html', doc_link)
+
+            doc_link = doc.getdocloc(encodings.idna, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings.idna', doc_link)
+            self.assertNotIn('encodings.idna.html', doc_link)
+
+            doc_link = doc.getdocloc(importlib._bootstrap, basedir=basedir)
+            self.assertIsNone(doc_link)
+
     def test_getpager_with_stdin_none(self):
         previous_stdin = sys.stdin
         try:
@@ -2149,9 +2175,46 @@ class PydocUrlHandlerTest(PydocBaseTest):
 
 
 class TestHelper(unittest.TestCase):
+    def mock_interactive_session(self, inputs):
+        """
+        Given a list of inputs, run an interactive help session.  Returns a string
+        of what would be shown on screen.
+        """
+        input_iter = iter(inputs)
+
+        def mock_getline(prompt):
+            output.write(prompt)
+            next_input = next(input_iter)
+            output.write(next_input + os.linesep)
+            return next_input
+
+        with captured_stdout() as output:
+            helper = pydoc.Helper(output=output)
+            with unittest.mock.patch.object(helper, "getline", mock_getline):
+                helper.interact()
+
+        # handle different line endings across platforms consistently
+        return output.getvalue().strip().splitlines(keepends=False)
+
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
+
+    def test_interact_empty_line_continues(self):
+        # gh-138568: test pressing Enter without input should continue in help session
+        self.assertEqual(
+            self.mock_interactive_session(["", "    ", "quit"]),
+            ["help> ", "help>     ", "help> quit"],
+        )
+
+    def test_interact_quit_commands_exit(self):
+        quit_commands = ["quit", "q", "exit"]
+        for quit_cmd in quit_commands:
+            with self.subTest(quit_command=quit_cmd):
+                self.assertEqual(
+                    self.mock_interactive_session([quit_cmd]),
+                    [f"help> {quit_cmd}"],
+                )
 
 
 class PydocWithMetaClasses(unittest.TestCase):

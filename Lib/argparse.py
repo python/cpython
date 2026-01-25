@@ -330,8 +330,14 @@ class HelpFormatter(object):
             if len(prefix) + len(usage) > text_width:
 
                 # break usage into wrappable parts
-                opt_parts = self._get_actions_usage_parts(optionals, groups)
-                pos_parts = self._get_actions_usage_parts(positionals, groups)
+                # keep optionals and positionals together to preserve
+                # mutually exclusive group formatting (gh-75949)
+                all_actions = optionals + positionals
+                parts, pos_start = self._get_actions_usage_parts_with_split(
+                    all_actions, groups, len(optionals)
+                )
+                opt_parts = parts[:pos_start]
+                pos_parts = parts[pos_start:]
 
                 # helper for wrapping lines
                 def get_lines(parts, indent, prefix=None):
@@ -387,6 +393,17 @@ class HelpFormatter(object):
         return ' '.join(self._get_actions_usage_parts(actions, groups))
 
     def _get_actions_usage_parts(self, actions, groups):
+        parts, _ = self._get_actions_usage_parts_with_split(actions, groups)
+        return parts
+
+    def _get_actions_usage_parts_with_split(self, actions, groups, opt_count=None):
+        """Get usage parts with split index for optionals/positionals.
+
+        Returns (parts, pos_start) where pos_start is the index in parts
+        where positionals begin. When opt_count is None, pos_start is None.
+        This preserves mutually exclusive group formatting across the
+        optionals/positionals boundary (gh-75949).
+        """
         # find group indices and identify actions in groups
         group_actions = set()
         inserts = {}
@@ -469,8 +486,16 @@ class HelpFormatter(object):
             for i in range(start + group_size, end):
                 parts[i] = None
 
-        # return the usage parts
-        return [item for item in parts if item is not None]
+        # if opt_count is provided, calculate where positionals start in
+        # the final parts list (for wrapping onto separate lines).
+        # Count before filtering None entries since indices shift after.
+        if opt_count is not None:
+            pos_start = sum(1 for p in parts[:opt_count] if p is not None)
+        else:
+            pos_start = None
+
+        # return the usage parts and split point (gh-75949)
+        return [item for item in parts if item is not None], pos_start
 
     def _format_text(self, text):
         if '%(prog)' in text:
@@ -669,11 +694,14 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
         if help is None:
             help = ''
 
-        if '%(default)' not in help:
-            if action.default is not SUPPRESS:
-                defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
-                if action.option_strings or action.nargs in defaulting_nargs:
-                    help += _(' (default: %(default)s)')
+        if (
+            '%(default)' not in help
+            and action.default is not SUPPRESS
+            and not action.required
+        ):
+            defaulting_nargs = (OPTIONAL, ZERO_OR_MORE)
+            if action.option_strings or action.nargs in defaulting_nargs:
+                help += _(' (default: %(default)s)')
         return help
 
 

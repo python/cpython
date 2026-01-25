@@ -947,12 +947,13 @@ Utilities and Decorators
    the member's name.  Care must be taken if mixing *auto()* with manually
    specified values.
 
-   *auto* instances are only resolved when at the top level of an assignment:
+   *auto* instances are only resolved when at the top level of an assignment, either by
+   itself or as part of a tuple:
 
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
      used to create the ``SECOND`` enum member;
-   * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
+   * ``THREE = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
      create the ``THREE`` enum member)
 
    .. versionchanged:: 3.11.1

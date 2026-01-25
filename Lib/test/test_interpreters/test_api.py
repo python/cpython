@@ -3,6 +3,7 @@ import pickle
 import sys
 from textwrap import dedent, indent
 import threading
+import traceback
 import types
 import unittest
 
@@ -1665,6 +1666,55 @@ class LowLevelTests(TestBase):
                     'assert spam is True',
                 )
             self.assertEqual(rc, 0)
+
+
+class CaptureExceptionTests(unittest.TestCase):
+
+    # Prevent crashes with incompatible TracebackException.format().
+    # Regression test for https://github.com/python/cpython/issues/143377.
+
+    def capture_with_formatter(self, exc, formatter):
+        with support.swap_attr(traceback.TracebackException, "format", formatter):
+            return _interpreters.capture_exception(exc)
+
+    def test_capture_exception(self):
+        captured = _interpreters.capture_exception(ValueError("hello"))
+
+        self.assertEqual(captured.type.__name__, "ValueError")
+        self.assertEqual(captured.type.__qualname__, "ValueError")
+        self.assertEqual(captured.type.__module__, "builtins")
+
+        self.assertEqual(captured.msg, "hello")
+        self.assertEqual(captured.formatted, "ValueError: hello")
+
+    def test_capture_exception_custom_format(self):
+        exc = ValueError("good bye!")
+        formatter = lambda self: ["hello\n", "world\n"]
+        captured = self.capture_with_formatter(exc, formatter)
+        self.assertEqual(captured.msg, "good bye!")
+        self.assertEqual(captured.formatted, "ValueError: good bye!")
+        self.assertEqual(captured.errdisplay, "hello\nworld")
+
+    @support.subTests("exc_lines", ([], ["x-no-nl"], ["x-no-nl", "y-no-nl"]))
+    def test_capture_exception_invalid_format(self, exc_lines):
+        formatter = lambda self: exc_lines
+        captured = self.capture_with_formatter(ValueError(), formatter)
+        self.assertEqual(captured.msg, "")
+        self.assertEqual(captured.formatted, "ValueError: ")
+        self.assertEqual(captured.errdisplay, "".join(exc_lines))
+
+    @unittest.skipUnless(
+        support.Py_DEBUG,
+        "printing subinterpreter unraisable exceptions requires DEBUG build",
+    )
+    def test_capture_exception_unraisable_exception(self):
+        formatter = lambda self: 1
+        with support.catch_unraisable_exception() as cm:
+            captured = self.capture_with_formatter(ValueError(), formatter)
+            self.assertFalse(hasattr(captured, "errdisplay"))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "can only join an iterable")
 
 
 if __name__ == '__main__':

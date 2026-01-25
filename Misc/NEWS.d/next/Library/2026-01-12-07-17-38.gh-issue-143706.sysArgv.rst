@@ -1,0 +1,5 @@
+Fix :mod:`multiprocessing` forkserver so that :data:`sys.argv` is correctly
+set before ``__main__`` is preloaded. Previously, :data:`sys.argv` was empty
+during main module import in forkserver child processes. This fixes a
+regression introduced in 3.13.8 and 3.14.1. Root caused by Aaron Wieczorek,
+test provided by Thomas Watson, thanks!

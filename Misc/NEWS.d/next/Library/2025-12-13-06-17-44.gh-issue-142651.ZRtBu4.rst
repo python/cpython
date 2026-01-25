@@ -1,0 +1,3 @@
+:mod:`unittest.mock`: fix a thread safety issue where :attr:`Mock.call_count
+<unittest.mock.Mock.call_count>` may return inaccurate values when the mock
+is called concurrently from multiple threads.

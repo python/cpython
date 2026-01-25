@@ -183,6 +183,25 @@ complete listing.
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (see :c:member:`PyConfig.use_environment`).
 
+.. c:macro:: Py_LOCAL(type)
+
+   Declare a function returning the specified *type* using a fast-calling
+   qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to ``static type``.
+
+.. c:macro:: Py_LOCAL_INLINE(type)
+
+   Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
+   be inlined.
+
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   On supported platforms, it ensures the symbol is not exported.
+
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("hidden")))``.
+
 .. c:macro:: Py_MAX(x, y)
 
    Return the maximum value between ``x`` and ``y``.
@@ -314,6 +333,51 @@ complete listing.
 
       PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
                                         "to the tropics and subtropics of the Eastern Hemisphere.");
+
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length of a statically allocated C array at compile time.
+
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
+
+   This is roughly equivalent to::
+
+      sizeof(array) / sizeof((array)[0])
+
+
+.. c:macro:: Py_EXPORTED_SYMBOL
+
+   Macro used to declare a symbol (function or data) as exported.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: Py_IMPORTED_SYMBOL
+
+   Macro used to declare a symbol as imported.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+
+.. c:macro:: PyAPI_DATA(type)
+
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
 
 
 .. _api-objects:

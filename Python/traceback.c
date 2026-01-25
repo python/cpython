@@ -356,6 +356,9 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     npath = PyList_Size(syspath);
 
     open = PyObject_GetAttr(io, &_Py_ID(open));
+    if (open == NULL) {
+        goto error;
+    }
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
         if (v == NULL) {
@@ -960,6 +963,9 @@ tstate_is_freed(PyThreadState *tstate)
     if (_PyMem_IsPtrFreed(tstate->interp)) {
         return 1;
     }
+    if (_PyMem_IsULongFreed(tstate->thread_id)) {
+        return 1;
+    }
     return 0;
 }
 
@@ -979,7 +985,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     }
 
     if (tstate_is_freed(tstate)) {
-        PUTS(fd, "  <tstate is freed>\n");
+        PUTS(fd, "  <freed thread state>\n");
         return;
     }
 
@@ -1004,12 +1010,16 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             PUTS(fd, "  <freed frame>\n");
             break;
         }
+        // Read frame->previous early since memory can be freed during
+        // dump_frame()
+        _PyInterpreterFrame *previous = frame->previous;
+
         if (dump_frame(fd, frame) < 0) {
             PUTS(fd, "  <invalid frame>\n");
             break;
         }
 
-        frame = frame->previous;
+        frame = previous;
         if (frame == NULL) {
             break;
         }
@@ -1100,7 +1110,6 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
-    tstate = PyInterpreterState_ThreadHead(interp);
     unsigned int nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
@@ -1111,11 +1120,18 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             PUTS(fd, "...\n");
             break;
         }
+
+        if (tstate_is_freed(tstate)) {
+            PUTS(fd, "<freed thread state>\n");
+            break;
+        }
+
         write_thread_id(fd, tstate, tstate == current_tstate);
         if (tstate == current_tstate && tstate->interp->gc.collecting) {
             PUTS(fd, "  Garbage-collecting\n");
         }
         dump_traceback(fd, tstate, 0);
+
         tstate = PyThreadState_Next(tstate);
         nthreads++;
     } while (tstate != NULL);

@@ -1,0 +1,3 @@
+Add parsing for ``References`` and ``In-Reply-To`` headers to the :mod:`email`
+library that parses the header content as lists of message id tokens.  This
+prevents them from being folded incorrectly.

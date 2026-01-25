@@ -490,6 +490,16 @@ class UpdateTestCase(unittest.TestCase):
 class CopyTestCase(unittest.TestCase):
 
     @hashlib_helper.requires_hashdigest('sha256')
+    def test_copy(self):
+        # Test a generic copy() and the attributes it exposes.
+        # See https://github.com/python/cpython/issues/142451.
+        h1 = hmac.new(b"my secret key", digestmod="sha256")
+        h2 = h1.copy()
+        self.assertEqual(h1.name, h2.name)
+        self.assertEqual(h1.digest_size, h2.digest_size)
+        self.assertEqual(h1.block_size, h2.block_size)
+
+    @hashlib_helper.requires_hashdigest('sha256')
     def test_attributes_old(self):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC.__new__(hmac.HMAC)

@@ -34,10 +34,12 @@ The :mod:`decimal` module provides support for fast correctly rounded
 decimal floating-point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
-* Decimal "is based on a floating-point model which was designed with people
-  in mind, and necessarily has a paramount guiding principle -- computers must
-  provide an arithmetic that works in the same way as the arithmetic that
-  people learn at school." -- excerpt from the decimal arithmetic specification.
+* Decimal "is based on a `floating-point model
+  <https://speleotrove.com/decimal/damodel.html#refnumber>`__ which was designed
+  with people in mind, and necessarily has a paramount guiding principle --
+  computers must provide an arithmetic that works in the same way as the
+  arithmetic that people learn at school." -- excerpt from the decimal
+  arithmetic specification.
 
 * Decimal numbers can be represented exactly.  In contrast, numbers like
   ``1.1`` and ``2.2`` do not have exact representations in binary
@@ -238,6 +240,26 @@ floating-point flying circus:
    >>> c % a
    Decimal('0.77')
 
+Decimals can be formatted (with :func:`format` built-in or :ref:`f-strings`) in
+fixed-point or scientific notation, using the same formatting syntax (see
+:ref:`formatspec`) as builtin :class:`float` type:
+
+.. doctest::
+
+   >>> format(Decimal('2.675'), "f")
+   '2.675'
+   >>> format(Decimal('2.675'), ".2f")
+   '2.68'
+   >>> f"{Decimal('2.675'):.2f}"
+   '2.68'
+   >>> format(Decimal('2.675'), ".2e")
+   '2.68e+0'
+   >>> with localcontext() as ctx:
+   ...     ctx.rounding = ROUND_DOWN
+   ...     print(format(Decimal('2.675'), ".2f"))
+   ...
+   2.67
+
 And some mathematical functions are also available to Decimal:
 
    >>> getcontext().prec = 28
@@ -264,7 +286,7 @@ allows the settings to be changed.  This approach meets the needs of most
 applications.
 
 For more advanced work, it may be useful to create alternate contexts using the
-Context() constructor.  To make an alternate active, use the :func:`setcontext`
+:meth:`Context` constructor.  To make an alternate active, use the :func:`setcontext`
 function.
 
 In accordance with the standard, the :mod:`decimal` module provides two ready to
@@ -2067,20 +2089,20 @@ to work with the :class:`Decimal` class::
 Decimal FAQ
 -----------
 
-Q. It is cumbersome to type ``decimal.Decimal('1234.5')``.  Is there a way to
+Q: It is cumbersome to type ``decimal.Decimal('1234.5')``.  Is there a way to
 minimize typing when using the interactive interpreter?
 
-A. Some users abbreviate the constructor to just a single letter:
+A: Some users abbreviate the constructor to just a single letter:
 
    >>> D = decimal.Decimal
    >>> D('1.23') + D('3.45')
    Decimal('4.68')
 
-Q. In a fixed-point application with two decimal places, some inputs have many
+Q: In a fixed-point application with two decimal places, some inputs have many
 places and need to be rounded.  Others are not supposed to have excess digits
 and need to be validated.  What methods should be used?
 
-A. The :meth:`~Decimal.quantize` method rounds to a fixed number of decimal places. If
+A: The :meth:`~Decimal.quantize` method rounds to a fixed number of decimal places. If
 the :const:`Inexact` trap is set, it is also useful for validation:
 
    >>> TWOPLACES = Decimal(10) ** -2       # same as Decimal('0.01')
@@ -2098,10 +2120,10 @@ the :const:`Inexact` trap is set, it is also useful for validation:
       ...
    Inexact: None
 
-Q. Once I have valid two place inputs, how do I maintain that invariant
+Q: Once I have valid two place inputs, how do I maintain that invariant
 throughout an application?
 
-A. Some operations like addition, subtraction, and multiplication by an integer
+A: Some operations like addition, subtraction, and multiplication by an integer
 will automatically preserve fixed point.  Others operations, like division and
 non-integer multiplication, will change the number of decimal places and need to
 be followed-up with a :meth:`~Decimal.quantize` step:
@@ -2133,21 +2155,21 @@ to handle the :meth:`~Decimal.quantize` step:
     >>> div(b, a)
     Decimal('0.03')
 
-Q. There are many ways to express the same value.  The numbers ``200``,
+Q: There are many ways to express the same value.  The numbers ``200``,
 ``200.000``, ``2E2``, and ``.02E+4`` all have the same value at
 various precisions. Is there a way to transform them to a single recognizable
 canonical value?
 
-A. The :meth:`~Decimal.normalize` method maps all equivalent values to a single
+A: The :meth:`~Decimal.normalize` method maps all equivalent values to a single
 representative:
 
    >>> values = map(Decimal, '200 200.000 2E2 .02E+4'.split())
    >>> [v.normalize() for v in values]
    [Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2')]
 
-Q. When does rounding occur in a computation?
+Q: When does rounding occur in a computation?
 
-A. It occurs *after* the computation.  The philosophy of the decimal
+A: It occurs *after* the computation.  The philosophy of the decimal
 specification is that numbers are considered exact and are created
 independent of the current context.  They can even have greater
 precision than current context.  Computations process with those
@@ -2165,10 +2187,10 @@ applied to the *result* of the computation::
    >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
    Decimal('3.1416')
 
-Q. Some decimal values always print with exponential notation.  Is there a way
+Q: Some decimal values always print with exponential notation.  Is there a way
 to get a non-exponential representation?
 
-A. For some values, exponential notation is the only way to express the number
+A: For some values, exponential notation is the only way to express the number
 of significant places in the coefficient.  For example, expressing
 ``5.0E+3`` as ``5000`` keeps the value constant but cannot show the
 original's two-place significance.
@@ -2183,9 +2205,9 @@ value unchanged:
     >>> remove_exponent(Decimal('5E+3'))
     Decimal('5000')
 
-Q. Is there a way to convert a regular float to a :class:`Decimal`?
+Q: Is there a way to convert a regular float to a :class:`Decimal`?
 
-A. Yes, any binary floating-point number can be exactly expressed as a
+A: Yes, any binary floating-point number can be exactly expressed as a
 Decimal though an exact conversion may take more precision than intuition would
 suggest:
 
@@ -2194,19 +2216,19 @@ suggest:
     >>> Decimal(math.pi)
     Decimal('3.141592653589793115997963468544185161590576171875')
 
-Q. Within a complex calculation, how can I make sure that I haven't gotten a
+Q: Within a complex calculation, how can I make sure that I haven't gotten a
 spurious result because of insufficient precision or rounding anomalies.
 
-A. The decimal module makes it easy to test results.  A best practice is to
+A: The decimal module makes it easy to test results.  A best practice is to
 re-run calculations using greater precision and with various rounding modes.
 Widely differing results indicate insufficient precision, rounding mode issues,
 ill-conditioned inputs, or a numerically unstable algorithm.
 
-Q. I noticed that context precision is applied to the results of operations but
+Q: I noticed that context precision is applied to the results of operations but
 not to the inputs.  Is there anything to watch out for when mixing values of
 different precisions?
 
-A. Yes.  The principle is that all values are considered to be exact and so is
+A: Yes.  The principle is that all values are considered to be exact and so is
 the arithmetic on those values.  Only the results are rounded.  The advantage
 for inputs is that "what you type is what you get".  A disadvantage is that the
 results can look odd if you forget that the inputs haven't been rounded:
@@ -2234,9 +2256,9 @@ Alternatively, inputs can be rounded upon creation using the
    >>> Context(prec=5, rounding=ROUND_DOWN).create_decimal('1.2345678')
    Decimal('1.2345')
 
-Q. Is the CPython implementation fast for large numbers?
+Q: Is the CPython implementation fast for large numbers?
 
-A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
+A: Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
 the decimal module integrate the high speed `libmpdec
 <https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
 arbitrary precision correctly rounded decimal floating-point arithmetic [#]_.
