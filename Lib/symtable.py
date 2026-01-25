@@ -231,7 +231,7 @@ class Function(SymbolTable):
         return self.__frees
 
     def get_cells(self):
-        """Return a tuple of cell variable names in the table.
+        """Return a tuple of cell variables in the function.
         """
         if self.__cells is None:
             is_cell = lambda x: _get_scope(x) == CELL
