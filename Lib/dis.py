@@ -436,7 +436,7 @@ class Instruction(_Instruction):
         formatter.print_instruction(self, False)
         return output.getvalue()
 
-def get_dis_theme():
+def _get_dis_theme():
     from _colorize import get_theme
     return get_theme().dis
 
@@ -483,7 +483,7 @@ class Formatter:
 
     def print_instruction_line(self, instr, mark_as_current):
         """Format instruction details for inclusion in disassembly output."""
-        theme = get_dis_theme()
+        theme = _get_dis_theme()
         lineno_width = self.lineno_width
         offset_width = self.offset_width
         label_width = self.label_width
@@ -546,7 +546,7 @@ class Formatter:
 
     def print_exception_table(self, exception_entries):
         file = self.file
-        theme = get_dis_theme()
+        theme = _get_dis_theme()
         if exception_entries:
             print("ExceptionTable:", file=file)
             for entry in exception_entries:
@@ -843,7 +843,7 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
 
 def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False, show_offsets=False, show_positions=False):
     disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
-    theme = get_dis_theme()
+    theme = _get_dis_theme()
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
