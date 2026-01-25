@@ -535,7 +535,7 @@ difflib
 
 
 dis
----------
+---
 
   .. _whatsnew315-color-dis:
 
