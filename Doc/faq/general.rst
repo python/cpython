@@ -311,7 +311,7 @@ releases.
 The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.
 Python 3.x is the recommended version and supported by most widely used libraries.
-Python 2.x is not maintained anymore (<:pep:`373>`).
+Python 2.x is not maintained anymore (:pep:`373`).
 
 How many people are using Python?
 ---------------------------------
