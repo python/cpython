@@ -5157,6 +5157,70 @@ ast_clear(PyObject *op)
     return 0;
 }
 
+/*
+ * Format the names in the set 'missing' into a natural language list,
+ * sorted in the order in which they appear in 'fields'.
+ *
+ * Similar to format_missing() from 'Python/ceval.c'.
+ *
+ * Parameters
+ *
+ *      missing     Set of missing field names to render.
+ *      fields      Sequence of AST node field names (self._fields).
+ */
+static PyObject *
+format_missing(PyObject *missing, PyObject *fields)
+{
+    Py_ssize_t num_fields, num_total, num_left;
+    num_fields = PySequence_Size(fields);
+    if (num_fields == -1) {
+        return NULL;
+    }
+    num_total = num_left = PySet_GET_SIZE(missing);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    // Iterate all AST node fields in order so that the missing positional
+    // arguments are rendered in the order in which __init__ expects them.
+    for (Py_ssize_t i = 0; i < num_fields; i++) {
+        PyObject *name = PySequence_GetItem(fields, i);
+        if (name == NULL) {
+            goto error;
+        }
+        int contains = PySet_Contains(missing, name);
+        if (contains == -1) {
+            Py_DECREF(name);
+            goto error;
+        }
+        else if (contains == 1) {
+            const char* fmt = NULL;
+            if (num_left == 1) {
+                fmt = "'%U'";
+            }
+            else if (num_total == 2) {
+                fmt = "'%U' and ";
+            }
+            else if (num_left == 2) {
+                fmt = "'%U', and ";
+            }
+            else {
+                fmt = "'%U', ";
+            }
+            num_left--;
+            if (PyUnicodeWriter_Format(writer, fmt, name) < 0) {
+                Py_DECREF(name);
+                goto error;
+            }
+        }
+        Py_DECREF(name);
+    }
+    return PyUnicodeWriter_Finish(writer);
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -5226,8 +5290,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%.400s got multiple values for argument '%U'",
-                        Py_TYPE(self)->tp_name, key);
+                        "%T got multiple values for argument '%U'",
+                        self, key);
                     res = -1;
                     goto cleanup;
                 }
@@ -5247,16 +5311,11 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto cleanup;
                 }
                 else if (contains == 0) {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
-                        "Support for arbitrary keyword arguments is deprecated "
-                        "and will be removed in Python 3.15.",
-                        Py_TYPE(self)->tp_name, key
-                    ) < 0) {
-                        res = -1;
-                        goto cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "%T.__init__ got an unexpected keyword argument '%U'",
+                        self, key);
+                    res = -1;
+                    goto cleanup;
                 }
             }
             res = PyObject_SetAttr(self, key, value);
@@ -5266,7 +5325,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
     Py_ssize_t size = PySet_Size(remaining_fields);
-    PyObject *field_types = NULL, *remaining_list = NULL;
+    PyObject *field_types = NULL, *remaining_list = NULL, *missing_names = NULL;
     if (size > 0) {
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
                                      &field_types) < 0) {
@@ -5283,6 +5342,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (!remaining_list) {
             goto set_remaining_cleanup;
         }
+        missing_names = PySet_New(NULL);
+        if (!missing_names) {
+            goto set_remaining_cleanup;
+        }
         for (Py_ssize_t i = 0; i < size; i++) {
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
@@ -5291,14 +5354,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
                 else {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "Field %R is missing from %.400s._field_types. "
-                        "This will become an error in Python 3.15.",
-                        name, Py_TYPE(self)->tp_name
-                    ) < 0) {
-                        goto set_remaining_cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "Field %R is missing from %T._field_types",
+                        name, self);
+                    goto set_remaining_cleanup;
                 }
             }
             else if (_PyUnion_Check(type)) {
@@ -5326,16 +5385,25 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             }
             else {
                 // simple field (e.g., identifier)
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: %R. "
-                    "This will become an error in Python 3.15.",
-                    Py_TYPE(self)->tp_name, name
-                ) < 0) {
+                res = PySet_Add(missing_names, name);
+                if (res < 0) {
                     goto set_remaining_cleanup;
                 }
             }
         }
+        Py_ssize_t num_missing = PySet_GET_SIZE(missing_names);
+        if (num_missing > 0) {
+            PyObject *name_str = format_missing(missing_names, fields);
+            if (!name_str) {
+                goto set_remaining_cleanup;
+            }
+            PyErr_Format(PyExc_TypeError,
+                "%T.__init__ missing %d required positional argument%s: %U",
+                self, num_missing, num_missing == 1 ? "" : "s", name_str);
+            Py_DECREF(name_str);
+            goto set_remaining_cleanup;
+        }
+        Py_DECREF(missing_names);
         Py_DECREF(remaining_list);
         Py_DECREF(field_types);
     }
@@ -5345,6 +5413,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_XDECREF(remaining_fields);
     return res;
   set_remaining_cleanup:
+    Py_XDECREF(missing_names);
     Py_XDECREF(remaining_list);
     Py_XDECREF(field_types);
     res = -1;
@@ -5426,182 +5495,6 @@ cleanup:
     Py_XDECREF(fields);
     Py_XDECREF(positional_args);
     return result;
-}
-
-/*
- * Perform the following validations:
- *
- *   - All keyword arguments are known 'fields' or 'attributes'.
- *   - No field or attribute would be left unfilled after copy.replace().
- *
- * On success, this returns 1. Otherwise, set a TypeError
- * exception and returns -1 (no exception is set if some
- * other internal errors occur).
- *
- * Parameters
- *
- *      self          The AST node instance.
- *      dict          The AST node instance dictionary (self.__dict__).
- *      fields        The list of fields (self._fields).
- *      attributes    The list of attributes (self._attributes).
- *      kwargs        Keyword arguments passed to ast_type_replace().
- *
- * The 'dict', 'fields', 'attributes' and 'kwargs' arguments can be NULL.
- *
- * Note: this function can be removed in 3.15 since the verification
- *       will be done inside the constructor.
- */
-static inline int
-ast_type_replace_check(PyObject *self,
-                       PyObject *dict,
-                       PyObject *fields,
-                       PyObject *attributes,
-                       PyObject *kwargs)
-{
-    // While it is possible to make some fast paths that would avoid
-    // allocating objects on the stack, this would cost us readability.
-    // For instance, if 'fields' and 'attributes' are both empty, and
-    // 'kwargs' is not empty, we could raise a TypeError immediately.
-    PyObject *expecting = PySet_New(fields);
-    if (expecting == NULL) {
-        return -1;
-    }
-    if (attributes) {
-        if (_PySet_Update(expecting, attributes) < 0) {
-            Py_DECREF(expecting);
-            return -1;
-        }
-    }
-    // Any keyword argument that is neither a field nor attribute is rejected.
-    // We first need to check whether a keyword argument is accepted or not.
-    // If all keyword arguments are accepted, we compute the required fields
-    // and attributes. A field or attribute is not needed if:
-    //
-    //  1) it is given in 'kwargs', or
-    //  2) it already exists on 'self'.
-    if (kwargs) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(kwargs, &pos, &key, &value)) {
-            int rc = PySet_Discard(expecting, key);
-            if (rc < 0) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-            if (rc == 0) {
-                PyErr_Format(PyExc_TypeError,
-                             "%.400s.__replace__ got an unexpected keyword "
-                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
-                Py_DECREF(expecting);
-                return -1;
-            }
-        }
-    }
-    // check that the remaining fields or attributes would be filled
-    if (dict) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(dict, &pos, &key, &value)) {
-            // Mark fields or attributes that are found on the instance
-            // as non-mandatory. If they are not given in 'kwargs', they
-            // will be shallow-coied; otherwise, they would be replaced
-            // (not in this function).
-            if (PySet_Discard(expecting, key) < 0) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-        }
-        if (attributes) {
-            // Some attributes may or may not be present at runtime.
-            // In particular, now that we checked whether 'kwargs'
-            // is correct or not, we allow any attribute to be missing.
-            //
-            // Note that fields must still be entirely determined when
-            // calling the constructor later.
-            PyObject *unused = PyObject_CallMethodOneArg(expecting,
-                                                         &_Py_ID(difference_update),
-                                                         attributes);
-            if (unused == NULL) {
-                Py_DECREF(expecting);
-                return -1;
-            }
-            Py_DECREF(unused);
-        }
-    }
-
-    // Discard fields from 'expecting' that default to None
-    PyObject *field_types = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
-                                 &_Py_ID(_field_types),
-                                 &field_types) < 0)
-    {
-        Py_DECREF(expecting);
-        return -1;
-    }
-    if (field_types != NULL) {
-        Py_ssize_t pos = 0;
-        PyObject *field_name, *field_type;
-        while (PyDict_Next(field_types, &pos, &field_name, &field_type)) {
-            if (_PyUnion_Check(field_type)) {
-                // optional field
-                if (PySet_Discard(expecting, field_name) < 0) {
-                    Py_DECREF(expecting);
-                    Py_DECREF(field_types);
-                    return -1;
-                }
-            }
-        }
-        Py_DECREF(field_types);
-    }
-
-    // Now 'expecting' contains the fields or attributes
-    // that would not be filled inside ast_type_replace().
-    Py_ssize_t m = PySet_GET_SIZE(expecting);
-    if (m > 0) {
-        PyObject *names = PyList_New(m);
-        if (names == NULL) {
-            Py_DECREF(expecting);
-            return -1;
-        }
-        Py_ssize_t i = 0, pos = 0;
-        PyObject *item;
-        Py_hash_t hash;
-        while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
-            PyObject *name = PyObject_Repr(item);
-            if (name == NULL) {
-                Py_DECREF(expecting);
-                Py_DECREF(names);
-                return -1;
-            }
-            // steal the reference 'name'
-            PyList_SET_ITEM(names, i++, name);
-        }
-        Py_DECREF(expecting);
-        if (PyList_Sort(names) < 0) {
-            Py_DECREF(names);
-            return -1;
-        }
-        PyObject *sep = PyUnicode_FromString(", ");
-        if (sep == NULL) {
-            Py_DECREF(names);
-            return -1;
-        }
-        PyObject *str_names = PyUnicode_Join(sep, names);
-        Py_DECREF(sep);
-        Py_DECREF(names);
-        if (str_names == NULL) {
-            return -1;
-        }
-        PyErr_Format(PyExc_TypeError,
-                     "%.400s.__replace__ missing %ld keyword argument%s: %U.",
-                     Py_TYPE(self)->tp_name, m, m == 1 ? "" : "s", str_names);
-        Py_DECREF(str_names);
-        return -1;
-    }
-    else {
-        Py_DECREF(expecting);
-        return 1;
-    }
 }
 
 /*
@@ -5691,9 +5584,6 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
         goto cleanup;
     }
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
-        goto cleanup;
-    }
-    if (ast_type_replace_check(self, dict, fields, attributes, kwargs) < 0) {
         goto cleanup;
     }
     empty_tuple = PyTuple_New(0);
