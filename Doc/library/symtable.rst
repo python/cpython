@@ -299,7 +299,7 @@ Examining Symbol Tables
 
    .. method:: is_cell()
 
-      Return ``True`` if the symbol is referenced from a nested block.
+      Return ``True`` if the symbol is referenced but not assigned in a nested block.
 
       .. versionadded:: next
 
