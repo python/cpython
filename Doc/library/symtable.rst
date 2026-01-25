@@ -299,7 +299,7 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is referenced from a nested block.
 
-      .. versionadded:: 3.15
+      .. versionadded:: next
 
    .. method:: is_free_class()
 
