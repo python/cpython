@@ -264,7 +264,7 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
     typ = str
 
     def test_verify_generated_headers(self):
-        """gh-121650: by default the generator prevents header injection"""
+        # gh-121650: by default the generator prevents header injection
         class LiteralHeader(str):
             name = 'Header'
             def fold(self, **kwargs):
@@ -285,6 +285,8 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
 
                 with self.assertRaises(email.errors.HeaderWriteError):
                     message.as_string()
+                with self.assertRaises(email.errors.HeaderWriteError):
+                    message.as_bytes()
 
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
