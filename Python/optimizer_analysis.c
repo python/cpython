@@ -128,7 +128,7 @@ type_watcher_callback(PyTypeObject* type)
 }
 
 static PyObject *
-convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop, bool insert)
 {
     assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
@@ -148,15 +148,22 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
     if (res == NULL) {
         return NULL;
     }
-    if (_Py_IsImmortal(res)) {
-        inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
-    }
-    else {
-        inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
-    }
-    if (inst->oparg & 1) {
-        assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
-        assert(inst[1].oparg & 1);
+    if (insert) {
+        if (_Py_IsImmortal(res)) {
+            inst->opcode = _INSERT_1_LOAD_CONST_INLINE_BORROW;
+        } else {
+            inst->opcode = _INSERT_1_LOAD_CONST_INLINE;
+        }
+    } else {
+        if (_Py_IsImmortal(res)) {
+            inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
+        } else {
+            inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
+        }
+        if (inst->oparg & 1) {
+            assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
+            assert(inst[1].oparg & 1);
+        }
     }
     inst->operand0 = (uint64_t)res;
     return res;
