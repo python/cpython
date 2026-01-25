@@ -554,7 +554,12 @@ class Formatter:
                 start = entry.start_label
                 end = entry.end_label
                 target = entry.target_label
-                print(f"  {theme.exception_label}L{start}{theme.reset} to {theme.exception_label}L{end}{theme.reset} -> {theme.exception_label}L{target}{theme.reset} [{entry.depth}]{lasti}", file=file)
+                print(
+                    f"  {theme.exception_label}L{start}{theme.reset} to "
+                    f"{theme.exception_label}L{end}{theme.reset} "
+                    f"-> {theme.exception_label}L{target}{theme.reset} [{entry.depth}]{lasti}",
+                    file=file,
+                )
 
 
 class ArgResolver:
