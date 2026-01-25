@@ -537,8 +537,6 @@ difflib
 dis
 ---
 
-  .. _whatsnew315-color-dis:
-
 * :func:`dis.dis` supports colored output by default, which can also be
   :ref:`controlled <using-on-controlling-color>` through ``NO_COLOR=1``
   environment variable.
