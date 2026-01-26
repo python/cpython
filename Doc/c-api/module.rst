@@ -1020,6 +1020,7 @@ or code that creates modules dynamically.
    This function is called automatically when creating a module from
    ``PyModuleDef`` (such as when using :ref:`multi-phase-initialization`,
    ``PyModule_Create``, or ``PyModule_FromDefAndSpec``).
+
    Return ``0`` on success.
    Return ``-1`` with an exception set on error.
 
