@@ -1326,7 +1326,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    return value of :func:`intern` around to benefit from it.
 
    .. note::
-      On the :term:`free threaded <free threading>` build, 
+      On the :term:`free threaded <free threading>` build,
       all interned strings are :term:`immortal`.
       This may change in the future.
 
