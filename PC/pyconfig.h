@@ -54,7 +54,6 @@ WIN32 is still required for the locale module.
 #define HAVE_TMPFILE
 #define HAVE_TMPNAM
 #define HAVE_CLOCK
-#define HAVE_STRERROR
 
 #include <io.h>
 
