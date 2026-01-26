@@ -2200,61 +2200,93 @@ class TestParser(TestParserMixin, TestEmailBase):
             label='from_test_get_atext',
             )(params_test_get_atext),
 
-        test_get_atom_with_wsp = C(
-            '\t bob  ', '\t bob  ', ' bob ', [], '')
-            ,
+        with_wsp = C(
+            '\t bob  ',
+            '\t bob  ',
+            ' bob ',
+            [],
+            '',
+            ),
 
-        test_get_atom_with_comments_and_wsp = C(
-            ' (foo) bob(bar)', ' (foo) bob(bar)', ' bob ', [], '',
+        with_comments_and_wsp = C(
+            ' (foo) bob(bar)',
+            ' (foo) bob(bar)',
+            ' bob ',
+            [],
+            '',
             comments=['foo', 'bar'],
             ),
 
-        test_get_atom_with_multiple_comments = C(
-            ' (foo) (bar) bob(bird)', ' (foo) (bar) bob(bird)', ' bob ',
-                [], '',
+        with_multiple_comments = C(
+            ' (foo) (bar) bob(bird)',
+            ' (foo) (bar) bob(bird)',
+            ' bob ',
+            [],
+            '',
             comments=['foo', 'bar', 'bird'],
             ),
 
-        test_get_atom_non_printable_in_comment = C(
-            ' (\x0A) bob', ' (\x0A) bob', ' bob',
-                [errors.NonPrintableDefect], '',
+        non_printable_in_comment = C(
+            ' (\x0A) bob',
+            ' (\x0A) bob',
+            ' bob',
+            [errors.NonPrintableDefect],
+            '',
             comments=['\x0A'],
             ),
 
-        test_get_atom_non_printable_in_atext = C(
-            ' (a) a\x0B', ' (a) a\x0B', ' a\x0B',
-                [errors.NonPrintableDefect], '',
+        non_printable_in_atext = C(
+            ' (a) a\x0B',
+            ' (a) a\x0B',
+            ' a\x0B',
+            [errors.NonPrintableDefect],
+            '',
             comments=['a'],
             ),
 
-        test_get_atom_header_ends_in_comment = C(
-            ' (a) bob (a', ' (a) bob (a)', ' bob ',
-                [errors.InvalidHeaderDefect], '',
+        header_ends_in_comment = C(
+            ' (a) bob (a',
+            ' (a) bob (a)',
+            ' bob ',
+            [errors.InvalidHeaderDefect],
+            '',
             comments=['a', 'a'],
             ),
 
-        test_get_atom_no_atom = C(
-                            ' (ab) ',
-                    exception=(errors.HeaderParseError, '.*'),
+        no_atom = C(
+            ' (ab) ',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_atom_no_atom_before_special = C(
-                            ' (ab) @',
-                    exception=(errors.HeaderParseError, '.*'),
+        no_atom_before_special = C(
+            ' (ab) @',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_atom_atom_ends_at_special = C(
-            ' (foo) bob(bar)  @bang', ' (foo) bob(bar)  ', ' bob ', [], '@bang',
+        atom_ends_at_special = C(
+            ' (foo) bob(bar)  @bang',
+            ' (foo) bob(bar)  ',
+            ' bob ',
+            [],
+            '@bang',
             comments=['foo', 'bar'],
             ),
 
-        test_get_atom_atom_ends_at_noncfws = C(
-            'bob  fred', 'bob  ', 'bob ', [], 'fred')
-            ,
+        atom_ends_at_noncfws = C(
+            'bob  fred',
+            'bob  ',
+            'bob ',
+            [],
+            'fred',
+            ),
 
-        test_get_atom_rfc2047_atom = C(
-            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
-            ,
+        rfc2047_atom = C(
+            '=?utf-8?q?=20bob?=',
+            ' bob',
+            ' bob',
+            [],
+            '',
+            ),
 
         )
 
