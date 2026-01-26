@@ -161,10 +161,10 @@ Key features include:
     timing with direct and cumulative samples. Best for detailed analysis and integration with
     existing Python profiling tools.
   * ``--collapsed``: Generates collapsed stack traces (one line per stack). This format is
-    specifically designed for creating flamegraphs with external tools like Brendan Gregg's
+    specifically designed for creating flame graphs with external tools like Brendan Gregg's
     FlameGraph scripts or speedscope.
-  * ``--flamegraph``: Generates a self-contained interactive HTML flamegraph using D3.js.
-    Opens directly in your browser for immediate visual analysis. Flamegraphs show the call
+  * ``--flamegraph``: Generates a self-contained interactive HTML flame graph using D3.js.
+    Opens directly in your browser for immediate visual analysis. Flame graphs show the call
     hierarchy where width represents time spent, making it easy to spot bottlenecks at a glance.
   * ``--gecko``: Generates Gecko Profiler format compatible with `Firefox Profiler
     <https://profiler.firefox.com>`__. Upload the output to Firefox Profiler for advanced
