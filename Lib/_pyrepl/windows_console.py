@@ -146,16 +146,18 @@ class WindowsConsole(Console):
 
         # Save original console modes so we can recover on cleanup.
         original_input_mode = DWORD()
-        GetConsoleMode(InHandle, original_input_mode)
+        if not GetConsoleMode(InHandle, original_input_mode):
+            raise WinError(get_last_error())
         trace(f'saved original input mode 0x{original_input_mode.value:x}')
         self.__original_input_mode = original_input_mode.value
 
-        SetConsoleMode(
+        if not SetConsoleMode(
             OutHandle,
             ENABLE_WRAP_AT_EOL_OUTPUT
             | ENABLE_PROCESSED_OUTPUT
             | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-        )
+        ):
+            raise WinError(get_last_error())
 
         self.screen: list[str] = []
         self.width = 80
@@ -347,14 +349,16 @@ class WindowsConsole(Console):
         self.__offset = 0
 
         if self.__vt_support:
-            SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT)
+            if not SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT):
+                raise WinError(get_last_error())
             self._enable_bracketed_paste()
 
     def restore(self) -> None:
         if self.__vt_support:
             # Recover to original mode before running REPL
             self._disable_bracketed_paste()
-            SetConsoleMode(InHandle, self.__original_input_mode)
+            if not SetConsoleMode(InHandle, self.__original_input_mode):
+                raise WinError(get_last_error())
 
     def _move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current posxy"""
