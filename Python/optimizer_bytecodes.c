@@ -899,7 +899,7 @@ dummy_func(void) {
         (void)args;
         callable = sym_new_not_null(ctx);
         PyTypeObject *tp = _PyType_LookupByVersion(type_version);
-       if (tp->tp_basicsize > sizeof(PyObject) && !(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        if (tp != NULL && tp->tp_basicsize > sizeof(PyObject) && !(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
             self_or_null = sym_new_slots_object(ctx, type_version);
         } else {
             self_or_null = sym_new_not_null(ctx);
