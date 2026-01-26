@@ -120,17 +120,6 @@ set_clear(PyObject *self, PyObject *obj)
     RETURN_INT(PySet_Clear(obj));
 }
 
-/* Raise AssertionError with test_name + ": " + msg, and return NULL. */
-
-static PyObject *
-raiseTestError(const char* test_name, const char* msg)
-{
-    PyObject *exc = PyErr_GetRaisedException();
-    PyErr_Format(exc, "%s: %s", test_name, msg);
-    return NULL;
-}
-
-
 static PyObject *
 test_frozenset_add_in_capi(PyObject *self, PyObject *Py_UNUSED(obj))
 {
@@ -167,55 +156,67 @@ error:
 }
 
 static PyObject *
-test_frozenset_add_in_capi_tracking(PyObject *self, PyObject *Py_UNUSED(ignored))
+raiseTestError(const char* test_name, const char* msg)
 {
-    PyObject *one = PyLong_FromLong(1);
-    assert(one);
+    PyObject *exc = PyErr_GetRaisedException();
+    PyErr_Format(PyErr_GetRaisedException(), "%s: %s", test_name, msg);
+    return NULL;
+}
 
+static PyObject *
+test_frozenset_add_in_capi_tracking_immutable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
     // Test: GC tracking - frozenset with only immutable items should not be tracked
-    frozenset = PyFrozenSet_New(NULL);
+    PyObject *frozenset = PyFrozenSet_New(NULL);
     if (frozenset == NULL) {
         return NULL;
     }
-    if (PySet_Add(frozenset, one) < 0) {
+    if (PySet_Add(frozenset, Py_True) < 0) {
         Py_DECREF(frozenset);
         return NULL;
     }
     if (PyObject_GC_IsTracked(frozenset)) {
         Py_DECREF(frozenset);
-        return raiseTestError("test_pyset_add_frozenset",
-                              "frozenset with only int should not be GC tracked");
+        return raiseTestError("test_frozenset_add_in_capi_tracking_immutable",
+                "frozenset with only int should not be GC tracked");
     }
     Py_DECREF(frozenset);
+    Py_RETURN_NONE;
+}
 
+static PyObject *
+test_frozenset_add_in_capi_tracking(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
     // Test: GC tracking - frozenset with tracked object should be tracked
-    frozenset = PyFrozenSet_New(NULL);
+    PyObject *frozenset = PyFrozenSet_New(NULL);
     if (frozenset == NULL) {
         return NULL;
     }
 
     PyObject *tracked_obj = PyErr_NewException("_testlimitedcapi.py_set_add", NULL, NULL);
     if (tracked_obj == NULL) {
-        Py_DECREF(frozenset);
-        return NULL;
+        goto error;
     }
     if (!PyObject_GC_IsTracked(tracked_obj)) {
-        return raiseTestError("test_pyset_add_frozenset",
+        return raiseTestError("test_frozenset_add_in_capi_tracking",
                               "test object should be tracked");
     }
     if (PySet_Add(frozenset, tracked_obj) < 0) {
-        Py_DECREF(frozenset);
-        Py_DECREF(tracked_obj);
-        return NULL;
+        goto error;
     }
+    Py_DECREF(tracked_obj);
     if (!PyObject_GC_IsTracked(frozenset)) {
         Py_DECREF(frozenset);
-        Py_DECREF(tracked_obj);
-        return raiseTestError("test_pyset_add_frozenset",
+        return raiseTestError("test_frozenset_add_in_capi_tracking",
                               "frozenset with with GC tracked object should be tracked");
     }
-
+    Py_DECREF(frozenset);
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(frozenset);
+    Py_XDECREF(tracked_obj);
+    return NULL;
 }
 
 
@@ -264,7 +265,6 @@ test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_U
     return NULL;
 }
 
-
 static PyMethodDef test_methods[] = {
     {"set_check", set_check, METH_O},
     {"set_checkexact", set_checkexact, METH_O},
@@ -284,9 +284,10 @@ static PyMethodDef test_methods[] = {
     {"set_clear", set_clear, METH_O},
 
     {"test_frozenset_add_in_capi", test_frozenset_add_in_capi, METH_NOARGS},
+    {"test_frozenset_add_in_capi_tracking", test_frozenset_add_in_capi_tracking, METH_NOARGS},
+    {"test_frozenset_add_in_capi_tracking_immutable", test_frozenset_add_in_capi_tracking_immutable, METH_NOARGS},
     {"test_set_contains_does_not_convert_unhashable_key",
      test_set_contains_does_not_convert_unhashable_key, METH_NOARGS},
-    {"test_pyset_add_frozenset", test_pyset_add_frozenset, METH_NOARGS},
 
     {NULL},
 };
