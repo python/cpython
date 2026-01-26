@@ -69,7 +69,6 @@ WIN32 is still required for the locale module.
 #define NT_THREADS
 #define WITH_THREAD
 #ifndef NETSCAPE_PI
-#define USE_SOCKET
 #endif
 
 #if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN) || defined(Py_BUILD_CORE_MODULE)
