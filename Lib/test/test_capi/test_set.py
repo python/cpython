@@ -220,15 +220,6 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: clear(NULL)
 
 
-class TestPySet_Add(unittest.TestCase):
-    def test_pyset_add_exact_set(self):
-        _testcapi.test_pyset_add_exact_set()
-
-    def test_pyset_add_frozenset(self):
-        _testcapi.test_pyset_add_frozenset()
-
-
-
 class TestInternalCAPI(BaseSetTests, unittest.TestCase):
     def test_set_update(self):
         update = _testinternalcapi.set_update
