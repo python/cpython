@@ -351,6 +351,9 @@ then
 	*-*-wasi*)
 	    ac_sys_system=WASI
 	    ;;
+	*-*-freebsd)
+	    ac_sys_system=FreeBSD
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -820,6 +823,9 @@ if test "$cross_compiling" = yes; then
 		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
+		;;
+	x86_64-*-freebsd)
+		_host_ident=x86_64
 		;;
 	*)
 		# for now, limit cross builds to known configurations
