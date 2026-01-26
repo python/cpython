@@ -159,7 +159,7 @@ static PyObject *
 raiseTestError(const char* test_name, const char* msg)
 {
     PyObject *exc = PyErr_GetRaisedException();
-    PyErr_Format(PyErr_GetRaisedException(), "%s: %s", test_name, msg);
+    PyErr_Format(exc, "%s: %s", test_name, msg);
     return NULL;
 }
 
