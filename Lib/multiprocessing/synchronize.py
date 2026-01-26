@@ -139,15 +139,15 @@ if sys.platform == 'darwin':
         """
 
         def __init__(self, kind, value, maxvalue, *, ctx):
-            util.debug(f"_MacOSXSemaphore:: creation of a {self.__class__.__name__}"\
-                        f"with '{value = }'")
+            if not isinstance(self, Semaphore):
+                raise TypeError("_MacOSXSemaphore can only be used "
+                                "as base class of Semaphore class")
+            self._count = ctx.Value('h', value)
             SemLock.__init__(self, kind, value, maxvalue, ctx=ctx)
-            self._count = ctx.Value('L', value) # May be more than 'L' ?
 
         def _acquire(self, *args, **kwargs) -> bool:
             if self._semlock.acquire(*args, **kwargs):
                 with self._count:
-                    util.debug(f"_MacOSXSemaphore: acquire {repr(self)}")
                     self._count.value -= 1
                 return True
             return False
@@ -156,27 +156,24 @@ if sys.platform == 'darwin':
             with self._count:
                 self._count.value += 1
                 self._semlock.release()
-                util.debug(f"_MacOSXSemaphore: release {repr(self)}")
 
         def _release_bounded(self):
-            if self._count.value + 1 > self._semlock.maxvalue:
-                raise ValueError(f"Cannot exceed initial value of"\
-                                f" {self._semlock.maxvalue!a}")
-            self._release()
+            with self._count:
+                if self._count.value + 1 > self._semlock.maxvalue:
+                    raise ValueError(f"Cannot exceed initial value of"\
+                                    f" {self._semlock.maxvalue!a}")
+                self._release()
 
         def _get_value(self) -> int:
             return self._count.value
 
         def _make_methods(self):
             super()._make_methods()
-            util.debug("_MacOSXSemaphore: _make_methods call")
             self.acquire = self._acquire
             if isinstance(self, BoundedSemaphore):
                 self.release = self._release_bounded
             elif isinstance(self, Semaphore):
                 self.release = self._release
-            else:
-                raise RuntimeError("Class dedicated only to Semaphore or BoundedSemaphore OSX")
             self.get_value = self._get_value
 
         def __setstate__(self, state):
