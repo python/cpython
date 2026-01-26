@@ -2217,54 +2217,148 @@ class TestParser(TestParserMixin, TestEmailBase):
             comments=['foo', 'bar', 'bird'],
             ),
 
-        non_printable_in_comment = C(
-            ' (\x0A) bob',
-            value=' bob',
-            defects=[errors.NonPrintableDefect],
-            comments=['\x0A'],
-            ),
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_comment = C(
+                ' ({char}) bob',
+                value=' bob',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['{char}'],
+                ),
 
-        non_printable_in_atext = C(
-            ' (a) a\x0B',
-            value=' a\x0B',
-            defects=[errors.NonPrintableDefect],
-            comments=['a'],
+            non_printable_in_atext = C(
+                ' (a) a{char}',
+                value=' a{char}',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['a'],
+                ),
+
             ),
 
         header_ends_in_comment = C(
             ' (a) bob (a',
             stringified=' (a) bob (a)',
             value=' bob ',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_comment_defect],
             comments=['a', 'a'],
             ),
 
         no_atom = C(
             ' (ab) ',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(errors.HeaderParseError, '(?i)expected'),
             ),
 
-        no_atom_before_special = C(
-            ' (ab) @',
-            exception=(errors.HeaderParseError, '.*'),
+        **for_each_character(RFC_SPECIALS, skip='(')(
+
+            no_atom_before_special = C(
+                ' (ab) {char}',
+                exception=(
+                    errors.HeaderParseError,
+                    '(?i)(?=.*expected)(?=.*{echar})',
+                    ),
+                ),
+
+            atom_ends_at_special = C(
+                ' (foo) bob(bar)  {char}bang',
+                value=' bob ',
+                remainder='{char}bang',
+                comments=['foo', 'bar'],
+                ),
+
             ),
 
-        atom_ends_at_special = C(
-            ' (foo) bob(bar)  @bang',
-            value=' bob ',
-            remainder='@bang',
-            comments=['foo', 'bar'],
+        **for_each_character(RFC_PRINTABLES, skip='(')(
+            atom_ends_at_noncfws = C(
+                'bob  {char}',
+                value='bob ',
+                remainder='{char}',
+                ),
             ),
 
-        atom_ends_at_noncfws = C(
-            'bob  fred',
-            value='bob ',
-            remainder='fred',
-            ),
-
-        rfc2047_atom = C(
+        ew_only = C(
             '=?utf-8?q?=20bob?=',
             stringified=' bob',
+            ),
+
+        ew_and_comments = C(
+            '(a) =?UTF-8?q?bob?= (b)',
+            stringified='(a) bob (b)',
+            value=' bob ',
+            comments=['a', 'b'],
+            ),
+
+        # XXX XXX this should actually be two missing whitespace defects.
+        ew_and_comments_no_ws = C(
+            '(a)=?UTF-8?q?bob?=(b)',
+            stringified='(a)bob(b)',
+            value=' bob ',
+            comments=['a', 'b'],
+            defects=[
+                #missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ),
+
+        # XXX XXX ditto
+        ew_and_empty_comments_no_ws = C(
+            '()=?UTF-8?q?bob?=()',
+            stringified='()bob()',
+            value=' bob ',
+            comments=['', ''],
+            defects=[
+                #missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ),
+
+        # XXX Ideally this should have a defect for the specials.
+        **for_each_character(RFC_SPECIALS)(
+            ew_with_unencoded_special = C(
+                '=?UTF-8?q?bob{char}?= @foo',
+                stringified='bob{char} ',
+                remainder='@foo',
+                ),
+            ),
+
+        ew_after_atom_no_ws = C(
+            'foo@=?UTF-8?q?bob?=',
+            value='foo',
+            remainder='@=?UTF-8?q?bob?=',
+            ),
+
+        # XXX XXX Technically these are correct as is but we're going to fix it
+        # to always decode the ews anyway, because most email software does.
+
+        multiple_ew_no_ws = C(
+            '=?UTF-8?q?foo?==?UTF-8?q?bar?=',
+            stringified='foo',
+            #stringified='foobar',
+            remainder='=?UTF-8?q?bar?=',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                #missing_whitespace_before_ew_defect,
+                ],
+            ),
+
+        ew_in_middle_of_atom_text = C(
+            'foo{=?UTF-8?q?foo?=}{=?UTF-8?q?bar?=}bar',
+            #stringified='foo{foo}{bar}bar',
+            #defects=[
+            #    missing_whitespace_before_ew_defect,
+            #    missing_whitespace_after_ew_defect,
+            #    missing_whitespace_before_ew_defect,
+            #    missing_whitespace_after_ew_defect,
+            #    ],
+            ),
+
+        empty_comments_no_ws = C(
+            ' ()bob() ',
+            value=' bob ',
+            comments=['', ''],
+            ),
+
+        all_non_special_printables_are_allowed = C(
+            f'{"".join(set(RFC_PRINTABLES) - set(RFC_SPECIALS))}@',
+            remainder='@',
             ),
 
         )
