@@ -5508,6 +5508,12 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.8
       Dictionaries are now reversible.
 
+
+.. seealso::
+   :class:`types.MappingProxyType` can be used to create a read-only view
+   of a :class:`dict`.
+
+
 .. admonition:: Thread safety
 
    Creating a dictionary with the :class:`dict` constructor is atomic when the
@@ -5647,11 +5653,6 @@ can be used interchangeably to index the same dictionary entry.
 
    Consider external synchronization when sharing :class:`dict` instances
    across threads.  See :ref:`freethreading-python-howto` for more information.
-
-
-.. seealso::
-   :class:`types.MappingProxyType` can be used to create a read-only view
-   of a :class:`dict`.
 
 
 .. _dict-views:
