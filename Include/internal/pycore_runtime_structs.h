@@ -77,9 +77,7 @@ struct _fileutils_state {
 struct _parser_runtime_state {
 #ifdef Py_DEBUG
     long memo_statistics[_PYPEGEN_NSTATISTICS];
-#ifdef Py_GIL_DISABLED
     PyMutex mutex;
-#endif
 #else
     int _not_used;
 #endif

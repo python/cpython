@@ -19,12 +19,13 @@ extern "C" {
 #ifdef _Py_JIT
 
 typedef _Py_CODEUNIT *(*jit_func)(
-    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
     _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
 );
 
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
+void _PyJIT_Fini(void);
 
 #endif  // _Py_JIT
 

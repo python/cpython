@@ -858,6 +858,8 @@ HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
 LIBOBJS
+REMOTE_DEBUGGING_LIBS
+REMOTE_DEBUGGING_CFLAGS
 LIBZSTD_LIBS
 LIBZSTD_CFLAGS
 LIBLZMA_LIBS
@@ -18188,6 +18190,7 @@ else case e in #(
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }
 _ACEOF
@@ -19807,6 +19810,12 @@ ac_fn_c_check_func "$LINENO" "poll" "ac_cv_func_poll"
 if test "x$ac_cv_func_poll" = xyes
 then :
   printf "%s\n" "#define HAVE_POLL 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ppoll" "ac_cv_func_ppoll"
+if test "x$ac_cv_func_ppoll" = xyes
+then :
+  printf "%s\n" "#define HAVE_PPOLL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "posix_fadvise" "ac_cv_func_posix_fadvise"
@@ -23023,6 +23032,22 @@ printf "%s\n" "yes" >&6; }
         have_libzstd=yes
 fi
 
+if test "x$have_libzstd" = xyes
+then :
+
+  REMOTE_DEBUGGING_CFLAGS="-DHAVE_ZSTD $LIBZSTD_CFLAGS"
+  REMOTE_DEBUGGING_LIBS="$LIBZSTD_LIBS"
+
+else case e in #(
+  e)
+  REMOTE_DEBUGGING_CFLAGS=""
+  REMOTE_DEBUGGING_LIBS=""
+ ;;
+esac
+fi
+
+
+
 
 
 
@@ -23947,6 +23972,9 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 
 fi
 
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
+if test "$ac_cv_libc" != musl
+then :
 
 ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
                #include <sys/prctl.h>
@@ -23967,6 +23995,7 @@ printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 fi
 
 
+fi
 # check for openpty, login_tty, and forkpty
 
 
@@ -31644,8 +31673,8 @@ fi
   if test "x$py_cv_module__remote_debugging" = xyes
 then :
 
-
-
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_CFLAGS=$REMOTE_DEBUGGING_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_LDFLAGS=$REMOTE_DEBUGGING_LIBS$as_nl"
 
 fi
 
