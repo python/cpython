@@ -43,13 +43,10 @@ from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import get_last_error, GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, WinDLL, windll, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
-
-    def GetLastError() -> int:
-        return 42
 
     def get_last_error() -> int:
         return 42
@@ -301,7 +298,7 @@ class WindowsConsole(Console):
         if not ScrollConsoleScreenBuffer(
             OutHandle, scroll_rect, None, destination_origin, fill_info
         ):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
     def _hide_cursor(self):
         self.__write("\x1b[?25l")
@@ -335,7 +332,7 @@ class WindowsConsole(Console):
     def screen_xy(self) -> tuple[int, int]:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
         return info.dwCursorPosition.X, info.dwCursorPosition.Y
 
     def _erase_to_end(self) -> None:
@@ -394,7 +391,7 @@ class WindowsConsole(Console):
         and width of the terminal window in characters."""
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
         return (
             info.srWindow.Bottom - info.srWindow.Top + 1,
             info.srWindow.Right - info.srWindow.Left + 1,
@@ -403,7 +400,7 @@ class WindowsConsole(Console):
     def _getscrollbacksize(self) -> int:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
@@ -411,7 +408,7 @@ class WindowsConsole(Console):
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
         return rec
 
@@ -421,7 +418,7 @@ class WindowsConsole(Console):
         rec = (n * INPUT_RECORD)()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, n, read):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
         return rec, read.value
 
@@ -523,7 +520,7 @@ class WindowsConsole(Console):
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
         if not FlushConsoleInputBuffer(InHandle):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
