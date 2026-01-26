@@ -1419,7 +1419,13 @@ PyCPointerType_from_param_impl(PyObject *type, PyTypeObject *cls,
     /* If we expect POINTER(<type>), but receive a <type> instance, accept
        it by calling byref(<type>).
     */
-    assert(typeinfo->proto);
+    if (typeinfo->proto == NULL) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "cannot convert argument: POINTER _type_ type is not set"
+        );
+        return NULL;
+    }
     switch (PyObject_IsInstance(value, typeinfo->proto)) {
     case 1:
         Py_INCREF(value); /* _byref steals a refcount */
