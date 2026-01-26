@@ -2664,7 +2664,7 @@ array_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
     }
 }
 
-static const void *emptybuf = "";
+static const _Py_ALIGNED_DEF(ALIGNOF_MAX_ALIGN_T, char) emptybuf[] = "";
 
 
 static int
