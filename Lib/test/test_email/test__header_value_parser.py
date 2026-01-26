@@ -2150,10 +2150,57 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_atom
 
-    def test_get_atom_only(self):
-        atom = self._test_get_x(parser.get_atom,
-            'bob', 'bob', 'bob', [], '')
+    @params
+    def test_get_atom(self, s, *args, **kw):
+        atom = self._test_parse(parser.get_atom, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atom, parser.Atom)
         self.assertEqual(atom.token_type, 'atom')
+        self.verify_terminal_types(atom, 'atext', 'vtext', 'ptext', 'fws')
+
+    # If there is no remainder a cfws test string should be valid as a atom
+    # prefix or suffix, with a few exceptions that test for what happens
+    # if closing parens are missing.
+    @params_map(with_namelist=True)
+    def adapt_get_cfws_tests_for_get_atom(
+            nl,
+            s,
+            *args,
+            stringified=None,
+            remainder=None,
+            **kw,
+        ):
+        if remainder or nl.has_any(
+                'multiple_mesting_missing_two_right_parens',
+                'no_right_paren_after_non_ws',
+                'no_right_paren_after_ws',
+                'header_ends_in_comment',
+            ):
+            return
+        new_s = f'{s} foo {s}'
+        if stringified:
+            kw['stringified'] = f'{stringified} foo {stringified}'
+        kw['value'] = ' foo '
+        for k in ('comments', 'commenttree', 'defects'):
+            if (v := kw.get(k)):
+                kw[k] = v * 2
+        yield 'adapted_from_get_cfws', C(new_s, **kw)
+
+    params_test_get_atom = old_api_only(
+
+        adapt_get_cfws_tests_for_get_atom(params_test_get_cfws),
+
+        # get_atom should pass all the get_atext tests except for those
+        # involving leading or trailing whitespace.
+        include_unless(
+            lambda n, s, *a, remainder='', **k:
+                s.startswith(tuple(CFWS_LEADER))
+                or remainder.startswith(tuple(CFWS_LEADER)),
+            label='from_test_get_atext',
+            )(params_test_get_atext),
+
+        )
 
     def test_get_atom_with_wsp(self):
         self._test_get_x(parser.get_atom,
