@@ -5,7 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        If the issue is trivial, for example a typo, an issue is not necessary.
+        > [!IMPORTANT]
+        > If the issue is trivial, for example a typo, an issue is not necessary.
   - type: textarea
     attributes:
       label: "Documentation"
