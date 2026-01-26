@@ -1019,10 +1019,10 @@ or code that creates modules dynamically.
    Set the docstring for *module* to *docstring*.
    This function is called automatically when creating a module from
    ``PyModuleDef`` (such as when using :ref:`multi-phase-initialization`,
-   ``PyModule_Create``, or ``PyModule_FromDefAndSpec``). Returns ``0`` on
-   success and ``-1`` on failure. Failure can happen if creating a Python string
-   from *docstring* fails or if setting the ``__doc__`` attribute on *module*
-   fails.
+   ``PyModule_Create``, or ``PyModule_FromDefAndSpec``).
+   
+   Return ``0`` on success.
+   Return ``-1`` with an exception set on error.
 
    .. versionadded:: 3.5
 
