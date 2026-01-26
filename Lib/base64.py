@@ -26,6 +26,8 @@ __all__ = [
     ]
 
 
+_NOT_SPECIFIED = ['NOT SPECIFIED']
+
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
 
 def _bytes_from_decode_data(s):
@@ -62,7 +64,7 @@ def b64encode(s, altchars=None, *, wrapcol=0):
     return encoded
 
 
-def b64decode(s, altchars=None, validate=False):
+def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPECIFIED):
     """Decode the Base64 encoded bytes-like object or ASCII string s.
 
     Optional altchars must be a bytes-like object or ASCII string of length 2
@@ -72,38 +74,64 @@ def b64decode(s, altchars=None, validate=False):
     The result is returned as a bytes object.  A binascii.Error is raised if
     s is incorrectly padded.
 
-    If validate is false (the default), characters that are neither in the
-    normal base-64 alphabet nor the alternative alphabet are discarded prior
-    to the padding check.  If validate is true, these non-alphabet characters
-    in the input result in a binascii.Error.
+    If ignorechars is specified, it should be a byte string containing
+    characters to ignore from the input.  The default value of validate is
+    True if ignorechars is specified, False otherwise.
+
+    If validate is false, characters that are neither in the normal base-64
+    alphabet nor the alternative alphabet are discarded prior to the
+    padding check.  If validate is true, these non-alphabet characters in
+    the input result in a binascii.Error if they are not in ignorechars.
     For more information about the strict base64 check, see:
 
     https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
     """
     s = _bytes_from_decode_data(s)
+    if validate is _NOT_SPECIFIED:
+        validate = ignorechars is not _NOT_SPECIFIED
+    if ignorechars is _NOT_SPECIFIED:
+        ignorechars = b''
     badchar = None
+    badchar_strict = False
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
         if len(altchars) != 2:
             raise ValueError(f'invalid altchars: {altchars!r}')
         for b in b'+/':
             if b not in altchars and b in s:
-                badchar = b
-                break
+                if badchar is None:
+                    badchar = b
+                if not validate:
+                    break
+                if not isinstance(ignorechars, (bytes, bytearray)):
+                    ignorechars = memoryview(ignorechars).cast('B')
+                if b not in ignorechars:
+                    badchar_strict = True
+                    badchar = b
+                    break
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    result = binascii.a2b_base64(s, strict_mode=validate)
+    result = binascii.a2b_base64(s, strict_mode=validate,
+                                 ignorechars=ignorechars)
     if badchar is not None:
         import warnings
-        if validate:
+        if badchar_strict:
             warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
                           f'with altchars={altchars!r} and validate=True '
                           f'will be an error in future Python versions',
                           DeprecationWarning, stacklevel=2)
         else:
-            warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
-                          f'with altchars={altchars!r} and validate=False '
-                          f'will be discarded in future Python versions',
-                          FutureWarning, stacklevel=2)
+            ignorechars = bytes(ignorechars)
+            if ignorechars:
+                warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                              f'with altchars={altchars!r} '
+                              f'and ignorechars={ignorechars!r} '
+                              f'will be discarded in future Python versions',
+                              FutureWarning, stacklevel=2)
+            else:
+                warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                              f'with altchars={altchars!r} and validate=False '
+                              f'will be discarded in future Python versions',
+                              FutureWarning, stacklevel=2)
     return result
 
 

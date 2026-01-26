@@ -444,12 +444,17 @@ base64
 * Added the *wrapcol* parameter in :func:`~base64.b64encode`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
+* Added the *ignorechars* parameter in :func:`~base64.b64decode`.
+  (Contributed by Serhiy Storchaka in :gh:`144001`.)
 
 binascii
 --------
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+* Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`144001`.)
 
 
 calendar

@@ -1797,6 +1797,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ident));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(identity_hint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignore));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignorechars));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(imag));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(implieslink));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(importlib));
