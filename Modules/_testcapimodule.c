@@ -2447,17 +2447,17 @@ test_pyset_add_exact_set(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     if (PySet_Add(set, one) < 0) {
         Py_DECREF(set);
-        return raiseTestError(self, "test_pyset_add",
+        return raiseTestError(self, "test_pyset_add_exact_set",
                               "PySet_Add to empty set failed");
     }
     if (PySet_Size(set) != 1) {
         Py_DECREF(set);
-        return raiseTestError(self, "test_pyset_add",
+        return raiseTestError(self, "test_pyset_add_exact_set",
                               "set size should be 1 after adding one element");
     }
     if (PySet_Contains(set, one) != 1) {
         Py_DECREF(set);
-        return raiseTestError(self, "test_pyset_add",
+        return raiseTestError(self, "test_pyset_add_exact_set",
                               "set should contain the added element");
     }
     Py_DECREF(set);
@@ -2475,13 +2475,13 @@ test_pyset_add_exact_set(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (PySet_Add(set, unhashable) != -1) {
         Py_DECREF(unhashable);
         Py_DECREF(set);
-        return raiseTestError(self, "test_pyset_add",
+        return raiseTestError(self, "test_pyset_add_exact_set",
                               "PySet_Add with unhashable should fail");
     }
     if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
         Py_DECREF(unhashable);
         Py_DECREF(set);
-        return raiseTestError(self, "test_pyset_add",
+        return raiseTestError(self, "test_pyset_add_exact_set",
                               "PySet_Add with unhashable should raise TypeError");
     }
     PyErr_Clear();

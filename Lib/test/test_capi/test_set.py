@@ -1,4 +1,3 @@
-import gc
 import unittest
 
 from test.support import import_helper
@@ -222,33 +221,12 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
 
 
 class TestPySet_Add(unittest.TestCase):
-    def test_pyset_add(self):
-        # Run C-level tests for PySet_Add
-        _testcapi.test_pyset_add()
+    def test_pyset_add_exact_set(self):
+        _testcapi.test_pyset_add_exact_set()
 
-    def test_set(self):
-        # Test the PySet_Add c-api for set objects
-        s = set()
-        self.assertEqual(_testlimitedcapi.pyset_add(s, 1), {1})
-        self.assertRaises(TypeError, _testlimitedcapi.pyset_add, s, [])
+    def test_pyset_add_frozenset(self):
+        _testcapi.test_pyset_add_frozenset()
 
-    def test_frozenset(self):
-        # Test the PySet_Add c-api for frozenset objects
-        self.assertEqual(_testlimitedcapi.pyset_add(frozenset(), 1), frozenset([1]))
-        frozen_set = frozenset()
-        # if the argument to PySet_Add is a frozenset that is not uniquely references an error is generated
-        self.assertRaises(SystemError, _testlimitedcapi.pyset_add, frozen_set, 1)
-
-    def test_frozenset_gc_tracking(self):
-        # see gh-140234
-        class TrackedHashableClass():
-            pass
-
-        a = TrackedHashableClass()
-        result_set = _testlimitedcapi.pyset_add(frozenset(), 1)
-        self.assertFalse(gc.is_tracked(result_set))
-        result_set = _testlimitedcapi.pyset_add(frozenset(), a)
-        self.assertTrue(gc.is_tracked(result_set))
 
 
 class TestInternalCAPI(BaseSetTests, unittest.TestCase):
