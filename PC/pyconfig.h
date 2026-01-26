@@ -511,9 +511,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define this if your time.h defines altzone */
 /* #define HAVE_ALTZONE */
 
-/* Define if you have the putenv function.  */
-#define HAVE_PUTENV
-
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES
 
