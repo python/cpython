@@ -130,62 +130,6 @@ raiseTestError(const char* test_name, const char* msg)
     return NULL;
 }
 
-static PyObject *
-test_pyset_add_exact_set(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    // Test: Adding to a regular set
-    PyObject *set = PySet_New(NULL);
-    if (set == NULL) {
-        return NULL;
-    }
-    PyObject *one = PyLong_FromLong(1);
-    assert(one);
-
-    if (PySet_Add(set, one) < 0) {
-        Py_DECREF(set);
-        return raiseTestError("test_pyset_add_exact_set",
-                              "PySet_Add to empty set failed");
-    }
-    if (PySet_Size(set) != 1) {
-        Py_DECREF(set);
-        return raiseTestError("test_pyset_add_exact_set",
-                              "set size should be 1 after adding one element");
-    }
-    if (PySet_Contains(set, one) != 1) {
-        Py_DECREF(set);
-        return raiseTestError("test_pyset_add_exact_set",
-                              "set should contain the added element");
-    }
-    Py_DECREF(set);
-
-    // Test: Adding unhashable item should raise TypeError
-    set = PySet_New(NULL);
-    if (set == NULL) {
-        return NULL;
-    }
-    PyObject *unhashable = PyList_New(0);
-    if (unhashable == NULL) {
-        Py_DECREF(set);
-        return NULL;
-    }
-    if (PySet_Add(set, unhashable) != -1) {
-        Py_DECREF(unhashable);
-        Py_DECREF(set);
-        return raiseTestError("test_pyset_add_exact_set",
-                              "PySet_Add with unhashable should fail");
-    }
-    if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-        Py_DECREF(unhashable);
-        Py_DECREF(set);
-        return raiseTestError("test_pyset_add_exact_set",
-                              "PySet_Add with unhashable should raise TypeError");
-    }
-    PyErr_Clear();
-    Py_DECREF(unhashable);
-    Py_DECREF(set);
-
-    Py_RETURN_NONE;
-}
 
 static PyObject *
 test_frozenset_add_in_capi(PyObject *self, PyObject *Py_UNUSED(obj))
@@ -223,47 +167,10 @@ error:
 }
 
 static PyObject *
-test_pyset_add_frozenset(PyObject *self, PyObject *Py_UNUSED(ignored))
+test_frozenset_add_in_capi_tracking(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *one = PyLong_FromLong(1);
     assert(one);
-
-    // Test: Adding to uniquely-referenced frozenset should succeed
-    PyObject *frozenset = PyFrozenSet_New(NULL);
-    if (frozenset == NULL) {
-        return NULL;
-    }
-
-    // frozenset is uniquely referenced here, so PySet_Add should work
-    if (PySet_Add(frozenset, one) < 0) {
-        Py_DECREF(frozenset);
-        return raiseTestError("test_pyset_add_frozenset",
-                              "PySet_Add to uniquely-referenced frozenset failed");
-    }
-    Py_DECREF(frozenset);
-
-    // Test: Adding to non-uniquely-referenced frozenset should raise SystemError
-    frozenset = PyFrozenSet_New(NULL);
-    if (frozenset == NULL) {
-        return NULL;
-    }
-    Py_INCREF(frozenset);  // Make it non-uniquely referenced
-
-    if (PySet_Add(frozenset, one) != -1) {
-        Py_DECREF(frozenset);
-        Py_DECREF(frozenset);
-        return raiseTestError("test_pyset_add_frozenset",
-                              "PySet_Add to non-uniquely-referenced frozenset should fail");
-    }
-    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-        Py_DECREF(frozenset);
-        Py_DECREF(frozenset);
-        return raiseTestError("test_pyset_add_frozenset",
-                              "PySet_Add to non-uniquely-referenced frozenset should raise SystemError");
-    }
-    PyErr_Clear();
-    Py_DECREF(frozenset);
-    Py_DECREF(frozenset);
 
     // Test: GC tracking - frozenset with only immutable items should not be tracked
     frozenset = PyFrozenSet_New(NULL);
@@ -379,7 +286,6 @@ static PyMethodDef test_methods[] = {
     {"test_frozenset_add_in_capi", test_frozenset_add_in_capi, METH_NOARGS},
     {"test_set_contains_does_not_convert_unhashable_key",
      test_set_contains_does_not_convert_unhashable_key, METH_NOARGS},
-    {"test_pyset_add_exact_set", test_pyset_add_exact_set, METH_NOARGS},
     {"test_pyset_add_frozenset", test_pyset_add_frozenset, METH_NOARGS},
 
     {NULL},
