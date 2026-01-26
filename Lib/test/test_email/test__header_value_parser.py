@@ -2200,65 +2200,63 @@ class TestParser(TestParserMixin, TestEmailBase):
             label='from_test_get_atext',
             )(params_test_get_atext),
 
-        )
-
-    def test_get_atom_with_wsp(self):
-        self._test_get_x(parser.get_atom,
+        test_get_atom_with_wsp = C(
             '\t bob  ', '\t bob  ', ' bob ', [], '')
+            ,
 
-    def test_get_atom_with_comments_and_wsp(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (foo) bob(bar)', ' (foo) bob(bar)', ' bob ', [], '')
-        self.assertEqual(atom[0][1].content, 'foo')
-        self.assertEqual(atom[2][0].content, 'bar')
+        test_get_atom_with_comments_and_wsp = C(
+            ' (foo) bob(bar)', ' (foo) bob(bar)', ' bob ', [], '',
+            comments=['foo', 'bar'],
+            ),
 
-    def test_get_atom_with_multiple_comments(self):
-        atom = self._test_get_x(parser.get_atom,
+        test_get_atom_with_multiple_comments = C(
             ' (foo) (bar) bob(bird)', ' (foo) (bar) bob(bird)', ' bob ',
-                [], '')
-        self.assertEqual(atom[0].comments, ['foo', 'bar'])
-        self.assertEqual(atom[2].comments, ['bird'])
+                [], '',
+            comments=['foo', 'bar', 'bird'],
+            ),
 
-    def test_get_atom_non_printable_in_comment(self):
-        atom = self._test_get_x(parser.get_atom,
+        test_get_atom_non_printable_in_comment = C(
             ' (\x0A) bob', ' (\x0A) bob', ' bob',
-                [errors.NonPrintableDefect], '')
-        self.assertEqual(atom[0].comments, ['\x0A'])
+                [errors.NonPrintableDefect], '',
+            comments=['\x0A'],
+            ),
 
-    def test_get_atom_non_printable_in_atext(self):
-        atom = self._test_get_x(parser.get_atom,
+        test_get_atom_non_printable_in_atext = C(
             ' (a) a\x0B', ' (a) a\x0B', ' a\x0B',
-                [errors.NonPrintableDefect], '')
-        self.assertEqual(atom[0].comments, ['a'])
+                [errors.NonPrintableDefect], '',
+            comments=['a'],
+            ),
 
-    def test_get_atom_header_ends_in_comment(self):
-        atom = self._test_get_x(parser.get_atom,
+        test_get_atom_header_ends_in_comment = C(
             ' (a) bob (a', ' (a) bob (a)', ' bob ',
-                [errors.InvalidHeaderDefect], '')
-        self.assertEqual(atom[0].comments, ['a'])
-        self.assertEqual(atom[2].comments, ['a'])
+                [errors.InvalidHeaderDefect], '',
+            comments=['a', 'a'],
+            ),
 
-    def test_get_atom_no_atom(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_atom(' (ab) ')
+        test_get_atom_no_atom = C(
+                            ' (ab) ',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_atom_no_atom_before_special(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_atom(' (ab) @')
+        test_get_atom_no_atom_before_special = C(
+                            ' (ab) @',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_atom_atom_ends_at_special(self):
-        atom = self._test_get_x(parser.get_atom,
-            ' (foo) bob(bar)  @bang', ' (foo) bob(bar)  ', ' bob ', [], '@bang')
-        self.assertEqual(atom[0].comments, ['foo'])
-        self.assertEqual(atom[2].comments, ['bar'])
+        test_get_atom_atom_ends_at_special = C(
+            ' (foo) bob(bar)  @bang', ' (foo) bob(bar)  ', ' bob ', [], '@bang',
+            comments=['foo', 'bar'],
+            ),
 
-    def test_get_atom_atom_ends_at_noncfws(self):
-        self._test_get_x(parser.get_atom,
+        test_get_atom_atom_ends_at_noncfws = C(
             'bob  fred', 'bob  ', 'bob ', [], 'fred')
+            ,
 
-    def test_get_atom_rfc2047_atom(self):
-        self._test_get_x(parser.get_atom,
+        test_get_atom_rfc2047_atom = C(
             '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
+            ,
+
+        )
 
     # get_dot_atom_text
 
