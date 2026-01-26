@@ -1749,23 +1749,29 @@ def get_cfws(value, start):
             )
     return cfws, start
 
-def get_quoted_string(value):
-    """quoted-string = [CFWS] <bare-quoted-string> [CFWS]
+@_deprecate_old_api
+def get_quoted_string(value, start):
+    """quoted-string = [CFWS] bare-quoted-string [CFWS]
 
-    'bare-quoted-string' is an intermediate class defined by this
-    parser and not by the RFC grammar.  It is the quoted string
-    without any attached CFWS.
+    Return a QuotedString containing the leading CFWSList (if any), the
+    BareQuotedString, and the trailing CFWSList (if any), plus the index of the
+    character after the parsed text (or the len of value if there is no text
+    left unparsed).
+
+    If no bare-quoted-string is found raise a HeaderParseError.
+
     """
     quoted_string = QuotedString()
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         quoted_string.append(token)
-    token, value = get_bare_quoted_string(value)
+    token, start = get_bare_quoted_string(value, start)
     quoted_string.append(token)
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         quoted_string.append(token)
-    return quoted_string, value
+    return quoted_string, start
 
 def get_atom(value):
     """atom = [CFWS] 1*atext [CFWS]

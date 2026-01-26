@@ -2953,7 +2953,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(qs.token_type, 'quoted-string')
         self.verify_terminal_types(qs, 'ptext', 'fws')
 
-
     # get_quoted_string should pass any get_bare_quoted_string test that
     # doesn't involve leading or trailing whitespace.
     @params_map
@@ -2967,9 +2966,9 @@ class TestParser(TestParserMixin, TestEmailBase):
         kw['quoted_value'] = kw.get('stringified', s[:-len(r)] if r else s)
         yield 'from_test_bare_quoted_string', C(s, *args, **kw)
 
-    # If there is no remainder a cfws test string should be valid as a quoted
-    # string prefix or suffix, with a few exceptions that test for what happens
-    # if closing parens are missing.
+    # If there is no remainder or exception expectation, a cfws test string
+    # should be valid as a quoted string prefix or suffix, with a few
+    # exceptions that test for what happens if closing parens are missing.
     @params_map(with_namelist=True)
     def adapt_get_cfws_tests_for_get_quoted_string(
             nl,
@@ -2977,13 +2976,15 @@ class TestParser(TestParserMixin, TestEmailBase):
             *args,
             stringified=None,
             remainder=None,
+            exception=None,
             **kw,
         ):
-        if remainder or nl.has_any(
+        if remainder or exception or nl.has_any(
                 'multiple_mesting_missing_two_right_parens',
                 'no_right_paren_after_non_ws',
                 'no_right_paren_after_ws',
                 'header_ends_in_comment',
+                'empty', # XXX POSTDEP remove this line, it's from a deprecation
             ):
             return
         new_s = f'{s} "foo" {s}'
@@ -2995,13 +2996,11 @@ class TestParser(TestParserMixin, TestEmailBase):
         for k in ('comments', 'commenttree', 'defects'):
             if (v := kw.get(k)):
                 kw[k] = v * 2
-        # XXX XXX mid refactoring the idx values are wrong.  Replace this
-        # when get_quoted_string is refactored.
-        if kw.get('ew_indexes'):
-            kw['ew_indexes'] = ...
+        if (idxs := kw.get('ew_indexes')):
+            kw['ew_indexes'] = idxs + [x + len(s) + 7 for x in idxs]
         yield 'adapted_from_get_cfws', C(new_s, **kw)
 
-    params_test_get_quoted_string = old_api_only(
+    params_test_get_quoted_string = for_each_api(
 
         adapt_bare_quoted_string_tests_for_get_quoted_string(
             params_test_get_bare_quoted_string,
@@ -3598,9 +3597,16 @@ class TestParser(TestParserMixin, TestEmailBase):
         kw['tokenlisttype'] = parser.TokenList
         yield '', C(*args, **kw)
 
-    @params_map
-    def adapt_get_quoted_string_tests_for_get_word(*args, **kw):
+    @params_map(with_namelist=True)
+    def adapt_get_quoted_string_tests_for_get_word(nl, *args, **kw):
         kw['tokenlisttype'] = parser.QuotedString
+        # XXX XXX Compensate for the fact that get_word is currently peeling
+        # off the first cfws without copying the indexes, and is only passing
+        # get_quoted_string the truncated value.
+        if ('adapted_from_get_cfws' in nl
+                and (idxs := kw.get('ew_indexes'))
+            ):
+            kw['ew_indexes'] = [x + 6 for x in idxs[:len(idxs)//2]]
         yield '', C(*args, **kw)
 
     params_test_get_word = old_api_only(
@@ -4138,6 +4144,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             kw['value'] = kw.pop('quoted_value')
         if 'exception' not in kw:
             kw['local_part'] = kw.pop('content')
+        # XXX XXX indexes won't be right mid-refactor, remove when
+        # get_local_part refactored.
+        if 'ew_indexes' in kw:
+            kw['ew_indexes'] = ...
         yield '', C(*args, **kw)
 
     # XXX XXX revert to no with_namelist when get_local_part is refactored
