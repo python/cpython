@@ -470,6 +470,16 @@ class RangeTest(unittest.TestCase):
         it.__setstate__(2**64 - 7)
         self.assertEqual(list(it), [12, 10])
 
+    def test_iterator_invalid_setstate(self):
+        for invalid_value in (1.0, ""):
+            ranges = (('rangeiter', range(10, 100, 2)),
+                      ('longrangeiter', range(10, 2**65, 2)))
+            for rng_name, rng in ranges:
+                with self.subTest(invalid_value=invalid_value, range=rng_name):
+                    it = iter(rng)
+                    with self.assertRaises(TypeError):
+                        it.__setstate__(invalid_value)
+
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
         # because the range validation step was eating the exception

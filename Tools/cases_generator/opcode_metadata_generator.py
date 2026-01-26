@@ -53,9 +53,12 @@ FLAGS = [
     "ESCAPES",
     "EXIT",
     "PURE",
+    "SYNC_SP",
     "ERROR_NO_POP",
     "NO_SAVE_IP",
     "PERIODIC",
+    "UNPREDICTABLE_JUMP",
+    "NEEDS_GUARD_IP",
 ]
 
 
@@ -147,7 +150,7 @@ def generate_instruction_formats(analysis: Analysis, out: CWriter) -> None:
 
 
 def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
-    out.emit("extern const uint8_t _PyOpcode_Deopt[256];\n")
+    out.emit("PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Deopt[256] = {\n")
     deopts: list[tuple[str, str]] = []
@@ -170,7 +173,7 @@ def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
 
 
 def generate_cache_table(analysis: Analysis, out: CWriter) -> None:
-    out.emit("extern const uint8_t _PyOpcode_Caches[256];\n")
+    out.emit("PyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Caches[256] = {\n")
     for inst in analysis.instructions.values():
@@ -186,7 +189,7 @@ def generate_cache_table(analysis: Analysis, out: CWriter) -> None:
 
 def generate_name_table(analysis: Analysis, out: CWriter) -> None:
     table_size = 256 + len(analysis.pseudos)
-    out.emit(f"extern const char *_PyOpcode_OpName[{table_size}];\n")
+    out.emit(f"PyAPI_DATA(const char) *_PyOpcode_OpName[{table_size}];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
     names = list(analysis.instructions) + list(analysis.pseudos)
@@ -201,10 +204,10 @@ def generate_metadata_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("struct opcode_metadata {\n")
     out.emit("uint8_t valid_entry;\n")
     out.emit("uint8_t instr_format;\n")
-    out.emit("uint16_t flags;\n")
+    out.emit("uint32_t flags;\n")
     out.emit("};\n\n")
     out.emit(
-        f"extern const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}];\n"
+        f"PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[{table_size}];\n"
     )
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(

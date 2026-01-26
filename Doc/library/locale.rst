@@ -48,8 +48,19 @@ The :mod:`locale` module defines the following exception and functions:
    If *locale* is omitted or ``None``, the current setting for *category* is
    returned.
 
+   Example::
+
+      >>> import locale
+      >>> loc = locale.setlocale(locale.LC_ALL)  # get current locale
+      # use German locale; name and availability varies with platform
+      >>> locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+      >>> locale.strcoll('f\xe4n', 'foo')  # compare a string containing an umlaut
+      >>> locale.setlocale(locale.LC_ALL, '')   # use user's preferred locale
+      >>> locale.setlocale(locale.LC_ALL, 'C')  # use default (C) locale
+      >>> locale.setlocale(locale.LC_ALL, loc)  # restore saved locale
+
    :func:`setlocale` is not thread-safe on most systems. Applications typically
-   start with a call of ::
+   start with a call of::
 
       import locale
       locale.setlocale(locale.LC_ALL, '')
@@ -359,8 +370,6 @@ The :mod:`locale` module defines the following exception and functions:
    determined.
    The "C" locale is represented as ``(None, None)``.
 
-   .. deprecated-removed:: 3.11 3.15
-
 
 .. function:: getlocale(category=LC_CTYPE)
 
@@ -524,8 +533,8 @@ The :mod:`locale` module defines the following exception and functions:
    SSH connections.
 
    Python doesn't internally use locale-dependent character transformation functions
-   from ``ctype.h``. Instead, an internal ``pyctype.h`` provides locale-independent
-   equivalents like :c:macro:`!Py_TOLOWER`.
+   from ``ctype.h``. Instead, ``pyctype.h`` provides locale-independent
+   equivalents like :c:macro:`Py_TOLOWER`.
 
 
 .. data:: LC_COLLATE
@@ -578,18 +587,6 @@ The :mod:`locale` module defines the following exception and functions:
 
    This is a symbolic constant used for different values returned by
    :func:`localeconv`.
-
-
-Example::
-
-   >>> import locale
-   >>> loc = locale.getlocale()  # get current locale
-   # use German locale; name might vary with platform
-   >>> locale.setlocale(locale.LC_ALL, 'de_DE')
-   >>> locale.strcoll('f\xe4n', 'foo')  # compare a string containing an umlaut
-   >>> locale.setlocale(locale.LC_ALL, '')   # use user's preferred locale
-   >>> locale.setlocale(locale.LC_ALL, 'C')  # use default (C) locale
-   >>> locale.setlocale(locale.LC_ALL, loc)  # restore saved locale
 
 
 Background, details, hints, tips and caveats

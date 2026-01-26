@@ -506,7 +506,7 @@ Summation and product functions
 
    Roughly equivalent to::
 
-       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q, strict=True)))
 
    .. versionadded:: 3.8
 
@@ -781,7 +781,7 @@ the following functions from the :mod:`math.integer` module:
    Floats with integral values (like ``5.0``) are no longer accepted in the
    :func:`factorial` function.
 
-.. deprecated:: next
+.. deprecated:: 3.15
    These aliases are :term:`soft deprecated` in favor of the
    :mod:`math.integer` functions.
 

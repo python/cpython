@@ -110,6 +110,7 @@
       <PreprocessorDefinitions Condition="'$(UseTailCallInterp)' == 'true'">_Py_TAIL_CALL_INTERP=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(WITH_COMPUTED_GOTOS)' != ''">HAVE_COMPUTED_GOTOS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DisableRemoteDebug)' != 'true'">Py_REMOTE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(StackRefDebug)' == 'true'">Py_STACKREF_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -276,6 +277,7 @@
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
+    <ClInclude Include="..\Include\internal\pycore_mmap.h" />
     <ClInclude Include="..\Include\internal\pycore_modsupport.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
@@ -598,7 +600,9 @@
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\bootstrap_hash.c" />
     <ClCompile Include="..\Python\brc.c" />
-    <ClCompile Include="..\Python\ceval.c" />
+    <ClCompile Include="..\Python\ceval.c">
+      <AdditionalOptions Condition="'$(UseTailCallInterp)' == 'true' and $(PlatformToolset) != 'ClangCL'">/std:clatest %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\codegen.c" />
     <ClCompile Include="..\Python\compile.c" />
@@ -658,6 +662,7 @@
     <ClCompile Include="..\Python\pymath.c" />
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\pystate.c" />
+    <ClCompile Include="..\Python\pystats.c" />
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />

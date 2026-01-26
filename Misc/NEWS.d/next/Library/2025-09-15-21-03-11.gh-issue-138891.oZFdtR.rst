@@ -1,2 +1,0 @@
-Fix ``SyntaxError`` when ``inspect.get_annotations(f, eval_str=True)`` is
-called on a function annotated with a :pep:`646` ``star_expression``

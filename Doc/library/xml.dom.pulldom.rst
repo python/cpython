@@ -74,7 +74,7 @@ given point) or to make use of the :func:`DOMEventStream.expandNode` method
 and switch to DOM-related processing.
 
 
-.. class:: PullDom(documentFactory=None)
+.. class:: PullDOM(documentFactory=None)
 
    Subclass of :class:`xml.sax.handler.ContentHandler`.
 

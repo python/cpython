@@ -563,7 +563,6 @@ def warn_explicit(message, category, filename, lineno,
     else:
         text = message
         message = category(message)
-    modules = None
     key = (text, category, lineno)
     with _wm._lock:
         if registry is None:
@@ -645,6 +644,9 @@ class WarningMessage(object):
         return ("{message : %r, category : %r, filename : %r, lineno : %s, "
                     "line : %r}" % (self.message, self._category_name,
                                     self.filename, self.lineno, self.line))
+
+    def __repr__(self):
+        return f'<{type(self).__qualname__} {self}>'
 
 
 class catch_warnings(object):

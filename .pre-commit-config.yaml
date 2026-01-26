@@ -1,7 +1,11 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.2
+    rev: v0.14.10
     hooks:
+      - id: ruff-check
+        name: Run Ruff (lint) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple/
       - id: ruff-check
         name: Run Ruff (lint) on Doc/
         args: [--exit-non-zero-on-fix]
@@ -31,20 +35,24 @@ repos:
         args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
         files: ^Tools/wasm/
       - id: ruff-format
+        name: Run Ruff (format) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple
+      - id: ruff-format
         name: Run Ruff (format) on Doc/
-        args: [--check]
+        args: [--exit-non-zero-on-fix]
         files: ^Doc/
       - id: ruff-format
         name: Run Ruff (format) on Tools/build/check_warnings.py
-        args: [--check, --config=Tools/build/.ruff.toml]
+        args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/check_warnings.py
       - id: ruff-format
         name: Run Ruff (format) on Tools/wasm/
-        args: [--check, --config=Tools/wasm/.ruff.toml]
+        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
         files: ^Tools/wasm/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.9.0
+    rev: 25.12.0
     hooks:
       - id: black
         name: Run Black on Tools/jit/
@@ -75,24 +83,24 @@ repos:
         files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.34.0
+    rev: 0.36.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
       - id: check-readthedocs
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: v1.7.9
     hooks:
       - id: actionlint
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.14.1
+    rev: v1.19.0
     hooks:
       - id: zizmor
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v1.0.0
+    rev: v1.0.2
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]

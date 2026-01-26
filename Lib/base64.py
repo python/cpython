@@ -45,14 +45,17 @@ def _bytes_from_decode_data(s):
 
 # Base64 encoding/decoding uses binascii
 
-def b64encode(s, altchars=None):
+def b64encode(s, altchars=None, *, wrapcol=0):
     """Encode the bytes-like object s using Base64 and return a bytes object.
 
     Optional altchars should be a byte string of length 2 which specifies an
     alternative alphabet for the '+' and '/' characters.  This allows an
     application to e.g. generate url or filesystem safe Base64 strings.
+
+    If wrapcol is non-zero, insert a newline (b'\\n') character after at most
+    every wrapcol characters.
     """
-    encoded = binascii.b2a_base64(s, newline=False)
+    encoded = binascii.b2a_base64(s, wrapcol=wrapcol, newline=False)
     if altchars is not None:
         assert len(altchars) == 2, repr(altchars)
         return encoded.translate(bytes.maketrans(b'+/', altchars))
@@ -69,20 +72,39 @@ def b64decode(s, altchars=None, validate=False):
     The result is returned as a bytes object.  A binascii.Error is raised if
     s is incorrectly padded.
 
-    If validate is False (the default), characters that are neither in the
+    If validate is false (the default), characters that are neither in the
     normal base-64 alphabet nor the alternative alphabet are discarded prior
-    to the padding check.  If validate is True, these non-alphabet characters
+    to the padding check.  If validate is true, these non-alphabet characters
     in the input result in a binascii.Error.
     For more information about the strict base64 check, see:
 
     https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
     """
     s = _bytes_from_decode_data(s)
+    badchar = None
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
-        assert len(altchars) == 2, repr(altchars)
+        if len(altchars) != 2:
+            raise ValueError(f'invalid altchars: {altchars!r}')
+        for b in b'+/':
+            if b not in altchars and b in s:
+                badchar = b
+                break
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    return binascii.a2b_base64(s, strict_mode=validate)
+    result = binascii.a2b_base64(s, strict_mode=validate)
+    if badchar is not None:
+        import warnings
+        if validate:
+            warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                          f'with altchars={altchars!r} and validate=True '
+                          f'will be an error in future Python versions',
+                          DeprecationWarning, stacklevel=2)
+        else:
+            warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                          f'with altchars={altchars!r} and validate=False '
+                          f'will be discarded in future Python versions',
+                          FutureWarning, stacklevel=2)
+    return result
 
 
 def standard_b64encode(s):
@@ -127,8 +149,19 @@ def urlsafe_b64decode(s):
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
     """
     s = _bytes_from_decode_data(s)
+    badchar = None
+    for b in b'+/':
+        if b in s:
+            badchar = b
+            break
     s = s.translate(_urlsafe_decode_translation)
-    return b64decode(s)
+    result = binascii.a2b_base64(s, strict_mode=False)
+    if badchar is not None:
+        import warnings
+        warnings.warn(f'invalid character {chr(badchar)!a} in URL-safe Base64 data '
+                      f'will be discarded in future Python versions',
+                      FutureWarning, stacklevel=2)
+    return result
 
 
 
@@ -193,7 +226,7 @@ def _b32encode(alphabet, s):
         encoded[-3:] = b'==='
     elif leftover == 4:
         encoded[-1:] = b'='
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
     # Delay the initialization of the table to not waste memory
@@ -238,7 +271,7 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
         last = acc.to_bytes(5)  # big endian
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
-    return bytes(decoded)
+    return decoded.take_bytes()
 
 
 def b32encode(s):
@@ -327,9 +360,8 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
     feature is not supported by the "standard" Adobe encoding.
 
-    wrapcol controls whether the output should have newline (b'\\n') characters
-    added to it. If this is non-zero, each output line will be at most this
-    many characters long, excluding the trailing newline.
+    If wrapcol is non-zero, insert a newline (b'\\n') character after at most
+    every wrapcol characters.
 
     pad controls whether the input is padded to a multiple of 4 before
     encoding. Note that the btoa implementation always pads.
@@ -462,9 +494,12 @@ def b85decode(b):
     # Delay the initialization of tables to not waste memory
     # if the function is never called
     if _b85dec is None:
-        _b85dec = [None] * 256
+        # we don't assign to _b85dec directly to avoid issues when
+        # multiple threads call this function simultaneously
+        b85dec_tmp = [None] * 256
         for i, c in enumerate(_b85alphabet):
-            _b85dec[c] = i
+            b85dec_tmp[c] = i
+        _b85dec = b85dec_tmp
 
     b = _bytes_from_decode_data(b)
     padding = (-len(b)) % 5
@@ -505,9 +540,9 @@ _z85_decode_translation = bytes.maketrans(
 )
 _z85_encode_translation = bytes.maketrans(_b85alphabet, _z85alphabet)
 
-def z85encode(s):
+def z85encode(s, pad=False):
     """Encode bytes-like object b in z85 format and return a bytes object."""
-    return b85encode(s).translate(_z85_encode_translation)
+    return b85encode(s, pad).translate(_z85_encode_translation)
 
 def z85decode(s):
     """Decode the z85-encoded bytes-like object or ASCII string b
@@ -563,11 +598,10 @@ def encodebytes(s):
     """Encode a bytestring into a bytes object containing multiple lines
     of base-64 data."""
     _input_type_check(s)
-    pieces = []
-    for i in range(0, len(s), MAXBINSIZE):
-        chunk = s[i : i + MAXBINSIZE]
-        pieces.append(binascii.b2a_base64(chunk))
-    return b"".join(pieces)
+    result = binascii.b2a_base64(s, wrapcol=MAXLINESIZE)
+    if result == b'\n':
+        return b''
+    return result
 
 
 def decodebytes(s):
@@ -601,7 +635,14 @@ def main():
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)
     else:
-        func(sys.stdin.buffer, sys.stdout.buffer)
+        if sys.stdin.isatty():
+            # gh-138775: read terminal input data all at once to detect EOF
+            import io
+            data = sys.stdin.buffer.read()
+            buffer = io.BytesIO(data)
+        else:
+            buffer = sys.stdin.buffer
+        func(buffer, sys.stdout.buffer)
 
 
 if __name__ == '__main__':

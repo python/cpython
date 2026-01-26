@@ -423,11 +423,12 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 
     PyObject *exc;
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
-    Py_DECREF(JSONDecodeError);
     if (exc) {
         PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
     }
+
+    Py_DECREF(JSONDecodeError);
 }
 
 static void
@@ -1459,6 +1460,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
+    indent_level = 0;
     if (encoder_listencode_obj(self, writer, obj, indent_level, indent_cache)) {
         PyUnicodeWriter_Discard(writer);
         Py_XDECREF(indent_cache);

@@ -107,6 +107,46 @@ header files properly declare the entry points to be ``extern "C"``. As a result
 there is no need to do anything special to use the API from C++.
 
 
+.. _capi-system-includes:
+
+System includes
+---------------
+
+   :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   The implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.13 or newer:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.11 or newer:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
+
+.. note::
+
+   Since Python may define some pre-processor definitions which affect the standard
+   headers on some systems, you *must* include :file:`Python.h` before any standard
+   headers are included.
+
+
 Useful macros
 =============
 
@@ -120,6 +160,10 @@ complete listing.
 .. c:macro:: Py_ABS(x)
 
    Return the absolute value of ``x``.
+
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
 
    .. versionadded:: 3.3
 
@@ -167,6 +211,25 @@ complete listing.
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (see :c:member:`PyConfig.use_environment`).
 
+.. c:macro:: Py_LOCAL(type)
+
+   Declare a function returning the specified *type* using a fast-calling
+   qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to ``static type``.
+
+.. c:macro:: Py_LOCAL_INLINE(type)
+
+   Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
+   be inlined.
+
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   On supported platforms, it ensures the symbol is not exported.
+
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("hidden")))``.
+
 .. c:macro:: Py_MAX(x, y)
 
    Return the maximum value between ``x`` and ``y``.
@@ -178,6 +241,14 @@ complete listing.
    Return the size of a structure (``type``) ``member`` in bytes.
 
    .. versionadded:: 3.6
+
+.. c:macro:: Py_MEMCPY(dest, src, n)
+
+   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
+   Use :c:func:`!memcpy` directly instead.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
 
 .. c:macro:: Py_MIN(x, y)
 
@@ -233,9 +304,32 @@ complete listing.
 
    .. versionadded:: 3.4
 
+.. c:macro:: Py_BUILD_ASSERT(cond)
+
+   Asserts a compile-time condition *cond*, as a statement.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(int64_t));
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_BUILD_ASSERT_EXPR(cond)
+
+   Asserts a compile-time condition *cond*, as an expression that evaluates to ``0``.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      #define foo_to_char(foo) \
+          ((char *)(foo) + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+
+   .. versionadded:: 3.3
+
 .. c:macro:: PyDoc_STRVAR(name, str)
 
-   Creates a variable with name ``name`` that can be used in docstrings.
+   Creates a variable with name *name* that can be used in docstrings.
    If Python is built without docstrings, the value will be empty.
 
    Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
@@ -266,6 +360,60 @@ complete listing.
               PyDoc_STR("Returns the keys of the row.")},
           {NULL, NULL}
       };
+
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given name *name*.
+
+   For example::
+
+      PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
+                                        "to the tropics and subtropics of the Eastern Hemisphere.");
+
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length of a statically allocated C array at compile time.
+
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
+
+   This is roughly equivalent to::
+
+      sizeof(array) / sizeof((array)[0])
+
+
+.. c:macro:: Py_EXPORTED_SYMBOL
+
+   Macro used to declare a symbol (function or data) as exported.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: Py_IMPORTED_SYMBOL
+
+   Macro used to declare a symbol as imported.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+
+.. c:macro:: PyAPI_DATA(type)
+
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
 
 
 .. _api-objects:

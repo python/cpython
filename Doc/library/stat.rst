@@ -511,4 +511,4 @@ meaning of these constants.
           STATX_ATTR_DAX
           STATX_ATTR_WRITE_ATOMIC
 
-   .. versionadded:: next
+   .. versionadded:: 3.15

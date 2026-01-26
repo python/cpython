@@ -768,7 +768,7 @@ not have to be) the original ``STACK[-2]``.
       end = STACK.pop()
       start = STACK.pop()
       container = STACK.pop()
-      values = STACK.pop()
+      value = STACK.pop()
       container[start:end] = value
 
    .. versionadded:: 3.12
@@ -1673,8 +1673,12 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
+   * ``0x10`` the :term:`annotate function` for the function object
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.14
+      Added ``0x10`` to indicate the annotate function for the function object.
 
 
 .. opcode:: BUILD_SLICE (argc)

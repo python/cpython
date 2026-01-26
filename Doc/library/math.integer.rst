@@ -4,7 +4,7 @@
 .. module:: math.integer
    :synopsis: Integer-specific mathematics functions.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 --------------
 
