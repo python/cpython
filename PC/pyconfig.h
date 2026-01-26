@@ -441,9 +441,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
    */
 #define HAVE_DECL_TZNAME 1
 
-/* Define if you have dirent.h.  */
-/* #define DIRENT 1 */
-
 /* Define to the type of elements in the array set by `getgroups'.
    Usually this is either `int' or `gid_t'.  */
 /* #undef GETGROUPS_T */
