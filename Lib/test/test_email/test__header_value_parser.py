@@ -2202,54 +2202,40 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         with_wsp = C(
             '\t bob  ',
-            '\t bob  ',
-            ' bob ',
-            [],
-            '',
+            value=' bob ',
             ),
 
         with_comments_and_wsp = C(
             ' (foo) bob(bar)',
-            ' (foo) bob(bar)',
-            ' bob ',
-            [],
-            '',
+            value=' bob ',
             comments=['foo', 'bar'],
             ),
 
         with_multiple_comments = C(
             ' (foo) (bar) bob(bird)',
-            ' (foo) (bar) bob(bird)',
-            ' bob ',
-            [],
-            '',
+            value=' bob ',
             comments=['foo', 'bar', 'bird'],
             ),
 
         non_printable_in_comment = C(
             ' (\x0A) bob',
-            ' (\x0A) bob',
-            ' bob',
-            [errors.NonPrintableDefect],
-            '',
+            value=' bob',
+            defects=[errors.NonPrintableDefect],
             comments=['\x0A'],
             ),
 
         non_printable_in_atext = C(
             ' (a) a\x0B',
-            ' (a) a\x0B',
-            ' a\x0B',
-            [errors.NonPrintableDefect],
-            '',
+            value=' a\x0B',
+            defects=[errors.NonPrintableDefect],
             comments=['a'],
             ),
 
         header_ends_in_comment = C(
             ' (a) bob (a',
-            ' (a) bob (a)',
-            ' bob ',
-            [errors.InvalidHeaderDefect],
-            '',
+            stringified=' (a) bob (a)',
+            value=' bob ',
+            defects=[errors.InvalidHeaderDefect],
             comments=['a', 'a'],
             ),
 
@@ -2265,27 +2251,20 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         atom_ends_at_special = C(
             ' (foo) bob(bar)  @bang',
-            ' (foo) bob(bar)  ',
-            ' bob ',
-            [],
-            '@bang',
+            value=' bob ',
+            remainder='@bang',
             comments=['foo', 'bar'],
             ),
 
         atom_ends_at_noncfws = C(
             'bob  fred',
-            'bob  ',
-            'bob ',
-            [],
-            'fred',
+            value='bob ',
+            remainder='fred',
             ),
 
         rfc2047_atom = C(
             '=?utf-8?q?=20bob?=',
-            ' bob',
-            ' bob',
-            [],
-            '',
+            stringified=' bob',
             ),
 
         )
