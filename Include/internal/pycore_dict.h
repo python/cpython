@@ -265,6 +265,13 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_UNIQUE_ID_SHIFT (32)
 #define DICT_UNIQUE_ID_MAX ((UINT64_C(1) << (64 - DICT_UNIQUE_ID_SHIFT)) - 1)
 
+/* The first three dict watcher IDs are reserved for CPython,
+ * so we don't need to check that they haven't been used */
+#define BUILTINS_WATCHER_ID     0
+#define GLOBALS_WATCHER_ID      1
+#define MODULE_WATCHER_ID       2
+#define FIRST_AVAILABLE_WATCHER 3
+
 
 PyAPI_FUNC(void)
 _PyDict_SendEvent(int watcher_bits,

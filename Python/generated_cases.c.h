@@ -9463,7 +9463,7 @@
                     JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                int err = PyDict_SetItem(GLOBALS(), name, l_v);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err < 0) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);

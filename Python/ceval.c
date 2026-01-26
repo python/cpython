@@ -4186,7 +4186,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
             *writeto = PyStackRef_NULL;
             return;
         }
-        int err = _PyModule_ReplaceLazyValue(globals, name, l_v);
+        int err = PyDict_SetItem(globals, name, l_v);
         if (err < 0) {
             Py_DECREF(l_v);
             *writeto = PyStackRef_NULL;

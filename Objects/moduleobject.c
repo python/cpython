@@ -19,7 +19,6 @@
 
 #include "osdefs.h"               // MAXPATHLEN
 
-
 #define _PyModule_CAST(op) \
     (assert(PyModule_Check(op)), _Py_CAST(PyModuleObject*, (op)))
 
@@ -196,11 +195,40 @@ new_module_notrack(PyTypeObject *mt)
     return m;
 }
 
+/* Module dict watcher callback.
+ * When a module dictionary is modified, we need to clear the keys version
+ * to invalidate any cached lookups that depend on the dictionary structure.
+ */
+static int
+module_dict_watcher(PyDict_WatchEvent event, PyObject *dict,
+                    PyObject *key, PyObject *new_value)
+{
+    assert(PyDict_Check(dict));
+    // Only if a new lazy object shows up do we need to clear the dictionary. If
+    // this is adding a new key then the version will be reset anyway.
+    if (event == PyDict_EVENT_MODIFIED &&
+        new_value != NULL &&
+        PyLazyImport_CheckExact(new_value)) {
+        _PyDict_ClearKeysVersionLockHeld(dict);
+    }
+    return 0;
+}
+
+int
+_PyModule_InitModuleDictWatcher(PyInterpreterState *interp)
+{
+    // This is a reserved watcher for CPython so there's no need to check for non-NULL.
+    assert(interp->dict_state.watchers[MODULE_WATCHER_ID] == NULL);
+    interp->dict_state.watchers[MODULE_WATCHER_ID] = &module_dict_watcher;
+    return 0;
+}
+
 static void
 track_module(PyModuleObject *m)
 {
     _PyDict_EnablePerThreadRefcounting(m->md_dict);
     _PyObject_SetDeferredRefcount((PyObject *)m);
+    PyDict_Watch(MODULE_WATCHER_ID, m->md_dict);
     PyObject_GC_Track(m);
 }
 
@@ -1266,23 +1294,6 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     return result;
 }
 
-int
-_PyModule_ReplaceLazyValue(PyObject *dict, PyObject *name, PyObject *value)
-{
-    // The adaptive interpreter uses the dictionary keys version to return the
-    // slot at a given index from the module. When replacing a value the
-    // version number doesn't change, so we need to atomically clear the
-    // version before replacing so that it doesn't return a lazy value.
-    int err;
-    Py_BEGIN_CRITICAL_SECTION(dict);
-
-    _PyDict_ClearKeysVersionLockHeld(dict);
-    err = _PyDict_SetItem_LockHeld((PyDictObject *)dict, name, value);
-
-    Py_END_CRITICAL_SECTION();
-    return err;
-}
-
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -1306,7 +1317,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 return NULL;
             }
 
-            if (_PyModule_ReplaceLazyValue(m->md_dict, name, new_value) < 0) {
+            if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
                 Py_CLEAR(new_value);
             }
             Py_DECREF(attr);

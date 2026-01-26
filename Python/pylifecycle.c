@@ -15,6 +15,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
+#include "pycore_moduleobject.h"  // _PyModule_InitModuleDictWatcher()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
@@ -631,6 +632,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     assert(_Py_IsMainInterpreter(interp));
     _PyInterpreterState_SetWhence(interp, _PyInterpreterState_WHENCE_RUNTIME);
     interp->_ready = 1;
+
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        return _PyStatus_ERR("failed to initialize module dict watcher");
+    }
 
     status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2466,6 +2472,11 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyInterpreterState_SetWhence(interp, whence);
     interp->_ready = 1;
+
+    /* Initialize the module dict watcher early, before any modules are created */
+    if (_PyModule_InitModuleDictWatcher(interp) != 0) {
+        goto error;
+    }
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held

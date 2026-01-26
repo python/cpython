@@ -1829,7 +1829,7 @@ dummy_func(
                     Py_DECREF(v_o);
                     ERROR_IF(true);
                 }
-                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                int err = PyDict_SetItem(GLOBALS(), name, l_v);
                 if (err < 0) {
                     Py_DECREF(v_o);
                     Py_DECREF(l_v);

@@ -211,42 +211,9 @@ class LazyImportTypeTests(unittest.TestCase):
         self.assertHasAttr(types, 'LazyImportType')
         self.assertEqual(types.LazyImportType.__name__, 'lazy_import')
 
-    def test_lazy_import_type_invalid_name(self):
-        """passing invalid name to lazy imports should raise a TypeError"""
-        with self.assertRaises(TypeError) as cm:
-            types.LazyImportType({}, None)
-
-    def test_lazy_import_type_invalid_fromlist_type(self):
-        """LazyImportType should reject invalid fromlist types."""
-        # fromlist must be None, a string, or a tuple - not an int
-        with self.assertRaises(TypeError) as cm:
-            types.LazyImportType({}, "module", 0)
-        self.assertIn("fromlist must be None, a string, or a tuple", str(cm.exception))
-
-        # Also test with other invalid types
-        with self.assertRaises(TypeError):
-            types.LazyImportType({}, "module", [])  # list not allowed
-
-        with self.assertRaises(TypeError):
-            types.LazyImportType({}, "module", {"x": 1})  # dict not allowed
-
-    def test_lazy_import_type_valid_fromlist(self):
-        """LazyImportType should accept valid fromlist types."""
-        # None is valid (implicit)
-        lazy1 = types.LazyImportType({}, "module")
-        self.assertIsNotNone(lazy1)
-
-        # Explicit None is valid
-        lazy2 = types.LazyImportType({}, "module", None)
-        self.assertIsNotNone(lazy2)
-
-        # String is valid
-        lazy3 = types.LazyImportType({}, "module", "attr")
-        self.assertIsNotNone(lazy3)
-
-        # Tuple is valid
-        lazy4 = types.LazyImportType({}, "module", ("attr1", "attr2"))
-        self.assertIsNotNone(lazy4)
+    def test_lazy_import_type_cant_construct(self):
+        """LazyImportType should not be directly constructible."""
+        self.assertRaises(TypeError, types.LazyImportType, {}, "module")
 
 
 class SyntaxRestrictionTests(unittest.TestCase):
@@ -758,6 +725,38 @@ class GlobalsAndDictTests(unittest.TestCase):
                 return True
 
             assert test_resolve()
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_add_lazy_to_globals(self):
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy from test.test_import.data.lazy_imports import basic2
+
+            assert 'test.test_import.data.lazy_imports.basic2' not in sys.modules
+
+            class C: pass
+            sneaky = C()
+            sneaky.x = 1
+
+            def f():
+                t = 0
+                for _ in range(5):
+                    t += sneaky.x
+                return t
+
+            f()
+            globals()["sneaky"] = globals()["basic2"]
+            assert f() == 210
             print("OK")
         """)
         result = subprocess.run(
