@@ -26975,7 +26975,7 @@ fi
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 
-PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
+PLATLIBDIR="lib"  # XXX: We should probably calculate the default from libdir, if defined.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
 printf %s "checking for --with-platlibdir... " >&6; }
 
