@@ -1180,12 +1180,14 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if order:
         # Create and set the ordering methods.
         flds = [f for f in field_list if f.compare]
-        if len(flds) == 1:
-            self_expr = f"self.{flds[0].name}"
-            other_expr = f"other.{flds[0].name}"
-        else:
-            self_expr = _tuple_str('self', flds)
-            other_expr = _tuple_str('other', flds)
+        match flds:
+            # Special-case single field comparisons. See GH-144191.
+            case [single_fld]:
+                self_expr = f'self.{single_fld.name}'
+                other_expr = f'other.{single_fld.name}'
+            case _:
+                self_expr = _tuple_str('self', flds)
+                other_expr = _tuple_str('other', flds)
         for name, op in [('__lt__', '<'),
                          ('__le__', '<='),
                          ('__gt__', '>'),
