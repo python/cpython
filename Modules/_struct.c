@@ -2662,8 +2662,7 @@ The optional first format char indicates byte order, size and alignment:\n\
 The remaining chars indicate types of args and must match exactly;\n\
 these can be preceded by a decimal repeat count:\n\
   x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
-  ?: _Bool (requires C99; if not available, char is used instead)\n\
-  h:short; H:unsigned short; i:int; I:unsigned int;\n\
+  ?:_Bool; h:short; H:unsigned short; i:int; I:unsigned int;\n\
   l:long; L:unsigned long; f:float; d:double; e:half-float.\n\
   F:float complex; D:double complex.\n\
 Special cases (preceding decimal count indicates length):\n\
