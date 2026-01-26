@@ -2452,7 +2452,7 @@ dummy_func(
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
-        op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
+        op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             DEOPT_IF(Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
@@ -2473,12 +2473,14 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            PyStackRef_CLOSE(owner);
+            o = owner;
+            DEAD(owner);
         }
 
         macro(LOAD_ATTR_MODULE) =
             unused/1 +
             _LOAD_ATTR_MODULE +
+            POP_TOP +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
@@ -5119,7 +5121,7 @@ dummy_func(
             assert(oparg <= NB_OPARG_LAST);
         }
 
-        op(_BINARY_OP, (lhs, rhs -- res)) {
+        op(_BINARY_OP, (lhs, rhs -- res, l, r)) {
             PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
             PyObject *rhs_o = PyStackRef_AsPyObjectBorrow(rhs);
 
@@ -5129,10 +5131,13 @@ dummy_func(
                 ERROR_NO_POP();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
-            DECREF_INPUTS();
+            l = lhs;
+            r = rhs;
+            DEAD(lhs);
+            DEAD(rhs);
         }
 
-        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
+        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP + POP_TOP + POP_TOP;
 
         pure replicate(2:4) inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
@@ -5439,6 +5444,12 @@ dummy_func(
             DEAD(null);
             PyStackRef_CLOSE(callable);
             value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_INSERT_1_LOAD_CONST_INLINE, (ptr/4, left -- res, l)) {
+            res = PyStackRef_FromPyObjectNew(ptr);
+            l = left;
+            INPUTS_DEAD();
         }
 
         tier2 op(_INSERT_1_LOAD_CONST_INLINE_BORROW, (ptr/4, left -- res, l)) {
