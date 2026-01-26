@@ -97,13 +97,14 @@ typedef struct {
 typedef struct {
     uint16_t slot_index;
     uint16_t symbol;
-} JitOptSlotMapping;
+} JitOptDescrMapping;
 
 typedef struct _jit_opt_slots {
     uint8_t tag;
     uint8_t num_slots;
+    uint16_t last_modified_index;  // Index in out_buffer when this object was last modified
     uint32_t type_version;
-    JitOptSlotMapping *slots;
+    JitOptDescrMapping *slots;
 } JitOptSlotsObject;
 
 typedef union _jit_opt_symbol {
@@ -147,7 +148,7 @@ typedef struct ty_arena {
 typedef struct slots_arena {
     int slots_curr_number;
     int slots_max_number;
-    JitOptSlotMapping arena[SLOTS_ARENA_SIZE];
+    JitOptDescrMapping arena[SLOTS_ARENA_SIZE];
 } slots_arena;
 
 #ifdef __cplusplus

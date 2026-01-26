@@ -509,6 +509,10 @@ optimize_uops(
         if (ctx->out_buffer.next == out_ptr) {
             *(ctx->out_buffer.next++) = *this_instr;
         }
+        // Track escapes
+        if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
+            ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer);
+        }
         assert(ctx->frame != NULL);
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
             DPRINTF(3, " stack_level %d\n", STACK_LEVEL());

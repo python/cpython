@@ -974,6 +974,7 @@ _Py_uop_sym_new_slots_object(JitOptContext *ctx, unsigned int type_version)
     res->slots.num_slots = 0;
     res->slots.slots = NULL;
     res->slots.type_version = type_version;
+    res->slots.last_modified_index = uop_buffer_length(&ctx->out_buffer);
     return PyJitRef_Wrap(res);
 }
 
@@ -982,7 +983,13 @@ _Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
 
-    if (sym->tag == JIT_SYM_SLOTS_TAG && sym->slots.slots != NULL) {
+    // Only return tracked slot values if:
+    // 1. Symbol is a slots object with mappings allocated
+    // 2. No escape has occurred since last modification (state is fresh)
+    if (sym->tag == JIT_SYM_SLOTS_TAG &&
+        sym->slots.slots != NULL &&
+        sym->slots.last_modified_index >= ctx->last_escape_index)
+    {
         for (int i = 0; i < sym->slots.num_slots; i++) {
             if (sym->slots.slots[i].slot_index == slot_index) {
                 return PyJitRef_Wrap(allocation_base(ctx) + sym->slots.slots[i].symbol);
@@ -993,13 +1000,13 @@ _Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index
     return _Py_uop_sym_new_not_null(ctx);
 }
 
-static JitOptSlotMapping *
+static JitOptDescrMapping *
 slots_arena_alloc(JitOptContext *ctx)
 {
     if (ctx->s_arena.slots_curr_number + MAX_SYMBOLIC_SLOTS_SIZE > ctx->s_arena.slots_max_number) {
         return NULL;
     }
-    JitOptSlotMapping *slots = &ctx->s_arena.arena[ctx->s_arena.slots_curr_number];
+    JitOptDescrMapping *slots = &ctx->s_arena.arena[ctx->s_arena.slots_curr_number];
     ctx->s_arena.slots_curr_number += MAX_SYMBOLIC_SLOTS_SIZE;
     return slots;
 }
@@ -1008,30 +1015,18 @@ void
 _Py_uop_sym_slots_setattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, JitOptRef value)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    int curr_index = uop_buffer_length(&ctx->out_buffer);
 
-    if (sym->tag == JIT_SYM_TYPE_VERSION_TAG) {
-        uint32_t version = sym->version.version;
-        sym->tag = JIT_SYM_SLOTS_TAG;
-        sym->slots.type_version = version;
-        sym->slots.num_slots = 0;
-        sym->slots.slots = slots_arena_alloc(ctx);
-        if (sym->slots.slots == NULL) {
-            return;
-        }
-    }
-    else if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
-        uint32_t version = sym->cls.version;
-        sym->tag = JIT_SYM_SLOTS_TAG;
-        sym->slots.type_version = version;
-        sym->slots.num_slots = 0;
-        sym->slots.slots = slots_arena_alloc(ctx);
-        if (sym->slots.slots == NULL) {
-            return;
-        }
-    }
-    else if (sym->tag != JIT_SYM_SLOTS_TAG) {
+    if (sym->tag != JIT_SYM_SLOTS_TAG) {
         return;
     }
+
+    // Check escape
+    if (sym->slots.last_modified_index < ctx->last_escape_index) {
+        sym->slots.num_slots = 0;
+    }
+    // Update the last modified timestamp
+    sym->slots.last_modified_index = curr_index;
     // Check if have arena space allocated
     if (sym->slots.slots == NULL) {
         sym->slots.slots = slots_arena_alloc(ctx);
@@ -1157,6 +1152,7 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
     ctx->out_of_space = false;
     ctx->contradiction = false;
     ctx->builtins_watched = false;
+    ctx->last_escape_index = 0;
 }
 
 int

@@ -3146,11 +3146,15 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            (void)type_version;
             (void)args;
             callable = sym_new_not_null(ctx);
-            self_or_null = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = callable;
+            PyTypeObject *tp = _PyType_LookupByVersion(type_version);
+            if (tp->tp_basicsize > sizeof(PyObject) && !(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+                self_or_null = sym_new_slots_object(ctx, type_version);
+            } else {
+                self_or_null = sym_new_not_null(ctx);
+            }
             stack_pointer[-1 - oparg] = self_or_null;
             break;
         }

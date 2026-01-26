@@ -44,6 +44,8 @@ typedef struct _JitOptContext {
     JitOptRef *limit;
     JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
     _PyJitUopBuffer out_buffer;
+    // Index of the last escaped uop in out_buffer.
+    int last_escape_index;
 } JitOptContext;
 
 
