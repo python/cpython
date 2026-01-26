@@ -367,7 +367,7 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
         Py_DECREF(addr_obj);
 
         uintptr_t *next_fp = (uintptr_t *)frame_pointer[0];
-        // Stop if the the frame pointer is extremely low.
+        // Stop if the frame pointer is extremely low.
         if ((uintptr_t)next_fp < 0x1000) {
             break;
         }

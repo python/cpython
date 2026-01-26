@@ -98,7 +98,6 @@ def _annotate_unwind():
     jit_enabled = hasattr(sys, "_jit") and sys._jit.is_enabled()
     jit_backend = _testinternalcapi.get_jit_backend()
     ranges = _testinternalcapi.get_jit_code_ranges() if jit_enabled else []
-    jit_code_ranges = len(ranges)
     if jit_enabled and ranges:
         print("JIT ranges:")
         for start, end in ranges:
@@ -113,7 +112,6 @@ def _annotate_unwind():
         "python_frames": python_frames,
         "jit_frames": jit_frames,
         "other_frames": other_frames,
-        "jit_code_ranges": jit_code_ranges,
         "jit_backend": jit_backend,
     })
 
@@ -149,6 +147,7 @@ def _manual_unwind_length(**env):
         ) from exc
 
 
+@support.requires_gil_enabled("test requires the GIL enabled")
 @unittest.skipIf(support.is_wasi, "test not supported on WASI")
 class FramePointerUnwindTests(unittest.TestCase):
 
