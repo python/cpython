@@ -2898,6 +2898,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_load_attr_module(self):
+        def testfunc(n):
+            import math
+            x = 0
+            for _ in range(n):
+                y = math.pi
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn(("_LOAD_ATTR_MODULE", "_POP_TOP_NOP"), itertools.pairwise(uops))
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
+
     def test_load_attr_with_hint(self):
         def testfunc(n):
             class C:

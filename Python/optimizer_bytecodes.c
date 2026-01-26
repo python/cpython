@@ -694,7 +694,7 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
+    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, o)) {
         (void)dict_version;
         (void)index;
         attr = PyJitRef_NULL;
@@ -706,7 +706,7 @@ dummy_func(void) {
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
-                    PyObject *res = convert_global_to_const(this_instr, dict, true);
+                    PyObject *res = convert_global_to_const(this_instr, dict, false, true);
                     if (res == NULL) {
                         attr = sym_new_not_null(ctx);
                     }
@@ -721,6 +721,7 @@ dummy_func(void) {
             /* No conversion made. We don't know what `attr` is. */
             attr = sym_new_not_null(ctx);
         }
+        o = owner;
     }
 
     op (_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
@@ -1585,7 +1586,7 @@ dummy_func(void) {
                 ctx->builtins_watched = true;
             }
             if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                cnst = convert_global_to_const(this_instr, builtins, false);
+                cnst = convert_global_to_const(this_instr, builtins, false, false);
             }
         }
         if (cnst == NULL) {
@@ -1624,7 +1625,7 @@ dummy_func(void) {
                     ctx->frame->globals_checked_version = version;
                 }
                 if (ctx->frame->globals_checked_version == version) {
-                    cnst = convert_global_to_const(this_instr, globals, false);
+                    cnst = convert_global_to_const(this_instr, globals, false, false);
                 }
             }
         }

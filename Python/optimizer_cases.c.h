@@ -1572,7 +1572,7 @@
                         ctx->frame->globals_checked_version = version;
                     }
                     if (ctx->frame->globals_checked_version == version) {
-                        cnst = convert_global_to_const(this_instr, globals, false);
+                        cnst = convert_global_to_const(this_instr, globals, false, false);
                     }
                 }
             }
@@ -1615,7 +1615,7 @@
                     ctx->builtins_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                    cnst = convert_global_to_const(this_instr, builtins, false);
+                    cnst = convert_global_to_const(this_instr, builtins, false, false);
                 }
             }
             if (cnst == NULL) {
@@ -1875,6 +1875,7 @@
         case _LOAD_ATTR_MODULE: {
             JitOptRef owner;
             JitOptRef attr;
+            JitOptRef o;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
             uint16_t index = (uint16_t)this_instr->operand0;
@@ -1890,7 +1891,7 @@
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                         _Py_BloomFilter_Add(dependencies, dict);
-                        PyObject *res = convert_global_to_const(this_instr, dict, true);
+                        PyObject *res = convert_global_to_const(this_instr, dict, false, true);
                         if (res == NULL) {
                             attr = sym_new_not_null(ctx);
                         }
@@ -1903,7 +1904,12 @@
             if (PyJitRef_IsNull(attr)) {
                 attr = sym_new_not_null(ctx);
             }
+            o = owner;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
+            stack_pointer[0] = o;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -4001,6 +4007,19 @@
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = value;
             stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _INSERT_1_LOAD_CONST_INLINE: {
+            JitOptRef res;
+            JitOptRef l;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
