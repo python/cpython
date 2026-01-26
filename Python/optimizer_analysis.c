@@ -510,7 +510,7 @@ optimize_uops(
             *(ctx->out_buffer.next++) = *this_instr;
         }
         // Track escapes
-        if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
+        if (_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG) {
             ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer);
         }
         assert(ctx->frame != NULL);
