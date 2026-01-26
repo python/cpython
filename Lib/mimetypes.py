@@ -609,6 +609,7 @@ def _default_mime_types():
         '.jpeg'   : 'image/jpeg',
         '.jpm'    : 'image/jpm',
         '.jpx'    : 'image/jpx',
+        '.jxl'    : 'image/jxl',
         '.heic'   : 'image/heic',
         '.heif'   : 'image/heif',
         '.png'    : 'image/png',
