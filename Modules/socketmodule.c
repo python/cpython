@@ -3057,6 +3057,18 @@ sock_accept_impl(PySocketSockObject *s, void *data)
     ctx->result = accept(get_sock_fd(s), addr, paddrlen);
 #endif
 
+#ifdef TCP_NODELAY
+    /* Enable TCP_NODELAY by default for TCP sockets */
+    if (ctx->result >= 0 || (INVALID_SOCKET != (SOCKET_T)-1 && ctx->result != INVALID_SOCKET)) {
+         if (s->sock_family == AF_INET || s->sock_family == AF_INET6) {
+            if (s->sock_type == SOCK_STREAM) {
+                int flag = 1;
+                setsockopt(ctx->result, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+            }
+        }
+    }
+#endif
+
 #ifdef MS_WINDOWS
     return (ctx->result != INVALID_SOCKET);
 #else
@@ -5821,6 +5833,17 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
         }
 #endif
     }
+
+#ifdef TCP_NODELAY
+    /* Enable TCP_NODELAY by default for TCP sockets */
+    if (family == AF_INET || family == AF_INET6) {
+        if (type == SOCK_STREAM) {
+            int flag = 1;
+            setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+        }
+    }
+#endif
+
     if (init_sockobject(state, self, fd, family, type, proto) == -1) {
         SOCKETCLOSE(fd);
         return -1;
