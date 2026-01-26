@@ -1,10 +1,3 @@
-#include "pyconfig.h"   // Py_GIL_DISABLED
-
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-   // Need limited C API for METH_FASTCALL
-   #define Py_LIMITED_API 0x030d0000
-#endif
-
 #include "parts.h"
 #include "util.h"
 
@@ -303,13 +296,11 @@ test_pyset_add_frozenset(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_pyset_add_frozenset",
                               "test object should be tracked");
     }
-    Py_RETURN_NONE;
     if (PySet_Add(frozenset, tracked_obj) < 0) {
         Py_DECREF(frozenset);
         Py_DECREF(tracked_obj);
         return NULL;
     }
-
     if (!PyObject_GC_IsTracked(frozenset)) {
         Py_DECREF(frozenset);
         Py_DECREF(tracked_obj);
@@ -366,24 +357,6 @@ test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_U
     return NULL;
 }
 
-// Interface to PySet_Add, returning the set
-static PyObject *
-pyset_add(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    if (nargs != 2) {
-        PyErr_SetString(PyExc_TypeError,
-                        "pyset_add requires exactly 2 arguments");
-        return NULL;
-    }
-    PyObject *set = args[0];
-    PyObject *item = args[1];
-
-    int return_value = PySet_Add(set, item);
-    if (return_value < 0) {
-        return NULL;
-    }
-    return Py_NewRef(set);
-}
 
 static PyMethodDef test_methods[] = {
     {"set_check", set_check, METH_O},

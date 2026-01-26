@@ -2658,7 +2658,7 @@ static PyMethodDef TestMethods[] = {
     {"return_null_without_error", return_null_without_error, METH_NOARGS},
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
-    {"Py_CompileString", pycompilestring, METH_O},
+    {"Py_CompileString",     pycompilestring, METH_O},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
