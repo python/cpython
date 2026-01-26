@@ -1,0 +1,1 @@
+set TCP_NODELAY by default (disable nagle algorithm)
