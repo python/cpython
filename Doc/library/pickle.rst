@@ -56,19 +56,6 @@ files.
 
 The :mod:`pickle` module differs from :mod:`marshal` in several significant ways:
 
-* The :mod:`pickle` module keeps track of the objects it has already serialized,
-  so that later references to the same object won't be serialized again.
-  :mod:`marshal` doesn't do this.
-
-  This has implications both for recursive objects and object sharing.  Recursive
-  objects are objects that contain references to themselves.  These are not
-  handled by marshal, and in fact, attempting to marshal recursive objects will
-  crash your Python interpreter.  Object sharing happens when there are multiple
-  references to the same object in different places in the object hierarchy being
-  serialized.  :mod:`pickle` stores such objects only once, and ensures that all
-  other references point to the master copy.  Shared objects remain shared, which
-  can be very important for mutable objects.
-
 * :mod:`marshal` cannot be used to serialize user-defined classes and their
   instances.  :mod:`pickle` can save and restore class instances transparently,
   however the class definition must be importable and live in the same module as
