@@ -41,6 +41,8 @@
 #   - 'full-abi': All of the struct is part of the ABI, including the size
 #     (users may define arrays of these structs).
 #     Typically used for initialization, rather than at runtime.
+#     Any members whose names start with an underscore are not part of the
+#     limited API; they're for CPython's use only.
 #   - 'opaque': No members are part of the ABI, nor is the size. The Limited
 #     API only handles these via pointers. The C definition should be
 #     incomplete (opaque).
@@ -2664,3 +2666,29 @@
 [function.Py_SET_SIZE]
     # Before 3.15, this was a macro that accessed the PyObject member
     added = '3.15'
+
+# PEP 757 import/export API.
+
+[function.PyLong_GetNativeLayout]
+    added = '3.15'
+[function.PyLong_Export]
+    added = '3.15'
+[function.PyLong_FreeExport]
+    added = '3.15'
+[function.PyLongWriter_Create]
+    added = '3.15'
+[function.PyLongWriter_Finish]
+    added = '3.15'
+[function.PyLongWriter_Discard]
+    added = '3.15'
+[struct.PyLongWriter]
+    added = '3.15'
+    struct_abi_kind = 'opaque'
+[struct.PyLongLayout]
+    added = '3.15'
+    struct_abi_kind = 'full-abi'
+[struct.PyLongExport]
+    added = '3.15'
+    # Note: The `_reserved` member of this struct is for interal use only.
+    # (The definition of 'full-abi' was clarified when this entry was added.)
+    struct_abi_kind = 'full-abi'

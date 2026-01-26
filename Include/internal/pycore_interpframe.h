@@ -27,7 +27,7 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
 // Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
 // freed. Used by dump_frame() in Python/traceback.c. The function uses
 // heuristics to detect freed memory, it's not 100% reliable.
-static inline PyCodeObject*
+static inline PyCodeObject* _Py_NO_SANITIZE_THREAD
 _PyFrame_SafeGetCode(_PyInterpreterFrame *f)
 {
     // globals and builtins may be NULL on a legit frame, but it's unlikely.
@@ -70,7 +70,7 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 // Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL if the
 // frame is invalid or freed. Used by dump_frame() in Python/traceback.c. The
 // function uses heuristics to detect freed memory, it's not 100% reliable.
-static inline int
+static inline int _Py_NO_SANITIZE_THREAD
 _PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
 {
     // Code based on _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
@@ -279,7 +279,7 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
 
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
-PyFrameObject *
+PyAPI_FUNC(PyFrameObject *)
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
@@ -394,6 +394,10 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
                         PyObject *locals, _PyStackRef const *args,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
+
+PyAPI_FUNC(_PyInterpreterFrame *)
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef __cplusplus
 }

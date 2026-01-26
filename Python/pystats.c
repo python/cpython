@@ -6,7 +6,7 @@
 #include "pycore_tstate.h"
 #include "pycore_initconfig.h"      // _PyStatus_OK()
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
-#include "pycore_uop_ids.h"         // MAX_UOP_ID
+#include "pycore_uop_ids.h"         // MAX_UOP_REGS_ID
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 #include "pycore_runtime.h"         // NUM_GENERATIONS
 
@@ -33,8 +33,8 @@ _PyStats_GetLocal(void)
 #endif
 
 
-#if PYSTATS_MAX_UOP_ID < MAX_UOP_ID
-#error "Not enough space allocated for pystats. Increase PYSTATS_MAX_UOP_ID to at least MAX_UOP_ID"
+#if PYSTATS_MAX_UOP_ID < MAX_UOP_REGS_ID
+#error "Not enough space allocated for pystats. Increase PYSTATS_MAX_UOP_ID to at least MAX_UOP_REGS_ID"
 #endif
 
 #define ADD_STAT_TO_DICT(res, field) \
@@ -285,7 +285,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             stats->optimizer_failure_reason_no_memory);
     fprintf(out, "Optimizer remove globals builtins changed: %" PRIu64 "\n", stats->remove_globals_builtins_changed);
     fprintf(out, "Optimizer remove globals incorrect keys: %" PRIu64 "\n", stats->remove_globals_incorrect_keys);
-    for (int i = 0; i <= MAX_UOP_ID; i++) {
+    for (int i = 0; i <= MAX_UOP_REGS_ID; i++) {
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
         }
@@ -304,15 +304,15 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         }
     }
 
-    for (int i = 1; i <= MAX_UOP_ID; i++){
-        for (int j = 1; j <= MAX_UOP_ID; j++) {
+    for (int i = 1; i <= MAX_UOP_REGS_ID; i++){
+        for (int j = 1; j <= MAX_UOP_REGS_ID; j++) {
             if (stats->opcode[i].pair_count[j]) {
                 fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
                         _PyOpcode_uop_name[i], _PyOpcode_uop_name[j], stats->opcode[i].pair_count[j]);
             }
         }
     }
-    for (int i = 0; i < MAX_UOP_ID; i++) {
+    for (int i = 0; i < MAX_UOP_REGS_ID; i++) {
         if (stats->error_in_opcode[i]) {
             fprintf(
                 out,

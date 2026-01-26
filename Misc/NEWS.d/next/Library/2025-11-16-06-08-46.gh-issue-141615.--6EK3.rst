@@ -1,1 +1,0 @@
-Check ``stdin`` instead of ``stdout`` for ``use_rawinput`` in :mod:`pdb`.
