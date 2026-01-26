@@ -4262,7 +4262,7 @@ features:
        import os
 
        # semaphore with start value '1'
-       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFD_CLOEXEC)
        try:
            # acquire semaphore
            v = os.eventfd_read(fd)
