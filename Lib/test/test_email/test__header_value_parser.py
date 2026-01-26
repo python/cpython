@@ -1542,9 +1542,9 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
 
         quoted_dquote = C(
-            r'"foo\"in"a',
+            r'"foo\"in"@',
             value='foo"in',
-            remainder='a',
+            remainder='@',
             ),
 
         **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
@@ -2037,19 +2037,24 @@ class TestParser(TestParserMixin, TestEmailBase):
             commenttree=[['foo'], ['bar'], ['bird']],
             ),
 
-        non_printable_in_comment = C(
-            ' (\x0A) "bob"',
-            value=' bob',
-            quoted_value=' "bob"',
-            defects=[errors.NonPrintableDefect],
-            comments=['\x0a'],
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_comment = C(
+                ' ({char}) "bob"',
+                value=' bob',
+                quoted_value=' "bob"',
+                defects=[(nonprintable_defect, '{char}')],
+                comments=['{char}'],
+                ),
             ),
 
+        # all the non printables in qcontent are checked by the included
+        # bare_quoted_string tests, this one proves that the defect is
+        # correctly copied up even if there is also comment text involved.
         non_printable_in_qcontent = C(
             ' (a) "a\x0B"',
             value=' a\x0B',
             quoted_value=' "a\x0B"',
-            defects=[errors.NonPrintableDefect],
+            defects=[nonprintable_defect('\x0b')],
             comments=['a'],
             ),
 
@@ -2065,7 +2070,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified=' (a) "bob" (a)',
             value=' bob ',
             quoted_value=' "bob" ',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_comment_defect],
             comments=['a', 'a'],
             commenttree=[['a'], ['a']],
             ),
@@ -2075,25 +2080,46 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified=' (a) "bob"',
             value=' bob',
             quoted_value=' "bob"',
-            defects=[errors.InvalidHeaderDefect],
+            defects=[end_inside_quoted_string_defect],
             comments=['a'],
             ),
 
         cfws_only_raises = C(
             '(foo) ',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(errors.HeaderParseError, '(?i)expected'),
             ),
 
         no_quoted_string = C(
             '(ab) xyz',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(errors.HeaderParseError, '(?=.*expected.*")(?=.*xyz)'),
             ),
 
-        qs_ends_at_noncfws = C(
-            '\t "bob" fee',
-            value=' bob ',
-            quoted_value=' "bob" ',
-            remainder='fee',
+        **for_each_character(RFC_PRINTABLES, skip='(')(
+            qs_ends_at_noncfws = C(
+                '\t "bob" {char}',
+                value=' bob ',
+                quoted_value=' "bob" ',
+                remainder='{char}',
+                ),
+            ),
+
+        ew_after_dquote = C(
+            '"bob"=?UTF-8?q?foo?=',
+            value='bob',
+            quoted_value='"bob"',
+            remainder='=?UTF-8?q?foo?=',
+            ),
+
+        empty_quotes_between_comments = C(
+            ' (a)  ""  (foo)',
+            value='  ',
+            quoted_value=' "" ',
+            comments=['a', 'foo'],
+            ),
+
+        empty_input = C(
+            '',
+            exception=(errors.HeaderParseError, r'(?i)expected'),
             ),
 
         )
