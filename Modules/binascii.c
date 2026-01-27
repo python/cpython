@@ -476,11 +476,11 @@ ignorechar(unsigned char c, Py_buffer *ignorechars, char ignorecache[32])
     if (ignorechars->buf == NULL) {
         return 0;
     }
-    if (ignorecache[c >> 8] & (1 << (c & 7))) {
+    if (ignorecache[c >> 3] & (1 << (c & 7))) {
         return 1;
     }
     if (memchr(ignorechars->buf, c, ignorechars->len)) {
-        ignorecache[c >> 8] |= 1 << (c & 7);
+        ignorecache[c >> 3] |= 1 << (c & 7);
         return 1;
     }
     return 0;
