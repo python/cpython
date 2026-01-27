@@ -226,6 +226,8 @@ complete listing.
    Currently, all systems supported by CPython (per :pep:`11`), with the
    exception of some WebAssembly platforms, support starting threads.
 
+   .. versionadded:: 3.13
+
 .. c:macro:: Py_CHARMASK(c)
 
    Argument must be a character or an integer in the range [-128, 127] or [0,
