@@ -428,7 +428,7 @@ To retrieve the state from a given module, use the following functions:
 
 .. c:function:: int PyModule_GetStateSize(PyObject *module, Py_ssize_t *result)
 
-   Set *\*result* to the size of the state for the module *module*, as specified
+   Set *\*result* to the size of *module*'s state, as specified
    using :c:macro:`Py_mod_state_size` (or :c:member:`PyModuleDef.m_size`),
    and return 0.
 
@@ -597,7 +597,7 @@ A module's token -- and the *your_token* value to use in the above code -- is:
 
 .. c:function:: int PyModule_GetToken(PyObject *module, void** result)
 
-   Set *\*result* to the module token for the module *module* and return 0.
+   Set *\*result* to the module token for *module* and return 0.
 
    On error, set *\*result* to NULL, and return -1 with an exception set.
 
@@ -645,7 +645,7 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
 
 .. c:function:: int PyModule_Exec(PyObject *module)
 
-   Execute the :c:data:`Py_mod_exec` slot(s) of the given module, *module*.
+   Execute the :c:data:`Py_mod_exec` slot(s) of *module*.
 
    On success, return 0.
    On error, return -1 with an exception set.
