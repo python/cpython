@@ -529,6 +529,7 @@ gen_try_set_executing(PyGenObject *gen)
                 return true;
             }
         }
+        return false;
     }
 #endif
     // Use faster non-atomic modifications in the GIL-enabled build and when
