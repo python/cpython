@@ -178,7 +178,7 @@ test_frozenset_add_in_capi_tracking_immutable(PyObject *self, PyObject *Py_UNUSE
     if (PyObject_GC_IsTracked(frozenset)) {
         Py_DECREF(frozenset);
         return raiseTestError("test_frozenset_add_in_capi_tracking_immutable",
-                "frozenset with only int should not be GC tracked");
+                "frozenset with only bool should not be GC tracked");
     }
     Py_DECREF(frozenset);
     Py_RETURN_NONE;
