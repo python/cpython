@@ -778,7 +778,8 @@ partial_setstate(PyObject *self, PyObject *state)
     if (!PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||
-        (kw != Py_None && !PyDict_Check(kw)))
+        (kw != Py_None && !PyDict_Check(kw)) ||
+        (dict != Py_None && !PyDict_Check(dict)))
     {
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;

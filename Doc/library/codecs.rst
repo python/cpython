@@ -1088,7 +1088,7 @@ alias for the ``'utf_8'`` codec.
    refer to the source :source:`aliases.py <Lib/encodings/aliases.py>` file.
 
 On Windows, ``cpXXX`` codecs are available for all code pages.
-But only codecs listed in the following table are guarantead to exist on
+But only codecs listed in the following table are guaranteed to exist on
 other platforms.
 
 .. impl-detail::

@@ -37,7 +37,7 @@ or as base classes.
 
    You can unescape other strings of data by passing a dictionary as the optional
    *entities* parameter.  The keys and values must all be strings; each key will be
-   replaced with its corresponding value.  ``'&amp'``, ``'&lt;'``, and ``'&gt;'``
+   replaced with its corresponding value.  ``'&amp;'``, ``'&lt;'``, and ``'&gt;'``
    are always unescaped, even if *entities* is provided.
 
 

@@ -1511,6 +1511,72 @@ class BasicTest(TestCase):
         thread.join()
         self.assertEqual(result, b"proxied data\n")
 
+    def test_large_content_length(self):
+        serv = socket.create_server((HOST, 0))
+        self.addCleanup(serv.close)
+
+        def run_server():
+            [conn, address] = serv.accept()
+            with conn:
+                while conn.recv(1024):
+                    conn.sendall(
+                        b"HTTP/1.1 200 Ok\r\n"
+                        b"Content-Length: %d\r\n"
+                        b"\r\n" % size)
+                    conn.sendall(b'A' * (size//3))
+                    conn.sendall(b'B' * (size - size//3))
+
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join, 1.0)
+
+        conn = client.HTTPConnection(*serv.getsockname())
+        try:
+            for w in range(15, 27):
+                size = 1 << w
+                conn.request("GET", "/")
+                with conn.getresponse() as response:
+                    self.assertEqual(len(response.read()), size)
+        finally:
+            conn.close()
+            thread.join(1.0)
+
+    def test_large_content_length_truncated(self):
+        serv = socket.create_server((HOST, 0))
+        self.addCleanup(serv.close)
+
+        def run_server():
+            while True:
+                [conn, address] = serv.accept()
+                with conn:
+                    conn.recv(1024)
+                    if not size:
+                        break
+                    conn.sendall(
+                        b"HTTP/1.1 200 Ok\r\n"
+                        b"Content-Length: %d\r\n"
+                        b"\r\n"
+                        b"Text" % size)
+
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join, 1.0)
+
+        conn = client.HTTPConnection(*serv.getsockname())
+        try:
+            for w in range(18, 65):
+                size = 1 << w
+                conn.request("GET", "/")
+                with conn.getresponse() as response:
+                    self.assertRaises(client.IncompleteRead, response.read)
+                conn.close()
+        finally:
+            conn.close()
+            size = 0
+            conn.request("GET", "/")
+            conn.close()
+            thread.join(1.0)
+
     def test_putrequest_override_domain_validation(self):
         """
         It should be possible to override the default validation

@@ -567,8 +567,8 @@ class OtherFileTests:
         # test that the mode attribute is correct for various mode strings
         # given as init args
         try:
-            for modes in [('w', 'wb'), ('wb', 'wb'), ('wb+', 'rb+'),
-                          ('w+b', 'rb+'), ('a', 'ab'), ('ab', 'ab'),
+            for modes in [('w', 'wb'), ('wb', 'wb'), ('wb+', 'wb+'),
+                          ('w+b', 'wb+'), ('a', 'ab'), ('ab', 'ab'),
                           ('ab+', 'ab+'), ('a+b', 'ab+'), ('r', 'rb'),
                           ('rb', 'rb'), ('rb+', 'rb+'), ('r+b', 'rb+')]:
                 # read modes are last so that TESTFN will exist first

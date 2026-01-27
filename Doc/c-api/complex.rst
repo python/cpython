@@ -82,7 +82,7 @@ Complex Number Objects
 
 .. c:type:: Py_complex
 
-   This C structure defines export format for a Python complex
+   This C structure defines an export format for a Python complex
    number object.
 
    .. c:member:: double real

@@ -558,7 +558,7 @@ process and user.
 
 .. function:: initgroups(username, gid, /)
 
-   Call the system initgroups() to initialize the group access list with all of
+   Call the system ``initgroups()`` to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
@@ -1556,6 +1556,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.15
 
 
+.. data:: RWF_ATOMIC
+
+   Write data atomically. Requires alignment to the device's atomic write unit.
+
+   .. availability:: Linux >= 6.11
+
+   .. versionadded:: 3.15
+
+
 .. function:: ptsname(fd, /)
 
    Return the name of the slave pseudo-terminal device associated with the
@@ -1598,6 +1607,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
+   - :data:`RWF_ATOMIC`
 
    Return the total number of bytes actually written.
 
@@ -1969,7 +1979,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program, other file descriptors are inherited.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
@@ -3404,34 +3415,124 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: statx_result
 
    Information about a file returned by :func:`os.statx`.
 
-   :class:`!statx_result` has all the attributes that :class:`~stat_result` has
-   on Linux, making it :term:`duck-typing` compatible, but
-   :class:`!statx_result` is not a subclass of :class:`~stat_result` and cannot
-   be used as a tuple.
+   :class:`!statx_result` has the following attributes:
 
-   :class:`!statx_result` has the following additional attributes:
+   .. attribute:: stx_atime
 
-   .. attribute:: stx_mask
+      Time of most recent access expressed in seconds.
 
-      Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
-      information retrieved, which may differ from what was requested.
+      Equal to ``None`` if :data:`STATX_ATIME` is missing from
+      :attr:`~statx_result.stx_mask`.
 
-   .. attribute:: stx_attributes_mask
+   .. attribute:: stx_atime_ns
 
-      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
-      specifying the attributes bits supported for this file.
+      Time of most recent access expressed in nanoseconds as an integer.
+
+      Equal to ``None`` if :data:`STATX_ATIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_atomic_write_segments_max
+
+      Maximum iovecs for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_unit_max
+
+      Maximum size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_unit_max_opt
+
+      Maximum optimized size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.16.
+
+   .. attribute:: stx_atomic_write_unit_min
+
+      Minimum size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
 
    .. attribute:: stx_attributes
 
       Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
       specifying the attributes of this file.
+
+   .. attribute:: stx_attributes_mask
+
+      A mask indicating which bits in :attr:`stx_attributes` are supported by
+      the VFS and the filesystem.
+
+   .. attribute:: stx_blksize
+
+      "Preferred" blocksize for efficient file system I/O. Writing to a file in
+      smaller chunks may cause an inefficient read-modify-rewrite.
+
+   .. attribute:: stx_blocks
+
+      Number of 512-byte blocks allocated for file.
+      This may be smaller than :attr:`stx_size`/512 when the file has holes.
+
+      Equal to ``None`` if :data:`STATX_BLOCKS` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_btime
+
+      Time of file creation expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_BTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_btime_ns
+
+      Time of file creation expressed in nanoseconds as an integer.
+
+      Equal to ``None`` if :data:`STATX_BTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ctime
+
+      Time of most recent metadata change expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_CTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ctime_ns
+
+      Time of most recent metadata change expressed in nanoseconds as an
+      integer.
+
+      Equal to ``None`` if :data:`STATX_CTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_dev
+
+      Identifier of the device on which this file resides.
 
    .. attribute:: stx_dev_major
 
@@ -3441,24 +3542,12 @@ features:
 
       Minor number of the device on which this file resides.
 
-   .. attribute:: stx_rdev_major
-
-      Major number of the device this file represents.
-
-   .. attribute:: stx_rdev_minor
-
-      Minor number of the device this file represents.
-
-   .. attribute:: stx_mnt_id
-
-      Mount ID.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 5.8.
-
    .. attribute:: stx_dio_mem_align
 
       Direct I/O memory buffer alignment requirement.
+
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.1.
@@ -3467,56 +3556,123 @@ features:
 
       Direct I/O file offset alignment requirement.
 
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
+
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.1.
-
-   .. attribute:: stx_subvol
-
-      Subvolume ID.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.10.
-
-   .. attribute:: stx_atomic_write_unit_min
-
-      Minimum size for direct I/O with torn-write protection.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.11.
-
-   .. attribute:: stx_atomic_write_unit_max
-
-      Maximum size for direct I/O with torn-write protection.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.11.
-
-   .. attribute:: stx_atomic_write_unit_max_opt
-
-      Maximum optimized size for direct I/O with torn-write protection.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.16.
-
-   .. attribute:: stx_atomic_write_segments_max
-
-      Maximum iovecs for direct I/O with torn-write protection.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.11.
 
    .. attribute:: stx_dio_read_offset_align
 
       Direct I/O file offset alignment requirement for reads.
 
+      Equal to ``None`` if :data:`STATX_DIO_READ_ALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
+
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.14.
+
+   .. attribute:: stx_gid
+
+      Group identifier of the file owner.
+
+      Equal to ``None`` if :data:`STATX_GID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ino
+
+      Inode number.
+
+      Equal to ``None`` if :data:`STATX_INO` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mask
+
+      Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
+      information retrieved, which may differ from what was requested.
+
+   .. attribute:: stx_mnt_id
+
+      Mount identifier.
+
+      Equal to ``None`` if :data:`STATX_MNT_ID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 5.8.
+
+   .. attribute:: stx_mode
+
+      File mode: file type and file mode bits (permissions).
+
+      Equal to ``None`` if :data:`STATX_TYPE | STATX_MODE <STATX_TYPE>`
+      is missing from :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mtime
+
+      Time of most recent content modification expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_MTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mtime_ns
+
+      Time of most recent content modification expressed in nanoseconds as an
+      integer.
+
+      Equal to ``None`` if :data:`STATX_MTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_nlink
+
+      Number of hard links.
+
+      Equal to ``None`` if :data:`STATX_NLINK` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_rdev
+
+      Type of device if an inode device.
+
+   .. attribute:: stx_rdev_major
+
+      Major number of the device this file represents.
+
+   .. attribute:: stx_rdev_minor
+
+      Minor number of the device this file represents.
+
+   .. attribute:: stx_size
+
+      Size of the file in bytes, if it is a regular file or a symbolic link.
+      The size of a symbolic link is the length of the pathname it contains,
+      without a terminating null byte.
+
+      Equal to ``None`` if :data:`STATX_SIZE` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_subvol
+
+      Subvolume identifier.
+
+      Equal to ``None`` if :data:`STATX_SUBVOL` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.10.
+
+   .. attribute:: stx_uid
+
+      User identifier of the file owner.
+
+      Equal to ``None`` if :data:`STATX_UID` is missing from
+      :attr:`~statx_result.stx_mask`.
 
    .. seealso:: The :manpage:`statx(2)` man page.
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: STATX_TYPE
@@ -3539,13 +3695,13 @@ features:
           STATX_WRITE_ATOMIC
           STATX_DIO_READ_ALIGN
 
-   Bitflags for use in the *mask* parameter to :func:`os.statx`.  Flags
-   including and after :const:`!STATX_MNT_ID` are only available when their
-   corresponding members in :class:`statx_result` are available.
+   Bitflags for use in the *mask* parameter to :func:`os.statx`.  Some of these
+   flags may be available even when their corresponding members in
+   :class:`statx_result` are not available.
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_FORCE_SYNC
 
@@ -3555,7 +3711,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_DONT_SYNC
 
@@ -3564,7 +3720,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_SYNC_AS_STAT
 
@@ -3576,7 +3732,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: AT_NO_AUTOMOUNT
@@ -3588,7 +3744,7 @@ features:
 
    .. availability:: Linux.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: statvfs(path)
@@ -3727,6 +3883,9 @@ features:
 .. function:: symlink(src, dst, target_is_directory=False, *, dir_fd=None)
 
    Create a symbolic link pointing to *src* named *dst*.
+
+   The *src* parameter refers to the target of the link (the file or directory being linked to),
+   and *dst* is the name of the link being created.
 
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
@@ -4103,7 +4262,7 @@ features:
        import os
 
        # semaphore with start value '1'
-       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFD_CLOEXEC)
        try:
            # acquire semaphore
            v = os.eventfd_read(fd)
@@ -5845,7 +6004,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-      :func:`cpu_count` returns the overridden value *n*.
+      :func:`cpu_count` returns the override value *n*.
 
 
 .. function:: getloadavg()
@@ -5867,7 +6026,7 @@ Miscellaneous System Information
    in the **system**.
 
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-   :func:`process_cpu_count` returns the overridden value *n*.
+   :func:`process_cpu_count` returns the override value *n*.
 
    See also the :func:`sched_getaffinity` function.
 

@@ -160,7 +160,7 @@ There are three ways strings and buffers can be converted to C:
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
-   The buffer may contain embedded null bytes. The caller have to call
+   The buffer may contain embedded null bytes. The caller has to call
    :c:func:`PyBuffer_Release` when it is done with the buffer.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
