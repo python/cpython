@@ -5,7 +5,7 @@ import threading
 import types
 import unittest
 from test.support import (threading_helper, check_impl_detail,
-                          requires_specialization, requires_specialization_ft,
+                          requires_specialization,
                           cpython_only, requires_jit_disabled, reset_code)
 from test.support.import_helper import import_module
 
@@ -524,7 +524,7 @@ class TestCallCache(TestBase):
             f()
 
     @requires_jit_disabled
-    @requires_specialization_ft
+    @requires_specialization
     def test_assign_init_code(self):
         class MyClass:
             def __init__(self):
@@ -547,7 +547,7 @@ class TestCallCache(TestBase):
         instantiate()
 
     @requires_jit_disabled
-    @requires_specialization_ft
+    @requires_specialization
     def test_push_init_frame_fails(self):
         def instantiate():
             return InitTakesArg()
@@ -576,7 +576,7 @@ class TestCallCache(TestBase):
             f()
 
     @requires_jit_disabled
-    @requires_specialization_ft
+    @requires_specialization
     def test_specialize_call_function_ex_py(self):
         def ex_py(*args, **kwargs):
             return 1
@@ -592,7 +592,7 @@ class TestCallCache(TestBase):
         self.assert_specialized(instantiate, "CALL_EX_PY")
 
     @requires_jit_disabled
-    @requires_specialization_ft
+    @requires_specialization
     def test_specialize_call_function_ex_py_fail(self):
         def ex_py(*args, **kwargs):
             return 1
@@ -660,7 +660,7 @@ class TestRacesDoNotCrash(TestBase):
             for writer in writers:
                 writer.join()
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_binary_subscr_getitem(self):
         def get_items():
             class C:
@@ -690,7 +690,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "BINARY_OP_SUBSCR_GETITEM"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_binary_subscr_list_int(self):
         def get_items():
             items = []
@@ -768,7 +768,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "FOR_ITER_LIST"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_class(self):
         def get_items():
             class C:
@@ -798,7 +798,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_CLASS"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_class_with_metaclass_check(self):
         def get_items():
             class Meta(type):
@@ -831,7 +831,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_getattribute_overridden(self):
         def get_items():
             class C:
@@ -861,7 +861,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_instance_value(self):
         def get_items():
             class C:
@@ -885,7 +885,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_method_lazy_dict(self):
         def get_items():
             class C(Exception):
@@ -915,7 +915,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_LAZY_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_method_no_dict(self):
         def get_items():
             class C:
@@ -946,7 +946,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_NO_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_method_with_values(self):
         def get_items():
             class C:
@@ -976,7 +976,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_WITH_VALUES"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_module(self):
         def get_items():
             items = []
@@ -1001,7 +1001,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_MODULE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_property(self):
         def get_items():
             class C:
@@ -1031,7 +1031,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_PROPERTY"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_slot(self):
         def get_items():
             class C:
@@ -1058,7 +1058,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_SLOT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_with_hint(self):
         def get_items():
             class C:
@@ -1085,7 +1085,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_global_module(self):
         if not have_dict_key_versions():
             raise unittest.SkipTest("Low on dict key versions")
@@ -1158,7 +1158,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_store_subscr_list_int(self):
         def get_items():
             items = []
@@ -1182,7 +1182,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_unpack_sequence_list(self):
         def get_items():
             items = []
@@ -1362,7 +1362,7 @@ class TestInstanceDict(unittest.TestCase):
 class TestSpecializer(TestBase):
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_binary_op(self):
         def binary_op_add_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1497,7 +1497,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(binary_op_bitwise_extend, "BINARY_OP")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_super_attr(self):
         """Ensure that LOAD_SUPER_ATTR is specialized as expected."""
 
@@ -1536,7 +1536,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR_METHOD")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_contain_op(self):
         def contains_op_dict():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1559,7 +1559,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(contains_op_set, "CONTAINS_OP")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_send_with(self):
         def run_async(coro):
             while True:
@@ -1586,7 +1586,7 @@ class TestSpecializer(TestBase):
         self.assert_specialized(send_with, "SEND_GEN")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_send_yield_from(self):
         def g():
             yield None
@@ -1601,7 +1601,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(send_yield_from, "SEND")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_store_attr_slot(self):
         class C:
             __slots__ = ['x']
@@ -1622,7 +1622,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(set_slot, "STORE_ATTR_SLOT")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_store_attr_instance_value(self):
         class C:
             pass
@@ -1644,7 +1644,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(set_value, "STORE_ATTR_INSTANCE_VALUE")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_store_attr_with_hint(self):
         class C:
             pass
@@ -1669,7 +1669,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(set_value, "STORE_ATTR_WITH_HINT")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_to_bool(self):
         def to_bool_bool():
             true_cnt, false_cnt = 0, 0
@@ -1737,7 +1737,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(to_bool_str, "TO_BOOL")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_unpack_sequence(self):
         def unpack_sequence_two_tuple():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1774,7 +1774,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(unpack_sequence_list, "UNPACK_SEQUENCE")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_binary_subscr(self):
         def binary_subscr_list_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1844,7 +1844,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(binary_subscr_getitems, "BINARY_OP")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_compare_op(self):
         def compare_op_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1878,7 +1878,7 @@ class TestSpecializer(TestBase):
 
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_for_iter(self):
         L = list(range(10))
         def for_iter_list():
@@ -1916,7 +1916,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_call_list_append(self):
         # gh-141367: only exact lists should use
         # CALL_LIST_APPEND instruction after specialization.
@@ -1943,7 +1943,7 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(my_list_append, "CALL")
 
     @cpython_only
-    @requires_specialization_ft
+    @requires_specialization
     def test_load_attr_module_with_getattr(self):
         module = types.ModuleType("test_module_with_getattr")
         module.__dict__["some_attr"] = "foo"
