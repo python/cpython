@@ -264,6 +264,16 @@ complete listing.
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (see :c:member:`PyConfig.use_environment`).
 
+.. c:macro:: Py_LL(number)
+
+   Use *number* as a :c:type:`long long` integer literal.
+
+   This usally expands to *number* followed by ``LL``, but will expand to some
+   compiler-specific suffixes (such as ``I64``) on older compilers.
+
+   In modern versions of Python, this macro is not very useful, as C99 and
+   later require the ``LL`` suffix to be valid for an integer.
+
 .. c:macro:: Py_LOCAL(type)
 
    Declare a function returning the specified *type* using a fast-calling
@@ -327,6 +337,14 @@ complete listing.
    ``"123"``.
 
    .. versionadded:: 3.4
+
+.. c:macro:: Py_ULL(number)
+
+   Similar to :c:macro:`Py_LL`, but *number* will be a :c:type:`unsigned long long`
+   literal instead. This is done by appending ``U`` to the result of ``Py_LL``.
+
+   In modern versions of Python, this macro is not very useful, as C99 and
+   later require the ``ULL``/``LLU`` suffix to be valid for an integer.
 
 .. c:macro:: Py_UNREACHABLE()
 
