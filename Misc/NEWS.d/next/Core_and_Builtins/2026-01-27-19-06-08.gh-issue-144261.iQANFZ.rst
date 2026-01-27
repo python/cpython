@@ -1,0 +1,1 @@
+SyntaxWarning when await an unawaitable constant.
