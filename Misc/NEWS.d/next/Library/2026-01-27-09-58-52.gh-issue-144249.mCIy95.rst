@@ -1,2 +1,2 @@
 Add filename context to OSError exceptions raised by
-:func:`ssl.SSLContext.load_cert_chain`, allowing users to have more context
+:func:`ssl.SSLContext.load_cert_chain`, allowing users to have more context.
