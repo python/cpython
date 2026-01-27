@@ -3138,11 +3138,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             return
         self.assertIsInstance(atom, parser.Atom)
         self.assertEqual(atom.token_type, 'atom')
-        self.verify_terminal_types(atom, 'atext', 'vtext', 'ptext', 'fws')
+        self.verify_terminal_types(atom, 'atext', 'ptext', 'fws')
 
-    # If there is no remainder a cfws test string should be valid as a atom
-    # prefix or suffix, with a few exceptions that test for what happens
-    # if closing parens are missing.
+    # If there is no remainder or exception expectation, a cfws test string
+    # should be valid as a atom prefix or suffix, with a few exceptions that
+    # test for what happens if closing parens are missing.
     @params_map(with_namelist=True)
     def adapt_get_cfws_tests_for_get_atom(
             nl,
@@ -3150,13 +3150,15 @@ class TestParser(TestParserMixin, TestEmailBase):
             *args,
             stringified=None,
             remainder=None,
+            exception=None,
             **kw,
         ):
-        if remainder or nl.has_any(
+        if remainder or exception or nl.has_any(
                 'multiple_mesting_missing_two_right_parens',
                 'no_right_paren_after_non_ws',
                 'no_right_paren_after_ws',
                 'header_ends_in_comment',
+                'empty', # XXX POSTDEP remove this line, it's from a deprecation
             ):
             return
         new_s = f'{s} foo {s}'
@@ -3166,13 +3168,11 @@ class TestParser(TestParserMixin, TestEmailBase):
         for k in ('comments', 'commenttree', 'defects'):
             if (v := kw.get(k)):
                 kw[k] = v * 2
-        # XXX XXX mid refactoring the idx values are wrong.  Replace this
-        # when get_atom is refactored.
-        if kw.get('ew_indexes'):
-            kw['ew_indexes'] = ...
+        if (idxs := kw.get('ew_indexes')):
+            kw['ew_indexes'] = idxs + [x + len(s) + 5 for x in idxs]
         yield 'adapted_from_get_cfws', C(new_s, **kw)
 
-    params_test_get_atom = old_api_only(
+    params_test_get_atom = for_each_api(
 
         adapt_get_cfws_tests_for_get_atom(params_test_get_cfws),
 
@@ -3181,8 +3181,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         include_unless(
             lambda n, s, *a, remainder='', **k:
                 s.startswith(tuple(CFWS_LEADER))
-                # XXX XXX disable the ew tests until get_atom is refactored
-                or 'ew_' in str(n)
                 or remainder.startswith(tuple(CFWS_LEADER)),
             label='from_test_get_atext_sequence',
             )(params_test_get_atext_sequence),
@@ -3264,6 +3262,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         ew_only = C(
             '=?utf-8?q?=20bob?=',
             stringified=' bob',
+            ew_indexes=[0],
             ),
 
         ew_and_comments = C(
@@ -3271,30 +3270,31 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified='(a) bob (b)',
             value=' bob ',
             comments=['a', 'b'],
+            ew_indexes=[4],
             ),
 
-        # XXX XXX this should actually be two missing whitespace defects.
         ew_and_comments_no_ws = C(
             '(a)=?UTF-8?q?bob?=(b)',
             stringified='(a)bob(b)',
             value=' bob ',
             comments=['a', 'b'],
             defects=[
-                #missing_whitespace_before_ew_defect,
+                missing_whitespace_before_ew_defect,
                 missing_whitespace_after_ew_defect,
                 ],
+            ew_indexes=[3],
             ),
 
-        # XXX XXX ditto
         ew_and_empty_comments_no_ws = C(
             '()=?UTF-8?q?bob?=()',
             stringified='()bob()',
             value=' bob ',
             comments=['', ''],
             defects=[
-                #missing_whitespace_before_ew_defect,
+                missing_whitespace_before_ew_defect,
                 missing_whitespace_after_ew_defect,
                 ],
+            ew_indexes=[2],
             ),
 
         # XXX Ideally this should have a defect for the specials.
@@ -3303,6 +3303,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                 '=?UTF-8?q?bob{char}?= @foo',
                 stringified='bob{char} ',
                 remainder='@foo',
+                ew_indexes=[0],
                 ),
             ),
 
@@ -3312,29 +3313,26 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='@=?UTF-8?q?bob?=',
             ),
 
-        # XXX XXX Technically these are correct as is but we're going to fix it
-        # to always decode the ews anyway, because most email software does.
-
         multiple_ew_no_ws = C(
             '=?UTF-8?q?foo?==?UTF-8?q?bar?=',
-            stringified='foo',
-            #stringified='foobar',
-            remainder='=?UTF-8?q?bar?=',
+            stringified='foobar',
             defects=[
                 missing_whitespace_after_ew_defect,
-                #missing_whitespace_before_ew_defect,
+                missing_whitespace_before_ew_defect,
                 ],
+            ew_indexes=[0, 15],
             ),
 
         ew_in_middle_of_atom_text = C(
             'foo{=?UTF-8?q?foo?=}{=?UTF-8?q?bar?=}bar',
-            #stringified='foo{foo}{bar}bar',
-            #defects=[
-            #    missing_whitespace_before_ew_defect,
-            #    missing_whitespace_after_ew_defect,
-            #    missing_whitespace_before_ew_defect,
-            #    missing_whitespace_after_ew_defect,
-            #    ],
+            stringified='foo{foo}{bar}bar',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            ew_indexes=[4, 21],
             ),
 
         empty_comments_no_ws = C(
@@ -3590,7 +3588,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             self.assertEqual(word.quoted_value, quoted_value)
         if content is not None:
             self.assertEqual(word.content, content)
-        self.verify_terminal_types(word, 'dot', 'atext', 'ptext', 'fws', 'vtext')
+        self.verify_terminal_types(word, 'dot', 'atext', 'ptext', 'fws')
 
     @params_map
     def adapt_get_atom_tests_for_get_word(*args, **kw):
@@ -3659,7 +3657,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             obs_dots,
             phrase.ppstr(),
             )
-        self.verify_terminal_types(phrase, 'dot', 'atext', 'ptext', 'fws', 'vtext')
+        self.verify_terminal_types(phrase, 'dot', 'atext', 'ptext', 'fws')
 
     @params_map(with_namelist=True)
     def adapt_get_word_tests_for_get_phrase(nl, *args, **kw):
@@ -3761,16 +3759,22 @@ class TestParser(TestParserMixin, TestEmailBase):
         adjacent_ew = C(
             '=?ascii?q?Joi?= \t =?ascii?q?ned?=',
             stringified='Joined',
+            # XXX XXX second index will change during refactor
+            ew_indexes=[0, 0],
             ),
 
         adjacent_ew_different_encodings = C(
             '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=',
             stringified='Bérénice',
+            # XXX XXX second index will change during refactor
+            ew_indexes=[0, 0],
             ),
 
         adjacent_ew_encoded_spaces = C(
             '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
             stringified='Encoded spaces preserved',
+            # XXX XXX second and third indexes will change during refactor
+            ew_indexes=[0, 0, 0],
             ),
 
         adjacent_ew_comment_is_not_linear_white_space = C(
@@ -3778,28 +3782,38 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified='Comment (is not) linear-white-space',
             value='Comment linear-white-space',
             comments=['is not'],
+            # XXX XXX second index will change during refactor
+            ew_indexes=[0, 0],
             ),
 
         adjacent_ew_no_error_on_defects = C(
             '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
             stringified='Defect still joins',
             defects=[whitespace_inside_ew_defect],
+            # XXX XXX second index will change during refactor
+            ew_indexes=[0, 0],
             ),
 
         adjacent_ew_ignore_non_ew = C(
             '=?ascii?q?No?= =?join?= for non-ew',
             stringified='No =?join?= for non-ew',
+            ew_indexes=[0],
             ),
 
         adjacent_ew_ignore_invalid_ew = C(
             '=?ascii?q?No?= =?ascii?rot13?wbva= for invalid ew',
             stringified='No =?ascii?rot13?wbva= for invalid ew',
+            ew_indexes=[0],
             ),
 
         adjacent_ew_missing_space = C(
             '=?ascii?q?Joi?==?ascii?q?ned?=',
             stringified='Joined',
-            defects=[missing_whitespace_after_ew_defect],
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 15],
             ),
 
         ew_before_quoted_string_missing_space = C(
@@ -3808,12 +3822,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             value='disjointed',
             defects=[
                 # XXX XXX After refactoring there should be one 'after' defect
-                missing_whitespace_after_ew_defect,
+                #missing_whitespace_after_ew_defect,
                 ew_inside_quoted_string_defect,
                 ],
-            # XXX XXX this will change during refactoring.  Currently only
-            # get_bare_quoted_string is adding indexes.
-            ew_indexes=[1],
+            # XXX XXX second index will change during refactoring
+            ew_indexes=[0, 1],
             ),
 
         ew_after_quoted_string_missing_space = C(
@@ -3825,9 +3838,8 @@ class TestParser(TestParserMixin, TestEmailBase):
                 #missing_whitespace_after_ew_defect,
                 ew_inside_quoted_string_defect,
                 ],
-            # XXX XXX this will change during refactoring.  Currently only
-            # get_bare_quoted_string is adding indexes.
-            ew_indexes=[1],
+            # XXX XXX second index will change during refactoring
+            ew_indexes=[1, 0],
             ),
 
         **for_each_character(RFC_SPECIALS, skip=CFWS_LEADER + '."')(
@@ -3904,7 +3916,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             'atext',
             'ptext',
             'fws',
-            'vtext',
             'misplaced-special',
             )
 
@@ -4068,13 +4079,12 @@ class TestParser(TestParserMixin, TestEmailBase):
                 # XXX XXX There should be exactly one ew whitespace defect
                 # here, but the number generated will change during refactor,
                 # until it is fixed when get_obs_local_part is refactored.
-                missing_whitespace_after_ew_defect,
+                #missing_whitespace_after_ew_defect,
                 missing_dot_in_local_part_defect,
                 ew_inside_quoted_string_defect,
                 ],
-            # XXX XXX this will change during refactoring.  Currently only
-            # get_bare_quoted_string is adding indexes.
-            ew_indexes=[1],
+            # XXX XXX second index will change during refactor
+            ew_indexes=[0, 1],
             ),
 
         less_invalid_ew_atoms = C(
@@ -4083,6 +4093,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             value="foo  .  bar .bird",
             local_part="foo . bar.bird",
             comments=['test'],
+            # XXX XXX the indexes will change during refactor
+            ew_indexes=[0, 0],
             ),
 
         # XXX XXX Since we've decided to decode encoded words, this becomes a
@@ -4096,9 +4108,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             local_part="foo . bar.bird",
             defects=[
                 # XXX XXX the whitespace defects will change during refactoring
-                missing_whitespace_after_ew_defect,
-                missing_whitespace_after_ew_defect,
+                #missing_whitespace_after_ew_defect,
+                #missing_whitespace_after_ew_defect,
                 ],
+            # XXX XXX second index will change during refactor
+            ew_indexes=[0, 0],
             ),
 
         )
@@ -4172,7 +4186,11 @@ class TestParser(TestParserMixin, TestEmailBase):
         else:
             defects.append(non_dot_atom_local_part_obs_defect)
         # XXX XXX delete this fixup when get_local_part is refactored.
-        if 'invalid_ew_atoms' in nl:
+        if nl.has_any(
+                'invalid_ew_atoms',
+                'less_invalid_ew_atoms',
+                'sort_of_valid_ew_dot_atom',
+            ):
             kw.pop('ew_indexes')
         yield '', C(*args, defects=defects, **kw)
 
