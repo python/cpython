@@ -7,7 +7,6 @@ import inspect
 import io
 import operator
 import os
-import py_compile
 import shutil
 import stat
 import sys
