@@ -4987,6 +4987,15 @@ class _TestSharedMemory(BaseTestCase):
             resource_tracker.unregister(mem._name, "shared_memory")
             mem.close()
 
+    def test_shared_memory_slice_assignment_no_crash():
+        from multiprocessing import shared_memory
+        shm = shared_memory.SharedMemory(create=True, size=10)
+        try:
+            shm.buf[:5] = b'hello'
+        finally:
+            shm.close()
+            shm.unlink()
+
 #
 # Test to verify that `Finalize` works.
 #

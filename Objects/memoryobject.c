@@ -2656,6 +2656,11 @@ memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
 
     CHECK_RELEASED_INT(self);
 
+    if (view->buf == NULL) {
+        PyErr_SetString(PyExc_BufferError, "memoryview: underlying buffer is no longer valid");
+        return -1;
+    }
+
     fmt = adjust_fmt(view);
     if (fmt == NULL)
         return -1;
