@@ -4,6 +4,7 @@
 import _thread
 from collections import deque
 import contextlib
+import dis
 import importlib.machinery
 import importlib.util
 import json
@@ -2856,6 +2857,85 @@ class Test_Pep523API(unittest.TestCase):
             list(outer())
         names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
         self.do_test(func, names)
+
+    def test_jit_frame(self):
+        def fakefunc():
+            pass
+
+        def f():
+            return sys._getframe(1)
+
+        res = _testinternalcapi.call_with_jit_frame(fakefunc, f, ())
+
+    def test_jit_frame_globals(self):
+        """jit executable can fill in globals when accessed"""
+        def fakefunc():
+            pass
+
+        fake_globals = {"abc":42}
+        def callback():
+            return {"globals": fake_globals}
+
+        res = _testinternalcapi.call_with_jit_frame(fakefunc, globals, (), callback)
+        self.assertEqual(res, fake_globals)
+
+    def test_jit_frame_builtins(self):
+        """jit executable can fill in builtins when accessed"""
+        def fakefunc():
+            pass
+
+        fake_builtins = {"abc":42}
+        def callback():
+            return {"builtins": fake_builtins}
+
+        res = _testinternalcapi.call_with_jit_frame(fakefunc, _testlimitedcapi.eval_getbuiltins, (), callback)
+        self.assertEqual(res, fake_builtins)
+
+    def test_jit_frame_instr_ptr(self):
+        """jit executable can fill in the instr ptr each time the frame is queried"""
+        def fakefunc():
+            pass
+            pass
+            pass
+            pass
+
+        offset = 0
+        linenos = []
+        def test():
+            for op in dis.get_instructions(fakefunc):
+                if op.opname in ("RESUME", "NOP", "RETURN_VALUE"):
+                    nonlocal offset
+                    offset = op.offset//2
+                    linenos.append(sys._getframe(1).f_lineno)
+
+        def callback():
+            return {"instr_ptr": offset}
+
+        _testinternalcapi.call_with_jit_frame(fakefunc, test, (), callback)
+        base = fakefunc.__code__.co_firstlineno
+        self.assertEqual(linenos, [base, base + 1, base + 2, base + 3, base + 4])
+
+    def test_jit_frame_code(self):
+        """internal C api checks the for a code executor"""
+        def fakefunc():
+            pass
+
+        def callback():
+            return _testinternalcapi.iframe_getcode(sys._getframe(1))
+
+        res = _testinternalcapi.call_with_jit_frame(fakefunc, callback, ())
+        self.assertEqual(res, fakefunc.__code__)
+
+    def test_jit_frame_line(self):
+        """internal C api checks the for a code executor"""
+        def fakefunc():
+            pass
+
+        def callback():
+            return _testinternalcapi.iframe_getline(sys._getframe(1))
+
+        res = _testinternalcapi.call_with_jit_frame(fakefunc, callback, ())
+        self.assertEqual(res, fakefunc.__code__.co_firstlineno)
 
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')

@@ -108,6 +108,7 @@ Python/bltinmodule.c	-	PyZip_Type	-
 Python/context.c	-	PyContextToken_Type	-
 Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-
+Python/frame.c	-	PyUnstable_ExternalExecutable_Type	-
 Python/instruction_sequence.c	-	_PyInstructionSequence_Type	-
 Python/instrumentation.c	-	_PyLegacyBranchEventHandler_Type	-
 Python/instrumentation.c	-	_PyBranchesIterator	-

@@ -20,7 +20,7 @@
 #include "pycore_dict.h"          // PyDictValues
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_frame.h"         // _PyInterpreterFrameCore
 #include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
@@ -28,6 +28,7 @@
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
+#include "pycore_interpframe_structs.h" // _PyInterpreterFrameCore
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -666,7 +667,7 @@ static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
     if (PyStackRef_FunctionCheck(f->f_funcobj)) {
-        PyFunctionObject *func = _PyFrame_GetFunction(f);
+        PyFunctionObject *func = _PyFrame_GetFunction(_PyFrame_Core(f));
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
@@ -699,6 +700,14 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 extern int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
 
 static PyObject *
+set_eval_frame_interp(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+    Py_RETURN_NONE;
+}
+
+// Defined in interpreter.c
+static PyObject *
 get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *res = PyDict_New();
@@ -723,11 +732,113 @@ get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
     return res;
 }
 
-static PyObject *
-set_eval_frame_interp(PyObject *self, PyObject *Py_UNUSED(args))
+typedef struct {
+    bool initialized;
+    _PyInterpreterFrame frame;
+} JitFrame;
+
+_PyInterpreterFrame *
+reifier(_PyInterpreterFrameCore *f, PyObject *executable)
 {
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
-    Py_RETURN_NONE;
+    JitFrame *jitframe = (JitFrame*)((char *)f - offsetof(JitFrame, frame));
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)f;
+    PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    if (!jitframe->initialized) {
+        frame->f_locals = NULL;
+        frame->f_globals = func->func_globals; // borrowed
+        frame->f_builtins = func->func_builtins; // borrowed
+        frame->frame_obj = NULL;
+        jitframe->initialized = true;
+    }
+    PyUnstable_PyExternalExecutable *ext_exec = (PyUnstable_PyExternalExecutable*)executable;
+    if (ext_exec->ef_state == NULL) {
+        return frame;
+    }
+
+    PyObject *res = PyObject_CallNoArgs(ext_exec->ef_state);
+    if (res == NULL) {
+        // reifier cannot fail
+        PyErr_Clear();
+        return frame;
+    }
+
+    // let the test-state function fill in details on the frame
+    if (PyDict_Check(res)) {
+        PyObject *globals = PyDict_GetItemString(res, "globals");
+        if (globals != NULL) {
+            frame->f_globals = globals;
+        }
+        PyObject *builtins = PyDict_GetItemString(res, "builtins");
+        if (builtins != NULL) {
+            frame->f_builtins = builtins;
+        }
+        PyObject *instr_ptr = PyDict_GetItemString(res, "instr_ptr");
+        if (instr_ptr != NULL) {
+            frame->instr_ptr = _PyCode_CODE((PyCodeObject *)func->func_code) +
+                                PyLong_AsLong(instr_ptr);
+        }
+    }
+    Py_DECREF(res);
+    return frame;
+}
+
+static PyObject *
+call_with_jit_frame(PyObject *self, PyObject *args)
+{
+    PyObject *fakefunc; // used for f_funcobj as-if we were that JITed function
+    PyObject *call;     // the thing to call for testing purposes
+    PyObject *callargs; // the arguments to provide for the test call
+    PyObject *state = NULL; // a state object provided to the reifier, for tests we
+                            // callback on it to populate fields.
+    if (!PyArg_ParseTuple(args, "OOO|O", &fakefunc, &call, &callargs, &state)) {
+        return NULL;
+    }
+    if (!PyTuple_Check(callargs)) {
+        PyErr_SetString(PyExc_TypeError, "callargs must be a tuple");
+        return NULL;
+    }
+
+    PyThreadState *tstate = PyThreadState_Get();
+    PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)fakefunc)->func_code;
+    PyObject *executable = PyUnstable_MakeExternalExecutable(reifier, code, state);
+    if (executable == NULL) {
+        return NULL;
+    }
+
+    // Create JIT frame and push onto the _PyInterprerFrame stack.
+    JitFrame frame;
+    frame.initialized = false;
+    // Initialize minimal set of fields
+    _PyFrame_Core(&frame.frame)->owner = FRAME_OWNED_EXTERNALLY;
+    _PyFrame_Core(&frame.frame)->previous = tstate->current_frame;
+    _PyFrame_Core(&frame.frame)->f_executable = PyStackRef_FromPyObjectSteal(executable);
+    frame.frame.f_funcobj = PyStackRef_FromPyObjectNew(fakefunc);
+    frame.frame.instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable;
+    frame.frame.stackpointer = &frame.frame.localsplus[0];
+#ifdef Py_GIL_DISABLED
+    frame.frame.tlbc_index = 0;
+#endif
+    tstate->current_frame = _PyFrame_Core(&frame.frame);
+
+    // call the test function
+    PyObject *res = PyObject_Call(call, callargs, NULL);
+
+    tstate->current_frame = _PyFrame_Core(&frame.frame)->previous;
+    // the test function may have caused the frame to get reified.
+    if (frame.initialized && frame.frame.frame_obj != NULL) {
+        // remove our reifier
+        PyStackRef_CLOSE(_PyFrame_Core(&frame.frame)->f_executable);
+        _PyFrame_Core(&frame.frame)->f_executable = PyStackRef_FromPyObjectNew(code);
+
+        // Transfer ownership to the reified frame object
+        _PyFrame_ClearExceptCode(&frame.frame);
+    }
+    else {
+        // Pop frame from the stack
+        PyStackRef_CLOSE(frame.frame.f_funcobj);
+    }
+    PyStackRef_CLOSE(_PyFrame_Core(&frame.frame)->f_executable);
+    return res;
 }
 
 /*[clinic input]
@@ -970,8 +1081,8 @@ iframe_getcode(PyObject *self, PyObject *frame)
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
-    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
-    return PyUnstable_InterpreterFrame_GetCode(f);
+    _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyUnstable_InterpreterFrame_GetCode(_PyFrame_Core(f));
 }
 
 static PyObject *
@@ -981,8 +1092,8 @@ iframe_getline(PyObject *self, PyObject *frame)
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
-    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
-    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLine(f));
+    _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLine(_PyFrame_Core(f)));
 }
 
 static PyObject *
@@ -992,8 +1103,8 @@ iframe_getlasti(PyObject *self, PyObject *frame)
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
-    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
-    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
+    _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(_PyFrame_Core(f)));
 }
 
 static PyObject *
@@ -2587,6 +2698,7 @@ static PyMethodDef module_functions[] = {
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_interp", set_eval_frame_interp, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    {"call_with_jit_frame", call_with_jit_frame, METH_VARARGS, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF

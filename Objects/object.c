@@ -2517,6 +2517,7 @@ static PyTypeObject* static_types[] = {
     &PyTuple_Type,
     &PyUnicodeIter_Type,
     &PyUnicode_Type,
+    &PyUnstable_ExternalExecutable_Type,
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
@@ -2753,13 +2754,13 @@ PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
         return 0;
     }
 
-    _PyInterpreterFrame *frame = _PyEval_GetFrame();
-    if (frame == NULL) {
+    _PyInterpreterFrameCore *frame = _PyEval_GetFrame();
+    if (frame == NULL || _PyFrame_IsExternalFrame(frame)) {
         return 0;
     }
 
-    _PyStackRef *base = _PyFrame_Stackbase(frame);
-    _PyStackRef *stackpointer = frame->stackpointer;
+    _PyStackRef *base = _PyFrame_Stackbase(_PyFrame_Full(frame));
+    _PyStackRef *stackpointer = _PyFrame_Full(frame)->stackpointer;
     while (stackpointer > base) {
         stackpointer--;
         _PyStackRef ref = *stackpointer;
@@ -3190,7 +3191,7 @@ _Py_Dealloc(PyObject *op)
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
-    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+    assert(_PyFrame_StackpointerSaved());
 #endif
     PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior

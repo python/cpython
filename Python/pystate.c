@@ -1539,23 +1539,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     // Initialize the embedded base frame - sentinel at the bottom of the frame stack
     _tstate->base_frame.previous = NULL;
     _tstate->base_frame.f_executable = PyStackRef_None;
-    _tstate->base_frame.f_funcobj = PyStackRef_NULL;
-    _tstate->base_frame.f_globals = NULL;
-    _tstate->base_frame.f_builtins = NULL;
-    _tstate->base_frame.f_locals = NULL;
-    _tstate->base_frame.frame_obj = NULL;
-    _tstate->base_frame.instr_ptr = NULL;
-    _tstate->base_frame.stackpointer = _tstate->base_frame.localsplus;
-    _tstate->base_frame.return_offset = 0;
     _tstate->base_frame.owner = FRAME_OWNED_BY_INTERPRETER;
-    _tstate->base_frame.visited = 0;
-#ifdef Py_DEBUG
-    _tstate->base_frame.lltrace = 0;
-#endif
-#ifdef Py_GIL_DISABLED
-    _tstate->base_frame.tlbc_index = 0;
-#endif
-    _tstate->base_frame.localsplus[0] = PyStackRef_NULL;
 
     // current_frame starts pointing to the base frame
     tstate->current_frame = &_tstate->base_frame;
@@ -2094,7 +2078,7 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    _PyInterpreterFrame *f = _PyThreadState_GetFrame(tstate);
+    _PyInterpreterFrameCore *f = _PyThreadState_GetFrame(tstate);
     if (f == NULL) {
         return NULL;
     }
@@ -2687,7 +2671,7 @@ _PyThread_CurrentFrames(void)
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
-            _PyInterpreterFrame *frame = t->current_frame;
+            _PyInterpreterFrameCore *frame = t->current_frame;
             frame = _PyFrame_GetFirstComplete(frame);
             if (frame == NULL) {
                 continue;
@@ -3076,7 +3060,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
 }
 
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+_PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrameCore * frame)
 {
     assert(tstate->datastack_chunk);
     PyObject **base = (PyObject **)frame;

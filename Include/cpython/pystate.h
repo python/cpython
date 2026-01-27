@@ -133,16 +133,16 @@ struct _ts {
     int what_event; /* The event currently being monitored, if any. */
 
     /* Pointer to currently executing frame. */
-    struct _PyInterpreterFrame *current_frame;
+    struct _PyInterpreterFrameCore *current_frame;
 
     /* Pointer to the base frame (bottommost sentinel frame).
        Used by profilers to validate complete stack unwinding.
        Points to the embedded base_frame in _PyThreadStateImpl.
-       The frame is embedded there rather than here because _PyInterpreterFrame
+       The frame is embedded there rather than here because _PyInterpreterFrameCore
        is defined in internal headers that cannot be exposed in the public API. */
-    struct _PyInterpreterFrame *base_frame;
+    struct _PyInterpreterFrameCore *base_frame;
 
-    struct _PyInterpreterFrame *last_profiled_frame;
+    struct _PyInterpreterFrameCore *last_profiled_frame;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;

@@ -47,7 +47,7 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 #if !_Py_TAIL_CALL_INTERP
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+    assert(_PyFrame_StackpointerSaved());
 #if !USE_COMPUTED_GOTOS
     uint8_t tracing_mode = 0;
     uint8_t dispatch_code;
@@ -56,7 +56,7 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
     _PyEntryFrame entry;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
-        assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+        assert(_PyFrame_Core(frame)->owner != FRAME_OWNED_BY_INTERPRETER);
         _PyEval_FrameClearAndPop(tstate, frame);
         return NULL;
     }
@@ -76,19 +76,19 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
     entry.frame.f_globals = (PyObject*)0xaaa3;
     entry.frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry.frame.f_executable = PyStackRef_None;
+    _PyFrame_Core(&entry.frame)->f_executable = PyStackRef_None;
     entry.frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR + 1;
     entry.frame.stackpointer = entry.stack;
-    entry.frame.owner = FRAME_OWNED_BY_INTERPRETER;
+    _PyFrame_Core(&entry.frame)->owner = FRAME_OWNED_BY_INTERPRETER;
     entry.frame.visited = 0;
     entry.frame.return_offset = 0;
 #ifdef Py_DEBUG
     entry.frame.lltrace = 0;
 #endif
     /* Push frame */
-    entry.frame.previous = tstate->current_frame;
-    frame->previous = &entry.frame;
-    tstate->current_frame = frame;
+    _PyFrame_Core(&entry.frame)->previous = tstate->current_frame;
+    _PyFrame_Core(frame)->previous = _PyFrame_Core(&entry.frame);
+    tstate->current_frame = _PyFrame_Core(frame);
     entry.frame.localsplus[0] = PyStackRef_NULL;
 
     /* support for generator.throw() */
@@ -100,17 +100,17 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
         /* Load thread-local bytecode */
         if (frame->tlbc_index != ((_PyThreadStateImpl *)tstate)->tlbc_index) {
             _Py_CODEUNIT *bytecode =
-                _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
+                _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(_PyFrame_Core(frame)));
             if (bytecode == NULL) {
                 goto early_exit;
             }
-            ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+            ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(_PyFrame_Core(frame));
             frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
             frame->instr_ptr = bytecode + off;
         }
 #endif
         /* Because this avoids the RESUME, we need to update instrumentation */
-        _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+        _Py_Instrument(_PyFrame_GetCode(_PyFrame_Core(frame)), tstate->interp);
         next_instr = frame->instr_ptr;
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -140,14 +140,14 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 early_exit:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+    assert(_PyFrame_Core(frame)->owner != FRAME_OWNED_BY_INTERPRETER);
     // GH-99729: We need to unlink the frame *before* clearing it:
     _PyInterpreterFrame *dying = frame;
-    frame = tstate->current_frame = dying->previous;
+    frame = (_PyInterpreterFrame *)(tstate->current_frame = _PyFrame_Core(dying)->previous);
     _PyEval_FrameClearAndPop(tstate, dying);
     frame->return_offset = 0;
-    assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
+    assert(_PyFrame_Core(frame)->owner == FRAME_OWNED_BY_INTERPRETER);
     /* Restore previous frame and exit */
-    tstate->current_frame = frame->previous;
+    tstate->current_frame = _PyFrame_Core(frame)->previous;
     return NULL;
 }

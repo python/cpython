@@ -1540,12 +1540,13 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
     HEAD_UNLOCK(runtime);
     while (ts) {
-        _PyInterpreterFrame *frame = ts->current_frame;
-        while (frame) {
-            if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-                frame = frame->previous;
+        _PyInterpreterFrameCore *f = ts->current_frame;
+        while (f) {
+            if (f->owner >= FRAME_OWNED_BY_INTERPRETER || _PyFrame_IsExternalFrame(f)) {
+                f = f->previous;
                 continue;
             }
+            _PyInterpreterFrame *frame = _PyFrame_Full(f);
             _PyStackRef *locals = frame->localsplus;
             _PyStackRef *sp = frame->stackpointer;
             objects_marked += move_to_reachable(frame->f_locals, &reachable, visited_space);
@@ -1576,7 +1577,7 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
                 break;
             }
             frame->visited = 1;
-            frame = frame->previous;
+            f = f->previous;
         }
         HEAD_LOCK(runtime);
         ts = PyThreadState_Next(ts);
@@ -2073,7 +2074,7 @@ Py_ssize_t
 _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     GCState *gcstate = &tstate->interp->gc;
-    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+    assert(_PyFrame_StackpointerSaved());
 
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {

@@ -228,9 +228,9 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     int oparg)
 {
     int offset = 0;
-    if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
+    if (_PyFrame_Core(frame)->owner < FRAME_OWNED_BY_INTERPRETER) {
         dump_stack(frame, stack_pointer);
-        offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
+        offset = (int)(next_instr - _PyFrame_GetBytecode(_PyFrame_Core(frame)));
     }
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
@@ -247,7 +247,7 @@ static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
     PyObject *fobj = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    if (!PyStackRef_CodeCheck(frame->f_executable) ||
+    if (!PyStackRef_CodeCheck(_PyFrame_Core(frame)->f_executable) ||
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
@@ -284,7 +284,7 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
     if (globals == NULL) {
         return 0;
     }
-    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+    if (_PyFrame_Core(frame)->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return 0;
     }
     int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
@@ -341,7 +341,7 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr, int event)
 {
     assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
-    if (_PyFrame_GetCode(frame)->co_flags & CO_NO_MONITORING_EVENTS) {
+    if (_PyFrame_GetCode(_PyFrame_Core(frame))->co_flags & CO_NO_MONITORING_EVENTS) {
         return 0;
     }
     PyObject *exc = PyErr_GetRaisedException();
@@ -367,7 +367,7 @@ static inline bool
 no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
 {
     assert(event < _PY_MONITORING_LOCAL_EVENTS);
-    _PyCoMonitoringData *data = _PyFrame_GetCode(frame)->_co_monitoring;
+    _PyCoMonitoringData *data = _PyFrame_GetCode(_PyFrame_Core(frame))->_co_monitoring;
     if (data) {
         return data->active_monitors.tools[event] == 0;
     }

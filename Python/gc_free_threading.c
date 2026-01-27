@@ -269,18 +269,23 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
 }
 
 static void
-frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
+frame_disable_deferred_refcounting(_PyInterpreterFrameCore *frame)
 {
     // Convert locals, variables, and the executable object to strong
     // references from (possibly) deferred references.
-    assert(frame->stackpointer != NULL);
     assert(frame->owner == FRAME_OWNED_BY_FRAME_OBJECT ||
-           frame->owner == FRAME_OWNED_BY_GENERATOR);
+           frame->owner & FRAME_OWNED_BY_GENERATOR);
 
     frame->f_executable = PyStackRef_AsStrongReference(frame->f_executable);
+    if (_PyFrame_IsExternalFrame(frame)) {
+        return;
+    }
 
-    if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+    _PyInterpreterFrame *f = _PyFrame_Full(frame);
+    assert(f->stackpointer != NULL);
+
+    if (frame->owner & FRAME_OWNED_BY_GENERATOR) {
+        PyGenObject *gen = _PyGen_GetGeneratorFromFrame(f);
         if (gen->gi_frame_state == FRAME_CLEARED) {
             // gh-124068: if the generator is cleared, then most fields other
             // than f_executable are not valid.
@@ -288,8 +293,8 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
         }
     }
 
-    frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
-    for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
+    f->f_funcobj = PyStackRef_AsStrongReference(f->f_funcobj);
+    for (_PyStackRef *ref = f->localsplus; ref < f->stackpointer; ref++) {
         if (!PyStackRef_IsNullOrInt(*ref) && !PyStackRef_RefcountOnObject(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
         }
@@ -315,10 +320,10 @@ disable_deferred_refcounting(PyObject *op)
     // use strong references, in case the generator or frame object is
     // resurrected by a finalizer.
     if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
-        frame_disable_deferred_refcounting(&((PyGenObject *)op)->gi_iframe);
+        frame_disable_deferred_refcounting(_PyFrame_Core(&((PyGenObject *)op)->gi_iframe));
     }
     else if (PyFrame_Check(op)) {
-        frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame);
+        frame_disable_deferred_refcounting(_PyFrame_Core(((PyFrameObject *)op)->f_frame));
     }
 }
 
@@ -477,12 +482,13 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
             c_ref = c_ref->next;
         }
 
-        for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
-            if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
+        for (_PyInterpreterFrameCore *f = p->current_frame; f != NULL; f = f->previous) {
+            if (f->owner >= FRAME_OWNED_BY_INTERPRETER || _PyFrame_IsExternalFrame(f)) {
                 continue;
             }
 
-            _PyStackRef *top = f->stackpointer;
+            _PyInterpreterFrame *frame = _PyFrame_Full(f);
+            _PyStackRef *top = frame->stackpointer;
             if (top == NULL) {
                 // GH-129236: The stackpointer may be NULL in cases where
                 // the GC is run during a PyStackRef_CLOSE() call. Skip this
@@ -492,7 +498,7 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
             }
 
             gc_visit_stackref(f->f_executable);
-            while (top != f->localsplus) {
+            while (top != frame->localsplus) {
                 --top;
                 gc_visit_stackref(*top);
             }
@@ -874,24 +880,25 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *ar
 {
     int err = 0;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
-        for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
-            if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
+        for (_PyInterpreterFrameCore *f = p->current_frame; f != NULL; f = f->previous) {
+            if (f->owner >= FRAME_OWNED_BY_INTERPRETER || _PyFrame_IsExternalFrame(f)) {
                 continue;
             }
 
-            if (f->stackpointer == NULL) {
+            _PyInterpreterFrame *frame = _PyFrame_Full(f);
+            if (frame->stackpointer == NULL) {
                 // GH-129236: The stackpointer may be NULL in cases where
                 // the GC is run during a PyStackRef_CLOSE() call. Skip this
                 // frame for now.
                 continue;
             }
 
-            _PyStackRef *top = f->stackpointer;
+            _PyStackRef *top = frame->stackpointer;
             if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
                 err = -1;
                 goto exit;
             }
-            while (top != f->localsplus) {
+            while (top != frame->localsplus) {
                 --top;
                 if (gc_visit_stackref_mark_alive(args, *top) < 0) {
                     err = -1;
