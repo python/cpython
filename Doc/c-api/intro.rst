@@ -331,6 +331,22 @@ complete listing.
 
    .. versionadded:: 3.11
 
+.. c:macro:: Py_SAFE_DOWNCAST(value, larger, smaller)
+
+   Cast *value* to type *smaller* from type *larger*, validating that no
+   information was lost.
+
+   On release builds of Python, this is roughly equivalent to
+   :c:expr:`(smaller) value` (in C++, ``static_cast<smaller>(value)`` will be
+   used instead).
+
+   On debug builds (implying that :c:macro:`Py_DEBUG` is defined), this asserts
+   that no information was lost with the cast from *larger* to *smaller*.
+
+   *value*, *larger*, and *smaller* may all be evaluated more than once in the
+   expression; as a consequence, do not pass an expensive operation directly to
+   this macro.
+
 .. c:macro:: Py_STRINGIFY(x)
 
    Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
