@@ -1369,7 +1369,7 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
 }
 
 // gh-140232: check whether a frozenset can be untracked from the GC
-void
+static void
 _PyFrozenSet_MaybeUntrack(PyObject *op)
 {
     assert(op != NULL);
