@@ -178,7 +178,10 @@ class TokenList(list):
         return sum((x.all_defects for x in self), self.defects)
 
     def startswith_fws(self):
-        return self[0].startswith_fws()
+        return self and self[0].startswith_fws()
+
+    def endswith_fws(self):
+        return self and self[-1].endswith_fws()
 
     as_ew_allowed = True
 
@@ -969,6 +972,9 @@ class WhiteSpaceTerminal(Terminal):
     def startswith_fws(self):
         return self and self[0] in WSP
 
+    def endswith_fws(self):
+        return self and self[-1] in WSP
+
 
 class ValueTerminal(Terminal):
 
@@ -977,6 +983,9 @@ class ValueTerminal(Terminal):
         return self
 
     def startswith_fws(self):
+        return False
+
+    def endswith_fws(self):
         return False
 
 
@@ -1773,32 +1782,44 @@ def get_quoted_string(value, start):
         quoted_string.append(token)
     return quoted_string, start
 
-def get_atom(value):
+@_deprecate_old_api
+def get_atom(value, start):
     """atom = [CFWS] 1*atext [CFWS]
 
-    An atom could be an rfc2047 encoded word.
+    Return an Atom containing the leading and trailing CFWSList tokens
+    if appropriate, as well as ValueTerminals of token_type atext, containing
+    all characters up to the next SPECIAL character or the end of value, and a
+    pointer to the special or the len of value.
+
+    Decode any encoded words, regardless of whitespace, registering defects
+    if the RFC required whitespace is missing.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
+    # We decode encoded words mixed in to atext without whitespace to in-total
+    # comprise the body of the atom. This might qualify as a separate defect.
     atom = Atom()
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         atom.append(token)
-    if value and value[0] in ATOM_ENDS:
+    if start >= vlen or value[start] in ATOM_ENDS:
         raise errors.HeaderParseError(
-            "expected atom but found '{}'".format(value))
-    if value.startswith('=?'):
-        try:
-            token, value = get_encoded_word(value)
-        except errors.HeaderParseError:
-            # XXX: need to figure out how to register defects when
-            # appropriate here.
-            token, value = get_atext(value)
-    else:
-        token, value = get_atext(value)
-    atom.append(token)
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+            "expected atom but found '{}'".format(value[start:]))
+    tl, start = get_atext_sequence(value, start)
+    if (tl[0].token_type == 'encoded-word'
+            and atom and not atom[-1].endswith_fws()
+        ):
+        atom.defects.append(_MissingWhitespaceBeforeEWDefect)
+    atom.extend(tl)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
+        if tl[-1].token_type == 'encoded-word' and not token.startswith_fws():
+            atom.defects.append(_MissingWhitespaceAfterEWDefect)
         atom.append(token)
-    return atom, value
+    return atom, start
 
 def get_dot_atom_text(value):
     """ dot-text = 1*atext *("." 1*atext)
@@ -3362,7 +3383,9 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
             continue
         tstr = str(part)
         if not want_encoding:
-            if part.token_type in ('ptext', 'vtext'):
+            # XXX At the end of the old API deprecation period 'vtext' can
+            # be removed from this list as it will no longer exist at all.
+            if part.token_type in ('ptext', 'atext', 'vtext'):
                 # Encode if tstr contains special characters.
                 want_encoding = not SPECIALSNL.isdisjoint(tstr)
             else:
