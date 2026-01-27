@@ -191,6 +191,12 @@ complete listing.
    *type* is the type of the expression. In modern versions of Python, this is
    unused. Historically, *type* was used to cast *integer*.
 
+   .. versionchanged:: 3.1
+
+      This macro is now valid for all signed integer types, not just those for
+      which :c:expr:`unsigned type` is legal. As a result, *type* is no longer
+      used.
+
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
