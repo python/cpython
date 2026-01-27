@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         > [!IMPORTANT]
-        > If the issue is trivial, for example a typo, an issue is not necessary.
+        > Trivial changes (for example typos) don’t require an issue before opening a PR.
   - type: textarea
     attributes:
       label: "Documentation"
