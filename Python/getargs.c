@@ -130,6 +130,16 @@ _PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, .
 }
 
 int
+PyArg_ParseVector(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
+{
+    va_list va;
+    va_start(va, format);
+    int retval = vgetargs1_impl(NULL, args, nargs, format, &va, 0);
+    va_end(va);
+    return retval;
+}
+
+int
 PyArg_VaParse(PyObject *args, const char *format, va_list va)
 {
     va_list lva;
