@@ -4932,6 +4932,15 @@ class _TestSharedMemory(BaseTestCase):
                     "resource_tracker: There appear to be 1 leaked "
                     "shared_memory objects to clean up at shutdown", err)
 
+    def test_shared_memory_slice_assignment_no_crash(self):
+        from multiprocessing import shared_memory
+        shm = shared_memory.SharedMemory(create=True, size=10)
+        try:
+            shm.buf[:5] = b'hello'
+        finally:
+            shm.close()
+            shm.unlink()
+
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
     @resource_tracker_format_subtests
     def test_shared_memory_untracking(self):
@@ -4986,15 +4995,6 @@ class _TestSharedMemory(BaseTestCase):
                 pass
             resource_tracker.unregister(mem._name, "shared_memory")
             mem.close()
-
-    def test_shared_memory_slice_assignment_no_crash():
-        from multiprocessing import shared_memory
-        shm = shared_memory.SharedMemory(create=True, size=10)
-        try:
-            shm.buf[:5] = b'hello'
-        finally:
-            shm.close()
-            shm.unlink()
 
 #
 # Test to verify that `Finalize` works.
