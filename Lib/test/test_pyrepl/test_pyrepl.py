@@ -1991,6 +1991,17 @@ class TestMain(ReplTestCase):
             safe_patterns.append(r'\x1b\[\?25[hl]')  # cursor visibility
             safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
 
+        # rmam / smam - automatic margins
+        rmam = ti.get("rmam")
+        smam = ti.get("smam")
+        if rmam:
+            safe_patterns.append(re.escape(rmam.decode("ascii")))
+        if smam:
+            safe_patterns.append(re.escape(smam.decode("ascii")))
+        if not rmam and not smam:
+            safe_patterns.append(r'\x1b\[\?7l') # turn off automatic margins
+            safe_patterns.append(r'\x1b\[\?7h') # turn on automatic margins
+
         # Modern extensions not in standard terminfo - always use patterns
         safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
         safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
@@ -1999,6 +2010,17 @@ class TestMain(ReplTestCase):
         safe_escapes = re.compile('|'.join(safe_patterns))
         cleaned_output = safe_escapes.sub('', output)
         self.assertIn(expected_output_sequence, cleaned_output)
+
+
+@skipUnless(sys.platform == "darwin", "macOS only")
+class TestMainAppleTerminal(TestMain):
+    """Test the REPL with Apple Terminal's TERM_PROGRAM set."""
+
+    def run_repl(self, repl_input, env=None, **kwargs):
+        if env is None:
+            env = os.environ.copy()
+        env["TERM_PROGRAM"] = "Apple_Terminal"
+        return super().run_repl(repl_input, env=env, **kwargs)
 
 
 class TestPyReplCtrlD(TestCase):

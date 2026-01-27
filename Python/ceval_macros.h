@@ -156,6 +156,19 @@
 #  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
+#if _Py_TIER2
+#define STOP_TRACING() \
+    do { \
+        if (IS_JIT_TRACING()) { \
+            LEAVE_TRACING(); \
+            _PyJit_FinalizeTracing(tstate, 0); \
+        } \
+    } while (0);
+#else
+#define STOP_TRACING() ((void)(0));
+#endif
+
+
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
@@ -420,7 +433,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state.prev_state.code_curr_size == 2); \
+        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state->prev_state.code_curr_size == 2); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \
@@ -488,6 +501,8 @@ do {                                                   \
 #define SET_CURRENT_CACHED_VALUES(N) ((void)0)
 #define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
 #endif
+
+#define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL)
 
 static inline int
 check_periodics(PyThreadState *tstate) {

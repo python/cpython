@@ -1246,6 +1246,14 @@ invalidate_executors(PyObject *self, PyObject *obj)
 }
 
 static PyObject *
+clear_executor_deletion_list(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _Py_ClearExecutorDeletionList(interp);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 get_exit_executor(PyObject *self, PyObject *arg)
 {
     if (!PyLong_CheckExact(arg)) {
@@ -2562,6 +2570,7 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
+    {"clear_executor_deletion_list", clear_executor_deletion_list, METH_NOARGS, NULL},
     {"get_exit_executor", get_exit_executor, METH_O, NULL},
 #endif
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),

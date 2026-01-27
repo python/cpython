@@ -1351,7 +1351,7 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
-@force_not_colorized
+@test.support.force_not_colorized_test_class
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
@@ -1493,6 +1493,7 @@ class UnraisableHookTest(unittest.TestCase):
     def test_custom_unraisablehook_fail(self):
         _testcapi = import_helper.import_module('_testcapi')
         from _testcapi import err_writeunraisable
+
         def hook_func(*args):
             raise Exception("hook_func failed")
 

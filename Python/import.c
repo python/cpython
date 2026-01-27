@@ -5530,8 +5530,8 @@ publish_lazy_imports_on_module(PyThreadState *tstate,
         }
 
         // Publish on the module that was just imported.
-        if (_PyModule_ReplaceLazyValue(module_dict, attr_name,
-                                       lazy_module_attr) < 0) {
+        if (PyDict_SetItem(module_dict, attr_name,
+                           lazy_module_attr) < 0) {
             Py_DECREF(lazy_module_attr);
             Py_DECREF(attr_name);
             return -1;

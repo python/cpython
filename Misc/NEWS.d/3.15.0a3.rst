@@ -843,15 +843,6 @@ for :term:`stdlib` modules.
 
 ..
 
-.. date: 2025-10-09-15-46-18
-.. gh-issue: 139686
-.. nonce: XwIZB2
-.. section: Library
-
-Make importlib.reload no-op for lazy modules.
-
-..
-
 .. date: 2025-09-09-13-00-42
 .. gh-issue: 138697
 .. nonce: QVwJw_

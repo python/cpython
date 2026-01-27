@@ -143,6 +143,9 @@ Misc/externals.spdx.json      @sethmlarson
 Misc/sbom.spdx.json           @sethmlarson
 Tools/build/generate_sbom.py  @sethmlarson
 
+# ABI check
+Misc/libabigail.abignore      @encukou
+
 
 # ----------------------------------------------------------------------------
 # Platform Support
@@ -173,9 +176,9 @@ Tools/wasm/config.site-wasm32-emscripten  @freakboy3742 @emmatyping
 Tools/wasm/emscripten                     @freakboy3742 @emmatyping
 
 # WebAssembly (WASI)
-Tools/wasm/wasi-env           @brettcannon @emmatyping
-Tools/wasm/wasi.py            @brettcannon @emmatyping
-Tools/wasm/wasi               @brettcannon @emmatyping
+Tools/wasm/wasi-env           @brettcannon @emmatyping @savannahostrowski
+Tools/wasm/wasi.py            @brettcannon @emmatyping @savannahostrowski
+Tools/wasm/wasi               @brettcannon @emmatyping @savannahostrowski
 
 # Windows
 PC/                           @python/windows-team
@@ -290,9 +293,9 @@ InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-T
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
-Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner
-Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner
-Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
+Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
+Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
 
 # Parser, Lexer, and Grammar
 Grammar/python.gram           @pablogsal @lysnikolaou
