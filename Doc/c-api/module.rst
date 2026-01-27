@@ -529,6 +529,9 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
    ``PyModuleDef``, using either ``PyModule_Create`` or
    ``PyModule_FromDefAndSpec``.
 
+   Return ``0`` on success.
+   Return ``-1`` with an exception set on error.
+
    .. versionadded:: 3.5
 
 .. c:function:: int PyModule_AddFunctions(PyObject *module, PyMethodDef *functions)
