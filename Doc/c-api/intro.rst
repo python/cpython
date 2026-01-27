@@ -167,6 +167,13 @@ complete listing.
 
    .. versionadded:: 3.3
 
+.. c:macro:: Py_ALIGNED(num)
+
+   Specify alignment to *num* bytes on compilers that support it.
+
+   This does not use the C11 standard ``_Alignas`` specifier; prefer use of
+   that over this macro.
+
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
