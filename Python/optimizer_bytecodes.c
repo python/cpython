@@ -38,9 +38,9 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
-#define sym_new_slots_object _Py_uop_sym_new_slots_object
-#define sym_slots_getattr _Py_uop_sym_slots_getattr
-#define sym_slots_setattr _Py_uop_sym_slots_setattr
+#define sym_new_descr_object _Py_uop_sym_new_descr_object
+#define sym_get_attr _Py_uop_sym_get_attr
+#define sym_set_attr _Py_uop_sym_set_attr
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
@@ -128,7 +128,10 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
-        sym_slots_setattr(ctx, owner, (uint16_t)index, value);
+        JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)index, value);
+        if (sym_is_null(old_value)) {
+            ADD_OP(_STORE_ATTR_SLOT_NULL, 0, index);
+        }
         o = owner;
     }
 
@@ -712,7 +715,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
-        attr = sym_slots_getattr(ctx, owner, (uint16_t)index);
+        attr = sym_get_attr(ctx, owner, (uint16_t)index);
         o = owner;
     }
 
@@ -900,7 +903,7 @@ dummy_func(void) {
         callable = sym_new_not_null(ctx);
         PyTypeObject *tp = _PyType_LookupByVersion(type_version);
         if (tp != NULL && tp->tp_basicsize > sizeof(PyObject) && !(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
-            self_or_null = sym_new_slots_object(ctx, type_version);
+            self_or_null = sym_new_descr_object(ctx, type_version);
         } else {
             self_or_null = sym_new_not_null(ctx);
         }

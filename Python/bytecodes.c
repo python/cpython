@@ -2726,6 +2726,20 @@ dummy_func(
             Py_XDECREF(old_value);
         }
 
+        op(_STORE_ATTR_SLOT_NULL, (index/1, value, owner -- o)) {
+            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+
+            DEOPT_IF(!LOCK_OBJECT(owner_o));
+            char *addr = (char *)owner_o + index;
+            STAT_INC(STORE_ATTR, hit);
+            PyObject *old_value = *(PyObject **)addr;
+            DEOPT_IF(old_value != NULL);
+            FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
+            UNLOCK_OBJECT(owner_o);
+            INPUTS_DEAD();
+            o = owner;
+        }
+
         macro(STORE_ATTR_SLOT) =
             unused/1 +
             _GUARD_TYPE_VERSION +

@@ -113,12 +113,12 @@ _PyUOpSymPrint(JitOptRef ref)
         case JIT_SYM_COMPACT_INT:
             printf("<compact_int at %p>", (void *)sym);
             break;
-        case JIT_SYM_SLOTS_TAG: {
-            PyTypeObject *slots_type = _PyType_LookupByVersion(sym->slots.type_version);
-            if (slots_type) {
-                printf("<%s slots[%d] v%u at %p>", slots_type->tp_name, sym->slots.num_slots, sym->slots.type_version, (void *)sym);
+        case JIT_SYM_DESCR_TAG: {
+            PyTypeObject *descr_type = _PyType_LookupByVersion(sym->descr.type_version);
+            if (descr_type) {
+                printf("<%s descr[%d] v%u at %p>", descr_type->tp_name, sym->descr.num_descrs, sym->descr.type_version, (void *)sym);
             } else {
-                printf("<slots[%d] v%u at %p>", sym->slots.num_slots, sym->slots.type_version, (void *)sym);
+                printf("<descr[%d] v%u at %p>", sym->descr.num_descrs, sym->descr.type_version, (void *)sym);
             }
             break;
         }
@@ -329,8 +329,8 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
                 sym_set_bottom(ctx, sym);
             }
             return;
-        case JIT_SYM_SLOTS_TAG:
-            if (typ->tp_version_tag != sym->slots.type_version) {
+        case JIT_SYM_DESCR_TAG:
+            if (typ->tp_version_tag != sym->descr.type_version) {
                 sym_set_bottom(ctx, sym);
             }
             return;
@@ -398,8 +398,8 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
                 return false;
             }
             return true;
-        case JIT_SYM_SLOTS_TAG:
-            if (version != sym->slots.type_version) {
+        case JIT_SYM_DESCR_TAG:
+            if (version != sym->descr.type_version) {
                 sym_set_bottom(ctx, sym);
                 return false;
             }
@@ -503,7 +503,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
                 sym_set_bottom(ctx, sym);
             }
             return;
-        case JIT_SYM_SLOTS_TAG:
+        case JIT_SYM_DESCR_TAG:
             sym_set_bottom(ctx, sym);
             return;
     }
@@ -626,8 +626,8 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return &PyBool_Type;
         case JIT_SYM_COMPACT_INT:
             return &PyLong_Type;
-        case JIT_SYM_SLOTS_TAG:
-            return _PyType_LookupByVersion(sym->slots.type_version);
+        case JIT_SYM_DESCR_TAG:
+            return _PyType_LookupByVersion(sym->descr.type_version);
     }
     Py_UNREACHABLE();
 }
@@ -656,8 +656,8 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
             return PyBool_Type.tp_version_tag;
         case JIT_SYM_COMPACT_INT:
             return PyLong_Type.tp_version_tag;
-        case JIT_SYM_SLOTS_TAG:
-            return sym->slots.type_version;
+        case JIT_SYM_DESCR_TAG:
+            return sym->descr.type_version;
     }
     Py_UNREACHABLE();
 }
@@ -692,7 +692,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_COMPACT_INT:
-        case JIT_SYM_SLOTS_TAG:
+        case JIT_SYM_DESCR_TAG:
             return -1;
         case JIT_SYM_KNOWN_CLASS_TAG:
             /* TODO :
@@ -850,7 +850,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_TUPLE_TAG:
         case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_TRUTHINESS_TAG:
-        case JIT_SYM_SLOTS_TAG:
+        case JIT_SYM_DESCR_TAG:
             sym_set_bottom(ctx, sym);
             return;
         case JIT_SYM_BOTTOM_TAG:
@@ -964,35 +964,35 @@ _Py_uop_sym_new_compact_int(JitOptContext *ctx)
 }
 
 JitOptRef
-_Py_uop_sym_new_slots_object(JitOptContext *ctx, unsigned int type_version)
+_Py_uop_sym_new_descr_object(JitOptContext *ctx, unsigned int type_version)
 {
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
         return out_of_space_ref(ctx);
     }
-    res->tag = JIT_SYM_SLOTS_TAG;
-    res->slots.num_slots = 0;
-    res->slots.slots = NULL;
-    res->slots.type_version = type_version;
-    res->slots.last_modified_index = uop_buffer_length(&ctx->out_buffer);
+    res->tag = JIT_SYM_DESCR_TAG;
+    res->descr.num_descrs = 0;
+    res->descr.descrs = NULL;
+    res->descr.type_version = type_version;
+    res->descr.last_modified_index = uop_buffer_length(&ctx->out_buffer);
     return PyJitRef_Wrap(res);
 }
 
 JitOptRef
-_Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index)
+_Py_uop_sym_get_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
 
     // Only return tracked slot values if:
-    // 1. Symbol is a slots object with mappings allocated
+    // 1. Symbol is a descr object with mappings allocated
     // 2. No escape has occurred since last modification (state is fresh)
-    if (sym->tag == JIT_SYM_SLOTS_TAG &&
-        sym->slots.slots != NULL &&
-        sym->slots.last_modified_index >= ctx->last_escape_index)
+    if (sym->tag == JIT_SYM_DESCR_TAG &&
+        sym->descr.descrs != NULL &&
+        sym->descr.last_modified_index >= ctx->last_escape_index)
     {
-        for (int i = 0; i < sym->slots.num_slots; i++) {
-            if (sym->slots.slots[i].slot_index == slot_index) {
-                return PyJitRef_Wrap(allocation_base(ctx) + sym->slots.slots[i].symbol);
+        for (int i = 0; i < sym->descr.num_descrs; i++) {
+            if (sym->descr.descrs[i].slot_index == slot_index) {
+                return PyJitRef_Wrap(allocation_base(ctx) + sym->descr.descrs[i].symbol);
             }
         }
     }
@@ -1001,52 +1001,68 @@ _Py_uop_sym_slots_getattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index
 }
 
 static JitOptDescrMapping *
-slots_arena_alloc(JitOptContext *ctx)
+descr_arena_alloc(JitOptContext *ctx)
 {
-    if (ctx->s_arena.slots_curr_number + MAX_SYMBOLIC_SLOTS_SIZE > ctx->s_arena.slots_max_number) {
+    if (ctx->d_arena.descr_curr_number + MAX_SYMBOLIC_DESCR_SIZE > ctx->d_arena.descr_max_number) {
         return NULL;
     }
-    JitOptDescrMapping *slots = &ctx->s_arena.arena[ctx->s_arena.slots_curr_number];
-    ctx->s_arena.slots_curr_number += MAX_SYMBOLIC_SLOTS_SIZE;
-    return slots;
+    JitOptDescrMapping *descrs = &ctx->d_arena.arena[ctx->d_arena.descr_curr_number];
+    ctx->d_arena.descr_curr_number += MAX_SYMBOLIC_DESCR_SIZE;
+    return descrs;
 }
 
-void
-_Py_uop_sym_slots_setattr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, JitOptRef value)
+JitOptRef
+_Py_uop_sym_set_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, JitOptRef value)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     int curr_index = uop_buffer_length(&ctx->out_buffer);
 
-    if (sym->tag != JIT_SYM_SLOTS_TAG) {
-        return;
+    if (sym->tag != JIT_SYM_DESCR_TAG) {
+        return _Py_uop_sym_new_not_null(ctx);
     }
 
     // Check escape
-    if (sym->slots.last_modified_index < ctx->last_escape_index) {
-        sym->slots.num_slots = 0;
+    if (sym->descr.last_modified_index < ctx->last_escape_index) {
+        sym->descr.num_descrs = 0;
     }
+
+    // Get old value before updating
+    JitOptRef old_value = PyJitRef_NULL;
+    if (sym->descr.descrs != NULL) {
+        for (int i = 0; i < sym->descr.num_descrs; i++) {
+            if (sym->descr.descrs[i].slot_index == slot_index) {
+                old_value = PyJitRef_Wrap(allocation_base(ctx) + sym->descr.descrs[i].symbol);
+                break;
+            }
+        }
+    }
+
     // Update the last modified timestamp
-    sym->slots.last_modified_index = curr_index;
+    sym->descr.last_modified_index = curr_index;
+
     // Check if have arena space allocated
-    if (sym->slots.slots == NULL) {
-        sym->slots.slots = slots_arena_alloc(ctx);
-        if (sym->slots.slots == NULL) {
-            return;
+    if (sym->descr.descrs == NULL) {
+        sym->descr.descrs = descr_arena_alloc(ctx);
+        if (sym->descr.descrs == NULL) {
+            return PyJitRef_IsNull(old_value) ? _Py_uop_sym_new_not_null(ctx) : old_value;
         }
     }
     // Check if the slot already exists
-    for (int i = 0; i < sym->slots.num_slots; i++) {
-        if (sym->slots.slots[i].slot_index == slot_index) {
-            sym->slots.slots[i].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
-            return;
+    for (int i = 0; i < sym->descr.num_descrs; i++) {
+        if (sym->descr.descrs[i].slot_index == slot_index) {
+            sym->descr.descrs[i].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
+            assert(!PyJitRef_IsNull(old_value));
+            return old_value;
         }
     }
     // Add new mapping if there's space
-    if (sym->slots.num_slots < MAX_SYMBOLIC_SLOTS_SIZE) {
-        int idx = sym->slots.num_slots++;
-        sym->slots.slots[idx].slot_index = slot_index;
-        sym->slots.slots[idx].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
+    if (sym->descr.num_descrs < MAX_SYMBOLIC_DESCR_SIZE) {
+        int idx = sym->descr.num_descrs++;
+        sym->descr.descrs[idx].slot_index = slot_index;
+        sym->descr.descrs[idx].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
     }
+
+    return PyJitRef_IsNull(old_value) ? PyJitRef_Borrow(_Py_uop_sym_new_null(ctx)) : old_value;
 }
 
 // 0 on success, -1 on error.
@@ -1138,9 +1154,9 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
     ctx->t_arena.ty_curr_number = 0;
     ctx->t_arena.ty_max_number = TY_ARENA_SIZE;
 
-    // Setup the arena for slot mappings.
-    ctx->s_arena.slots_curr_number = 0;
-    ctx->s_arena.slots_max_number = SLOTS_ARENA_SIZE;
+    // Setup the arena for descriptor mappings.
+    ctx->d_arena.descr_curr_number = 0;
+    ctx->d_arena.descr_max_number = DESCR_ARENA_SIZE;
 
     // Frame setup
     ctx->curr_frame_depth = 0;
@@ -1460,33 +1476,32 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "43 is not an int");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref_int) == val_43, "43 isn't 43");
 
-    JitOptRef slots_obj = _Py_uop_sym_new_slots_object(ctx, 42);
-    TEST_PREDICATE(!_Py_uop_sym_is_null(slots_obj), "slots object is NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_not_null(slots_obj), "slots object is not not-null");
-    TEST_PREDICATE(_Py_uop_sym_get_type_version(slots_obj) == 42,
-                   "slots object has wrong type version");
+    JitOptRef descr_obj = _Py_uop_sym_new_descr_object(ctx, 42);
+    TEST_PREDICATE(!_Py_uop_sym_is_null(descr_obj), "descr object is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(descr_obj), "descr object is not not-null");
+    TEST_PREDICATE(_Py_uop_sym_get_type_version(descr_obj) == 42,
+                   "descr object has wrong type version");
 
     JitOptRef slot_val = _Py_uop_sym_new_const(ctx, val_42);
-    _Py_uop_sym_slots_setattr(ctx, slots_obj, 0, slot_val);
-    JitOptRef retrieved = _Py_uop_sym_slots_getattr(ctx, slots_obj, 0);
+    _Py_uop_sym_set_attr(ctx, descr_obj, 0, slot_val);
+    JitOptRef retrieved = _Py_uop_sym_get_attr(ctx, descr_obj, 0);
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_42,
-                   "slots getattr(0) didn't return val_42");
+                   "descr getattr(0) didn't return val_42");
 
-    JitOptRef missing = _Py_uop_sym_slots_getattr(ctx, slots_obj, 99);
+    JitOptRef missing = _Py_uop_sym_get_attr(ctx, descr_obj, 99);
     TEST_PREDICATE(_Py_uop_sym_is_not_null(missing), "missing slot is not not-null");
     TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, missing), "missing slot is const");
 
     JitOptRef slot_val2 = _Py_uop_sym_new_const(ctx, val_43);
-    _Py_uop_sym_slots_setattr(ctx, slots_obj, 0, slot_val2);
-    retrieved = _Py_uop_sym_slots_getattr(ctx, slots_obj, 0);
+    _Py_uop_sym_set_attr(ctx, descr_obj, 0, slot_val2);
+    retrieved = _Py_uop_sym_get_attr(ctx, descr_obj, 0);
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_43,
-                   "slots getattr(0) didn't return val_43 after update");
+                   "descr getattr(0) didn't return val_43 after update");
 
-    JitOptRef slots_obj2 = _Py_uop_sym_new_slots_object(ctx, 42);
-    _Py_uop_sym_set_type_version(ctx, slots_obj2, 43);
-    TEST_PREDICATE(_Py_uop_sym_is_bottom(slots_obj2),
-                   "slots object with wrong type version isn't bottom");
-
+    JitOptRef descr_obj2 = _Py_uop_sym_new_descr_object(ctx, 42);
+    _Py_uop_sym_set_type_version(ctx, descr_obj2, 43);
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(descr_obj2),
+                   "descr object with wrong type version isn't bottom");
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);

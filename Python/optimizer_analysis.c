@@ -247,9 +247,9 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
-#define sym_new_slots_object _Py_uop_sym_new_slots_object
-#define sym_slots_getattr _Py_uop_sym_slots_getattr
-#define sym_slots_setattr _Py_uop_sym_slots_setattr
+#define sym_new_descr_object _Py_uop_sym_new_descr_object
+#define sym_get_attr _Py_uop_sym_get_attr
+#define sym_set_attr _Py_uop_sym_set_attr
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
@@ -511,7 +511,7 @@ optimize_uops(
         }
         // Track escapes
         if (_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG) {
-            ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer);
+            ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer) - 1;
         }
         assert(ctx->frame != NULL);
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
