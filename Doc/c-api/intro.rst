@@ -245,6 +245,12 @@ complete listing.
    .. versionchanged:: 3.8
       MSVC support was added.
 
+.. c:macro:: Py_FORCE_EXPANSION(X)
+
+   This is equivalent to :c:expr:`X`, which is useful for token-pasting in
+   macros, as macro expansions in *X* are forcefully evaluated by the
+   preprocessor.
+
 .. c:macro:: Py_GETENV(s)
 
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
