@@ -71,6 +71,8 @@ def make_legacy_pyc(source, allow_compile=False):
     try:
         pyc_file = importlib.util.cache_from_source(source)
     except NotImplementedError:
+        if not allow_compile:
+            raise
         py_compile.compile(source, legacy_pyc, doraise=True)
     else:
         shutil.move(pyc_file, legacy_pyc)
