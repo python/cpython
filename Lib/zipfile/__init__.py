@@ -743,7 +743,7 @@ def _ZipDecrypter(pwd):
             c ^= ((k * (k^1)) >> 8) & 0xFF
             update_keys(c)
             append(c)
-        return bytes(result)
+        return result.take_bytes()
 
     return decrypter
 
