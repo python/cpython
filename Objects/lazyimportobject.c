@@ -11,7 +11,7 @@
 #define PyLazyImportObject_CAST(op) ((PyLazyImportObject *)(op))
 
 PyObject *
-_PyLazyImport_New(PyObject *builtins, PyObject *name, PyObject *fromlist)
+_PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name, PyObject *fromlist)
 {
     PyLazyImportObject *m;
     if (!name || !PyUnicode_Check(name)) {
@@ -38,7 +38,6 @@ _PyLazyImport_New(PyObject *builtins, PyObject *name, PyObject *fromlist)
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
 
-    _PyInterpreterFrame *frame = _PyEval_GetFrame();
     if (frame != NULL) {
         PyCodeObject *code = _PyFrame_GetCode(frame);
         if (code != NULL) {

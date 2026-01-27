@@ -4363,7 +4363,7 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name,
                 }
                 if (!contains) {
                     PyObject *lazy_module_attr = _PyLazyImport_New(
-                        builtins, parent, child
+                        tstate->current_frame, builtins, parent, child
                     );
                     if (lazy_module_attr == NULL) {
                         goto done;
@@ -4472,7 +4472,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     // here, 'filter' is either NULL or is equivalent to a borrowed reference
-    PyObject *res = _PyLazyImport_New(builtins, abs_name, fromlist);
+    PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist);
     if (res == NULL) {
         Py_DECREF(abs_name);
         return NULL;
@@ -5522,8 +5522,8 @@ publish_lazy_imports_on_module(PyThreadState *tstate,
         }
         // Create a new lazy module attr for the subpackage which was
         // previously lazily imported.
-        PyObject *lazy_module_attr = _PyLazyImport_New(builtins, name,
-                                                       attr_name);
+        PyObject *lazy_module_attr = _PyLazyImport_New(tstate->current_frame, builtins,
+                                                       name, attr_name);
         if (lazy_module_attr == NULL) {
             Py_DECREF(attr_name);
             return -1;

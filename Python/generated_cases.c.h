@@ -6344,7 +6344,7 @@
             if (PyLazyImport_CheckExact(PyStackRef_AsPyObjectBorrow(from))) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 res_o = _PyEval_LazyImportFrom(
-                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                    tstate, frame, PyStackRef_AsPyObjectBorrow(from), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             else {

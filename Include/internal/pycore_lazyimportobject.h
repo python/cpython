@@ -27,7 +27,7 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
-    PyObject *import_func, PyObject *from, PyObject *attr);
+    struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from, PyObject *attr);
 
 #ifdef __cplusplus
 }

@@ -3831,7 +3831,7 @@ done:
 }
 
 PyObject *
-_PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
+_PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name)
 {
     assert(PyLazyImport_CheckExact(v));
     assert(name);
@@ -3865,7 +3865,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             if (from == NULL) {
                 return NULL;
             }
-            ret = _PyLazyImport_New(d->lz_builtins, from, name);
+            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
             Py_DECREF(from);
             return ret;
         }
@@ -3879,12 +3879,12 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             if (from == NULL) {
                 return NULL;
             }
-            ret = _PyLazyImport_New(d->lz_builtins, from, name);
+            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
             Py_DECREF(from);
             return ret;
         }
     }
-    ret = _PyLazyImport_New(d->lz_builtins, d->lz_from, name);
+    ret = _PyLazyImport_New(frame, d->lz_builtins, d->lz_from, name);
     return ret;
 }
 
@@ -4178,7 +4178,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
     }
 
     PyObject *res_o = PyStackRef_AsPyObjectBorrow(*writeto);
-    if (PyLazyImport_CheckExact(res_o)) {
+    if (res_o != NULL && PyLazyImport_CheckExact(res_o)) {
         PyObject *l_v = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), res_o);
         PyStackRef_CLOSE(writeto[0]);
         if (l_v == NULL) {

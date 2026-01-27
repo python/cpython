@@ -3021,7 +3021,7 @@ dummy_func(
             PyObject *res_o;
             if (PyLazyImport_CheckExact(PyStackRef_AsPyObjectBorrow(from))) {
                 res_o = _PyEval_LazyImportFrom(
-                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                    tstate, frame, PyStackRef_AsPyObjectBorrow(from), name);
             }
             else {
                 res_o = _PyEval_ImportFrom(
