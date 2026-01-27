@@ -266,7 +266,7 @@ complete listing.
 
 .. c:macro:: Py_LL(number)
 
-   Use *number* as a :c:type:`long long` integer literal.
+   Use *number* as a ``long long`` integer literal.
 
    This usally expands to *number* followed by ``LL``, but will expand to some
    compiler-specific suffixes (such as ``I64``) on older compilers.
@@ -356,7 +356,7 @@ complete listing.
 
 .. c:macro:: Py_ULL(number)
 
-   Similar to :c:macro:`Py_LL`, but *number* will be a :c:type:`unsigned long long`
+   Similar to :c:macro:`Py_LL`, but *number* will be an ``unsigned long long``
    literal instead. This is done by appending ``U`` to the result of ``Py_LL``.
 
    In modern versions of Python, this macro is not very useful, as C99 and
