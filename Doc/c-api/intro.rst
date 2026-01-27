@@ -502,6 +502,16 @@ complete listing.
    This macro is intended for defining CPython's C API itself;
    extension modules should not use it for their own symbols.
 
+.. c:macro:: Py_VA_COPY
+
+   This is a :term:`soft deprecated` alias to the C99-standard ``va_copy``
+   function.
+
+   Historically, this would use a compiler-specific method to copy a ``va_list``.
+
+   .. versionchanged:: 3.6
+      This is now an alias to ``va_copy``.
+
 
 .. _api-objects:
 
