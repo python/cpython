@@ -55,7 +55,7 @@ class TestImport(unittest.TestCase):
         except SyntaxError: pass
         else: raise RuntimeError('Failed to induce SyntaxError') # self.fail()?
         self.assertNotIn(self.module_name, sys.modules)
-        self.assertFalse(hasattr(sys.modules[self.package_name], 'foo'))
+        self.assertNotHasAttr(sys.modules[self.package_name], 'foo')
 
         # ...make up a variable name that isn't bound in __builtins__
         var = 'a'

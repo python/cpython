@@ -344,7 +344,7 @@ class TypeCommentTests(unittest.TestCase):
                 todo = set(t.name[1:])
                 self.assertEqual(len(t.args.args) + len(t.args.posonlyargs),
                                  len(todo) - bool(t.args.vararg) - bool(t.args.kwarg))
-                self.assertTrue(t.name.startswith('f'), t.name)
+                self.assertStartsWith(t.name, 'f')
                 for index, c in enumerate(t.name[1:]):
                     todo.remove(c)
                     if c == 'v':

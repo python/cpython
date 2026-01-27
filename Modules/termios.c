@@ -474,6 +474,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 termios.tcsetwinsize
 
     fd: fildes
@@ -488,7 +489,7 @@ is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().
 
 static PyObject *
 termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
-/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=4a06424465b24aee]*/
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=9a163c4e06fc4a41]*/
 {
     if (!PySequence_Check(winsz) || PySequence_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,

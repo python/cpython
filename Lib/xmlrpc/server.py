@@ -239,7 +239,7 @@ class SimpleXMLRPCDispatcher:
 
         see http://www.xmlrpc.com/discuss/msgReader$1208"""
 
-        self.funcs.update({'system.multicall' : self.system_multicall})
+        self.funcs['system.multicall'] = self.system_multicall
 
     def _marshaled_dispatch(self, data, dispatch_method = None, path = None):
         """Dispatches an XML-RPC method from marshalled (XML) data.
@@ -578,7 +578,7 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     """
 
     allow_reuse_address = True
-    allow_reuse_port = True
+    allow_reuse_port = False
 
     # Warning: this is for debugging purposes only! Never set this to True in
     # production code, as will be sending out sensitive information (exception

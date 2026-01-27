@@ -1,1 +1,0 @@
-Make :mod:`pdb` return to caller frame correctly when ``f_trace`` of the caller frame is not set

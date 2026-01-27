@@ -1,16 +1,17 @@
+import collections.abc
+import copy
+import gc
+import itertools
+import operator
+import pickle
+import re
 import unittest
+import warnings
+import weakref
+from random import randrange, shuffle
 from test import support
 from test.support import warnings_helper
-import gc
-import weakref
-import operator
-import copy
-import pickle
-from random import randrange, shuffle
-import warnings
-import collections
-import collections.abc
-import itertools
+
 
 class PassThru(Exception):
     pass
@@ -18,6 +19,14 @@ class PassThru(Exception):
 def check_pass_thru():
     raise PassThru
     yield 1
+
+class CustomHash:
+    def __init__(self, hash):
+        self.hash = hash
+    def __hash__(self):
+        return self.hash
+    def __repr__(self):
+        return f'<CustomHash {self.hash} at {id(self):#x}>'
 
 class BadCmp:
     def __hash__(self):
@@ -236,7 +245,7 @@ class TestJointOps:
             if type(self.s) not in (set, frozenset):
                 self.assertEqual(self.s.x, dup.x)
                 self.assertEqual(self.s.z, dup.z)
-                self.assertFalse(hasattr(self.s, 'y'))
+                self.assertNotHasAttr(self.s, 'y')
                 del self.s.x, self.s.z
 
     def test_iterator_pickling(self):
@@ -645,6 +654,57 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertRaises(KeyError, myset.remove, set(range(1)))
         self.assertRaises(KeyError, myset.remove, set(range(3)))
 
+    def test_unhashable_element(self):
+        myset = {'a'}
+        elem = [1, 2, 3]
+
+        def check_unhashable_element():
+            msg = "cannot use 'list' as a set element (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_element():
+            elem in myset
+        with check_unhashable_element():
+            myset.add(elem)
+        with check_unhashable_element():
+            myset.discard(elem)
+
+        # Only TypeError exception is overridden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        elem2 = HashError()
+        with self.assertRaises(KeyError):
+            elem2 in myset
+        with self.assertRaises(KeyError):
+            myset.add(elem2)
+        with self.assertRaises(KeyError):
+            myset.discard(elem2)
+
+    def test_hash_collision_remove_add(self):
+        self.maxDiff = None
+        # There should be enough space, so all elements with unique hash
+        # will be placed in corresponding cells without collision.
+        n = 64
+        elems = [CustomHash(h) for h in range(n)]
+        # Elements with hash collision.
+        a = CustomHash(n)
+        b = CustomHash(n)
+        elems += [a, b]
+        s = self.thetype(elems)
+        self.assertEqual(len(s), len(elems), s)
+        s.remove(a)
+        # "a" has been replaced with a dummy.
+        del elems[n]
+        self.assertEqual(len(s), len(elems), s)
+        self.assertEqual(s, set(elems))
+        s.add(b)
+        # "b" should not replace the dummy.
+        self.assertEqual(len(s), len(elems), s)
+        self.assertEqual(s, set(elems))
+
 
 class SetSubclass(set):
     pass
@@ -846,8 +906,8 @@ class TestBasicOps:
 
     def check_repr_against_values(self):
         text = repr(self.set)
-        self.assertTrue(text.startswith('{'))
-        self.assertTrue(text.endswith('}'))
+        self.assertStartsWith(text, '{')
+        self.assertEndsWith(text, '}')
 
         result = text[1:-1].split(', ')
         result.sort()
@@ -1823,6 +1883,7 @@ class TestWeirdBugs(unittest.TestCase):
         list(si)
 
     def test_merge_and_mutate(self):
+        # gh-141805
         class X:
             def __hash__(self):
                 return hash(0)
@@ -1834,6 +1895,33 @@ class TestWeirdBugs(unittest.TestCase):
         other = {X() for i in range(10)}
         s = {0}
         s.update(other)
+
+    def test_hash_collision_concurrent_add(self):
+        class X:
+            def __hash__(self):
+                return 0
+        class Y:
+            flag = False
+            def __hash__(self):
+                return 0
+            def __eq__(self, other):
+                if not self.flag:
+                    self.flag = True
+                    s.add(X())
+                return self is other
+
+        a = X()
+        s = set()
+        s.add(a)
+        s.add(X())
+        s.remove(a)
+        # Now the set contains a dummy entry followed by an entry
+        # for an object with hash 0.
+        s.add(Y())
+        # The following operations should not crash.
+        repr(s)
+        list(s)
+        set() | s
 
 
 class TestOperationsMutating:

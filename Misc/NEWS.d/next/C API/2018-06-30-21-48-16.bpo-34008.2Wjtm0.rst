@@ -1,2 +1,0 @@
-Added ``Py_IsInitialized`` to the list of APIs that are safe to call before
-the interpreter is initialized, and updated the embedding tests to cover it.

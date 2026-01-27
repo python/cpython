@@ -1,4 +1,0 @@
-The :exc:`DeprecationWarning` emitted when testing the truth value of an
-:class:`xml.etree.ElementTree.Element` now describes unconditionally
-returning ``True`` in a future version rather than raising an exception in
-Python 3.14.

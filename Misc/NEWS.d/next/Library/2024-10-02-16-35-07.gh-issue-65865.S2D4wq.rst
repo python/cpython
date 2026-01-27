@@ -1,3 +1,0 @@
-:mod:`argparse` now raises early error for invalid ``help`` arguments to
-:meth:`~argparse.ArgumentParser.add_argument`,
-:meth:`~argparse.ArgumentParser.add_subparsers` and :meth:`!add_parser`.

@@ -8,7 +8,25 @@
 #include <windows.h>
 #endif
 
-#if (defined(__APPLE__) && defined(__MACH__)) || defined(__linux__)
+#if defined(__APPLE__) && defined(__MACH__)
+#include <AvailabilityMacros.h>
+// memset_s is available from macOS 10.9, iOS 7, watchOS 2, and on all tvOS and visionOS versions.
+#  if (defined(MAC_OS_X_VERSION_MIN_REQUIRED) && defined(MAC_OS_X_VERSION_10_9) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9))
+#    define APPLE_HAS_MEMSET_S
+#  elif (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && defined(__IPHONE_7_0) && (__IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_7_0))
+#    define APPLE_HAS_MEMSET_S
+#  elif (defined(TARGET_OS_TV) && TARGET_OS_TV)
+#    define APPLE_HAS_MEMSET_S
+#  elif (defined(__WATCH_OS_VERSION_MIN_REQUIRED) && defined(__WATCHOS_2_0) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_2_0))
+#    define APPLE_HAS_MEMSET_S
+#  elif (defined(TARGET_OS_VISION) && TARGET_OS_VISION)
+#    define APPLE_HAS_MEMSET_S
+#  else
+#    undef APPLE_HAS_MEMSET_S
+#  endif
+#endif
+
+#if (defined(__APPLE__) && defined(__MACH__)) || defined(__linux__) || defined(__OpenBSD__)
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <string.h>
 #endif
@@ -36,10 +54,10 @@ void Lib_Memzero0_memzero0(void *dst, uint64_t len) {
   size_t len_ = (size_t) len;
 
   #ifdef _WIN32
-    SecureZeroMemory(dst, len);
-  #elif defined(__APPLE__) && defined(__MACH__)
+    SecureZeroMemory(dst, len_);
+  #elif defined(__APPLE__) && defined(__MACH__) && defined(APPLE_HAS_MEMSET_S)
     memset_s(dst, len_, 0, len_);
-  #elif (defined(__linux__) && !defined(LINUX_NO_EXPLICIT_BZERO)) || defined(__FreeBSD__)
+  #elif (defined(__linux__) && !defined(LINUX_NO_EXPLICIT_BZERO)) || defined(__FreeBSD__) || defined(__OpenBSD__)
     explicit_bzero(dst, len_);
   #elif defined(__NetBSD__)
     explicit_memset(dst, 0, len_);
@@ -48,7 +66,7 @@ void Lib_Memzero0_memzero0(void *dst, uint64_t len) {
     #warning "Your platform does not support any safe implementation of memzero -- consider a pull request!"
     volatile unsigned char *volatile dst_ = (volatile unsigned char *volatile) dst;
     size_t i = 0U;
-    while (i < len)
+    while (i < len_)
       dst_[i++] = 0U;
   #endif
 }

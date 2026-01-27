@@ -195,7 +195,7 @@ The ``ZoneInfo`` class
 
 The ``ZoneInfo`` class has two alternate constructors:
 
-.. classmethod:: ZoneInfo.from_file(fobj, /, key=None)
+.. classmethod:: ZoneInfo.from_file(file_obj, /, key=None)
 
     Constructs a ``ZoneInfo`` object from a file-like object returning bytes
     (e.g. a file opened in binary mode or an :class:`io.BytesIO` object).
@@ -205,6 +205,9 @@ The ``ZoneInfo`` class has two alternate constructors:
     :py:meth:`~object.__str__` and :py:meth:`~object.__repr__`.
 
     Objects created via this constructor cannot be pickled (see `pickling`_).
+
+    :exc:`ValueError` is raised if the data read from *file_obj* is not a valid
+    TZif file.
 
 .. classmethod:: ZoneInfo.no_cache(key)
 
@@ -299,7 +302,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
 1. ``ZoneInfo(key)``: When constructed with the primary constructor, a
    ``ZoneInfo`` object is serialized by key, and when deserialized, the
    deserializing process uses the primary and thus it is expected that these
-   are expected to be the same object as other references to the same time
+   are the same object as other references to the same time
    zone.  For example, if ``europe_berlin_pkl`` is a string containing a pickle
    constructed from ``ZoneInfo("Europe/Berlin")``, one would expect the
    following behavior:
@@ -325,7 +328,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
        >>> a is b
        False
 
-3. ``ZoneInfo.from_file(fobj, /, key=None)``: When constructed from a file, the
+3. ``ZoneInfo.from_file(file_obj, /, key=None)``: When constructed from a file, the
    ``ZoneInfo`` object raises an exception on pickling. If an end user wants to
    pickle a ``ZoneInfo`` constructed from a file, it is recommended that they
    use a wrapper type or a custom serialization function: either serializing by
@@ -349,7 +352,7 @@ Functions
 
     This function only includes canonical zone names and does not include
     "special" zones such as those under the ``posix/`` and ``right/``
-    directories, or the ``posixrules`` zone.
+    directories, the ``posixrules``  or the ``localtime`` zone.
 
     .. caution::
 

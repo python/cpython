@@ -1,5 +1,5 @@
 def to_tuple(t):
-    if t is None or isinstance(t, (str, int, complex, float, bytes)) or t is Ellipsis:
+    if t is None or isinstance(t, (str, int, complex, float, bytes, tuple)) or t is Ellipsis:
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]

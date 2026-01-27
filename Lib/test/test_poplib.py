@@ -17,6 +17,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import asynchat
 from test.support import asyncore
+from test.support import control_characters_c0
 
 
 test_support.requires_working_socket(module=True)
@@ -257,7 +258,7 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
 
 class TestPOP3Class(TestCase):
     def assertOK(self, resp):
-        self.assertTrue(resp.startswith(b"+OK"))
+        self.assertStartsWith(resp, b"+OK")
 
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
@@ -289,11 +290,42 @@ class TestPOP3Class(TestCase):
     def test_stat(self):
         self.assertEqual(self.client.stat(), (10, 100))
 
+        original_shortcmd = self.client._shortcmd
+        def mock_shortcmd_invalid_format(cmd):
+            if cmd == 'STAT':
+                return b'+OK'
+            return original_shortcmd(cmd)
+
+        self.client._shortcmd = mock_shortcmd_invalid_format
+        with self.assertRaises(poplib.error_proto):
+            self.client.stat()
+
+        def mock_shortcmd_invalid_data(cmd):
+            if cmd == 'STAT':
+                return b'+OK abc def'
+            return original_shortcmd(cmd)
+
+        self.client._shortcmd = mock_shortcmd_invalid_data
+        with self.assertRaises(poplib.error_proto):
+            self.client.stat()
+
+        def mock_shortcmd_extra_fields(cmd):
+            if cmd == 'STAT':
+                return b'+OK 1 2 3 4 5'
+            return original_shortcmd(cmd)
+
+        self.client._shortcmd = mock_shortcmd_extra_fields
+
+        result = self.client.stat()
+        self.assertEqual(result, (1, 2))
+
+        self.client._shortcmd = original_shortcmd
+
     def test_list(self):
         self.assertEqual(self.client.list()[1:],
                          ([b'1 1', b'2 2', b'3 3', b'4 4', b'5 5'],
                           25))
-        self.assertTrue(self.client.list('1').endswith(b"OK 1 1"))
+        self.assertEndsWith(self.client.list('1'), b"OK 1 1")
 
     def test_retr(self):
         expected = (b'+OK 116 bytes',
@@ -364,6 +396,13 @@ class TestPOP3Class(TestCase):
         self.assertIsNone(self.client.sock)
         self.assertIsNone(self.client.file)
 
+    def test_control_characters(self):
+        for c0 in control_characters_c0():
+            with self.assertRaises(ValueError):
+                self.client.user(f'user{c0}')
+            with self.assertRaises(ValueError):
+                self.client.pass_(f'{c0}pass')
+
     @requires_ssl
     def test_stls_capa(self):
         capa = self.client.capa()
@@ -428,7 +467,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
                                         context=ctx)
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         self.assertIs(self.client.sock.context, ctx)
-        self.assertTrue(self.client.noop().startswith(b'+OK'))
+        self.assertStartsWith(self.client.noop(), b'+OK')
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)

@@ -17,10 +17,10 @@ class CookieTests(unittest.TestCase):
              'repr': "<SimpleCookie: chips='ahoy' vienna='finger'>",
              'output': 'Set-Cookie: chips=ahoy\nSet-Cookie: vienna=finger'},
 
-            {'data': 'keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;"',
-             'dict': {'keebler' : 'E=mc2; L="Loves"; fudge=\012;'},
-             'repr': '''<SimpleCookie: keebler='E=mc2; L="Loves"; fudge=\\n;'>''',
-             'output': 'Set-Cookie: keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;"'},
+            {'data': 'keebler="E=mc2; L=\\"Loves\\"; fudge=;"',
+             'dict': {'keebler' : 'E=mc2; L="Loves"; fudge=;'},
+             'repr': '''<SimpleCookie: keebler='E=mc2; L="Loves"; fudge=;'>''',
+             'output': 'Set-Cookie: keebler="E=mc2; L=\\"Loves\\"; fudge=;"'},
 
             # Check illegal cookies that have an '=' char in an unquoted value
             {'data': 'keebler=E=mc2',
@@ -48,6 +48,29 @@ class CookieTests(unittest.TestCase):
                     'Set-Cookie: d=r',
                     'Set-Cookie: f=h'
                 ))
+            },
+
+            # gh-92936: allow double quote in cookie values
+            {
+                'data': 'cookie="{"key": "value"}"',
+                'dict': {'cookie': '{"key": "value"}'},
+                'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
+                'output': 'Set-Cookie: cookie="{"key": "value"}"',
+            },
+            {
+                'data': 'key="some value; surrounded by quotes"',
+                'dict': {'key': 'some value; surrounded by quotes'},
+                'repr': "<SimpleCookie: key='some value; surrounded by quotes'>",
+                'output': 'Set-Cookie: key="some value; surrounded by quotes"',
+            },
+            {
+                'data': 'session="user123"; preferences="{"theme": "dark"}"',
+                'dict': {'session': 'user123', 'preferences': '{"theme": "dark"}'},
+                'repr': "<SimpleCookie: preferences='{\"theme\": \"dark\"}' session='user123'>",
+                'output': '\n'.join((
+                    'Set-Cookie: preferences="{"theme": "dark"}"',
+                    'Set-Cookie: session="user123"',
+                ))
             }
         ]
 
@@ -58,6 +81,52 @@ class CookieTests(unittest.TestCase):
             self.assertEqual(C.output(sep='\n'), case['output'])
             for k, v in sorted(case['dict'].items()):
                 self.assertEqual(C[k].value, v)
+
+    def test_obsolete_rfc850_date_format(self):
+        # Test cases with different days and dates in obsolete RFC 850 format
+        test_cases = [
+            # from RFC 850, change EST to GMT
+            # https://datatracker.ietf.org/doc/html/rfc850#section-2
+            {
+                'data': 'key=value; expires=Saturday, 01-Jan-83 00:00:00 GMT',
+                'output': 'Saturday, 01-Jan-83 00:00:00 GMT'
+            },
+            {
+                'data': 'key=value; expires=Friday, 19-Nov-82 16:59:30 GMT',
+                'output': 'Friday, 19-Nov-82 16:59:30 GMT'
+            },
+            # from RFC 9110
+            # https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.7-6
+            {
+                'data': 'key=value; expires=Sunday, 06-Nov-94 08:49:37 GMT',
+                'output': 'Sunday, 06-Nov-94 08:49:37 GMT'
+            },
+            # other test cases
+            {
+                'data': 'key=value; expires=Wednesday, 09-Nov-94 08:49:37 GMT',
+                'output': 'Wednesday, 09-Nov-94 08:49:37 GMT'
+            },
+            {
+                'data': 'key=value; expires=Friday, 11-Nov-94 08:49:37 GMT',
+                'output': 'Friday, 11-Nov-94 08:49:37 GMT'
+            },
+            {
+                'data': 'key=value; expires=Monday, 14-Nov-94 08:49:37 GMT',
+                'output': 'Monday, 14-Nov-94 08:49:37 GMT'
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(data=case['data']):
+                C = cookies.SimpleCookie()
+                C.load(case['data'])
+
+                # Extract the cookie name from the data string
+                cookie_name = case['data'].split('=')[0]
+
+                # Check if the cookie is loaded correctly
+                self.assertIn(cookie_name, C)
+                self.assertEqual(C[cookie_name].get('expires'), case['output'])
 
     def test_unquote(self):
         cases = [
@@ -134,7 +203,7 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
         C['Customer']['expires'] = 0
         # can't test exact output, it always depends on current date/time
-        self.assertTrue(C.output().endswith('GMT'))
+        self.assertEndsWith(C.output(), 'GMT')
 
         # loading 'expires'
         C = cookies.SimpleCookie()
@@ -158,6 +227,14 @@ class CookieTests(unittest.TestCase):
         C['Customer']['httponly'] = True
         self.assertEqual(C.output(),
             'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Secure')
+
+    def test_set_secure_httponly_partitioned_attrs(self):
+        C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
+        C['Customer']['secure'] = True
+        C['Customer']['httponly'] = True
+        C['Customer']['partitioned'] = True
+        self.assertEqual(C.output(),
+            'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Partitioned; Secure')
 
     def test_samesite_attrs(self):
         samesite_values = ['Strict', 'Lax', 'strict', 'lax']
@@ -516,6 +593,50 @@ class MorselTests(unittest.TestCase):
         self.assertRegex(str(morsel),
                 r'Set-Cookie: key=coded_val; '
                 r'expires=\w+, \d+ \w+ \d+ \d+:\d+:\d+ \w+')
+
+    def test_control_characters(self):
+        for c0 in support.control_characters_c0():
+            morsel = cookies.Morsel()
+
+            # .__setitem__()
+            with self.assertRaises(cookies.CookieError):
+                morsel[c0] = "val"
+            with self.assertRaises(cookies.CookieError):
+                morsel["path"] = c0
+
+            # .setdefault()
+            with self.assertRaises(cookies.CookieError):
+                morsel.setdefault("path", c0)
+            with self.assertRaises(cookies.CookieError):
+                morsel.setdefault(c0, "val")
+
+            # .set()
+            with self.assertRaises(cookies.CookieError):
+                morsel.set(c0, "val", "coded-value")
+            with self.assertRaises(cookies.CookieError):
+                morsel.set("path", c0, "coded-value")
+            with self.assertRaises(cookies.CookieError):
+                morsel.set("path", "val", c0)
+
+    def test_control_characters_output(self):
+        # Tests that even if the internals of Morsel are modified
+        # that a call to .output() has control character safeguards.
+        for c0 in support.control_characters_c0():
+            morsel = cookies.Morsel()
+            morsel.set("key", "value", "coded-value")
+            morsel._key = c0  # Override private variable.
+            cookie = cookies.SimpleCookie()
+            cookie["cookie"] = morsel
+            with self.assertRaises(cookies.CookieError):
+                cookie.output()
+
+            morsel = cookies.Morsel()
+            morsel.set("key", "value", "coded-value")
+            morsel._coded_value = c0  # Override private variable.
+            cookie = cookies.SimpleCookie()
+            cookie["cookie"] = morsel
+            with self.assertRaises(cookies.CookieError):
+                cookie.output()
 
 
 def load_tests(loader, tests, pattern):

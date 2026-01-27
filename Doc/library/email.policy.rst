@@ -267,7 +267,7 @@ added matters.  To illustrate::
 
       Handle a *defect* found on *obj*.  When the email package calls this
       method, *defect* will always be a subclass of
-      :class:`~email.errors.Defect`.
+      :class:`~email.errors.MessageDefect`.
 
       The default implementation checks the :attr:`raise_on_defect` flag.  If
       it is ``True``, *defect* is raised as an exception.  If it is ``False``
@@ -277,7 +277,7 @@ added matters.  To illustrate::
    .. method:: register_defect(obj, defect)
 
       Register a *defect* on *obj*.  In the email package, *defect* will always
-      be a subclass of :class:`~email.errors.Defect`.
+      be a subclass of :class:`~email.errors.MessageDefect`.
 
       The default implementation calls the ``append`` method of the ``defects``
       attribute of *obj*.  When the email package calls :attr:`handle_defect`,
@@ -661,6 +661,13 @@ The header objects and their attributes are described in
 
    An instance of :class:`Compat32`, providing  backward compatibility with the
    behavior of the email package in Python 3.2.
+
+   .. note::
+
+      The :const:`compat32` policy should not be used as a policy for
+      :class:`~email.message.EmailMessage` objects, and should only be used
+      to serialize messages that were created using the :const:`compat32`
+      policy.
 
 
 .. rubric:: Footnotes

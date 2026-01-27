@@ -1,2 +1,0 @@
-Remove coverity scan from the CPython repo. It has not been used since 2020
-and is currently unmaintained.

@@ -57,10 +57,6 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
     Py_ssize_t mid;
     int res;
 
-    if (lo < 0) {
-        PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
-        return -1;
-    }
     if (hi == -1) {
         hi = PySequence_Size(list);
         if (hi < 0)
@@ -70,7 +66,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
     if (sq_item == NULL) {
         return -1;
     }
-    if (Py_EnterRecursiveCall("in _bisect.bisect_right")) {
+    if (Py_EnterRecursiveCall(" in _bisect.bisect_right")) {
         return -1;
     }
     PyTypeObject *tp = Py_TYPE(item);
@@ -153,7 +149,7 @@ _bisect.bisect_right -> Py_ssize_t
 
     a: object
     x: object
-    lo: Py_ssize_t = 0
+    lo: Py_ssize_t(allow_negative=False) = 0
     hi: Py_ssize_t(c_default='-1', accept={int, NoneType}) = None
     *
     key: object = None
@@ -173,7 +169,7 @@ A custom key function can be supplied to customize the sort order.
 static Py_ssize_t
 _bisect_bisect_right_impl(PyObject *module, PyObject *a, PyObject *x,
                           Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=3a4bc09cc7c8a73d input=43071869772dd53a]*/
+/*[clinic end generated code: output=3a4bc09cc7c8a73d input=b476bc45667273ac]*/
 {
     return internal_bisect_right(a, x, lo, hi, key);
 }
@@ -183,7 +179,7 @@ _bisect.insort_right
 
     a: object
     x: object
-    lo: Py_ssize_t = 0
+    lo: Py_ssize_t(allow_negative=False) = 0
     hi: Py_ssize_t(c_default='-1', accept={int, NoneType}) = None
     *
     key: object = None
@@ -201,7 +197,7 @@ A custom key function can be supplied to customize the sort order.
 static PyObject *
 _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
                           Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=ac3bf26d07aedda2 input=f60777d2b6ddb239]*/
+/*[clinic end generated code: output=ac3bf26d07aedda2 input=f2caa8abec0763e8]*/
 {
     PyObject *result, *key_x;
     Py_ssize_t index;
@@ -241,10 +237,6 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
     Py_ssize_t mid;
     int res;
 
-    if (lo < 0) {
-        PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
-        return -1;
-    }
     if (hi == -1) {
         hi = PySequence_Size(list);
         if (hi < 0)
@@ -254,7 +246,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
     if (sq_item == NULL) {
         return -1;
     }
-    if (Py_EnterRecursiveCall("in _bisect.bisect_left")) {
+    if (Py_EnterRecursiveCall(" in _bisect.bisect_left")) {
         return -1;
     }
     PyTypeObject *tp = Py_TYPE(item);
@@ -338,7 +330,7 @@ _bisect.bisect_left -> Py_ssize_t
 
     a: object
     x: object
-    lo: Py_ssize_t = 0
+    lo: Py_ssize_t(allow_negative=False) = 0
     hi: Py_ssize_t(c_default='-1', accept={int, NoneType}) = None
     *
     key: object = None
@@ -358,7 +350,7 @@ A custom key function can be supplied to customize the sort order.
 static Py_ssize_t
 _bisect_bisect_left_impl(PyObject *module, PyObject *a, PyObject *x,
                          Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=70749d6e5cae9284 input=f29c4fe7f9b797c7]*/
+/*[clinic end generated code: output=70749d6e5cae9284 input=9b4d49b5ddecfad7]*/
 {
     return internal_bisect_left(a, x, lo, hi, key);
 }
@@ -369,7 +361,7 @@ _bisect.insort_left
 
     a: object
     x: object
-    lo: Py_ssize_t = 0
+    lo: Py_ssize_t(allow_negative=False) = 0
     hi: Py_ssize_t(c_default='-1', accept={int, NoneType}) = None
     *
     key: object = None
@@ -387,7 +379,7 @@ A custom key function can be supplied to customize the sort order.
 static PyObject *
 _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
                          Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=b1d33e5e7ffff11e input=0a700a82edbd472c]*/
+/*[clinic end generated code: output=b1d33e5e7ffff11e input=ff85a79826e22f31]*/
 {
     PyObject *result, *key_x;
     Py_ssize_t index;

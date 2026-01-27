@@ -1,3 +1,0 @@
-Fix a possible race condition affecting parallel builds configured with
-``--enable-experimental-jit``, in which :exc:`FileNotFoundError` could be caused by
-another process already moving ``jit_stencils.h.new`` to ``jit_stencils.h``.

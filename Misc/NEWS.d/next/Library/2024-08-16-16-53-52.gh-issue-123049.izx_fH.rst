@@ -1,2 +1,0 @@
-Add support for :const:`~configparser.UNNAMED_SECTION`
-in :meth:`configparser.ConfigParser.add_section`.

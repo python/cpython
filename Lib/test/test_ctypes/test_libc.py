@@ -23,7 +23,7 @@ class LibTest(unittest.TestCase):
         self.assertEqual(lib.my_sqrt(2.0), math.sqrt(2.0))
 
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
-                         "requires C11 complex type")
+                         "requires C11 complex type and libffi >= 3.3.0")
     def test_csqrt(self):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex

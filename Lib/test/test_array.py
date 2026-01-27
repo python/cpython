@@ -67,6 +67,23 @@ class MiscTest(unittest.TestCase):
         a += a
         self.assertEqual(len(a), 0)
 
+    def test_fromlist_reentrant_index_mutation(self):
+
+        class Evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __index__(self):
+                self.lst.clear()
+                return "not an int"
+
+        for typecode in ('I', 'L', 'Q'):
+            with self.subTest(typecode=typecode):
+                lst = []
+                lst.append(Evil(lst))
+                a = array.array(typecode)
+                with self.assertRaises(TypeError):
+                    a.fromlist(lst)
+
 
 # Machine format codes.
 #
@@ -1255,6 +1272,14 @@ class UnicodeTest(StringTest, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             array.array("u")
 
+    def test_empty_string_mem_leak_gh140474(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            for _ in range(1000):
+                a = array.array('u', '')
+                self.assertEqual(len(a), 0)
+                self.assertEqual(a.typecode, 'u')
+
 
 class UCS4Test(UnicodeTest):
     typecode = 'w'
@@ -1664,6 +1689,14 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(len(ls), len(example))
         self.assertEqual(ls[:8], list(example[:8]))
         self.assertEqual(ls[-8:], list(example[-8:]))
+
+    def test_gh_128961(self):
+        a = array.array('i')
+        it = iter(a)
+        list(it)
+        it.__setstate__(0)
+        self.assertRaises(StopIteration, next, it)
+
 
 if __name__ == "__main__":
     unittest.main()

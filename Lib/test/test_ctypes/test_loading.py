@@ -101,6 +101,12 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(AttributeError, dll.__getitem__, 1234)
 
     @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
+    def test_load_without_name_and_with_handle(self):
+        handle = ctypes.windll.kernel32._handle
+        lib = ctypes.WinDLL(name=None, handle=handle)
+        self.assertIs(handle, lib._handle)
+
+    @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
     def test_1703286_A(self):
         # On winXP 64-bit, advapi32 loads at an address that does
         # NOT fit into a 32-bit integer.  FreeLibrary must be able
@@ -135,7 +141,7 @@ class LoaderTest(unittest.TestCase):
                          'test specific to Windows')
     def test_load_hasattr(self):
         # bpo-34816: shouldn't raise OSError
-        self.assertFalse(hasattr(ctypes.windll, 'test'))
+        self.assertNotHasAttr(ctypes.windll, 'test')
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')

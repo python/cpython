@@ -196,6 +196,7 @@ iteration of the loop::
     Found an odd number 9
 
 .. _tut-for-else:
+.. _break-and-continue-statements-and-else-clauses-on-loops:
 
 :keyword:`!else` Clauses on Loops
 =================================
@@ -250,6 +251,7 @@ statements: a ``try`` statement's ``else`` clause runs when no exception
 occurs, and a loop's ``else`` clause runs when no ``break`` occurs. For more on
 the ``try`` statement and exceptions, see :ref:`tut-handling`.
 
+.. index:: single: ...; ellipsis literal
 .. _tut-pass:
 
 :keyword:`!pass` Statements
@@ -276,6 +278,12 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
    ...     pass   # Remember to implement this!
    ...
 
+For this last case, many people use the ellipsis literal :code:`...` instead of
+:code:`pass`. This use has no special meaning to Python, and is not part of
+the language definition (you could use any constant expression here), but
+:code:`...` is used conventionally as a placeholder body as well.
+See :ref:`bltin-ellipsis-object`.
+
 
 .. _tut-match:
 
@@ -288,7 +296,8 @@ similar to a switch statement in C, Java or JavaScript (and many
 other languages), but it's more similar to pattern matching in
 languages like Rust or Haskell. Only the first pattern that matches
 gets executed and it can also extract components (sequence elements
-or object attributes) from the value into variables.
+or object attributes) from the value into variables. If no case matches,
+none of the branches is executed.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -304,7 +313,7 @@ The simplest form compares a subject value against one or more literals::
                 return "Something's wrong with the internet"
 
 Note the last block: the "variable name" ``_`` acts as a *wildcard* and
-never fails to match. If no case matches, none of the branches is executed.
+never fails to match.
 
 You can combine several literals in a single pattern using ``|`` ("or")::
 
@@ -559,7 +568,7 @@ This example, as usual, demonstrates some new Python features:
   Different types define different methods.  Methods of different types may have
   the same name without causing ambiguity.  (It is possible to define your own
   object types and methods, using *classes*, see :ref:`tut-classes`)
-  The method :meth:`!append` shown in the example is defined for list objects; it
+  The method :meth:`~list.append` shown in the example is defined for list objects; it
   adds a new element at the end of the list.  In this example it is equivalent to
   ``result = result + [a]``, but more efficient.
 
@@ -997,7 +1006,8 @@ scope::
    43
 
 The above example uses a lambda expression to return a function.  Another use
-is to pass a small function as an argument::
+is to pass a small function as an argument.  For instance, :meth:`list.sort`
+takes a sorting key function *key* which can be a lambda function::
 
    >>> pairs = [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')]
    >>> pairs.sort(key=lambda pair: pair[1])
@@ -1029,31 +1039,28 @@ blank, visually separating the summary from the rest of the description.  The
 following lines should be one or more paragraphs describing the object's calling
 conventions, its side effects, etc.
 
-The Python parser does not strip indentation from multi-line string literals in
-Python, so tools that process documentation have to strip indentation if
-desired.  This is done using the following convention. The first non-blank line
-*after* the first line of the string determines the amount of indentation for
-the entire documentation string.  (We can't use the first line since it is
-generally adjacent to the string's opening quotes so its indentation is not
-apparent in the string literal.)  Whitespace "equivalent" to this indentation is
-then stripped from the start of all lines of the string.  Lines that are
-indented less should not occur, but if they occur all their leading whitespace
-should be stripped.  Equivalence of whitespace should be tested after expansion
-of tabs (to 8 spaces, normally).
+The Python parser strips indentation from multi-line string literals when they
+serve as module, class, or function docstrings.
 
 Here is an example of a multi-line docstring::
 
    >>> def my_function():
    ...     """Do nothing, but document it.
    ...
-   ...     No, really, it doesn't do anything.
+   ...     No, really, it doesn't do anything:
+   ...
+   ...         >>> my_function()
+   ...         >>>
    ...     """
    ...     pass
    ...
    >>> print(my_function.__doc__)
    Do nothing, but document it.
 
-       No, really, it doesn't do anything.
+   No, really, it doesn't do anything:
+
+       >>> my_function()
+       >>>
 
 
 .. _tut-annotations:
@@ -1071,7 +1078,7 @@ Function Annotations
 information about the types used by user-defined functions (see :pep:`3107` and
 :pep:`484` for more information).
 
-:term:`Annotations <function annotation>` are stored in the :attr:`!__annotations__`
+:term:`Annotations <function annotation>` are stored in the :attr:`~object.__annotations__`
 attribute of the function as a dictionary and have no effect on any other part of the
 function.  Parameter annotations are defined by a colon after the parameter name, followed
 by an expression evaluating to the value of the annotation.  Return annotations are

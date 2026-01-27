@@ -108,7 +108,6 @@
     <ClInclude Include="$(mpdecimalDir)\libmpdec\convolute.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\crt.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\difradix2.h" />
-    <ClInclude Include="..\Modules\_decimal\docstrings.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\fnt.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\fourstep.h" />
     <ClInclude Include="..\Modules\_decimal\windows\mpdecimal.h" />

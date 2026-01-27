@@ -1,2 +1,0 @@
-Fix valgrind warning by initializing the f-string buffers to 0 in the
-tokenizer. Patch by Pablo Galindo

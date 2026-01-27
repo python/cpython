@@ -282,7 +282,7 @@ class CodeopTests(unittest.TestCase):
         # Test that the warning is only returned once.
         with warnings_helper.check_warnings(
                 ('"is" with \'str\' literal', SyntaxWarning),
-                ("invalid escape sequence", SyntaxWarning),
+                ('"\\\\e" is an invalid escape sequence', SyntaxWarning),
                 ) as w:
             compile_command(r"'\e' is 0")
             self.assertEqual(len(w.warnings), 2)
@@ -322,7 +322,7 @@ class CodeopTests(unittest.TestCase):
             dedent("""\
                 def foo(x,x):
                    pass
-            """), "duplicate argument 'x' in function definition")
+            """), "duplicate parameter 'x' in function definition")
 
 
 

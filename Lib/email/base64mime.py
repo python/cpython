@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Ben Gertzfield
 # Contact: email-sig@python.org
 
@@ -83,16 +83,15 @@ def body_encode(s, maxlinelen=76, eol=NL):
     if not s:
         return ""
 
-    encvec = []
-    max_unencoded = maxlinelen * 3 // 4
-    for i in range(0, len(s), max_unencoded):
-        # BAW: should encode() inherit b2a_base64()'s dubious behavior in
-        # adding a newline to the encoded string?
-        enc = b2a_base64(s[i:i + max_unencoded]).decode("ascii")
-        if enc.endswith(NL) and eol != NL:
-            enc = enc[:-1] + eol
-        encvec.append(enc)
-    return EMPTYSTRING.join(encvec)
+    if not eol:
+        return b2a_base64(s, newline=False).decode("ascii")
+
+    # BAW: should encode() inherit b2a_base64()'s dubious behavior in
+    # adding a newline to the encoded string?
+    enc = b2a_base64(s, wrapcol=maxlinelen).decode("ascii")
+    if eol != NL:
+        enc = enc.replace(NL, eol)
+    return enc
 
 
 def decode(string):

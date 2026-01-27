@@ -260,10 +260,15 @@ class CompletingReader(Reader):
     def calc_screen(self) -> list[str]:
         screen = super().calc_screen()
         if self.cmpltn_menu_visible:
-            ly = self.lxy[1]
+            # We display the completions menu below the current prompt
+            ly = self.lxy[1] + 1
             screen[ly:ly] = self.cmpltn_menu
-            self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
-            self.cxy = self.cxy[0], self.cxy[1] + len(self.cmpltn_menu)
+            # If we're not in the middle of multiline edit, don't append to screeninfo
+            # since that screws up the position calculation in pos2xy function.
+            # This is a hack to prevent the cursor jumping
+            # into the completions menu when pressing left or down arrow.
+            if self.pos != len(self.buffer):
+                self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
         return screen
 
     def finish(self) -> None:
@@ -288,3 +293,7 @@ class CompletingReader(Reader):
 
     def get_completions(self, stem: str) -> list[str]:
         return []
+
+    def get_line(self) -> str:
+        """Return the current line until the cursor position."""
+        return ''.join(self.buffer[:self.pos])

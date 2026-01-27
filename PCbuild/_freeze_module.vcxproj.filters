@@ -34,7 +34,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">
@@ -160,9 +160,6 @@
     <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\formatter_unicode.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\frame.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -232,10 +229,15 @@
     <ClCompile Include="..\Python\importdl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\index_pool.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\instruction_sequence.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\interpconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -365,6 +367,9 @@
     <ClCompile Include="..\Python\pystate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\pystats.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pystrcmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -399,6 +404,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\sliceobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\remote_debugging.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
@@ -476,7 +484,16 @@
     <ClCompile Include="..\Objects\typeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_format.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodectype.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_formatter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_writer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c">

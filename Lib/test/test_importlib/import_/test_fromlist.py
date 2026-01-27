@@ -63,7 +63,7 @@ class HandlingFromlist:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('module', fromlist=['non_existent'])
                 self.assertEqual(module.__name__, 'module')
-                self.assertFalse(hasattr(module, 'non_existent'))
+                self.assertNotHasAttr(module, 'non_existent')
 
     def test_module_from_package(self):
         # [module]
@@ -71,7 +71,7 @@ class HandlingFromlist:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg', fromlist=['module'])
                 self.assertEqual(module.__name__, 'pkg')
-                self.assertTrue(hasattr(module, 'module'))
+                self.assertHasAttr(module, 'module')
                 self.assertEqual(module.module.__name__, 'pkg.module')
 
     def test_nonexistent_from_package(self):
@@ -79,7 +79,7 @@ class HandlingFromlist:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg', fromlist=['non_existent'])
                 self.assertEqual(module.__name__, 'pkg')
-                self.assertFalse(hasattr(module, 'non_existent'))
+                self.assertNotHasAttr(module, 'non_existent')
 
     def test_module_from_package_triggers_ModuleNotFoundError(self):
         # If a submodule causes an ModuleNotFoundError because it tries
@@ -107,7 +107,7 @@ class HandlingFromlist:
                 mock['pkg'].__all__ = ['module']
                 module = self.__import__('pkg', fromlist=fromlist)
                 self.assertEqual(module.__name__, 'pkg')
-                self.assertTrue(hasattr(module, 'module'))
+                self.assertHasAttr(module, 'module')
                 self.assertEqual(module.module.__name__, 'pkg.module')
 
     def test_using_star(self):
@@ -125,8 +125,8 @@ class HandlingFromlist:
                 mock['pkg'].__all__ = ['module1']
                 module = self.__import__('pkg', fromlist=['module2', '*'])
                 self.assertEqual(module.__name__, 'pkg')
-                self.assertTrue(hasattr(module, 'module1'))
-                self.assertTrue(hasattr(module, 'module2'))
+                self.assertHasAttr(module, 'module1')
+                self.assertHasAttr(module, 'module2')
                 self.assertEqual(module.module1.__name__, 'pkg.module1')
                 self.assertEqual(module.module2.__name__, 'pkg.module2')
 
@@ -136,7 +136,7 @@ class HandlingFromlist:
                 importer['pkg'].__all__ = ['non_existent']
                 module = self.__import__('pkg', fromlist=['*'])
                 self.assertEqual(module.__name__, 'pkg')
-                self.assertFalse(hasattr(module, 'non_existent'))
+                self.assertNotHasAttr(module, 'non_existent')
 
     def test_star_in_all(self):
         with util.mock_spec('pkg.__init__') as importer:
@@ -144,7 +144,7 @@ class HandlingFromlist:
                 importer['pkg'].__all__ = ['*']
                 module = self.__import__('pkg', fromlist=['*'])
                 self.assertEqual(module.__name__, 'pkg')
-                self.assertFalse(hasattr(module, '*'))
+                self.assertNotHasAttr(module, '*')
 
     def test_invalid_type(self):
         with util.mock_spec('pkg.__init__') as importer:

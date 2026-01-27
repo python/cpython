@@ -22,6 +22,9 @@ def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     dot are special cases that are not matched by '*' and '?'
     patterns by default.
 
+    The order of the returned list is undefined. Sort it if you need a
+    particular order.
+
     If `include_hidden` is true, the patterns '*', '?', '**'  will match hidden
     directories.
 
@@ -39,6 +42,9 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     fnmatch. However, unlike fnmatch, filenames starting with a
     dot are special cases that are not matched by '*' and '?'
     patterns.
+
+    The order of the returned paths is undefined. Sort them if you need a
+    particular order.
 
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
@@ -121,21 +127,6 @@ def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
         if _isdir(dirname, dir_fd):
             return [basename]
     return []
-
-_deprecated_function_message = (
-    "{name} is deprecated and will be removed in Python {remove}. Use "
-    "glob.glob and pass a directory to its root_dir argument instead."
-)
-
-def glob0(dirname, pattern):
-    import warnings
-    warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    return _glob0(dirname, pattern, None, False)
-
-def glob1(dirname, pattern):
-    import warnings
-    warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    return _glob1(dirname, pattern, None, False)
 
 # This helper function recursively yields relative pathnames inside a literal
 # directory.
@@ -312,19 +303,19 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if part:
                 if not include_hidden and part[0] in '*?':
                     results.append(r'(?!\.)')
-                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep)[0])
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
-    return fr'(?s:{res})\Z'
+    return fr'(?s:{res})\z'
 
 
 @functools.lru_cache(maxsize=512)
-def _compile_pattern(pat, sep, case_sensitive, recursive=True):
+def _compile_pattern(pat, seps, case_sensitive, recursive=True):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = translate(pat, recursive=recursive, include_hidden=True, seps=sep)
+    regex = translate(pat, recursive=recursive, include_hidden=True, seps=seps)
     return re.compile(regex, flags=flags).match
 
 
@@ -348,13 +339,7 @@ class _GlobberBase:
 
     @staticmethod
     def scandir(path):
-        """Implements os.scandir().
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def add_slash(path):
-        """Returns a path with a trailing slash added.
+        """Like os.scandir(), but generates (entry, name, path) tuples.
         """
         raise NotImplementedError
 
@@ -365,15 +350,16 @@ class _GlobberBase:
         raise NotImplementedError
 
     @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir().
+    def stringify_path(path):
+        """Converts the path to a string object
         """
         raise NotImplementedError
 
     # High-level methods
 
-    def compile(self, pat):
-        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive)
+    def compile(self, pat, altsep=None):
+        seps = (self.sep, altsep) if altsep else self.sep
+        return _compile_pattern(pat, seps, self.case_sensitive, self.recursive)
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and
@@ -395,10 +381,12 @@ class _GlobberBase:
     def special_selector(self, part, parts):
         """Returns a function that selects special children of the given path.
         """
+        if parts:
+            part += self.sep
         select_next = self.selector(parts)
 
         def select_special(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists)
         return select_special
 
@@ -408,14 +396,16 @@ class _GlobberBase:
 
         # Optimization: consume and join any subsequent literal parts here,
         # rather than leaving them for the next selector. This reduces the
-        # number of string concatenation operations and calls to add_slash().
+        # number of string concatenation operations.
         while parts and magic_check.search(parts[-1]) is None:
             part += self.sep + parts.pop()
+        if parts:
+            part += self.sep
 
         select_next = self.selector(parts)
 
         def select_literal(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists=False)
         return select_literal
 
@@ -431,23 +421,19 @@ class _GlobberBase:
 
         def select_wildcard(path, exists=False):
             try:
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(path) as scandir_it:
-                    entries = list(scandir_it)
+                entries = self.scandir(path)
             except OSError:
                 pass
             else:
-                for entry in entries:
-                    if match is None or match(entry.name):
+                for entry, entry_name, entry_path in entries:
+                    if match is None or match(entry_name):
                         if dir_only:
                             try:
                                 if not entry.is_dir():
                                     continue
                             except OSError:
                                 continue
-                        entry_path = self.parse_entry(entry)
-                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
                             yield from select_next(entry_path, exists=True)
                         else:
                             yield entry_path
@@ -477,9 +463,9 @@ class _GlobberBase:
         select_next = self.selector(parts)
 
         def select_recursive(path, exists=False):
-            path = self.add_slash(path)
-            match_pos = len(str(path))
-            if match is None or match(str(path), match_pos):
+            path_str = self.stringify_path(path)
+            match_pos = len(path_str)
+            if match is None or match(path_str, match_pos):
                 yield from select_next(path, exists)
             stack = [path]
             while stack:
@@ -488,14 +474,11 @@ class _GlobberBase:
         def select_recursive_step(stack, match_pos):
             path = stack.pop()
             try:
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(path) as scandir_it:
-                    entries = list(scandir_it)
+                entries = self.scandir(path)
             except OSError:
                 pass
             else:
-                for entry in entries:
+                for entry, _entry_name, entry_path in entries:
                     is_dir = False
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
@@ -504,8 +487,10 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        entry_path = self.parse_entry(entry)
-                        if match is None or match(str(entry_path), match_pos):
+                        entry_path_str = self.stringify_path(entry_path)
+                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
+                        if match is None or match(entry_path_str, match_pos):
                             if dir_only:
                                 yield from select_next(entry_path, exists=True)
                             else:
@@ -532,20 +517,16 @@ class _StringGlobber(_GlobberBase):
     """Provides shell-style pattern matching and globbing for string paths.
     """
     lexists = staticmethod(os.path.lexists)
-    scandir = staticmethod(os.scandir)
-    parse_entry = operator.attrgetter('path')
     concat_path = operator.add
 
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
+    @staticmethod
+    def scandir(path):
+        # We must close the scandir() object before proceeding to
+        # avoid exhausting file descriptors when globbing deep trees.
+        with os.scandir(path) as scandir_it:
+            entries = list(scandir_it)
+        return ((entry, entry.name, entry.path) for entry in entries)
+
+    @staticmethod
+    def stringify_path(path):
+        return path  # Already a string.

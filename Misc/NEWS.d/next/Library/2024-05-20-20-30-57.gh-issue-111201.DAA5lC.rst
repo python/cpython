@@ -1,1 +1,0 @@
-Remove dependency to :mod:`readline` from the new Python REPL.

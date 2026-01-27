@@ -5,7 +5,7 @@
 Parsing arguments and building values
 =====================================
 
-These functions are useful when creating your own extensions functions and
+These functions are useful when creating your own extension functions and
 methods.  Additional information and examples are available in
 :ref:`extending-index`.
 
@@ -160,7 +160,7 @@ There are three ways strings and buffers can be converted to C:
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
-   The buffer may contain embedded null bytes. The caller have to call
+   The buffer may contain embedded null bytes. The caller has to call
    :c:func:`PyBuffer_Release` when it is done with the buffer.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
@@ -229,41 +229,58 @@ There are three ways strings and buffers can be converted to C:
 Numbers
 -------
 
+These formats allow representing Python numbers or single characters as C numbers.
+Formats that require :class:`int`, :class:`float` or :class:`complex` can
+also use the corresponding special methods :meth:`~object.__index__`,
+:meth:`~object.__float__` or :meth:`~object.__complex__` to convert
+the Python object to the required type.
+
+For signed integer formats, :exc:`OverflowError` is raised if the value
+is out of range for the C type.
+For unsigned integer formats, the
+most significant bits are silently truncated when the receiving field is too
+small to receive the value, and :exc:`DeprecationWarning` is emitted when
+the value is larger than the maximal value for the C type or less than
+the minimal value for the corresponding signed integer type of the same size.
+
 ``b`` (:class:`int`) [unsigned char]
-   Convert a nonnegative Python integer to an unsigned tiny int, stored in a C
+   Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
    :c:expr:`unsigned char`.
 
 ``B`` (:class:`int`) [unsigned char]
-   Convert a Python integer to a tiny int without overflow checking, stored in a C
+   Convert a Python integer to a tiny integer without overflow checking, stored in a C
    :c:expr:`unsigned char`.
+   Convert a Python integer to a C :c:expr:`unsigned char`.
 
 ``h`` (:class:`int`) [short int]
    Convert a Python integer to a C :c:expr:`short int`.
 
 ``H`` (:class:`int`) [unsigned short int]
-   Convert a Python integer to a C :c:expr:`unsigned short int`, without overflow
-   checking.
+   Convert a Python integer to a C :c:expr:`unsigned short int`.
 
 ``i`` (:class:`int`) [int]
    Convert a Python integer to a plain C :c:expr:`int`.
 
 ``I`` (:class:`int`) [unsigned int]
-   Convert a Python integer to a C :c:expr:`unsigned int`, without overflow
-   checking.
+   Convert a Python integer to a C :c:expr:`unsigned int`.
 
 ``l`` (:class:`int`) [long int]
    Convert a Python integer to a C :c:expr:`long int`.
 
 ``k`` (:class:`int`) [unsigned long]
-   Convert a Python integer to a C :c:expr:`unsigned long` without
-   overflow checking.
+   Convert a Python integer to a C :c:expr:`unsigned long`.
+
+   .. versionchanged:: 3.14
+      Use :meth:`~object.__index__` if available.
 
 ``L`` (:class:`int`) [long long]
    Convert a Python integer to a C :c:expr:`long long`.
 
 ``K`` (:class:`int`) [unsigned long long]
-   Convert a Python integer to a C :c:expr:`unsigned long long`
-   without overflow checking.
+   Convert a Python integer to a C :c:expr:`unsigned long long`.
+
+   .. versionchanged:: 3.14
+      Use :meth:`~object.__index__` if available.
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
@@ -288,6 +305,14 @@ Numbers
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
 
+.. deprecated:: 3.15
+
+   For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
+   :exc:`DeprecationWarning` is emitted when the value is larger than
+   the maximal value for the C type or less than the minimal value for
+   the corresponding signed integer type of the same size.
+
+
 Other objects
 -------------
 
@@ -307,7 +332,7 @@ Other objects
 
 .. _o_ampersand:
 
-``O&`` (object) [*converter*, *anything*]
+``O&`` (object) [*converter*, *address*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C
    variable (of arbitrary type), converted to :c:expr:`void *`.  The *converter*
@@ -321,14 +346,20 @@ Other objects
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
 
-   If the *converter* returns ``Py_CLEANUP_SUPPORTED``, it may get called a
+   .. c:macro:: Py_CLEANUP_SUPPORTED
+      :no-typesetting:
+
+   If the *converter* returns :c:macro:`!Py_CLEANUP_SUPPORTED`, it may get called a
    second time if the argument parsing eventually fails, giving the converter a
    chance to release any memory that it had already allocated. In this second
    call, the *object* parameter will be ``NULL``; *address* will have the same value
    as in the original call.
 
+   Examples of converters: :c:func:`PyUnicode_FSConverter` and
+   :c:func:`PyUnicode_FSDecoder`.
+
    .. versionchanged:: 3.1
-      ``Py_CLEANUP_SUPPORTED`` was added.
+      :c:macro:`!Py_CLEANUP_SUPPORTED` was added.
 
 ``p`` (:class:`bool`) [int]
    Tests the value passed in for truth (a boolean **p**\ redicate) and converts
@@ -339,16 +370,25 @@ Other objects
 
    .. versionadded:: 3.3
 
-``(items)`` (:class:`tuple`) [*matching-items*]
-   The object must be a Python sequence whose length is the number of format units
+``(items)`` (sequence) [*matching-items*]
+   The object must be a Python sequence (except :class:`str`, :class:`bytes`
+   or :class:`bytearray`) whose length is the number of format units
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
 
-It is possible to pass "long" integers (integers whose value exceeds the
-platform's :c:macro:`LONG_MAX`) however no proper range checking is done --- the
-most significant bits are silently truncated when the receiving field is too
-small to receive the value (actually, the semantics are inherited from downcasts
-in C --- your mileage may vary).
+   If *items* contains format units which store a :ref:`borrowed buffer
+   <c-arg-borrowed-buffer>` (``s``, ``s#``, ``z``, ``z#``, ``y``, or ``y#``)
+   or a :term:`borrowed reference` (``S``, ``Y``, ``U``, ``O``, or ``O!``),
+   the object must be a Python tuple.
+   The *converter* for the ``O&`` format unit in *items* must not store
+   a borrowed buffer or a borrowed reference.
+
+   .. versionchanged:: 3.14
+      :class:`str` and :class:`bytearray` objects no longer accepted as a sequence.
+
+   .. deprecated:: 3.14
+      Non-tuple sequences are deprecated if *items* contains format units
+      which store a borrowed buffer or a borrowed reference.
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
@@ -627,11 +667,24 @@ Building values
    ``L`` (:class:`int`) [long long]
       Convert a C :c:expr:`long long` to a Python integer object.
 
+   .. _capi-py-buildvalue-format-K:
+
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:expr:`unsigned long long` to a Python integer object.
 
    ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
+
+   ``p`` (:class:`bool`) [int]
+      Convert a C :c:expr:`int` to a Python :class:`bool` object.
+
+      Be aware that this format requires an ``int`` argument.
+      Unlike most other contexts in C, variadic arguments are not coerced to
+      a suitable type automatically.
+      You can convert another type (for example, a pointer or a float) to a
+      suitable ``int`` value using ``(x) ? 1 : 0`` or ``!!x``.
+
+      .. versionadded:: 3.14
 
    ``c`` (:class:`bytes` of length 1) [char]
       Convert a C :c:expr:`int` representing a byte to a Python :class:`bytes` object of

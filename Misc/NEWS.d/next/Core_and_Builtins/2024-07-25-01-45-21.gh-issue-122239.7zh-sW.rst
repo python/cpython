@@ -1,3 +1,0 @@
-When a :class:`list`, :class:`tuple` or :class:`dict`
-with too many elements is unpacked, show the actual
-length in the error message.

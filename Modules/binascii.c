@@ -76,11 +76,12 @@ get_binascii_state(PyObject *module)
 }
 
 
-static const unsigned char table_a2b_base64[] = {
+/* Align to 64 bytes for L1 cache line friendliness */
+static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
-    52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1, 0,-1,-1, /* Note PAD->0 */
+    52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1,64,-1,-1, /* PAD->64 detected by fast path */
     -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
     15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
     -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
@@ -101,8 +102,90 @@ static const unsigned char table_a2b_base64[] = {
 /* Max binary chunk size; limited only by available memory */
 #define BASE64_MAXBIN ((PY_SSIZE_T_MAX - 3) / 2)
 
-static const unsigned char table_b2a_base64[] =
+/*
+ * Fast base64 encoding/decoding helpers.
+ *
+ * Process complete groups without loop-carried dependencies.
+ */
+
+/* Align to 64 bytes for L1 cache line friendliness */
+static const unsigned char table_b2a_base64[] Py_ALIGNED(64) =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/* Encode 3 bytes into 4 base64 characters. */
+static inline void
+base64_encode_trio(const unsigned char *in, unsigned char *out,
+                   const unsigned char *table)
+{
+    unsigned int combined = ((unsigned int)in[0] << 16) |
+                            ((unsigned int)in[1] << 8) |
+                            (unsigned int)in[2];
+    out[0] = table[(combined >> 18) & 0x3f];
+    out[1] = table[(combined >> 12) & 0x3f];
+    out[2] = table[(combined >> 6) & 0x3f];
+    out[3] = table[combined & 0x3f];
+}
+
+/* Encode multiple complete 3-byte groups.
+ * Returns the number of input bytes processed (always a multiple of 3).
+ */
+static inline Py_ssize_t
+base64_encode_fast(const unsigned char *in, Py_ssize_t in_len,
+                   unsigned char *out, const unsigned char *table)
+{
+    Py_ssize_t n_trios = in_len / 3;
+    const unsigned char *in_end = in + n_trios * 3;
+
+    while (in < in_end) {
+        base64_encode_trio(in, out, table);
+        in += 3;
+        out += 4;
+    }
+
+    return n_trios * 3;
+}
+
+/* Decode 4 base64 characters into 3 bytes.
+ * Returns 1 on success, 0 if any character is invalid.
+ */
+static inline int
+base64_decode_quad(const unsigned char *in, unsigned char *out,
+                   const unsigned char *table)
+{
+    unsigned char v0 = table[in[0]];
+    unsigned char v1 = table[in[1]];
+    unsigned char v2 = table[in[2]];
+    unsigned char v3 = table[in[3]];
+
+    if ((v0 | v1 | v2 | v3) & 0xc0) {
+        return 0;
+    }
+
+    out[0] = (v0 << 2) | (v1 >> 4);
+    out[1] = (v1 << 4) | (v2 >> 2);
+    out[2] = (v2 << 6) | v3;
+    return 1;
+}
+
+/* Decode multiple complete 4-character groups (no padding allowed).
+ * Returns the number of input characters processed.
+ * Stops at the first invalid character, padding, or incomplete group.
+ */
+static inline Py_ssize_t
+base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
+                   unsigned char *out, const unsigned char *table)
+{
+    Py_ssize_t n_quads = in_len / 4;
+    Py_ssize_t i;
+
+    for (i = 0; i < n_quads; i++) {
+        if (!base64_decode_quad(in + i * 4, out + i * 3, table)) {
+            break;
+        }
+    }
+
+    return i * 4;
+}
 
 
 static const unsigned short crctab_hqx[256] = {
@@ -189,6 +272,32 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
     return Py_CLEANUP_SUPPORTED;
 }
 
+/* The function inserts '\n' each width characters, moving the data right.
+ * It assumes that we allocated enough space for all of the newlines in data.
+ * Returns the size of the data including the newlines.
+ */
+static Py_ssize_t
+wraplines(unsigned char *data, Py_ssize_t size, size_t width)
+{
+    if ((size_t)size <= width) {
+        return size;
+    }
+    unsigned char *src = data + size;
+    Py_ssize_t newlines = (size - 1) / width;
+    Py_ssize_t line_len = size - newlines * width;
+    size += newlines;
+    unsigned char *dst = data + size;
+
+    while ((src -= line_len) != data) {
+        dst -= line_len;
+        memmove(dst, src, line_len);
+        *--dst = '\n';
+        line_len = width;
+    }
+    assert(dst == data + width);
+    return size;
+}
+
 #include "clinic/binascii.c.h"
 
 /*[clinic input]
@@ -205,11 +314,9 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=e027f8e0b0598742 input=7cafeaf73df63d1c]*/
 {
     const unsigned char *ascii_data;
-    unsigned char *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
     binascii_state *state;
 
@@ -223,9 +330,11 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
     ascii_len--;
 
     /* Allocate the buffer */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL )
+    PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
+    if (writer == NULL) {
         return NULL;
-    bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
+    }
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
     for( ; bin_len > 0 ; ascii_len--, ascii_data++ ) {
         /* XXX is it really best to add NULs if there's no more data */
@@ -245,11 +354,10 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
             if ( this_ch < ' ' || this_ch > (' ' + 64)) {
                 state = get_binascii_state(module);
                 if (state == NULL) {
-                    return NULL;
+                    goto error;
                 }
                 PyErr_SetString(state->Error, "Illegal char");
-                Py_DECREF(rv);
-                return NULL;
+                goto error;
             }
             this_ch = (this_ch - ' ') & 077;
         }
@@ -277,14 +385,17 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
              this_ch != '\n' && this_ch != '\r' ) {
             state = get_binascii_state(module);
             if (state == NULL) {
-                return NULL;
+                goto error;
             }
             PyErr_SetString(state->Error, "Trailing garbage");
-            Py_DECREF(rv);
-            return NULL;
+            goto error;
         }
     }
-    return rv;
+    return PyBytesWriter_Finish(writer);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
 }
 
 /*[clinic input]
@@ -302,16 +413,13 @@ static PyObject *
 binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
 /*[clinic end generated code: output=b1b99de62d9bbeb8 input=beb27822241095cd]*/
 {
-    unsigned char *ascii_data;
     const unsigned char *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
     binascii_state *state;
-    Py_ssize_t bin_len, out_len;
-    _PyBytesWriter writer;
+    Py_ssize_t bin_len;
 
-    _PyBytesWriter_Init(&writer);
     bin_data = data->buf;
     bin_len = data->len;
     if ( bin_len > 45 ) {
@@ -325,10 +433,12 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     }
 
     /* We're lazy and allocate to much (fixed up later) */
-    out_len = 2 + (bin_len + 2) / 3 * 4;
-    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
-    if (ascii_data == NULL)
+    Py_ssize_t out_len = 2 + (bin_len + 2) / 3 * 4;
+    PyBytesWriter *writer = PyBytesWriter_Create(out_len);
+    if (writer == NULL) {
         return NULL;
+    }
+    unsigned char *ascii_data = PyBytesWriter_GetData(writer);
 
     /* Store the length */
     if (backtick && !bin_len)
@@ -356,7 +466,15 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    return _PyBytesWriter_Finish(&writer, ascii_data);
+    return PyBytesWriter_FinishWithPointer(writer, ascii_data);
+}
+
+
+static int
+ignorechar(unsigned char c, Py_buffer *ignorechars)
+{
+    return (ignorechars->buf != NULL &&
+            memchr(ignorechars->buf, c, ignorechars->len));
 }
 
 /*[clinic input]
@@ -365,83 +483,104 @@ binascii.a2b_base64
     data: ascii_buffer
     /
     *
-    strict_mode: bool = False
+    strict_mode: bool(c_default="-1", py_default="<unrepresentable>") = False
+        When set to true, bytes that are not part of the base64 standard are
+        not allowed.  The same applies to excess data after padding (= / ==).
+        Set to True by default if ignorechars is specified, False otherwise.
+    ignorechars: Py_buffer(py_default="<unrepresentable>") = None
+        A byte string containing characters to ignore from the input when
+        strict_mode is true.
 
 Decode a line of base64 data.
-
-  strict_mode
-    When set to True, bytes that are not part of the base64 standard are not allowed.
-    The same applies to excess data after padding (= / ==).
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
-/*[clinic end generated code: output=5409557788d4f975 input=c0c15fd0f8f9a62d]*/
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
+                         Py_buffer *ignorechars)
+/*[clinic end generated code: output=eab37aea4cfa6daa input=3be4937d72943835]*/
 {
     assert(data->len >= 0);
 
     const unsigned char *ascii_data = data->buf;
     size_t ascii_len = data->len;
     binascii_state *state = NULL;
-    char padding_started = 0;
+
+    if (strict_mode == -1) {
+        strict_mode = (ignorechars->buf != NULL);
+    }
 
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
-    _PyBytesWriter writer;
-    _PyBytesWriter_Init(&writer);
-    unsigned char *bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
-    if (bin_data == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
+    if (writer == NULL) {
         return NULL;
-    unsigned char *bin_data_start = bin_data;
+    }
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
-    if (strict_mode && ascii_len > 0 && ascii_data[0] == '=') {
-        state = get_binascii_state(module);
-        if (state) {
-            PyErr_SetString(state->Error, "Leading padding not allowed");
+    size_t i = 0;  /* Current position in input */
+
+    /* Fast path: use optimized decoder for complete quads.
+     * This works for both strict and non-strict mode for valid input.
+     * The fast path stops at padding, invalid chars, or incomplete groups.
+     */
+    if (ascii_len >= 4) {
+        Py_ssize_t fast_chars = base64_decode_fast(ascii_data, (Py_ssize_t)ascii_len,
+                                                   bin_data, table_a2b_base64);
+        if (fast_chars > 0) {
+            i = (size_t)fast_chars;
+            bin_data += (fast_chars / 4) * 3;
         }
-        goto error_end;
     }
 
+    /* Slow path: handle remaining input (padding, invalid chars, partial groups) */
     int quad_pos = 0;
     unsigned char leftchar = 0;
     int pads = 0;
-    for (size_t i = 0; i < ascii_len; i++) {
+    for (; i < ascii_len; i++) {
         unsigned char this_ch = ascii_data[i];
 
         /* Check for pad sequences and ignore
         ** the invalid ones.
         */
         if (this_ch == BASE64_PAD) {
-            padding_started = 1;
+            pads++;
 
-            if (strict_mode && quad_pos == 0) {
-                state = get_binascii_state(module);
-                if (state) {
-                    PyErr_SetString(state->Error, "Excess padding not allowed");
-                }
-                goto error_end;
-            }
-            if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
-                /* A pad sequence means we should not parse more input.
-                ** We've already interpreted the data from the quad at this point.
-                ** in strict mode, an error should raise if there's excess data after the padding.
-                */
-                if (strict_mode && i + 1 < ascii_len) {
+            if (strict_mode) {
+                if (quad_pos == 0) {
                     state = get_binascii_state(module);
                     if (state) {
-                        PyErr_SetString(state->Error, "Excess data after padding");
+                        PyErr_SetString(state->Error, (i == 0)
+                            ? "Leading padding not allowed"
+                            : "Excess padding not allowed");
                     }
                     goto error_end;
                 }
-
-                goto done;
+                if (quad_pos == 1) {
+                    /* Set an error below. */
+                    break;
+                }
+                if (quad_pos + pads > 4) {
+                    state = get_binascii_state(module);
+                    if (state) {
+                        PyErr_SetString(state->Error, "Excess padding not allowed");
+                    }
+                    goto error_end;
+                }
+            }
+            else {
+                if (quad_pos >= 2 && quad_pos + pads >= 4) {
+                    /* A pad sequence means we should not parse more input.
+                    ** We've already interpreted the data from the quad at this point.
+                    */
+                    goto done;
+                }
             }
             continue;
         }
 
-        this_ch = table_a2b_base64[this_ch];
-        if (this_ch >= 64) {
-            if (strict_mode) {
+        unsigned char v = table_a2b_base64[this_ch];
+        if (v >= 64) {
+            if (strict_mode && !ignorechar(this_ch, ignorechars)) {
                 state = get_binascii_state(module);
                 if (state) {
                     PyErr_SetString(state->Error, "Only base64 data is allowed");
@@ -452,10 +591,12 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         }
 
         // Characters that are not '=', in the middle of the padding, are not allowed
-        if (strict_mode && padding_started) {
+        if (strict_mode && pads) {
             state = get_binascii_state(module);
             if (state) {
-                PyErr_SetString(state->Error, "Discontinuous padding not allowed");
+                PyErr_SetString(state->Error, (quad_pos + pads == 4)
+                    ? "Excess data after padding"
+                    : "Discontinuous padding not allowed");
             }
             goto error_end;
         }
@@ -464,51 +605,57 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         switch (quad_pos) {
             case 0:
                 quad_pos = 1;
-                leftchar = this_ch;
+                leftchar = v;
                 break;
             case 1:
                 quad_pos = 2;
-                *bin_data++ = (leftchar << 2) | (this_ch >> 4);
-                leftchar = this_ch & 0x0f;
+                *bin_data++ = (leftchar << 2) | (v >> 4);
+                leftchar = v & 0x0f;
                 break;
             case 2:
                 quad_pos = 3;
-                *bin_data++ = (leftchar << 4) | (this_ch >> 2);
-                leftchar = this_ch & 0x03;
+                *bin_data++ = (leftchar << 4) | (v >> 2);
+                leftchar = v & 0x03;
                 break;
             case 3:
                 quad_pos = 0;
-                *bin_data++ = (leftchar << 6) | (this_ch);
+                *bin_data++ = (leftchar << 6) | (v);
                 leftchar = 0;
                 break;
         }
     }
 
-    if (quad_pos != 0) {
+    if (quad_pos == 1) {
+        /* There is exactly one extra valid, non-padding, base64 character.
+        ** This is an invalid length, as there is no possible input that
+        ** could encoded into such a base64 string.
+        */
         state = get_binascii_state(module);
-        if (state == NULL) {
-            /* error already set, from get_binascii_state */
-        } else if (quad_pos == 1) {
-            /*
-            ** There is exactly one extra valid, non-padding, base64 character.
-            ** This is an invalid length, as there is no possible input that
-            ** could encoded into such a base64 string.
-            */
+        if (state) {
+            unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
             PyErr_Format(state->Error,
                          "Invalid base64-encoded string: "
                          "number of data characters (%zd) cannot be 1 more "
                          "than a multiple of 4",
                          (bin_data - bin_data_start) / 3 * 4 + 1);
-        } else {
+        }
+        goto error_end;
+    }
+
+    if (quad_pos != 0 && quad_pos + pads != 4) {
+        state = get_binascii_state(module);
+        if (state) {
             PyErr_SetString(state->Error, "Incorrect padding");
         }
-        error_end:
-        _PyBytesWriter_Dealloc(&writer);
-        return NULL;
+        goto error_end;
     }
 
 done:
-    return _PyBytesWriter_Finish(&writer, bin_data);
+    return PyBytesWriter_FinishWithPointer(writer, bin_data);
+
+error_end:
+    PyBytesWriter_Discard(writer);
+    return NULL;
 }
 
 
@@ -518,73 +665,92 @@ binascii.b2a_base64
     data: Py_buffer
     /
     *
+    wrapcol: size_t = 0
     newline: bool = True
 
 Base64-code line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
-/*[clinic end generated code: output=4ad62c8e8485d3b3 input=0e20ff59c5f2e3e1]*/
+binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
+                         int newline)
+/*[clinic end generated code: output=2edc7311a9515eac input=2ee4214e6d489e2e]*/
 {
-    unsigned char *ascii_data;
-    const unsigned char *bin_data;
-    int leftbits = 0;
-    unsigned char this_ch;
-    unsigned int leftchar = 0;
-    Py_ssize_t bin_len, out_len;
-    _PyBytesWriter writer;
-    binascii_state *state;
-
-    bin_data = data->buf;
-    bin_len = data->len;
-    _PyBytesWriter_Init(&writer);
-
+    const unsigned char *bin_data = data->buf;
+    Py_ssize_t bin_len = data->len;
     assert(bin_len >= 0);
 
-    if ( bin_len > BASE64_MAXBIN ) {
-        state = get_binascii_state(module);
-        if (state == NULL) {
-            return NULL;
-        }
-        PyErr_SetString(state->Error, "Too much data for base64 line");
-        return NULL;
+    /* Each group of 3 bytes (rounded up) gets encoded as 4 characters,
+     * not counting newlines.
+     * Note that 'b' gets encoded as 'Yg==' (1 in, 4 out).
+     *
+     * Use unsigned integer arithmetic to avoid signed integer overflow.
+     */
+    size_t out_len = ((size_t)bin_len + 2u) / 3u * 4u;
+    if (out_len > PY_SSIZE_T_MAX) {
+        goto toolong;
     }
-
-    /* We're lazy and allocate too much (fixed up later).
-       "+2" leaves room for up to two pad characters.
-       Note that 'b' gets encoded as 'Yg==\n' (1 in, 5 out). */
-    out_len = bin_len*2 + 2;
-    if (newline)
+    if (wrapcol && out_len) {
+        /* Each line should encode a whole number of bytes. */
+        wrapcol = wrapcol < 4 ? 4 : wrapcol / 4 * 4;
+        out_len += (out_len - 1u) / wrapcol;
+        if (out_len > PY_SSIZE_T_MAX) {
+            goto toolong;
+        }
+    }
+    if (newline) {
         out_len++;
-    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
-    if (ascii_data == NULL)
-        return NULL;
-
-    for( ; bin_len > 0 ; bin_len--, bin_data++ ) {
-        /* Shift the data into our buffer */
-        leftchar = (leftchar << 8) | *bin_data;
-        leftbits += 8;
-
-        /* See if there are 6-bit groups ready */
-        while ( leftbits >= 6 ) {
-            this_ch = (leftchar >> (leftbits-6)) & 0x3f;
-            leftbits -= 6;
-            *ascii_data++ = table_b2a_base64[this_ch];
+        if (out_len > PY_SSIZE_T_MAX) {
+            goto toolong;
         }
     }
-    if ( leftbits == 2 ) {
-        *ascii_data++ = table_b2a_base64[(leftchar&3) << 4];
+    PyBytesWriter *writer = PyBytesWriter_Create(out_len);
+    if (writer == NULL) {
+        return NULL;
+    }
+    unsigned char *ascii_data = PyBytesWriter_GetData(writer);
+
+    /* Use the optimized fast path for complete 3-byte groups */
+    Py_ssize_t fast_bytes = base64_encode_fast(bin_data, bin_len, ascii_data,
+                                               table_b2a_base64);
+    bin_data += fast_bytes;
+    ascii_data += (fast_bytes / 3) * 4;
+    bin_len -= fast_bytes;
+
+    /* Handle remaining 0-2 bytes */
+    if (bin_len == 1) {
+        /* 1 byte remaining: produces 2 base64 chars + 2 padding */
+        unsigned int val = bin_data[0];
+        *ascii_data++ = table_b2a_base64[(val >> 2) & 0x3f];
+        *ascii_data++ = table_b2a_base64[(val << 4) & 0x3f];
         *ascii_data++ = BASE64_PAD;
         *ascii_data++ = BASE64_PAD;
-    } else if ( leftbits == 4 ) {
-        *ascii_data++ = table_b2a_base64[(leftchar&0xf) << 2];
+    }
+    else if (bin_len == 2) {
+        /* 2 bytes remaining: produces 3 base64 chars + 1 padding */
+        unsigned int val = ((unsigned int)bin_data[0] << 8) | bin_data[1];
+        *ascii_data++ = table_b2a_base64[(val >> 10) & 0x3f];
+        *ascii_data++ = table_b2a_base64[(val >> 4) & 0x3f];
+        *ascii_data++ = table_b2a_base64[(val << 2) & 0x3f];
         *ascii_data++ = BASE64_PAD;
+    }
+
+    if (wrapcol) {
+        unsigned char *start = PyBytesWriter_GetData(writer);
+        ascii_data = start + wraplines(start, ascii_data - start, wrapcol);
     }
     if (newline)
         *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    return _PyBytesWriter_Finish(&writer, ascii_data);
+    return PyBytesWriter_FinishWithPointer(writer, ascii_data);
+
+toolong:;
+    binascii_state *state = get_binascii_state(module);
+    if (state == NULL) {
+        return NULL;
+    }
+    PyErr_SetString(state->Error, "Too much data for base64");
+    return NULL;
 }
 
 
@@ -886,8 +1052,6 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
 {
     const char* argbuf;
     Py_ssize_t arglen;
-    PyObject *retval;
-    char* retbuf;
     Py_ssize_t i, j;
     binascii_state *state;
 
@@ -909,10 +1073,11 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
         return NULL;
     }
 
-    retval = PyBytes_FromStringAndSize(NULL, (arglen/2));
-    if (!retval)
+    PyBytesWriter *writer = PyBytesWriter_Create(arglen/2);
+    if (writer == NULL) {
         return NULL;
-    retbuf = PyBytes_AS_STRING(retval);
+    }
+    char *retbuf = PyBytesWriter_GetData(writer);
 
     for (i=j=0; i < arglen; i += 2) {
         unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
@@ -920,18 +1085,18 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
         if (top >= 16 || bot >= 16) {
             state = get_binascii_state(module);
             if (state == NULL) {
-                return NULL;
+                goto error;
             }
             PyErr_SetString(state->Error,
                             "Non-hexadecimal digit found");
-            goto finally;
+            goto error;
         }
         retbuf[j++] = (top << 4) + bot;
     }
-    return retval;
+    return PyBytesWriter_Finish(writer);
 
-  finally:
-    Py_DECREF(retval);
+error:
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 

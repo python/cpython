@@ -28,7 +28,6 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop',
-    'DefaultEventLoopPolicy',
     'EventLoop',
 )
 
@@ -360,7 +359,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 "os.sendfile() is not available")
         try:
             fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as err:
+        except (AttributeError, io.UnsupportedOperation):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
@@ -963,11 +962,11 @@ def can_use_pidfd():
     return True
 
 
-class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class _UnixDefaultEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
     """UNIX event loop policy"""
     _loop_factory = _UnixSelectorEventLoop
 
 
 SelectorEventLoop = _UnixSelectorEventLoop
-DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+_DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
 EventLoop = SelectorEventLoop
