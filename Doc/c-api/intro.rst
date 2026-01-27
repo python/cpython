@@ -194,7 +194,7 @@ complete listing.
    .. versionchanged:: 3.1
 
       This macro is now valid for all signed integer types, not just those for
-      which :c:expr:`unsigned type` is legal. As a result, *type* is no longer
+      which ``unsigned type`` is legal. As a result, *type* is no longer
       used.
 
 .. c:macro:: Py_ALWAYS_INLINE
