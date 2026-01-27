@@ -7162,9 +7162,8 @@ class TestProgName(TestCase):
         script_name = script_helper.make_script(dirname, basename, self.source)
         if not compiled:
             return script_name
-        py_compile.compile(script_name, doraise=True)
+        pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
         os.remove(script_name)
-        pyc_file = import_helper.make_legacy_pyc(script_name)
         return pyc_file
 
     def make_zip_script(self, script_name, name_in_zip=None):

@@ -765,4 +765,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 // Truncate the thread name to 32766 characters.
 #define _PYTHREAD_NAME_MAXLEN 32766
 
+// DO NOT MERGE
+#define _PY_DISABLE_SYS_CACHE_TAG
+
 #endif /* !Py_CONFIG_H */
