@@ -24,18 +24,9 @@ lost:
 
 .. doctest::
 
-    >>> sorted([5, 2, 3, 1, 4])
-    [1, 2, 3, 4, 5]
-
-    >>> original = [5, 2, 3, 1, 4]
-    >>> sorted(original)  # Returns a new sorted list
-    [1, 2, 3, 4, 5]
-    >>> original          # Original remains unchanged
-    [5, 2, 3, 1, 4]
-
-    >>> # To keep the sorted result, assign it to a variable
-    >>> sorted_list = sorted(original)
-    >>> sorted_list
+    >>> integers = [5, 2, 3, 1, 4]
+    >>> sorted_integers = sorted(integers)
+    >>> sorted_integers
     [1, 2, 3, 4, 5]
 
 You can also use the :meth:`list.sort` method. It modifies the list
@@ -46,7 +37,7 @@ more efficient.
 .. doctest::
 
     >>> a = [5, 2, 3, 1, 4]
-    >>> a.sort()           # Modifies 'a' in-place, returns None
+    >>> a.sort()
     >>> a
     [1, 2, 3, 4, 5]
 
