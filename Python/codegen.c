@@ -3748,6 +3748,7 @@ check_index(compiler *c, expr_ty e, expr_ty s)
     }
 }
 
+static int
 check_awaitable(compiler* c, expr_ty e)
 {
     /* Emit a warning when awaiting obvious non-awaitable literal objects. */
