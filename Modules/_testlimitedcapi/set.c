@@ -198,6 +198,8 @@ test_frozenset_add_in_capi_tracking(PyObject *self, PyObject *Py_UNUSED(ignored)
         goto error;
     }
     if (!PyObject_GC_IsTracked(tracked_obj)) {
+        Py_DECREF(frozenset);
+        Py_DECREF(tracked_obj);
         return raiseTestError("test_frozenset_add_in_capi_tracking",
                               "test object should be tracked");
     }
