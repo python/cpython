@@ -174,6 +174,23 @@ complete listing.
    This does not use the C11 standard ``_Alignas`` specifier; prefer use of
    that over this macro.
 
+.. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
+
+   Similar to :c:expr:`integer >> positions`, but forces sign extension, as the C
+   standard does not define whether a right-shift of a signed integer will
+   perform sign extension or a zero-fill.
+
+   *integer* should be any signed integer type.
+   *positions* is the number of positions to shift to the right.
+
+   Both *integer* and *positions* can be evaluated more than once;
+   consequently, avoid directly passing a function call or some other
+   expensive operation to this macro. Instead, store the result as a
+   variable and then pass it.
+
+   *type* is the type of the expression. In modern versions of Python, this is
+   unused. Historically, *type* was used to cast *integer*.
+
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
