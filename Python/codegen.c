@@ -3748,6 +3748,32 @@ check_index(compiler *c, expr_ty e, expr_ty s)
     }
 }
 
+check_awaitable(compiler* c, expr_ty e)
+{
+    /* Emit a warning when awaiting obvious non-awaitable literal objects. */
+    switch (e->kind) {
+    case Constant_kind:
+    case Tuple_kind:
+    case List_kind:
+    case ListComp_kind:
+    case Dict_kind:
+    case DictComp_kind:
+    case Set_kind:
+    case SetComp_kind:
+    case GeneratorExp_kind:
+    case JoinedStr_kind:
+    case TemplateStr_kind:
+    case FormattedValue_kind:
+    case Interpolation_kind: {
+        location loc = LOC(e);
+        return _PyCompile_Warn(c, loc, "'%.200s' object can't be awaited",
+            infer_type(e)->tp_name);
+    }
+    default:
+        return SUCCESS;
+    }
+}
+
 static int
 is_import_originated(compiler *c, expr_ty e)
 {
@@ -5295,6 +5321,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
+        RETURN_IF_ERROR(check_awaitable(c, e->v.Await.value));
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, loc, Py_None);
