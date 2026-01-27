@@ -1021,6 +1021,9 @@ or code that creates modules dynamically.
    ``PyModuleDef`` (such as when using :ref:`multi-phase-initialization`,
    ``PyModule_Create``, or ``PyModule_FromDefAndSpec``).
 
+   Return ``0`` on success.
+   Return ``-1`` with an exception set on error.
+
    .. versionadded:: 3.5
 
 .. c:function:: int PyUnstable_Module_SetGIL(PyObject *module, void *gil)
