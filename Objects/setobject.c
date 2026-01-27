@@ -1368,8 +1368,8 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
     return make_new_set(type, iterable);
 }
 
-void
 // gh-140232: check whether a frozenset can be untracked from the GC
+void
 _PyFrozenSet_MaybeUntrack(PyObject *op)
 {
     assert(op != NULL);
@@ -2957,7 +2957,7 @@ PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
     PyObject *result = make_new_set(&PyFrozenSet_Type, iterable);
-    if (result != 0) {
+    if (result != NULL) {
         _PyFrozenSet_MaybeUntrack(result);
     }
     return result;
@@ -3038,8 +3038,9 @@ PySet_Add(PyObject *anyset, PyObject *key)
         // API limits the usage of `PySet_Add` to "fill in the values of brand
         // new frozensets before they are exposed to other code". In this case,
         // this can be done without a lock.
-        // since another key is added to the set, we must track the frozenset if needed
-        if (PyFrozenSet_CheckExact(anyset) && PyObject_GC_IsTracked(key) && !PyObject_GC_IsTracked(anyset) ) {
+        // Since another key is added to the set, we must track the frozenset
+        // if needed.
+        if (PyFrozenSet_CheckExact(anyset) && PyObject_GC_IsTracked(key) && !PyObject_GC_IsTracked(anyset)) {
             _PyObject_GC_TRACK(anyset);
         }
         return set_add_key((PySetObject *)anyset, key);
