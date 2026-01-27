@@ -251,6 +251,14 @@ complete listing.
    macros, as macro expansions in *X* are forcefully evaluated by the
    preprocessor.
 
+.. c:macro:: Py_GCC_ATTRIBUTE(name)
+
+   Use a GCC attribute *name*, hiding it from compilers that don't support GCC
+   attributes (such as MSVC).
+
+   This expands to ``__attribute__((name))`` on a GCC compiler, and expands
+   to nothing on compilers that don't support GCC attributes.
+
 .. c:macro:: Py_GETENV(s)
 
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
