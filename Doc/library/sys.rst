@@ -2016,6 +2016,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
 
+   See :ref:`remote-debugging` for more information about the remote debugging
+   mechanism.
+
    .. audit-event:: sys.remote_exec pid script_path
 
       When the code is executed in the remote process, an
@@ -2031,6 +2034,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       with the path in the remote process.
       This event is raised in the remote process, not the one
       that called :func:`sys.remote_exec`.
+
+   .. availability:: Unix, Windows.
+   .. versionadded:: 3.14
+      See :pep:`768` for more details.
 
 
 .. function:: _enablelegacywindowsfsencoding()

@@ -24,7 +24,6 @@
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
 #include "pycore_time.h"          // _PyTime_Init()
-#include "pycore_uop.h"           // UOP_BUFFER_SIZE
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -1843,6 +1842,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     _PyMem_AbandonDelayed(tstate);
 
     _PyThreadState_ClearMimallocHeaps(tstate);
+
+#ifdef _Py_TIER2
+    _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
+#endif
 
     tstate->_status.cleared = 1;
 

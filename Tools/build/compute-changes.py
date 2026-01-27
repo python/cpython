@@ -50,7 +50,7 @@ SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 ANDROID_DIRS = frozenset({"Android"})
 IOS_DIRS = frozenset({"Apple", "iOS"})
 MACOS_DIRS = frozenset({"Mac"})
-WASI_DIRS = frozenset({Path("Tools", "wasm")})
+WASI_DIRS = frozenset({Path("Platforms", "WASI")})
 
 LIBRARY_FUZZER_PATHS = frozenset({
     # All C/CPP fuzzers.
@@ -194,7 +194,7 @@ def get_file_platform(file: Path) -> str | None:
         return "ios"
     if first_part in ANDROID_DIRS:
         return "android"
-    if len(file.parts) >= 2 and Path(*file.parts[:2]) in WASI_DIRS: # Tools/wasm/
+    if len(file.parts) >= 2 and Path(*file.parts[:2]) in WASI_DIRS:
         return "wasi"
     return None
 
