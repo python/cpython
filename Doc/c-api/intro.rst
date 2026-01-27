@@ -219,6 +219,13 @@ complete listing.
 
    .. versionadded:: 3.11
 
+.. c:macro:: Py_CAN_START_THREADS
+
+   If this macro is defined, then the current system is able to start threads.
+
+   Currently, all systems supported by CPython (per :pep:`11`), with the
+   exception of some WebAssembly platforms, support starting threads.
+
 .. c:macro:: Py_CHARMASK(c)
 
    Argument must be a character or an integer in the range [-128, 127] or [0,
