@@ -17,11 +17,25 @@ Sorting Basics
 ==============
 
 A simple ascending sort is very easy: just call the :func:`sorted` function. It
-returns a new sorted list:
+returns a new sorted list and does not modify the original.
+
+If you do not store or otherwise use the return value, the sorted result is
+lost:
 
 .. doctest::
 
     >>> sorted([5, 2, 3, 1, 4])
+    [1, 2, 3, 4, 5]
+
+    >>> original = [5, 2, 3, 1, 4]
+    >>> sorted(original)  # Returns a new sorted list
+    [1, 2, 3, 4, 5]
+    >>> original          # Original remains unchanged
+    [5, 2, 3, 1, 4]
+
+    >>> # To keep the sorted result, assign it to a variable
+    >>> sorted_list = sorted(original)
+    >>> sorted_list
     [1, 2, 3, 4, 5]
 
 You can also use the :meth:`list.sort` method. It modifies the list
@@ -32,7 +46,7 @@ more efficient.
 .. doctest::
 
     >>> a = [5, 2, 3, 1, 4]
-    >>> a.sort()
+    >>> a.sort()           # Modifies 'a' in-place, returns None
     >>> a
     [1, 2, 3, 4, 5]
 
