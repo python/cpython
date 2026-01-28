@@ -3633,7 +3633,7 @@ then
 			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
 
 			if test "$enable_framework"; then
-				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+				LINKFORSHARED="$LINKFORSHARED -Wl,-headerpad_max_install_names "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
 		elif test $ac_sys_system = "iOS"; then
