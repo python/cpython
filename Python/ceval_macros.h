@@ -351,7 +351,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
-#ifdef ENABLE_SPECIALIZATION_FT
+#ifdef ENABLE_SPECIALIZATION
 /* Multiple threads may execute these concurrently if thread-local bytecode is
  * disabled and they all execute the main copy of the bytecode. Specialization
  * is disabled in that case so the value is unused, but the RMW cycle should be
@@ -529,6 +529,7 @@ gen_try_set_executing(PyGenObject *gen)
                 return true;
             }
         }
+        return false;
     }
 #endif
     // Use faster non-atomic modifications in the GIL-enabled build and when
