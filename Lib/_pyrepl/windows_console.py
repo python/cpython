@@ -272,9 +272,22 @@ class WindowsConsole(Console):
 
         self.__write(newline[x_pos:])
         if wlen(newline) == self.width:
-            # If we wrapped we want to start at the next line
-            self._move_relative(0, y + 1)
-            self.posxy = 0, y + 1
+            if self.__vt_support:
+                info = CONSOLE_SCREEN_BUFFER_INFO()
+                if not GetConsoleScreenBufferInfo(OutHandle, info):
+                    raise WinError(GetLastError())
+                win_y = int(info.dwCursorPosition.Y - info.srWindow.Top)
+                expected = y - self.__offset
+                if win_y == expected + 1:
+                    # Terminal wrapped to next row.
+                    self.posxy = 0, y + 1
+                else:
+                    # Terminal did not wrap; cursor stays at end-of-line.
+                    self.posxy = self.width, y
+            else:
+                # If we wrapped we want to start at the next line
+                self._move_relative(0, y + 1)
+                self.posxy = 0, y + 1
         else:
             self.posxy = wlen(newline), y
 
