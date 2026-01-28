@@ -81,7 +81,8 @@ def list_packages(names: set[str]) -> None:
 # includes Windows and macOS extensions.
 def list_modules_setup_extensions(names: set[str]) -> None:
     checker = ModuleChecker()
-    names.update(checker.list_module_names(all=True))
+    # filter out math.integer submodule
+    names.update(checker.list_module_names(all=True) - {'_math_integer'})
 
 
 # List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).

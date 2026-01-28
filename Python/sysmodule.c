@@ -2899,14 +2899,6 @@ list_stdlib_module_names(void)
             Py_DECREF(names);
             return NULL;
         }
-        if (PyUnicode_EqualToUTF8(name, "_math_integer")) {
-            Py_DECREF(name);
-            name = PyUnicode_FromString("math.integer");
-            if (name == NULL) {
-                Py_DECREF(names);
-                return NULL;
-            }
-        }
         PyTuple_SET_ITEM(names, i, name);
     }
 
