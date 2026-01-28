@@ -1,4 +1,4 @@
-Enables patching in a ``_PY_DISABLE_SYS_CACHE_TAG`` preprocessor definition
-when building to force :attr:`sys.implementation.cache_tag` to ``None``.
-This has the effect of completely disabling automatic creation and reading
-of ``.pyc`` files.
+Enables patching the ``TAG`` preprocessor definition to override
+:attr:`sys.implementation.cache_tag` at build time. Setting it to ``NULL``
+has the effect of completely disabling automatic creation and use of
+``.pyc`` files.
