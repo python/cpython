@@ -2111,7 +2111,7 @@ class TestPyReplCtrlD(TestCase):
 class TestWindowsConsoleVtEolWrap(TestCase):
     """
     When a line exactly fills the terminal width, VT terminals differ on whether
-    the cursor immediately wraps to the next row. In VT mode we must synchronize 
+    the cursor immediately wraps to the next row. In VT mode we must synchronize
     our logical cursor position with the real console cursor.
     """
     def _make_console_like(self, *, width: int, offset: int, vt: bool):
