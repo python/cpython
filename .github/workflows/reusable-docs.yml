@@ -81,9 +81,6 @@ jobs:
     name: 'Doctest'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    env:
-      # DO NOT MERGE
-      PIP_NO_COMPILE: 1
     steps:
     - uses: actions/checkout@v6
       with:

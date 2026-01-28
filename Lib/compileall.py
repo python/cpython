@@ -165,6 +165,15 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     stripdir = os.fspath(stripdir) if stripdir is not None else None
     name = os.path.basename(fullname)
 
+    # Without a cache_tag, we can only create legacy .pyc files. None of our
+    # callers seem to expect this, so the best we can do is silently succeed
+    # without creating anything.
+    if not legacy and sys.implementation.cache_tag is None:
+        if not quiet:
+            print("No cache tag is available to generate .pyc path for {!r}"
+                    .format(fullname))
+        return True
+
     dfile = None
 
     if ddir is not None:

@@ -18,9 +18,6 @@ jobs:
     name: ${{ inputs.oss-fuzz-project-name }} (${{ inputs.sanitizer }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      # DO NOT MERGE
-      PIP_NO_COMPILE: 1
     steps:
       - name: Build fuzzers (${{ inputs.sanitizer }})
         id: build
