@@ -524,7 +524,7 @@ API Functions
    Returns true on success; on failure, it returns false and raises the
    appropriate exception.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
