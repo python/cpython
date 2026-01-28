@@ -968,22 +968,13 @@ def _extract_caret_anchors_from_line_segment(segment):
     return None
 
 
-def _lookahead(iterator, default):
-    forked = itertools.tee(iterator, 1)[0]
-    return next(forked, default)
-
-
 def _zip_display_width(line, carets):
-    line = itertools.tee(line, 1)[0]
+    import unicodedata
     carets = iter(carets)
-    for char in line:
+    for char in unicodedata.iter_graphemes(line):
+        char = str(char)
         char_width = _display_width(char)
-        next_char = _lookahead(line, "")
-        if next_char and char_width == _display_width(char + next_char):
-            next(line)
-            yield char + next_char, "".join(itertools.islice(carets, char_width))
-        else:
-            yield char, "".join(itertools.islice(carets, char_width))
+        yield char, "".join(itertools.islice(carets, char_width))
 
 
 def _display_width(line, offset=None):
