@@ -175,7 +175,7 @@ complete listing.
 
 .. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
 
-   Similar to :c:expr:`integer >> positions`, but forces sign extension, as the C
+   Similar to ``integer >> positions``, but forces sign extension, as the C
    standard does not define whether a right-shift of a signed integer will
    perform sign extension or a zero-fill.
 
@@ -246,7 +246,7 @@ complete listing.
 
 .. c:macro:: Py_FORCE_EXPANSION(X)
 
-   This is equivalent to :c:expr:`X`, which is useful for token-pasting in
+   This is equivalent to ``X``, which is useful for token-pasting in
    macros, as macro expansions in *X* are forcefully evaluated by the
    preprocessor.
 
