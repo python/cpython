@@ -2004,8 +2004,8 @@ local and remote interpreters must be the same exact version.
    Callers should adjust permissions before calling, for example::
 
       import os
-      import tempfile
       import sys
+      import tempfile
 
       with tempfile.NamedTemporaryFile(
           mode='w',
