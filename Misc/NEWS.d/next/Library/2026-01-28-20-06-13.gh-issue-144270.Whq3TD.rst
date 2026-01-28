@@ -1,0 +1,1 @@
+Fix xml.etree.ElementTree.SubElement to reject ``parent`` passed as a keyword argument, making the Python signature consistent with the C implementation.
