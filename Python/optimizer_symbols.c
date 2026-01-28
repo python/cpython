@@ -113,6 +113,9 @@ _PyUOpSymPrint(JitOptRef ref)
         case JIT_SYM_COMPACT_INT:
             printf("<compact_int at %p>", (void *)sym);
             break;
+        case JIT_SYM_PREDICATE_TAG:
+            printf("<predicate at %p>", (void *)sym);
+            break;
         default:
             printf("<tag=%d at %p>", sym->tag, (void *)sym);
             break;
@@ -666,6 +669,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_PREDICATE_TAG:
             return -1;
         case JIT_SYM_KNOWN_CLASS_TAG:
             /* TODO :
