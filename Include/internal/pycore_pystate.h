@@ -338,6 +338,9 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
 #endif
 }
 
+// Exports for '_testinternalcapi' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GuardCountdown(PyInterpreterState *interp);
+
 #ifdef __cplusplus
 }
 #endif

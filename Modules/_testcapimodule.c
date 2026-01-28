@@ -2594,6 +2594,193 @@ create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
     return PyType_FromSpec(&ManagedWeakrefNoGC_spec);
 }
 
+static void
+test_interp_guards_common(void)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterGuard guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != 0);
+    assert(PyInterpreterGuard_GetInterpreter(guard) == interp);
+
+    PyInterpreterGuard guard_2 = PyInterpreterGuard_Copy(guard);
+    assert(guard_2 != 0);
+    assert(PyInterpreterGuard_GetInterpreter(guard_2) == interp);
+
+    // We can close the references in any order
+    PyInterpreterGuard_Release(guard_2);
+    PyInterpreterGuard_Release(guard);
+}
+
+static PyObject *
+test_interpreter_guards(PyObject *self, PyObject *unused)
+{
+    // Test the main interpreter
+    test_interp_guards_common();
+
+    // Test a (legacy) subinterpreter
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    test_interp_guards_common();
+    Py_EndInterpreter(interp_tstate);
+
+    // Test an isolated subinterpreter
+    PyInterpreterConfig config = {
+        .gil = PyInterpreterConfig_OWN_GIL,
+        .check_multi_interp_extensions = 1
+    };
+
+    PyThreadState *isolated_interp_tstate;
+    PyStatus status = Py_NewInterpreterFromConfig(&isolated_interp_tstate, &config);
+    if (PyStatus_Exception(status)) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        return NULL;
+    }
+
+    test_interp_guards_common();
+    Py_EndInterpreter(isolated_interp_tstate);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
+{
+    PyInterpreterGuard guard = PyInterpreterGuard_FromCurrent();
+    if (guard == 0) {
+        return NULL;
+    }
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    assert(PyGILState_GetThisThreadState() == save_tstate);
+    PyThreadView thread_views[10];
+
+    for (int i = 0; i < 10; ++i) {
+        // Test reactivation of the detached tstate.
+        thread_views[i] = PyThreadState_Ensure(guard);
+        if (thread_views[i] == 0) {
+            PyInterpreterGuard_Release(guard);
+            return PyErr_NoMemory();
+        }
+
+        // No new thread state should've been created.
+        assert(PyThreadState_Get() == save_tstate);
+        PyThreadState_Release(thread_views[i]);
+    }
+
+    assert(PyThreadState_GetUnchecked() == NULL);
+
+    // Similarly, test ensuring with deep nesting and *then* releasing.
+    // If the (detached) gilstate matches the interpreter, then it shouldn't
+    // create a new thread state.
+    for (int i = 0; i < 10; ++i) {
+        thread_views[i] = PyThreadState_Ensure(guard);
+        if (thread_views[i] == 0) {
+            // This will technically leak other thread states, but it doesn't
+            // matter because this is a test.
+            PyInterpreterGuard_Release(guard);
+            return PyErr_NoMemory();
+        }
+
+        assert(PyThreadState_Get() == save_tstate);
+    }
+
+    for (int i = 0; i < 10; ++i) {
+        assert(PyThreadState_Get() == save_tstate);
+        PyThreadState_Release(thread_views[i]);
+    }
+
+    assert(PyThreadState_GetUnchecked() == NULL);
+    PyInterpreterGuard_Release(guard);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
+{
+    PyInterpreterGuard guard = PyInterpreterGuard_FromCurrent();
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    if (interp_tstate == NULL) {
+        PyInterpreterGuard_Release(guard);
+        return PyErr_NoMemory();
+    }
+
+    /* This should create a new thread state for the calling interpreter, *not*
+       reactivate the old one. In a real-world scenario, this would arise in
+       something like this:
+
+       def some_func():
+           import something
+           # This re-enters the main interpreter, but we
+           # shouldn't have access to prior thread-locals.
+           something.call_something()
+
+       interp = interpreters.create()
+       interp.exec(some_func)
+       */
+    PyThreadView thread_view = PyThreadState_Ensure(guard);
+    if (thread_view == 0) {
+        PyInterpreterGuard_Release(guard);
+        return PyErr_NoMemory();
+    }
+
+    PyThreadState *ensured_tstate = PyThreadState_Get();
+    assert(ensured_tstate != save_tstate);
+    assert(PyInterpreterState_Get() == PyInterpreterGuard_GetInterpreter(guard));
+    assert(PyGILState_GetThisThreadState() == ensured_tstate);
+
+    // Now though, we should reactivate the thread state
+    PyThreadView other_thread_view = PyThreadState_Ensure(guard);
+    if (other_thread_view == 0) {
+        PyThreadState_Release(thread_view);
+        PyInterpreterGuard_Release(guard);
+        return PyErr_NoMemory();
+    }
+
+    assert(PyThreadState_Get() == ensured_tstate);
+    PyThreadState_Release(other_thread_view);
+
+    // Ensure that we're restoring the prior thread state
+    PyThreadState_Release(thread_view);
+    assert(PyThreadState_Get() == interp_tstate);
+    assert(PyGILState_GetThisThreadState() == interp_tstate);
+
+    PyThreadState_Swap(interp_tstate);
+    Py_EndInterpreter(interp_tstate);
+
+    PyInterpreterGuard_Release(guard);
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_view_after_shutdown(PyObject *self, PyObject *unused)
+{
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *interp_tstate = Py_NewInterpreter();
+    if (interp_tstate == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    PyInterpreterView view = PyInterpreterView_FromCurrent();
+    if (view == 0) {
+        return PyErr_NoMemory();
+    }
+
+    // As a sanity check, ensure that the view actually works
+    PyInterpreterGuard guard = PyInterpreterGuard_FromView(view);
+    PyInterpreterGuard_Release(guard);
+
+    // Now, destroy the interpreter and try to acquire a lock from a view.
+    // It should fail.
+    Py_EndInterpreter(interp_tstate);
+    guard = PyInterpreterGuard_FromView(view);
+    assert(guard == 0);
+
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -2691,6 +2878,10 @@ static PyMethodDef TestMethods[] = {
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"create_managed_weakref_nogc_type",
         create_managed_weakref_nogc_type, METH_NOARGS},
+    {"test_interpreter_lock", test_interpreter_guards, METH_NOARGS},
+    {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
+    {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
+    {"test_interp_view_after_shutdown", test_interp_view_after_shutdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
