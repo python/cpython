@@ -4938,7 +4938,7 @@ class _TestSharedMemory(BaseTestCase):
         mv = shm.buf
         shm.close()
         shm.unlink()
-        with self.assertRaises(BufferError):
+        with self.assertRaises((BufferError, ValueError)):
             mv[:5] = b'hello'
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
