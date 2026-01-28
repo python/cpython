@@ -303,22 +303,26 @@ class BaseXYTestCase(unittest.TestCase):
 
     def test_b64decode_invalid_chars(self):
         # issue 1466065: Test some invalid characters.
-        tests = ((b'%3d==', b'\xdd'),
-                 (b'$3d==', b'\xdd'),
-                 (b'[==', b''),
-                 (b'YW]3=', b'am'),
-                 (b'3{d==', b'\xdd'),
-                 (b'3d}==', b'\xdd'),
-                 (b'@@', b''),
-                 (b'!', b''),
-                 (b"YWJj\n", b"abc"),
-                 (b'YWJj\nYWI=', b'abcab'))
+        tests = ((b'%3d==', b'\xdd', b'%$'),
+                 (b'$3d==', b'\xdd', b'%$'),
+                 (b'[==', b'', None),
+                 (b'YW]3=', b'am', b']'),
+                 (b'3{d==', b'\xdd', b'{}'),
+                 (b'3d}==', b'\xdd', b'{}'),
+                 (b'@@', b'', b'@!'),
+                 (b'!', b'', b'@!'),
+                 (b"YWJj\n", b"abc", b'\n'),
+                 (b'YWJj\nYWI=', b'abcab', b'\n'),
+                 (b'YW\nJj', b'abc', b'\n'),
+                 (b'YW\nJj', b'abc', bytearray(b'\n')),
+                 (b'YW\nJj', b'abc', memoryview(b'\n')),
+        )
         funcs = (
             base64.b64decode,
             base64.standard_b64decode,
             base64.urlsafe_b64decode,
         )
-        for bstr, res in tests:
+        for bstr, res, ignorechars in tests:
             for func in funcs:
                 with self.subTest(bstr=bstr, func=func):
                     self.assertEqual(func(bstr), res)
@@ -327,24 +331,76 @@ class BaseXYTestCase(unittest.TestCase):
                 base64.b64decode(bstr, validate=True)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
+            with self.assertRaises(binascii.Error):
+                # Even empty ignorechars enables the strict mode.
+                base64.b64decode(bstr, ignorechars=b'')
+            if ignorechars is not None:
+                r = base64.b64decode(bstr, ignorechars=ignorechars)
+                self.assertEqual(r, res)
+
+        with self.assertRaises(TypeError):
+            base64.b64decode(b'', ignorechars='')
+        with self.assertRaises(TypeError):
+            base64.b64decode(b'', ignorechars=[])
+        with self.assertRaises(TypeError):
+            base64.b64decode(b'', ignorechars=None)
 
         # Normal alphabet characters will be discarded when alternative given
-        with self.assertWarns(FutureWarning):
-            self.assertEqual(base64.b64decode(b'++++', altchars=b'-_'),
-                             b'\xfb\xef\xbe')
-        with self.assertWarns(FutureWarning):
-            self.assertEqual(base64.b64decode(b'////', altchars=b'-_'),
-                             b'\xff\xff\xff')
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(base64.b64decode(b'++++', altchars=b'-_', validate=True),
-                             b'\xfb\xef\xbe')
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(base64.b64decode(b'////', altchars=b'-_', validate=True),
-                             b'\xff\xff\xff')
-        with self.assertWarns(FutureWarning):
+        discarded = ("invalid character %a in Base64 data with %s "
+                     "will be discarded in future Python versions")
+        error = ("invalid character %a in Base64 data with %s "
+                 "will be an error in future Python versions")
+        with self.assertWarns(FutureWarning) as cm:
+            r = base64.b64decode(b'++++', altchars=b'-_')
+        self.assertEqual(r, b'\xfb\xef\xbe')
+        self.assertEqual(str(cm.warning),
+                         discarded % ('+', "altchars=b'-_' and validate=False"))
+        with self.assertWarns(FutureWarning) as cm:
+            r = base64.b64decode(b'////', altchars=b'-_')
+        self.assertEqual(r, b'\xff\xff\xff')
+        self.assertEqual(str(cm.warning),
+                         discarded % ('/', "altchars=b'-_' and validate=False"))
+        with self.assertWarns(DeprecationWarning) as cm:
+            r = base64.b64decode(b'++++', altchars=b'-_', validate=True)
+        self.assertEqual(r, b'\xfb\xef\xbe')
+        self.assertEqual(str(cm.warning),
+                         error % ('+', "altchars=b'-_' and validate=True"))
+        with self.assertWarns(DeprecationWarning) as cm:
+            r = base64.b64decode(b'////', altchars=b'-_', validate=True)
+        self.assertEqual(r, b'\xff\xff\xff')
+        self.assertEqual(str(cm.warning),
+                         error % ('/', "altchars=b'-_' and validate=True"))
+        with self.assertWarns(FutureWarning) as cm:
+            r = base64.b64decode(b'++++', altchars=b'-_', ignorechars=b'+')
+        self.assertEqual(r, b'\xfb\xef\xbe')
+        self.assertEqual(str(cm.warning),
+                         discarded % ('+', "altchars=b'-_' and ignorechars=b'+'"))
+        with self.assertWarns(FutureWarning) as cm:
+            r = base64.b64decode(b'////', altchars=b'-_', ignorechars=b'/')
+        self.assertEqual(r, b'\xff\xff\xff')
+        self.assertEqual(str(cm.warning),
+                         discarded % ('/', "altchars=b'-_' and ignorechars=b'/'"))
+        with self.assertWarns(DeprecationWarning) as cm:
+            r = base64.b64decode(b'++++////', altchars=b'-_', ignorechars=b'+')
+        self.assertEqual(r, b'\xfb\xef\xbe\xff\xff\xff')
+        self.assertEqual(str(cm.warning),
+                         error % ('/', "altchars=b'-_' and validate=True"))
+        with self.assertWarns(DeprecationWarning) as cm:
+            r = base64.b64decode(b'++++////', altchars=b'-_', ignorechars=b'/')
+        self.assertEqual(r, b'\xfb\xef\xbe\xff\xff\xff')
+        self.assertEqual(str(cm.warning),
+                         error % ('+', "altchars=b'-_' and validate=True"))
+
+        with self.assertWarns(FutureWarning) as cm:
             self.assertEqual(base64.urlsafe_b64decode(b'++++'), b'\xfb\xef\xbe')
-        with self.assertWarns(FutureWarning):
+        self.assertEqual(str(cm.warning),
+                         "invalid character '+' in URL-safe Base64 data "
+                         "will be discarded in future Python versions")
+        with self.assertWarns(FutureWarning) as cm:
             self.assertEqual(base64.urlsafe_b64decode(b'////'), b'\xff\xff\xff')
+        self.assertEqual(str(cm.warning),
+                         "invalid character '/' in URL-safe Base64 data "
+                         "will be discarded in future Python versions")
         with self.assertRaises(binascii.Error):
             base64.b64decode(b'+/!', altchars=b'-_')
 

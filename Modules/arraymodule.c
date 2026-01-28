@@ -408,10 +408,13 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = _PyNumber_Index(v);
-        if (NULL == v) {
+        Py_INCREF(v);
+        PyObject *res = _PyNumber_Index(v);
+        Py_DECREF(v);
+        if (NULL == res) {
             return -1;
         }
+        v = res;
         do_decref = 1;
     }
     x = PyLong_AsUnsignedLong(v);
@@ -468,10 +471,13 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = _PyNumber_Index(v);
-        if (NULL == v) {
+        Py_INCREF(v);
+        PyObject *res = _PyNumber_Index(v);
+        Py_DECREF(v);
+        if (NULL == res) {
             return -1;
         }
+        v = res;
         do_decref = 1;
     }
     x = PyLong_AsUnsignedLong(v);
@@ -521,10 +527,13 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = _PyNumber_Index(v);
-        if (NULL == v) {
+        Py_INCREF(v);
+        PyObject *res = _PyNumber_Index(v);
+        Py_DECREF(v);
+        if (NULL == res) {
             return -1;
         }
+        v = res;
         do_decref = 1;
     }
     x = PyLong_AsUnsignedLongLong(v);
@@ -2655,7 +2664,7 @@ array_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
     }
 }
 
-static const void *emptybuf = "";
+static const _Py_ALIGNED_DEF(ALIGNOF_MAX_ALIGN_T, char) emptybuf[] = "";
 
 
 static int
