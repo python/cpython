@@ -4935,11 +4935,11 @@ class _TestSharedMemory(BaseTestCase):
     def test_shared_memory_slice_assignment_no_crash(self):
         from multiprocessing import shared_memory
         shm = shared_memory.SharedMemory(create=True, size=10)
-        try:
-            shm.buf[:5] = b'hello'
-        finally:
-            shm.close()
-            shm.unlink()
+        mv = shm.buf
+        shm.close()
+        shm.unlink()
+        with self.assertRaises(BufferError):
+            mv[:5] = b'hello'
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
     @resource_tracker_format_subtests
