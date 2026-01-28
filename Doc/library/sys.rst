@@ -2007,12 +2007,15 @@ local and remote interpreters must be the same exact version.
       import tempfile
       import sys
 
-      with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+      with tempfile.NamedTemporaryFile(
+          mode='w',
+          suffix='.py', 
+          delete_on_close=False,
+      ) as f:
           f.write("print('Hello from remote!')")
           f.flush()
           os.chmod(f.name, 0o644)  # Readable by group/other
           sys.remote_exec(pid, f.name)
-      os.unlink(f.name)  # Cleanup
 
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
