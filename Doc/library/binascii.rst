@@ -49,16 +49,22 @@ The :mod:`binascii` module defines the following functions:
 
 
 .. function:: a2b_base64(string, /, *, strict_mode=False)
+              a2b_base64(string, /, *, strict_mode=True, ignorechars)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
+
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *strict_mode* is true.
+   The default value of *strict_mode* is ``True`` if *ignorechars* is specified,
+   ``False`` otherwise.
 
    If *strict_mode* is true, only valid base64 data will be converted. Invalid base64
    data will raise :exc:`binascii.Error`.
 
    Valid base64:
 
-   * Conforms to :rfc:`3548`.
+   * Conforms to :rfc:`4648`.
    * Contains only characters from the base64 alphabet.
    * Contains no excess data after padding (including excess padding, newlines, etc.).
    * Does not start with a padding.
@@ -66,15 +72,27 @@ The :mod:`binascii` module defines the following functions:
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
-.. function:: b2a_base64(data, *, newline=True)
 
-   Convert binary data to a line of ASCII characters in base64 coding. The return
-   value is the converted line, including a newline char if *newline* is
-   true.  The output of this function conforms to :rfc:`3548`.
+.. function:: b2a_base64(data, *, wrapcol=0, newline=True)
+
+   Convert binary data to a line(s) of ASCII characters in base64 coding,
+   as specified in :rfc:`4648`.
+
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
+
+   If *newline* is true (default), a newline character will be added
+   at the end of the output.
 
    .. versionchanged:: 3.6
       Added the *newline* parameter.
+
+   .. versionchanged:: 3.15
+      Added the *wrapcol* parameter.
 
 
 .. function:: a2b_qp(data, header=False)

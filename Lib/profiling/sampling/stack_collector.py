@@ -6,6 +6,7 @@ import json
 import linecache
 import os
 import sys
+import sysconfig
 
 from ._css_utils import get_combined_css
 from .collector import Collector, extract_lineno
@@ -18,21 +19,12 @@ class StackTraceCollector(Collector):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
 
-    def collect(self, stack_frames, skip_idle=False):
-        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
-            # Async-aware mode: process async task frames
-            for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
-                if not frames:
-                    continue
-                self.process_frames(frames, thread_id)
-        else:
-            # Sync-only mode
-            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
-                if not frames:
-                    continue
-                self.process_frames(frames, thread_id)
+    def collect(self, stack_frames, timestamps_us=None, skip_idle=False):
+        weight = len(timestamps_us) if timestamps_us else 1
+        for frames, thread_id in self._iter_stacks(stack_frames, skip_idle=skip_idle):
+            self.process_frames(frames, thread_id, weight=weight)
 
-    def process_frames(self, frames, thread_id):
+    def process_frames(self, frames, thread_id, weight=1):
         pass
 
 
@@ -41,13 +33,13 @@ class CollapsedStackCollector(StackTraceCollector):
         super().__init__(*args, **kwargs)
         self.stack_counter = collections.Counter()
 
-    def process_frames(self, frames, thread_id):
+    def process_frames(self, frames, thread_id, weight=1):
         # Extract only (filename, lineno, funcname) - opcode not needed for collapsed stacks
         # frame is (filename, location, funcname, opcode)
         call_tree = tuple(
             (f[0], extract_lineno(f[1]), f[2]) for f in reversed(frames)
         )
-        self.stack_counter[(call_tree, thread_id)] += 1
+        self.stack_counter[(call_tree, thread_id)] += weight
 
     def export(self, filename):
         lines = []
@@ -96,23 +88,26 @@ class FlamegraphCollector(StackTraceCollector):
         # Per-thread statistics
         self.per_thread_stats = {}  # {thread_id: {has_gil, on_cpu, gil_requested, unknown, has_exception, total, gc_samples}}
 
-    def collect(self, stack_frames, skip_idle=False):
+    def collect(self, stack_frames, timestamps_us=None, skip_idle=False):
         """Override to track thread status statistics before processing frames."""
-        # Increment sample count once per sample
-        self._sample_count += 1
+        # Weight is number of timestamps (samples with identical stack)
+        weight = len(timestamps_us) if timestamps_us else 1
+
+        # Increment sample count by weight
+        self._sample_count += weight
 
         # Collect both aggregate and per-thread statistics using base method
         status_counts, has_gc_frame, per_thread_stats = self._collect_thread_status_stats(stack_frames)
 
-        # Merge aggregate status counts
+        # Merge aggregate status counts (multiply by weight)
         for key in status_counts:
-            self.thread_status_counts[key] += status_counts[key]
+            self.thread_status_counts[key] += status_counts[key] * weight
 
         # Update aggregate GC frame count
         if has_gc_frame:
-            self.samples_with_gc_frames += 1
+            self.samples_with_gc_frames += weight
 
-        # Merge per-thread statistics
+        # Merge per-thread statistics (multiply by weight)
         for thread_id, stats in per_thread_stats.items():
             if thread_id not in self.per_thread_stats:
                 self.per_thread_stats[thread_id] = {
@@ -125,10 +120,10 @@ class FlamegraphCollector(StackTraceCollector):
                     "gc_samples": 0,
                 }
             for key, value in stats.items():
-                self.per_thread_stats[thread_id][key] += value
+                self.per_thread_stats[thread_id][key] += value * weight
 
         # Call parent collect to process frames
-        super().collect(stack_frames, skip_idle=skip_idle)
+        super().collect(stack_frames, timestamps_us, skip_idle=skip_idle)
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate,
                   error_rate=None, missed_samples=None, mode=None):
@@ -250,7 +245,6 @@ class FlamegraphCollector(StackTraceCollector):
             }
 
         # Calculate thread status percentages for display
-        import sysconfig
         is_free_threaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
         total_threads = max(1, self.thread_status_counts["total"])
         thread_stats = {
@@ -311,7 +305,7 @@ class FlamegraphCollector(StackTraceCollector):
             "opcode_mapping": opcode_mapping
         }
 
-    def process_frames(self, frames, thread_id):
+    def process_frames(self, frames, thread_id, weight=1):
         """Process stack frames into flamegraph tree structure.
 
         Args:
@@ -319,10 +313,11 @@ class FlamegraphCollector(StackTraceCollector):
                     leaf-to-root order. location is (lineno, end_lineno, col_offset, end_col_offset).
                     opcode is None if not gathered.
             thread_id: Thread ID for this stack trace
+            weight: Number of samples this stack represents (for batched RLE)
         """
         # Reverse to root->leaf order for tree building
-        self._root["samples"] += 1
-        self._total_samples += 1
+        self._root["samples"] += weight
+        self._total_samples += weight
         self._root["threads"].add(thread_id)
         self._all_threads.add(thread_id)
 
@@ -336,11 +331,11 @@ class FlamegraphCollector(StackTraceCollector):
             if node is None:
                 node = {"samples": 0, "children": {}, "threads": set(), "opcodes": collections.Counter()}
                 current["children"][func] = node
-            node["samples"] += 1
+            node["samples"] += weight
             node["threads"].add(thread_id)
 
             if opcode is not None:
-                node["opcodes"][opcode] += 1
+                node["opcodes"][opcode] += weight
 
             current = node
 

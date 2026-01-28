@@ -6,6 +6,7 @@ from .constants import (
     THREAD_STATUS_GIL_REQUESTED,
     THREAD_STATUS_UNKNOWN,
     THREAD_STATUS_HAS_EXCEPTION,
+    _INTERNAL_FRAME_SUFFIXES,
 )
 
 try:
@@ -42,10 +43,38 @@ def extract_lineno(location):
         return 0
     return location[0]
 
+def _is_internal_frame(frame):
+    if isinstance(frame, tuple):
+        filename = frame[0] if frame else ""
+    else:
+        filename = getattr(frame, "filename", "")
+
+    if not filename:
+        return False
+
+    return filename.endswith(_INTERNAL_FRAME_SUFFIXES)
+
+
+def filter_internal_frames(frames):
+    if not frames:
+        return frames
+
+    return [f for f in frames if not _is_internal_frame(f)]
+
+
 class Collector(ABC):
     @abstractmethod
-    def collect(self, stack_frames):
-        """Collect profiling data from stack frames."""
+    def collect(self, stack_frames, timestamps_us=None):
+        """Collect profiling data from stack frames.
+
+        Args:
+            stack_frames: List of InterpreterInfo objects
+            timestamps_us: Optional list of timestamps in microseconds. If provided
+                (from binary replay with RLE batching), use these instead of current
+                time. If None, collectors should use time.monotonic() or similar.
+                The list may contain multiple timestamps when samples are batched
+                together (same stack, different times).
+        """
 
     def collect_failed_sample(self):
         """Collect data about a failed sample attempt."""
@@ -53,6 +82,10 @@ class Collector(ABC):
     @abstractmethod
     def export(self, filename):
         """Export collected data to a file."""
+
+    @staticmethod
+    def _filter_internal_frames(frames):
+        return filter_internal_frames(frames)
 
     def _iter_all_frames(self, stack_frames, skip_idle=False):
         for interpreter_info in stack_frames:
@@ -67,7 +100,10 @@ class Collector(ABC):
                         continue
                 frames = thread_info.frame_info
                 if frames:
-                    yield frames, thread_info.thread_id
+                    # Filter out internal profiler frames from the bottom of the stack
+                    frames = self._filter_internal_frames(frames)
+                    if frames:
+                        yield frames, thread_info.thread_id
 
     def _iter_async_frames(self, awaited_info_list):
         # Phase 1: Index tasks and build parent relationships with pre-computed selection
@@ -78,6 +114,17 @@ class Collector(ABC):
 
         # Phase 3: Build linear stacks from each leaf to root (optimized - no sorting!)
         yield from self._build_linear_stacks(leaf_task_ids, task_map, child_to_parent)
+
+    def _iter_stacks(self, stack_frames, skip_idle=False):
+        """Yield (frames, thread_id) for all stacks, handling both sync and async modes."""
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            for frames, thread_id, _ in self._iter_async_frames(stack_frames):
+                if frames:
+                    yield frames, thread_id
+        else:
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
+                if frames:
+                    yield frames, thread_id
 
     def _build_task_graph(self, awaited_info_list):
         task_map = {}

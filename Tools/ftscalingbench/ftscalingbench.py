@@ -21,6 +21,7 @@
 # > echo "0" | sudo tee /sys/devices/system/cpu/cpufreq/boost
 #
 
+import copy
 import math
 import os
 import queue
@@ -213,6 +214,14 @@ class MyDataClass:
 def instantiate_dataclass():
     for _ in range(1000 * WORK_SCALE):
         obj = MyDataClass(x=1, y=2, z=3)
+
+
+@register_benchmark
+def deepcopy():
+    x = {'list': [1, 2], 'tuple': (1, None)}
+    for i in range(40 * WORK_SCALE):
+        copy.deepcopy(x)
+
 
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()

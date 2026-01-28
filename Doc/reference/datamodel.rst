@@ -546,6 +546,7 @@ Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
+   single: __builtins__ (function attribute)
    single: __closure__ (function attribute)
    single: __globals__ (function attribute)
    pair: global; namespace
@@ -555,6 +556,12 @@ Special read-only attributes
 
    * - Attribute
      - Meaning
+
+   * - .. attribute:: function.__builtins__
+     - A reference to the :class:`dictionary <dict>` that holds the function's
+       builtins namespace.
+
+       .. versionadded:: 3.10
 
    * - .. attribute:: function.__globals__
      - A reference to the :class:`dictionary <dict>` that holds the function's
@@ -1819,6 +1826,12 @@ Slice objects are used to represent slices for
 :meth:`~object.__getitem__`
 methods.  They are also created by the built-in :func:`slice` function.
 
+.. versionadded:: 3.15
+
+   The :func:`slice` type now supports :ref:`subscription <subscriptions>`. For
+   example, ``slice[float]`` may be used in type annotations to indicate a slice
+   containing :type:`float` objects.
+
 .. index::
    single: start (slice object attribute)
    single: stop (slice object attribute)
@@ -2617,7 +2630,7 @@ Notes on using *__slots__*:
 * :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
   *__weakref__* are defined for a class derived from a
   :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
-  :class:`int`, :class:`bytes`, and :class:`tuple`.
+  :class:`int`, :class:`bytes`, and :class:`type`, except :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
@@ -2642,6 +2655,7 @@ Notes on using *__slots__*:
 
 .. versionchanged:: 3.15
    Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+   Allowed defining any *__slots__* for a class derived from :class:`tuple`.
 
 
 .. _class-customization:

@@ -792,16 +792,16 @@ class BaseBytesTest:
         pi = PseudoFloat(3.1415)
 
         exceptions_params = [
-            ('%x format: an integer is required, not float', b'%x', 3.14),
-            ('%X format: an integer is required, not float', b'%X', 2.11),
-            ('%o format: an integer is required, not float', b'%o', 1.79),
-            ('%x format: an integer is required, not PseudoFloat', b'%x', pi),
-            ('%x format: an integer is required, not complex', b'%x', 3j),
-            ('%X format: an integer is required, not complex', b'%X', 2j),
-            ('%o format: an integer is required, not complex', b'%o', 1j),
-            ('%u format: a real number is required, not complex', b'%u', 3j),
-            ('%i format: a real number is required, not complex', b'%i', 2j),
-            ('%d format: a real number is required, not complex', b'%d', 2j),
+            ('%x requires an integer, not float', b'%x', 3.14),
+            ('%X requires an integer, not float', b'%X', 2.11),
+            ('%o requires an integer, not float', b'%o', 1.79),
+            (r'%x requires an integer, not .*\.PseudoFloat', b'%x', pi),
+            ('%x requires an integer, not complex', b'%x', 3j),
+            ('%X requires an integer, not complex', b'%X', 2j),
+            ('%o requires an integer, not complex', b'%o', 1j),
+            ('%u requires a real number, not complex', b'%u', 3j),
+            ('%i requires a real number, not complex', b'%i', 2j),
+            ('%d requires a real number, not complex', b'%d', 2j),
             (
                 r'%c requires an integer in range\(256\)'
                 r' or a single byte, not .*\.PseudoFloat',
@@ -810,7 +810,7 @@ class BaseBytesTest:
         ]
 
         for msg, format_bytes, value in exceptions_params:
-            with self.assertRaisesRegex(TypeError, msg):
+            with self.assertRaisesRegex(TypeError, 'format argument: ' + msg):
                 operator.mod(format_bytes, value)
 
     def test_memory_leak_gh_140939(self):
@@ -1381,6 +1381,18 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 os.remove(tfn)
             except OSError:
                 pass
+
+    def test_mod_concurrent_mutation(self):
+        # Prevent crash in __mod__ when formatting mutates the bytearray.
+        # Regression test for https://github.com/python/cpython/issues/142557.
+        fmt = bytearray(b"%a end")
+
+        class S:
+            def __repr__(self):
+                fmt.clear()
+                return "E"
+
+        self.assertRaises(BufferError, fmt.__mod__, S())
 
     def test_reverse(self):
         b = bytearray(b'hello')
@@ -2059,6 +2071,67 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             instance.ba[instance:1] = [ord("?")]
             self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
             self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+    def test_search_methods_reentrancy_raises_buffererror(self):
+        # gh-142560: Raise BufferError if buffer mutates during search arg conversion.
+        class Evil:
+            def __init__(self, ba):
+                self.ba = ba
+            def __buffer__(self, flags):
+                self.ba.clear()
+                return memoryview(self.ba)
+            def __release_buffer__(self, view: memoryview) -> None:
+                view.release()
+            def __index__(self):
+                self.ba.clear()
+                return ord("A")
+
+        def make_case():
+            ba = bytearray(b"A")
+            return ba, Evil(ba)
+
+        for name in ("find", "count", "index", "rindex", "rfind"):
+            ba, evil = make_case()
+            with self.subTest(name):
+                with self.assertRaises(BufferError):
+                    getattr(ba, name)(evil)
+
+        ba, evil = make_case()
+        with self.assertRaises(BufferError):
+            evil in ba
+        with self.assertRaises(BufferError):
+            ba.split(evil)
+        with self.assertRaises(BufferError):
+            ba.rsplit(evil)
+
+    def test_extend_empty_buffer_overflow(self):
+        # gh-143003
+        class EvilIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return next(source)
+            def __length_hint__(self):
+                return 0
+
+        # Use ASCII digits so float() takes the fast path that expects a NUL terminator.
+        source = iter(b'42')
+        ba = bytearray()
+        ba.extend(EvilIter())
+
+        self.assertRaises(ValueError, float, bytearray())
+
+    def test_hex_use_after_free(self):
+        # Prevent UAF in bytearray.hex(sep) with re-entrant sep.__len__.
+        # Regression test for https://github.com/python/cpython/issues/143195.
+        ba = bytearray(b'\xAA')
+
+        class S(bytes):
+            def __len__(self):
+                ba.clear()
+                return 1
+
+        self.assertRaises(BufferError, ba.hex, S(b':'))
 
 
 class AssortedBytesTest(unittest.TestCase):

@@ -768,7 +768,7 @@ not have to be) the original ``STACK[-2]``.
       end = STACK.pop()
       start = STACK.pop()
       container = STACK.pop()
-      values = STACK.pop()
+      value = STACK.pop()
       container[start:end] = value
 
    .. versionadded:: 3.12
