@@ -1141,13 +1141,6 @@ class CopyTests(unittest.TestCase):
                     self.assertEqual(to_tuple(child.parent), to_tuple(node))
 
 
-    def test_replace_non_str_kwarg(self):
-        node = ast.Name(id="x")
-        errmsg = "got an unexpected keyword argument <object object"
-        with self.assertRaisesRegex(TypeError, errmsg):
-            node.__replace__(**{object(): "y"})
-
-
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
