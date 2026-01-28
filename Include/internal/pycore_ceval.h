@@ -316,7 +316,7 @@ PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(
     PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level,
     int lazy);
 PyAPI_FUNC(PyObject *) _PyEval_LazyImportFrom(
-    PyThreadState *tstate, PyObject *v, PyObject *name);
+    PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyEval_ImportName(
     PyThreadState *tstate, PyObject *builtins, PyObject *globals,
     PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);

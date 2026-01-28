@@ -116,20 +116,26 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base64__doc__,
-"a2b_base64($module, data, /, *, strict_mode=False)\n"
+"a2b_base64($module, data, /, *, strict_mode=<unrepresentable>,\n"
+"           ignorechars=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Decode a line of base64 data.\n"
 "\n"
 "  strict_mode\n"
-"    When set to True, bytes that are not part of the base64 standard are not allowed.\n"
-"    The same applies to excess data after padding (= / ==).");
+"    When set to true, bytes that are not part of the base64 standard are\n"
+"    not allowed.  The same applies to excess data after padding (= / ==).\n"
+"    Set to True by default if ignorechars is specified, False otherwise.\n"
+"  ignorechars\n"
+"    A byte string containing characters to ignore from the input when\n"
+"    strict_mode is true.");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
     {"a2b_base64", _PyCFunction_CAST(binascii_a2b_base64), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base64__doc__},
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode);
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
+                         Py_buffer *ignorechars);
 
 static PyObject *
 binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -137,7 +143,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -146,7 +152,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(strict_mode), },
+        .ob_item = { &_Py_ID(strict_mode), &_Py_ID(ignorechars), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -155,17 +161,18 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "strict_mode", NULL};
+    static const char * const _keywords[] = {"", "strict_mode", "ignorechars", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "a2b_base64",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
-    int strict_mode = 0;
+    int strict_mode = -1;
+    Py_buffer ignorechars = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -178,17 +185,29 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    strict_mode = PyObject_IsTrue(args[1]);
-    if (strict_mode < 0) {
+    if (args[1]) {
+        strict_mode = PyObject_IsTrue(args[1]);
+        if (strict_mode < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyObject_GetBuffer(args[2], &ignorechars, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_a2b_base64_impl(module, &data, strict_mode);
+    return_value = binascii_a2b_base64_impl(module, &data, strict_mode, &ignorechars);
 
 exit:
     /* Cleanup for data */
     if (data.obj)
        PyBuffer_Release(&data);
+    /* Cleanup for ignorechars */
+    if (ignorechars.obj) {
+       PyBuffer_Release(&ignorechars);
+    }
 
     return return_value;
 }
@@ -823,4 +842,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=644ccdc8e0d56e65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13f0a4b0f5d3fcb4 input=a9049054013a1b77]*/
