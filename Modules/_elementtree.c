@@ -611,6 +611,13 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     ElementObject* parent;
     PyObject* tag;
     PyObject* attrib = NULL;
+    if (kwds && PyDict_Contains(kwds, PyUnicode_FromString("parent"))) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "SubElement() got some positional-only arguments passed as keyword arguments"
+        );
+         return NULL;
+    }
     if (!PyArg_ParseTuple(args, "O!O|O!:SubElement",
                           st->Element_Type, &parent, &tag,
                           &PyDict_Type, &attrib)) {
