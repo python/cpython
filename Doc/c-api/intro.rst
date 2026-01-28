@@ -171,8 +171,7 @@ complete listing.
 
    Specify alignment to *num* bytes on compilers that support it.
 
-   This does not use the C11 standard ``_Alignas`` specifier; prefer use of
-   that over this macro.
+   Consider using the C11 standard ``_Alignas`` specifier over this macro.
 
 .. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
 
@@ -344,7 +343,7 @@ complete listing.
    that no information was lost with the cast from *larger* to *smaller*.
 
    *value*, *larger*, and *smaller* may all be evaluated more than once in the
-   expression; as a consequence, do not pass an expensive operation directly to
+   expression; consequently, do not pass an expensive operation directly to
    this macro.
 
 .. c:macro:: Py_STRINGIFY(x)
@@ -360,7 +359,7 @@ complete listing.
    literal instead. This is done by appending ``U`` to the result of ``Py_LL``.
 
    In modern versions of Python, this macro is not very useful, as C99 and
-   later require the ``ULL``/``LLU`` suffix to be valid for an integer.
+   later require the ``ULL``/``LLU`` suffixes to be valid for an integer.
 
 .. c:macro:: Py_UNREACHABLE()
 
