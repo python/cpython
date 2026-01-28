@@ -26,6 +26,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
+  PIP_NO_COMPILE: 1
 
 jobs:
   build-context:
