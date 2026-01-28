@@ -546,26 +546,24 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
             pads++;
 
             if (strict_mode) {
-                if (quad_pos == 0) {
-                    state = get_binascii_state(module);
-                    if (state) {
-                        PyErr_SetString(state->Error, (i == 0)
-                            ? "Leading padding not allowed"
-                            : "Excess padding not allowed");
-                    }
-                    goto error_end;
+                if (quad_pos >= 2 && quad_pos + pads <= 4) {
+                    continue;
+                }
+                if (ignorechar(BASE64_PAD, ignorechars)) {
+                    continue;
                 }
                 if (quad_pos == 1) {
                     /* Set an error below. */
                     break;
                 }
-                if (quad_pos + pads > 4) {
-                    state = get_binascii_state(module);
-                    if (state) {
-                        PyErr_SetString(state->Error, "Excess padding not allowed");
-                    }
-                    goto error_end;
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error,
+                                    (quad_pos == 0 && i == 0)
+                                    ? "Leading padding not allowed"
+                                    : "Excess padding not allowed");
                 }
+                goto error_end;
             }
             else {
                 if (quad_pos >= 2 && quad_pos + pads >= 4) {
@@ -574,8 +572,8 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                     */
                     goto done;
                 }
+                continue;
             }
-            continue;
         }
 
         unsigned char v = table_a2b_base64[this_ch];
@@ -591,7 +589,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
         }
 
         // Characters that are not '=', in the middle of the padding, are not allowed
-        if (strict_mode && pads) {
+        if (pads && strict_mode && !ignorechar(BASE64_PAD, ignorechars)) {
             state = get_binascii_state(module);
             if (state) {
                 PyErr_SetString(state->Error, (quad_pos + pads == 4)
@@ -642,7 +640,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
         goto error_end;
     }
 
-    if (quad_pos != 0 && quad_pos + pads != 4) {
+    if (quad_pos != 0 && quad_pos + pads < 4) {
         state = get_binascii_state(module);
         if (state) {
             PyErr_SetString(state->Error, "Incorrect padding");
