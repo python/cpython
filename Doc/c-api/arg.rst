@@ -519,8 +519,8 @@ API Functions
 .. c:function:: int PyArg_ParseVector(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
 
    Parse the parameters of a function that takes only vector parameters into
-   local variables; function using the :c:macro:`METH_FASTCALL` calling
-   convention.
+   local variables (that is, a function using the :c:macro:METH_FASTCALL calling
+   convention).
    Returns true on success; on failure, it returns false and raises the
    appropriate exception.
 
