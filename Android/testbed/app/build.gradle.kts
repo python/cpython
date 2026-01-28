@@ -125,9 +125,10 @@ android {
         path("src/main/c/CMakeLists.txt")
     }
 
-    // Set this property to something non-empty, otherwise it'll use the default
-    // list, which ignores asset directories beginning with an underscore.
-    aaptOptions.ignoreAssetsPattern = ".git"
+    // Set this property to something nonexistent but non-empty. Otherwise it'll use the
+    // default list, which ignores asset directories beginning with an underscore, and
+    // maybe also other files required by tests.
+    aaptOptions.ignoreAssetsPattern = "android-testbed-dont-ignore-anything"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
