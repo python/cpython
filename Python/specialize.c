@@ -1314,24 +1314,14 @@ specialize_load_global_lock_held(
         goto fail;
     }
     PyObject *value = NULL;
-    if (PyDict_GetItemRef(globals, name, &value) < 0) {
+    Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
+    if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
     }
     if (value != NULL && PyLazyImport_CheckExact(value)) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
         Py_DECREF(value);
-        goto fail;
-    }
-    Py_XDECREF(value);
-#ifdef Py_GIL_DISABLED
-    PyObject *value;
-    Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
-#else
-    Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
-#endif
-    if (index == DKIX_ERROR) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
