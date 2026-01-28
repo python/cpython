@@ -1671,6 +1671,19 @@ dummy_func(
             DECREF_INPUTS();
         }
 
+        op(_UNPACK_SEQUENCE_UNIQUE_TUPLE, (seq -- values[oparg])) {
+            PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
+            assert(PyTuple_CheckExact(seq_o));
+            DEOPT_IF(PyTuple_GET_SIZE(seq_o) != oparg);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            PyObject **items = _PyTuple_ITEMS(seq_o);
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = PyStackRef_FromPyObjectSteal(items[i]);
+                items[i] = NULL;
+            }
+            DECREF_INPUTS();
+        }
+
         macro(UNPACK_SEQUENCE_LIST) =
             _GUARD_TOS_LIST + unused/1 + _UNPACK_SEQUENCE_LIST;
 

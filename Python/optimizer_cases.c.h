@@ -33,6 +33,7 @@
             if (sym_is_null(value)) {
                 ctx->done = true;
             }
+            value = PyJitRef_RemoveUnique(value);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -43,6 +44,7 @@
         case _LOAD_FAST: {
             JitOptRef value;
             value = GETLOCAL(oparg);
+            value = PyJitRef_RemoveUnique(value);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -53,6 +55,7 @@
         case _LOAD_FAST_BORROW: {
             JitOptRef value;
             value = PyJitRef_Borrow(GETLOCAL(oparg));
+            value = PyJitRef_RemoveUnique(value);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -65,6 +68,7 @@
             value = GETLOCAL(oparg);
             JitOptRef temp = sym_new_null(ctx);
             GETLOCAL(oparg) = temp;
+            value = PyJitRef_RemoveUnique(value);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -1234,7 +1238,7 @@
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+            JitOptRef temp = PyJitRef_StripBorrowInfo(retval);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -1412,8 +1416,23 @@
             JitOptRef *values;
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
+            if (PyJitRef_IsUnique(seq)) {
+                REPLACE_OP((this_instr), _UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
+            }
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
+            }
+            CHECK_STACK_BOUNDS(-1 + oparg);
+            stack_pointer += -1 + oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _UNPACK_SEQUENCE_UNIQUE_TUPLE: {
+            JitOptRef *values;
+            values = &stack_pointer[-1];
+            for (int _i = oparg; --_i >= 0;) {
+                values[_i] = sym_new_not_null(ctx);
             }
             CHECK_STACK_BOUNDS(-1 + oparg);
             stack_pointer += -1 + oparg;
@@ -1711,6 +1730,7 @@
             JitOptRef tup;
             values = &stack_pointer[-oparg];
             tup = sym_new_tuple(ctx, oparg, values);
+            tup = PyJitRef_MakeUnique(tup);
             CHECK_STACK_BOUNDS(1 - oparg);
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
@@ -3646,8 +3666,10 @@
             JitOptRef top;
             bottom = stack_pointer[-1 - (oparg-1)];
             assert(oparg > 0);
+            bottom = PyJitRef_RemoveUnique(bottom);
             top = bottom;
             CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1 - (oparg-1)] = bottom;
             stack_pointer[0] = top;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

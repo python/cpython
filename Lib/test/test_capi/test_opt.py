@@ -1999,6 +1999,45 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
 
+    def test_unique_tuple_unpack(self):
+        def f(n):
+            def triplet(x):
+                return (x, x, x)
+            hits = 0
+            for i in range(n):
+                x, y, z = triplet(1)
+                hits += x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_tuple_unpack(self):
+        def f(n):
+            def triplet(x):
+                return (x, x, x)
+            hits = 0
+            for i in range(n):
+                t = triplet(1)
+                x, y, z = t
+                hits += x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+
     def test_remove_guard_for_known_type_set(self):
         def f(n):
             x = 0
