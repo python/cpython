@@ -1065,11 +1065,11 @@ time_ctime(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(ctime_doc,
-"ctime(seconds) -> string\n\
+"ctime([seconds]) -> string\n\
 \n\
 Convert a time in seconds since the Epoch to a string in local time.\n\
-This is equivalent to asctime(localtime(seconds)). When the time tuple is\n\
-not present, current time as returned by localtime() is used.");
+This is equivalent to asctime(localtime(seconds)). When 'seconds' is not\n\
+passed in, the current time as returned by time() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
