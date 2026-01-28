@@ -1313,12 +1313,8 @@ specialize_load_global_lock_held(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-#ifdef Py_GIL_DISABLED
     PyObject *value;
     Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
-#else
-    Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
-#endif
     if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
