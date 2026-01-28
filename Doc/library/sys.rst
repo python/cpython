@@ -2014,9 +2014,6 @@ local and remote interpreters must be the same exact version.
           sys.remote_exec(pid, f.name)
       os.unlink(f.name)  # Cleanup
 
-   .. availability:: Unix, Windows.
-   .. versionadded:: 3.14
-
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
 
