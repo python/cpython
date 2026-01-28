@@ -1416,8 +1416,8 @@
             JitOptRef *values;
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
-            if (PyJitRef_IsUnique(seq)) {
-                REPLACE_OP((this_instr), _UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
+            if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
+                ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
             }
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);

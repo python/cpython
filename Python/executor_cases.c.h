@@ -7175,6 +7175,12 @@
                 SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
+            if (!_PyObject_IsUniquelyReferenced(seq_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = seq;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq_o);
             for (int i = oparg; --i >= 0; ) {
