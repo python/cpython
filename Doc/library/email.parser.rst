@@ -155,7 +155,7 @@ message body, instead setting the payload to the raw body.
 
       Read all the data from the binary file-like object *fp*, parse the
       resulting bytes, and return the message object.  *fp* must support
-      both the :meth:`~io.IOBase.readline` and the :meth:`~io.IOBase.read`
+      both the :meth:`~io.IOBase.readline` and the :meth:`~io.BufferedIOBase.read`
       methods.
 
       The bytes contained in *fp* must be formatted as a block of :rfc:`5322`
