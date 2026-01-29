@@ -22,7 +22,7 @@ set -euo pipefail
 PROJECT_NAME="CPython"
 
 # Scripts directory.
-SCRIPTS_DIR="etc/scripts"
+SCRIPTS_DIR="etc/scripts/common"
 
 # Name of the build command.
 CMD_NAME_BUILD="build"
