@@ -433,7 +433,16 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         """
         try:
-            self.raw_requestline = self.rfile.readline(65537)
+            # Set socket timeout for the readline operation to respect server timeout
+            prev_timeout = self.connection.gettimeout()
+            if hasattr(self.server, 'timeout') and self.server.timeout is not None:
+                self.connection.settimeout(self.server.timeout)
+
+            try:
+                self.raw_requestline = self.rfile.readline(65537)
+            finally:
+                # Restore previous timeout
+                self.connection.settimeout(prev_timeout)
             if len(self.raw_requestline) > 65536:
                 self.requestline = ''
                 self.request_version = ''
