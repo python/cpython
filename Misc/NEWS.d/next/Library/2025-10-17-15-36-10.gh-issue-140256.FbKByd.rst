@@ -1,0 +1,1 @@
+Fix ``Instruction.argrepr`` not being populated for ``LOAD_SMALL_INT``. Patch by Dave Pearson.
