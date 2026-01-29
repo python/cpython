@@ -583,76 +583,59 @@ parse_internal_render_format_spec(PyObject *obj,
        we're doing (int, float, string). */
 
     switch (format->type) {
-    case 'b':
-    case 'c':
-    case 'd':
     case 'e':
     case 'E':
     case 'f':
     case 'F':
     case 'g':
     case 'G':
-    case 'n':
-    case 'o':
-    case 's':
-    case 'x':
-    case 'X':
     case '%':
     case '\0':
-        /* These are all valid types. */
         break;
-    default:
-        unknown_presentation_type(format->type, Py_TYPE(obj)->tp_name);
-        return 0;
-    }
-
-    if (format->thousands_separators != LT_NO_LOCALE) {
-        switch (format->type) {
-        case 'd':
-        case 'e':
-        case 'f':
-        case 'g':
-        case 'E':
-        case 'G':
-        case '%':
-        case 'F':
-        case '\0':
-            /* These are allowed. See PEP 378.*/
-            break;
-        case 'b':
-        case 'o':
-        case 'x':
-        case 'X':
-            /* Underscores are allowed in bin/oct/hex. See PEP 515. */
-            if (format->thousands_separators == LT_UNDERSCORE_LOCALE) {
-                /* Every four digits, not every three, in bin/oct/hex. */
-                format->thousands_separators = LT_UNDER_FOUR_LOCALE;
-                break;
-            }
-            _Py_FALLTHROUGH;
-        default:
-            invalid_thousands_separator_type(format->thousands_separators,
-                                             format->type);
-            return 0;
-        }
-    }
-
-    if (format->frac_thousands_separator != LT_NO_LOCALE) {
-        switch (format->type) {
-        case 'e':
-        case 'f':
-        case 'g':
-        case 'E':
-        case 'G':
-        case '%':
-        case 'F':
-        case '\0':
-            break;
-        default:
+    case 'd':
+        if (format->frac_thousands_separator != LT_NO_LOCALE) {
             invalid_fraction_separator_type(format->frac_thousands_separator,
                                             format->type);
             return 0;
         }
+        break;
+    case 'c':
+    case 's':
+    case 'n':
+        if (format->thousands_separators != LT_NO_LOCALE) {
+            invalid_thousands_separator_type(format->thousands_separators,
+                                             format->type);
+            return 0;
+        }
+        if (format->frac_thousands_separator != LT_NO_LOCALE) {
+            invalid_fraction_separator_type(format->frac_thousands_separator,
+                                            format->type);
+            return 0;
+        }
+        break;
+    case 'b':
+    case 'o':
+    case 'x':
+    case 'X':
+        /* Underscores are allowed in bin/oct/hex. See PEP 515. */
+        if (format->thousands_separators == LT_UNDERSCORE_LOCALE) {
+            /* Every four digits, not every three, in bin/oct/hex. */
+            format->thousands_separators = LT_UNDER_FOUR_LOCALE;
+        }
+        else if (format->thousands_separators != LT_NO_LOCALE) {
+            invalid_thousands_separator_type(format->thousands_separators,
+                                             format->type);
+            return 0;
+        }
+        if (format->frac_thousands_separator != LT_NO_LOCALE) {
+            invalid_fraction_separator_type(format->frac_thousands_separator,
+                                            format->type);
+            return 0;
+        }
+        break;
+    default:
+        unknown_presentation_type(format->type, Py_TYPE(obj)->tp_name);
+        return 0;
     }
 
     assert (format->align <= 127);
