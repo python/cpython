@@ -27,6 +27,7 @@ class Runner:
 
     If debug is True, the event loop will be run in debug mode.
     If loop_factory is passed, it is used for new event loop creation.
+    If eager_tasks is True, the loop creates eager tasks by default.
 
     asyncio.run(main(), debug=True)
 
@@ -46,10 +47,11 @@ class Runner:
 
     # Note: the class is final, it is not intended for inheritance.
 
-    def __init__(self, *, debug=None, loop_factory=None):
+    def __init__(self, *, debug=None, loop_factory=None, eager_tasks=False):
         self._state = _State.CREATED
         self._debug = debug
         self._loop_factory = loop_factory
+        self._eager_tasks = eager_tasks
         self._loop = None
         self._context = None
         self._interrupt_count = 0
@@ -153,6 +155,8 @@ class Runner:
             self._loop = self._loop_factory()
         if self._debug is not None:
             self._loop.set_debug(self._debug)
+        if self._eager_tasks:
+            self._loop.set_task_factory(tasks.eager_task_factory)
         self._context = contextvars.copy_context()
         self._state = _State.INITIALIZED
 
@@ -166,7 +170,7 @@ class Runner:
         raise KeyboardInterrupt()
 
 
-def run(main, *, debug=None, loop_factory=None):
+def run(main, *, debug=None, loop_factory=None, eager_tasks=False):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -178,6 +182,7 @@ def run(main, *, debug=None, loop_factory=None):
 
     If debug is True, the event loop will be run in debug mode.
     If loop_factory is passed, it is used for new event loop creation.
+    If eager_tasks is True, the loop creates eager tasks by default.
 
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should
@@ -200,7 +205,8 @@ def run(main, *, debug=None, loop_factory=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug, loop_factory=loop_factory) as runner:
+    with Runner(debug=debug, loop_factory=loop_factory,
+                eager_tasks=eager_tasks) as runner:
         return runner.run(main)
 
 
