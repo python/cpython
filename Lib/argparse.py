@@ -1385,7 +1385,10 @@ class _SubParsersAction(Action):
         # namespace for the relevant parts.
         subnamespace, arg_strings = subparser.parse_known_args(arg_strings, None)
         for key, value in vars(subnamespace).items():
-            setattr(namespace, key, value)
+            if key != '__defaults__':
+                setattr(namespace, key, value)
+        if hasattr(namespace, '__defaults__'):
+            namespace.__defaults__.update(subnamespace.__defaults__)
 
         if arg_strings:
             if not hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
@@ -1467,6 +1470,9 @@ class FileType(object):
 class Namespace(_AttributeHolder):
     """Simple object for storing attributes.
 
+    Default values are stored in a dict named `__defaults__` so they won't
+    override the given values.
+
     Implements equality by attribute names and values, and provides a simple
     string representation.
     """
@@ -1474,15 +1480,33 @@ class Namespace(_AttributeHolder):
     def __init__(self, **kwargs):
         for name in kwargs:
             setattr(self, name, kwargs[name])
+        self.__defaults__ = {}
+
+    def _get_kwargs(self):
+        kwargs = self.__defaults__ | self.__dict__
+        kwargs.pop('__defaults__', None)
+        return list(kwargs.items())
+
+    def __getattr__(self, name):
+        try:
+            return self.__defaults__[name]
+        except KeyError:
+            raise AttributeError(name)
 
     def __eq__(self, other):
         if not isinstance(other, Namespace):
             return NotImplemented
-        return vars(self) == vars(other)
+        return dict(self._get_kwargs()) == dict(other._get_kwargs())
 
     def __contains__(self, key):
-        return key in self.__dict__
+        return key in self.__dict__ or key in self.__defaults__
 
+
+def _set_default(namespace, dest, value):
+    if not hasattr(namespace, '__defaults__'):
+        setattr(namespace, dest, value)
+    else:
+        namespace.__defaults__[dest] = value
 
 class _ActionsContainer(object):
 
@@ -2107,14 +2131,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # add any action defaults that aren't present
         for action in self._actions:
             if action.dest is not SUPPRESS:
-                if not hasattr(namespace, action.dest):
-                    if action.default is not SUPPRESS:
-                        setattr(namespace, action.dest, action.default)
+                if action.default is not SUPPRESS and not hasattr(namespace, action.dest):
+                    _set_default(namespace, action.dest, action.default)
 
         # add any parser defaults that aren't present
         for dest in self._defaults:
             if not hasattr(namespace, dest):
-                setattr(namespace, dest, self._defaults[dest])
+                _set_default(namespace, dest, self._defaults[dest])
 
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
@@ -2412,7 +2435,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                         isinstance(action.default, str) and
                         hasattr(namespace, action.dest) and
                         action.default is getattr(namespace, action.dest)):
-                        setattr(namespace, action.dest,
+                        _set_default(namespace, action.dest,
                                 self._get_value(action, action.default))
 
         if required_actions:
