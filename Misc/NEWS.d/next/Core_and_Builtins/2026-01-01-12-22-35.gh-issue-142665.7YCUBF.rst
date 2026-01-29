@@ -1,0 +1,3 @@
+Fix use-after-free crashes when slicing a :class:`memoryview` or
+accessing the elements of a sliced view concurrently mutates the
+underlying buffer. Patch by Bénédikt Tran.
