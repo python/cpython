@@ -3206,15 +3206,18 @@ features:
 
    .. attribute:: st_atime
 
-      Time of most recent access expressed in seconds.
+      Time of most recent access expressed in seconds since the Unix epoch
+      (see the :mod:`time` module).
 
    .. attribute:: st_mtime
 
-      Time of most recent content modification expressed in seconds.
+      Time of most recent content modification expressed in seconds since
+      the Unix epoch (see the :mod:`time` module).
 
    .. attribute:: st_ctime
 
-      Time of most recent metadata change expressed in seconds.
+      Time of most recent metadata change expressed in seconds since the
+      Unix epoch (see the :mod:`time` module).
 
       .. versionchanged:: 3.12
          ``st_ctime`` is deprecated on Windows. Use ``st_birthtime`` for
@@ -3223,21 +3226,22 @@ features:
 
    .. attribute:: st_atime_ns
 
-      Time of most recent access expressed in nanoseconds as an integer.
+      Time of most recent access expressed in nanoseconds since the Unix epoch
+      as an integer.
 
       .. versionadded:: 3.3
 
    .. attribute:: st_mtime_ns
 
-      Time of most recent content modification expressed in nanoseconds as an
-      integer.
+      Time of most recent content modification expressed in nanoseconds since
+      the Unix epoch as an integer.
 
       .. versionadded:: 3.3
 
    .. attribute:: st_ctime_ns
 
-      Time of most recent metadata change expressed in nanoseconds as an
-      integer.
+      Time of most recent metadata change expressed in nanoseconds since the
+      Unix epoch as an integer.
 
       .. versionadded:: 3.3
 
@@ -3248,16 +3252,17 @@ features:
 
    .. attribute:: st_birthtime
 
-      Time of file creation expressed in seconds. This attribute is not
-      always available, and may raise :exc:`AttributeError`.
+      Time of file creation expressed in seconds since the Unix epoch
+      (see the :mod:`time` module). This attribute is not always available,
+      and may raise :exc:`AttributeError`.
 
       .. versionchanged:: 3.12
          ``st_birthtime`` is now available on Windows.
 
    .. attribute:: st_birthtime_ns
 
-      Time of file creation expressed in nanoseconds as an integer.
-      This attribute is not always available, and may raise
+      Time of file creation expressed in nanoseconds since the Unix epoch as an
+      integer. This attribute is not always available, and may raise
       :exc:`AttributeError`.
 
       .. versionadded:: 3.12
@@ -3280,6 +3285,17 @@ features:
       slightly inexact. If you need the exact timestamps you should always use
       :attr:`st_atime_ns`, :attr:`st_mtime_ns`, :attr:`st_ctime_ns` and
       :attr:`st_birthtime_ns`.
+
+   .. note::
+
+      These timestamps are seconds (or nanoseconds for the ``*_ns`` variants)
+      since the Unix epoch (00:00:00 UTC, January 1, 1970), and are compatible
+      with :func:`time.time`. To convert a timestamp ``ts`` to a
+      :class:`datetime.datetime`, use
+      :func:`datetime.datetime.fromtimestamp` for local time or
+      ``datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)`` for
+      UTC. The function :func:`datetime.datetime.utcfromtimestamp` can also be
+      used to get a naive UTC datetime.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
