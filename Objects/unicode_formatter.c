@@ -283,7 +283,7 @@ invalid_thousands_separator_type(char separator, Py_UCS4 presentation_type)
     /* presentation_type has been checked before thousands separator. */
     assert(presentation_type >= 32 && presentation_type < 127);
     PyErr_Format(PyExc_ValueError,
-                 "Cannot specify '%c' with type code '%c'",
+                 "Cannot specify '%c' with '%c'",
                  separator, (int)presentation_type);
 }
 
@@ -291,10 +291,10 @@ static void
 invalid_fraction_separator_type(char separator, Py_UCS4 presentation_type)
 {
     assert(separator == ',' || separator == '_');
-    /* presentation_type has been checked before thousands separator. */
+    /* presentation_type has been checked before fraction separator. */
     assert(presentation_type >= 32 && presentation_type < 127);
     PyErr_Format(PyExc_ValueError,
-                 "Cannot specify '%c' in fractional part with type code '%c'",
+                 "Cannot specify '%c' in fractional part with '%c'",
                  separator, (int)presentation_type);
 }
 
@@ -551,7 +551,17 @@ parse_internal_render_format_spec(PyObject *obj,
                          "Format specifier missing precision");
             return 0;
         }
+    }
 
+    if (end-pos) {
+        Py_UCS4 next = READ_spec(pos);
+        if (next == ',' || next == '_') {
+            /* Expect type, got another grouping character */
+            PyErr_Format(PyExc_ValueError,
+                         "Cannot specify grouping '%c' more than once",
+                         next);
+            return 0;
+        }
     }
 
     /* Finally, parse the type field. */

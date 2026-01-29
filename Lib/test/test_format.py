@@ -661,26 +661,38 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
 
     def test_with_two_commas_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify ',' with ','.")
+        error_msg = re.escape("Cannot specify grouping ',' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,,}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,,}'.format(1.1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,,f}'.format(1.1)
 
     def test_with_two_underscore_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify '_' with '_'.")
+        error_msg = re.escape("Cannot specify grouping '_' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:__}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.__}'.format(1.1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.__f}'.format(1.1)
 
-    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify both ',' and '_'.")
+    def test_with_a_comma_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,_}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,_}'.format(1.1)
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:.,_f}'.format(1.1)
 
     def test_with_an_underscore_and_a_comma_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        error_msg = re.escape("Cannot specify both ',' and '_'")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:._,}'.format(1.1)
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:._,f}'.format(1.1)
 
