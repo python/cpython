@@ -83,7 +83,6 @@ def have_python_version(py_version):
     return py_executable_map.get(py_version, None)
 
 
-@support.requires_resource('cpu')
 class AbstractCompatTests(pickletester.AbstractPickleTests):
     py_version = None
 
@@ -206,6 +205,24 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
     test_buffers_error = None
     test_oob_buffers = None
     test_oob_buffers_writable_to_readonly = None
+
+slow_tests = [
+    'test_ints',  # 14 sec
+    'test_int_pickling_efficiency',  # 8 sec
+    'test_builtin_exceptions',  # 8 sec
+    'test_builtin_functions',  # 5 sec
+    'test_long',  # 4 sec
+    'test_builtin_types',  # 3 sec
+    'test_float',  # 2.4 sec
+    'test_framing_many_objects',  # 1.7 sec
+    'test_bytes_memoization',  # 1.5 sec
+    'test_bytearray_memoization',  # 1.4 sec
+]
+
+for name in slow_tests:
+    t = getattr(AbstractCompatTests, name)
+    t = support.requires_resource('cpu')(t)
+    setattr(AbstractCompatTests, name, t)
 
 class PyPicklePythonCompat(AbstractCompatTests):
     pickler = pickle._Pickler
