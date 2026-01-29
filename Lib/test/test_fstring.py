@@ -1866,6 +1866,65 @@ print(f'''{{
                 f.write('''def f(a): pass\nf"{f(a=lambda: 'à'\n)}"'''.encode())
             assert_python_ok(script)
 
+    def test_gh141271(self):
+        self.assertEqual(f'''{""" " # not comment """=}''', '""" " # not comment """=\' " # not comment \'')
+
+        self.assertEqual(
+f'''{""" " # not comment
+"""=}''',
+'''""" " # not comment
+"""=\' " # not comment\\n\'''')
+
+        self.assertEqual(
+f'''{"\"" # comment
+=}''',
+'"\\"" \n=\'"\'')
+
+        self.assertEqual(
+f'{ # comment A
+(f'''
+# not comment B
+{ # comment C '
+3 # comment D
+* 2}''', '\n# not comment E\n6')=}',
+" \n(f'''\n# not comment B\n{ \n3 \n* 2}''', '\\n# not comment E\\n6')=('\\n# not comment B\\n6', '\\n# not comment E\\n6')")
+
+        self.assertEqual(
+f'{
+f'{# 1 '
+f"{# 2 "
+None
+=}"
+=}'
+}',
+'''
+f"{
+None
+=}"
+=\'\\nNone\\n=None\'''')
+
+        self.assertEqual(
+f'{
+f'{# 1 '
+f"{# 2 "
+f'''{# 3 '
+f"""{# 4 "
+None
+=}"""
+=}'''
+=}"
+=}'
+}',
+'''
+f"{
+f\'\'\'{
+f"""{
+None
+=}"""
+=}\'\'\'
+=}"
+=\'\\nf\\\'\\\'\\\'{\\nf"""{\\nNone\\n=}"""\\n=}\\\'\\\'\\\'\\n=\\\'\\\\nf"""{\\\\nNone\\\\n=}"""\\\\n=\\\\\\\'\\\\\\\\nNone\\\\\\\\n=None\\\\\\\'\\\'\'''')
+
 
 if __name__ == '__main__':
     unittest.main()
