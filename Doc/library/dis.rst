@@ -1275,12 +1275,17 @@ iterations of the loop.
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
    or :opcode:`CALL_KW` when calling the unbound method.
-   Otherwise, ``NULL`` and the object returned by
-   the attribute lookup are pushed.
+   Otherwise, the object returned by the attribute lookup and ``NULL`` are
+   pushed (in that order).
 
    .. versionchanged:: 3.12
-      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` was
       pushed to the stack before the attribute or unbound method respectively.
+
+   .. versionchanged:: 3.13
+      The push order changed to keep the callable at a fixed stack position for
+      :opcode:`CALL`: the attribute or unbound method is now pushed before the
+      ``NULL``/``self`` marker (previously the marker was pushed first).
 
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
@@ -1299,13 +1304,19 @@ iterations of the loop.
    except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
+   :opcode:`LOAD_ATTR`, which results in pushing the loaded method and ``NULL``
+   (in that order).
    When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
    call to :func:`super` (unset means zero-argument).
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      The push order for method loads changed to keep the callable at a fixed
+      stack position for :opcode:`CALL`: the loaded method is now pushed before
+      the ``NULL`` marker (previously the marker was pushed first).
 
 
 .. opcode:: COMPARE_OP (opname)
@@ -1437,6 +1448,11 @@ iterations of the loop.
    .. versionchanged:: 3.11
       If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
       stack before the global variable.
+
+   .. versionchanged:: 3.13
+      The push order changed to keep the callable at a fixed stack position for
+      :opcode:`CALL`: the global is now pushed before the ``NULL`` marker
+      (previously the marker was pushed first).
 
 .. opcode:: LOAD_FAST (var_num)
 
