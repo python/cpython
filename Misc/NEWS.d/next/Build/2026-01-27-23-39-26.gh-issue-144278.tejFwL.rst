@@ -1,0 +1,4 @@
+Enables patching the ``TAG`` preprocessor definition to override
+:data:`sys.implementation.cache_tag <sys.implementation>` at build time.
+Setting it to ``NULL`` has the effect of completely disabling automatic
+creation and use of ``.pyc`` files.
