@@ -1582,6 +1582,7 @@ extern "C" {
     INIT_ID(autocommit), \
     INIT_ID(backtick), \
     INIT_ID(base), \
+    INIT_ID(basic), \
     INIT_ID(before), \
     INIT_ID(big), \
     INIT_ID(binary_form), \
