@@ -1,0 +1,2 @@
+Ensure cancellation error is raised by :func:`asyncio.gather` using the error
+from a cancelled child, if there is one.

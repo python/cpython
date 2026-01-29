@@ -838,6 +838,7 @@ def gather(*coros_or_futures, return_exceptions=False):
             # All futures are done; create a list of results
             # and set it to the 'outer' future.
             results = []
+            cancelled_child = None
 
             for fut in children:
                 if fut.cancelled():
@@ -847,6 +848,8 @@ def gather(*coros_or_futures, return_exceptions=False):
                     # to 'results' instead of raising it, don't bother
                     # setting __context__.  This also lets us preserve
                     # calling '_make_cancelled_error()' at most once.
+                    if cancelled_child is None:
+                        cancelled_child = fut
                     res = exceptions.CancelledError(
                         '' if fut._cancel_message is None else
                         fut._cancel_message)
@@ -857,10 +860,15 @@ def gather(*coros_or_futures, return_exceptions=False):
                 results.append(res)
 
             if outer._cancel_requested:
+                # If one or more children were cancelled, raise the exception
+                # from the first of those encountered, otherwise use the last
+                # child. See issue gh-97907.
+                if cancelled_child is None:
+                    cancelled_child = fut
                 # If gather is being cancelled we must propagate the
                 # cancellation regardless of *return_exceptions* argument.
                 # See issue 32684.
-                exc = fut._make_cancelled_error()
+                exc = cancelled_child._make_cancelled_error()
                 outer.set_exception(exc)
             else:
                 outer.set_result(results)
