@@ -594,6 +594,8 @@ class Set(Collection):
             return NotImplemented
         return len(self) == len(other) and self.__le__(other)
 
+    __ne__ = object.__ne__
+
     @classmethod
     def _from_iterable(cls, it):
         '''Construct an instance of the class from any iterable input.
@@ -820,6 +822,8 @@ class Mapping(Collection):
         if not isinstance(other, Mapping):
             return NotImplemented
         return dict(self.items()) == dict(other.items())
+
+    __ne__ = object.__ne__
 
     __reversed__ = None
 
