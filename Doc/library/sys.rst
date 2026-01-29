@@ -2009,7 +2009,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       with tempfile.NamedTemporaryFile(
           mode='w',
-          suffix='.py', 
+          suffix='.py',
           delete_on_close=False,
       ) as f:
           f.write("print('Hello from remote!')")
