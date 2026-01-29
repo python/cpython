@@ -1099,6 +1099,42 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         rv = shutil.copytree(src_dir, dst_dir)
         self.assertEqual(['pol'], os.listdir(rv))
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
+    def test_copytree_recursive_junction(self):
+        # Test that copytree raises Error for recursive junctions (Windows)
+        base_dir = self.mkdtemp()
+        self.addCleanup(shutil.rmtree, base_dir, ignore_errors=True)
+
+        # Create source directory structure
+        src_dir = os.path.join(base_dir, "source")
+        junction_dir = os.path.join(src_dir, "junction")
+        os.makedirs(junction_dir)
+
+        # Create a junction pointing to its parent, creating a cycle
+        junction_target = os.path.dirname(junction_dir)  # Points to Source
+        try:
+            result = subprocess.run(
+                ["mklink", "/J", junction_dir, junction_target],
+                shell=True, check=False, capture_output=True, text=True
+            )
+            if result.returncode != 0:
+                # Skip if we don't have permission to create junctions
+                self.skipTest(f"Failed to create junction: {result.stderr.strip()}")
+        except Exception as e:
+            # Skip if mklink is not available or fails for any reason
+            self.skipTest(f"Failed to create junction: {e}")
+
+        # Create destination directory
+        dst_dir = os.path.join(base_dir, "Dest")
+
+        # Test that copytree raises Error with infinite recursion message
+        with self.assertRaises(shutil.Error) as cm:
+            shutil.copytree(src_dir, dst_dir)
+
+        # Verify the error message contains "Infinite recursion detected"
+        self.assertIn("Infinite recursion detected", str(cm.exception))
+
+
 class TestCopy(BaseTest, unittest.TestCase):
 
     ### shutil.copymode
