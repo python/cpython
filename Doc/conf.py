@@ -223,6 +223,30 @@ nitpick_ignore = [
     ('envvar', 'USERPROFILE'),
 ]
 
+# Vendored identifiers without intersphinx support.
+nitpick_ignore += [
+    # used in c-api/expat.rst
+    ('c:identifier', 'XML_Bool'),
+    ('c:identifier', 'XML_Char'),
+    ('c:identifier', 'XML_CharacterDataHandler'),
+    ('c:identifier', 'XML_CommentHandler'),
+    ('c:identifier', 'XML_DefaultHandler'),
+    ('c:identifier', 'XML_Encoding'),
+    ('c:identifier', 'XML_EndElementHandler'),
+    ('c:identifier', 'XML_EndNamespaceDeclHandler'),
+    ('c:identifier', 'XML_Error'),
+    ('c:identifier', 'XML_LChar'),
+    ('c:identifier', 'XML_Memory_Handling_Suite'),
+    ('c:identifier', 'XML_Parser'),
+    ('c:identifier', 'XML_ProcessingInstructionHandler'),
+    ('c:identifier', 'XML_Size'),
+    ('c:identifier', 'XML_StartDoctypeDeclHandler'),
+    ('c:identifier', 'XML_StartElementHandler'),
+    ('c:identifier', 'XML_StartNamespaceDeclHandler'),
+    ('c:identifier', 'XML_Status'),
+    ('c:identifier', 'XML_UnknownEncodingHandler'),
+]
+
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
