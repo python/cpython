@@ -1,0 +1,4 @@
+The ``base64_codec``, ``uu_codec``, ``quopri_codec``, ``hex_codec``,
+``zlib_codec`` and ``bz2_codec`` now raise a :exc:`ValueError` when their
+decoder/encoder is provided an *errors* parameter that is not equal to
+``'strict'``.
