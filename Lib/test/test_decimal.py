@@ -6028,15 +6028,28 @@ def test(arith=None, verbose=None, todo_tests=None, debug=None):
 
 
 if __name__ == '__main__':
-    import optparse
-    p = optparse.OptionParser("test_decimal.py [--debug] [{--skip | test1 [test2 [...]]}]")
-    p.add_option('--debug', '-d', action='store_true', help='shows the test number and context before each test')
-    p.add_option('--skip',  '-s', action='store_true', help='skip over 90% of the arithmetic tests')
-    (opt, args) = p.parse_args()
+    import argparse
 
-    if opt.skip:
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("tests", nargs="*", default=[], help="specific tests to run")
+    group.add_argument(
+        "-s",
+        "--skip",
+        action="store_true",
+        help="skip over 90%% of the arithmetic tests",
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="shows the test number and context before each test",
+    )
+    args = parser.parse_args()
+
+    if args.skip:
         test(arith=False, verbose=True)
-    elif args:
-        test(arith=True, verbose=True, todo_tests=args, debug=opt.debug)
+    elif args.tests:
+        test(arith=True, verbose=True, todo_tests=args.tests, debug=args.debug)
     else:
         test(arith=True, verbose=True)
