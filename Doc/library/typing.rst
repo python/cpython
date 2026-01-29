@@ -1174,7 +1174,8 @@ These can be used as types in annotations. They all support subscription using
    or transforms parameters of another
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
-   is currently only valid when used as the first argument to a :ref:`Callable <annotating-callables>`.
+   is valid when used in :ref:`Callable <annotating-callables>` type hints
+   and when instantiating user-defined generic classes with :class:`ParamSpec` parameters.
    The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
    ellipsis (``...``).
 
