@@ -242,7 +242,6 @@ For all the following functions:
 
     .. versionchanged:: 3.13
         Multiple *path_names* are accepted.
-        *encoding* and *errors* must be given as keyword arguments.
 
 
 .. function:: is_resource(anchor, *path_names)
