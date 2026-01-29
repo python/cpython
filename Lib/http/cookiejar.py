@@ -50,7 +50,7 @@ def _debug(*args):
         logger = logging.getLogger("http.cookiejar")
     return logger.debug(*args)
 
-HTTPONLY_ATTR = "HTTPOnly"
+HTTPONLY_ATTR = "HttpOnly"
 HTTPONLY_PREFIX = "#HttpOnly_"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
 NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")
@@ -801,7 +801,10 @@ class Cookie:
 
         self._rest = copy.copy(rest)
 
-    def has_nonstandard_attr(self, name):
+    def has_nonstandard_attr(self, name, case_insensitive=False):
+        if case_insensitive:
+            name = name.lower()
+            return any(k.lower() == name for k in self._rest)
         return name in self._rest
     def get_nonstandard_attr(self, name, default=None):
         return self._rest.get(name, default)
@@ -2114,7 +2117,7 @@ class MozillaCookieJar(FileCookieJar):
                 else:
                     name = cookie.name
                     value = cookie.value
-                if cookie.has_nonstandard_attr(HTTPONLY_ATTR):
+                if cookie.has_nonstandard_attr(HTTPONLY_ATTR, case_insensitive=True):
                     domain = HTTPONLY_PREFIX + domain
                 f.write(
                     "\t".join([domain, initial_dot, cookie.path,
