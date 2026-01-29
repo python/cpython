@@ -266,17 +266,19 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist:: python-grammar
-   comprehension: `assignment_expression` `comp_for`
+   comprehension: `flexible_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
-:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
-In this case, the elements of the new container are those that would be produced
-by considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
-nesting from left to right, and evaluating the expression to produce an element
-each time the innermost block is reached.
+:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if`
+clauses.  In this case, the elements of the new container are those that would
+be produced by considering each of the :keyword:`!for` or :keyword:`!if`
+clauses a block, nesting from left to right, and evaluating the expression to
+produce an element each time the innermost block is reached.  If the expression
+is starred, the result will instead be unpacked to produce zero or more
+elements.
 
 However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
 the comprehension is executed in a separate implicitly nested scope. This ensures
@@ -320,6 +322,9 @@ See also :pep:`530`.
    Asynchronous comprehensions are now allowed inside comprehensions in
    asynchronous functions. Outer comprehensions implicitly become
    asynchronous.
+
+.. versionchanged:: next
+   Unpacking with the ``*`` operator is now allowed in the expression.
 
 
 .. _lists:
@@ -396,8 +401,8 @@ enclosed in curly braces:
 .. productionlist:: python-grammar
    dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
    dict_item_list: `dict_item` ("," `dict_item`)* [","]
+   dict_comprehension: `dict_item` `comp_for`
    dict_item: `expression` ":" `expression` | "**" `or_expr`
-   dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
 
@@ -419,10 +424,21 @@ earlier dict items and earlier dictionary unpackings.
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
 
-A dict comprehension, in contrast to list and set comprehensions, needs two
-expressions separated with a colon followed by the usual "for" and "if" clauses.
-When the comprehension is run, the resulting key and value elements are inserted
-in the new dictionary in the order they are produced.
+A dict comprehension may take one of two forms:
+
+- The first form  uses two expressions separated with a colon followed by the
+  usual "for" and "if" clauses.  When the comprehension is run, the resulting
+  key and value elements are inserted in the new dictionary in the order they
+  are produced.
+
+- The second form uses a single expression prefixed by the ``**`` dictionary
+  unpacking operator followed by the usual "for" and "if" clauses.  When the
+  comprehension is evaluated, the expression is evaluated and then unpacked,
+  inserting zero or more key/value pairs into the new dictionary.
+
+Both forms of dictionary comprehension retain the property that if the same key
+is specified multiple times, the associated value in the resulting dictionary
+will be the last one specified.
 
 .. index:: pair: immutable; object
            hashable
@@ -439,6 +455,8 @@ prevails.
    the key.  Starting with 3.8, the key is evaluated before the value, as
    proposed by :pep:`572`.
 
+.. versionchanged:: next
+   Unpacking with the ``**`` operator is now allowed in dictionary comprehensions.
 
 .. _genexpr:
 
@@ -453,7 +471,7 @@ Generator expressions
 A generator expression is a compact generator notation in parentheses:
 
 .. productionlist:: python-grammar
-   generator_expression: "(" `expression` `comp_for` ")"
+   generator_expression: "(" `flexible_expression` `comp_for` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
 for comprehensions, except that it is enclosed in parentheses instead of
