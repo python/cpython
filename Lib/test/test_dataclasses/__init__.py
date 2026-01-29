@@ -4293,10 +4293,17 @@ class TestStringAnnotations(unittest.TestCase):
         from test.test_dataclasses import dataclass_module_1_str
         from test.test_dataclasses import dataclass_module_2
         from test.test_dataclasses import dataclass_module_2_str
+        from test.test_dataclasses import dataclass_module_3
+        from test.test_dataclasses import dataclass_module_3_str
+        from test.test_dataclasses import dataclass_module_4
+        from test.test_dataclasses import dataclass_module_4_str
 
-        for m in (dataclass_module_1, dataclass_module_1_str,
-                  dataclass_module_2, dataclass_module_2_str,
-                  ):
+        for m in (
+            dataclass_module_1, dataclass_module_1_str,
+            dataclass_module_2, dataclass_module_2_str,
+            dataclass_module_3, dataclass_module_3_str,
+            dataclass_module_4, dataclass_module_4_str,
+        ):
             with self.subTest(m=m):
                 # There's a difference in how the ClassVars are
                 # interpreted when using string annotations or
@@ -4599,6 +4606,14 @@ class TestMakeDataclass(unittest.TestCase):
         c = C(10)
         self.assertEqual(c.x, 10)
         self.assertEqual(c.__custom__, True)
+
+    def test_empty_annotation_string(self):
+        @dataclass
+        class DataclassWithEmptyTypeAnnotation:
+            x: ""
+
+        c = DataclassWithEmptyTypeAnnotation(10)
+        self.assertEqual(c.x, 10)
 
 
 class TestReplace(unittest.TestCase):
