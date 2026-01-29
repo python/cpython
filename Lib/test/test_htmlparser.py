@@ -533,6 +533,37 @@ text
             ("endtag", tag),
         ], collector=EventCollector(convert_charrefs=False, scripting=True))
 
+    @support.subTests('tag,converted', [
+        ('TıTLE', 'tıtle'),
+        ('NOFRAMEſ', 'noframeſ'),
+        ('NOſCRIPT', 'noſcript'),
+        ('NOSCRıPT', 'noscrıpt'),
+        ('SCRıPT', 'scrıpt'),
+        ('ADDREß', 'addreß'),
+        ('DATALIﬆ', 'dataliﬆ'),
+        ('Lı', 'lı'),
+        ('LINK', 'linK'),
+    ])
+    def test_nonascii_tag(self, tag, converted):
+        # Starts with ASCII letter
+        source = f"<{tag}><br></{tag}>"
+        self._run_check(source, [
+            ("starttag", converted, []),
+            ("starttag", "br", []),
+            ("endtag", converted),
+        ], collector=EventCollector(convert_charrefs=False, scripting=True))
+
+    @support.subTests('tag', ['ſtyle', 'ﬅyle', 'ﬆyle', 'ıframe', 'ſcript',
+                              'ı', 'KBD', 'ſMALL', 'ﬆRONG'])
+    def test_invalid_nonascii_tag(self, tag):
+        # Starts with non-ASCII letter
+        source = f"<{tag}><br></{tag}>"
+        self._run_check(source, [
+            ("data", f"<{tag}>"),
+            ("starttag", "br", []),
+            ("comment", f"{tag}"),
+        ], collector=EventCollector(convert_charrefs=False, scripting=True))
+
     @support.subTests('tail,end', [
         ('', False),
         ('<', False),
@@ -1068,7 +1099,7 @@ class AttributesTestCase(TestCaseBase):
             "<a href=mailto:xyz@example.com>",
             [("starttag", "a", [("href", "mailto:xyz@example.com")])])
 
-    def test_attr_nonascii(self):
+    def test_attr_value_nonascii(self):
         # see issue 7311
         self._run_check(
             "<img src=/foo/bar.png alt=\u4e2d\u6587>",
@@ -1082,6 +1113,16 @@ class AttributesTestCase(TestCaseBase):
             '<a title="\u30c6\u30b9\u30c8" href="\u30c6\u30b9\u30c8.html">',
             [("starttag", "a", [("title", "\u30c6\u30b9\u30c8"),
                                 ("href", "\u30c6\u30b9\u30c8.html")])])
+
+    def test_attr_name_nonascii(self):
+        self._run_check(
+            '<BUTTON ACCEßKEY="s">',
+            [('starttag', 'button', [('acceßKey', 's')])])
+        self._run_check(
+            '<TRACK KIND="chapters" ſRC="sampleChapters.vtt" SRCLANG="en" />',
+            [('startendtag', 'track', [('Kind', 'chapters'),
+                                       ('ſrc', 'sampleChapters.vtt'),
+                                       ('srclang', 'en')])])
 
     def test_attr_entity_replacement(self):
         self._run_check(
