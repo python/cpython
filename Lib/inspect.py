@@ -1408,7 +1408,7 @@ def formatargvalues(args, varargs, varkw, locals,
         specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
     return '(' + ', '.join(specs) + ')'
 
-def _missing_arguments(f_name, argnames, pos, values):
+def _missing_arguments(f_name, argnames, pos, values, *, has_posonly=False):
     names = [repr(name) for name in argnames if name not in values]
     missing = len(names)
     if missing == 1:
@@ -1419,10 +1419,18 @@ def _missing_arguments(f_name, argnames, pos, values):
         tail = ", {} and {}".format(*names[-2:])
         del names[-2:]
         s = ", ".join(names) + tail
-    raise TypeError("%s() missing %i required %s argument%s: %s" %
-                    (f_name, missing,
-                      "positional" if pos else "keyword-only",
-                      "" if missing == 1 else "s", s))
+
+    if pos:
+        qualifier = "positional" if has_posonly else ""
+    else:
+        qualifier = "keyword-only"
+    if qualifier:
+        raise TypeError("%s() missing %i required %s argument%s: %s" %
+                        (f_name, missing, qualifier,
+                         "" if missing == 1 else "s", s))
+    else:
+        raise TypeError("%s() missing %i required argument%s: %s" %
+                        (f_name, missing, "" if missing == 1 else "s", s))
 
 def _too_many(f_name, args, kwonly, varargs, defcount, given, values):
     atleast = len(args) - defcount
@@ -1456,7 +1464,9 @@ def getcallargs(func, /, *positional, **named):
     f_name = func.__name__
     arg2value = {}
 
-
+    num_posonly = 0
+    if hasattr(func, '__code__'):
+        num_posonly = func.__code__.co_posonlyargcount
     if ismethod(func) and func.__self__ is not None:
         # implicit 'self' (or 'cls' for classmethods) argument
         positional = (func.__self__,) + positional
@@ -1490,7 +1500,9 @@ def getcallargs(func, /, *positional, **named):
         req = args[:num_args - num_defaults]
         for arg in req:
             if arg not in arg2value:
-                _missing_arguments(f_name, req, True, arg2value)
+                missing_posonly = any(i < num_posonly for i, name in enumerate(args)
+                                    if name in req and name not in arg2value)
+                _missing_arguments(f_name, req, True, arg2value, has_posonly=missing_posonly)
         for i, arg in enumerate(args[num_args - num_defaults:]):
             if arg not in arg2value:
                 arg2value[arg] = defaults[i]
@@ -1502,7 +1514,7 @@ def getcallargs(func, /, *positional, **named):
             else:
                 missing += 1
     if missing:
-        _missing_arguments(f_name, kwonlyargs, False, arg2value)
+        _missing_arguments(f_name, kwonlyargs, False, arg2value, has_posonly=False)
     return arg2value
 
 ClosureVars = namedtuple('ClosureVars', 'nonlocals globals builtins unbound')

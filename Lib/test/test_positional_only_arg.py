@@ -142,7 +142,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
     def test_positional_only_and_arg_invalid_calls(self):
         def f(a, b, /, c):
             pass
-        with self.assertRaisesRegex(TypeError, r"f\(\) missing 1 required positional argument: 'c'"):
+        with self.assertRaisesRegex(TypeError, r"f\(\) missing 1 required argument: 'c'"):
             f(1, 2)
         with self.assertRaisesRegex(TypeError, r"f\(\) missing 2 required positional arguments: 'b' and 'c'"):
             f(1)
@@ -170,7 +170,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
             f(1, 2, 3, e=2)
         with self.assertRaisesRegex(TypeError, r"missing 2 required keyword-only arguments: 'd' and 'e'"):
             f(1, 2, 3)
-        with self.assertRaisesRegex(TypeError, r"f\(\) missing 1 required positional argument: 'c'"):
+        with self.assertRaisesRegex(TypeError, r"f\(\) missing 1 required argument: 'c'"):
             f(1, 2)
         with self.assertRaisesRegex(TypeError, r"f\(\) missing 2 required positional arguments: 'b' and 'c'"):
             f(1)
@@ -278,7 +278,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
             return g
 
         self.assertEqual(f(1,2)(3,4), 10)
-        with self.assertRaisesRegex(TypeError, r"g\(\) missing 1 required positional argument: 'y2'"):
+        with self.assertRaisesRegex(TypeError, r"g\(\) missing 1 required argument: 'y2'"):
             f(1,2)(3)
         with self.assertRaisesRegex(TypeError, r"g\(\) takes 2 positional arguments but 3 were given"):
             f(1,2)(3,4,5)
@@ -296,7 +296,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
             return g
 
         self.assertEqual(f(1,2)(3,4), 10)
-        with self.assertRaisesRegex(TypeError, r"g\(\) missing 1 required positional argument: 'y2'"):
+        with self.assertRaisesRegex(TypeError, r"g\(\) missing 1 required argument: 'y2'"):
             f(1,2)(3)
         with self.assertRaisesRegex(TypeError, r"g\(\) takes 2 positional arguments but 3 were given"):
             f(1,2)(3,4,5)
