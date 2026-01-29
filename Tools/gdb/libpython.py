@@ -1627,31 +1627,30 @@ def int_from_int(gdbval):
     return int(gdbval)
 
 
-def stringify(val):
-    # TODO: repr() puts everything on one line; pformat can be nicer, but
-    # can lead to v.long results; this function isolates the choice
-    if True:
-        return repr(val)
+_verbose_stringify = False
+
+def stringify(pyop, multiline=False):
+    if _verbose_stringify:
+        # Generate full proxy value then stringify it.
+        # Doing so could be expensive
+        proxyval = pyop.proxyval(set())
+        if multiline:
+            from pprint import pformat
+            return pformat(proxyval)
+        else:
+            return repr(proxyval)
     else:
-        from pprint import pformat
-        return pformat(val)
+        return pyop.get_truncated_repr(MAX_OUTPUT_LEN)
 
 
 class PyObjectPtrPrinter:
     "Prints a (PyObject*)"
 
-    def __init__ (self, gdbval):
+    def __init__(self, gdbval):
         self.gdbval = gdbval
 
-    def to_string (self):
-        pyop = PyObjectPtr.from_pyobject_ptr(self.gdbval)
-        if True:
-            return pyop.get_truncated_repr(MAX_OUTPUT_LEN)
-        else:
-            # Generate full proxy value then stringify it.
-            # Doing so could be expensive
-            proxyval = pyop.proxyval(set())
-            return stringify(proxyval)
+    def to_string(self):
+        return stringify(PyObjectPtr.from_pyobject_ptr(self.gdbval))
 
 def pretty_printer_lookup(gdbval):
     type = gdbval.type.strip_typedefs().unqualified()
@@ -1671,8 +1670,9 @@ During development, I've been manually invoking the code in this way:
 (gdb) python
 
 import sys
-sys.path.append('/home/david/coding/python-gdb')
+sys.path.append('/home/david/coding/cpython/Tools/gdb')
 import libpython
+from importlib import reload
 end
 
 then reloading it after each edit like this:
@@ -2118,6 +2118,23 @@ class PyBacktrace(gdb.Command):
 
 PyBacktrace()
 
+class PyParameterVerbosePrint(gdb.Parameter):
+    set_doc ="Enable Python object pretty printing and allow Python objects to be printed completely instead of being truncated at some limit"
+
+    def __init__(self):
+        gdb.Parameter.__init__ (self,
+                              "py-verbose-print",
+                              gdb.COMMAND_DATA,
+                              gdb.PARAM_BOOLEAN)
+        self.value = False
+
+    def get_set_string (self):
+        global _verbose_stringify
+        _verbose_stringify = self.value
+        return ""
+
+PyParameterVerbosePrint()
+
 class PyPrint(gdb.Command):
     'Look up the given python variable name, and print it'
     def __init__(self):
@@ -2142,11 +2159,16 @@ class PyPrint(gdb.Command):
 
         pyop_var, scope = pyop_frame.get_var_by_name(name)
 
+        var_stringifed = stringify(pyop_var, multiline=True)
+        multiline = "\n" in var_stringifed
+        if multiline:
+            # Prefix with a line continuation and indent by single space
+            var_stringifed = "\\\n %s" % var_stringifed.replace("\n", "\n ")
         if pyop_var:
             print('%s %r = %s'
                    % (scope,
                       name,
-                      pyop_var.get_truncated_repr(MAX_OUTPUT_LEN)))
+                      var_stringifed))
         else:
             print('%r not found' % name)
 
@@ -2182,7 +2204,7 @@ class PyLocals(gdb.Command):
             for pyop_name, pyop_value in pyop_frame.iter_locals():
                 print('%s = %s'
                     % (pyop_name.proxyval(set()),
-                        pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
+                        stringify(pyop_value)))
 
 
             pyop_frame = pyop_frame.previous()
