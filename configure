@@ -4753,9 +4753,9 @@ esac
 
 if test $define_xopen_source = yes
 then
-  # X/Open 7, incorporating POSIX.1-2008
+  # X/Open 8, incorporating POSIX.1-2024
 
-printf "%s\n" "#define _XOPEN_SOURCE 700" >>confdefs.h
+printf "%s\n" "#define _XOPEN_SOURCE 800" >>confdefs.h
 
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
@@ -4767,7 +4767,7 @@ printf "%s\n" "#define _XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
 
 
 
-printf "%s\n" "#define _POSIX_C_SOURCE 200809L" >>confdefs.h
+printf "%s\n" "#define _POSIX_C_SOURCE 202405L" >>confdefs.h
 
 fi
 
