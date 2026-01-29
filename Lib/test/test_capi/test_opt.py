@@ -3750,6 +3750,7 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(test_is_none, TIER2_THRESHOLD)
         self.assertEqual(res, True)
         self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
 
         self.assertIn("_IS_OP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
