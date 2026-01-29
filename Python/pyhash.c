@@ -168,18 +168,24 @@ Py_HashBuffer(const void *ptr, Py_ssize_t len)
         const unsigned char *p = ptr;
         hash = 5381; /* DJBX33A starts with 5381 */
 
-        switch(len) {
-            /* ((hash << 5) + hash) + *p == hash * 33 + *p */
-            case 7: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
-            case 6: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
-            case 5: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
-            case 4: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
-            case 3: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
-            case 2: hash = ((hash << 5) + hash) + *p++; _Py_FALLTHROUGH;
-            case 1: hash = ((hash << 5) + hash) + *p++; break;
-            default:
-                Py_UNREACHABLE();
+        if (len >= 4) {
+            /* 1185921 = 33^4, 35937 = 33^3, 1089 = 33^2 */
+            hash = hash * 1185921 + p[0] * 35937 + p[1] * 1089 +
+                    p[2] * 33 + p[3];
+            len -= 4;
+            p += 4;
         }
+        else if (len >= 2) {
+            if (len > 2) {
+                hash = hash * 35937 + p[0] * 1089 + p[1] * 33 + p[2];
+            }
+            else {
+		        hash = hash * 1089 + p[0] * 33 + p[1];
+            }
+	    }
+        else if (len != 0 ) {
+            hash = hash * 33 + *p;
+	    }
         hash ^= len;
         hash ^= (Py_uhash_t) _Py_HashSecret.djbx33a.suffix;
         x = (Py_hash_t)hash;
