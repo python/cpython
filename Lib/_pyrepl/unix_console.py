@@ -585,6 +585,11 @@ class UnixConsole(Console):
         self.posxy = 0, 0
         self.screen = []
 
+    def clear_all(self) -> None:
+        """Clear screen and scrollback buffer."""
+        self.__write("\x1b[3J\x1b[2J\x1b[H")
+        self.clear()
+
     @property
     def input_hook(self):
         # avoid inline imports here so the repl doesn't get flooded
