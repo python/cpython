@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'sphinx.ext.graphviz',
 ]
 
 # Skip if downstream redistributors haven't installed them
@@ -562,6 +563,10 @@ extlinks = {
     "source": (SOURCE_URI, "%s"),
 }
 extlinks_detect_hardcoded_links = True
+
+# Options for sphinx.ext.graphviz
+# -------------------------------
+graphviz_output_format = 'svg'
 
 # Options for c_annotations extension
 # -----------------------------------
