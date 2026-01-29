@@ -178,7 +178,6 @@ def enable_keys():
     onkey(start_ssort, "s")
     onkey(start_qsort, "q")
     onkey(randomize, "r")
-    onkey(bye, "space")
 
 def main():
     getscreen().clearscreen()
@@ -191,7 +190,7 @@ def main():
     return "EVENTLOOP"
 
 instructions1 = "press i for insertion sort, s for selection sort, q for quicksort"
-instructions2 = "spacebar to quit, r to randomize"
+instructions2 = "r to randomize"
 
 if __name__=="__main__":
     msg = main()
