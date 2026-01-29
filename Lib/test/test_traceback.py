@@ -4250,6 +4250,21 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(A(), 'blech')
         self.assertNotIn("Did you mean", actual)
 
+    def test_suggestions_not_normalized(self):
+        class A:
+            analization = None
+            ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = None
+
+        self.assertIn("'finalization'", self.get_suggestion(A(), 'ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ'))
+
+        class B:
+            attr_a = None
+            attr_µ = None
+
+        suggestion = self.get_suggestion(B(), 'attr_\xb5')
+        self.assertIn("'attr_\u03bc'", suggestion)
+        self.assertIn(r"'attr_\u03bc'", suggestion)
+
 
 class GetattrSuggestionTests(BaseSuggestionTests):
     def test_suggestions_no_args(self):
@@ -4871,6 +4886,18 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         instance = A()
         actual = self.get_suggestion(instance.foo)
         self.assertIn("self.blech", actual)
+
+    def test_name_error_with_instance_not_normalized(self):
+        class A:
+            def __init__(self):
+                self.ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = None
+            def foo(self):
+                analization = 1
+                x = ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ
+
+        instance = A()
+        actual = self.get_suggestion(instance.foo)
+        self.assertIn("self.finalization", actual)
 
     def test_unbound_local_error_with_instance(self):
         class A:
