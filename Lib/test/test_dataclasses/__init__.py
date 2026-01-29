@@ -370,6 +370,16 @@ class TestCase(unittest.TestCase):
         @dataclass(order=True)
         class C:
             pass
+
+        # Check "self" comparisons.
+        ref = C()
+        self.assertEqual(ref, ref)
+        self.assertLessEqual(ref, ref)
+        self.assertGreaterEqual(ref, ref)
+        self.assertFalse(ref != ref)
+        self.assertFalse(ref < ref)
+        self.assertFalse(ref > ref)
+
         self.assertLessEqual(C(), C())
         self.assertGreaterEqual(C(), C())
 
@@ -399,12 +409,61 @@ class TestCase(unittest.TestCase):
         @dataclass(order=True)
         class C:
             x: int
+
+        # Check "self" comparisons.
+        ref = C(0)
+        self.assertEqual(ref, ref)
+        self.assertLessEqual(ref, ref)
+        self.assertGreaterEqual(ref, ref)
+        self.assertFalse(ref != ref)
+        self.assertFalse(ref < ref)
+        self.assertFalse(ref > ref)
+
         self.assertLess(C(0), C(1))
         self.assertLessEqual(C(0), C(1))
         self.assertLessEqual(C(1), C(1))
         self.assertGreater(C(1), C(0))
         self.assertGreaterEqual(C(1), C(0))
         self.assertGreaterEqual(C(1), C(1))
+
+        @dataclass(order=True)
+        class CFloat:
+            x: float
+
+        nan = float("nan")
+
+        # Check "self" comparisons.
+        ref = CFloat(nan)
+        self.assertEqual(ref, ref)
+        self.assertLessEqual(ref, ref)
+        self.assertGreaterEqual(ref, ref)
+        self.assertFalse(ref != ref)
+        self.assertFalse(ref < ref)
+        self.assertFalse(ref > ref)
+
+        self.assertNotEqual(CFloat(0.0), CFloat(nan))
+        self.assertNotEqual(CFloat(nan), CFloat(0.0))
+        self.assertNotEqual(CFloat(nan), CFloat(nan))
+
+        # gh-137658: Testing <, <=, == all return False with NaN
+        # Previously, <= would incorrectly return True on Python 3.13+ even though both < and == were False
+        for idx, fn in enumerate([lambda a, b: a < b,
+                                  lambda a, b: a <= b,
+                                  lambda a, b: a == b]):
+            with self.subTest(idx=idx):
+                self.assertFalse(fn(CFloat(0.0), CFloat(nan)))
+                self.assertFalse(fn(CFloat(nan), CFloat(0.0)))
+                self.assertFalse(fn(CFloat(nan), CFloat(nan)))
+
+        # gh-137658: Testing >, >=, == all return False with NaN
+        # Previously, >= would incorrectly return True on Python 3.13+ even though both > and == were False
+        for idx, fn in enumerate([lambda a, b: a > b,
+                                  lambda a, b: a >= b,
+                                  lambda a, b: a == b]):
+            with self.subTest(idx=idx):
+                self.assertFalse(fn(CFloat(0.0), CFloat(nan)))
+                self.assertFalse(fn(CFloat(nan), CFloat(0.0)))
+                self.assertFalse(fn(CFloat(nan), CFloat(nan)))
 
     def test_simple_compare(self):
         # Ensure that order=False is the default.
@@ -459,6 +518,40 @@ class TestCase(unittest.TestCase):
                 self.assertTrue(fn(C(0, 1), C(0, 0)))
                 self.assertTrue(fn(C(1, 0), C(0, 1)))
                 self.assertTrue(fn(C(1, 1), C(1, 0)))
+
+        @dataclass(order=True)
+        class CFloat:
+            x: float
+            y: float
+
+        nan = float("nan")
+
+        self.assertNotEqual(CFloat(0.0, nan), CFloat(nan, 0.0))
+        self.assertNotEqual(CFloat(0.0, 0.0), CFloat(nan, nan))
+        self.assertNotEqual(CFloat(0.0, nan), CFloat(nan, nan))
+        self.assertNotEqual(CFloat(nan, nan), CFloat(nan, nan))
+
+        # gh-137658: Testing <, <=, == all return False with NaN
+        # Previously, <= would incorrectly return True on Python 3.13+ even though both < and == were False
+        for idx, fn in enumerate([lambda a, b: a < b,
+                                  lambda a, b: a <= b,
+                                  lambda a, b: a == b]):
+            with self.subTest(idx=idx):
+                self.assertFalse(fn(CFloat(0.0, nan), CFloat(nan, 0.0)))
+                self.assertFalse(fn(CFloat(0.0, 0.0), CFloat(nan, nan)))
+                self.assertFalse(fn(CFloat(0.0, nan), CFloat(nan, nan)))
+                self.assertFalse(fn(CFloat(nan, nan), CFloat(nan, nan)))
+
+        # gh-137658: Testing >, >=, == all return False with NaN
+        # Previously, >= would incorrectly return True on Python 3.13+ even though both > and == were False
+        for idx, fn in enumerate([lambda a, b: a > b,
+                                  lambda a, b: a >= b,
+                                  lambda a, b: a == b]):
+            with self.subTest(idx=idx):
+                self.assertFalse(fn(CFloat(0.0, nan), CFloat(nan, 0.0)))
+                self.assertFalse(fn(CFloat(0.0, 0.0), CFloat(nan, nan)))
+                self.assertFalse(fn(CFloat(0.0, nan), CFloat(nan, nan)))
+                self.assertFalse(fn(CFloat(nan, nan), CFloat(nan, nan)))
 
     def test_compare_subclasses(self):
         # Comparisons fail for subclasses, even if no fields
