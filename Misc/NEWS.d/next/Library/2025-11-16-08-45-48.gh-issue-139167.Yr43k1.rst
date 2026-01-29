@@ -1,0 +1,1 @@
+Allow users to use customized ``gen_colors`` function for pyrepl ``Reader``.
