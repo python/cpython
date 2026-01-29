@@ -2555,6 +2555,82 @@ Public classes
    * ``a.rotate(angle)`` rotation
 
 
+Exceptions
+----------
+
+
+.. exception:: TurtleGraphicsError
+
+   Exception raised when a turtle graphics operation fails.
+
+   This exception is raised in various error conditions, such as:
+
+   * Invalid color specifications (e.g., color values out of range)
+   * Invalid shape types or names
+   * Invalid turtle graphics modes
+   * Invalid canvas arguments
+   * Other turtle graphics configuration errors
+
+   Examples:
+
+   **Invalid color specifications:**
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> screen.colormode(1.0)
+      >>> turtle.pencolor(240, 160, 80)
+      Traceback (most recent call last):
+           ...
+      TurtleGraphicsError: bad color sequence: (240, 160, 80)
+
+      >>> turtle.pencolor("invalid_color_name")
+      Traceback (most recent call last):
+           ...
+      TurtleGraphicsError: bad color string: invalid_color_name
+
+   **Invalid shape types:**
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> from turtle import Shape
+      >>> s = Shape("invalid_type", None)
+      Traceback (most recent call last):
+           ...
+      TurtleGraphicsError: There is no shape type invalid_type
+
+   **Invalid turtle graphics modes:**
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> screen.mode("invalid_mode")
+      Traceback (most recent call last):
+           ...
+      TurtleGraphicsError: No turtle-graphics-mode invalid_mode
+
+   **Invalid shape names:**
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.shape("nonexistent_shape")
+      Traceback (most recent call last):
+           ...
+      TurtleGraphicsError: There is no shape named nonexistent_shape
+
+   **Invalid shape parameters:**
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.shapesize(stretch_wid=0, stretch_len=1)
+      Traceback (most recent call last):
+           ...
+      TurtleGraphicsError: stretch_wid/stretch_len must not be zero
+
+
 .. _turtle-explanation:
 
 Explanation
