@@ -65,7 +65,7 @@ error:
 int
 _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
 {
-    // This errors are cleaned on startup. Todo: Fix it.
+    // These errors are cleaned on startup. Todo: Fix it.
     va_list vargs;
     va_start(vargs, format);
     int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
