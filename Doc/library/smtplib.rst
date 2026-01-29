@@ -536,12 +536,17 @@ An :class:`SMTP` instance has the following methods:
    specified in :rfc:`5322`\: *from_addr* is set to the :mailheader:`Sender`
    field if it is present, and otherwise to the :mailheader:`From` field.
    *to_addrs* combines the values (if any) of the :mailheader:`To`,
-   :mailheader:`Cc`, and :mailheader:`Bcc` fields from *msg*.  If exactly one
-   set of :mailheader:`Resent-*` headers appear in the message, the regular
-   headers are ignored and the :mailheader:`Resent-*` headers are used instead.
-   If the message contains more than one set of :mailheader:`Resent-*` headers,
-   a :exc:`ValueError` is raised, since there is no way to unambiguously detect
-   the most recent set of :mailheader:`Resent-` headers.
+   :mailheader:`Cc`, and :mailheader:`Bcc` fields from *msg*.  If there's no
+   :mailheader:`Date` header inside the message, ``send_message`` will add one to the data.
+   If exactly one set of :mailheader:`Resent-*` headers appear in the message,
+   the regular headers are ignored and the :mailheader:`Resent-*` headers are
+   used instead.  If the message contains more than one set of
+   :mailheader:`Resent-*` headers, a :exc:`ValueError` is raised, since there
+   is no way to unambiguously detect the most recent set of
+   :mailheader:`Resent-` headers.
+
+   .. versionchanged:: next
+      Support to add :mailheader:`Date` header to the message if one does not exist.
 
    ``send_message`` serializes *msg* using
    :class:`~email.generator.BytesGenerator` with ``\r\n`` as the *linesep*, and
