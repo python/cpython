@@ -49,6 +49,17 @@ _Py_DECREF_INT(PyLongObject *op)
 }
 
 static inline int
+/// Return 1 if the object is one of the immortal small ints
+_long_is_small_int(PyObject *op)
+{
+    assert(PyLong_Check(op));
+    PyLongObject *long_object = (PyLongObject *)op;
+    int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
+    assert((!is_small_int) || PyLong_CheckExact(op));
+    return is_small_int;
+}
+
+static inline int
 is_medium_int(stwodigits x)
 {
     /* Take care that we are comparing unsigned values. */
@@ -344,8 +355,6 @@ medium_from_stwodigits(stwodigits x)
 }
 
 
-/* If a freshly-allocated int is already shared, it must
-   be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)
 _PyLong_Negate(PyLongObject **x_p)
 {
@@ -357,8 +366,10 @@ _PyLong_Negate(PyLongObject **x_p)
         return;
     }
 
-    *x_p = _PyLong_FromSTwoDigits(-medium_value(x));
-    Py_DECREF(x);
+    /* If a freshly-allocated int is already shared, it must
+    be a small integer, so negating it will fit a single digit */
+    assert(_long_is_small_int((PyObject *)x));
+    *x_p = (PyLongObject *)_PyLong_FromSTwoDigits(-medium_value(x));
 }
 
 #define PYLONG_FROM_INT(UINT_TYPE, INT_TYPE, ival)                                  \
@@ -3620,16 +3631,6 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     else
         result = long_compare((PyLongObject*)self, (PyLongObject*)other);
     Py_RETURN_RICHCOMPARE(result, 0, op);
-}
-
-static inline int
-/// Return 1 if the object is one of the immortal small ints
-_long_is_small_int(PyObject *op)
-{
-    PyLongObject *long_object = (PyLongObject *)op;
-    int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
-    assert((!is_small_int) || PyLong_CheckExact(op));
-    return is_small_int;
 }
 
 void
