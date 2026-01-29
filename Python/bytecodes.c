@@ -30,7 +30,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
 #include "pycore_template.h"      // _PyTemplate_Build()
-#include "pycore_tuple.h"         // _PyTuple_ExactDealloc(), _PyTuple_ITEMS()
+#include "pycore_tuple.h"         // _PyTuple_EmptyExactDealloc(), _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
 #include "pycore_dict.h"
@@ -1682,7 +1682,7 @@ dummy_func(
                 *values++ = PyStackRef_FromPyObjectSteal(items[i]);
                 items[i] = NULL;
             }
-            PyStackRef_CLOSE_SPECIALIZED(seq, _PyTuple_ExactDealloc);
+            PyStackRef_CLOSE_SPECIALIZED(seq, _PyTuple_EmptyExactDealloc);
         }
 
         macro(UNPACK_SEQUENCE_LIST) =

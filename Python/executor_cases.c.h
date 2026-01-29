@@ -7187,7 +7187,7 @@
                 *values++ = PyStackRef_FromPyObjectSteal(items[i]);
                 items[i] = NULL;
             }
-            PyStackRef_CLOSE_SPECIALIZED(seq, _PyTuple_ExactDealloc);
+            PyStackRef_CLOSE_SPECIALIZED(seq, _PyTuple_EmptyExactDealloc);
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

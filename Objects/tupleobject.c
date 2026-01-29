@@ -206,7 +206,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
 /* Methods */
 
 void
-_PyTuple_ExactDealloc(PyObject *obj)
+_PyTuple_EmptyExactDealloc(PyObject *obj)
 {
     assert(PyTuple_CheckExact(obj));
     PyTupleObject *op = _PyTuple_CAST(obj);
