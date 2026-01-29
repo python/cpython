@@ -469,12 +469,23 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
+typedef unsigned char ignorecache_t[32];
 
 static int
-ignorechar(unsigned char c, Py_buffer *ignorechars)
+ignorechar(unsigned char c, const Py_buffer *ignorechars,
+           ignorecache_t ignorecache)
 {
-    return (ignorechars->buf != NULL &&
-            memchr(ignorechars->buf, c, ignorechars->len));
+    if (ignorechars == NULL) {
+        return 0;
+    }
+    if (ignorecache[c >> 3] & (1 << (c & 7))) {
+        return 1;
+    }
+    if (memchr(ignorechars->buf, c, ignorechars->len)) {
+        ignorecache[c >> 3] |= 1 << (c & 7);
+        return 1;
+    }
+    return 0;
 }
 
 /*[clinic input]
@@ -508,6 +519,13 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
     if (strict_mode == -1) {
         strict_mode = (ignorechars->buf != NULL);
     }
+    if (!strict_mode || ignorechars->buf == NULL || ignorechars->len == 0) {
+        ignorechars = NULL;
+    }
+    ignorecache_t ignorecache;
+    if (ignorechars != NULL) {
+        memset(ignorecache, 0, sizeof(ignorecache));
+    }
 
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
@@ -517,8 +535,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
-    size_t i = 0;  /* Current position in input */
-
+fastpath:
     /* Fast path: use optimized decoder for complete quads.
      * This works for both strict and non-strict mode for valid input.
      * The fast path stops at padding, invalid chars, or incomplete groups.
@@ -527,7 +544,8 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
         Py_ssize_t fast_chars = base64_decode_fast(ascii_data, (Py_ssize_t)ascii_len,
                                                    bin_data, table_a2b_base64);
         if (fast_chars > 0) {
-            i = (size_t)fast_chars;
+            ascii_data += fast_chars;
+            ascii_len -= fast_chars;
             bin_data += (fast_chars / 4) * 3;
         }
     }
@@ -536,8 +554,8 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
     int quad_pos = 0;
     unsigned char leftchar = 0;
     int pads = 0;
-    for (; i < ascii_len; i++) {
-        unsigned char this_ch = ascii_data[i];
+    for (; ascii_len; ascii_data++, ascii_len--) {
+        unsigned char this_ch = *ascii_data;
 
         /* Check for pad sequences and ignore
         ** the invalid ones.
@@ -549,7 +567,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                 if (quad_pos == 0) {
                     state = get_binascii_state(module);
                     if (state) {
-                        PyErr_SetString(state->Error, (i == 0)
+                        PyErr_SetString(state->Error, (ascii_data == data->buf)
                             ? "Leading padding not allowed"
                             : "Excess padding not allowed");
                     }
@@ -580,7 +598,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
 
         unsigned char v = table_a2b_base64[this_ch];
         if (v >= 64) {
-            if (strict_mode && !ignorechar(this_ch, ignorechars)) {
+            if (strict_mode && !ignorechar(this_ch, ignorechars, ignorecache)) {
                 state = get_binascii_state(module);
                 if (state) {
                     PyErr_SetString(state->Error, "Only base64 data is allowed");
@@ -621,7 +639,9 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                 quad_pos = 0;
                 *bin_data++ = (leftchar << 6) | (v);
                 leftchar = 0;
-                break;
+                ascii_data++;
+                ascii_len--;
+                goto fastpath;
         }
     }
 
