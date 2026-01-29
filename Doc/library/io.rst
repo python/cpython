@@ -765,7 +765,9 @@ than raw I/O does.
 
    A buffered binary stream providing higher-level access to a readable, non
    seekable :class:`RawIOBase` raw binary stream.  It inherits from
-   :class:`BufferedIOBase`.
+   :class:`BufferedIOBase`. :class:`BufferedReader` stores a :class:`FileIO`
+   object in its *raw* attribute, which is why it exposes properties such as
+   *name* and *mode*.
 
    When reading data from this object, a larger amount of data may be
    requested from the underlying raw stream, and kept in an internal buffer.
@@ -799,7 +801,9 @@ than raw I/O does.
 
    A buffered binary stream providing higher-level access to a writeable, non
    seekable :class:`RawIOBase` raw binary stream.  It inherits from
-   :class:`BufferedIOBase`.
+   :class:`BufferedIOBase`. :class:`BufferedWriter` stores a :class:`FileIO`
+   object in its *raw* attribute, which is why it exposes properties such as
+   *name* and *mode*.
 
    When writing to this object, data is normally placed into an internal
    buffer.  The buffer will be written out to the underlying :class:`RawIOBase`
@@ -963,7 +967,10 @@ Text I/O
 
    A buffered text stream providing higher-level access to a
    :class:`BufferedIOBase` buffered binary stream.  It inherits from
-   :class:`TextIOBase`.
+   :class:`TextIOBase`. :class:`TextIOWrapper` stores an object of type
+   :class:`BufferedReader`, :class:`BufferedWriter`, or :class:`BufferedRandom`
+   in its internal *buffer* attribute, which is why it exposes properties such
+   as *name* and *mode*.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
    encoded with.  In :ref:`UTF-8 Mode <utf8-mode>`, this defaults to UTF-8.
