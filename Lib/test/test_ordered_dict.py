@@ -970,6 +970,93 @@ class CPythonOrderedDictTests(OrderedDictTests,
 
         gc.collect()
 
+    def test_copy_concurrent_clear_in__getitem__(self):
+        # Prevent crashes when a copy mutates the OrderedDict.
+        # Regression tests for github.com/python/cpython/issues/142734.
+        class MyOD(self.OrderedDict):
+            def __getitem__(self, key):
+                super().clear()
+                return None
+
+        od = MyOD(enumerate(range(5)))
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_copy_concurrent_insertion_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            def __getitem__(self, key):
+                self['new_key'] = 'new_value'
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two')])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_copy_concurrent_deletion_by_del_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            call_count = 0
+            def __getitem__(self, key):
+                self.call_count += 1
+                if self.call_count == 1:
+                    del self[3]
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_copy_concurrent_deletion_by_pop_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            call_count = 0
+            def __getitem__(self, key):
+                self.call_count += 1
+                if self.call_count == 1:
+                    self.pop(3)
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_copy_concurrent_deletion_and_set_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            call_count = 0
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+            def __getitem__(self, key):
+                self.call_count += 1
+                if self.call_count == 1:
+                    del self[4]
+                elif self.call_count == 2:
+                    self['new_key'] = 'new_value'
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_copy_concurrent_mutation_in__setitem__(self):
+        class MyOD(self.OrderedDict):
+            # When calling `__getitem__` on the source dict, `instance_count` is 1.
+            # When calling `__setitem__` on the target dict, `instance_count` is 2.
+            instance_count = 0
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                MyOD.instance_count += 1
+
+            def __setitem__(self, key, value):
+                if self.instance_count == 2 and len(od) > 1:
+                    del od[next(iter(od))]
+                return super().__setitem__(key, value)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+        self.assertEqual(MyOD.instance_count, 2)
+
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
 

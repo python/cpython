@@ -1,0 +1,1 @@
+:mod:`collections`: fix use-after-free crashes in :meth:`OrderedDict.copy <dict.copy>` when the dictionary to copy is concurrently mutated.
