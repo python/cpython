@@ -30,6 +30,8 @@ import threading
 import time
 from dataclasses import dataclass
 from operator import methodcaller
+from typing import NamedTuple
+from collections import namedtuple
 
 # The iterations in individual benchmarks are scaled by this factor.
 WORK_SCALE = 100
@@ -40,10 +42,25 @@ threads = []
 in_queues = []
 out_queues = []
 
-
 def register_benchmark(func):
     ALL_BENCHMARKS[func.__name__] = func
     return func
+
+class Foo(NamedTuple):
+    x: int
+
+
+Bar = namedtuple('Bar', ['x'])
+
+@register_benchmark
+def typing_namedtuple():
+    for i in range(1000 * WORK_SCALE):
+        _ = Foo(x=1)
+
+@register_benchmark
+def namedtuple():
+    for i in range(1000 * WORK_SCALE):
+        _ = Bar(x=1)
 
 @register_benchmark
 def object_cfunction():
