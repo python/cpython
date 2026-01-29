@@ -1,0 +1,1 @@
+Print out the truncated line, not the raw sourceline.
