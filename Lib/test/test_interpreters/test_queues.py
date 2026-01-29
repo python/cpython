@@ -1,4 +1,3 @@
-import importlib
 import pickle
 import threading
 from textwrap import dedent
@@ -39,7 +38,12 @@ class LowLevelTests(TestBase):
 
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
-        importlib.reload(queues)
+        interp = interpreters.create()
+        interp.exec(dedent(f"""
+            import importlib
+            from concurrent.interpreters import _queues as queues
+            importlib.reload(queues)
+            """));
 
     def test_create_destroy(self):
         qid = _queues.create(2, REPLACE, -1)
