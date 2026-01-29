@@ -211,6 +211,7 @@ except ImportError:
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect, Py_GIL_DISABLED, late_deletion)
+from test.support.constants_helper import iter_global_strings
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
@@ -1251,6 +1252,41 @@ class CodeConstsTest(unittest.TestCase):
         self.assertIsInstance(code.co_consts[1], Unhashable)
         self.assertEqual(code.co_consts[2], code.co_consts[3])
 
+    @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
+    def test__Py_DECLARE_STR_is_interned(self):
+        for global_string in iter_global_strings():
+            with self.subTest(global_string=global_string):
+                self.assertIsInterned(eval(f"'{global_string}'"))
+
+    noninternable_by_default = textwrap.dedent(f'''
+        not-internable
+        not.internable
+        не_интернируемый
+        str with spaces
+        {chr(0x011111)}
+        {chr(0x9999)}
+        {chr(0x100)}
+    ''')
+
+    @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
+    def test_non_internable_strings_not_interned(self):
+        for noninternable in self.noninternable_by_default.strip().splitlines():
+            with self.subTest(noninternable=noninternable):
+                self.assertIsNotInterned(eval(f"'{noninternable}'"))
+
+    @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
+    def test_explicitly_interned_strings(self):
+        for noninternable in self.noninternable_by_default.strip().splitlines():
+            self.assertIsNotInterned(noninternable)
+            sys.intern(noninternable)
+            with self.subTest(noninternable=noninternable):
+                self.assertIsInterned(noninternable)
+                interned_from_code = eval(f"'{noninternable}'")
+                self.assertIsInterned(interned_from_code)
+                self.assertIs(noninternable, interned_from_code)
 
 class CodeWeakRefTest(unittest.TestCase):
 
