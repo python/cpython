@@ -582,11 +582,16 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # Struct instance.  This test can be used to detect the leak
         # when running with regrtest -L.
         s = struct.Struct('i')
-        s.__init__('ii')
+        with self.assertWarns(DeprecationWarning):
+            s.__init__('ii')
+        self.assertEqual(s.format, 'ii')
+        packed = b'\x01\x00\x00\x00\x02\x00\x00\x00'
+        self.assertEqual(s.pack(1, 2), packed)
+        self.assertEqual(s.unpack(packed), (1, 2))
 
     def check_sizeof(self, format_str, number_of_codes):
         # The size of 'PyStructObject'
-        totalsize = support.calcobjsize('2n3P')
+        totalsize = support.calcobjsize('2n3P1?')
         # The size taken up by the 'formatcode' dynamic array
         totalsize += struct.calcsize('P3n0P') * (number_of_codes + 1)
         support.check_sizeof(self, struct.Struct(format_str), totalsize)
@@ -790,7 +795,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __init__(self):
                 super().__init__('>h')
 
-        my_struct = MyStruct()
+        with self.assertWarns(DeprecationWarning):
+            my_struct = MyStruct()
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
     def test_repr(self):
@@ -824,7 +830,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertListEqual(list(results), [None] * 5)
 
     def test_operations_on_half_initialized_Struct(self):
-        S = struct.Struct.__new__(struct.Struct)
+        with self.assertWarns(DeprecationWarning):
+            S = struct.Struct.__new__(struct.Struct)
 
         spam = array.array('b', b' ')
         self.assertRaises(RuntimeError, S.iter_unpack, spam)

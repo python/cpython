@@ -1,0 +1,3 @@
+Calling the ``Struct.__new__()`` without required argument now is deprecated.
+Calling :meth:`~object.__init__` method on initialized :class:`~struct.Struct`
+objects is deprecated.  Patch by Sergey B Kirpichev.
