@@ -104,7 +104,7 @@ else:
         """
         def __new__(mcls, name, bases, namespace, /, **kwargs):
             cls = super().__new__(mcls, name, bases, namespace, **kwargs)
-            _abc_init(cls)
+            _abc_init(cls, bases, namespace)
             return cls
 
         def register(cls, subclass):

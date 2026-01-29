@@ -49,6 +49,14 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+
+        # Performance optimization for common case
+        cls._abc_should_check_subclasses = False
+        if "__subclasses__" in namespace:
+            cls._abc_should_check_subclasses = True
+            for base in bases:
+                if hasattr(base, "_abc_should_check_subclasses"):
+                    base._abc_should_check_subclasses = True
         return cls
 
     def register(cls, subclass):
@@ -65,8 +73,20 @@ class ABCMeta(type):
         if issubclass(cls, subclass):
             # This would create a cycle, which is bad for the algorithm below
             raise RuntimeError("Refusing to create an inheritance cycle")
+        # Add registry entry
         cls._abc_registry.add(subclass)
         ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
+        # Recursively register the subclass in all ABC bases,
+        # to avoid recursive lookups down the class tree.
+        # >>> class Ancestor1(ABC): pass
+        # >>> class Ancestor2(Ancestor1): pass
+        # >>> class Other: pass
+        # >>> Ancestor2.register(Other)  # calls Ancestor1.register(Other)
+        # >>> issubclass(Other, Ancestor2) is True
+        # >>> issubclass(Other, Ancestor1) is True  # already in registry
+        for base in cls.__bases__:
+            if hasattr(base, "_abc_registry"):
+                base.register(subclass)
         return subclass
 
     def _dump_registry(cls, file=None):
@@ -132,16 +152,25 @@ class ABCMeta(type):
         if cls in getattr(subclass, '__mro__', ()):
             cls._abc_cache.add(subclass)
             return True
+        # Fast path: check subclass is in weakset directly.
+        if subclass in cls._abc_registry:
+            cls._abc_cache.add(subclass)
+            return True
         # Check if it's a subclass of a registered class (recursive)
         for rcls in cls._abc_registry:
             if issubclass(subclass, rcls):
                 cls._abc_cache.add(subclass)
                 return True
-        # Check if it's a subclass of a subclass (recursive)
-        for scls in cls.__subclasses__():
-            if issubclass(subclass, scls):
-                cls._abc_cache.add(subclass)
-                return True
+        # Check if it's a subclass of a subclass (recursive).
+        # If __subclasses__ contain only ABCs,
+        # calling issubclass(...) will trigger the same __subclasscheck__
+        # on *every* element of class inheritance tree.
+        # Performing that only in resence of `def __subclasses__()` classmethod
+        if cls._abc_should_check_subclasses:
+            for scls in cls.__subclasses__():
+                if issubclass(subclass, scls):
+                    cls._abc_cache.add(subclass)
+                    return True
         # No dice; update negative cache
         cls._abc_negative_cache.add(subclass)
         return False

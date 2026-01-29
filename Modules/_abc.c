@@ -35,21 +35,13 @@ get_abc_state(PyObject *module)
 static inline uint64_t
 get_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&state->abc_invalidation_counter);
-#else
-    return state->abc_invalidation_counter;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_RELAXED(state->abc_invalidation_counter);
 }
 
 static inline void
 increment_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_uint64(&state->abc_invalidation_counter, 1);
-#else
-    state->abc_invalidation_counter++;
-#endif
+    FT_ATOMIC_ADD_UINT64(state->abc_invalidation_counter, 1);
 }
 
 /* This object stores internal state for ABCs.
@@ -65,6 +57,7 @@ typedef struct {
     PyObject *_abc_cache;
     PyObject *_abc_negative_cache;
     uint64_t _abc_negative_cache_version;
+    uint8_t _abc_should_check_subclasses;
 } _abc_data;
 
 #define _abc_data_CAST(op)  ((_abc_data *)(op))
@@ -72,21 +65,25 @@ typedef struct {
 static inline uint64_t
 get_cache_version(_abc_data *impl)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&impl->_abc_negative_cache_version);
-#else
-    return impl->_abc_negative_cache_version;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_RELAXED(impl->_abc_negative_cache_version);
 }
 
 static inline void
 set_cache_version(_abc_data *impl, uint64_t version)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_uint64(&impl->_abc_negative_cache_version, version);
-#else
-    impl->_abc_negative_cache_version = version;
-#endif
+    FT_ATOMIC_STORE_UINT64_RELAXED(impl->_abc_negative_cache_version, version);
+}
+
+static inline uint8_t
+get_should_check_subclasses(_abc_data *impl)
+{
+    return FT_ATOMIC_LOAD_UINT8_RELAXED(impl->_abc_should_check_subclasses);
+}
+
+static inline void
+set_should_check_subclasses(_abc_data *impl)
+{
+    FT_ATOMIC_STORE_UINT8_RELAXED(impl->_abc_should_check_subclasses, 1);
 }
 
 static int
@@ -139,6 +136,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->_abc_cache = NULL;
     self->_abc_negative_cache = NULL;
     self->_abc_negative_cache_version = get_invalidation_counter(state);
+    self->_abc_should_check_subclasses = 0;
     return (PyObject *) self;
 }
 
@@ -175,6 +173,30 @@ _get_impl(PyObject *module, PyObject *self)
         return NULL;
     }
     return (_abc_data *)impl;
+}
+
+/* If class is inherited from ABC, set data to point to internal ABC state of class, and return 1.
+   If object is not inherited from ABC, return 0.
+   If error is encountered, return -1.
+ */
+static int
+_get_optional_impl(_abcmodule_state *state, PyObject *self, _abc_data **data)
+{
+    assert(data != NULL);
+    PyObject *impl = NULL;
+    int res = PyObject_GetOptionalAttr(self, &_Py_ID(_abc_impl), &impl);
+    if (res <= 0) {
+        *data = NULL;
+        return res;
+    }
+    if (!Py_IS_TYPE(impl, state->_abc_data_type)) {
+        PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
+        Py_DECREF(impl);
+        *data = NULL;
+        return -1;
+    }
+    *data = (_abc_data *)impl;
+    return 1;
 }
 
 static int
@@ -347,11 +369,12 @@ _abc__get_dump(PyObject *module, PyObject *self)
     }
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(impl);
-    res = Py_BuildValue("NNNK",
+    res = Py_BuildValue("NNNKK",
                         PySet_New(impl->_abc_registry),
                         PySet_New(impl->_abc_cache),
                         PySet_New(impl->_abc_negative_cache),
-                        get_cache_version(impl));
+                        get_cache_version(impl),
+                        get_should_check_subclasses(impl));
     Py_END_CRITICAL_SECTION();
     Py_DECREF(impl);
     return res;
@@ -359,7 +382,7 @@ _abc__get_dump(PyObject *module, PyObject *self)
 
 // Compute set of abstract method names.
 static int
-compute_abstract_methods(PyObject *self)
+compute_abstract_methods(PyObject *self, PyObject *bases, PyObject *ns)
 {
     int ret = -1;
     PyObject *abstracts = PyFrozenSet_New(NULL);
@@ -367,19 +390,13 @@ compute_abstract_methods(PyObject *self)
         return -1;
     }
 
-    PyObject *ns = NULL, *items = NULL, *bases = NULL;  // Py_XDECREF()ed on error.
-
     /* Stage 1: direct abstract methods. */
-    ns = PyObject_GetAttr(self, &_Py_ID(__dict__));
-    if (!ns) {
-        goto error;
-    }
-
     // We can't use PyDict_Next(ns) even when ns is dict because
     // _PyObject_IsAbstract() can mutate ns.
-    items = PyMapping_Items(ns);
+    PyObject *items = PyMapping_Items(ns);
     if (!items) {
-        goto error;
+        Py_DECREF(abstracts);
+        return -1;
     }
     assert(PyList_Check(items));
     for (Py_ssize_t pos = 0; pos < PyList_GET_SIZE(items); pos++) {
@@ -414,15 +431,6 @@ compute_abstract_methods(PyObject *self)
     }
 
     /* Stage 2: inherited abstract methods. */
-    bases = PyObject_GetAttr(self, &_Py_ID(__bases__));
-    if (!bases) {
-        goto error;
-    }
-    if (!PyTuple_Check(bases)) {
-        PyErr_SetString(PyExc_TypeError, "__bases__ is not tuple");
-        goto error;
-    }
-
     for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(bases); pos++) {
         PyObject *item = PyTuple_GET_ITEM(bases, pos);  // borrowed
         PyObject *base_abstracts, *iter;
@@ -475,10 +483,34 @@ compute_abstract_methods(PyObject *self)
     ret = 0;
 error:
     Py_DECREF(abstracts);
-    Py_XDECREF(ns);
-    Py_XDECREF(items);
-    Py_XDECREF(bases);
+    Py_DECREF(items);
     return ret;
+}
+
+/*
+ * Notify base classes that child one has __subclasses__ overriden.
+ * Used as performance optimization in __subclasscheck__
+ */
+static int
+_abc_notify_subclasses_override(_abcmodule_state *state, PyObject *data, PyObject *bases)
+{
+    set_should_check_subclasses((_abc_data*) data);
+
+    for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(bases); pos++) {
+        PyObject *base_class = PyTuple_GET_ITEM(bases, pos);  // borrowed
+        _abc_data *base_impl = NULL;
+        int base_is_abc = _get_optional_impl(state, base_class, &base_impl);
+        if (base_is_abc < 0) {
+            return -1;
+        }
+        if (base_is_abc == 0) {
+            continue;
+        }
+        set_should_check_subclasses(base_impl);
+        Py_DECREF(base_impl);
+    }
+
+    return 0;
 }
 
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
@@ -488,18 +520,21 @@ error:
 _abc._abc_init
 
     self: object
+    bases: object(subclass_of="&PyTuple_Type")
+    namespace: object(subclass_of="&PyDict_Type")
     /
 
 Internal ABC helper for class set-up. Should be never used outside abc module.
 [clinic start generated code]*/
 
 static PyObject *
-_abc__abc_init(PyObject *module, PyObject *self)
-/*[clinic end generated code: output=594757375714cda1 input=0b3513f947736d39]*/
+_abc__abc_init_impl(PyObject *module, PyObject *self, PyObject *bases,
+                    PyObject *namespace)
+/*[clinic end generated code: output=a410180fefc86056 input=a984e4f7d36d6298]*/
 {
     _abcmodule_state *state = get_abc_state(module);
     PyObject *data;
-    if (compute_abstract_methods(self) < 0) {
+    if (compute_abstract_methods(self, bases, namespace) < 0) {
         return NULL;
     }
 
@@ -507,6 +542,12 @@ _abc__abc_init(PyObject *module, PyObject *self)
     data = abc_data_new(state->_abc_data_type, NULL, NULL);
     if (data == NULL) {
         return NULL;
+    }
+    if (PyDict_ContainsString(namespace, "__subclasses__")) {
+        if (_abc_notify_subclasses_override(state, data, bases) < 0) {
+            Py_DECREF(data);
+            return NULL;
+        }
     }
     if (PyObject_SetAttr(self, &_Py_ID(_abc_impl), data) < 0) {
         Py_DECREF(data);
@@ -580,6 +621,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     if (result < 0) {
         return NULL;
     }
+    /* Add registry entry */
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
         return NULL;
@@ -591,7 +633,43 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     Py_DECREF(impl);
 
     /* Invalidate negative cache */
-    increment_invalidation_counter(get_abc_state(module));
+    _abcmodule_state *state = get_abc_state(module);
+    increment_invalidation_counter(state);
+
+    /*
+     * Recursively register the subclass in all ABC bases,
+     * to avoid recursive lookups down the class tree.
+     * >>> class Ancestor1(ABC): pass
+     * >>> class Ancestor2(Ancestor1): pass
+     * >>> class Other: pass
+     * >>> Ancestor2.register(Other)  # calls Ancestor1.register(Other)
+     * >>> issubclass(Other, Ancestor2) is True
+     * >>> issubclass(Other, Ancestor1) is True  # already in registry
+     */
+    PyObject *bases = PyObject_GetAttr(self, &_Py_ID(__bases__));
+    if (!bases) {
+        return NULL;
+    }
+    if (!PyTuple_Check(bases)) {
+        PyErr_SetString(PyExc_TypeError, "__bases__ is not tuple");
+        goto error;
+    }
+    for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(bases); pos++) {
+        PyObject *base = PyTuple_GET_ITEM(bases, pos);  // borrowed
+        int base_is_abc = PyObject_HasAttrWithError(base, &_Py_ID(_abc_impl));
+        if (base_is_abc < 0) {
+            goto error;
+        }
+        if (base_is_abc == 0) {
+            continue;
+        }
+        PyObject *res = PyObject_CallMethod(base, "register", "O", subclass);
+        Py_XDECREF(res);
+        if (!res) {
+            goto error;
+        }
+    }
+    Py_DECREF(bases);
 
     /* Set Py_TPFLAGS_SEQUENCE or Py_TPFLAGS_MAPPING flag */
     if (PyType_Check(self)) {
@@ -604,6 +682,10 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         }
     }
     return Py_NewRef(subclass);
+
+error:
+    Py_DECREF(bases);
+    return NULL;
 }
 
 
@@ -804,31 +886,38 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
 
-    /* 6. Check if it's a subclass of a subclass (recursive). */
-    subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
-    if (subclasses == NULL) {
-        goto end;
-    }
-    if (!PyList_Check(subclasses)) {
-        PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
-        goto end;
-    }
-    for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
-        PyObject *scls = PyList_GetItemRef(subclasses, pos);
-        if (scls == NULL) {
+    /* 6. Check if it's a subclass of a subclass (recursive).
+     * If __subclasses__ contain only ABCs,
+     * calling issubclass(...) will trigger the same __subclasscheck__
+     * on *every* element of class inheritance tree.
+     * Performing that only in resence of `def __subclasses__()` classmethod
+     */
+    if (get_should_check_subclasses(impl)) {
+        subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+        if (subclasses == NULL) {
             goto end;
         }
-        int r = PyObject_IsSubclass(subclass, scls);
-        Py_DECREF(scls);
-        if (r > 0) {
-            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+        if (!PyList_Check(subclasses)) {
+            PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
+            goto end;
+        }
+        for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
+            PyObject *scls = PyList_GetItemRef(subclasses, pos);
+            if (scls == NULL) {
                 goto end;
             }
-            result = Py_True;
-            goto end;
-        }
-        if (r < 0) {
-            goto end;
+            int r = PyObject_IsSubclass(subclass, scls);
+            Py_DECREF(scls);
+            if (r > 0) {
+                if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+                    goto end;
+                }
+                result = Py_True;
+                goto end;
+            }
+            if (r < 0) {
+                goto end;
+            }
         }
     }
 
@@ -849,7 +938,7 @@ static int
 subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                              PyObject **result)
 {
-    // Fast path: check subclass is in weakref directly.
+    // Fast path: check subclass is in weakset directly.
     int ret = _in_weak_set(impl, &impl->_abc_registry, subclass);
     if (ret < 0) {
         *result = NULL;
