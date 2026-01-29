@@ -155,12 +155,27 @@ class ForkServer(object):
                 if not pid:
                     # still alive
                     return
-                # dead, launch it again
-                os.close(self._forkserver_alive_fd)
-                self._forkserver_authkey = None
-                self._forkserver_address = None
-                self._forkserver_alive_fd = None
-                self._forkserver_pid = None
+            if self._forkserver_alive_fd is not None:
+                # forkserver may be inherited from parent, is it still running?
+                try:
+                    # check by writing a probe
+                    os.write(self._forkserver_alive_fd, b'P')
+                except OSError:
+                    pass
+                else:
+                    # still alive
+                    return
+
+            # dead, launch it again
+            if self._forkserver_alive_fd is not None:
+                try:
+                    os.close(self._forkserver_alive_fd)
+                except OSError:
+                    pass
+            self._forkserver_authkey = None
+            self._forkserver_address = None
+            self._forkserver_alive_fd = None
+            self._forkserver_pid = None
 
             cmd = ('from multiprocessing.forkserver import main; ' +
                    'main(%d, %d, %r, **%r)')
@@ -292,6 +307,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
             os.close(authkey_r)
     else:
         authkey = b''
+    _forkserver._forkserver_authkey = authkey
 
     _handle_preload(preload, main_path, sys_path, sys_argv, on_error)
 
@@ -336,9 +352,16 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                         break
 
                 if alive_r in rfds:
-                    # EOF because no more client processes left
-                    assert os.read(alive_r, 1) == b'', "Not at EOF?"
-                    raise SystemExit
+                    data = os.read(alive_r, 1)
+                    if data == b'P':
+                        # probe from client
+                        pass
+                    elif data == b'':
+                        # EOF because no more client processes left
+                        raise SystemExit
+                    else:
+                        raise RuntimeError("Unknown data received in alive fd")
+
 
                 if sig_r in rfds:
                     # Got SIGCHLD
