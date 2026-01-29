@@ -280,29 +280,11 @@ static void
 invalid_thousands_separator_type(char separator, Py_UCS4 presentation_type)
 {
     assert(separator == ',' || separator == '_');
-    if (presentation_type == '\'') {
-        PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with type code \"'\"",
-                     separator);
-    }
-    else if (presentation_type >= 32 && presentation_type < 127) {
-        PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with type code '%c'",
-                     separator,
-                     (int)presentation_type);
-    }
-    else if (Py_UNICODE_ISPRINTABLE(presentation_type)) {
-        PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with type code '%c' (U+%04X)",
-                     separator,
-                     (int)presentation_type, (int)presentation_type);
-    }
-    else {
-        PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with type code U+%04X",
-                     separator,
-                     (int)presentation_type);
-    }
+    /* presentation_type has been checked before thousands separator. */
+    assert(presentation_type >= 32 && presentation_type < 127);
+    PyErr_Format(PyExc_ValueError,
+                 "Cannot specify '%c' with type code '%c'",
+                 separator, (int)presentation_type);
 }
 
 static void
@@ -589,7 +571,31 @@ parse_internal_render_format_spec(PyObject *obj,
        specifier.  Do not take into account what type of formatting
        we're doing (int, float, string). */
 
-    if (format->thousands_separators) {
+    switch (format->type) {
+    case 'b':
+    case 'c':
+    case 'd':
+    case 'e':
+    case 'E':
+    case 'f':
+    case 'F':
+    case 'g':
+    case 'G':
+    case 'n':
+    case 'o':
+    case 's':
+    case 'x':
+    case 'X':
+    case '%':
+    case '\0':
+        /* These are all valid types. */
+        break;
+    default:
+        unknown_presentation_type(format->type, Py_TYPE(obj)->tp_name);
+        return 0;
+    }
+
+    if (format->thousands_separators != LT_NO_LOCALE) {
         switch (format->type) {
         case 'd':
         case 'e':
@@ -614,17 +620,28 @@ parse_internal_render_format_spec(PyObject *obj,
             }
             _Py_FALLTHROUGH;
         default:
-            invalid_thousands_separator_type(format->thousands_separators, format->type);
+            invalid_thousands_separator_type(format->thousands_separators,
+                                             format->type);
             return 0;
         }
     }
 
-    if (format->type == 'n'
-        && format->frac_thousands_separator != LT_NO_LOCALE)
-    {
-        invalid_thousands_separator_type(format->frac_thousands_separator,
-                                         format->type);
-        return 0;
+    if (format->frac_thousands_separator != LT_NO_LOCALE) {
+        switch (format->type) {
+        case 'e':
+        case 'f':
+        case 'g':
+        case 'E':
+        case 'G':
+        case '%':
+        case 'F':
+        case '\0':
+            break;
+        default:
+            invalid_thousands_separator_type(format->frac_thousands_separator,
+                                             format->type);
+            return 0;
+        }
     }
 
     assert (format->align <= 127);
