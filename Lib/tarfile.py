@@ -1615,14 +1615,19 @@ class TarInfo(object):
         """Replace fields with supplemental information from a previous
            pax extended or global header.
         """
+        real_size_updated = False
         for keyword, value in pax_headers.items():
             if keyword == "GNU.sparse.name":
                 setattr(self, "path", value)
             elif keyword == "GNU.sparse.size":
                 setattr(self, "size", int(value))
+                real_size_updated = True
             elif keyword == "GNU.sparse.realsize":
                 setattr(self, "size", int(value))
+                real_size_updated = True
             elif keyword in PAX_FIELDS:
+                if keyword == "size" and real_size_updated:
+                    continue
                 if keyword in PAX_NUMBER_FIELDS:
                     try:
                         value = PAX_NUMBER_FIELDS[keyword](value)
