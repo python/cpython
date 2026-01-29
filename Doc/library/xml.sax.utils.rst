@@ -71,6 +71,11 @@ or as base classes.
    content:  if ``False`` (the default) they are emitted as a pair of start/end
    tags, if set to ``True`` they are emitted as a single self-closed tag.
 
+   .. note::
+      :class:`!XMLGenerator` is only intended to be used as a ``handler``
+      with SAX parser functions from the :mod:`!xml.sax` module. Using XMLGenerator
+      on untrusted user inputs is not the intended use.
+
    .. versionchanged:: 3.2
       Added the *short_empty_elements* parameter.
 
