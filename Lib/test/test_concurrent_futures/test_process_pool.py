@@ -228,6 +228,18 @@ class ProcessPoolExecutorTest(ExecutorTest):
         for i, future in enumerate(futures):
             self.assertEqual(future.result(), mul(i, i))
 
+    def test_subinterpreter(self):
+        from concurrent import interpreters
+        import textwrap
+
+        interp = interpreters.create()
+        interp.exec(textwrap.dedent("""
+            import multiprocessing
+            pool = multiprocessing.Pool()
+            pool.close()
+        """))
+        interp.close()
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_python_finalization_error(self):
         # gh-109047: Catch RuntimeError on thread creation

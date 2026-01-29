@@ -62,7 +62,8 @@ class ExecutionFailed(InterpreterError):
 
 def create():
     """Return a new (idle) Python interpreter."""
-    id = _interpreters.create(reqrefs=True)
+    config = _interpreters.new_config('isolated', allow_daemon_threads=True)
+    id = _interpreters.create(config, reqrefs=True)
     return Interpreter(id, _ownsref=True)
 
 
