@@ -188,17 +188,15 @@ write code that handles both IP versions correctly.  Address objects are
 
       ``True`` if the address is defined as not globally reachable by
       iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-      (for IPv6) with the following exceptions:
+      (for IPv6) with the following exception:
 
-      * ``is_private`` is ``False`` for the shared address space (``100.64.0.0/10``)
-      * For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
-        semantics of the underlying IPv4 addresses and the following condition holds
-        (see :attr:`IPv6Address.ipv4_mapped`)::
+      For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
+      semantics of the underlying IPv4 addresses and the following condition holds
+      (see :attr:`IPv6Address.ipv4_mapped`)::
 
-            address.is_private == address.ipv4_mapped.is_private
+         address.is_private == address.ipv4_mapped.is_private
 
-      ``is_private`` has value opposite to :attr:`is_global`, except for the shared address space
-      (``100.64.0.0/10`` range) where they are both ``False``.
+      ``is_private`` has value opposite to :attr:`is_global`.
 
       .. versionchanged:: 3.13
 
@@ -212,6 +210,10 @@ write code that handles both IP versions correctly.  Address objects are
            ``2001:1::2/128``, ``2001:3::/32``, ``2001:4:112::/48``, ``2001:20::/28``, ``2001:30::/28``.
            The exceptions are not considered private.
 
+         Additionally ``100.64.0.0/10`` is no longer exceptional – both ``is_private`` and
+         ``is_global`` used to return ``False`` for addresses in that range, now ``is_private``
+         returns ``True``.
+
    .. attribute:: is_global
 
       ``True`` if the address is defined as globally reachable by
@@ -224,8 +226,7 @@ write code that handles both IP versions correctly.  Address objects are
 
          address.is_global == address.ipv4_mapped.is_global
 
-      ``is_global`` has value opposite to :attr:`is_private`, except for the shared address space
-      (``100.64.0.0/10`` range) where they are both ``False``.
+      ``is_global`` has value opposite to :attr:`is_private`.
 
       .. versionadded:: 3.4
 
