@@ -820,10 +820,13 @@ class SourceLoader(_LoaderBasics):
         source_hash = None
         hash_based = False
         check_source = True
-        try:
-            bytecode_path = cache_from_source(source_path)
-        except NotImplementedError:
-            bytecode_path = None
+        bytecode_path = None
+        # TESTING: Potential fast path
+        if sys.implementation.cache_tag is not None:
+            try:
+                bytecode_path = cache_from_source(source_path)
+            except NotImplementedError:
+                pass
         else:
             try:
                 st = self.path_stats(source_path)
