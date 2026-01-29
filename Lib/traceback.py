@@ -1086,9 +1086,29 @@ class TracebackException:
 
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
-        if exc_type is not None:
+
+        if self._have_exc_type:
             self.exc_type_qualname = exc_type.__qualname__
             self.exc_type_module = exc_type.__module__
+            if issubclass(exc_type, SyntaxError):
+                # Handle SyntaxErrors specially
+                self.filename = exc_value.filename
+                lno = exc_value.lineno
+                self.lineno = str(lno) if lno is not None else None
+                end_lno = exc_value.end_lineno
+                self.end_lineno = str(end_lno) if end_lno is not None else None
+                self.text = exc_value.text
+                self.offset = exc_value.offset
+                self.end_offset = exc_value.end_offset
+                self.msg = exc_value.msg
+                self._is_syntax_error = True
+                self._exc_metadata = getattr(exc_value, "_metadata", None)
+            elif suggestion := _suggestion_message(exc_type, exc_value, exc_traceback):
+                if self._str.endswith(('.', '?', '!')):
+                    punctuation = ''
+                else:
+                    punctuation = '.'
+                self._str += f"{punctuation} {suggestion}"
         else:
             self.exc_type_qualname = None
             self.exc_type_module = None
@@ -1110,8 +1130,6 @@ class TracebackException:
                 getattr(exc_value, "name_from", None) is not None:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
-            if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
@@ -1128,15 +1146,6 @@ class TracebackException:
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
-            if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1752,6 +1761,38 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                 return nested_suggestion
 
     return suggestion
+
+
+def _suggestion_message(exc_type, exc_value, exc_traceback):
+    if (
+        issubclass(exc_type, ModuleNotFoundError)
+        and sys.flags.no_site
+        and getattr(exc_value, "name", None) not in sys.stdlib_module_names
+    ):
+        return ("Site initialization is disabled, did you forget to "
+            "add the site-packages directory to sys.path?")
+    if issubclass(exc_type, (ImportError, NameError, AttributeError)):
+        if issubclass(exc_type, ImportError):
+            wrong_name = getattr(exc_value, "name_from", None)
+        else:
+            wrong_name = getattr(exc_value, "name", None)
+        if wrong_name:
+            other_name = _compute_suggestion_error(
+                exc_value, exc_traceback, wrong_name
+            )
+            maybe_stdlib_import = (
+                issubclass(exc_type, NameError)
+                and wrong_name in sys.stdlib_module_names
+            )
+            if not other_name:
+                if maybe_stdlib_import:
+                    return f"Did you forget to import '{wrong_name}'?"
+                return None
+            text = f"Did you mean: '{other_name}'?"
+            if maybe_stdlib_import:
+                return f"{text} Or did you forget to import '{wrong_name}'?"
+            return text
+    return None
 
 
 def _levenshtein_distance(a, b, max_cost):
