@@ -1452,8 +1452,10 @@ typedef struct {
     PyObject *weakreflist;      /* List of weak references to self */
     /* A {localdummy -> localdict} dict */
     PyObject *localdicts;
-    /* A set of weakrefs to thread sentinels localdummies*/
+    /* A set of weakrefs to thread sentinels localdummies */
     PyObject *thread_watchdogs;
+    /* A set of thread sentinels that were created during finalization */
+    PyObject *abandoned_sentinels;
 } localobject;
 
 #define localobject_CAST(op)    ((localobject *)(op))
@@ -1544,6 +1546,11 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         goto err;
     }
 
+    self->abandoned_sentinels = PySet_New(NULL);
+    if (self->abandoned_sentinels == NULL) {
+        goto err;
+    }
+
     PyObject *localsdict = NULL;
     PyObject *sentinel_wr = NULL;
     if (create_localsdict(self, state, &localsdict, &sentinel_wr) < 0) {
@@ -1568,6 +1575,7 @@ local_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->kw);
     Py_VISIT(self->localdicts);
     Py_VISIT(self->thread_watchdogs);
+    Py_VISIT(self->abandoned_sentinels);
     return 0;
 }
 
@@ -1579,6 +1587,7 @@ local_clear(PyObject *op)
     Py_CLEAR(self->kw);
     Py_CLEAR(self->localdicts);
     Py_CLEAR(self->thread_watchdogs);
+    Py_CLEAR(self->abandoned_sentinels);
     return 0;
 }
 
@@ -1862,6 +1871,25 @@ clear_locals(PyObject *locals_and_key, PyObject *dummyweakref)
                                    "thread local %R", (PyObject *)self);
         }
     }
+
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate->threading_local_key != NULL) {
+        // gh-140798: It's possible that some finalizer recreates
+        // thread key and sentinel localdummies during clearing localsdict.
+        // In this case we save thread sentinel to local set and
+        // clear key and sentinel in thread state one more time.
+        if (PySet_Add(self->abandoned_sentinels, tstate->threading_local_sentinel) < 0) {
+            PyErr_FormatUnraisable("Exception ignored while adding "
+                                   "thread abandoned sentinel of %R", self);
+        }
+
+        Py_CLEAR(tstate->threading_local_key);
+        Py_CLEAR(tstate->threading_local_sentinel);
+    }
+
+    assert(tstate->threading_local_key == NULL);
+    assert(tstate->threading_local_sentinel == NULL);
+
     if (self->thread_watchdogs != NULL) {
         if (PySet_Discard(self->thread_watchdogs, dummyweakref) < 0) {
             PyErr_FormatUnraisable("Exception ignored while clearing "
