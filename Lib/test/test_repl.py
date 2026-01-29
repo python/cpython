@@ -5,6 +5,7 @@ import select
 import subprocess
 import sys
 import unittest
+from contextlib import contextmanager
 from functools import partial
 from textwrap import dedent
 from test import support
@@ -65,6 +66,19 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=F
 
 
 spawn_asyncio_repl = partial(spawn_repl, "-m", "asyncio", custom=True)
+
+
+@contextmanager
+def new_pythonstartup_env(*, code: str, histfile: str = ".pythonhist"):
+    """Create environment variables for a PYTHONSTARTUP script in a temporary directory."""
+    with os_helper.temp_dir() as tmpdir:
+        filename = os.path.join(tmpdir, "pythonstartup.py")
+        with open(filename, "w") as f:
+            f.write(code)
+        yield {
+            "PYTHONSTARTUP": filename,
+            "PYTHON_HISTORY": os.path.join(tmpdir, histfile)
+        }
 
 
 def run_on_interactive_mode(source):
@@ -260,8 +274,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
         """) % script
         self.assertIn(expected, output)
 
-
-
     def test_runsource_show_syntax_error_location(self):
         user_input = dedent("""def f(x, x): ...
                             """)
@@ -356,6 +368,45 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         self.assertEqual(exit_code, 0, "".join(output))
 
+    def test_pythonstartup_success(self):
+        # errors based on https://github.com/python/cpython/issues/137576
+        # case 1: error in user input, but PYTHONSTARTUP is fine
+        startup_code = "print('notice from pythonstartup')"
+        startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
+
+        p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
+        p.stdin.write("1/0")
+        output = kill_python(p)
+        self.assertStartsWith(output, 'notice from pythonstartup')
+        expected = dedent("""\
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
+        """)
+        self.assertIn(expected, output)
+
+    def test_pythonstartup_failure(self):
+        # case 2: error in PYTHONSTARTUP triggered by user input
+        startup_code = "def foo():\n    1/0\n"
+        startup_env = self.enterContext(new_pythonstartup_env(code=startup_code))
+
+        p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
+        p.stdin.write("foo()")
+        output = kill_python(p)
+        expected = dedent(f"""\
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+            foo()
+            ~~~^^
+          File "{startup_env['PYTHONSTARTUP']}", line 2, in foo
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
+        """)
+        self.assertIn(expected, output)
+
 
 @support.force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
@@ -376,6 +427,7 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         self.assertEqual(traceback_lines, expected_lines)
 
 
+@support.force_not_colorized_test_class
 class TestAsyncioREPL(unittest.TestCase):
     def test_multiple_statements_fail_early(self):
         user_input = "1 / 0; print(f'afterwards: {1+1}')"
@@ -426,6 +478,50 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertEqual(output[:3], ">>>")
 
+    def test_pythonstartup_success(self):
+        startup_code = dedent("print('notice from pythonstartup in asyncio repl')")
+        startup_env = self.enterContext(
+            new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
+
+        p = spawn_repl(
+            "-qm", "asyncio",
+            env=os.environ | startup_env,
+            isolated=False,
+            custom=True)
+        p.stdin.write("1/0")
+        output = kill_python(p)
+        self.assertStartsWith(output, 'notice from pythonstartup in asyncio repl')
+
+        expected = dedent("""\
+          File "<stdin>", line 1, in <module>
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
+        """)
+        self.assertIn(expected, output)
+
+    def test_pythonstartup_failure(self):
+        startup_code = "def foo():\n    1/0\n"
+        startup_env = self.enterContext(
+            new_pythonstartup_env(code=startup_code, histfile=".asyncio_history"))
+
+        p = spawn_repl(
+            "-qm", "asyncio",
+            env=os.environ | startup_env,
+            isolated=False,
+            custom=True)
+        p.stdin.write("foo()")
+        output = kill_python(p)
+        expected = dedent(f"""\
+          File "<stdin>", line 1, in <module>
+            foo()
+            ~~~^^
+          File "{startup_env['PYTHONSTARTUP']}", line 2, in foo
+            1/0
+            ~^~
+        ZeroDivisionError: division by zero
+        """)
+        self.assertIn(expected, output)
 
 if __name__ == "__main__":
     unittest.main()
