@@ -5061,6 +5061,29 @@ then
 fi
 AC_MSG_RESULT([$with_pymalloc])
 
+AC_MSG_CHECKING([for --with-pymalloc-hugepages])
+AC_ARG_WITH(
+  [pymalloc-hugepages],
+  [AS_HELP_STRING([--with-pymalloc-hugepages],
+    [enable huge page support for pymalloc arenas (default is no)])])
+if test "$with_pymalloc_hugepages" = "yes"
+then
+    dnl configure only runs on Unix-like systems; Windows uses MEM_LARGE_PAGES
+    dnl via VirtualAlloc but does not use configure. Only check MAP_HUGETLB here.
+    AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[
+#include <sys/mman.h>
+      ]], [[
+int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;
+(void)flags;
+      ]])],
+      [AC_DEFINE([PYMALLOC_USE_HUGEPAGES], [1],
+         [Define to use huge pages for pymalloc arenas])],
+      [AC_MSG_WARN([--with-pymalloc-hugepages requested but MAP_HUGETLB not found])
+       with_pymalloc_hugepages=no])
+fi
+AC_MSG_RESULT([${with_pymalloc_hugepages:-no}])
+
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING([for --with-c-locale-coercion])
 AC_ARG_WITH(

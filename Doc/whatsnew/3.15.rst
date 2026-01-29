@@ -1477,6 +1477,12 @@ Build changes
   modules that are missing or packaged separately.
   (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
 
+* The new configure option :option:`--with-pymalloc-hugepages` enables huge
+  page support for :ref:`pymalloc <pymalloc>` arenas. When enabled, arena size
+  increases to 2 MiB and allocation uses ``MAP_HUGETLB`` (Linux) or
+  ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
+  On Windows, use ``build.bat --pymalloc-hugepages``.
+
 * Annotating anonymous mmap usage is now supported if Linux kernel supports
   :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
