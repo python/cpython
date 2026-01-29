@@ -340,24 +340,24 @@ Supported operations:
 +================================+===============================================+
 | ``t1 = t2 + t3``               | Sum of ``t2`` and ``t3``.                     |
 |                                | Afterwards ``t1 - t2 == t3`` and              |
-|                                | ``t1 - t3 == t2`` are true. (1)               |
+|                                | ``t1 - t3 == t2`` are true. [#td1]_           |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 - t3``               | Difference of ``t2``  and ``t3``. Afterwards  |
 |                                | ``t1 == t2 - t3`` and ``t2 == t1 + t3`` are   |
-|                                | true. (1)(6)                                  |
+|                                | true. [#td1]_ [#td6]_                         |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
 |                                | Afterwards ``t1 // i == t2`` is true,         |
 |                                | provided ``i != 0``.                          |
 +--------------------------------+-----------------------------------------------+
 |                                | In general, ``t1  * i == t1 * (i-1) + t1``    |
-|                                | is true. (1)                                  |
+|                                | is true. [#td1]_                              |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * f or t1 = f * t2`` | Delta multiplied by a float. The result is    |
 |                                | rounded to the nearest multiple of            |
 |                                | timedelta.resolution using round-half-to-even.|
 +--------------------------------+-----------------------------------------------+
-| ``f = t2 / t3``                | Division (3) of overall duration ``t2`` by    |
+| ``f = t2 / t3``                | Division [#td3]_ of overall duration ``t2`` by|
 |                                | interval unit ``t3``. Returns a :class:`float`|
 |                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
@@ -367,29 +367,29 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 // i`` or            | The floor is computed and the remainder (if   |
 | ``t1 = t2 // t3``              | any) is thrown away. In the second case, an   |
-|                                | integer is returned. (3)                      |
+|                                | integer is returned. [#td3]_                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 % t3``               | The remainder is computed as a                |
-|                                | :class:`timedelta` object. (3)                |
+|                                | :class:`timedelta` object. [#td3]_            |
 +--------------------------------+-----------------------------------------------+
 | ``q, r = divmod(t1, t2)``      | Computes the quotient and the remainder:      |
-|                                | ``q = t1 // t2`` (3) and ``r = t1 % t2``.     |
+|                                | ``q = t1 // t2`` [#td3]_ and ``r = t1 % t2``. |
 |                                | ``q`` is an integer and ``r`` is a            |
 |                                | :class:`timedelta` object.                    |
 +--------------------------------+-----------------------------------------------+
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
-|                                | same value. (2)                               |
+|                                | same value. [#td2]_                           |
 +--------------------------------+-----------------------------------------------+
 | ``-t1``                        | Equivalent to ``timedelta(-t1.days,           |
 |                                | -t1.seconds, -t1.microseconds)``,             |
-|                                | and to ``t1 * -1``. (1)(4)                    |
+|                                | and to ``t1 * -1``. [#td1]_ [#td4]_           |
 +--------------------------------+-----------------------------------------------+
 | ``abs(t)``                     | Equivalent to ``+t`` when ``t.days >= 0``,    |
-|                                | and to ``-t`` when ``t.days < 0``. (2)        |
+|                                | and to ``-t`` when ``t.days < 0``. [#td2]_    |
 +--------------------------------+-----------------------------------------------+
 | ``str(t)``                     | Returns a string in the form                  |
 |                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  |
-|                                | is negative for negative ``t``. (5)           |
+|                                | is negative for negative ``t``. [#td5]_       |
 +--------------------------------+-----------------------------------------------+
 | ``repr(t)``                    | Returns a string representation of the        |
 |                                | :class:`timedelta` object as a constructor    |
@@ -397,21 +397,21 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 
 
-Notes:
+.. rubric:: Notes
 
-(1)
+.. [#td1]
    This is exact but may overflow.
 
-(2)
+.. [#td2]
    This is exact and cannot overflow.
 
-(3)
+.. [#td3]
    Division by zero raises :exc:`ZeroDivisionError`.
 
-(4)
+.. [#td4]
    ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
-(5)
+.. [#td5]
    String representations of :class:`timedelta` objects are normalized
    similarly to their internal representation. This leads to somewhat
    unusual results for negative timedeltas. For example::
@@ -421,7 +421,7 @@ Notes:
       >>> print(_)
       -1 day, 19:00:00
 
-(6)
+.. [#td6]
    The expression ``t2 - t3`` will always be equal to the expression ``t2 + (-t3)`` except
    when t3 is equal to ``timedelta.max``; in that case the former will produce a result
    while the latter will overflow.
@@ -656,46 +656,46 @@ Supported operations:
 | Operation                     | Result                                       |
 +===============================+==============================================+
 | ``date2 = date1 + timedelta`` | ``date2`` will be ``timedelta.days`` days    |
-|                               | after ``date1``. (1)                         |
+|                               | after ``date1``. [#date1]_                   |
 +-------------------------------+----------------------------------------------+
 | ``date2 = date1 - timedelta`` | Computes ``date2`` such that ``date2 +       |
-|                               | timedelta == date1``. (2)                    |
+|                               | timedelta == date1``. [#date2]_              |
 +-------------------------------+----------------------------------------------+
-| ``timedelta = date1 - date2`` | \(3)                                         |
+| ``timedelta = date1 - date2`` | [#date3]_                                    |
 +-------------------------------+----------------------------------------------+
-| | ``date1 == date2``          | Equality comparison. (4)                     |
+| | ``date1 == date2``          | Equality comparison. [#date4]_               |
 | | ``date1 != date2``          |                                              |
 +-------------------------------+----------------------------------------------+
-| | ``date1 < date2``           | Order comparison. (5)                        |
+| | ``date1 < date2``           | Order comparison. [#date5]_                  |
 | | ``date1 > date2``           |                                              |
 | | ``date1 <= date2``          |                                              |
 | | ``date1 >= date2``          |                                              |
 +-------------------------------+----------------------------------------------+
 
-Notes:
+.. rubric:: Notes:
 
-(1)
+.. [#date1]
    *date2* is moved forward in time if ``timedelta.days > 0``, or backward if
    ``timedelta.days < 0``. Afterward ``date2 - date1 == timedelta.days``.
    ``timedelta.seconds`` and ``timedelta.microseconds`` are ignored.
    :exc:`OverflowError` is raised if ``date2.year`` would be smaller than
    :const:`MINYEAR` or larger than :const:`MAXYEAR`.
 
-(2)
+.. [#date2]
    ``timedelta.seconds`` and ``timedelta.microseconds`` are ignored.
 
-(3)
+.. [#date3]
    This is exact, and cannot overflow. ``timedelta.seconds`` and
    ``timedelta.microseconds`` are 0, and ``date2 + timedelta == date1`` after.
 
-(4)
+.. [#date4]
    :class:`date` objects are equal if they represent the same date.
 
    :class:`!date` objects that are not also :class:`.datetime` instances
    are never equal to :class:`!datetime` objects, even if they represent
    the same date.
 
-(5)
+.. [#date5]
    *date1* is considered less than *date2* when *date1* precedes *date2* in time.
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
    date2.toordinal()``.
@@ -1260,22 +1260,24 @@ Supported operations:
 +---------------------------------------+--------------------------------+
 | Operation                             | Result                         |
 +=======================================+================================+
-| ``datetime2 = datetime1 + timedelta`` | \(1)                           |
+| ``datetime2 = datetime1 + timedelta`` | [#dt1]_                        |
 +---------------------------------------+--------------------------------+
-| ``datetime2 = datetime1 - timedelta`` | \(2)                           |
+| ``datetime2 = datetime1 - timedelta`` | [#dt2]_                        |
 +---------------------------------------+--------------------------------+
-| ``timedelta = datetime1 - datetime2`` | \(3)                           |
+| ``timedelta = datetime1 - datetime2`` | [#dt3]_                        |
 +---------------------------------------+--------------------------------+
-| | ``datetime1 == datetime2``          | Equality comparison. (4)       |
+| | ``datetime1 == datetime2``          | Equality comparison. [#dt4]_   |
 | | ``datetime1 != datetime2``          |                                |
 +---------------------------------------+--------------------------------+
-| | ``datetime1 < datetime2``           | Order comparison. (5)          |
+| | ``datetime1 < datetime2``           | Order comparison. [#dt5]_      |
 | | ``datetime1 > datetime2``           |                                |
 | | ``datetime1 <= datetime2``          |                                |
 | | ``datetime1 >= datetime2``          |                                |
 +---------------------------------------+--------------------------------+
 
-(1)
+.. rubric:: Notes
+
+.. [#dt1]
    ``datetime2`` is a duration of ``timedelta`` removed from ``datetime1``, moving forward in
    time if ``timedelta.days > 0``, or backward if ``timedelta.days < 0``. The
    result has the same :attr:`~.datetime.tzinfo` attribute as the input datetime, and
@@ -1284,12 +1286,12 @@ Supported operations:
    :const:`MAXYEAR`. Note that no time zone adjustments are done even if the
    input is an aware object.
 
-(2)
+.. [#dt2]
    Computes the ``datetime2`` such that ``datetime2 + timedelta == datetime1``. As for
    addition, the result has the same :attr:`~.datetime.tzinfo` attribute as the input
    datetime, and no time zone adjustments are done even if the input is aware.
 
-(3)
+.. [#dt3]
    Subtraction of a :class:`.datetime` from a :class:`.datetime` is defined only if
    both operands are naive, or if both are aware. If one is aware and the other is
    naive, :exc:`TypeError` is raised.
@@ -1304,7 +1306,7 @@ Supported operations:
    result is ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None)
    - b.utcoffset())`` except that the implementation never overflows.
 
-(4)
+.. [#dt4]
    :class:`.datetime` objects are equal if they represent the same date
    and time, taking into account the time zone.
 
@@ -1319,7 +1321,7 @@ Supported operations:
    :class:`!datetime` instances in a repeated interval are never equal to
    :class:`!datetime` instances in other time zone.
 
-(5)
+.. [#dt5]
    *datetime1* is considered less than *datetime2* when *datetime1* precedes
    *datetime2* in time, taking into account the time zone.
 
@@ -2501,12 +2503,12 @@ requires, and these work on all platforms with a standard C implementation.
 +-----------+--------------------------------+------------------------+-------+
 | Directive | Meaning                        | Example                | Notes |
 +===========+================================+========================+=======+
-| ``%a``    | Weekday as locale's            || Sun, Mon, ..., Sat    | \(1)  |
+| ``%a``    | Weekday as locale's            || Sun, Mon, ..., Sat    |[#f1]_ |
 |           | abbreviated name.              |  (en_US);              |       |
 |           |                                || So, Mo, ..., Sa       |       |
 |           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%A``    | Weekday as locale's full name. || Sunday, Monday, ...,  | \(1)  |
+| ``%A``    | Weekday as locale's full name. || Sunday, Monday, ...,  |[#f1]_ |
 |           |                                |  Saturday (en_US);     |       |
 |           |                                || Sonntag, Montag, ..., |       |
 |           |                                |  Samstag (de_DE)       |       |
@@ -2515,84 +2517,84 @@ requires, and these work on all platforms with a standard C implementation.
 |           | where 0 is Sunday and 6 is     |                        |       |
 |           | Saturday.                      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%d``    | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
+| ``%d``    | Day of the month as a          | 01, 02, ..., 31        |[#f9]_ |
+|           | zero-padded decimal number.    |                        |[#fa]_ |
 +-----------+--------------------------------+------------------------+-------+
-| ``%b``    | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
+| ``%b``    | Month as locale's abbreviated  || Jan, Feb, ..., Dec    |[#f1]_ |
 |           | name.                          |  (en_US);              |       |
 |           |                                || Jan, Feb, ..., Dez    |       |
 |           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%B``    | Month as locale's full name.   || January, February,    | \(1)  |
+| ``%B``    | Month as locale's full name.   || January, February,    |[#f1]_ |
 |           |                                |  ..., December (en_US);|       |
 |           |                                || Januar, Februar, ..., |       |
 |           |                                |  Dezember (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        | \(9)  |
+| ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        |[#f9]_ |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%y``    | Year without century as a      | 00, 01, ..., 99        | \(9)  |
+| ``%y``    | Year without century as a      | 00, 01, ..., 99        |[#f9]_ |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Y``    | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
+| ``%Y``    | Year with century as a decimal | 0001, 0002, ..., 2013, |[#f2]_ |
 |           | number.                        | 2014, ..., 9998, 9999  |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        | \(9)  |
+| ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        |[#f9]_ |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        | \(9)  |
+| ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        |[#f9]_ |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%p``    | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
-|           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
+| ``%p``    | Locale's equivalent of either  || AM, PM (en_US);       |[#f1]_ |
+|           | AM or PM.                      || am, pm (de_DE)        |[#f3]_ |
 +-----------+--------------------------------+------------------------+-------+
-| ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
+| ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        |[#f9]_ |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%S``    | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
-|           | decimal number.                |                        | \(9)  |
+| ``%S``    | Second as a zero-padded        | 00, 01, ..., 59        |[#f4]_ |
+|           | decimal number.                |                        |[#f9]_ |
 +-----------+--------------------------------+------------------------+-------+
-| ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(5)  |
+| ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   |[#f5]_ |
 |           | number, zero-padded to 6       | 999999                 |       |
 |           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
+| ``%z``    | UTC offset in the form         | (empty), +0000,        |[#f6]_ |
 |           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |
 |           | string if the object is        | +063415,               |       |
 |           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
+| ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      |[#f6]_ |
 |           | if the object is naive).       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%j``    | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
+| ``%j``    | Day of the year as a           | 001, 002, ..., 366     |[#f9]_ |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
-|           | (Sunday as the first day of    |                        | \(9)  |
+| ``%U``    | Week number of the year        | 00, 01, ..., 53        |[#f7]_ |
+|           | (Sunday as the first day of    |                        |[#f9]_ |
 |           | the week) as a zero-padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Sunday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(7), |
-|           | (Monday as the first day of    |                        | \(9)  |
+| ``%W``    | Week number of the year        | 00, 01, ..., 53        |[#f7]_ |
+|           | (Monday as the first day of    |                        |[#f9]_ |
 |           | the week) as a zero-padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
 |           | new year preceding the first   |                        |       |
 |           | Monday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
+| ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   |[#f1]_ |
 |           | time representation.           |  1988 (en_US);         |       |
 |           |                                || Di 16 Aug 21:30:00    |       |
 |           |                                |  1988 (de_DE)          |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%x``    | Locale's appropriate date      || 08/16/88 (None);      | \(1)  |
+| ``%x``    | Locale's appropriate date      || 08/16/88 (None);      |[#f1]_ |
 |           | representation.                || 08/16/1988 (en_US);   |       |
 |           |                                || 16.08.1988 (de_DE)    |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%X``    | Locale's appropriate time      || 21:30:00 (en_US);     | \(1)  |
+| ``%X``    | Locale's appropriate time      || 21:30:00 (en_US);     |[#f1]_ |
 |           | representation.                || 21:30:00 (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%%``    | A literal ``'%'`` character.   | %                      |       |
@@ -2604,7 +2606,7 @@ convenience. These parameters all correspond to ISO 8601 date values.
 +-----------+--------------------------------+------------------------+-------+
 | Directive | Meaning                        | Example                | Notes |
 +===========+================================+========================+=======+
-| ``%G``    | ISO 8601 year with century     | 0001, 0002, ..., 2013, | \(8)  |
+| ``%G``    | ISO 8601 year with century     | 0001, 0002, ..., 2013, |[#f8]_ |
 |           | representing the year that     | 2014, ..., 9998, 9999  |       |
 |           | contains the greater part of   |                        |       |
 |           | the ISO week (``%V``).         |                        |       |
@@ -2612,13 +2614,13 @@ convenience. These parameters all correspond to ISO 8601 date values.
 | ``%u``    | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
 |           | number where 1 is Monday.      |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8), |
-|           | number with Monday as          |                        | \(9)  |
+| ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        |[#f8]_ |
+|           | number with Monday as          |                        |[#f9]_ |
 |           | the first day of the week.     |                        |       |
 |           | Week 01 is the week containing |                        |       |
 |           | Jan 4.                         |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
+| ``%:z``   | UTC offset in the form         | (empty), +00:00,       |[#f6]_ |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
 |           | (empty string if the object is | +06:34:15,             |       |
 |           | naive).                        | -03:07:12.345216       |       |
@@ -2710,15 +2712,15 @@ platform-dependent. On some platforms such code points are preserved intact in
 the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
 an empty string instead.
 
-Notes:
+.. rubric:: Notes
 
-(1)
+.. [#f1]
    Because the format depends on the current locale, care should be taken when
    making assumptions about the output value. Field orderings will vary (for
    example, "month/day/year" versus "day/month/year"), and the output may
    contain non-ASCII characters.
 
-(2)
+.. [#f2]
    The :meth:`~.datetime.strptime` method can parse years in the full [1, 9999] range, but
    years < 1000 must be zero-filled to 4-digit width.
 
@@ -2730,22 +2732,22 @@ Notes:
       In version 3.2, :meth:`~.datetime.strftime` method was restricted to
       years >= 1000.
 
-(3)
+.. [#f3]
    When used with the :meth:`~.datetime.strptime` method, the ``%p`` directive only affects
    the output hour field if the ``%I`` directive is used to parse the hour.
 
-(4)
+.. [#f4]
    Unlike the :mod:`time` module, the :mod:`!datetime` module does not support
    leap seconds.
 
-(5)
+.. [#f5]
    When used with the :meth:`~.datetime.strptime` method, the ``%f`` directive
    accepts from one to six digits and zero pads on the right. ``%f`` is
    an extension to the set of format characters in the C standard (but
    implemented separately in datetime objects, and therefore always
    available).
 
-(6)
+.. [#f6]
    For a naive object, the ``%z``, ``%:z`` and ``%Z`` format codes are replaced
    by empty strings.
 
@@ -2802,23 +2804,23 @@ Notes:
       aware :class:`.datetime` object will be produced. The ``tzinfo`` of the
       result will be set to a :class:`timezone` instance.
 
-(7)
+.. [#f7]
    When used with the :meth:`~.datetime.strptime` method, ``%U`` and ``%W`` are only used
    in calculations when the day of the week and the calendar year (``%Y``)
    are specified.
 
-(8)
+.. [#f8]
    Similar to ``%U`` and ``%W``, ``%V`` is only used in calculations when the
    day of the week and the ISO year (``%G``) are specified in a
    :meth:`~.datetime.strptime` format string. Also note that ``%G`` and ``%Y`` are not
    interchangeable.
 
-(9)
+.. [#f9]
    When used with the :meth:`~.datetime.strptime` method, the leading zero is optional
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
-(10)
+.. [#fa]
    When parsing a month and day using :meth:`~.datetime.strptime`, always
    include a year in the format.  If the value you need to parse lacks a year,
    append an explicit dummy leap year.  Otherwise your code will raise an
