@@ -1,0 +1,29 @@
+{#
+  Customization of sphinx's basic/localtoc.html
+
+  - When present, display links to the parent pages within sections,
+    rather than link to the global contents
+  - When parents are absent, display a link to the document root using the docstitle
+#}
+  <div>
+    <div>
+{%- if parents %}
+{%- for parent in parents %}
+      <h{{ loop.index0 + 3 }}>
+        <a href="{{ parent.link|e }}" 
+           title="{{ parent.title }}">
+           {{ parent.title }}
+        </a>
+      </h{{ loop.index0 + 3 }}>
+{%- endfor %}
+{%- else %}
+      <h3>
+        <a href="{{ pathto(root_doc)|e }}"
+           title="{{ docstitle|e }}">
+           {{ docstitle|e }}
+        </a>
+      </h3>
+{%- endif %}
+    </div>
+    {{ toc }}
+  </div>
