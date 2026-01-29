@@ -634,10 +634,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         yield 'oldapi', newspec
 
     params_test_get_encoded_word__invalid_input = expect_get_encoded_word_raise(
-        missing_start_raises =                      'abc',
-        missing_end_raises =                        '=?abc',
-        missing_middle_raises =                     '=?abc?=',
-        invalid_cte_raises =                        '=?utf-8?X?abc?=',
+        no_chrome =                                 'content',
+        start_and_charset_only =                    '=?UTF-8',
+        missing_both_middle =                       '=?content?=',
+        unknown_cte =                               '=?UTF-8?X?content?=',
         )
 
     params_test_get_encoded_word = old_api_only(
