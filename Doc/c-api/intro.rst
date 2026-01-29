@@ -187,9 +187,8 @@ complete listing.
    expensive operation to this macro. Instead, store the result as a
    variable and then pass it.
 
-   *type* is the type of the expression. In modern versions of Python, this is
-   unused and only kept for backwards compatibility. Historically, *type* was
-   used to cast *integer*.
+   *type* is unused and only kept for backwards compatibility. Historically,
+   *type* was used to cast *integer*.
 
    .. versionchanged:: 3.1
 
