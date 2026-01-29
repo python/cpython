@@ -587,7 +587,7 @@ third party, such as running code when a module is unloaded::
 
     import weakref, sys
     def unloading_module():
-        # implicit reference to the module globals from the function body
+        ...  # implicit reference to the module globals from the function body
     weakref.finalize(sys.modules[__name__], unloading_module)
 
 
