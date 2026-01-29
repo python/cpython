@@ -344,7 +344,7 @@ class MacOSXOSAScriptTest(unittest.TestCase):
         url = "https://python.org"
         self.browser.open(url)
         self.assertTrue(self.popen_pipe._closed)
-        self.assertEqual(self.popen_pipe.cmd, "osascript")
+        self.assertEqual(self.popen_pipe.cmd, "/usr/bin/osascript")
         script = self.popen_pipe.pipe.getvalue()
         self.assertEqual(script.strip(), f'open location "{url}"')
 
