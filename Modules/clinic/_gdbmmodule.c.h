@@ -43,7 +43,7 @@ exit:
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_setdefault__doc__,
-"setdefault($self, key, default=None, /)\n"
+"setdefault($self, key, default, /)\n"
 "--\n"
 "\n"
 "Get value for key, or set it to default and return default if not present.");
@@ -60,17 +60,13 @@ _gdbm_gdbm_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
-    PyObject *default_value = Py_None;
+    PyObject *default_value;
 
-    if (!_PyArg_CheckPositional("setdefault", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("setdefault", nargs, 2, 2)) {
         goto exit;
     }
     key = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
     default_value = args[1];
-skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _gdbm_gdbm_setdefault_impl((gdbmobject *)self, key, default_value);
     Py_END_CRITICAL_SECTION();
@@ -389,4 +385,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8bca34ce9d4493dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0847daeab077bbe0 input=a9049054013a1b77]*/
