@@ -1,0 +1,1 @@
+Fix ``testGetServBy`` in ``test_socket.py`` on systems without certain entries in ``/etc/services``.

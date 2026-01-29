@@ -7,6 +7,7 @@ from test.support import (
 from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
+import collections
 import contextlib
 import decimal
 import errno
@@ -203,6 +204,28 @@ def _have_socket_hyperv():
     else:
         s.close()
     return True
+
+
+def _find_service(expected_protocols,
+                  services_file='/etc/services'):
+    if not os.path.exists(services_file):
+        return None
+    expected_protocols = set(expected_protocols)
+    services = collections.defaultdict(set)
+    with open(services_file, 'r') as f:
+        for line in map(str.strip, f):
+            if line.startswith('#'):
+                continue
+            tokens = line.split()
+            if len(tokens) < 2 or '/' not in tokens[1]:
+                continue
+            service_name = tokens[0]
+            _, service_protocol = tokens[1].split('/', maxsplit=1)
+            service_protocols = services[service_name]
+            service_protocols.add(service_protocol)
+            if service_protocols <= expected_protocols:
+                return service_name
+    return None
 
 
 @contextlib.contextmanager
@@ -1285,7 +1308,10 @@ class GeneralModuleTests(unittest.TestCase):
             except OSError:
                 pass
         else:
-            raise OSError
+            service = _find_service(['tcp'])
+            if service is None:
+                self.skipTest('No available TCP service found.')
+            port = socket.getservbyname(service, 'tcp')
         # Try same call with optional protocol omitted
         # Issue gh-71123: this fails on Android before API level 23.
         if not (support.is_android and platform.android_ver().api_level < 23):
