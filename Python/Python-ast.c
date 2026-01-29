@@ -8520,6 +8520,19 @@ _PyAST_arguments(asdl_arg_seq * posonlyargs, asdl_arg_seq * args, arg_ty
     p = (arguments_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
+    if (kwonlyargs == NULL) {
+        kwonlyargs = _Py_asdl_arg_seq_new(0, arena);
+        if (!kwonlyargs) {
+            return NULL;
+        }
+    }
+    if (kw_defaults == NULL) {
+        kw_defaults = _Py_asdl_expr_seq_new(asdl_seq_LEN(kwonlyargs), arena);
+        if (!kw_defaults) {
+            return NULL;
+        }
+    }
+    assert(asdl_seq_LEN(kw_defaults) == asdl_seq_LEN(kwonlyargs));
     p->posonlyargs = posonlyargs;
     p->args = args;
     p->vararg = vararg;
