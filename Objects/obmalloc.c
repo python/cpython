@@ -496,10 +496,30 @@ void *
 _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
 {
 #ifdef MS_WINDOWS
+#  ifdef PYMALLOC_USE_HUGEPAGES
+    void *ptr = VirtualAlloc(NULL, size,
+                    MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
+                    PAGE_READWRITE);
+    if (ptr != NULL)
+        return ptr;
+    /* Fall back to regular pages */
+#  endif
     return VirtualAlloc(NULL, size,
                         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 #elif defined(ARENAS_USE_MMAP)
     void *ptr;
+#  ifdef PYMALLOC_USE_HUGEPAGES
+#    ifdef MAP_HUGETLB
+    ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
+               MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB, -1, 0);
+    if (ptr != MAP_FAILED) {
+        assert(ptr != NULL);
+        (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc:hugepage");
+        return ptr;
+    }
+    /* Fall back to regular pages */
+#    endif
+#  endif
     ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
                MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     if (ptr == MAP_FAILED)

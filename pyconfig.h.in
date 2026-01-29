@@ -1739,6 +1739,9 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Define to use huge pages for pymalloc arenas */
+#undef PYMALLOC_USE_HUGEPAGES
+
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
 
