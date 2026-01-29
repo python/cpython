@@ -380,6 +380,14 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return 2;
     }
 
+    struct _Py_stat_struct sb;
+    if (_Py_fstat_noraise(fileno(fp), &sb) == 0 && S_ISDIR(sb.st_mode)) {
+        PySys_FormatStderr("%S: %R is a directory, cannot continue\n",
+                           program_name, filename);
+        fclose(fp);
+        return 1;
+    }
+
     if (skip_source_first_line) {
         int ch;
         /* Push back first newline so line numbers remain the same */
@@ -389,14 +397,6 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
                 break;
             }
         }
-    }
-
-    struct _Py_stat_struct sb;
-    if (_Py_fstat_noraise(fileno(fp), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-        PySys_FormatStderr("%S: %R is a directory, cannot continue\n",
-                           program_name, filename);
-        fclose(fp);
-        return 1;
     }
 
     // Call pending calls like signal handlers (SIGINT)
