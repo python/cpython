@@ -1,0 +1,1 @@
+For Windows, os.path.ismount() now returns False for non-existent drive letter roots.
