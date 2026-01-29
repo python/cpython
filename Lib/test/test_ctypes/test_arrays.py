@@ -103,6 +103,50 @@ class ArrayTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             del ca[0]
 
+    def test_ctypes_array_class_assignment_incompatible(self):
+        A = c_long * 3
+        B = c_long * 5
+        x = A(1, 2, 3)
+
+        with self.assertRaises(TypeError):
+            x.__class__ = B
+
+    def test_ctypes_array_class_assignment_incompatible_target(self):
+        A = c_int * 3
+        class OtherArray(Array):
+            _type_ = c_int
+            _length_ = 4   # incompatible length
+
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = OtherArray
+
+
+    def test_ctypes_array_class_assignment_zero_length(self):
+        A = c_long * 0
+        B = c_long * 1
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = B
+
+    def test_ctypes_array_class_assignment_incompatible_element_type(self):
+        A = c_int * 3
+        B = c_double * 3
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = B
+
+    def test_ctypes_array_class_assignment_signed_unsigned(self):
+        A = c_long * 3
+        B = c_ulonglong * 3
+        a = A()
+
+        with self.assertRaises(TypeError):
+            a.__class__ = B
+
     def test_step_overflow(self):
         a = (c_int * 5)()
         a[3::sys.maxsize] = (1,)
