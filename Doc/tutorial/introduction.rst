@@ -140,11 +140,12 @@ and uses the ``j`` or ``J`` suffix to indicate the imaginary part
 Text
 ----
 
-Python can manipulate text (represented by type :class:`str`, so-called
-"strings") as well as numbers.  This includes characters "``!``", words
-"``rabbit``", names "``Paris``", sentences "``Got your back.``", etc.
-"``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
-quotes (``"..."``) with the same result [#]_.
+Python can manipulate text (represented by the :class:`str` type, so-called
+"strings") as well as numbers.  This includes characters (“``!``"), words
+(“``rabbit``"), names (“``Paris``"), sentences (“``Got your back.``"), and even
+special characters and emoticons (“``Yay! :)``"). They can be enclosed in
+single quotes (``'...'``) or double quotes (``"..."``) with the same
+result [#]_.
 
 .. code-block:: pycon
 
