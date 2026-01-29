@@ -229,8 +229,9 @@ The module defines the following user-callable items:
 
    The file descriptor is :ref:`not inherited by child processes <fd_inheritance>`.
 
-   Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
-   for deleting the temporary file when done with it.
+   Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible for closing
+   and deleting the temporary file (by e.g. using :func:`os.close` and
+   :func:`os.remove`) when done with it.
 
    If *suffix* is not ``None``, the file name will end with that suffix,
    otherwise there will be no suffix.  :func:`mkstemp` does not put a dot
