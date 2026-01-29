@@ -5105,6 +5105,8 @@ class TestStdLib(unittest.TestCase):
                 ('__qualname__', 'TestStdLib.Color'),
                 ('__init_subclass__', getattr(self.Color, '__init_subclass__')),
                 ('__iter__', self.Color.__iter__),
+                ('_missing_', self.Color._missing_),
+                ('_generate_next_value_', self.Color._generate_next_value_),
                 ))
         result = dict(inspect.getmembers(self.Color))
         self.assertEqual(set(values.keys()), set(result.keys()))
@@ -5147,6 +5149,10 @@ class TestStdLib(unittest.TestCase):
                     defining_class=self.Color, object='Color'),
                 Attribute(name='__qualname__', kind='data',
                     defining_class=self.Color, object='TestStdLib.Color'),
+                Attribute(name='_missing_', kind='class method',
+                    defining_class=Enum, object=self.Color._missing_),
+                Attribute(name='_generate_next_value_', kind='static method',
+                    defining_class=self.Color, object=staticmethod(self.Color._generate_next_value_)),
                 Attribute(name='YELLOW', kind='data',
                     defining_class=self.Color, object=self.Color.YELLOW),
                 Attribute(name='MAGENTA', kind='data',
@@ -5178,10 +5184,10 @@ class TestStdLib(unittest.TestCase):
                 # __doc__ is too big to check exactly, so treat the same as __init_subclass__
                 for name in ('name','kind','defining_class'):
                     if getattr(v, name) != getattr(r, name):
-                        print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                        print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                         failed = True
             elif r != v:
-                print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                 failed = True
         if failed:
             self.fail("result does not equal expected, see print above")
@@ -5537,6 +5543,7 @@ def enum_dir(cls):
             '__class__', '__contains__', '__doc__', '__getitem__',
             '__iter__', '__len__', '__members__', '__module__',
             '__name__', '__qualname__',
+            '_generate_next_value_', '_missing_',
             ]
             + members
             )
@@ -5552,7 +5559,8 @@ def enum_dir(cls):
 
 def member_dir(member):
     if member.__class__._member_type_ is object:
-        allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
+        allowed = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value',
+                       '_generate_next_value_', '_missing_', '_add_alias_', '_add_value_alias_'])
     else:
         allowed = set(dir(member))
     for cls in member.__class__.mro():
