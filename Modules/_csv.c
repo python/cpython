@@ -139,16 +139,9 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
 
-    PyObject *write;    /* write output lines to this file */
-
-    DialectObj *dialect;    /* parsing dialect */
-
-    Py_UCS4 *rec;            /* buffer for parser.join */
-    Py_ssize_t rec_size;        /* size of allocated record */
-    Py_ssize_t rec_len;         /* length of record */
-    int num_fields;             /* number of fields in record */
-
-    PyObject *error_obj;       /* cached error object */
+    PyObject *write;            /* write output lines to this file */
+    DialectObj *dialect;        /* parsing dialect */
+    PyObject *error_obj;        /* cached error object */
 } WriterObj;
 
 #define _DialectObj_CAST(op)    ((DialectObj *)(op))
@@ -1120,197 +1113,126 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 /*
  * WRITER
  */
-/* ---------------------------------------------------------------- */
-static void
-join_reset(WriterObj *self)
-{
-    self->rec_len = 0;
-    self->num_fields = 0;
-}
-
-#define MEM_INCR 32768
-
-/* Calculate new record length or append field to record.  Return new
- * record length.
- */
-static Py_ssize_t
-join_append_data(WriterObj *self, int field_kind, const void *field_data,
-                 Py_ssize_t field_len, int *quoted,
-                 int copy_phase)
-{
-    DialectObj *dialect = self->dialect;
-    Py_ssize_t i;
-    Py_ssize_t rec_len;
-
-#define INCLEN \
-    do {\
-        if (!copy_phase && rec_len == PY_SSIZE_T_MAX) {    \
-            goto overflow; \
-        } \
-        rec_len++; \
-    } while(0)
-
-#define ADDCH(c)                                \
-    do {\
-        if (copy_phase) \
-            self->rec[rec_len] = c;\
-        INCLEN;\
-    } while(0)
-
-    rec_len = self->rec_len;
-
-    /* If this is not the first field we need a field separator */
-    if (self->num_fields > 0)
-        ADDCH(dialect->delimiter);
-
-    /* Handle preceding quote */
-    if (copy_phase && *quoted)
-        ADDCH(dialect->quotechar);
-
-    /* Copy/count field data */
-    /* If field is null just pass over */
-    for (i = 0; field_data && (i < field_len); i++) {
-        Py_UCS4 c = PyUnicode_READ(field_kind, field_data, i);
-        int want_escape = 0;
-
-        if (c == dialect->delimiter ||
-            c == dialect->escapechar ||
-            c == dialect->quotechar  ||
-            c == '\n'  ||
-            c == '\r'  ||
-            PyUnicode_FindChar(
-                dialect->lineterminator, c, 0,
-                PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
-            if (dialect->quoting == QUOTE_NONE)
-                want_escape = 1;
-            else {
-                if (c == dialect->quotechar) {
-                    if (dialect->doublequote)
-                        ADDCH(dialect->quotechar);
-                    else
-                        want_escape = 1;
-                }
-                else if (c == dialect->escapechar) {
-                    want_escape = 1;
-                }
-                if (!want_escape)
-                    *quoted = 1;
-            }
-            if (want_escape) {
-                if (dialect->escapechar == NOT_SET) {
-                    PyErr_Format(self->error_obj,
-                                 "need to escape, but no escapechar set");
-                    return -1;
-                }
-                ADDCH(dialect->escapechar);
-            }
-        }
-        /* Copy field character into record buffer.
-         */
-        ADDCH(c);
+static inline int
+_is_structural_char(Py_UCS4 c, DialectObj *dialect, Py_ssize_t term_len) {
+    if (c == dialect->delimiter || c == '\n' || c == '\r') {
+        return 1;
     }
-
-    if (*quoted) {
-        if (copy_phase)
-            ADDCH(dialect->quotechar);
-        else {
-            INCLEN; /* starting quote */
-            INCLEN; /* ending quote */
-        }
+    if (term_len > 0 && PyUnicode_FindChar(dialect->lineterminator, c, 0, term_len, 1) >= 0) {
+        return 1;
     }
-    return rec_len;
-
-  overflow:
-    PyErr_NoMemory();
-    return -1;
-#undef ADDCH
-#undef INCLEN
+    return 0;
 }
 
 static int
-join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
-{
-    assert(rec_len >= 0);
-
-    if (rec_len > self->rec_size) {
-        size_t rec_size_new = (size_t)(rec_len / MEM_INCR + 1) * MEM_INCR;
-        Py_UCS4 *rec_new = self->rec;
-        PyMem_Resize(rec_new, Py_UCS4, rec_size_new);
-        if (rec_new == NULL) {
-            PyErr_NoMemory();
-            return 0;
-        }
-        self->rec = rec_new;
-        self->rec_size = (Py_ssize_t)rec_size_new;
-    }
-    return 1;
-}
-
-static int
-join_append(WriterObj *self, PyObject *field, int quoted)
+_write_field(PyUnicodeWriter *writer, WriterObj *self, PyObject *field, int *quoted)
 {
     DialectObj *dialect = self->dialect;
-    int field_kind = -1;
-    const void *field_data = NULL;
+    Py_ssize_t term_len = PyUnicode_GET_LENGTH(dialect->lineterminator);
     Py_ssize_t field_len = 0;
-    Py_ssize_t rec_len;
 
-    if (field != NULL) {
-        field_kind = PyUnicode_KIND(field);
-        field_data = PyUnicode_DATA(field);
+    bool is_none = (field == NULL);
+
+    if (!is_none) {
+        assert(PyUnicode_Check(field));
         field_len = PyUnicode_GET_LENGTH(field);
-    }
-    if (!field_len && dialect->delimiter == ' ' && dialect->skipinitialspace) {
-        if (dialect->quoting == QUOTE_NONE ||
-            (field == NULL &&
-             (dialect->quoting == QUOTE_STRINGS ||
-              dialect->quoting == QUOTE_NOTNULL)))
-        {
-            PyErr_Format(self->error_obj,
-                         "empty field must be quoted if delimiter is a space "
-                         "and skipinitialspace is true");
-            return 0;
+        if (field_len < 0) {
+            return -1;
         }
-        quoted = 1;
     }
-    rec_len = join_append_data(self, field_kind, field_data, field_len,
-                               &quoted, 0);
-    if (rec_len < 0)
-        return 0;
 
-    /* grow record buffer if necessary */
-    if (!join_check_rec_size(self, rec_len))
-        return 0;
+    if (field_len == 0 && dialect->delimiter == ' ' && dialect->skipinitialspace) {
+        if (dialect->quoting == QUOTE_NONE ||
+            (is_none && (dialect->quoting == QUOTE_STRINGS ||
+                         dialect->quoting == QUOTE_NOTNULL))) {
+            PyErr_SetString(self->error_obj,
+                "empty field must be quoted if delimiter is a space and skipinitialspace is true");
+            return -1;
+        }
+        *quoted = 1;
+    }
 
-    self->rec_len = join_append_data(self, field_kind, field_data, field_len,
-                                     &quoted, 1);
-    self->num_fields++;
+    /* For ANY quoting != QUOTE_NONE, structural characters force quoting */
+    if (!*quoted && !is_none && field_len > 0 && dialect->quoting != QUOTE_NONE) {
+        Py_ssize_t i;
+        for (i = 0; i < field_len; i++) {
+            Py_UCS4 c = PyUnicode_READ_CHAR(field, i);
+            if (_is_structural_char(c, dialect, term_len) ||
+                (c == dialect->quotechar && dialect->doublequote)) {
+                *quoted = 1;
+                break;
+            }
+        }
+    }
 
-    return 1;
-}
+    /* open if needed */
+    if (*quoted) {
+        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
+            return -1;
+        }
+    }
 
-static int
-join_append_lineterminator(WriterObj *self)
-{
-    Py_ssize_t terminator_len, i;
-    int term_kind;
-    const void *term_data;
+    if (!is_none && field_len > 0) {
+        Py_ssize_t i;
+        for (i = 0; i < field_len; i++) {
+            Py_UCS4 c = PyUnicode_READ_CHAR(field, i);
 
-    terminator_len = PyUnicode_GET_LENGTH(self->dialect->lineterminator);
-    if (terminator_len == -1)
-        return 0;
+            if (dialect->quoting == QUOTE_NONE) {
+                /* escape structural characters when we cannot quote. */
+                if (_is_structural_char(c, dialect, term_len) ||
+                    c == dialect->escapechar ||
+                    c == dialect->quotechar) {
+                    if (dialect->escapechar == NOT_SET) {
+                        PyErr_SetString(self->error_obj, "need to escape, but no escapechar set");
+                        return -1;
+                    }
+                    if (PyUnicodeWriter_WriteChar(writer, dialect->escapechar) < 0) {
+                        return -1;
+                    }
+                }
+            }
+            else {
+                /* handle in-field quoting/escaping. */
+                if (c == dialect->quotechar) {
+                    if (dialect->doublequote) {
+                        /* double the quote inside a quoted field */
+                        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
+                            return -1;
+                        }
+                    }
+                    else {
+                        /* ...or escape if we cannot double. */
+                        if (dialect->escapechar == NOT_SET) {
+                            PyErr_SetString(self->error_obj, "need to escape, but no escapechar set");
+                            return -1;
+                        }
+                        if (PyUnicodeWriter_WriteChar(writer, dialect->escapechar) < 0) {
+                            return -1;
+                        }
+                    }
+                }
+                else if (c == dialect->escapechar && dialect->escapechar != NOT_SET) {
+                    /* escape literal escapechar */
+                    if (PyUnicodeWriter_WriteChar(writer, dialect->escapechar) < 0) {
+                        return -1;
+                    }
+                }
+            }
 
-    /* grow record buffer if necessary */
-    if (!join_check_rec_size(self, self->rec_len + terminator_len))
-        return 0;
+            if (PyUnicodeWriter_WriteChar(writer, c) < 0) {
+                return -1;
+            }
+        }
+    }
 
-    term_kind = PyUnicode_KIND(self->dialect->lineterminator);
-    term_data = PyUnicode_DATA(self->dialect->lineterminator);
-    for (i = 0; i < terminator_len; i++)
-        self->rec[self->rec_len + i] = PyUnicode_READ(term_kind, term_data, i);
-    self->rec_len += terminator_len;
+    /* close if needed */
+    if (*quoted) {
+        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
+            return -1;
+        }
+    }
 
-    return 1;
+    return 0;
 }
 
 static PyObject *
@@ -1319,7 +1241,12 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
     WriterObj *self = _WriterObj_CAST(op);
     DialectObj *dialect = self->dialect;
     PyObject *iter, *field, *line, *result;
-    bool null_field = false;
+    PyUnicodeWriter *writer = NULL;
+    Py_ssize_t field_count = 0;
+
+    bool first_field_was_empty_like = false;
+    bool first_field_was_none = false;
+    bool first_field_was_quoted_in_loop = false;
 
     iter = PyObject_GetIter(seq);
     if (iter == NULL) {
@@ -1331,12 +1258,23 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
         return NULL;
     }
 
-    /* Join all fields in internal buffer.
-     */
-    join_reset(self);
+    writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        Py_DECREF(iter);
+        return NULL;
+    }
+
     while ((field = PyIter_Next(iter))) {
-        int append_ok;
         int quoted;
+        PyObject *str_field = NULL;
+        bool null_field = (field == Py_None);
+
+        if (field_count > 0) {
+            if (PyUnicodeWriter_WriteChar(writer, dialect->delimiter) < 0) {
+                Py_DECREF(field);
+                goto error;
+            }
+        }
 
         switch (dialect->quoting) {
         case QUOTE_NONNUMERIC:
@@ -1349,72 +1287,90 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
             quoted = PyUnicode_Check(field);
             break;
         case QUOTE_NOTNULL:
-            quoted = field != Py_None;
+            quoted = !null_field;
             break;
         default:
             quoted = 0;
             break;
         }
 
-        null_field = (field == Py_None);
-        if (PyUnicode_Check(field)) {
-            append_ok = join_append(self, field, quoted);
-            Py_DECREF(field);
+        if (null_field) {
+            str_field = NULL;
         }
-        else if (null_field) {
-            append_ok = join_append(self, NULL, quoted);
-            Py_DECREF(field);
+        else if (PyUnicode_Check(field)) {
+            str_field = Py_NewRef(field);
         }
         else {
-            PyObject *str;
-
-            str = PyObject_Str(field);
-            Py_DECREF(field);
-            if (str == NULL) {
-                Py_DECREF(iter);
-                return NULL;
+            str_field = PyObject_Str(field);
+            if (str_field == NULL) {
+                Py_DECREF(field);
+                goto error;
             }
-            append_ok = join_append(self, str, quoted);
-            Py_DECREF(str);
         }
-        if (!append_ok) {
-            Py_DECREF(iter);
-            return NULL;
+
+        /* Single empty field special case */
+        if (field_count == 0) {
+            first_field_was_none = null_field;
+            first_field_was_empty_like = null_field || !PyUnicode_GET_LENGTH(str_field);
         }
+
+        if (_write_field(writer, self, str_field, &quoted) < 0) {
+            Py_XDECREF(str_field);
+            Py_DECREF(field);
+            goto error;
+        }
+
+        if (field_count == 0) {
+            first_field_was_quoted_in_loop = (quoted != 0);
+        }
+
+        Py_XDECREF(str_field);
+        Py_DECREF(field);
+        field_count++;
+    }
+
+    if (PyErr_Occurred()) {
+        goto error;
     }
     Py_DECREF(iter);
-    if (PyErr_Occurred())
-        return NULL;
+    iter = NULL;
 
-    if (self->num_fields > 0 && self->rec_len == 0) {
+    /* Single empty-field rule */
+    if (field_count == 1 && first_field_was_empty_like && !first_field_was_quoted_in_loop) {
         if (dialect->quoting == QUOTE_NONE ||
-            (null_field &&
+            (first_field_was_none &&
              (dialect->quoting == QUOTE_STRINGS ||
-              dialect->quoting == QUOTE_NOTNULL)))
-        {
-            PyErr_Format(self->error_obj,
-                "single empty field record must be quoted");
-            return NULL;
+              dialect->quoting == QUOTE_NOTNULL))) {
+            PyErr_SetString(self->error_obj,
+                            "single empty field record must be quoted");
+            goto error_after_iter;
         }
-        self->num_fields--;
-        if (!join_append(self, NULL, 1))
-            return NULL;
+        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
+            goto error_after_iter;
+        }
+        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
+            goto error_after_iter;
+        }
     }
 
-    /* Add line terminator.
-     */
-    if (!join_append_lineterminator(self)) {
-        return NULL;
+    if (PyUnicodeWriter_WriteStr(writer, self->dialect->lineterminator) < 0) {
+        goto error_after_iter;
     }
 
-    line = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                     (void *) self->rec, self->rec_len);
+    line = PyUnicodeWriter_Finish(writer);
+    writer = NULL;
     if (line == NULL) {
         return NULL;
     }
     result = PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
     return result;
+
+error:
+    Py_XDECREF(iter);
+error_after_iter:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }
 
 PyDoc_STRVAR(csv_writerow_doc,
@@ -1509,9 +1465,6 @@ Writer_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     tp->tp_clear(op);
-    if (self->rec != NULL) {
-        PyMem_Free(self->rec);
-    }
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -1554,12 +1507,6 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     self->dialect = NULL;
     self->write = NULL;
-
-    self->rec = NULL;
-    self->rec_size = 0;
-    self->rec_len = 0;
-    self->num_fields = 0;
-
     self->error_obj = Py_NewRef(module_state->error_obj);
 
     if (!PyArg_UnpackTuple(args, "writer", 1, 2, &output_file, &dialect)) {
