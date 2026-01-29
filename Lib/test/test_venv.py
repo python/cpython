@@ -784,6 +784,20 @@ class BasicTest(BaseTest):
         self.assertIn('*', file_lines)
 
     @requireVenvCreate
+    def test_scm_ignore_files_git_appends_to_existing_file(self):
+        """Test that an existing .gitignore file is appended to."""
+        gitignore_path = self.get_env_file('.gitignore')
+        with open(gitignore_path, 'w', encoding='utf-8') as fp:
+            fp.write("# Existing comment\n")
+
+        self.run_with_capture(venv.create, self.env_dir,
+                              scm_ignore_files={'git'})
+
+        file_lines = self.get_text_file_contents('.gitignore').splitlines()
+        self.assertIn('# Existing comment', file_lines)
+        self.assertIn('*', file_lines)
+
+    @requireVenvCreate
     def test_create_scm_ignore_files_multiple(self):
         """
         Test that ``scm_ignore_files`` can work with multiple SCMs.
