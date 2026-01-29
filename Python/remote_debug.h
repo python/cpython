@@ -752,6 +752,7 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         if (strstr(filename, substr)) {
+            PyErr_Clear();
             retval = search_elf_file_for_section(handle, secname, start, path);
             if (retval) {
                 break;
