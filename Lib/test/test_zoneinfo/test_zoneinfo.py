@@ -1577,6 +1577,37 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
 
+    def test_inconsistent_weak_cache_get(self):
+        class Cache:
+            def get(self, key, default=None):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.Zoneinfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(TypeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(str(te.exception), "expected ZI, got int")
+
+    def test_inconsistent_weak_cache_setdefault(self):
+        class Cache:
+            def get(self, key, default=None):
+                return default
+            def setdefault(self, key, value):
+                return 1337
+
+        class ZI(self.klass):
+            pass
+        # Class attribute must be set after class creation
+        # to override zoneinfo.Zoneinfo.__init_subclass__.
+        ZI._weak_cache = Cache()
+
+        with self.assertRaises(TypeError) as te:
+            ZI("America/Los_Angeles")
+        self.assertEqual(str(te.exception), "expected ZI, got int")
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
     module = py_zoneinfo
