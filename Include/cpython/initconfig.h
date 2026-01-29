@@ -191,6 +191,9 @@ typedef struct PyConfig {
     int tlbc_enabled;
 #endif
 
+    // If equal to 0, stop Python initialization before the "main" phase.
+    int init_main;
+
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
     wchar_t *program_name;
@@ -223,9 +226,6 @@ typedef struct PyConfig {
     // Install importlib? If equals to 0, importlib is not initialized at all.
     // Needed by freeze_importlib.
     int _install_importlib;
-
-    // If equal to 0, stop Python initialization before the "main" phase.
-    int _init_main;
 
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;

@@ -696,7 +696,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_install_importlib': True,
         'check_hash_pycs_mode': 'default',
         'pathconfig_warnings': True,
-        '_init_main': True,
+        'init_main': True,
         'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': False,
         '_is_python_build': IGNORE_CONFIG,
@@ -1313,6 +1313,24 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
+
+    def test_init_main(self):
+        code = ('import _testinternalcapi, json; '
+                'print(json.dumps(_testinternalcapi.get_configs()))')
+        config = {
+            'argv': ['-c', 'arg2'],
+            'orig_argv': ['python3',
+                          '-c', code,
+                          'arg2'],
+            'program_name': './python3',
+            'run_command': code + '\n',
+            'parse_argv': True,
+            'init_main': False,
+            'sys_path_0': '',
+        }
+        self.check_all_configs("test_init_main", config,
+                               api=API_PYTHON,
+                               stderr="Run Python code before Py_InitializeMain")
 
     def test_init_parse_argv(self):
         config = {

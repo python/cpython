@@ -62,7 +62,7 @@ runtime_init(void)
     if (PyInitConfig_SetInt(config, "_install_importlib", 0) < 0) {
         goto error;
     }
-    if (PyInitConfig_SetInt(config, "_init_main", 0) < 0) {
+    if (PyInitConfig_SetInt(config, "init_main", 0) < 0) {
         goto error;
     }
 

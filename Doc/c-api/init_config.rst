@@ -1552,6 +1552,15 @@ PyConfig
 
       .. versionadded:: 3.13
 
+   .. c:member:: int init_main
+
+      If set to ``0``, :c:func:`Py_InitializeFromConfig` stops at the "Core"
+      initialization phase. See the :c:func:`Py_InitializeMain` function.
+
+      Default: ``1``.
+
+      .. versionadded:: 3.15
+
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:
@@ -2299,13 +2308,86 @@ Py_GetArgcArgv()
 
    See also :c:member:`PyConfig.orig_argv` member.
 
-Delaying main module execution
+
+Multi-Phase Initialization API
 ==============================
 
-In some embedding use cases, it may be desirable to separate interpreter initialization
-from the execution of the main module.
+This section is an API introducing multi-phase
+initialization, the core feature of :pep:`432`:
 
-This separation can be achieved by setting ``PyConfig.run_command`` to the empty
-string during initialization (to prevent the interpreter from dropping into the
-interactive prompt), and then subsequently executing the desired main module
-code using ``__main__.__dict__`` as the global namespace.
+* "Core" initialization phase, "bare minimum Python":
+
+  * Builtin types;
+  * Builtin exceptions;
+  * Builtin and frozen modules;
+  * The :mod:`sys` module is only partially initialized
+    (ex: :data:`sys.path` doesn't exist yet).
+
+* "Main" initialization phase, Python is fully initialized:
+
+  * Install and configure :mod:`importlib`;
+  * Apply the :ref:`Path Configuration <init-path-config>`;
+  * Install signal handlers;
+  * Finish :mod:`sys` module initialization (ex: create :data:`sys.stdout`
+    and :data:`sys.path`);
+  * Enable optional features like :mod:`faulthandler` and :mod:`tracemalloc`;
+  * Import the :mod:`site` module;
+  * etc.
+
+.. c:function:: PyStatus Py_InitializeMain(void)
+
+   Move to the "Main" initialization phase, finish the Python initialization.
+
+   See the :c:member:`PyConfig.init_main` member.
+
+   .. versionadded:: 3.15
+
+No module is imported during the "Core" phase and the ``importlib`` module is
+not configured: the :ref:`Path Configuration <init-path-config>` is only
+applied during the "Main" phase. It may allow to customize Python in Python to
+override or tune the :ref:`Path Configuration <init-path-config>`, maybe
+install a custom :data:`sys.meta_path` importer or an import hook, etc.
+
+It may become possible to calculate the :ref:`Path Configuration
+<init-path-config>` in Python, after the Core phase and before the Main phase,
+which is one of the :pep:`432` motivation.
+
+The "Core" phase is not properly defined: what should be and what should
+not be available at this phase is not specified yet.
+
+Example running Python code between "Core" and "Main" initialization
+phases::
+
+    void init_python(void)
+    {
+        PyStatus status;
+
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+        config.init_main = 0;
+
+        /* ... customize 'config' configuration ... */
+
+        status = Py_InitializeFromConfig(&config);
+        PyConfig_Clear(&config);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+
+        /* Use sys.stderr because sys.stdout is only created
+           by Py_InitializeMain() */
+        int res = PyRun_SimpleString(
+            "import sys; "
+            "print('Run Python code before Py_InitializeMain', "
+                   "file=sys.stderr)");
+        if (res < 0) {
+            exit(1);
+        }
+
+        /* ... put more configuration code here ... */
+
+        status = Py_InitializeMain();
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+    }
