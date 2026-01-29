@@ -2,6 +2,19 @@
 #  error "this header file must not be included directly"
 #endif
 
+PyAPI_FUNC(int) PyArg_ParseVector(
+    PyObject *const *args,
+    Py_ssize_t nargs,
+    const char *format,
+    ...);
+PyAPI_FUNC(int) PyArg_ParseVectorAndKeywords(
+    PyObject *const *args,
+    Py_ssize_t nargs,
+    PyObject *kwnames,
+    const char *format,
+    PY_CXX_CONST char * const *kwlist,
+    ...);
+
 // A data structure that can be used to run initialization code once in a
 // thread-safe manner. The C++11 equivalent is std::call_once.
 typedef struct {

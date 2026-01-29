@@ -57,8 +57,15 @@ static const char *convertsimple(PyObject *, const char **, va_list *, int,
 static Py_ssize_t convertbuffer(PyObject *, const void **p, const char **);
 static int getbuffer(PyObject *, Py_buffer *, const char**);
 
-static int vgetargskeywords(PyObject *, PyObject *,
-                            const char *, const char * const *, va_list *, int);
+static int
+vgetargskeywords(PyObject *args, PyObject *kwargs,
+                 const char *format, const char * const *kwlist,
+                 va_list *p_va, int flags);
+static int
+vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
+                      PyObject *kwargs, PyObject *kwnames,
+                      const char *format, const char * const *kwlist,
+                      va_list *p_va, int flags);
 static int vgetargskeywordsfast(PyObject *, PyObject *,
                             struct _PyArg_Parser *, va_list *, int);
 static int vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
@@ -128,6 +135,40 @@ _PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, .
     va_end(va);
     return retval;
 }
+
+int
+PyArg_ParseVector(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
+{
+    va_list va;
+    va_start(va, format);
+    int retval = vgetargs1_impl(NULL, args, nargs, format, &va, 0);
+    va_end(va);
+    return retval;
+}
+
+int
+PyArg_ParseVectorAndKeywords(PyObject *const *args, Py_ssize_t nargs,
+                             PyObject *kwnames,
+                             const char *format,
+                             const char * const *kwlist, ...)
+{
+    if ((args == NULL && nargs != 0) ||
+        (kwnames != NULL && !PyTuple_Check(kwnames)) ||
+        format == NULL ||
+        kwlist == NULL)
+    {
+        PyErr_BadInternalCall();
+        return 0;
+    }
+
+    va_list va;
+    va_start(va, kwlist);
+    int retval = vgetargskeywords_impl(args, nargs, NULL, kwnames, format,
+                                       kwlist, &va, 0);
+    va_end(va);
+    return retval;
+}
+
 
 int
 PyArg_VaParse(PyObject *args, const char *format, va_list va)
@@ -1612,11 +1653,27 @@ PyArg_ValidateKeywordArguments(PyObject *kwargs)
 static PyObject *
 new_kwtuple(const char * const *keywords, int total, int pos);
 
+static PyObject*
+find_keyword_str(PyObject *kwnames, PyObject *const *kwstack, const char *key)
+{
+    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwnames);
+    for (Py_ssize_t i = 0; i < nkwargs; i++) {
+        PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
+        assert(PyUnicode_Check(kwname));
+        if (PyUnicode_EqualToUTF8(kwname, key)) {
+            return Py_NewRef(kwstack[i]);
+        }
+    }
+    return NULL;
+}
+
 #define IS_END_OF_FORMAT(c) (c == '\0' || c == ';' || c == ':')
 
 static int
-vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
-                 const char * const *kwlist, va_list *p_va, int flags)
+vgetargskeywords_impl(PyObject *const *args, Py_ssize_t nargs,
+                      PyObject *kwargs, PyObject *kwnames,
+                      const char *format, const char * const *kwlist,
+                      va_list *p_va, int flags)
 {
     char msgbuf[512];
     int levels[32];
@@ -1625,16 +1682,18 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     int max = INT_MAX;
     int i, pos, len;
     int skip = 0;
-    Py_ssize_t nargs, nkwargs;
+    Py_ssize_t nkwargs;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
+    PyObject * const *kwstack = NULL;
 
     freelist.entries = static_entries;
     freelist.first_available = 0;
     freelist.entries_malloced = 0;
 
-    assert(args != NULL && PyTuple_Check(args));
+    assert(args != NULL || nargs == 0);
     assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert(kwnames == NULL || PyTuple_Check(kwnames));
     assert(format != NULL);
     assert(kwlist != NULL);
     assert(p_va != NULL);
@@ -1672,8 +1731,16 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         freelist.entries_malloced = 1;
     }
 
-    nargs = PyTuple_GET_SIZE(args);
-    nkwargs = (kwargs == NULL) ? 0 : PyDict_GET_SIZE(kwargs);
+    if (kwargs != NULL) {
+        nkwargs = PyDict_GET_SIZE(kwargs);
+    }
+    else if (kwnames != NULL) {
+        nkwargs = PyTuple_GET_SIZE(kwnames);
+        kwstack = args + nargs;
+    }
+    else {
+        nkwargs = 0;
+    }
     if (nargs + nkwargs > len) {
         /* Adding "keyword" (when nargs == 0) prevents producing wrong error
            messages in some special cases (see bpo-31229). */
@@ -1757,11 +1824,16 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         if (!skip) {
             PyObject *current_arg;
             if (i < nargs) {
-                current_arg = Py_NewRef(PyTuple_GET_ITEM(args, i));
+                current_arg = Py_NewRef(args[i]);
             }
             else if (nkwargs && i >= pos) {
-                if (PyDict_GetItemStringRef(kwargs, kwlist[i], &current_arg) < 0) {
-                    return cleanreturn(0, &freelist);
+                if (kwargs != NULL) {
+                    if (PyDict_GetItemStringRef(kwargs, kwlist[i], &current_arg) < 0) {
+                        return cleanreturn(0, &freelist);
+                    }
+                }
+                else {
+                    current_arg = find_keyword_str(kwnames, kwstack, kwlist[i]);
                 }
                 if (current_arg) {
                     --nkwargs;
@@ -1846,8 +1918,13 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         /* make sure there are no arguments given by name and position */
         for (i = pos; i < nargs; i++) {
             PyObject *current_arg;
-            if (PyDict_GetItemStringRef(kwargs, kwlist[i], &current_arg) < 0) {
-                return cleanreturn(0, &freelist);
+            if (kwargs != NULL) {
+                if (PyDict_GetItemStringRef(kwargs, kwlist[i], &current_arg) < 0) {
+                    return cleanreturn(0, &freelist);
+                }
+            }
+            else {
+                current_arg = find_keyword_str(kwnames, kwstack, kwlist[i]);
             }
             if (current_arg) {
                 Py_DECREF(current_arg);
@@ -1863,7 +1940,20 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         }
         /* make sure there are no extraneous keyword arguments */
         j = 0;
-        while (PyDict_Next(kwargs, &j, &key, NULL)) {
+        while (1) {
+            if (kwargs != NULL) {
+                if (!PyDict_Next(kwargs, &j, &key, NULL)) {
+                    break;
+                }
+            }
+            else {
+                if (j >= nkwargs) {
+                    break;
+                }
+                key = PyTuple_GET_ITEM(kwnames, j);
+                j++;
+            }
+
             int match = 0;
             if (!PyUnicode_Check(key)) {
                 PyErr_SetString(PyExc_TypeError,
@@ -1921,6 +2011,16 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     return cleanreturn(1, &freelist);
 }
 
+static int
+vgetargskeywords(PyObject *argstuple, PyObject *kwargs,
+                 const char *format, const char * const *kwlist,
+                 va_list *p_va, int flags)
+{
+    PyObject *const *args = _PyTuple_ITEMS(argstuple);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(argstuple);
+    return vgetargskeywords_impl(args, nargs, kwargs, NULL,
+                                 format, kwlist, p_va, flags);
+}
 
 static int
 scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
