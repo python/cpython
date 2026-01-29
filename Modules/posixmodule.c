@@ -9384,13 +9384,13 @@ os_openpty_impl(PyObject *module)
     if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
         goto posix_error;
 
-#if !defined(__CYGWIN__) && !defined(__ANDROID__) && !defined(HAVE_DEV_PTC)
+#if defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC)
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
     ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
-#endif /* HAVE_CYGWIN */
+#endif /* defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC) */
 #endif /* HAVE_OPENPTY */
 
     return Py_BuildValue("(ii)", master_fd, slave_fd);
