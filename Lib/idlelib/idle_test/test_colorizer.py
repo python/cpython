@@ -52,6 +52,12 @@ source = textwrap.dedent("""\
     '''
     case _:'''
     "match x:"
+    self. \\
+        set
+    f(self, \\
+        set())
+    x = match if match else \\
+            match
     """)
 
 
@@ -404,6 +410,7 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('28.25', ('STRING',)), ('28.38', ('STRING',)),
                     ('30.0', ('STRING',)),
                     ('31.1', ('STRING',)),
+                    ('33.4', ()), ('35.4', ("BUILTIN",)), ('37.8', ()),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -434,7 +441,11 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
         eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
-        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '33.0'))
+        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '32.0'))
+        eq(text.tag_nextrange('SYNC', '32.0'), ('33.7', '34.0'))
+        eq(text.tag_nextrange('SYNC', '34.0'), ('35.10', '36.0'))
+        eq(text.tag_nextrange('SYNC', '36.0'), ('37.13', '39.0'))
+        eq(text.tag_nextrange('SYNC', '39.0'), ())
 
     def _assert_highlighting(self, source, tag_ranges):
         """Check highlighting of a given piece of code.
