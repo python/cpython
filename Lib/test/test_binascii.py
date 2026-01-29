@@ -120,7 +120,8 @@ class BinASCIITest(unittest.TestCase):
 
     def test_base64_bad_padding(self):
         # Test malformed padding
-        def _assertRegexTemplate(assert_regex, data, non_strict_mode_expected_result):
+        def _assertRegexTemplate(assert_regex, data,
+                                 non_strict_mode_expected_result):
             data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
                 binascii.a2b_base64(data, strict_mode=True)
@@ -235,7 +236,8 @@ class BinASCIITest(unittest.TestCase):
 
     def test_base64_excess_data(self):
         # Test excess data exceptions
-        def assertExcessData(data, non_strict_expected, ignore_padchar_expected=None):
+        def assertExcessData(data, non_strict_expected,
+                             ignore_padchar_expected=None):
             assert_regex = r'(?i)Excess data'
             data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
@@ -293,7 +295,8 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'a===')
         assertInvalidLength(b'a' * 5)
         assertInvalidLength(b'a' * (4 * 87 + 1))
-        assertInvalidLength(b'A\tB\nC ??DE', strict_mode=False) # only 5 valid characters
+        assertInvalidLength(b'A\tB\nC ??DE', # only 5 valid characters
+                            strict_mode=False)
 
     def test_uu(self):
         MAX_UU = 45

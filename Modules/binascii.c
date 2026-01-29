@@ -607,7 +607,9 @@ fastpath:
         }
 
         // Characters that are not '=', in the middle of the padding, are not allowed
-        if (pads && strict_mode && !ignorechar(BASE64_PAD, ignorechars, ignorecache)) {
+        if (pads && strict_mode &&
+            !ignorechar(BASE64_PAD, ignorechars, ignorecache))
+        {
             state = get_binascii_state(module);
             if (state) {
                 PyErr_SetString(state->Error, (quad_pos + pads == 4)
