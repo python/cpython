@@ -1,0 +1,2 @@
+Add a boolean flag, indicating support the IEC 60559 floating-point standard
+(as specified by the Annex F of C99).  Patch by Sergey B Kirpichev.

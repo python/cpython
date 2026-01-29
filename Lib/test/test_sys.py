@@ -641,7 +641,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.exec_prefix, str)
         self.assertIsInstance(sys.base_exec_prefix, str)
         self.assertIsInstance(sys.executable, str)
-        self.assertEqual(len(sys.float_info), 11)
+        self.assertEqual(len(sys.float_info), 12)
         self.assertEqual(sys.float_info.radix, 2)
         self.assertEqual(len(sys.int_info), 4)
         self.assertTrue(sys.int_info.bits_per_digit % 5 == 0)
