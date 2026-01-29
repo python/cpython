@@ -1,7 +1,6 @@
 # regression test for SAX 2.0
-
 from xml.sax import make_parser, ContentHandler, \
-                    SAXException, SAXReaderNotAvailable, SAXParseException
+                    SAXException, SAXReaderNotAvailable, SAXParseException, handler
 import unittest
 from unittest import mock
 try:
@@ -1306,6 +1305,23 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(parser.getSystemId(), fname)
         self.assertEqual(parser.getPublicId(), None)
+
+    def test_qualified_names(self):
+
+        class Handler(ContentHandler):
+            def startElementNS(self, name, qname, attrs):
+                self.qname = qname
+
+        for xml_s, expected_qname in zip(["<Q:E xmlns:Q='http://example.org/testuri'/>", "<E xmlns='http://example.org/testuri'/>", "<E />"], ["Q:E", "E", "E"]):
+            parser = create_parser()
+            parser.setFeature(handler.feature_namespaces, 1)
+            parser.setFeature(handler.feature_namespace_prefixes, 1)
+
+            h = Handler()
+
+            parser.setContentHandler(h)
+            parser.parse(StringIO(xml_s))
+            self.assertEqual(h.qname, expected_qname)
 
 
 # ===========================================================================
