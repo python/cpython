@@ -91,7 +91,8 @@ POST request.
    ``False`` otherwise.
 
    If *validate* is false, characters that are neither
-   in the normal base-64 alphabet nor the alternative alphabet are
+   in the normal base-64 alphabet nor (if *ignorechars* is not specified)
+   the alternative alphabet are
    discarded prior to the padding check, but the ``+`` and ``/`` characters
    keep their meaning if they are not in *altchars* (they will be discarded
    in future Python versions).
@@ -101,13 +102,12 @@ POST request.
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
+
    .. deprecated:: next
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
       is now deprecated.
-
-
-   .. versionchanged:: next
-      Added the *ignorechars* parameter.
 
 
 .. function:: standard_b64encode(s)
