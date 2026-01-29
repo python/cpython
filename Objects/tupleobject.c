@@ -205,6 +205,35 @@ PyTuple_Pack(Py_ssize_t n, ...)
 
 /* Methods */
 
+void
+_PyTuple_ExactDealloc(PyObject *obj)
+{
+    assert(PyTuple_CheckExact(obj));
+    PyTupleObject *op = _PyTuple_CAST(obj);
+
+    if (Py_SIZE(op) == 0 && op == &_Py_SINGLETON(tuple_empty)) {
+#ifdef Py_DEBUG
+        _Py_FatalRefcountError("deallocating the empty tuple singleton");
+#else
+        return;
+#endif
+    }
+
+    PyObject_GC_UnTrack(op);
+
+#ifdef Py_DEBUG
+    Py_ssize_t i = Py_SIZE(op);
+    while (--i >= 0) {
+        assert(op->ob_item[i] == NULL);
+    }
+#endif
+
+    // This will abort on the empty singleton (if there is one).
+    if (!maybe_freelist_push(op)) {
+        Py_TYPE(op)->tp_free((PyObject *)op);
+    }
+}
+
 static void
 tuple_dealloc(PyObject *self)
 {

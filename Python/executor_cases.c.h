@@ -7187,15 +7187,10 @@
                 *values++ = PyStackRef_FromPyObjectSteal(items[i]);
                 items[i] = NULL;
             }
+            PyStackRef_CLOSE_SPECIALIZED(seq, _PyTuple_ExactDealloc);
+            SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(seq);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            _tos_cache0 = PyStackRef_ZERO_BITS;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
