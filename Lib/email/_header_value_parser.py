@@ -3132,14 +3132,25 @@ def _fold_mime_parameters(part, lines, maxlen, encoding):
                 # have that, we'd be stuck, so in that case fall back to
                 # the RFC standard width.
                 maxlen = 78
-            splitpoint = maxchars = maxlen - chrome_len - 2
-            while True:
+            maxchars = maxlen - chrome_len - 2
+            # Ensure maxchars is at least 1 to prevent negative values
+            if maxchars <= 0:
+                maxchars = 1
+            splitpoint = maxchars
+            splitpoint = max(1, splitpoint)  # Ensure splitpoint is always at least 1
+            while splitpoint > 1:
                 partial = value[:splitpoint]
                 encoded_value = urllib.parse.quote(
                     partial, safe='', errors=error_handler)
                 if len(encoded_value) <= maxchars:
                     break
                 splitpoint -= 1
+            else:
+                # If we still can't fit, force a minimal split
+                splitpoint = 1
+                partial = value[:splitpoint]
+                encoded_value = urllib.parse.quote(
+                    partial, safe='', errors=error_handler)
             lines.append(" {}*{}*={}{}".format(
                 name, section, extra_chrome, encoded_value))
             extra_chrome = ''
