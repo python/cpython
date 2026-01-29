@@ -31,6 +31,7 @@ import sys
 
 from tkinter.font import Font
 import idlelib
+from idlelib import macosx
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
@@ -660,6 +661,17 @@ class IdleConf:
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
+
+        if macosx.isAquaTk():
+            # There appears to be a system default binding for `Command-Q`
+            # on macOS that interferes with IDLE's setup. Don't add it
+            # to the key bindings an rely the default binding.
+            #
+            # Without this IDLE will prompt twice about closing a file with
+            # unsaved changes when the user quits IDLE using the keyboard
+            # shortcutand then chooses "Cancel" the first time the dialog
+            # appears.
+            del keyBindings['<<close-all-windows>>']
 
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
