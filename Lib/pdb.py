@@ -1367,7 +1367,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_commands = _complete_bpnumber
 
     def do_break(self, arg, temporary=False):
-        """b(reak) [ ([filename:]lineno | function) [, condition] ]
+        """b(reak) [ [filename:](lineno | function) [, condition] ]
 
         Without argument, list all breaks.
 
@@ -1377,9 +1377,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         present, it is a string specifying an expression which must
         evaluate to true before the breakpoint is honored.
 
-        The line number may be prefixed with a filename and a colon,
-        to specify a breakpoint in another file (probably one that
-        hasn't been loaded yet).  The file is searched for on
+        The line number and function may be prefixed with a filename and
+        a colon, to specify a breakpoint in another file (probably one
+        that hasn't been loaded yet).  The file is searched for on
         sys.path; the .py suffix may be omitted.
         """
         if not arg:
@@ -1418,8 +1418,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             try:
                 lineno = int(arg)
             except ValueError:
-                self.error('Bad lineno: %s' % arg)
-                return
+                func = arg
+                find_res = find_function(func, self.canonic(filename))
+                if not find_res:
+                    self.error('Bad lineno or function name: %s' % arg)
+                    return
+                funcname, filename, lineno = find_res
         else:
             # no colon; can be lineno or function
             try:
@@ -1680,12 +1684,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return reply.strip().lower()
 
     def do_clear(self, arg):
-        """cl(ear) [filename:lineno | bpnumber ...]
+        """cl(ear) [filename:(lineno | function) | bpnumber ...]
 
         With a space separated list of breakpoint numbers, clear
         those breakpoints.  Without argument, clear all breaks (but
         first ask confirmation).  With a filename:lineno argument,
-        clear all breaks at that line in that file.
+        clear all breakpoints at that line.  With a filename:function
+        argument, clear all breakpoints at that function.
         """
         if not arg:
             reply = self._prompt_for_confirmation(
@@ -1701,13 +1706,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if ':' in arg:
             # Make sure it works for "clear C:\foo\bar.py:12"
             i = arg.rfind(':')
-            filename = arg[:i]
-            arg = arg[i+1:]
+            filename = arg[:i].rstrip()
+            arg = arg[i+1:].lstrip()
+            err = None
             try:
                 lineno = int(arg)
             except ValueError:
-                err = "Invalid line number (%s)" % arg
-            else:
+                f = self.lookupmodule(filename)
+                if not f:
+                    err = '%r not found from sys.path' % filename
+                else:
+                    filename = f
+                    func = arg
+                    find_res = find_function(func, self.canonic(filename))
+                    if find_res:
+                        _, filename, lineno = find_res
+                    else:
+                        err = "Invalid line number or function name:(%s)" % arg
+            if not err:
                 bplist = self.get_breaks(filename, lineno)[:]
                 err = self.clear_break(filename, lineno)
             if err:
