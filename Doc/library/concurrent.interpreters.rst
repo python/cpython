@@ -227,11 +227,15 @@ This module defines the following functions:
    Initialize a new (idle) Python interpreter
    and return a :class:`Interpreter` object for it.
 
-.. function:: create_queue()
+.. function:: create_queue(maxsize=0)
 
    Initialize a new cross-interpreter queue and return a :class:`Queue`
    object for it.
 
+   *maxsize* is an integer that sets the upperbound limit on the number of
+   items that can be placed in the queue. Insertion will be blocked once this
+   size has been reached, until queue items are consumed. If *maxsize* is
+   less than or equal to zero, the queue size is infinite.
 
 Interpreter objects
 ^^^^^^^^^^^^^^^^^^^
@@ -271,7 +275,7 @@ Interpreter objects
       Some objects are actually shared and some are copied efficiently,
       but most are copied via :mod:`pickle`.  See :ref:`interp-object-sharing`.
 
-   .. method:: exec(code, /, dedent=True)
+   .. method:: exec(code, /)
 
       Run the given source code in the interpreter (in the current thread).
 
@@ -335,13 +339,13 @@ Communicating Between Interpreters
       The queue's ID.
 
 
-.. exception:: QueueEmptyError
+.. exception:: QueueEmpty
 
    This exception, a subclass of :exc:`queue.Empty`, is raised from
    :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the queue
    is empty.
 
-.. exception:: QueueFullError
+.. exception:: QueueFull
 
    This exception, a subclass of :exc:`queue.Full`, is raised from
    :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
