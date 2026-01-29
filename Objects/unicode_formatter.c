@@ -288,6 +288,17 @@ invalid_thousands_separator_type(char separator, Py_UCS4 presentation_type)
 }
 
 static void
+invalid_fraction_separator_type(char separator, Py_UCS4 presentation_type)
+{
+    assert(separator == ',' || separator == '_');
+    /* presentation_type has been checked before thousands separator. */
+    assert(presentation_type >= 32 && presentation_type < 127);
+    PyErr_Format(PyExc_ValueError,
+                 "Cannot specify '%c' in fractional part with type code '%c'",
+                 separator, (int)presentation_type);
+}
+
+static void
 invalid_comma_and_underscore(void)
 {
     PyErr_SetString(PyExc_ValueError, "Cannot specify both ',' and '_'");
@@ -638,8 +649,8 @@ parse_internal_render_format_spec(PyObject *obj,
         case '\0':
             break;
         default:
-            invalid_thousands_separator_type(format->frac_thousands_separator,
-                                             format->type);
+            invalid_fraction_separator_type(format->frac_thousands_separator,
+                                            format->type);
             return 0;
         }
     }
