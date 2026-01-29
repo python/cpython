@@ -10,7 +10,7 @@ import weakref
 from contextlib import contextmanager
 from sys import monitoring
 from test.support import threading_helper
-from threading import Thread, _PyRLock, Barrier
+from threading import Thread, RLock, Barrier
 from unittest import TestCase
 
 
@@ -287,7 +287,7 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
 
         sys.settrace(trace)
         try:
-            l = _PyRLock()
+            l = RLock()
 
             def f():
                 for i in range(loops):
