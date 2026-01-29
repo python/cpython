@@ -2440,17 +2440,31 @@ def get_section(value):
     The caller should already have dealt with leading CFWS.
 
     """
+    def is_accepted_digit(d):
+        # While only ASCII digits are allowed by the RFC, we accept any digit
+        # that can be converted to an int for backwards compatibility purposes.
+        # We don't use str.isdigit() as some Unicode digits are not convertible
+        # (e.g. superscript digits).
+        try:
+            int(d)
+            return True
+        except ValueError:
+            return False
+
     section = Section()
     if not value or value[0] != '*':
         raise errors.HeaderParseError("Expected section but found {}".format(
                                         value))
     section.append(ValueTerminal('*', 'section-marker'))
     value = value[1:]
-    if not value or not value[0].isdigit():
+    if not value or not is_accepted_digit(value[0]):
         raise errors.HeaderParseError("Expected section number but "
                                       "found {}".format(value))
     digits = ''
-    while value and value[0].isdigit():
+    while value and is_accepted_digit(value[0]):
+        if not '0' <= value[0] <= '9':
+            section.defects.append(errors.InvalidHeaderDefect(
+                    "section number has a non-ASCII digit {}".format(value[0])))
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
