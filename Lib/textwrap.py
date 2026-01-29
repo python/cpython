@@ -304,8 +304,12 @@ class TextWrapper:
 
             # If the last chunk on this line is all whitespace, drop it.
             if self.drop_whitespace and cur_line and cur_line[-1].strip() == '':
-                cur_len -= len(cur_line[-1])
-                del cur_line[-1]
+                # If this is the first line keep it if a non-whitespace chunk follows
+                if not lines and len(cur_line) == 1 and chunks and chunks[-1].strip() != '':
+                    pass
+                else:
+                    cur_len -= len(cur_line[-1])
+                    del cur_line[-1]
 
             if cur_line:
                 if (self.max_lines is None or

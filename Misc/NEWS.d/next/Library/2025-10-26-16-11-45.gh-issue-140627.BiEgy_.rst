@@ -1,0 +1,2 @@
+Fix :func:`textwrap.wrap` to preserve a whitespace only line at the start of
+a paragraph when non-whitespace text follows.
