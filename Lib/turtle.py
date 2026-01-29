@@ -1596,7 +1596,7 @@ class TNavigator(object):
         Will be overwritten by parent class
         """
         self._position = Vec2D(0.0, 0.0)
-        self._orient =  TNavigator.START_ORIENTATION[self._mode]
+        self._orient = TNavigator.START_ORIENTATION[self._mode]
 
     def _setmode(self, mode=None):
         """Set turtle-mode to 'standard', 'world' or 'logo'.
@@ -1628,9 +1628,8 @@ class TNavigator(object):
         Optional argument:
         fullcircle -  a number
 
-        Set angle measurement units, i. e. set number
-        of 'degrees' for a full circle. Default value is
-        360 degrees.
+        Set angle measurement units so that a full circle is *fullcircle*
+        units. The default value is `360.0` (i.e. conventional degrees).
 
         Example (for a Turtle instance named turtle):
         >>> turtle.left(90)
@@ -1643,11 +1642,19 @@ class TNavigator(object):
         >>> turtle.heading()
         100
 
+        Change angle measurement unit to radians (where a full circle
+        equals 2π radians, so 90 degrees becomes π/2 radians)
+        >>> turtle.degrees(2*math.pi)
+        >>> turtle.heading()
+        1.5707963267948966
+
         """
         self._setDegreesPerAU(fullcircle)
 
     def radians(self):
         """ Set the angle measurement units to radians.
+
+        Equivalent to calling `degrees(2*math.pi)`
 
         No arguments.
 
@@ -1732,9 +1739,17 @@ class TNavigator(object):
         Argument:
         angle -- a number (integer or float)
 
-        Turn turtle right by angle units. (Units are by default degrees,
-        but can be set via the degrees() and radians() functions.)
-        Angle orientation depends on mode. (See this.)
+        Turn turtle right by *angle* units.
+
+        The unit of measurement is controlled by `degrees()` and
+        `radians()`:
+
+        * By default, 360.0 units form a full circle (degrees).
+        * After calling `radians()`, ``2*math.pi`` units form a full circle.
+        * Custom values can be set with `degrees(fullcircle)`.
+
+        Orientation of the turn depends in the current turtle mode,
+        see function `mode()`.
 
         Example (for a Turtle instance named turtle):
         >>> turtle.heading()
@@ -1753,9 +1768,17 @@ class TNavigator(object):
         Argument:
         angle -- a number (integer or float)
 
-        Turn turtle left by angle units. (Units are by default degrees,
-        but can be set via the degrees() and radians() functions.)
-        Angle orientation depends on mode. (See this.)
+        Turn turtle left by *angle* units.
+
+        The unit of measurement is controlled by `degrees()` and
+        `radians()`:
+
+        * By default, 360.0 units form a full circle (degrees).
+        * After calling `radians()`, ``2*math.pi`` units form a full circle.
+        * Custom values can be set with `degrees(fullcircle)`.
+
+        Orientation of the turn depends in the current turtle mode,
+        see function `mode()`.
 
         Example (for a Turtle instance named turtle):
         >>> turtle.heading()
@@ -2645,8 +2668,26 @@ class RawTurtle(TPen, TNavigator):
 
         No argument.
 
-        Delete the turtle's drawings from the screen, re-center the turtle
-        and set variables to the default values.
+        Delete the turtle's drawings from the screen. Move the turtle
+        to position `(0, 0)`, set its heading to 0 and restore
+        the following state variables to their initial values:
+
+        - position: `(0, 0)`
+        - heading: `0` (east if standard or world mode, north if logo mode)
+        - pen state: down (drawing)
+        - pensize: `1`
+        - pencolor: black
+        - fillcolor: white
+        - speed: `3`
+        - turtle visibility: shown
+        - shape size: `(1.0, 1.0)` (no stretch)
+        - shape shear: `0.0` (no shear)
+        - shape tilt: `0.0` (no tilt)
+
+        Note:
+            The angle unit is **not reset** to degrees. If
+            `radians()` was used before `reset()`,
+            the unit remains radians.
 
         Example (for a Turtle instance named turtle):
         >>> turtle.position()
