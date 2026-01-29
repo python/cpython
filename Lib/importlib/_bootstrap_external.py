@@ -827,7 +827,7 @@ class SourceLoader(_LoaderBasics):
                 bytecode_path = cache_from_source(source_path)
             except NotImplementedError:
                 pass
-        else:
+        if bytecode_path:
             try:
                 st = self.path_stats(source_path)
             except OSError:
