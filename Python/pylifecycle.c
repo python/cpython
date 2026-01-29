@@ -3222,6 +3222,8 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
 static void
 fatal_output_debug(const char *msg)
 {
+    assert(msg != NULL);
+
     /* buffer of 256 bytes allocated on the stack */
     WCHAR buffer[256 / sizeof(WCHAR)];
     size_t buflen = Py_ARRAY_LENGTH(buffer) - 1;
@@ -3503,7 +3505,12 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
     }
 
 #ifdef MS_WINDOWS
-    fatal_output_debug(msg);
+    if (msg) {
+        fatal_output_debug(msg);
+    }
+    else {
+        fatal_output_debug("<message not set>");
+    }
 #endif /* MS_WINDOWS */
 
     fatal_error_exit(status);
@@ -3525,6 +3532,8 @@ _Py_FatalErrorFunc(const char *func, const char *msg)
     fatal_error(fileno(stderr), 1, func, msg, -1);
 }
 
+#define FATAL_MSG_SIZE 1024
+#define FATAL_MSG_SIZE_WITHOUT_ELLIPSIS FATAL_MSG_SIZE - 3
 
 void _Py_NO_RETURN
 _Py_FatalErrorFormat(const char *func, const char *format, ...)
@@ -3536,6 +3545,29 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     }
     reentrant = 1;
 
+    va_list vargs;
+#ifdef MS_WINDOWS
+    va_start(vargs, format);
+    int length = vsnprintf(NULL, 0, format, vargs);
+    va_end(vargs);
+
+    char msg[FATAL_MSG_SIZE];
+    if (length < FATAL_MSG_SIZE) {
+        va_start(vargs, format);
+        vsnprintf(msg, length + 1, format, vargs);
+        va_end(vargs);
+
+        fatal_error(fileno(stderr), 1, func, msg, -1);
+    }
+
+    va_start(vargs, format);
+    vsnprintf(msg, FATAL_MSG_SIZE_WITHOUT_ELLIPSIS, format, vargs);
+    va_end(vargs);
+    strcpy (msg + FATAL_MSG_SIZE_WITHOUT_ELLIPSIS - 1, "...");
+#else
+    char *msg = NULL;
+#endif
+
     FILE *stream = stderr;
     const int fd = fileno(stream);
     PUTS(fd, "Fatal Python error: ");
@@ -3544,7 +3576,6 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
         PUTS(fd, ": ");
     }
 
-    va_list vargs;
     va_start(vargs, format);
     vfprintf(stream, format, vargs);
     va_end(vargs);
@@ -3552,7 +3583,7 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     fputs("\n", stream);
     fflush(stream);
 
-    fatal_error(fd, 0, NULL, NULL, -1);
+    fatal_error(fd, 0, func, msg, -1);
 }
 
 
