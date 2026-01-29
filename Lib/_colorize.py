@@ -327,6 +327,7 @@ class Syntax(ThemeSection):
 class Traceback(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     message: str = ANSIColors.MAGENTA
+    note: str = ANSIColors.MAGENTA
     filename: str = ANSIColors.MAGENTA
     line_no: str = ANSIColors.MAGENTA
     frame: str = ANSIColors.MAGENTA

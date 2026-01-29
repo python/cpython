@@ -1,0 +1,1 @@
+:func:`traceback.format_exception_only` now colorizes exception notes.
