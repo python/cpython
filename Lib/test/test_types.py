@@ -10,7 +10,6 @@ from test.support.import_helper import import_fresh_module
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
-import _datetime
 import gc
 import inspect
 import pickle
@@ -22,6 +21,14 @@ import unittest.mock
 import weakref
 import typing
 import re
+try:
+    import _datetime
+except ModuleNotFoundError:
+    _datetime = None
+try:
+    import _types
+except ModuleNotFoundError:
+    _types = None
 
 c_types = import_fresh_module('types', fresh=['_types'])
 py_types = import_fresh_module('types', blocked=['_types'])
@@ -40,15 +47,10 @@ def clear_typing_caches():
 
 class TypesTests(unittest.TestCase):
 
-    def test_names(self):
+    def check_types_names(self, module_types, *, c_extension=False):
         c_only_names = {'CapsuleType'}
         ignored = {'new_class', 'resolve_bases', 'prepare_class',
                    'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
-
-        for name in c_types.__all__:
-            if name not in c_only_names | ignored:
-                self.assertIs(getattr(c_types, name), getattr(py_types, name))
-
         all_names = ignored | {
             'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
             'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
@@ -60,8 +62,24 @@ class TypesTests(unittest.TestCase):
             'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
             'TracebackType', 'UnionType', 'WrapperDescriptorType',
         }
-        self.assertEqual(all_names, set(c_types.__all__))
-        self.assertEqual(all_names - c_only_names, set(py_types.__all__))
+        expected = all_names if c_extension else all_names - c_only_names
+        self.assertEqual(expected, set(module_types.__all__))
+
+    @unittest.skipUnless(_types, "requires C _types module")
+    def test_c_types_names(self):
+        self.check_types_names(c_types, c_extension=True)
+
+    def test_py_types_names(self):
+        self.check_types_names(py_types, c_extension=False)
+
+    @unittest.skipUnless(_types, "requires C _types module")
+    def test_types_names_consistency(self):
+        c_only_names = {'CapsuleType'}
+        ignored = {'new_class', 'resolve_bases', 'prepare_class',
+                   'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
+        for name in c_types.__all__:
+            if name not in c_only_names | ignored:
+                self.assertIs(getattr(c_types, name), getattr(py_types, name))
 
     def test_truth_values(self):
         if None: self.fail('None is true instead of false')
@@ -691,6 +709,7 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(exc.__traceback__, types.TracebackType)
         self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
 
+    @unittest.skipUnless(_datetime, "requires _datetime module")
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
