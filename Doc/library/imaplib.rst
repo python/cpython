@@ -205,7 +205,23 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.append(mailbox, flags, date_time, message)
 
-   Append *message* to named mailbox.
+   Append *message* to a named *mailbox*.
+
+   *flags* is a space-separated string containing IMAP flags tokens.
+
+   System flags defined in :rfc:`RFC 3501 <3501#section-2.3.2>` are:
+
+   * ``\Seen`` - Message has been read.
+   * ``\Answered`` - Message has been answered.
+   * ``\Flagged`` - Message is "flagged" for urgent/special attention.
+   * ``\Deleted`` - Message is "deleted" for removal by later ``EXPUNGE``.
+   * ``\Draft`` - Message has not completed composition (marked as a draft).
+   * ``\Recent`` - Message is "recently" arrived in this mailbox.
+
+   *date_time* is the date and time associated with the message.
+
+   *message* is a string representing the entire email message, including
+   headers and body.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
