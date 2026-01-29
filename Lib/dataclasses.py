@@ -25,6 +25,7 @@ __all__ = ['dataclass',
            'make_dataclass',
            'replace',
            'is_dataclass',
+           'is_direct_dataclass'
            ]
 
 # Conditions for adding methods.  The boxes indicate what action the
@@ -207,6 +208,9 @@ _FIELD_INITVAR = _FIELD_BASE('_FIELD_INITVAR')
 # The name of an attribute on the class where we store the Field
 # objects.  Also used to check if a class is a Data Class.
 _FIELDS = '__dataclass_fields__'
+
+# The set of classes and ancestors that have been directly declared as dataclasses (vs. inherited)
+_DECLARED_DATA_CLASSES = '__declared_dataclasses__'
 
 # The name of an attribute on the class that stores the parameters to
 # @dataclass.
@@ -1430,9 +1434,15 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
     """
 
     def wrap(cls):
+        seen = getattr(cls, _DECLARED_DATA_CLASSES, None)
+        if seen is None:
+            seen = set()
+            setattr(cls, _DECLARED_DATA_CLASSES, seen)
+        elif id(cls) in seen:
+            return cls
+        seen.add(id(cls))
         return _process_class(cls, init, repr, eq, order, unsafe_hash,
-                              frozen, match_args, kw_only, slots,
-                              weakref_slot)
+                              frozen, match_args, kw_only, slots)
 
     # See if we're being called as @dataclass or @dataclass().
     if cls is None:
@@ -1471,6 +1481,11 @@ def is_dataclass(obj):
     dataclass."""
     cls = obj if isinstance(obj, type) else type(obj)
     return hasattr(cls, _FIELDS)
+
+
+def is_direct_dataclass(cls: type):
+    """ Returns True if cls is declared as a dataclass (vs. inherits from) """
+    return id(cls) in getattr(cls, _DECLARED_DATA_CLASSES, set())
 
 
 def asdict(obj, *, dict_factory=dict):
