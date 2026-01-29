@@ -130,9 +130,10 @@ android {
         path("src/main/c/CMakeLists.txt")
     }
 
-    // Set this property to something non-empty, otherwise it'll use the default
-    // list, which ignores asset directories beginning with an underscore.
-    aaptOptions.ignoreAssetsPattern = ".git"
+    // Set this property to something nonexistent but non-empty. Otherwise it'll use the
+    // default list, which ignores asset directories beginning with an underscore, and
+    // maybe also other files required by tests.
+    aaptOptions.ignoreAssetsPattern = "android-testbed-dont-ignore-anything"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -234,6 +235,12 @@ androidComponents.onVariants { variant ->
                     from(cwd)
                 }
             }
+
+            // A filename ending with .gz will be automatically decompressed
+            // while building the APK. Avoid this by adding a dash to the end,
+            // and add an extra dash to any filenames that already end with one.
+            // This will be undone in MainActivity.kt.
+            rename(""".*(\.gz|-)""", "$0-")
         }
     }
 
