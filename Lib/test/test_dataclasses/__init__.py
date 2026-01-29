@@ -406,6 +406,16 @@ class TestCase(unittest.TestCase):
         self.assertGreaterEqual(C(1), C(0))
         self.assertGreaterEqual(C(1), C(1))
 
+        @dataclass(order=True)
+        class C2:
+            x: int
+            y: int = field(compare=False)
+
+        self.assertLess(C2(0, 10), C2(1, -5))
+        self.assertLessEqual(C2(1, 10), C2(1, -5))
+        self.assertGreater(C2(2, -1), C2(1, 999))
+        self.assertGreaterEqual(C2(1, 10), C2(1, -5))
+
     def test_simple_compare(self):
         # Ensure that order=False is the default.
         @dataclass
