@@ -558,7 +558,8 @@ parse_internal_render_format_spec(PyObject *obj,
         if (next == ',' || next == '_') {
             /* Expect type, got another grouping character */
             PyErr_Format(PyExc_ValueError,
-                         "Cannot specify grouping '%c' more than once",
+                         "Cannot specify grouping character '%c' "
+                         "more than once",
                          next);
             return 0;
         }

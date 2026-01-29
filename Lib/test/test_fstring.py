@@ -1697,14 +1697,16 @@ x = (
             compile("f'{a $ b}'", "?", "exec")
 
     def test_with_two_commas_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify grouping ',' more than once")
+        error_msg = re.escape(
+            "Cannot specify grouping character ',' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:,,}'
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1.1:.,,}'
 
     def test_with_two_underscore_in_format_specifier(self):
-        error_msg = re.escape("Cannot specify grouping '_' more than once")
+        error_msg = re.escape(
+            "Cannot specify grouping character '_' more than once")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:__}'
         with self.assertRaisesRegex(ValueError, error_msg):
