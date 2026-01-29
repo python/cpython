@@ -61,6 +61,8 @@ See :pep:`405` for more background on Python virtual environments.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. _venv-cli:
+
 Creating virtual environments
 -----------------------------
 
@@ -314,7 +316,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
       any existing target directory, before creating the environment.
 
     * *symlinks* -- a boolean value indicating whether to attempt to symlink the
-      Python binary rather than copying.
+      Python binary rather than copying (defaults to ``False`` on Windows, and
+      to ``True`` on all other platforms).
 
     * *upgrade* -- a boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
@@ -348,6 +351,11 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. versionchanged:: 3.13
        Added the ``scm_ignore_files`` parameter
+
+      .. versionchanged:: 3.14
+       The ``symlinks`` parameter's default value was changed from always
+       ``False`` to being platform dependent — ``False`` on Windows, ``True`` on
+       all other platforms — matching the :ref:`CLI <venv-cli>`.
 
     :class:`EnvBuilder` may be used as a base class.
 
