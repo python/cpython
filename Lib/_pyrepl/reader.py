@@ -28,7 +28,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
-from .utils import wlen, unbracket, disp_str, gen_colors, THEME
+from .utils import wlen, unbracket, disp_str, THEME
 from .trace import trace
 
 
@@ -312,7 +312,7 @@ class Reader:
         prompt_from_cache = (offset and self.buffer[offset - 1] != "\n")
 
         if self.can_colorize:
-            colors = list(gen_colors(self.get_unicode()))
+            colors = list(_colorize._gen_colors(self.get_unicode()))
         else:
             colors = None
         trace("colors = {colors}", colors=colors)
