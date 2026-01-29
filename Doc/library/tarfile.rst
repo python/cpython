@@ -145,6 +145,9 @@ Some facts and figures:
    a Zstandard dictionary used to improve compression of smaller amounts of
    data.
 
+   For modes ``'r:zst'`` and ``'r|zst'``, :func:`tarfile.open` accepts the keyword
+   arguments *options* and *zstd_dict* as well.
+
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
