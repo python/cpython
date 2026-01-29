@@ -793,6 +793,9 @@ also be used to improve performance.
    The configure script checks that the platform supports ``MAP_HUGETLB``
    and emits a warning if it is not available.
 
+   On Windows, use the ``--pymalloc-hugepages`` flag with ``build.bat`` or
+   set the ``UsePymallocHugepages`` MSBuild property.
+
    .. versionadded:: 3.15
 
 .. option:: --without-doc-strings
