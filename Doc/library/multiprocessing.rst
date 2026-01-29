@@ -2186,7 +2186,7 @@ callables with the manager class.  For example::
 
 
 Using a remote manager
-""""""""""""""""""""""
+"""""""""""""""""""""""
 
 It is possible to run a manager server on one machine and have clients use it
 from other machines (assuming that the firewalls involved allow it).
@@ -2194,11 +2194,12 @@ from other machines (assuming that the firewalls involved allow it).
 Running the following commands creates a server for a single shared queue which
 remote clients can access::
 
+   >>> from multiprocessing import Manager
    >>> from multiprocessing.managers import BaseManager
-   >>> from queue import Queue
-   >>> queue = Queue()
+   >>> manager = Manager()
+   >>> queue = manager.Queue()
    >>> class QueueManager(BaseManager): pass
-   >>> QueueManager.register('get_queue', callable=lambda:queue)
+   >>> QueueManager.register('get_queue', callable=lambda: queue)
    >>> m = QueueManager(address=('', 50000), authkey=b'abracadabra')
    >>> s = m.get_server()
    >>> s.serve_forever()
@@ -2227,7 +2228,7 @@ Another client can also use it::
 Local processes can also access that queue, using the code from above on the
 client to access it remotely::
 
-    >>> from multiprocessing import Process, Queue
+    >>> from multiprocessing import Process, Manager
     >>> from multiprocessing.managers import BaseManager
     >>> class Worker(Process):
     ...     def __init__(self, q):
@@ -2236,7 +2237,8 @@ client to access it remotely::
     ...     def run(self):
     ...         self.q.put('local hello')
     ...
-    >>> queue = Queue()
+    >>> manager = Manager()
+    >>> queue = manager.Queue()
     >>> w = Worker(queue)
     >>> w.start()
     >>> class QueueManager(BaseManager): pass
