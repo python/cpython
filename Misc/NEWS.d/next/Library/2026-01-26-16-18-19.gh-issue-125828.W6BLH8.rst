@@ -1,0 +1,2 @@
+Fix the not implemented ``get_value`` for :class:`multiprocessing.Semaphore` on MacOSX
+by adding a dedicated class in the ``synchronize.py`` file.
