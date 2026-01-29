@@ -1560,6 +1560,23 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         wrapper = self.TextIOWrapper(raw)
         wrapper.close()  # should not crash
 
+    def test_issue143007(self):
+        # gh-143007: Null pointer dereference in TextIOWrapper.seek
+        # via re-entrant __int__
+        wrapper = self.TextIOWrapper(self.BytesIO(b"x"))
+
+        class Cookie(int):
+            def __new__(cls, wrapper):
+                obj = int.__new__(cls, 0)
+                obj.wrapper = wrapper
+                return obj
+            def __int__(self):
+                self.wrapper.detach()
+                return 0
+
+        with self.assertRaises(ValueError):
+            wrapper.seek(Cookie(wrapper), 0)  # should not crash
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
