@@ -1251,6 +1251,52 @@ class TestCopy(BaseTest, unittest.TestCase):
         finally:
             os.chflags = old_chflags
 
+    def test_copystat_handles_utime_errors(self):
+        # gh-42948: copystat should ignore permission errors when setting times
+        tmpdir = self.mkdtemp()
+        file1 = os.path.join(tmpdir, 'file1')
+        file2 = os.path.join(tmpdir, 'file2')
+        create_file(file1, 'xxx')
+        create_file(file2, 'xxx')
+
+        def make_utime_raiser(err):
+            def _utime_raiser(path, times=None, *, ns=None, dir_fd=None,
+                              follow_symlinks=True):
+                ex = OSError()
+                ex.errno = err
+                raise ex
+            return _utime_raiser
+
+        for err in errno.EPERM, errno.EACCES:
+            with unittest.mock.patch('os.utime', side_effect=make_utime_raiser(err)):
+                shutil.copystat(file1, file2)
+
+        with unittest.mock.patch('os.utime', side_effect=make_utime_raiser(errno.EINVAL)):
+            self.assertRaises(OSError, shutil.copystat, file1, file2)
+
+    @mock_rename
+    def test_move_handles_utime_errors(self):
+        # gh-42948: move should succeed despite utime permission errors
+        src_dir = self.mkdtemp()
+        dst_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'file')
+        dst_file = os.path.join(dst_dir, 'file')
+        create_file(src_file, 'content')
+
+        def _utime_raiser(path, times=None, *, ns=None, dir_fd=None,
+                          follow_symlinks=True):
+            ex = OSError()
+            ex.errno = errno.EPERM
+            raise ex
+
+        with unittest.mock.patch('os.utime', side_effect=_utime_raiser):
+            result = shutil.move(src_file, dst_file)
+            self.assertEqual(result, dst_file)
+            self.assertTrue(os.path.exists(dst_file))
+            self.assertFalse(os.path.exists(src_file))
+            with open(dst_file) as f:
+                self.assertEqual(f.read(), 'content')
+
     ### shutil.copyxattr
 
     @os_helper.skip_unless_xattr

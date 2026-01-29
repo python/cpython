@@ -1,0 +1,3 @@
+:func:`shutil.copystat` now ignores permission errors when setting file
+times. This fixes :func:`shutil.move` failures on filesystems where the user
+has write access but is not the owner. Patch by Shamil Abdulaev.
