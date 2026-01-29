@@ -1410,6 +1410,12 @@ class TarInfo(object):
         next.offset = self.offset
         if self.type == GNUTYPE_LONGNAME:
             next.name = nts(buf, tarfile.encoding, tarfile.errors)
+            # V7 directory detection in frombuf() may have used garbage
+            # name data. Re-apply it with the actual long name.
+            if next.type == DIRTYPE and not next.name.endswith("/"):
+                next.type = AREGTYPE
+            elif next.type == AREGTYPE and next.name.endswith("/"):
+                next.type = DIRTYPE
         elif self.type == GNUTYPE_LONGLINK:
             next.linkname = nts(buf, tarfile.encoding, tarfile.errors)
 
