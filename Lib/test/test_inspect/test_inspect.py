@@ -2934,21 +2934,71 @@ class TestGetCoroutineState(unittest.TestCase):
             self.assertIn(name, str(state))
 
     def test_getcoroutinelocals(self):
+        from collections.abc import Coroutine
+
         @types.coroutine
         def gencoro():
             yield
 
-        gencoro = gencoro()
+        genc = gencoro()
         async def func(a=None):
             b = 'spam'
-            await gencoro
+            await genc
 
         coro = func()
         self.assertEqual(inspect.getcoroutinelocals(coro),
-                         {'a': None, 'gencoro': gencoro})
+                         {'a': None, 'genc': genc})
         coro.send(None)
         self.assertEqual(inspect.getcoroutinelocals(coro),
-                         {'a': None, 'gencoro': gencoro, 'b': 'spam'})
+                         {'a': None, 'genc': genc, 'b': 'spam'})
+
+        def make_coro():
+            genc = gencoro()
+            async def coro():
+                local1 = 1
+                await genc
+                local2 = 2
+            return genc, coro()
+
+        # Does not have `cr_frame`:
+
+        class CustomCoro(Coroutine):
+            def __init__(self, coro):
+                self._coro = coro
+
+            def __await__(self):
+                return self._coro.__await__
+
+            def send(self, value):
+                return self._coro.send(value)
+
+            def throw(self, *args):
+                return super().throw(*args)
+
+        genc, cr = make_coro()
+        self.assertEqual(inspect.getcoroutinelocals(CustomCoro(cr)), {})
+
+        cr.send(None)
+        self.assertEqual(inspect.getcoroutinelocals(CustomCoro(cr)), {})
+
+        # Has custom `cr_frame` implementation:
+
+        class CustomCoroWithCRFrame(CustomCoro):
+            @property
+            def cr_frame(self):
+                return self._coro.cr_frame
+
+        genc, cr = make_coro()
+        self.assertEqual(
+            inspect.getcoroutinelocals(CustomCoroWithCRFrame(cr)),
+            {'genc': genc},
+        )
+
+        cr.send(None)
+        self.assertEqual(
+            inspect.getcoroutinelocals(CustomCoroWithCRFrame(cr)),
+            {'genc': genc, 'local1': 1},
+        )
 
 
 @support.requires_working_socket()
