@@ -243,46 +243,72 @@ _PyUnicode_InsertThousandsGrouping(
 }
 
 
-/* Raises an exception about an unknown presentation type for this
- * type. */
-
 static void
 unknown_presentation_type(Py_UCS4 presentation_type,
                           const char* type_name)
 {
-    /* %c might be out-of-range, hence the two cases. */
-    if (presentation_type > 32 && presentation_type < 128)
+    if (presentation_type == '\'') {
+        PyErr_Format(PyExc_ValueError,
+                     "Unknown format code \"'\" "
+                     "for object of type '%.200s'",
+                     type_name);
+    }
+    else if (presentation_type >= 32 && presentation_type < 127) {
         PyErr_Format(PyExc_ValueError,
                      "Unknown format code '%c' "
                      "for object of type '%.200s'",
-                     (char)presentation_type,
+                     (int)presentation_type,
                      type_name);
-    else
+    }
+    else if (Py_UNICODE_ISPRINTABLE(presentation_type)) {
         PyErr_Format(PyExc_ValueError,
-                     "Unknown format code '\\x%x' "
+                     "Unknown format code '%c' (U+%04X) "
                      "for object of type '%.200s'",
-                     (unsigned int)presentation_type,
+                     (int)presentation_type, (int)presentation_type,
                      type_name);
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "Unknown format code U+%04X "
+                     "for object of type '%.200s'",
+                     (int)presentation_type,
+                     type_name);
+    }
 }
 
 static void
-invalid_thousands_separator_type(char specifier, Py_UCS4 presentation_type)
+invalid_thousands_separator_type(char separator, Py_UCS4 presentation_type)
 {
-    assert(specifier == ',' || specifier == '_');
-    if (presentation_type > 32 && presentation_type < 128)
+    assert(separator == ',' || separator == '_');
+    if (presentation_type == '\'') {
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with '%c'.",
-                     specifier, (char)presentation_type);
-    else
+                     "Cannot specify '%c' with type code \"'\"",
+                     separator);
+    }
+    else if (presentation_type >= 32 && presentation_type < 127) {
         PyErr_Format(PyExc_ValueError,
-                     "Cannot specify '%c' with '\\x%x'.",
-                     specifier, (unsigned int)presentation_type);
+                     "Cannot specify '%c' with type code '%c'",
+                     separator,
+                     (int)presentation_type);
+    }
+    else if (Py_UNICODE_ISPRINTABLE(presentation_type)) {
+        PyErr_Format(PyExc_ValueError,
+                     "Cannot specify '%c' with type code '%c' (U+%04X)",
+                     separator,
+                     (int)presentation_type, (int)presentation_type);
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "Cannot specify '%c' with type code U+%04X",
+                     separator,
+                     (int)presentation_type);
+    }
 }
 
 static void
 invalid_comma_and_underscore(void)
 {
-    PyErr_Format(PyExc_ValueError, "Cannot specify both ',' and '_'.");
+    PyErr_SetString(PyExc_ValueError, "Cannot specify both ',' and '_'");
 }
 
 /*
@@ -547,7 +573,7 @@ parse_internal_render_format_spec(PyObject *obj,
                                          end-start);
         if (actual_format_spec != NULL) {
             PyErr_Format(PyExc_ValueError,
-                "Invalid format specifier '%U' for object of type '%.200s'",
+                "Invalid format specifier %R for object of type '%.200s'",
                 actual_format_spec, Py_TYPE(obj)->tp_name);
             Py_DECREF(actual_format_spec);
         }
