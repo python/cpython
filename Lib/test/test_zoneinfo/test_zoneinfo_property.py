@@ -4,9 +4,7 @@ import os
 import pickle
 import unittest
 import zoneinfo
-
 from test.support.hypothesis_helper import hypothesis
-
 import test.test_zoneinfo._support as test_support
 
 ZoneInfoTestBase = test_support.ZoneInfoTestBase
@@ -59,6 +57,50 @@ def _valid_keys():
         output.extend(keys)
 
     return output
+
+
+def _make_datetime_class(missing):
+    all_attrs = (
+        "year",
+        "month",
+        "day",
+        "hour",
+        "minute",
+        "second",
+        "microsecond",
+        "tzinfo",
+        "fold",
+    )
+    included_attrs = set(all_attrs) - set(missing)
+
+    class ClassWithMissing:
+        def __init__(self, *args, **kwargs):
+            self._datetime = datetime.datetime(*args, **kwargs)
+            for attr, arg in zip(all_attrs, args):
+                if attr in kwargs:
+                    raise ValueError(
+                        f"{attr} specified more than once in argument list"
+                    )
+
+                kwargs[attr] = arg
+
+            for attr, arg in kwargs.items():
+                if attr in included_attrs:
+                    setattr(self, attr, arg)
+
+        def utcoffset(self):
+            return self.tzinfo.utcoffset(self)
+
+        def dst(self):
+            return self.tzinfo.dst(self)
+
+        def tzname(self):
+            return self.tzinfo.tzname(self)
+
+        def toordinal(self):
+            return self._datetime.toordinal()
+
+    return ClassWithMissing
 
 
 VALID_KEYS = _valid_keys()
@@ -126,6 +168,90 @@ class ZoneInfoTest(ZoneInfoTestBase):
         self.assertEqual(dt_zi.utcoffset(), ZERO)
         self.assertEqual(dt_zi.dst(), ZERO)
         self.assertEqual(dt_zi.tzname(), "UTC")
+
+    @hypothesis.given(
+        dt=hypothesis.strategies.datetimes(),
+        key=valid_keys(),
+        missing=hypothesis.strategies.lists(
+            hypothesis.strategies.sampled_from(
+                (
+                    "year",
+                    "month",
+                    "day",
+                    "hour",
+                    "minute",
+                    "second",
+                    "microsecond",
+                    "tzinfo",
+                    "fold",
+                )
+            ),
+            unique=True,
+            min_size=1,
+        ),
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(1995, 9, 2, 14, 34, 56),
+        key="Europe/Berlin",
+        missing=["fold"],
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(1995, 9, 2, 14, 34, 56),
+        key="Europe/Berlin",
+        missing=["year"],
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(1995, 9, 2, 14, 34, 56),
+        key="Europe/Berlin",
+        missing=["tzinfo"],
+    )
+    @hypothesis.example(
+        dt=datetime.datetime(1995, 9, 2, 14, 34, 56),
+        key="Europe/Berlin",
+        missing=[
+            "year",
+            "month",
+            "day",
+            "hour",
+            "minute",
+            "second",
+            "microsecond",
+            "tzinfo",
+            "fold",
+        ],
+    )
+    def test_bad_duck_typed_class(self, dt, key, missing):
+        # Passing duck typed `datetime`-lookalikes is not actively supported,
+        # but it also shouldn't raise segfaults.
+
+        tzi = self.module.ZoneInfo(key)
+        DateTimeClass = _make_datetime_class(missing=missing)
+        false_friend = DateTimeClass(
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt.microsecond,
+            tzinfo=tzi,
+            fold=dt.fold,
+        )
+
+        try:
+            false_friend.utcoffset()
+        except Exception:
+            pass
+
+        try:
+            false_friend.dst()
+        except Exception:
+            pass
+
+        try:
+            false_friend.tzname()
+        except Exception:
+            pass
 
 
 class CZoneInfoTest(ZoneInfoTest):
