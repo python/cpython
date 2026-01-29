@@ -2,32 +2,32 @@
 #define Py_CONFIG_H
 
 /* pyconfig.h.  NOT Generated automatically by configure.
-
-This is a manually maintained version used for the Watcom,
-Borland and Microsoft Visual C++ compilers.  It is a
-standard part of the Python distribution.
-
-WINDOWS DEFINES:
-The code specific to Windows should be wrapped around one of
-the following #defines
-
-MS_WIN64 - Code specific to the MS Win64 API
-MS_WIN32 - Code specific to the MS Win32 (and Win64) API (obsolete, this covers all supported APIs)
-MS_WINDOWS - Code specific to Windows, but all versions.
-Py_ENABLE_SHARED - Code if the Python core is built as a DLL.
-
-Also note that neither "_M_IX86" or "_MSC_VER" should be used for
-any purpose other than "Windows Intel x86 specific" and "Microsoft
-compiler specific".  Therefore, these should be very rare.
-
-
-NOTE: The following symbols are deprecated:
-NT, USE_DL_EXPORT, USE_DL_IMPORT, DL_EXPORT, DL_IMPORT
-MS_CORE_DLL.
-
-WIN32 is still required for the locale module.
-
-*/
+ *
+ * This is a manually maintained version used for the Watcom,
+ * Borland and Microsoft Visual C++ compilers.  It is a
+ * standard part of the Python distribution.
+ *
+ * WINDOWS DEFINES:
+ * The code specific to Windows should be wrapped around one of
+ * the following #defines
+ *
+ * MS_WIN64 - Code specific to the MS Win64 API
+ * MS_WIN32 - Code specific to the MS Win32 (and Win64) API (obsolete, this covers all supported APIs)
+ * MS_WINDOWS - Code specific to Windows, but all versions.
+ * Py_ENABLE_SHARED - Code if the Python core is built as a DLL.
+ *
+ * Also note that neither "_M_IX86" or "_MSC_VER" should be used for
+ * any purpose other than "Windows Intel x86 specific" and "Microsoft
+ * compiler specific".  Therefore, these should be very rare.
+ *
+ *
+ * NOTE: The following symbols are deprecated:
+ * NT, USE_DL_EXPORT, USE_DL_IMPORT, DL_EXPORT, DL_IMPORT
+ * MS_CORE_DLL.
+ *
+ * WIN32 is still required for the locale module.
+ *
+ */
 
 /* Deprecated USE_DL_EXPORT macro - please use Py_BUILD_CORE */
 #ifdef USE_DL_EXPORT
@@ -35,11 +35,11 @@ WIN32 is still required for the locale module.
 #endif /* USE_DL_EXPORT */
 
 /* Visual Studio 2005 introduces deprecation warnings for
-   "insecure" and POSIX functions. The insecure functions should
-   be replaced by *_s versions (according to Microsoft); the
-   POSIX functions by _* versions (which, according to Microsoft,
-   would be ISO C conforming). Neither renaming is feasible, so
-   we just silence the warnings. */
+ * "insecure" and POSIX functions. The insecure functions should
+ * be replaced by *_s versions (according to Microsoft); the
+ * POSIX functions by _* versions (which, according to Microsoft,
+ * would be ISO C conforming). Neither renaming is feasible, so
+ * we just silence the warnings. */
 
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
@@ -137,13 +137,13 @@ WIN32 is still required for the locale module.
 #define _Py_STRINGIZE1(X) #X
 
 /* MSVC defines _WINxx to differentiate the windows platform types
-
-   Note that for compatibility reasons _WIN32 is defined on Win32
-   *and* on Win64. For the same reasons, in Python, MS_WIN32 is
-   defined on Win32 *and* Win64. Win32 only code must therefore be
-   guarded as follows:
-        #if defined(MS_WIN32) && !defined(MS_WIN64)
-*/
+ *
+ * Note that for compatibility reasons _WIN32 is defined on Win32
+ * *and* on Win64. For the same reasons, in Python, MS_WIN32 is
+ * defined on Win32 *and* Win64. Win32 only code must therefore be
+ * guarded as follows:
+ *      #if defined(MS_WIN32) && !defined(MS_WIN64)
+ */
 #ifdef _WIN64
 #define MS_WIN64
 #endif
@@ -184,12 +184,12 @@ WIN32 is still required for the locale module.
 #define Py_NTDDI NTDDI_WIN10
 
 /* We only set these values when building Python - we don't want to force
-   these values on extensions, as that will affect the prototypes and
-   structures exposed in the Windows headers. Even when building Python, we
-   allow a single source file to override this - they may need access to
-   structures etc so it can optionally use new Windows features if it
-   determines at runtime they are available.
-*/
+ * these values on extensions, as that will affect the prototypes and
+ * structures exposed in the Windows headers. Even when building Python, we
+ * allow a single source file to override this - they may need access to
+ * structures etc so it can optionally use new Windows features if it
+ * determines at runtime they are available.
+ */
 #if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN) || defined(Py_BUILD_CORE_MODULE)
 #ifndef NTDDI_VERSION
 #define NTDDI_VERSION Py_NTDDI
@@ -264,10 +264,10 @@ typedef int pid_t;
 /* egcs/gnu-win32 defines __GNUC__ and _WIN32 */
 #if defined(__GNUC__) && defined(_WIN32)
 /* XXX These defines are likely incomplete, but should be easy to fix.
-   They should be complete enough to build extension modules. */
+ * They should be complete enough to build extension modules. */
 /* Suggested by Rene Liebscher <R.Liebscher@gmx.de> to avoid a GCC 2.91.*
-   bug that requires structure imports.  More recent versions of the
-   compiler don't exhibit this bug.
+ * bug that requires structure imports.  More recent versions of the
+ * compiler don't exhibit this bug.
 */
 #if (__GNUC__==2) && (__GNUC_MINOR__<=91)
 #warning "Please use an up-to-date version of gcc! (>2.91 recommended)"
@@ -284,7 +284,7 @@ typedef int pid_t;
 /* lcc-win32 defines __LCC__ */
 #if defined(__LCC__)
 /* XXX These defines are likely incomplete, but should be easy to fix.
-   They should be complete enough to build extension modules. */
+ * They should be complete enough to build extension modules. */
 
 #define _Py_COMPILER "[lcc-win32]"
 typedef int pid_t;
@@ -323,11 +323,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                 /* not building the core - must be an ext */
 #               if defined(_MSC_VER) && !defined(Py_NO_LINK_LIB)
                         /* So MSVC users need not specify the .lib
-                        file in their Makefile */
+                         * file in their Makefile */
                         /* Define Py_NO_LINK_LIB to build extension disabling pragma
-                        based auto-linking.
-                        This is relevant when using build-system generator (e.g CMake) where
-                        the linking is explicitly handled */
+                         * based auto-linking.
+                         * This is relevant when using build-system generator (e.g CMake) where
+                         * the linking is explicitly handled */
 #                       if defined(Py_GIL_DISABLED)
 #                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python315t_d.lib")
@@ -351,8 +351,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 #ifdef MS_WIN64
 /* maintain "win32" sys.platform for backward compatibility of Python code,
-   the Win64 API should be close enough to the Win32 API to make this
-   preferable */
+ * the Win64 API should be close enough to the Win32 API to make this
+ * preferable */
 #       define PLATFORM "win32"
 #       define SIZEOF_VOID_P 8
 #       define SIZEOF_TIME_T 8
@@ -363,10 +363,10 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define ALIGNOF_SIZE_T 8
 #       define ALIGNOF_MAX_ALIGN_T 8
 /* configure.ac defines HAVE_LARGEFILE_SUPPORT iff
-   sizeof(off_t) > sizeof(long), and sizeof(long long) >= sizeof(off_t).
-   On Win64 the second condition is not true, but if fpos_t replaces off_t
-   then this is true. The uses of HAVE_LARGEFILE_SUPPORT imply that Win64
-   should define this. */
+ * sizeof(off_t) > sizeof(long), and sizeof(long long) >= sizeof(off_t).
+ * On Win64 the second condition is not true, but if fpos_t replaces off_t
+ * then this is true. The uses of HAVE_LARGEFILE_SUPPORT imply that Win64
+ * should define this. */
 #       define HAVE_LARGEFILE_SUPPORT
 #elif defined(MS_WIN32)
 #       define PLATFORM "win32"
@@ -397,9 +397,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_FLOAT 4
 
 /* VC 7.1 has them and VC 6.0 does not.  VC 6.0 has a version number of 1200.
-   Microsoft eMbedded Visual C++ 4.0 has a version number of 1201 and doesn't
-   define these.
-   If some compiler does not provide them, modify the #if appropriately. */
+ * Microsoft eMbedded Visual C++ 4.0 has a version number of 1201 and doesn't
+ * define these.
+ * If some compiler does not provide them, modify the #if appropriately. */
 #if defined(_MSC_VER)
 #if _MSC_VER > 1300
 #define HAVE_UINTPTR_T 1
@@ -413,7 +413,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #endif
 
 /* define signed and unsigned exact-width 32-bit and 64-bit types, used in the
-   implementation of Python integers. */
+ * implementation of Python integers. */
 #define PY_UINT32_T uint32_t
 #define PY_UINT64_T uint64_t
 #define PY_INT32_T int32_t
@@ -422,14 +422,14 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Fairly standard from here! */
 
 /* Define if on AIX 3.
-   System headers sometimes define this.
-   We just want to avoid a redefinition error message.  */
+ * System headers sometimes define this.
+ * We just want to avoid a redefinition error message.  */
 #ifndef _ALL_SOURCE
 /* #undef _ALL_SOURCE */
 #endif
 
 /* Define to empty if the keyword does not work.  */
-/* #define const  */
+/* #define const */
 
 /* Define to 1 if you have the <conio.h> header file. */
 #define HAVE_CONIO_H 1
@@ -442,33 +442,33 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_DECL_TZNAME 1
 
 /* Define if you have dirent.h.  */
-/* #define DIRENT 1 */
+/* #undef DIRENT */
 
 /* Define to the type of elements in the array set by `getgroups'.
-   Usually this is either `int' or `gid_t'.  */
+ * Usually this is either `int' or `gid_t'.  */
 /* #undef GETGROUPS_T */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-/* #undef gid_t */
+/* #define gid_t */
 
 /* Define if your struct tm has tm_zone.  */
 /* #undef HAVE_TM_ZONE */
 
 /* Define if you don't have tm_zone but do have the external array
-   tzname.  */
+ * tzname.  */
 #define HAVE_TZNAME
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-/* #undef mode_t */
+/* #define mode_t */
 
 /* Define if you don't have dirent.h, but have ndir.h.  */
 /* #undef NDIR */
 
 /* Define to `long' if <sys/types.h> doesn't define.  */
-/* #undef off_t */
+/* #define off_t */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-/* #undef pid_t */
+/* #define pid_t */
 
 /* Define if the system does not provide POSIX.1 features except
    with this defined.  */
@@ -481,7 +481,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define RETSIGTYPE void
 
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
-/* #undef size_t */
+/* #define size_t */
 
 /* Define if you have the ANSI C header files.  */
 #define STDC_HEADERS 1
@@ -496,10 +496,10 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef TIME_WITH_SYS_TIME */
 
 /* Define if your <sys/time.h> declares struct tm.  */
-/* #define TM_IN_SYS_TIME 1 */
+/* #undef TM_IN_SYS_TIME 1 */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-/* #undef uid_t */
+/* #define uid_t */
 
 /* Define if the closedir function returns void instead of int.  */
 /* #undef VOID_CLOSEDIR */
@@ -509,7 +509,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef GETPGRP_HAVE_ARGS */
 
 /* Define this if your time.h defines altzone */
-/* #define HAVE_ALTZONE */
+/* #undef HAVE_ALTZONE */
 
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV
@@ -518,11 +518,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_PROTOTYPES
 
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0). */
+ * (which you can't on SCO ODT 3.0). */
 /* #undef SYS_SELECT_WITH_SYS_TIME */
 
 /* Define if you want build the _decimal module using a coroutine-local rather
-   than a thread-local context */
+ * than a thread-local context */
 #define WITH_DECIMAL_CONTEXTVAR 1
 
 /* Define if you want documentation strings in extension modules */
@@ -532,7 +532,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef WITH_THREAD */
 
 /* Define if you want to use the GNU readline library */
-/* #define WITH_READLINE 1 */
+/* #undef WITH_READLINE */
 
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
@@ -541,7 +541,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define WITH_MIMALLOC 1
 
 /* Define if you have clock.  */
-/* #define HAVE_CLOCK */
+/* #undef HAVE_CLOCK */
 
 /* Define when any dynamic module loading is enabled */
 #define HAVE_DYNAMIC_LOADING
@@ -651,37 +651,37 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_SYS_AUDIOIO_H */
 
 /* Define if you have the <sys/param.h> header file.  */
-/* #define HAVE_SYS_PARAM_H 1 */
+/* #undef HAVE_SYS_PARAM_H */
 
 /* Define if you have the <sys/select.h> header file.  */
-/* #define HAVE_SYS_SELECT_H 1 */
+/* #undef HAVE_SYS_SELECT_H */
 
 /* Define to 1 if you have the <sys/stat.h> header file.  */
 #define HAVE_SYS_STAT_H 1
 
 /* Define if you have the <sys/time.h> header file.  */
-/* #define HAVE_SYS_TIME_H 1 */
+/* #undef HAVE_SYS_TIME_H */
 
 /* Define if you have the <sys/times.h> header file.  */
-/* #define HAVE_SYS_TIMES_H 1 */
+/* #undef HAVE_SYS_TIMES_H */
 
 /* Define to 1 if you have the <sys/types.h> header file.  */
 #define HAVE_SYS_TYPES_H 1
 
 /* Define if you have the <sys/un.h> header file.  */
-/* #define HAVE_SYS_UN_H 1 */
+/* #undef HAVE_SYS_UN_H */
 
 /* Define if you have the <sys/utime.h> header file.  */
-/* #define HAVE_SYS_UTIME_H 1 */
+/* #undef HAVE_SYS_UTIME_H */
 
 /* Define if you have the <sys/utsname.h> header file.  */
-/* #define HAVE_SYS_UTSNAME_H 1 */
+/* #undef HAVE_SYS_UTSNAME_H */
 
 /* Define if you have the <unistd.h> header file.  */
-/* #define HAVE_UNISTD_H 1 */
+/* #undef HAVE_UNISTD_H */
 
 /* Define if you have the <utime.h> header file.  */
-/* #define HAVE_UTIME_H 1 */
+/* #undef HAVE_UTIME_H */
 
 /* Define if the compiler provides a wchar.h header file. */
 #define HAVE_WCHAR_H 1
@@ -720,11 +720,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_LIBTHREAD */
 
 /* WinSock does not use a bitmask in select, and uses
-   socket handles greater than FD_SETSIZE */
+ * socket handles greater than FD_SETSIZE */
 #define Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
 
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored with the
-   least significant byte first */
+ * least significant byte first */
 #define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1
 
 /* Define to 1 if you have the `erf' function. */
