@@ -8700,19 +8700,19 @@
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                attr = PyObject_GetAttrStackRef(PyStackRef_AsPyObjectBorrow(owner), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -1;
+                stack_pointer[-1] = attr;
+                stack_pointer += (oparg&1);
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(owner);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (attr_o == NULL) {
+                if (PyStackRef_IsNull(attr)) {
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
-                stack_pointer += 1;
+                stack_pointer += -(oparg&1);
             }
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;

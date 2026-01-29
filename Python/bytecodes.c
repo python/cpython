@@ -2389,10 +2389,9 @@ dummy_func(
             }
             else {
                 /* Classic, pushes one value. */
-                PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                attr = PyObject_GetAttrStackRef(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
-                ERROR_IF(attr_o == NULL);
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                ERROR_IF(PyStackRef_IsNull(attr));
             }
         }
 

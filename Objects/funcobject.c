@@ -7,6 +7,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
@@ -1868,7 +1869,15 @@ PyStaticMethod_New(PyObject *callable)
     staticmethod *sm = (staticmethod *)
         PyType_GenericAlloc(&PyStaticMethod_Type, 0);
     if (sm != NULL) {
+        _PyObject_SetDeferredRefcount((PyObject *)sm);
         sm->sm_callable = Py_NewRef(callable);
     }
     return (PyObject *)sm;
+}
+
+PyObject *
+_PyStaticMethod_GetFunc(PyObject *self)
+{
+    staticmethod *sm = _PyStaticMethod_CAST(self);
+    return sm->sm_callable;
 }
