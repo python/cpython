@@ -1997,6 +1997,26 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
+   Note that the remote process must be able to read the temporary script file in terms
+   of permissions. If the caller is running under different user than the process,
+   the caller should grant permissions (typically ``os.fchmod(filename, 0o644)``).
+
+   Callers should adjust permissions before calling, for example::
+
+      import os
+      import sys
+      import tempfile
+
+      with tempfile.NamedTemporaryFile(
+          mode='w',
+          suffix='.py',
+          delete_on_close=False,
+      ) as f:
+          f.write("print('Hello from remote!')")
+          f.flush()
+          os.chmod(f.name, 0o644)  # Readable by group/other
+          sys.remote_exec(pid, f.name)
+
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
 
