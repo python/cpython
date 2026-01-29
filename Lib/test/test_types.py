@@ -2167,6 +2167,21 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertIs(type(spam2), Spam)
         self.assertEqual(vars(spam2), {'ham': 5, 'eggs': 9})
 
+    def test_replace_invalid_subtype(self):
+        # See https://github.com/python/cpython/issues/143636.
+        class NS(types.SimpleNamespace):
+            def __new__(cls, *args, **kwargs):
+                if created:
+                    return object()
+                return super().__new__(cls)
+
+        created = False
+        ns = NS()
+        created = True
+        err = re.escape("NS.__new__() must return an instance "
+                        "of a subclass of types.SimpleNamespace")
+        self.assertRaisesRegex(TypeError, err, copy.replace, ns)
+
     def test_fake_namespace_compare(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
         # SystemError.
