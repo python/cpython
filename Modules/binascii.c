@@ -469,11 +469,13 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
+typedef unsigned char ignorecache_t[32];
 
 static int
-ignorechar(unsigned char c, Py_buffer *ignorechars, char ignorecache[32])
+ignorechar(unsigned char c, const Py_buffer *ignorechars,
+           ignorecache_t ignorecache)
 {
-    if (ignorechars->buf == NULL) {
+    if (ignorechars == NULL) {
         return 0;
     }
     if (ignorecache[c >> 3] & (1 << (c & 7))) {
@@ -517,8 +519,11 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
     if (strict_mode == -1) {
         strict_mode = (ignorechars->buf != NULL);
     }
-    char ignorecache[32];
-    if (strict_mode && ignorechars->buf != NULL) {
+    if (!strict_mode || ignorechars->buf == NULL || ignorechars->len == 0) {
+        ignorechars = NULL;
+    }
+    ignorecache_t ignorecache;
+    if (ignorechars != NULL) {
         memset(ignorecache, 0, sizeof(ignorecache));
     }
 

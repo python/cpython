@@ -202,16 +202,16 @@ class BinASCIITest(unittest.TestCase):
         assertNonBase64Data(b'a\nb==', b'i', ignorechars=bytearray(b'\n'))
         assertNonBase64Data(b'a\nb==', b'i', ignorechars=memoryview(b'\n'))
 
-        # Same byte in the bit cache: '\r' >> 3 == '\n' >> 3.
+        # Same cell in the cache: '\r' >> 3 == '\n' >> 3.
         data = self.type2test(b'\r\n')
         with self.assertRaises(binascii.Error):
             binascii.a2b_base64(data, ignorechars=b'\r')
         self.assertEqual(binascii.a2b_base64(data, ignorechars=b'\r\n'), b'')
-        # Same mask in the bit cache: ':' & 7 == '\n' & 7.
-        data = self.type2test(b':\n')
+        # Same bit mask in the cache: '*' & 31 == '\n' & 31.
+        data = self.type2test(b'*\n')
         with self.assertRaises(binascii.Error):
-            binascii.a2b_base64(data, ignorechars=b':')
-        self.assertEqual(binascii.a2b_base64(data, ignorechars=b':\n'), b'')
+            binascii.a2b_base64(data, ignorechars=b'*')
+        self.assertEqual(binascii.a2b_base64(data, ignorechars=b'*\n'), b'')
 
         data = self.type2test(b'a\nb==')
         with self.assertRaises(TypeError):
