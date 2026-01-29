@@ -32,15 +32,230 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
 
 from _colorize import can_colorize, get_theme
 from heapq import nlargest as _nlargest
-from collections import namedtuple as _namedtuple
+from collections import Counter as _Counter, namedtuple as _namedtuple
 from types import GenericAlias
 
 Match = _namedtuple('Match', 'a b size')
+
+
+def _adjust_indices(seq, start, stop):
+    if start < 0:
+        raise ValueError('Starting index can not be negative')
+    size = len(seq)
+    if stop is None or stop > size:
+        stop = size
+    return start, stop
+
+
+class _LCSUBSimple:
+    """Simple dict method for finding longest common substring.
+
+    Complexity:
+        T: O(n1 + n2) best, O(n1 × n2) worst
+        S: O(n2)
+            , where n1 = len(a), n2 = len(b)
+
+    Members:
+        _b2j    for x in b, b2j[x] is a list of the indices (into b)
+                at which x appears; junk elements do not appear
+    """
+
+    def __init__(self, b, junk=()):
+        if not isinstance(junk, frozenset):
+            junk = frozenset(junk)
+        self.b = b
+        self.junk = junk
+        self._b2j = None
+
+    def isbuilt(self, blo, bhi):
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if blo >= bhi:
+            return True
+        return self._b2j is not None
+
+    def _get_b2j(self):
+        b2j = self._b2j
+        if b2j is not None:
+            return b2j
+
+        b2j = {}   # positions of each element in b
+        for i, elt in enumerate(self.b):
+            indices = b2j.setdefault(elt, [])
+            indices.append(i)
+        junk = self.junk
+        if junk:
+            for elt in junk:
+                del b2j[elt]
+        self._b2j = b2j
+        return b2j
+
+    def find(self, a, alo=0, ahi=None, blo=0, bhi=None):
+        alo, ahi = _adjust_indices(a, alo, ahi)
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if alo >= ahi or blo >= bhi:
+            return (alo, blo, 0)
+
+        b2j = self._get_b2j()
+        j2len = {}
+        nothing = []
+        besti, bestj, bestsize = alo, blo, 0
+        # find longest junk-free match
+        # during an iteration of the loop, j2len[j] = length of longest
+        # junk-free match ending with a[i-1] and b[j]
+        for i in range(alo, ahi):
+            # look at all instances of a[i] in b; note that because
+            # b2j has no junk keys, the loop is skipped if a[i] is junk
+            j2lenget = j2len.get
+            newj2len = {}
+            for j in b2j.get(a[i], nothing):
+                # a[i] matches b[j]
+                if j < blo:
+                    continue
+                if j >= bhi:
+                    break
+                k = newj2len[j] = j2lenget(j-1, 0) + 1
+                if k > bestsize:
+                    besti = i - k + 1
+                    bestj = j - k + 1
+                    bestsize = k
+            j2len = newj2len
+
+        return besti, bestj, bestsize
+
+
+class _LCSUBAutomaton:
+    """Suffix Automaton for finding longest common substring.
+
+    Complexity:
+        T: O(n1 + n2)   - roughly 2 * n1 + 6 * n2
+        S: O(n2)        - maximum nodes: 2 * n2 + 1
+            , where n1 = len(a), n2 = len(b)
+
+    Node spec:
+        node: list = [length: int, link: list, next: dict, end_pos: int]
+            length  - match length when the node is reached
+            link    - reference to a node to fall back to
+            next    - map to nodes to go to when matched
+            end_pos - end position of first occurrence (used for result)
+    """
+
+    def __init__(self, b, junk=()):
+        if not isinstance(junk, frozenset):
+            junk = frozenset(junk)
+        self.b = b
+        self.junk = junk
+        self._root = None
+        self._cache = (None, None)
+
+    def isbuilt(self, blo, bhi):
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if blo >= bhi:
+            return True
+        return self._root is not None and self._cache == (blo, bhi)
+
+    def _get_root(self, blo, bhi):
+        """
+        Automaton needs to rebuild for every (start2, stop2)
+        It is made to cache the last one and only rebuilds for new range
+        """
+        key = (blo, bhi)
+        root = self._root
+        if root is not None and self._cache == key:
+            return root
+
+        LEN, LINK, NEXT, EPOS = 0, 1, 2, 3
+        root = [0, None, {}, -1]
+        b = self.b
+        junk = self.junk
+        last_len = 0
+        last = root
+        for j in range(blo, bhi):
+            c = b[j]
+            if c in junk:
+                last_len = 0
+                last = root
+            else:
+                last_len += 1
+                curr = [last_len, None, {}, j]
+
+                p = last
+                p_next = p[NEXT]
+                while c not in p_next:
+                    p_next[c] = curr
+                    if p is root:
+                        curr[LINK] = root
+                        break
+                    p = p[LINK]
+                    p_next = p[NEXT]
+                else:
+                    q = p_next[c]
+                    p_len_p1 = p[LEN] + 1
+                    if p_len_p1 == q[LEN]:
+                        curr[LINK] = q
+                    else:
+                        # Copy `q[EPOS]` to ensure leftmost match in b
+                        clone = [p_len_p1, q[LINK], q[NEXT].copy(), q[EPOS]]
+                        while (p_next := p[NEXT]).get(c) is q:
+                            p_next[c] = clone
+                            if p is root:
+                                break
+                            p = p[LINK]
+
+                        q[LINK] = curr[LINK] = clone
+
+                last = curr
+
+        self._root = root
+        self._cache = key
+        return root
+
+    def find(self, a, alo=0, ahi=None, blo=0, bhi=None):
+        alo, ahi = _adjust_indices(a, alo, ahi)
+        blo, bhi = _adjust_indices(self.b, blo, bhi)
+        if alo >= ahi or blo >= bhi:
+            return (alo, blo, 0)
+
+        LEN, LINK, NEXT, EPOS = 0, 1, 2, 3
+        root = self._get_root(blo, bhi)
+        junk = self.junk
+        v = root
+        l = 0
+        best_len = 0
+        best_state = None
+        best_pos = 0
+
+        for i in range(alo, ahi):
+            c = a[i]
+            if c in junk:
+                v = root
+                l = 0
+            else:
+                while v is not root and c not in v[NEXT]:
+                    v = v[LINK]
+                    l = v[LEN]
+
+                v_next = v[NEXT]
+                if c in v_next:
+                    v = v_next[c]
+                    l += 1
+                    if l > best_len:
+                        best_len = l
+                        best_state = v
+                        best_pos = i
+
+        if not best_len:
+            return (alo, blo, 0)
+
+        start_in_s1 = best_pos + 1 - best_len
+        start_in_s2 = best_state[EPOS] + 1 - best_len
+        return (start_in_s1, start_in_s2, best_len)
+
 
 def _calculate_ratio(matches, length):
     if length:
         return 2.0 * matches / length
     return 1.0
+
 
 class SequenceMatcher:
 
@@ -276,32 +491,41 @@ class SequenceMatcher:
         # out the junk later is much cheaper than building b2j "right"
         # from the start.
         b = self.b
-        self.b2j = b2j = {}
-
-        for i, elt in enumerate(b):
-            indices = b2j.setdefault(elt, [])
-            indices.append(i)
-
-        # Purge junk elements
-        self.bjunk = junk = set()
         isjunk = self.isjunk
-        if isjunk:
-            for elt in b2j.keys():
-                if isjunk(elt):
-                    junk.add(elt)
-            for elt in junk: # separate loop avoids separate list of keys
-                del b2j[elt]
-
-        # Purge popular elements that are not junk
+        self.bjunk = junk = set()
+        autojunk = self.autojunk
         self.bpopular = popular = set()
+        self._bcounts = bcounts = dict(_Counter(b))
+        if isjunk:
+            junk.update(filter(isjunk, bcounts))
+            for elt in junk:
+                del bcounts[elt]
+
         n = len(b)
-        if self.autojunk and n >= 200:
+        if autojunk and n >= 200:
             ntest = n // 100 + 1
-            for elt, idxs in b2j.items():
-                if len(idxs) > ntest:
+            for elt, num in bcounts.items():
+                if num > ntest:
                     popular.add(elt)
             for elt in popular: # ditto; as fast for 1% deletion
-                del b2j[elt]
+                del bcounts[elt]
+
+        if not bcounts:
+            self._bcount_thres = 0
+        else:
+            sum_bcount = sum(bcounts.values())
+            avg_bcount = sum(c * c for c in bcounts.values()) / sum_bcount
+            max_bcount = max(bcounts.values())
+            self._bcount_thres = avg_bcount * 0.8 + max_bcount * 0.2
+
+        self._all_junk = all_junk = frozenset(junk | popular)
+        self._lcsub_simple = _LCSUBSimple(b, all_junk)
+        self._lcsub_automaton = _LCSUBAutomaton(b, all_junk)
+
+    @property
+    def b2j(self):
+        # NOTE: For backwards compatibility
+        return self._lcsub_simple._get_b2j()
 
     def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
@@ -361,32 +585,52 @@ class SequenceMatcher:
         # Windiff ends up at the same place as diff, but by pairing up
         # the unique 'b's and then matching the first two 'a's.
 
-        a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
+        a, b, isbjunk = self.a, self.b, self.bjunk.__contains__
         if ahi is None:
             ahi = len(a)
         if bhi is None:
             bhi = len(b)
-        besti, bestj, bestsize = alo, blo, 0
-        # find longest junk-free match
-        # during an iteration of the loop, j2len[j] = length of longest
-        # junk-free match ending with a[i-1] and b[j]
-        j2len = {}
-        nothing = []
-        for i in range(alo, ahi):
-            # look at all instances of a[i] in b; note that because
-            # b2j has no junk keys, the loop is skipped if a[i] is junk
-            j2lenget = j2len.get
-            newj2len = {}
-            for j in b2j.get(a[i], nothing):
-                # a[i] matches b[j]
-                if j < blo:
-                    continue
-                if j >= bhi:
-                    break
-                k = newj2len[j] = j2lenget(j-1, 0) + 1
-                if k > bestsize:
-                    besti, bestj, bestsize = i-k+1, j-k+1, k
-            j2len = newj2len
+        asize = ahi - alo
+        bsize = bhi - blo
+
+        if asize <= 0 and bsize <= 0:
+            besti, bestj, bestsize = alo, blo, 0
+        else:
+            # Can trim a from both ends while characters are not in b
+            # This is cheap and we have bcounts at all times
+            bcounts = self._bcounts
+            tmp_alo = alo
+            tmp_ahi = ahi
+            while tmp_alo < tmp_ahi and a[tmp_alo] not in bcounts:
+                tmp_alo += 1
+            while tmp_alo < tmp_ahi and a[tmp_ahi - 1] not in bcounts:
+                tmp_ahi -= 1
+            tmp_asize = tmp_ahi - tmp_alo
+            if tmp_asize <= 0:
+                besti, bestj, bestsize = alo, blo, 0
+            else:
+                # Constant to contruct automaton is roughly - 6.
+                # Constant to run automaton is roughly - 1.
+                # This has been tested on a range of data sets.
+                # It gave selection accuracy of ~95%.
+                # Weak spot is cases with little or no element overlap at all.
+                # However, such check would likely have more cost than benefit.
+                simple_calc = self._lcsub_simple
+                automaton = self._lcsub_automaton
+
+                simple_cost = self._bcount_thres * tmp_asize
+                if not simple_calc.isbuilt(blo, bhi):
+                    simple_cost += bsize
+
+                automaton_cost = tmp_asize
+                if not automaton.isbuilt(blo, bhi):
+                    automaton_cost += bsize * 6
+
+                if simple_cost < automaton_cost:
+                    calc = simple_calc
+                else:
+                    calc = automaton
+                besti, bestj, bestsize = calc.find(a, tmp_alo, tmp_ahi, blo, bhi)
 
         # Extend the best by non-junk elements on each end.  In particular,
         # "popular" non-junk elements aren't in b2j, which greatly speeds

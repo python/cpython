@@ -172,7 +172,7 @@ class PyclbrTest(TestCase):
         with temporary_main_spec():
             self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
                                                 "DocTestCase", '_DocTestSuite'))
-        self.checkModule('difflib', ignore=("Match",))
+        self.checkModule('difflib', ignore=("Match", "b2j"))
 
     def test_cases(self):
         # see test.pyclbr_input for the rationale behind the ignored symbols
