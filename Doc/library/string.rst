@@ -648,7 +648,7 @@ Format examples
 ^^^^^^^^^^^^^^^
 
 This section contains examples of the :meth:`str.format` syntax and
-comparison with the old ``%``-formatting.
+comparison with the old :ref:`printf-style formatting <old-string-formatting>`.
 
 In most of the cases the syntax is similar to the old ``%``-formatting, with the
 addition of the ``{}`` and with ``:`` used instead of ``%``.
