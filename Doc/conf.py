@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'sphinx.ext.imgconverter',
 ]
 
 # Skip if downstream redistributors haven't installed them
