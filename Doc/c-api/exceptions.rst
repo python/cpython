@@ -1013,7 +1013,7 @@ Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requ
 special recursion handling.  In addition to protecting the stack,
 :c:member:`~PyTypeObject.tp_repr` also needs to track objects to prevent cycles.  The
 following two functions facilitate this functionality.  Effectively,
-these are the C equivalent to :func:`reprlib.recursive_repr`.
+these are the C equivalent to :deco:`reprlib.recursive_repr`.
 
 .. c:function:: int Py_ReprEnter(PyObject *object)
 
