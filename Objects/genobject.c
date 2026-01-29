@@ -38,24 +38,24 @@ static PyObject* async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
     _Py_CAST(PyAsyncGenObject*, (op))
 
 #ifdef Py_GIL_DISABLED
+static bool
+gen_try_set_frame_state(PyGenObject *gen, int8_t *expected, int8_t state)
+{
+    if (*expected == FRAME_SUSPENDED_YIELD_FROM_LOCKED) {
+        // Wait for the in-progress gi_yieldfrom read to complete
+        _Py_yield();
+        *expected = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+        return false;
+    }
+    return _Py_atomic_compare_exchange_int8(&gen->gi_frame_state, expected, state);
+}
+
 # define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
-    _Py_atomic_compare_exchange_int8(&(gen)->gi_frame_state, &expected, (state))
+    gen_try_set_frame_state((gen), &(expected), (state))
 #else
 # define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
     ((gen)->gi_frame_state = (state), true)
 #endif
-
-// Wait for any in-progress gi_yieldfrom read to complete.
-static inline void
-gen_yield_from_lock_wait(PyGenObject *gen, int8_t *frame_state)
-{
-#ifdef Py_GIL_DISABLED
-    while (*frame_state == FRAME_SUSPENDED_YIELD_FROM_LOCKED) {
-        _Py_yield();
-        *frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
-    }
-#endif
-}
 
 
 static const char *NON_INIT_CORO_MSG = "can't send non-None value to a "
@@ -331,8 +331,6 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, PyObject **presult)
     *presult = NULL;
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
     do {
-        gen_yield_from_lock_wait(gen, &frame_state);
-
         if (frame_state == FRAME_CREATED && arg && arg != Py_None) {
             const char *msg = "can't send non-None value to a "
                                 "just-started generator";
@@ -467,8 +465,6 @@ gen_close(PyObject *self, PyObject *args)
 
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
     do {
-        gen_yield_from_lock_wait(gen, &frame_state);
-
         if (frame_state == FRAME_CREATED) {
             // && (1) to avoid -Wunreachable-code warning on Clang
             if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_CLEARED) && (1)) {
@@ -487,9 +483,7 @@ gen_close(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        assert(frame_state == FRAME_SUSPENDED_YIELD_FROM ||
-               frame_state == FRAME_SUSPENDED);
-
+        assert(FRAME_STATE_SUSPENDED(frame_state));
     } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING));
 
     int err = 0;
@@ -631,8 +625,6 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
 {
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
     do {
-        gen_yield_from_lock_wait(gen, &frame_state);
-
         if (frame_state == FRAME_EXECUTING) {
             gen_raise_already_executing_error(gen);
             return NULL;
@@ -898,8 +890,9 @@ gen_getyieldfrom(PyObject *self, void *Py_UNUSED(ignored))
 #ifdef Py_GIL_DISABLED
     int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
     do {
-        gen_yield_from_lock_wait(gen, &frame_state);
-        if (frame_state != FRAME_SUSPENDED_YIELD_FROM) {
+        if (frame_state != FRAME_SUSPENDED_YIELD_FROM &&
+            frame_state != FRAME_SUSPENDED_YIELD_FROM_LOCKED)
+        {
             Py_RETURN_NONE;
         }
     } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_SUSPENDED_YIELD_FROM_LOCKED));
