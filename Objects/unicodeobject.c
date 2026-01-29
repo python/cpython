@@ -9475,6 +9475,9 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
         else if (Py_UNICODE_ISSPACE(ch)) {
             out[i] = ' ';
         }
+        else if (ch == 0x2212) {  /* MINUS SIGN */
+            out[i] = '-';
+        }
         else {
             int decimal = Py_UNICODE_TODECIMAL(ch);
             if (decimal < 0) {
