@@ -45,8 +45,9 @@ class Address:
                 raise ValueError("Invalid addr_spec; only '{}' "
                                  "could be parsed from '{}'".format(
                                     a_s, addr_spec))
-            if a_s.all_defects:
-                raise a_s.all_defects[0]
+            for defect in a_s.all_defects:
+                if not isinstance(defect, errors.NonASCIILocalPartDefect):
+                    raise defect
             username = a_s.local_part
             domain = a_s.domain
         self._display_name = display_name
