@@ -67,6 +67,9 @@ SHELL=		/bin/sh -e
 # Use this to make a link between python$(VERSION) and python in $(BINDIR)
 LN=		@LN@
 
+# patchelf is used on Linux to set SONAME of libpython3.so for stable ABI
+PATCHELF=	@PATCHELF@
+
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
@@ -1026,7 +1029,11 @@ libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
 	fi
 
 libpython3.so:	libpython$(LDVERSION).so
-	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
+	if test -n "$(PATCHELF)"; then \
+		cp $^ $@ && $(PATCHELF) --set-soname $@ $@; \
+	else \
+		$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^; \
+	fi
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
 	 $(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
