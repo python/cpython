@@ -153,6 +153,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_TWO_TUPLE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_TUPLE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_LIST] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_EX] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -1447,6 +1448,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 0, 1, _UNPACK_SEQUENCE_TUPLE_r10 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 0, 1, _UNPACK_SEQUENCE_UNIQUE_TUPLE_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -3740,6 +3750,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_UNPACK_SEQUENCE_r10] = _UNPACK_SEQUENCE,
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_TWO_TUPLE,
     [_UNPACK_SEQUENCE_TUPLE_r10] = _UNPACK_SEQUENCE_TUPLE,
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE_r10] = _UNPACK_SEQUENCE_UNIQUE_TUPLE,
     [_UNPACK_SEQUENCE_LIST_r10] = _UNPACK_SEQUENCE_LIST,
     [_UNPACK_EX_r10] = _UNPACK_EX,
     [_STORE_ATTR_r20] = _STORE_ATTR,
@@ -5357,6 +5368,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_UNPACK_SEQUENCE_TUPLE_r10] = "_UNPACK_SEQUENCE_TUPLE_r10",
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = "_UNPACK_SEQUENCE_TWO_TUPLE_r12",
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE] = "_UNPACK_SEQUENCE_UNIQUE_TUPLE",
+    [_UNPACK_SEQUENCE_UNIQUE_TUPLE_r10] = "_UNPACK_SEQUENCE_UNIQUE_TUPLE_r10",
     [_WITH_EXCEPT_START] = "_WITH_EXCEPT_START",
     [_WITH_EXCEPT_START_r33] = "_WITH_EXCEPT_START_r33",
     [_YIELD_VALUE] = "_YIELD_VALUE",
@@ -5600,6 +5613,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _UNPACK_SEQUENCE_TWO_TUPLE:
             return 1;
         case _UNPACK_SEQUENCE_TUPLE:
+            return 1;
+        case _UNPACK_SEQUENCE_UNIQUE_TUPLE:
             return 1;
         case _UNPACK_SEQUENCE_LIST:
             return 1;

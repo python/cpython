@@ -206,7 +206,8 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 #define REF_IS_BORROWED 1
 #define REF_IS_INVALID  2
-#define REF_TAG_BITS    3
+#define REF_IS_UNIQUE   4
+#define REF_TAG_BITS    7
 
 #define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_TAG_BITS)))
 
@@ -235,6 +236,30 @@ static inline bool
 PyJitRef_IsInvalid(JitOptRef ref)
 {
     return (ref.bits & REF_IS_INVALID) == REF_IS_INVALID;
+}
+
+static inline JitOptRef
+PyJitRef_MakeUnique(JitOptRef ref)
+{
+    return (JitOptRef){ ref.bits | REF_IS_UNIQUE };
+}
+
+static inline JitOptRef
+PyJitRef_RemoveUnique(JitOptRef ref)
+{
+    return (JitOptRef){ ref.bits & (~REF_IS_UNIQUE) };
+}
+
+static inline bool
+PyJitRef_IsUnique(JitOptRef ref)
+{
+    return (ref.bits & REF_IS_UNIQUE) == REF_IS_UNIQUE;
+}
+
+static inline JitOptRef
+PyJitRef_StripBorrowInfo(JitOptRef ref)
+{
+    return (JitOptRef){ .bits = ref.bits & ~(REF_IS_BORROWED | REF_IS_INVALID) };
 }
 
 static inline JitOptRef
