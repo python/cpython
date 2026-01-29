@@ -3974,6 +3974,31 @@ def bœr():
         self.assertIn('-> pass', lines)
         self.assertIn('(Pdb) 42', lines)
 
+    def test_issue135700(self):
+        # See gh-135700
+        module_code = textwrap.dedent("""\
+            22
+
+            class ClassVar:
+                pass
+            __dataclass_fields__: ClassVar
+        """)
+        with open("testmod.py", "w") as f:
+            f.write(module_code)
+        self.addCleanup(os_helper.unlink, "testmod.py")
+
+        script = textwrap.dedent("""
+            import testmod
+            print(testmod.__annotations__)
+        """)
+        commands = """
+            b testmod.py:1
+            c
+            c
+        """
+        result = self.run_pdb_script(script, commands)
+        self.assertNotIn("(1)__annotate__()", result[0])
+
     def test_step_into_botframe(self):
         # gh-125422
         # pdb should not be able to step into the botframe (bdb.py)

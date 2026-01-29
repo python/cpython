@@ -13,6 +13,7 @@
  */
 
 #include "Python.h"
+#include "listobject.h"
 #include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #define NEED_OPCODE_TABLES
@@ -705,13 +706,14 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     PyObject *value_with_fake_globals = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     _Py_DECLARE_STR(format, ".format");
-    ADDOP_I(c, loc, LOAD_FAST, 0);
-    ADDOP_LOAD_CONST(c, loc, value_with_fake_globals);
-    ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
+
+    ADDOP_I(c, NO_LOCATION, LOAD_FAST, 0);
+    ADDOP_LOAD_CONST(c, NO_LOCATION, value_with_fake_globals);
+    ADDOP_I(c, NO_LOCATION, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
-    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
-    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
-    ADDOP_I(c, loc, RAISE_VARARGS, 1);
+    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, body);
+    ADDOP_I(c, NO_LOCATION, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
+    ADDOP_I(c, NO_LOCATION, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
     return SUCCESS;
 }
@@ -770,7 +772,7 @@ codegen_deferred_annotations_body(compiler *c, location loc,
     assert(PyList_CheckExact(conditional_annotation_indices));
     assert(annotations_len == PyList_Size(conditional_annotation_indices));
 
-    ADDOP_I(c, loc, BUILD_MAP, 0); // stack now contains <annos>
+    ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0); // stack now contains <annos>
 
     for (Py_ssize_t i = 0; i < annotations_len; i++) {
         PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
@@ -806,7 +808,7 @@ codegen_deferred_annotations_body(compiler *c, location loc,
         ADDOP_I(c, LOC(st), COPY, 2);
         ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
         // stack now contains <annos> <name> <annos> <value>
-        ADDOP(c, loc, STORE_SUBSCR);
+        ADDOP(c, LOC(st), STORE_SUBSCR);
         // stack now contains <annos>
 
         USE_LABEL(c, not_set);
@@ -841,7 +843,15 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     assert(ste->ste_annotation_block != NULL);
     void *key = (void *)((uintptr_t)ste->ste_id + 1);
-    if (codegen_setup_annotations_scope(c, loc, key,
+
+    // Get the first annotation location
+    assert(PyList_GET_SIZE(deferred_anno) > 0);
+    PyObject* ptr = PyList_GET_ITEM(deferred_anno, 0);
+    stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
+    if (st == NULL) {
+        goto error;
+    }
+    if (codegen_setup_annotations_scope(c, LOC(st), key,
                                         ste->ste_annotation_block->ste_name) < 0) {
         goto error;
     }
@@ -854,12 +864,11 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     Py_DECREF(deferred_anno);
     Py_DECREF(conditional_annotation_indices);
 
-    RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
+    RETURN_IF_ERROR(codegen_leave_annotations_scope(c, LOC(st)));
     RETURN_IF_ERROR(codegen_nameop(
-        c, loc,
+        c, LOC(st),
         ste->ste_type == ClassBlock ? &_Py_ID(__annotate_func__) : &_Py_ID(__annotate__),
         Store));
-
     if (need_separate_block) {
         RETURN_IF_ERROR(_PyCompile_EndAnnotationSetup(c));
     }
@@ -886,8 +895,8 @@ int
 _PyCodegen_Module(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interactive)
 {
     if (SYMTABLE_ENTRY(c)->ste_has_conditional_annotations) {
-        ADDOP_I(c, loc, BUILD_SET, 0);
-        ADDOP_N(c, loc, STORE_NAME, &_Py_ID(__conditional_annotations__), names);
+        ADDOP_I(c, NO_LOCATION, BUILD_SET, 0);
+        ADDOP_N(c, NO_LOCATION, STORE_NAME, &_Py_ID(__conditional_annotations__), names);
     }
     return codegen_body(c, loc, stmts, is_interactive);
 }
@@ -1585,8 +1594,8 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     if (SYMTABLE_ENTRY(c)->ste_has_conditional_annotations) {
-        ADDOP_I(c, loc, BUILD_SET, 0);
-        ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
+        ADDOP_I(c, NO_LOCATION, BUILD_SET, 0);
+        ADDOP_N_IN_SCOPE(c, NO_LOCATION, STORE_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
     }
     /* compile the body proper */
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_body(c, loc, s->v.ClassDef.body, false));
