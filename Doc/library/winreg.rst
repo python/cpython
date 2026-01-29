@@ -422,6 +422,42 @@ This module offers the following functions:
    .. audit-event:: winreg.QueryValue key,sub_key,value_name winreg.QueryValueEx
 
 
+.. function:: GetValue(key, sub_key, value_name, flags=RRF_RT_ANY)
+
+   Retrieves the type and data for a specified registry value without requiring
+   the key to be opened first.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that holds the name of the subkey with which the value
+   is associated. If this parameter is ``None`` or empty, the value will be read
+   from the key specified by *key*.
+
+   *value_name* is a string indicating the value to query, or ``None`` for the
+   default value of the subkey.
+
+   *flags* is an integer that specifies the restrictions on the value type to
+   be queried (see :ref:`RRF_* constants <rrf-constants>`). Default is
+   ``RRF_RT_ANY``.
+
+   The result is a tuple of 2 items:
+
+   +-------+-----------------------------------------+
+   | Index | Meaning                                 |
+   +=======+=========================================+
+   | ``0`` | The value of the registry item.         |
+   +-------+-----------------------------------------+
+   | ``1`` | An integer giving the registry type for |
+   |       | this value (see table in docs for       |
+   |       | :meth:`SetValueEx`)                     |
+   +-------+-----------------------------------------+
+
+   .. audit-event:: winreg.GetValue key,sub_key,value_name,flags winreg.GetValue
+
+   .. versionadded:: next
+
+
 .. function:: SaveKey(key, file_name)
 
    Saves the specified key, and all its subkeys to the specified file.
@@ -751,6 +787,83 @@ For more information, see `Registry Value Types
 .. data:: REG_SZ
 
    A null-terminated string.
+
+
+.. _rrf-constants:
+
+RRF_* Constants
++++++++++++++++
+
+Registry value retrieval flags used with :func:`GetValue`.
+
+.. data:: RRF_RT_ANY
+
+   No type restriction. All registry value types will be returned.
+
+
+.. data:: RRF_RT_DWORD
+
+   Restrict query to 32-bit values.
+
+
+.. data:: RRF_RT_QWORD
+
+   Restrict query to 64-bit values.
+
+
+.. data:: RRF_RT_REG_BINARY
+
+   Restrict query to binary data (REG_BINARY).
+
+
+.. data:: RRF_RT_REG_DWORD
+
+   Restrict query to REG_DWORD values.
+
+
+.. data:: RRF_RT_REG_QWORD
+
+   Restrict query to REG_QWORD values.
+
+
+.. data:: RRF_RT_REG_EXPAND_SZ
+
+   Restrict query to expandable strings (REG_EXPAND_SZ).
+
+
+.. data:: RRF_RT_REG_MULTI_SZ
+
+   Restrict query to multi-strings (REG_MULTI_SZ).
+
+
+.. data:: RRF_RT_REG_NONE
+
+   Restrict query to null values (REG_NONE).
+
+
+.. data:: RRF_RT_REG_SZ
+
+   Restrict query to null-terminated strings (REG_SZ).
+
+
+.. data:: RRF_NOEXPAND
+
+   Do not automatically expand environment variables in REG_EXPAND_SZ values.
+
+
+.. data:: RRF_ZEROONFAILURE
+
+   Set buffer contents to zeroes on failure.
+
+
+.. data:: RRF_SUBKEY_WOW6464KEY
+
+   Query the 64-bit registry view on 64-bit Windows.
+
+
+.. data:: RRF_SUBKEY_WOW6432KEY
+
+   Query the 32-bit registry view on 64-bit Windows.
 
 
 .. _handle-object:
