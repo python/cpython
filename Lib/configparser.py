@@ -985,7 +985,9 @@ class RawConfigParser(MutableMapping):
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
             if value is not None or not self._allow_no_value:
-                value = delimiter + str(value).replace('\n', '\n\t')
+                # Convert all possible line-endings into '\n\t'
+                value = (delimiter + str(value).replace('\r\n', '\n')
+                         .replace('\r', '\n').replace('\n', '\n\t'))
             else:
                 value = ""
             fp.write("{}{}\n".format(key, value))
