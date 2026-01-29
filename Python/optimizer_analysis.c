@@ -254,6 +254,9 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_descr_object _Py_uop_sym_new_descr_object
+#define sym_get_attr _Py_uop_sym_get_attr
+#define sym_set_attr _Py_uop_sym_set_attr
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
@@ -488,8 +491,9 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
+        bool was_init_shim = CURRENT_FRAME_IS_INIT_SHIM();
 
-        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+        if (!was_init_shim) {
             stack_pointer = ctx->frame->stack_pointer;
         }
 
@@ -498,7 +502,7 @@ optimize_uops(
             printf("%4d abs: ", (int)(this_instr - trace));
             _PyUOpPrint(this_instr);
             printf(" \n");
-            if (get_lltrace() >= 5 && !CURRENT_FRAME_IS_INIT_SHIM()) {
+            if (get_lltrace() >= 5 && !was_init_shim) {
                 dump_abstract_stack(ctx->frame, stack_pointer);
             }
         }
@@ -514,12 +518,19 @@ optimize_uops(
                 DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
         }
+        bool is_init_shim = CURRENT_FRAME_IS_INIT_SHIM();
         // If no ADD_OP was called during this iteration, copy the original instruction
         if (ctx->out_buffer.next == out_ptr) {
             *(ctx->out_buffer.next++) = *this_instr;
         }
+        // Track escapes - but skip when in/from init shim frame, since self hasn't escaped yet
+        if ((_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG) &&
+            !was_init_shim && !is_init_shim)
+        {
+            ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer) - 1;
+        }
         assert(ctx->frame != NULL);
-        if (!CURRENT_FRAME_IS_INIT_SHIM() && !ctx->done) {
+        if (!is_init_shim && !ctx->done) {
             DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
             ctx->frame->stack_pointer = stack_pointer;
             assert(STACK_LEVEL() >= 0);
