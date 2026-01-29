@@ -456,6 +456,8 @@ class Sniffer:
         # can't be determined, it is assumed to be a string in which case
         # the length of the string is the determining factor: if all of the
         # rows except for the first are the same length, it's a header.
+        # When the strings have varying length, the average length of all
+        # strings becomes a determining factor.
         # Finally, a 'vote' is taken at the end for each column, adding or
         # subtracting from the likelihood of the first row being a header.
 
@@ -464,8 +466,9 @@ class Sniffer:
         header = next(rdr) # assume first row is header
 
         columns = len(header)
-        columnTypes = {}
-        for i in range(columns): columnTypes[i] = None
+        columnTypes = {i: None for i in range(columns)}
+        average_size = 0
+        col_are_strings = True
 
         checked = 0
         for row in rdr:
@@ -478,6 +481,10 @@ class Sniffer:
                 continue # skip rows that have irregular number of columns
 
             for col in list(columnTypes.keys()):
+                # check if all col are strings
+                if row[col].isnumeric():
+                    col_are_strings = False
+
                 thisType = complex
                 try:
                     thisType(row[col])
@@ -488,6 +495,7 @@ class Sniffer:
                 if thisType != columnTypes[col]:
                     if columnTypes[col] is None: # add new column type
                         columnTypes[col] = thisType
+                        average_size += len(row[col])
                     else:
                         # type is inconsistent, remove column from
                         # consideration
@@ -496,6 +504,13 @@ class Sniffer:
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
+
+        # special case when all columns are strings and columnTypes has been emptied
+        if not columnTypes and col_are_strings and columns > 0:
+            # If there are only columns of strings and no column types specified,
+            # update the dictionary to store the average length of all strings
+            columnTypes[0] = average_size // columns
+
         for col, colType in columnTypes.items():
             if isinstance(colType, int): # it's a length
                 if len(header[col]) != colType:
