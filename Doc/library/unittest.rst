@@ -1131,7 +1131,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-   .. method:: assertLogs(logger=None, level=None, formatter=None)
+   .. method:: assertLogs(logger=None, level=None, formatter=None, keep_handlers=False)
 
       A context manager to test that at least one message is logged on
       the *logger* or one of its children, with at least the given
@@ -1149,6 +1149,15 @@ Test cases
       If given, *formatter* should be a :class:`logging.Formatter` object.
       The default is a formatter with format string
       ``"%(levelname)s:%(name)s:%(message)s"``
+
+      If given, *keep_handlers* should be a boolean value. If ``True``,
+      existing handlers attached to the logger will be preserved and
+      continue to function normally alongside the capturing handler.
+      If ``False`` (the default), existing handlers are temporarily
+      removed during the assertion to prevent log output during tests.
+      Note that when *keep_handlers* is ``True``, the logger's level
+      is still temporarily set to the requested level, which may cause
+      existing handlers to process more messages than they normally would.
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1179,6 +1188,10 @@ Test cases
 
       .. versionchanged:: 3.15
          Now accepts a *formatter* to control how messages are formatted.
+
+      .. versionchanged:: 3.16
+         Added the *keep_handlers* parameter to optionally preserve
+         existing handlers.
 
    .. method:: assertNoLogs(logger=None, level=None)
 
