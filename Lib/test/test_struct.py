@@ -478,9 +478,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             pack_into(writable_buf, None, test_string)
         with self.assertRaises(TypeError):
             pack_into(writable_buf, 0.0, test_string)
-        with self.assertRaises((IndexError, OverflowError)):
+        with self.assertRaises(OverflowError):
             pack_into(writable_buf, 2**1000, test_string)
-        with self.assertRaises((IndexError, OverflowError)):
+        with self.assertRaises(OverflowError):
             pack_into(writable_buf, -2**1000, test_string)
 
     def test_pack_into(self):
