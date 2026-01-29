@@ -38,6 +38,14 @@ class TestDecodeB(TestEmailBase):
         # 2 missing padding characters
         self._test(b'dg', b'v', [errors.InvalidBase64PaddingDefect])
 
+    def test_urlsafe_alphabet(self):
+        self._test(
+            b'QW5tZWxkdW5nIE5ldHphbnNjaGx1c3MgU_xkcmluZzNwLmpwZw==',
+            b'Anmeldung Netzanschluss S\xfcdring3p.jpg',
+            [errors.InvalidBase64CharactersDefect])
+        # mix of different base64 alphabets
+        self._test(b'aGVsbG8_Pz8/', b'hello????', [errors.InvalidBase64CharactersDefect])
+
     def test_invalid_character(self):
         self._test(b'dm\x01k===', b'vi', [errors.InvalidBase64CharactersDefect])
 
