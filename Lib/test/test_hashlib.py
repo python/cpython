@@ -23,6 +23,7 @@ from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
 from test.support.import_helper import import_fresh_module
 from test.support import requires_resource
+from test.support import script_helper
 from test.support import threading_helper
 from http.client import HTTPException
 
@@ -1395,6 +1396,18 @@ class TestScrypt(unittest.TestCase):
         self.assertRaises(ValueError, scrypt, dklen=0)
         MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
         self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
+
+    def test_builtins_in_openssl_fips_mode(self):
+        try:
+            from _hashlib import get_fips_mode
+        except ImportError:
+            self.skipTest('OpenSSL _hashlib not available')
+        from test import _test_hashlib_fips
+        child_test_path = _test_hashlib_fips.__file__
+        env = os.environ.copy()
+        # A config to mock FIPS mode, see _test_hashlib_fips.py.
+        env["OPENSSL_CONF"] = os.path.join(os.path.dirname(__file__), "hashlibdata", "openssl.cnf")
+        script_helper.run_test_script(child_test_path, env=env)
 
 
 if __name__ == "__main__":
