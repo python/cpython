@@ -1623,19 +1623,28 @@ iterations of the loop.
    .. versionadded:: 3.13
 
 
-.. opcode:: CALL_FUNCTION_EX (flags)
+.. opcode:: CALL_FUNCTION_EX
 
-   Calls a callable object with variable set of positional and keyword
-   arguments.  If the lowest bit of *flags* is set, the top of the stack
-   contains a mapping object containing additional keyword arguments.
-   Before the callable is called, the mapping object and iterable object
-   are each "unpacked" and their contents passed in as keyword and
-   positional arguments respectively.
-   ``CALL_FUNCTION_EX`` pops all arguments and the callable object off the stack,
-   calls the callable object with those arguments, and pushes the return value
-   returned by the callable object.
+    Calls a callable object with a variable set of positional and keyword
+    arguments collected at runtime. It expects (in ascending order):
 
-   .. versionadded:: 3.6
+    * the callable object
+    * ``NULL`` (a marker used in the calling convention; may be elided in
+       optimized internal forms)
+    * a :class:`tuple` containing the positional arguments
+    * either ``NULL`` or a :class:`dict` containing the keyword arguments
+
+    The positional arguments tuple and the keyword arguments dict are each
+    "unpacked" and passed to the callable. ``CALL_FUNCTION_EX`` pops all these
+    items and pushes the callable's return value.
+    The presence of keyword arguments is indicated solely by whether the
+    last stack item is ``NULL`` or a :class:`dict`; there is no operand or
+    flag associated with this opcode.
+
+    .. versionadded:: 3.6
+    .. versionchanged:: 3.14
+       The opcode no longer uses a flags operand to signal the presence of
+       ``**kwargs``; the stack layout alone determines this.
 
 
 .. opcode:: PUSH_NULL
