@@ -1,5 +1,4 @@
 """Unit tests for contextlib.py, and other context managers."""
-
 import io
 import os
 import sys
@@ -678,6 +677,74 @@ class TestContextDecorator(unittest.TestCase):
         state = []
         test('something else')
         self.assertEqual(state, [1, 'something else', 999])
+
+
+    def test_contextmanager_decorate_generator_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        for _ in test("something"):
+            self.assertEqual(state, [1, "something"])
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+
+    def test_contextmanager_decorate_coroutine_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+
+        coro = test('something')
+        with self.assertRaises(StopIteration):
+            coro.send(None)
+
+        self.assertEqual(state, [1, 'something', 999])
+
+
+    def test_contextmanager_decorate_asyncgen_function(self):
+        @contextmanager
+        def woohoo(y):
+            state.append(y)
+            yield
+            state.append(999)
+
+        state = []
+        @woohoo(1)
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        async def run_test():
+            async for _ in test("something"):
+                self.assertEqual(state, [1, "something"])
+
+        agen = test('something')
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+        with self.assertRaises(StopAsyncIteration):
+            agen.asend(None).send(None)
+
+        self.assertEqual(state, [1, 'something', "second item", 999])
 
 
 class TestBaseExitStack:
