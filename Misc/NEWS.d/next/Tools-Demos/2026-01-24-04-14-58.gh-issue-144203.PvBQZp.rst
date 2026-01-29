@@ -1,0 +1,2 @@
+venv prompt in your shell can be customizable for prefix and suffix of venv name using VIRTUAL_ENV_PROMPT_PREFIX and VIRTUAL_ENV_PROMPT_SUFFIX from the default "(" and ") ".
+If variable is not set, the default "(" and ") " still be used.

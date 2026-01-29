@@ -19,7 +19,9 @@ setenv VIRTUAL_ENV_PROMPT __VENV_PROMPT__
 set _OLD_VIRTUAL_PROMPT="$prompt"
 
 if (! "$?VIRTUAL_ENV_DISABLE_PROMPT") then
-    set prompt = "("__VENV_PROMPT__") $prompt:q"
+    if (! $?VIRTUAL_ENV_PROMPT_PREFIX) set VIRTUAL_ENV_PROMPT_PREFIX = "("
+    if (! $?VIRTUAL_ENV_PROMPT_SUFFIX) set VIRTUAL_ENV_PROMPT_SUFFIX = ") "
+    set prompt = "${VIRTUAL_ENV_PROMPT_PREFIX}"__VENV_PROMPT__"${VIRTUAL_ENV_PROMPT_SUFFIX}$prompt:q"
 endif
 
 alias pydoc python -m pydoc

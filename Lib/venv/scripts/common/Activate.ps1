@@ -229,10 +229,12 @@ if (-not $Env:VIRTUAL_ENV_DISABLE_PROMPT) {
     # Make sure _OLD_VIRTUAL_PROMPT is global
     function global:_OLD_VIRTUAL_PROMPT { "" }
     Copy-Item -Path function:prompt -Destination function:_OLD_VIRTUAL_PROMPT
-    New-Variable -Name _PYTHON_VENV_PROMPT_PREFIX -Description "Python virtual environment prompt prefix" -Scope Global -Option ReadOnly -Visibility Public -Value $Prompt
+    $venvPrefix = if ($Env:VIRTUAL_ENV_PROMPT_PREFIX) { $Env:VIRTUAL_ENV_PROMPT_PREFIX } else { "(" }
+    $venvSuffix = if ($Env:VIRTUAL_ENV_PROMPT_SUFFIX) { $Env:VIRTUAL_ENV_PROMPT_SUFFIX } else { ") " }
+    New-Variable -Name _PYTHON_VENV_PROMPT_PREFIX -Description "Python virtual environment prompt prefix" -Scope Global -Option ReadOnly -Visibility Public -Value "$venvPrefix$Prompt$venvSuffix"
 
     function global:prompt {
-        Write-Host -NoNewline -ForegroundColor Green "($_PYTHON_VENV_PROMPT_PREFIX) "
+        Write-Host -NoNewline -ForegroundColor Green "$_PYTHON_VENV_PROMPT_PREFIX"
         _OLD_VIRTUAL_PROMPT
     }
 }
