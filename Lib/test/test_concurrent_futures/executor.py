@@ -247,3 +247,30 @@ class ExecutorTest:
         msg = 'lenlen'
         with self.assertRaisesRegex(FalseyLenException, msg):
             self.executor.submit(raiser, FalseyLenException, msg).result()
+
+    def test_shutdown_notifies_cancelled_futures(self):
+        # gh-136655: ensure cancelled futures are notified
+        count = self.worker_count * 2
+        barrier = self.create_barrier(self.worker_count + 1)
+        with self.executor as exec:
+            fs = [exec.submit(blocking_raiser,
+                              barrier if index < self.worker_count else None)
+                  for index in range(count)]
+
+            exec.shutdown(wait=False, cancel_futures=True)
+            try:
+                barrier.wait()
+            except threading.BrokenBarrierError:
+                pass
+
+            for future in fs:
+                self.assertRaises(
+                    (FalseyBoolException, futures.CancelledError, threading.BrokenBarrierError),
+                    future.result)
+
+            self.assertIn('CANCELLED_AND_NOTIFIED', [f._state for f in fs])
+
+def blocking_raiser(barrier=None):
+    if barrier is not None:
+        barrier.wait(1)
+    raise FalseyBoolException()
