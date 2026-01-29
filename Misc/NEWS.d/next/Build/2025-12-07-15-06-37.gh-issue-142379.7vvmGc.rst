@@ -1,0 +1,9 @@
+Some termio operations are not actually usable on some
+architectures. For example, the TCGETA, TCSETA, TCSETAF and TCSETAW
+are defined with a reference to "struct termio" on alpha, hppa and
+sparc64, but "struct termio" is no longer defined since glibc 2.42,
+causing a build failure.
+
+Instead of using those operations as soon as they are defined, check
+more carefully that they are actually usable. This is done using a new
+m4 macro PY_CHECK_CONSTANT.
