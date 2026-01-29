@@ -3170,6 +3170,23 @@ features:
 
       File mode: file type and file mode bits (permissions).
 
+      .. note::
+
+         ``st_mode`` is an :class:`int` bitmask that combines the file type and the
+         permission bits. If you expect POSIX-style values like ``755`` or ``644``,
+         render the value in octal and/or mask out only the permission bits. For example:
+
+         .. code-block:: pycon
+
+            >>> import os, stat
+            >>> m = os.stat("somefile").st_mode
+            >>> oct(m)                 # includes the file-type bits (e.g. 0o100...)
+            '0o100755'
+            >>> oct(stat.S_IMODE(m))   # permissions only
+            '0o755'
+            >>> stat.filemode(m)       # human-readable form
+            '-rwxr-xr-x'
+
    .. attribute:: st_ino
 
       Platform dependent, but if non-zero, uniquely identifies the
