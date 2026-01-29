@@ -955,6 +955,11 @@ _PyJit_translate_single_bytecode_to_trace(
                     assert(next->op.code == STORE_FAST);
                     operand = next->op.arg;
                 }
+                else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
+                    PyObject *recorded_value = tracer->prev_state.recorded_value;
+                    tracer->prev_state.recorded_value = NULL;
+                    operand = (uintptr_t)recorded_value;
+                }
                 // All other instructions
                 ADD_TO_TRACE(uop, oparg, operand, target);
             }
@@ -997,7 +1002,7 @@ done:
 Py_NO_INLINE int
 _PyJit_TryInitializeTracing(
     PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr,
-    _Py_CODEUNIT *start_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth,
+    _Py_CODEUNIT *start_instr, _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth,
     _PyExitData *exit, int oparg, _PyExecutorObject *current_executor)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
@@ -1048,14 +1053,20 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.func = (PyFunctionObject *)Py_NewRef(func);
     tracer->initial_state.executor = (_PyExecutorObject *)Py_XNewRef(current_executor);
     tracer->initial_state.exit = exit;
-    tracer->initial_state.stack_depth = curr_stackdepth;
+    tracer->initial_state.stack_depth = stack_pointer - _PyFrame_Stackbase(frame);
     tracer->initial_state.chain_depth = chain_depth;
     tracer->prev_state.dependencies_still_valid = true;
     tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
     tracer->prev_state.instr = curr_instr;
     tracer->prev_state.instr_frame = frame;
     tracer->prev_state.instr_oparg = oparg;
-    tracer->prev_state.instr_stacklevel = curr_stackdepth;
+    tracer->prev_state.instr_stacklevel = tracer->initial_state.stack_depth;
+    tracer->prev_state.recorded_value = NULL;
+    uint8_t record_func_index = _PyOpcode_RecordFunctionIndices[curr_instr->op.code];
+    if (record_func_index) {
+        _Py_RecordFuncPtr record_func = _PyOpcode_RecordFunctions[record_func_index];
+        record_func(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
+    }
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
     tracer->initial_state.jump_backward_instr = curr_instr;
 
@@ -1099,6 +1110,7 @@ _PyJit_FinalizeTracing(PyThreadState *tstate, int err)
     Py_CLEAR(tracer->initial_state.func);
     Py_CLEAR(tracer->initial_state.executor);
     Py_CLEAR(tracer->prev_state.instr_code);
+    Py_CLEAR(tracer->prev_state.recorded_value);
     uop_buffer_init(&tracer->code_buffer, &tracer->uop_array[0], UOP_MAX_TRACE_LENGTH);
     tracer->is_tracing = false;
 }
@@ -1526,6 +1538,10 @@ uop_optimize(
             buffer[pc].opcode = opcode + oparg + 1 - _PyUop_Replication[opcode].start;
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
         }
+        else if (_PyUop_Flags[opcode] & HAS_RECORDS_VALUE_FLAG) {
+            Py_XDECREF((PyObject *)(uintptr_t)buffer[pc].operand0);
+            buffer[pc].opcode = _NOP;
+        }
         else if (is_terminator(&buffer[pc])) {
             break;
         }
@@ -1925,6 +1941,8 @@ error:
     // If we're truly out of memory, wiping out everything is a fine fallback
     _Py_Executors_InvalidateAll(interp, 0);
 }
+
+#include "record_functions.c.h"
 
 static int
 escape_angles(const char *input, Py_ssize_t size, char *buffer) {

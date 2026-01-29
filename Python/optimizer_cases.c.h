@@ -1833,6 +1833,7 @@
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
             assert(type_version);
+            assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
             } else {
@@ -4173,6 +4174,34 @@
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
+            break;
+        }
+
+        case _RECORD_TOS: {
+            break;
+        }
+
+        case _RECORD_TOS_TYPE: {
+            break;
+        }
+
+        case _RECORD_NOS: {
+            break;
+        }
+
+        case _RECORD_4OS: {
+            break;
+        }
+
+        case _RECORD_CALLABLE: {
+            break;
+        }
+
+        case _RECORD_BOUND_METHOD: {
+            break;
+        }
+
+        case _RECORD_CALLER_CODE: {
             break;
         }
 
