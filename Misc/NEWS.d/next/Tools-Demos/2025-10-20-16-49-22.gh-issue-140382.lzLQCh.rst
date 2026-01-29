@@ -1,0 +1,1 @@
+Argument clinic now supports :meth:`module.__getattr__`.
