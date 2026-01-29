@@ -1462,6 +1462,13 @@ Py_InitializeFromConfig(const PyConfig *config)
     }
     config = _PyInterpreterState_GetConfig(tstate->interp);
 
+    if (config->init_callback != NULL) {
+        status = config->init_callback(config->init_callback_arg);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->_init_main) {
         status = pyinit_main(tstate);
         if (_PyStatus_EXCEPTION(status)) {
