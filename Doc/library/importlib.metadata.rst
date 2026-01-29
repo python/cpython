@@ -92,6 +92,7 @@ collection of :ref:`EntryPoint <entry-points>` objects.
 
 You can get the :ref:`metadata for a distribution <metadata>`::
 
+    >>> from importlib.metadata import metadata  # doctest: +SKIP
     >>> list(metadata('wheel'))  # doctest: +SKIP
     ['Metadata-Version', 'Name', 'Version', 'Summary', 'Home-page', 'Author', 'Author-email', 'Maintainer', 'Maintainer-email', 'License', 'Project-URL', 'Project-URL', 'Project-URL', 'Keywords', 'Platform', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Requires-Python', 'Provides-Extra', 'Requires-Dist', 'Requires-Dist']
 
