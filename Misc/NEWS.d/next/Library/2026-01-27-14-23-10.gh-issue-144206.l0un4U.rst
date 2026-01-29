@@ -1,0 +1,2 @@
+Improve error messages for buffer overflow in :func:`fcntl.fcntl` and
+:func:`fcntl.ioctl`.
