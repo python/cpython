@@ -213,6 +213,72 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor = self.executor_type(1, max_tasks_per_child=3)
         self.assertEqual(executor._mp_context.get_start_method(), "spawn")
 
+    def test_max_tasks_per_child_rapid_task_submission_gh115634(self):
+        # gh-115634: Rapid task submission with max_tasks_per_child
+        # caused a deadlock due to incorrect semaphore accounting.
+        # When a worker exits after completing max_tasks_per_child tasks,
+        # the executor would incorrectly think an idle worker existed
+        # and fail to spawn a replacement, causing a hang.
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+
+        # Test the exact bug scenario: 1 worker, max_tasks=2, 10 tasks
+        executor = self.executor_type(1, mp_context=context, max_tasks_per_child=2)
+        try:
+            futures = [executor.submit(mul, i, i) for i in range(10)]
+
+            # All futures should complete without hanging
+            results = [future.result(timeout=support.SHORT_TIMEOUT) for future in futures]
+            expected = [i * i for i in range(10)]
+            self.assertEqual(results, expected,
+                           "ProcessPoolExecutor with max_tasks_per_child=2 failed to "
+                           "complete all 10 tasks (gh-115634 deadlock regression)")
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
+
+    def test_max_tasks_per_child_multiple_worker_restarts_gh115634(self):
+        # gh-115634: Test multiple restart cycles with various max_tasks values
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+
+        # Test with max_tasks=3, forcing multiple restarts
+        executor = self.executor_type(1, mp_context=context, max_tasks_per_child=3)
+        try:
+            futures = [executor.submit(mul, i, 2) for i in range(15)]
+
+            # All 15 tasks should complete (requires 5 worker restarts)
+            results = [future.result(timeout=support.SHORT_TIMEOUT) for future in futures]
+            expected = [i * 2 for i in range(15)]
+            self.assertEqual(results, expected,
+                           "ProcessPoolExecutor with max_tasks_per_child=3 failed to "
+                           "complete all 15 tasks across 5 worker restart cycles "
+                           "(gh-115634 deadlock regression)")
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
+
+    def test_max_tasks_per_child_multiple_workers_gh115634(self):
+        # gh-115634: Test with multiple workers to ensure fix works
+        # with different worker pool sizes
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+
+        # 2 workers, max_tasks=2 each, 12 tasks total
+        # Should require 3 restart cycles per worker
+        executor = self.executor_type(2, mp_context=context, max_tasks_per_child=2)
+        try:
+            futures = [executor.submit(mul, i, 3) for i in range(12)]
+
+            results = [future.result(timeout=support.SHORT_TIMEOUT) for future in futures]
+            expected = [i * 3 for i in range(12)]
+            self.assertEqual(results, expected,
+                           "ProcessPoolExecutor with 2 workers and max_tasks_per_child=2 "
+                           "failed to complete all 12 tasks (gh-115634 deadlock regression)")
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
+
     def test_max_tasks_early_shutdown(self):
         context = self.get_context()
         if context.get_start_method(allow_none=False) == "fork":
