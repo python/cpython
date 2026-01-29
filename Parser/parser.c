@@ -11596,7 +11596,7 @@ expression_rule(Parser *p)
     return _res;
 }
 
-// if_expression: disjunction 'if' disjunction 'else' expression | invalid_if_expression
+// if_expression: disjunction 'if' disjunction 'else' expression
 static expr_ty
 if_expression_rule(Parser *p)
 {
@@ -11662,25 +11662,6 @@ if_expression_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s if_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction 'else' expression"));
-    }
-    if (p->call_invalid_rules) { // invalid_if_expression
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> if_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_if_expression"));
-        void *invalid_if_expression_var;
-        if (
-            (invalid_if_expression_var = invalid_if_expression_rule(p))  // invalid_if_expression
-        )
-        {
-            D(fprintf(stderr, "%*c+ if_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_if_expression"));
-            _res = invalid_if_expression_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s if_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_if_expression"));
     }
     _res = NULL;
   done:
