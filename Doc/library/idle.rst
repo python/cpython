@@ -13,7 +13,7 @@ IDLE --- Python editor and shell
    single: Integrated Development Environment
 
 ..
-   Remember to update Lib/idlelib/help.html with idlelib.help.copy_strip() when modifying this file.
+   Remember to update Lib/idlelib/help.html with make idlehelp when modifying this file.
 
 --------------
 
