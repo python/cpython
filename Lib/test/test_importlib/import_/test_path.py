@@ -94,13 +94,30 @@ class FinderTests:
             self.check_found(found, importer)
             self.assertIn(os.getcwd(), sys.path_importer_cache)
 
-    def test_None_on_sys_path(self):
-        # Putting None in sys.path[0] caused an import regression from Python
-        # 3.2: http://bugs.python.org/issue16514
+    def test_invalid_names_in_sys_path(self):
+        for name, desc in [
+            # Putting None in sys.path[0] caused an import regression from
+            # Python 3.2: http://bugs.python.org/issue16514
+            (None, 'None in sys.path[0]'),
+            # embedded NUL characters raise ValueError in os.stat()
+            ('\x00', 'NUL bytes path'),
+            (f'Top{os.sep}Mid\x00', 'path with embedded NUL bytes'),
+            # A path with surrogate codes. A UnicodeEncodeError is raised
+            # by os.stat() upon querying, which is a subclass of ValueError.
+            ("\uD834\uDD1E", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            # For POSIX platforms, an OSError will be raised but for Windows
+            # platforms, a ValueError is raised due to the path_t converter.
+            # See: https://github.com/python/cpython/issues/122353
+            ('a' * 1_000_000, 'very long path'),
+        ]:
+            with self.subTest(desc):
+                self._test_invalid_name_in_sys_path(name)
+
+    def _test_invalid_name_in_sys_path(self, name):
         new_path = sys.path[:]
-        new_path.insert(0, None)
+        new_path.insert(0, name)
         new_path_importer_cache = sys.path_importer_cache.copy()
-        new_path_importer_cache.pop(None, None)
+        new_path_importer_cache.pop(name, None)
         new_path_hooks = [zipimport.zipimporter,
                           self.machinery.FileFinder.path_hook(
                               *self.importlib._bootstrap_external._get_supported_file_loaders())]
