@@ -18,12 +18,14 @@ The script uses LD_RUN_PATH, LD_LIBRARY_PATH, CPPFLAGS and LDFLAGS to bend
 search paths for header files and shared libraries. It's known to work on
 Linux with GCC and clang.
 
-Please keep this script compatible with Python 2.7, and 3.4 to 3.7.
+Please keep this script compatible with all currently-maintained Python
+versions.
 
 (c) 2013-2017 Christian Heimes <christian@python.org>
 """
 from __future__ import print_function
 
+from abc import ABCMeta, abstractmethod
 import argparse
 from datetime import datetime
 import logging
@@ -41,31 +43,6 @@ import tarfile
 
 
 log = logging.getLogger("multissl")
-
-OPENSSL_OLD_VERSIONS = [
-    "1.1.1w",
-    "3.1.8",
-    "3.2.6",
-]
-
-OPENSSL_RECENT_VERSIONS = [
-    "3.0.18",
-    "3.3.5",
-    "3.4.3",
-    "3.5.4",
-    "3.6.0",
-    # See make_ssl_data.py for notes on adding a new version.
-]
-
-LIBRESSL_OLD_VERSIONS = [
-]
-
-LIBRESSL_RECENT_VERSIONS = [
-]
-
-AWSLC_RECENT_VERSIONS = [
-    "1.55.0",
-]
 
 # store files in ../multissl
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -87,33 +64,19 @@ parser.add_argument(
 parser.add_argument(
     '--disable-ancient',
     action='store_true',
-    help="Don't test OpenSSL and LibreSSL versions without upstream support",
+    help="Don't test SSL versions without upstream support",
 )
 parser.add_argument(
-    '--openssl',
-    nargs='+',
-    default=(),
-    help=(
-        "OpenSSL versions, defaults to '{}' (ancient: '{}') if no "
-        "OpenSSL and LibreSSL versions are given."
-    ).format(OPENSSL_RECENT_VERSIONS, OPENSSL_OLD_VERSIONS)
+    '--ssl',
+    choices=('openssl', 'awslc', 'libressl'),
+    default=None,
+    help="Which SSL lib to test. If not specified, all are tested.",
 )
 parser.add_argument(
-    '--libressl',
+    '--ssl-versions',
     nargs='+',
-    default=(),
-    help=(
-        "LibreSSL versions, defaults to '{}' (ancient: '{}') if no "
-        "OpenSSL and LibreSSL versions are given."
-    ).format(LIBRESSL_RECENT_VERSIONS, LIBRESSL_OLD_VERSIONS)
-)
-parser.add_argument(
-    '--awslc',
-    nargs='+',
-    default=(),
-    help=(
-        "AWS-LC versions, defaults to '{}' if no crypto library versions are given."
-    ).format(AWSLC_RECENT_VERSIONS)
+    default=None,
+    help="SSL lib versions, default depends on libs passed to --ssl",
 )
 parser.add_argument(
     '--tests',
@@ -161,30 +124,55 @@ parser.add_argument(
 )
 
 
-class AbstractBuilder(object):
-    library = None
-    url_templates = None
-    src_template = None
-    build_template = None
+class AbstractBuilder(object, metaclass=ABCMeta):
     depend_target = None
     install_target = 'install'
     if hasattr(os, 'process_cpu_count'):
         jobs = os.process_cpu_count()
     else:
         jobs = os.cpu_count()
-
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),
         os.path.join(PYTHONROOT, "Modules/_hashopenssl.c"),
     )
     module_libs = ("_ssl", "_hashlib")
 
+    @property
+    @abstractmethod
+    def library(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def url_templates(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def src_template(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def build_template(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def recent_versions():
+        pass
+
+    @property
+    def old_versions():
+        return []
+
     def __init__(self, version, args):
         self.version = version
         self.args = args
+        libdir = self.library.lower().replace("-", "")
         # installation directory
         self.install_dir = os.path.join(
-            os.path.join(args.base_directory, self.library.lower()), version
+            os.path.join(args.base_directory, libdir), version
         )
         # source file
         self.src_dir = os.path.join(args.base_directory, 'src')
@@ -399,29 +387,58 @@ class AbstractBuilder(object):
                 os.path.join(PYTHONROOT, 'Lib/test/ssltests.py'),
                 '-j0'
             ]
-        elif sys.version_info < (3, 3):
-            cmd = [sys.executable, '-m', 'test.regrtest']
         else:
             cmd = [sys.executable, '-m', 'test', '-j0']
         if network:
-            cmd.extend(['-u', 'network', '-u', 'urlfetch'])
-        cmd.extend(['-w', '-r'])
+            cmd.extend(['--use', 'network', '--use', 'urlfetch'])
+        cmd.extend(['--rerun', '--randomize'])
         cmd.extend(tests)
         self._subprocess_call(cmd, stdout=None)
 
 
 class BuildOpenSSL(AbstractBuilder):
-    library = "OpenSSL"
-    url_templates = (
-        "https://github.com/openssl/openssl/releases/download/openssl-{v}/openssl-{v}.tar.gz",
-        "https://www.openssl.org/source/openssl-{v}.tar.gz",
-        "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz"
-    )
-    src_template = "openssl-{}.tar.gz"
-    build_template = "openssl-{}"
     # only install software, skip docs
     install_target = 'install_sw'
     depend_target = 'depend'
+
+    @property
+    def library(self=None):
+        return "OpenSSL"
+
+    @property
+    def url_templates(self=None):
+        return (
+            "https://github.com/openssl/openssl/releases/download/openssl-{v}/openssl-{v}.tar.gz",
+            "https://www.openssl.org/source/openssl-{v}.tar.gz",
+            "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz",
+        )
+
+    @property
+    def src_template(self=None):
+        return "openssl-{}.tar.gz"
+
+    @property
+    def build_template(self=None):
+        return "openssl-{}"
+
+    @property
+    def recent_versions():
+        return [
+            "3.0.18",
+            "3.3.5",
+            "3.4.4",
+            "3.5.4",
+            "3.6.0",
+            # See make_ssl_data.py for notes on adding a new version.
+        ]
+
+    @property
+    def old_versions():
+        return [
+            "1.1.1w",
+            "3.1.8",
+            "3.2.6",
+        ]
 
     def _post_install(self):
         if self.version.startswith("3."):
@@ -458,21 +475,53 @@ class BuildOpenSSL(AbstractBuilder):
 
 
 class BuildLibreSSL(AbstractBuilder):
-    library = "LibreSSL"
-    url_templates = (
-        "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz",
-    )
-    src_template = "libressl-{}.tar.gz"
-    build_template = "libressl-{}"
+    @property
+    def library(self=None):
+        return "LibreSSL"
+
+    @property
+    def url_templates(self=None):
+        return (
+            "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz",
+        )
+
+    @property
+    def src_template(self=None):
+        return "libressl-{}.tar.gz"
+
+    @property
+    def build_template(self=None):
+        "libressl-{}"
+
+    @property
+    def recent_versions():
+        return []
 
 
 class BuildAWSLC(AbstractBuilder):
-    library = "AWS-LC"
-    url_templates = (
-        "https://github.com/aws/aws-lc/archive/refs/tags/v{v}.tar.gz",
-    )
-    src_template = "aws-lc-{}.tar.gz"
-    build_template = "aws-lc-{}"
+    @property
+    def library(self=None):
+        return "AWS-LC"
+
+    @property
+    def url_templates(self=None):
+        return (
+            "https://github.com/aws/aws-lc/archive/refs/tags/v{v}.tar.gz",
+        )
+
+    @property
+    def src_template(self=None):
+        return "aws-lc-{}.tar.gz"
+
+    @property
+    def build_template(self=None):
+        return "aws-lc-{}"
+
+    @property
+    def recent_versions():
+        return [
+            "1.55.0",
+        ]
 
     def _build_src(self, config_args=()):
         cwd = self.build_dir
@@ -508,19 +557,6 @@ def configure_make():
 
 def main():
     args = parser.parse_args()
-    if not args.openssl and not args.libressl and not args.awslc:
-        args.openssl = list(OPENSSL_RECENT_VERSIONS)
-        args.libressl = list(LIBRESSL_RECENT_VERSIONS)
-        args.awslc = list(AWSLC_RECENT_VERSIONS)
-        if not args.disable_ancient:
-            args.openssl.extend(OPENSSL_OLD_VERSIONS)
-            args.libressl.extend(LIBRESSL_OLD_VERSIONS)
-
-    logging.basicConfig(
-        level=logging.DEBUG if args.debug else logging.INFO,
-        format="*** %(levelname)s %(message)s"
-    )
-
     start = datetime.now()
 
     if args.steps in {'modules', 'tests'}:
@@ -536,17 +572,38 @@ def main():
         # check for configure and run make
         configure_make()
 
-    # download and register builder
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="*** %(levelname)s %(message)s"
+    )
+
+    versions = []
+    ssl_libs = AbstractBuilder.__subclasses__()
+    if args.ssl:
+        lib_name = lambda x: x.library.fget().lower().replace("-", "")
+        libs = [l for l in ssl_libs if lib_name(l) == args.ssl]
+        assert len(libs) == 1
+        cls = libs.pop()
+        if args.ssl_versions:
+            versions.extend((cls, v) for v in args.ssl_versions)
+        else:
+            versions.extend((cls, v) for v in cls.recent_versions.fget())
+            if not args.disable_ancient:
+                versions.extend([(cls, v) for v in cls.old_versions.fget()])
+    else:
+        if args.ssl_versions:
+            print("ERROR: SSL versions specified without specifying library")
+            exit(1)
+        for cls in ssl_libs:
+            versions.extend([(cls, v) for v in cls.recent_versions.fget()])
+            if not args.disable_ancient:
+                versions.extend([(cls, v) for v in cls.old_versions.fget()])
+
     builds = []
-    for build_class, versions in [
-        (BuildOpenSSL, args.openssl),
-        (BuildLibreSSL, args.libressl),
-        (BuildAWSLC, args.awslc),
-    ]:
-        for version in versions:
-            build = build_class(version, args)
-            build.install()
-            builds.append(build)
+    for build_class, version in versions:
+        build = build_class(version, args)
+        build.install()
+        builds.append(build)
 
     if args.steps in {'modules', 'tests'}:
         for build in builds:

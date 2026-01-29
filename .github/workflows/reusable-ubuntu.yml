@@ -57,7 +57,7 @@ jobs:
         key: ${{ inputs.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --ssl openssl --ssl-versions "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
