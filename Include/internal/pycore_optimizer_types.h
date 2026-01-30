@@ -96,16 +96,18 @@ typedef struct {
     uint8_t tag;
 } JitOptCompactInt;
 
-// Mapping from slot index or attribute offset to its symbolic value.
-// SAFETY: This structure is used for both STORE_ATTR_SLOT
-// and STORE_ATTR_INSTANCE_VALUE.
-// These two never appear on the same object type because:
-// __slots__ classes don't have Py_TPFLAGS_INLINE_VALUES
-// Therefore, there is no index collision between
-// slot offsets and inline value offsets.
-// Note: STORE_ATTR_WITH_HINT is NOT currently tracked.
-// If we want to track it in the future, we need to
-// be careful about potential index collisions with STORE_ATTR_INSTANCE_VALUE.
+/*
+Mapping from slot index or attribute offset to its symbolic value.
+SAFETY:
+This structure is used for both STORE_ATTR_SLOT and STORE_ATTR_INSTANCE_VALUE.
+These two never appear on the same object type because:
+__slots__ classes don't have Py_TPFLAGS_INLINE_VALUES
+Therefore, there is no index collision between slot offsets and inline value offsets.
+Note:
+STORE_ATTR_WITH_HINT is NOT currently tracked.
+If we want to track it in the future, we need to be careful about
+potential index collisions with STORE_ATTR_INSTANCE_VALUE.
+*/
 typedef struct {
     uint16_t slot_index;
     uint16_t symbol;
