@@ -1587,7 +1587,9 @@ read_failed:
 Py_ssize_t
 _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
 {
-    PyDictKeysObject *dk = _Py_atomic_load_ptr(&mp->ma_keys);
+    ensure_shared_on_read(mp);
+
+    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
         Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
         if (ix == DKIX_EMPTY) {
