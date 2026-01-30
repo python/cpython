@@ -38,6 +38,9 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_descr_object _Py_uop_sym_new_descr_object
+#define sym_get_attr _Py_uop_sym_get_attr
+#define sym_set_attr _Py_uop_sym_set_attr
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
@@ -103,6 +106,14 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
+        JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)offset, value);
+        if (sym_is_null(old_value)) {
+            ADD_OP(_STORE_ATTR_INSTANCE_VALUE_NULL, 0, offset);
+        }
+        o = owner;
+    }
+
+    op(_STORE_ATTR_INSTANCE_VALUE_NULL, (offset/1, value, owner -- o)) {
         (void)value;
         o = owner;
     }
@@ -125,7 +136,14 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
-        (void)index;
+        JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)index, value);
+        if (sym_is_null(old_value)) {
+            ADD_OP(_STORE_ATTR_SLOT_NULL, 0, index);
+        }
+        o = owner;
+    }
+
+    op(_STORE_ATTR_SLOT_NULL, (index/1, value, owner -- o)) {
         (void)value;
         o = owner;
     }
@@ -749,8 +767,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
-        attr = sym_new_not_null(ctx);
-        (void)index;
+        attr = sym_get_attr(ctx, owner, (uint16_t)index);
         o = owner;
     }
 
@@ -934,10 +951,14 @@ dummy_func(void) {
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-        (void)type_version;
         (void)args;
         callable = sym_new_not_null(ctx);
-        self_or_null = sym_new_not_null(ctx);
+        PyTypeObject *tp = _PyType_LookupByVersion(type_version);
+        if (tp != NULL) {
+            self_or_null = sym_new_descr_object(ctx, type_version);
+        } else {
+            self_or_null = sym_new_not_null(ctx);
+        }
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
