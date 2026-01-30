@@ -122,8 +122,7 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
             _testcapi.pymodule_get_token(mod)
 
     def test_def_slot(self):
-        """Slots that replace PyModuleDef fields can't be used with PyModuleDef
-        """
+        """Slots cannot contradict PyModuleDef fields"""
         for name in DEF_SLOTS:
             with self.subTest(name):
                 spec = FakeSpec()
@@ -132,6 +131,11 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
                     _testcapi.module_from_def_slot(spec)
                 self.assertIn(name, str(cm.exception))
                 self.assertIn("PyModuleDef", str(cm.exception))
+
+    def test_def_slot_parrot(self):
+        """Slots with same value as PyModuleDef fields are allowed"""
+        spec = FakeSpec()
+        _testcapi.module_from_def_slot_parrot(spec)
 
     def test_repeated_def_slot(self):
         """Slots that replace PyModuleDef fields can't be repeated"""
