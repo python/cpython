@@ -79,9 +79,10 @@ once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
 with ``import`` (followed by space or tab) are executed.
 
 .. note::
-   On Windows, a file whose name has the form :file:`._pth` is handled 
-   differently; it is used by the Windows-only "embeddable distribution" 
-   to provide a self-contained Python environment. See 
+
+   On Windows, a file whose name has the form :file:`._pth` is handled
+   differently; it is used by the Windows-only "embeddable distribution"
+   to provide a self-contained Python environment. See
    :ref:`finding-modules` for more details.
 
 .. note::
