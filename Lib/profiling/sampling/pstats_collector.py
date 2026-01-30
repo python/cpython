@@ -1,8 +1,10 @@
 import collections
 import marshal
+import pstats
 
 from _colorize import ANSIColors
 from .collector import Collector, extract_lineno
+from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
 
 class PstatsCollector(Collector):
@@ -68,7 +70,7 @@ class PstatsCollector(Collector):
 
     # Needed for compatibility with pstats.Stats
     def create_stats(self):
-        sample_interval_sec = self.sample_interval_usec / 1_000_000
+        sample_interval_sec = self.sample_interval_usec / MICROSECONDS_PER_SECOND
         callers = {}
         for fname, call_counts in self.result.items():
             total = call_counts["direct_calls"] * sample_interval_sec
@@ -85,9 +87,6 @@ class PstatsCollector(Collector):
 
     def print_stats(self, sort=-1, limit=None, show_summary=True, mode=None):
         """Print formatted statistics to stdout."""
-        import pstats
-        from .constants import PROFILING_MODE_CPU
-
         # Create stats object
         stats = pstats.SampledStats(self).strip_dirs()
         if not stats.stats:
@@ -263,7 +262,7 @@ class PstatsCollector(Collector):
         elif max_value >= 0.001:
             return "ms", 1000.0
         else:
-            return "μs", 1000000.0
+            return "μs", float(MICROSECONDS_PER_SECOND)
 
     def _print_summary(self, stats_list, total_samples):
         """Print summary of interesting functions."""

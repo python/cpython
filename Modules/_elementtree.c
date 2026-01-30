@@ -1679,8 +1679,7 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
     }
 
     if (rc == 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Element.remove(x): element not found");
+        PyErr_Format(PyExc_ValueError, "%R not in %R", subelement, self);
         return NULL;
     }
 
@@ -1806,15 +1805,19 @@ element_subscr(PyObject *op, PyObject *item)
         return element_getitem(op, i);
     }
     else if (PySlice_Check(item)) {
+        // Note: 'slicelen' is computed once we are sure that 'self->extra'
+        // cannot be mutated by user-defined code.
+        // See https://github.com/python/cpython/issues/143200.
         Py_ssize_t start, stop, step, slicelen, i;
         size_t cur;
         PyObject* list;
 
-        if (!self->extra)
-            return PyList_New(0);
-
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
+        }
+
+        if (self->extra == NULL) {
+            return PyList_New(0);
         }
         slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
                                          step);
@@ -1858,28 +1861,26 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         return element_setitem(op, i, value);
     }
     else if (PySlice_Check(item)) {
+        // Note: 'slicelen' is computed once we are sure that 'self->extra'
+        // cannot be mutated by user-defined code.
+        // See https://github.com/python/cpython/issues/143200.
         Py_ssize_t start, stop, step, slicelen, newlen, i;
         size_t cur;
 
         PyObject* recycle = NULL;
         PyObject* seq;
 
-        if (!self->extra) {
-            if (create_extra(self, NULL) < 0)
-                return -1;
-        }
-
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
-                                         step);
 
         if (value == NULL) {
             /* Delete slice */
-            size_t cur;
-            Py_ssize_t i;
-
+            if (self->extra == NULL) {
+                return 0;
+            }
+            slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                             step);
             if (slicelen <= 0)
                 return 0;
 
@@ -1948,8 +1949,16 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         }
         newlen = PySequence_Fast_GET_SIZE(seq);
 
-        if (step !=  1 && newlen != slicelen)
-        {
+        if (self->extra == NULL) {
+            if (create_extra(self, NULL) < 0) {
+                Py_DECREF(seq);
+                return -1;
+            }
+        }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
+
+        if (step != 1 && newlen != slicelen) {
             Py_DECREF(seq);
             PyErr_Format(PyExc_ValueError,
                 "attempt to assign sequence of size %zd "

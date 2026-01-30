@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 
-from .collector import Collector
+from .collector import Collector, filter_internal_frames
 from .opcode_utils import get_opcode_info, format_opcode
 try:
     from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION
@@ -172,7 +172,7 @@ class GeckoCollector(Collector):
         # Process threads
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
-                frames = thread_info.frame_info
+                frames = filter_internal_frames(thread_info.frame_info)
                 tid = thread_info.thread_id
 
                 # Initialize thread if needed

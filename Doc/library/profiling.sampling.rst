@@ -1,4 +1,4 @@
-.. highlight:: shell-session
+.. highlight:: sh
 
 .. _profiling-sampling:
 
@@ -53,7 +53,7 @@ counts**, not direct measurements. Tachyon counts how many times each function
 appears in the collected samples, then multiplies by the sampling interval to
 estimate time.
 
-For example, with a 100 microsecond sampling interval over a 10-second profile,
+For example, with a 10 kHz sampling rate over a 10-second profile,
 Tachyon collects approximately 100,000 samples. If a function appears in 5,000
 samples (5% of total), Tachyon estimates it consumed 5% of the 10-second
 duration, or about 500 milliseconds. This is a statistical estimate, not a
@@ -142,7 +142,7 @@ Use live mode for real-time monitoring (press ``q`` to quit)::
 
 Profile for 60 seconds with a faster sampling rate::
 
-   python -m profiling.sampling run -d 60 -i 50 script.py
+   python -m profiling.sampling run -d 60 -r 20khz script.py
 
 Generate a line-by-line heatmap::
 
@@ -241,8 +241,8 @@ is unaware it is being profiled.
 When profiling production systems, keep these guidelines in mind:
 
 Start with shorter durations (10-30 seconds) to get quick results, then extend
-if you need more statistical accuracy. The default 10-second duration is usually
-sufficient to identify major hotspots.
+if you need more statistical accuracy. By default, profiling runs until the
+target process completes, which is usually sufficient to identify major hotspots.
 
 If possible, profile during representative load rather than peak traffic.
 Profiles collected during normal operation are easier to interpret than those
@@ -326,10 +326,10 @@ The default configuration works well for most use cases:
 
    * - Option
      - Default
-   * - Default for ``--interval`` / ``-i``
-     - 100 µs between samples (~10,000 samples/sec)
+   * - Default for ``--sampling-rate`` / ``-r``
+     - 1 kHz
    * - Default for ``--duration`` / ``-d``
-     - 10 seconds
+     - Run to completion
    * - Default for ``--all-threads`` / ``-a``
      - Main thread only
    * - Default for ``--native``
@@ -346,33 +346,31 @@ The default configuration works well for most use cases:
      - Disabled (non-blocking sampling)
 
 
-Sampling interval and duration
-------------------------------
+Sampling rate and duration
+--------------------------
 
-The two most fundamental parameters are the sampling interval and duration.
+The two most fundamental parameters are the sampling rate and duration.
 Together, these determine how many samples will be collected during a profiling
 session.
 
-The :option:`--interval` option (:option:`-i`) sets the time between samples in
-microseconds. The default is 100 microseconds, which produces approximately
-10,000 samples per second::
+The :option:`--sampling-rate` option (:option:`-r`) sets how frequently samples
+are collected. The default is 1 kHz (10,000 samples per second)::
 
-   python -m profiling.sampling run -i 50 script.py
+   python -m profiling.sampling run -r 20khz script.py
 
-Lower intervals capture more samples and provide finer-grained data at the
-cost of slightly higher profiler CPU usage. Higher intervals reduce profiler
+Higher rates capture more samples and provide finer-grained data at the
+cost of slightly higher profiler CPU usage. Lower rates reduce profiler
 overhead but may miss short-lived functions. For most applications, the
-default interval provides a good balance between accuracy and overhead.
+default rate provides a good balance between accuracy and overhead.
 
-The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. The
-default is 10 seconds::
+The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. By
+default, profiling continues until the target process exits or is interrupted::
 
    python -m profiling.sampling run -d 60 script.py
 
-Longer durations collect more samples and produce more statistically reliable
-results, especially for code paths that execute infrequently. When profiling
-a program that runs for a fixed time, you may want to set the duration to
-match or exceed the expected runtime.
+Specifying a duration is useful when attaching to long-running processes or when
+you want to limit profiling to a specific time window. When profiling a script,
+the default behavior of running to completion is usually what you want.
 
 
 Thread selection
@@ -573,9 +571,9 @@ appended:
 - For pstats format (which defaults to stdout), subprocesses produce files like
   ``profile_12345.pstats``
 
-The subprocess profilers inherit most sampling options from the parent (interval,
-duration, thread selection, native frames, GC frames, async-aware mode, and
-output format). All Python descendant processes are profiled recursively,
+The subprocess profilers inherit most sampling options from the parent (sampling
+rate, duration, thread selection, native frames, GC frames, async-aware mode,
+and output format). All Python descendant processes are profiled recursively,
 including grandchildren and further descendants.
 
 Subprocess detection works by periodically scanning for new descendants of
@@ -880,9 +878,9 @@ interesting functions that highlights:
 
 Use :option:`--no-summary` to suppress both the legend and summary sections.
 
-To save pstats output to a file instead of stdout::
+To save pstats output to a binary file instead of stdout::
 
-   python -m profiling.sampling run -o profile.txt script.py
+   python -m profiling.sampling run -o profile.pstats script.py
 
 The pstats format supports several options for controlling the display.
 The :option:`--sort` option determines the column used for ordering results::
@@ -1389,13 +1387,13 @@ Global options
 Sampling options
 ----------------
 
-.. option:: -i <microseconds>, --interval <microseconds>
+.. option:: -r <rate>, --sampling-rate <rate>
 
-   Sampling interval in microseconds. Default: 100.
+   Sampling rate (for example, ``10000``, ``10khz``, ``10k``). Default: ``1khz``.
 
 .. option:: -d <seconds>, --duration <seconds>
 
-   Profiling duration in seconds. Default: 10.
+   Profiling duration in seconds. Default: run to completion.
 
 .. option:: -a, --all-threads
 
@@ -1457,7 +1455,9 @@ Output options
 
 .. option:: --pstats
 
-   Generate text statistics output. This is the default.
+   Generate pstats statistics. This is the default.
+   When written to stdout, the output is a text table; with :option:`-o`,
+   it is a binary pstats file.
 
 .. option:: --collapsed
 
@@ -1488,9 +1488,17 @@ Output options
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   :option:`--pstats` writes to stdout, while other formats generate a file
-   named ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
+   :option:`--pstats` prints a text table to stdout, while ``-o`` writes a
+   binary pstats file. Other formats generate a file named
+   ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
    :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
+
+.. option:: --browser
+
+   Automatically open HTML output (:option:`--flamegraph` and
+   :option:`--heatmap`) in your default web browser after generation.
+   When profiling with :option:`--subprocesses`, only the main process
+   opens the browser; subprocess outputs are never auto-opened.
 
 
 pstats display options

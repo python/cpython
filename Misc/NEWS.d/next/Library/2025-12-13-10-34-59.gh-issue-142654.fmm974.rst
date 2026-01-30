@@ -1,2 +1,0 @@
-Show the clearer error message when using ``profiling.sampling`` on an
-unknown PID.

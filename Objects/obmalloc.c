@@ -307,8 +307,45 @@ _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
 {
 #ifdef Py_GIL_DISABLED
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    // Implement our own realloc logic so that we can copy PyObject header
+    // in a thread-safe way.
+    size_t size = mi_usable_size(ptr);
+    if (nbytes <= size && nbytes >= (size / 2) && nbytes > 0) {
+        return ptr;
+    }
+
     mi_heap_t *heap = tstate->mimalloc.current_object_heap;
-    return mi_heap_realloc(heap, ptr, nbytes);
+    void* newp = mi_heap_malloc(heap, nbytes);
+    if (newp == NULL) {
+        return NULL;
+    }
+
+    // Free threaded Python allows access from other threads to the PyObject reference count
+    // fields for a period of time after the object is freed (see InternalDocs/qsbr.md).
+    // These fields are typically initialized by PyObject_Init() using relaxed
+    // atomic stores. We need to copy these fields in a thread-safe way here.
+    // We use the "debug_offset" to determine how many bytes to copy -- it
+    // includes the PyObject header and plus any extra pre-headers.
+    size_t offset = heap->debug_offset;
+    assert(offset % sizeof(void*) == 0);
+
+    size_t copy_size = (size < nbytes ? size : nbytes);
+    if (copy_size >= offset) {
+        for (size_t i = 0; i != offset; i += sizeof(void*)) {
+            // Use memcpy to avoid strict-aliasing issues. However, we probably
+            // still have unavoidable strict-aliasing issues with
+            // _Py_atomic_store_ptr_relaxed here.
+            void *word;
+            memcpy(&word, (char*)ptr + i, sizeof(void*));
+            _Py_atomic_store_ptr_relaxed((void**)((char*)newp + i), word);
+        }
+        _mi_memcpy((char*)newp + offset, (char*)ptr + offset, copy_size - offset);
+    }
+    else {
+        _mi_memcpy(newp, ptr, copy_size);
+    }
+    mi_free(ptr);
+    return newp;
 #else
     return mi_realloc(ptr, nbytes);
 #endif
@@ -459,10 +496,30 @@ void *
 _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
 {
 #ifdef MS_WINDOWS
+#  ifdef PYMALLOC_USE_HUGEPAGES
+    void *ptr = VirtualAlloc(NULL, size,
+                    MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
+                    PAGE_READWRITE);
+    if (ptr != NULL)
+        return ptr;
+    /* Fall back to regular pages */
+#  endif
     return VirtualAlloc(NULL, size,
                         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 #elif defined(ARENAS_USE_MMAP)
     void *ptr;
+#  ifdef PYMALLOC_USE_HUGEPAGES
+#    ifdef MAP_HUGETLB
+    ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
+               MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB, -1, 0);
+    if (ptr != MAP_FAILED) {
+        assert(ptr != NULL);
+        (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc:hugepage");
+        return ptr;
+    }
+    /* Fall back to regular pages */
+#    endif
+#  endif
     ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
                MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     if (ptr == MAP_FAILED)

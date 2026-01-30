@@ -1128,6 +1128,7 @@ enable_ipv6
 with_doc_strings
 with_mimalloc
 with_pymalloc
+with_pymalloc_hugepages
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -1935,6 +1936,9 @@ Optional Packages:
   --with-mimalloc         build with mimalloc memory allocator (default is yes
                           if C11 stdatomic.h is available.)
   --with-pymalloc         enable specialized mallocs (default is yes)
+  --with-pymalloc-hugepages
+                          enable huge page support for pymalloc arenas
+                          (default is no)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -4753,9 +4757,9 @@ esac
 
 if test $define_xopen_source = yes
 then
-  # X/Open 7, incorporating POSIX.1-2008
+  # X/Open 8, incorporating POSIX.1-2024
 
-printf "%s\n" "#define _XOPEN_SOURCE 700" >>confdefs.h
+printf "%s\n" "#define _XOPEN_SOURCE 800" >>confdefs.h
 
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
@@ -4767,7 +4771,7 @@ printf "%s\n" "#define _XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
 
 
 
-printf "%s\n" "#define _POSIX_C_SOURCE 200809L" >>confdefs.h
+printf "%s\n" "#define _POSIX_C_SOURCE 202405L" >>confdefs.h
 
 fi
 
@@ -18190,6 +18194,7 @@ else case e in #(
         if (pthread_attr_init(&attr)) return (-1);
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
         if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        if (pthread_join(id, NULL)) return (-1);
         return (0);
       }
 _ACEOF
@@ -18947,6 +18952,49 @@ printf "%s\n" "#define WITH_PYMALLOC 1" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 printf "%s\n" "$with_pymalloc" >&6; }
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc-hugepages" >&5
+printf %s "checking for --with-pymalloc-hugepages... " >&6; }
+
+# Check whether --with-pymalloc-hugepages was given.
+if test ${with_pymalloc_hugepages+y}
+then :
+  withval=$with_pymalloc_hugepages;
+fi
+
+if test "$with_pymalloc_hugepages" = "yes"
+then
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/mman.h>
+
+int
+main (void)
+{
+
+int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;
+(void)flags;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+printf "%s\n" "#define PYMALLOC_USE_HUGEPAGES 1" >>confdefs.h
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: --with-pymalloc-hugepages requested but MAP_HUGETLB not found" >&5
+printf "%s\n" "$as_me: WARNING: --with-pymalloc-hugepages requested but MAP_HUGETLB not found" >&2;}
+       with_pymalloc_hugepages=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${with_pymalloc_hugepages:-no}" >&5
+printf "%s\n" "${with_pymalloc_hugepages:-no}" >&6; }
 
 # Check for --with-c-locale-coercion
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
@@ -19809,6 +19857,12 @@ ac_fn_c_check_func "$LINENO" "poll" "ac_cv_func_poll"
 if test "x$ac_cv_func_poll" = xyes
 then :
   printf "%s\n" "#define HAVE_POLL 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ppoll" "ac_cv_func_ppoll"
+if test "x$ac_cv_func_ppoll" = xyes
+then :
+  printf "%s\n" "#define HAVE_PPOLL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "posix_fadvise" "ac_cv_func_posix_fadvise"
@@ -23965,6 +24019,9 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 
 fi
 
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
+if test "$ac_cv_libc" != musl
+then :
 
 ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
                #include <sys/prctl.h>
@@ -23985,6 +24042,7 @@ printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 fi
 
 
+fi
 # check for openpty, login_tty, and forkpty
 
 

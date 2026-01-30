@@ -25,6 +25,10 @@ extern "C" {
 #define BINARY_FORMAT_MAGIC_SWAPPED 0x48434154  /* Byte-swapped magic for endianness detection */
 #define BINARY_FORMAT_VERSION   1
 
+/* Sentinel values for optional frame fields */
+#define OPCODE_NONE             255  /* No opcode captured (u8 sentinel) */
+#define LOCATION_NOT_AVAILABLE  (-1) /* lineno/column not available (zigzag sentinel) */
+
 /* Conditional byte-swap macros for cross-endian file reading.
  * Uses Python's optimized byte-swap functions from pycore_bitutils.h */
 #define SWAP16_IF(swap, x) ((swap) ? _Py_bswap16(x) : (x))
@@ -172,18 +176,28 @@ typedef struct {
     size_t compressed_buffer_size;
 } ZstdCompressor;
 
-/* Frame entry - combines all frame data for better cache locality */
+/* Frame entry - combines all frame data for better cache locality.
+ * Stores full source position (line, end_line, column, end_column) and opcode.
+ * Delta values are computed during serialization for efficiency. */
 typedef struct {
     uint32_t filename_idx;
     uint32_t funcname_idx;
-    int32_t lineno;
+    int32_t lineno;         /* Start line number (-1 for synthetic frames) */
+    int32_t end_lineno;     /* End line number (-1 if not available) */
+    int32_t column;         /* Start column in UTF-8 bytes (-1 if not available) */
+    int32_t end_column;     /* End column in UTF-8 bytes (-1 if not available) */
+    uint8_t opcode;         /* Python opcode (0-254) or OPCODE_NONE (255) */
 } FrameEntry;
 
-/* Frame key for hash table lookup */
+/* Frame key for hash table lookup - includes all fields for proper deduplication */
 typedef struct {
     uint32_t filename_idx;
     uint32_t funcname_idx;
     int32_t lineno;
+    int32_t end_lineno;
+    int32_t column;
+    int32_t end_column;
+    uint8_t opcode;
 } FrameKey;
 
 /* Pending RLE sample - buffered for run-length encoding */
@@ -305,8 +319,8 @@ typedef struct {
     PyObject **strings;
     uint32_t strings_count;
 
-    /* Parsed frame table: packed as [filename_idx, funcname_idx, lineno] */
-    uint32_t *frame_data;
+    /* Parsed frame table: array of FrameEntry structures */
+    FrameEntry *frames;
     uint32_t frames_count;
 
     /* Sample data region */
