@@ -100,7 +100,11 @@ class SampleProfiler:
                     break
 
                 current_time = time.perf_counter()
-                if next_time < current_time:
+                if next_time > current_time:
+                    sleep_time = (next_time - current_time) * 0.9
+                    if sleep_time > 0.0001:
+                        time.sleep(sleep_time)
+                elif next_time < current_time:
                     try:
                         with _pause_threads(self.unwinder, self.blocking):
                             if async_aware == "all":
