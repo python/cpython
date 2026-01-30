@@ -1011,6 +1011,11 @@ the options available to you.
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
 |                | format this yourself.   | if no exception has occurred, ``None``.       |
 +----------------+-------------------------+-----------------------------------------------+
+| exc_text       | You shouldn't need to   | Exception information formatted as a string.  |
+|                | format this yourself.   | This is set when :meth:`Formatter.format` is  |
+|                |                         | invoked, or ``None`` if no exception has      |
+|                |                         | occurred.                                     |
++----------------+-------------------------+-----------------------------------------------+
 | filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
 +----------------+-------------------------+-----------------------------------------------+
 | funcName       | ``%(funcName)s``        | Name of function containing the logging call. |
@@ -1082,12 +1087,13 @@ LoggerAdapter Objects
 information into logging calls. For a usage example, see the section on
 :ref:`adding contextual information to your logging output <context-info>`.
 
-.. class:: LoggerAdapter(logger, extra, merge_extra=False)
+.. class:: LoggerAdapter(logger, extra=None, merge_extra=False)
 
    Returns an instance of :class:`LoggerAdapter` initialized with an
-   underlying :class:`Logger` instance, a dict-like object (*extra*), and a
-   boolean (*merge_extra*) indicating whether or not the *extra* argument of
-   individual log calls should be merged with the :class:`LoggerAdapter` extra.
+   underlying :class:`Logger` instance, an optional dict-like object (*extra*),
+   and an optional boolean (*merge_extra*) indicating whether or not
+   the *extra* argument of individual log calls should be merged with
+   the :class:`LoggerAdapter` extra.
    The default behavior is to ignore the *extra* argument of individual log
    calls and only use the one of the :class:`LoggerAdapter` instance
 
@@ -1127,9 +1133,13 @@ information into logging calls. For a usage example, see the section on
       Attribute :attr:`!manager` and method :meth:`!_log` were added, which
       delegate to the underlying logger and allow adapters to be nested.
 
+   .. versionchanged:: 3.10
+
+      The *extra* argument is now optional.
+
    .. versionchanged:: 3.13
 
-      The *merge_extra* argument was added.
+      The *merge_extra* parameter was added.
 
 
 Thread Safety

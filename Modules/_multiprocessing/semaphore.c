@@ -8,6 +8,7 @@
  */
 
 #include "multiprocessing.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 
 #ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>           // gettimeofday()

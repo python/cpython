@@ -262,7 +262,7 @@ A file descriptor is either a socket or file object, or a small integer
 gotten from a fileno() method call on one of those.
 
 The optional 4th argument specifies a timeout in seconds; it may be
-a floating-point number to specify fractions of seconds.  If it is absent
+a non-integer to specify fractions of seconds.  If it is absent
 or None, the call will never time out.
 
 The return value is a tuple of three lists corresponding to the first three
@@ -277,7 +277,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=df20779a9c2f5c1e]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=b0403de75cd11cc1]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -305,8 +305,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be a float or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
@@ -426,7 +427,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     return ret;
 }
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 /*
  * poll() support
  */
@@ -625,27 +626,41 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     PyObject *result_list = NULL;
     int poll_result, i, j;
     PyObject *value = NULL, *num = NULL;
-    PyTime_t timeout = -1, ms = -1, deadline = 0;
+    PyTime_t timeout = -1, deadline = 0;
     int async_err = 0;
 
     if (timeout_obj != Py_None) {
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
                                            _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be an integer or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
+    }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
-        if (ms < INT_MIN || ms > INT_MAX) {
-            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+#ifdef HAVE_PPOLL
+    struct timespec ts, *ts_p = NULL;
+
+    if (timeout_obj != Py_None) {
+        if (_PyTime_AsTimespec(timeout, &ts) < 0) {
             return NULL;
         }
 
         if (timeout >= 0) {
-            deadline = _PyDeadline_Init(timeout);
+            ts_p = &ts;
+        }
+    }
+#else
+    PyTime_t ms = -1;
+
+    if (timeout_obj != Py_None) {
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+        if (ms < INT_MIN || ms > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+            return NULL;
         }
     }
 
@@ -658,6 +673,11 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
 #else
         ms = -1;
 #endif
+    }
+#endif
+
+    if (timeout >= 0) {
+        deadline = _PyDeadline_Init(timeout);
     }
 
     /* Avoid concurrent poll() invocation, issue 8865 */
@@ -679,7 +699,11 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+#ifdef HAVE_PPOLL
+        poll_result = ppoll(self->ufds, self->ufd_len, ts_p, NULL);
+#else
         poll_result = poll(self->ufds, self->ufd_len, (int)ms);
+#endif
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
@@ -697,8 +721,16 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
                 poll_result = 0;
                 break;
             }
+#ifdef HAVE_PPOLL
+            if (_PyTime_AsTimespec(timeout, &ts) < 0) {
+                poll_result = -1;
+                break;
+            }
+            assert(ts_p == &ts);
+#else
             ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
-            /* retry poll() with the recomputed timeout */
+#endif
+            /* retry poll()/ppoll() with the recomputed timeout */
         }
     } while (1);
 
@@ -974,8 +1006,9 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
                                            _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be an integer or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
@@ -1565,7 +1598,7 @@ select_epoll_unregister_impl(pyEpoll_Object *self, int fd)
 select.epoll.poll
 
     timeout as timeout_obj: object = None
-      the maximum time to wait in seconds (as float);
+      the maximum time to wait in seconds (with fractions);
       a timeout of None or -1 makes poll wait indefinitely
     maxevents: int = -1
       the maximum number of events returned; -1 means no limit
@@ -1579,7 +1612,7 @@ as a list of (fd, events) 2-tuples.
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
                        int maxevents)
-/*[clinic end generated code: output=e02d121a20246c6c input=33d34a5ea430fd5b]*/
+/*[clinic end generated code: output=e02d121a20246c6c input=deafa7f04a60ebe0]*/
 {
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
@@ -1595,8 +1628,9 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be an integer or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
@@ -2291,7 +2325,7 @@ select.kqueue.control
         The maximum number of events that the kernel will return.
     timeout as otimeout: object = None
         The maximum time to wait in seconds, or else None to wait forever.
-        This accepts floats for smaller timeouts, too.
+        This accepts non-integers for smaller timeouts, too.
     /
 
 Calls the kernel kevent function.
@@ -2300,7 +2334,7 @@ Calls the kernel kevent function.
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
                            int maxevents, PyObject *otimeout)
-/*[clinic end generated code: output=81324ff5130db7ae input=59c4e30811209c47]*/
+/*[clinic end generated code: output=81324ff5130db7ae input=be969d2bc6f84205]*/
 {
     int gotevents = 0;
     int nchanges = 0;
@@ -2331,9 +2365,8 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
         if (_PyTime_FromSecondsObject(&timeout,
                                       otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
             PyErr_Format(PyExc_TypeError,
-                "timeout argument must be a number "
-                "or None, got %.200s",
-                _PyType_Name(Py_TYPE(otimeout)));
+                         "timeout must be a real number or None, not %T",
+                         otimeout);
             return NULL;
         }
 
@@ -2463,7 +2496,7 @@ static PyGetSetDef kqueue_queue_getsetlist[] = {
 
 #include "clinic/selectmodule.c.h"
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 
 static PyMethodDef poll_methods[] = {
     SELECT_POLL_REGISTER_METHODDEF
@@ -2658,7 +2691,7 @@ _select_exec(PyObject *m)
     ADD_INT(PIPE_BUF);
 #endif
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 #ifdef __APPLE__
     if (select_have_broken_poll()) {
         if (PyObject_DelAttrString(m, "poll") == -1) {

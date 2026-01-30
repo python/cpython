@@ -756,7 +756,7 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         return NULL;
     }
 
-    HMACObject *self = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *self = PyObject_New(HMACObject, state->hmac_type);
     if (self == NULL) {
         return NULL;
     }
@@ -791,7 +791,6 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
 #endif
     }
     assert(rc == 0);
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error_on_key:
@@ -852,7 +851,7 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=a955bfa55b65b215 input=17b2c0ad0b147e36]*/
 {
     hmacmodule_state *state = get_hmacmodule_state_by_cls(cls);
-    HMACObject *copy = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *copy = PyObject_New(HMACObject, state->hmac_type);
     if (copy == NULL) {
         return NULL;
     }
@@ -870,7 +869,6 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
     }
 
     HASHLIB_INIT_MUTEX(copy);
-    PyObject_GC_Track(copy);
     return (PyObject *)copy;
 }
 
@@ -1026,7 +1024,6 @@ static void
 HMACObject_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     (void)HMACObject_clear(op);
     type->tp_free(op);
     Py_DECREF(type);
@@ -1051,9 +1048,7 @@ static PyType_Slot HMACObject_Type_slots[] = {
     {Py_tp_repr, HMACObject_repr},
     {Py_tp_methods, HMACObject_methods},
     {Py_tp_getset, HMACObject_getsets},
-    {Py_tp_clear, HMACObject_clear},
     {Py_tp_dealloc, HMACObject_dealloc},
-    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL} /* sentinel */
 };
 
@@ -1063,8 +1058,7 @@ static PyType_Spec HMAC_Type_spec = {
     .flags = Py_TPFLAGS_DEFAULT
              | Py_TPFLAGS_DISALLOW_INSTANTIATION
              | Py_TPFLAGS_HEAPTYPE
-             | Py_TPFLAGS_IMMUTABLETYPE
-             | Py_TPFLAGS_HAVE_GC,
+             | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = HMACObject_Type_slots,
 };
 

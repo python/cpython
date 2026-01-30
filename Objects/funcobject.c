@@ -11,7 +11,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
-
+#include "pycore_optimizer.h"     // _PyJit_Tracer_InvalidateDependency
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -62,6 +62,7 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_CODE:
         case PyFunction_EVENT_MODIFY_DEFAULTS:
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+        case PyFunction_EVENT_MODIFY_QUALNAME:
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
         default:
@@ -747,6 +748,7 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
     Py_XSETREF(op->func_qualname, Py_NewRef(value));
     return 0;
 }
@@ -1149,6 +1151,10 @@ func_dealloc(PyObject *self)
     if (_PyObject_ResurrectEnd(self)) {
         return;
     }
+#if _Py_TIER2
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), self, 1);
+    _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), self);
+#endif
     _PyObject_GC_UNTRACK(op);
     FT_CLEAR_WEAKREFS(self, op->func_weakreflist);
     (void)func_clear((PyObject*)op);

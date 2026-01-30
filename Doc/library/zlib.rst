@@ -8,15 +8,13 @@
 --------------
 
 For applications that require data compression, the functions in this module
-allow compression and decompression, using the zlib library. The zlib library
-has its own home page at https://www.zlib.net.   There are known
-incompatibilities between the Python module and versions of the zlib library
-earlier than 1.1.3; 1.1.3 has a `security vulnerability <https://zlib.net/zlib_faq.html#faq33>`_, so we recommend using
-1.1.4 or later.
+allow compression and decompression, using the `zlib library <https://www.zlib.net>`_.
+
+.. include:: ../includes/optional-module.rst
 
 zlib's functions have many options and often need to be used in a particular
 order.  This documentation doesn't attempt to cover all of the permutations;
-consult the zlib manual at http://www.zlib.net/manual.html for authoritative
+consult the `zlib manual <https://www.zlib.net/manual.html>`_ for authoritative
 information.
 
 For reading and writing ``.gz`` files see the :mod:`gzip` module.
@@ -56,23 +54,22 @@ The available exception and functions in this module are:
    that were concurrently computed. To compute checksums sequentially, use
    :func:`adler32` with the running checksum as the ``value`` argument.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
-.. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
+.. function:: compress(data, /, level=Z_DEFAULT_COMPRESSION, wbits=MAX_WBITS)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
    *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
-   ``1`` (Z_BEST_SPEED) is fastest and produces the least compression, ``9`` (Z_BEST_COMPRESSION)
-   is slowest and produces the most.  ``0`` (Z_NO_COMPRESSION) is no compression.
-   The default value is ``-1`` (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
-   compromise between speed and compression (currently equivalent to level 6).
+   See :const:`Z_BEST_SPEED` (``1``), :const:`Z_BEST_COMPRESSION` (``9``),
+   :const:`Z_NO_COMPRESSION` (``0``), and the default,
+   :const:`Z_DEFAULT_COMPRESSION` (``-1``) for more information about these values.
 
    .. _compress-wbits:
 
    The *wbits* argument controls the size of the history buffer (or the
    "window size") used when compressing data, and whether a header and
    trailer is included in the output.  It can take several ranges of values,
-   defaulting to ``15`` (MAX_WBITS):
+   defaulting to ``15`` (:const:`MAX_WBITS`):
 
    * +9 to +15: The base-two logarithm of the window size, which
      therefore ranges between 512 and 32768.  Larger values produce
@@ -96,17 +93,15 @@ The available exception and functions in this module are:
       The *wbits* parameter is now available to set window bits and
       compression type.
 
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
+.. function:: compressobj(level=Z_DEFAULT_COMPRESSION, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
 
    *level* is the compression level -- an integer from ``0`` to ``9`` or ``-1``.
-   A value of ``1`` (Z_BEST_SPEED) is fastest and produces the least compression,
-   while a value of ``9`` (Z_BEST_COMPRESSION) is slowest and produces the most.
-   ``0`` (Z_NO_COMPRESSION) is no compression.  The default value is ``-1`` (Z_DEFAULT_COMPRESSION).
-   Z_DEFAULT_COMPRESSION represents a default compromise between speed and compression
-   (currently equivalent to level 6).
+   See :const:`Z_BEST_SPEED` (``1``), :const:`Z_BEST_COMPRESSION` (``9``),
+   :const:`Z_NO_COMPRESSION` (``0``), and the default,
+   :const:`Z_DEFAULT_COMPRESSION` (``-1``) for more information about these values.
 
    *method* is the compression algorithm. Currently, the only supported value is
    :const:`DEFLATED`.
@@ -121,7 +116,7 @@ The available exception and functions in this module are:
 
    *strategy* is used to tune the compression algorithm. Possible values are
    :const:`Z_DEFAULT_STRATEGY`, :const:`Z_FILTERED`, :const:`Z_HUFFMAN_ONLY`,
-   :const:`Z_RLE` (zlib 1.2.0.1) and :const:`Z_FIXED` (zlib 1.2.2.2).
+   :const:`Z_RLE` and :const:`Z_FIXED`.
 
    *zdict* is a predefined compression dictionary. This is a sequence of bytes
    (such as a :class:`bytes` object) containing subsequences that are expected
@@ -162,7 +157,7 @@ The available exception and functions in this module are:
    that were concurrently computed. To compute checksums sequentially, use
    :func:`crc32` with the running checksum as the ``value`` argument.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
@@ -249,7 +244,7 @@ Compression objects support the following methods:
    All pending input is processed, and a bytes object containing the remaining compressed
    output is returned.  *mode* can be selected from the constants
    :const:`Z_NO_FLUSH`, :const:`Z_PARTIAL_FLUSH`, :const:`Z_SYNC_FLUSH`,
-   :const:`Z_FULL_FLUSH`, :const:`Z_BLOCK` (zlib 1.2.3.4), or :const:`Z_FINISH`,
+   :const:`Z_FULL_FLUSH`, :const:`Z_BLOCK`, or :const:`Z_FINISH`,
    defaulting to :const:`Z_FINISH`.  Except :const:`Z_FINISH`, all constants
    allow compressing further bytestrings of data, while :const:`Z_FINISH` finishes the
    compressed stream and prevents compressing any more data.  After calling :meth:`flush`
@@ -340,6 +335,137 @@ Decompression objects support the following methods and attributes:
    objects.
 
 
+The following constants are available to configure compression and decompression
+behavior:
+
+.. data:: DEFLATED
+
+   The deflate compression method.
+
+
+.. data:: MAX_WBITS
+
+   The maximum window size, expressed as a power of 2.
+   For example, if :const:`!MAX_WBITS` is ``15`` it results in a window size
+   of ``32 KiB``.
+
+
+.. data:: DEF_MEM_LEVEL
+
+   The default memory level for compression objects.
+
+
+.. data:: DEF_BUF_SIZE
+
+   The default buffer size for decompression operations.
+
+
+.. data:: Z_NO_COMPRESSION
+
+   Compression level ``0``; no compression.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_BEST_SPEED
+
+   Compression level ``1``; fastest and produces the least compression.
+
+
+.. data:: Z_BEST_COMPRESSION
+
+   Compression level ``9``; slowest and produces the most compression.
+
+
+.. data:: Z_DEFAULT_COMPRESSION
+
+   Default compression level (``-1``); a compromise between speed and
+   compression. Currently equivalent to compression level ``6``.
+
+
+.. data:: Z_DEFAULT_STRATEGY
+
+   Default compression strategy, for normal data.
+
+
+.. data:: Z_FILTERED
+
+   Compression strategy for data produced by a filter (or predictor).
+
+
+.. data:: Z_HUFFMAN_ONLY
+
+   Compression strategy that forces Huffman coding only.
+
+
+.. data:: Z_RLE
+
+   Compression strategy that limits match distances to one (run-length encoding).
+
+   This constant is only available if Python was compiled with zlib
+   1.2.0.1 or greater.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_FIXED
+
+   Compression strategy that prevents the use of dynamic Huffman codes.
+
+   This constant is only available if Python was compiled with zlib
+   1.2.2.2 or greater.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_NO_FLUSH
+
+   Flush mode ``0``. No special flushing behavior.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_PARTIAL_FLUSH
+
+   Flush mode ``1``. Flush as much output as possible.
+
+
+.. data:: Z_SYNC_FLUSH
+
+   Flush mode ``2``. All output is flushed and the output is aligned to a byte boundary.
+
+
+.. data:: Z_FULL_FLUSH
+
+   Flush mode ``3``. All output is flushed and the compression state is reset.
+
+
+.. data:: Z_FINISH
+
+   Flush mode ``4``. All pending input is processed, no more input is expected.
+
+
+.. data:: Z_BLOCK
+
+   Flush mode ``5``. A deflate block is completed and emitted.
+
+   This constant is only available if Python was compiled with zlib
+   1.2.2.2 or greater.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_TREES
+
+   Flush mode ``6``, for inflate operations. Instructs inflate to return when
+   it gets to the next deflate block boundary.
+
+   This constant is only available if Python was compiled with zlib
+   1.2.3.4 or greater.
+
+   .. versionadded:: 3.6
+
+
 Information about the version of the zlib library in use is available through
 the following constants:
 
@@ -375,10 +501,10 @@ the following constants:
    Module :mod:`gzip`
       Reading and writing :program:`gzip`\ -format files.
 
-   http://www.zlib.net
+   https://www.zlib.net
       The zlib library home page.
 
-   http://www.zlib.net/manual.html
+   https://www.zlib.net/manual.html
       The zlib manual explains  the semantics and usage of the library's many
       functions.
 

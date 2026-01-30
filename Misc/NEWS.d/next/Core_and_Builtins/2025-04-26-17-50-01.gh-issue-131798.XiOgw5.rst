@@ -1,2 +1,0 @@
-Narrow the return type and constant-evaluate ``CALL_ISINSTANCE`` for a
-subset of known values in the JIT. Patch by Tomas Roun

@@ -684,6 +684,7 @@ static PyType_Spec PyCursesPanel_Type_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
         | Py_TPFLAGS_HAVE_GC
     ),
     .slots = PyCursesPanel_Type_slots

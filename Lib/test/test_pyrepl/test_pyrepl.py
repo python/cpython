@@ -1,7 +1,9 @@
+import importlib
 import io
 import itertools
 import os
 import pathlib
+import pkgutil
 import re
 import rlcompleter
 import select
@@ -26,9 +28,16 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
-from _pyrepl._module_completer import ImportParser, ModuleCompleter
-from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
-                              _ReadlineWrapper)
+from _pyrepl._module_completer import (
+    ImportParser,
+    ModuleCompleter,
+    HARDCODED_SUBMODULES,
+)
+from _pyrepl.readline import (
+    ReadlineAlikeReader,
+    ReadlineConfig,
+    _ReadlineWrapper,
+)
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
@@ -930,7 +939,6 @@ class TestPyReplCompleter(TestCase):
 
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
-        import importlib
         # Make iter_modules() search only the standard library.
         # This makes the test more reliable in case there are
         # other user packages/scripts on PYTHONPATH which can
@@ -964,6 +972,7 @@ class TestPyReplModuleCompleter(TestCase):
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+            ("from __phello__ import s\t\n", "from __phello__ import spam"),  # frozen module
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1013,14 +1022,6 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, expected)
 
     def test_builtin_completion_top_level(self):
-        import importlib
-        # Make iter_modules() search only the standard library.
-        # This makes the test more reliable in case there are
-        # other user packages/scripts on PYTHONPATH which can
-        # intefere with the completions.
-        lib_path = os.path.dirname(importlib.__path__[0])
-        sys.path = [lib_path]
-
         cases = (
             ("import bui\t\n", "import builtins"),
             ("from bui\t\n", "from builtins"),
@@ -1038,6 +1039,8 @@ class TestPyReplModuleCompleter(TestCase):
             (None, "from . import readl\t\n", "from . import readl"),
             ("_pyrepl", "from .readl\t\n", "from .readline"),
             ("_pyrepl", "from . import readl\t\n", "from . import readline"),
+            ("_pyrepl", "from .. import toodeep\t\n", "from .. import toodeep"),
+            ("concurrent", "from .futures.i\t\n", "from .futures.interpreter"),
         )
         for package, code, expected in cases:
             with self.subTest(code=code):
@@ -1075,6 +1078,134 @@ class TestPyReplModuleCompleter(TestCase):
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, expected)
+
+    def test_global_cache(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              patch.object(sys, "path", [_dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mod_aa.py").mkdir()
+            (dir1 / "mod_bb.py").mkdir()
+            events = code_to_events("import mod_a\t\nimport mod_b\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output_1, output_2 = reader.readline(), reader.readline()
+            self.assertEqual(output_1, "import mod_aa")
+            self.assertEqual(output_2, "import mod_bb")
+
+    def test_hardcoded_stdlib_submodules(self):
+        cases = (
+            ("import collections.\t\n", "import collections.abc"),
+            ("from os import \t\n", "from os import path"),
+            ("import xml.parsers.expat.\t\te\t\n\n", "import xml.parsers.expat.errors"),
+            ("from xml.parsers.expat import \t\tm\t\n\n", "from xml.parsers.expat import model"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_hardcoded_stdlib_submodules_not_proposed_if_local_import(self):
+        with (tempfile.TemporaryDirectory() as _dir,
+              patch.object(sys, "modules", {})):  # hide imported module
+            dir = pathlib.Path(_dir)
+            (dir / "collections").mkdir()
+            (dir / "collections" / "__init__.py").touch()
+            (dir / "collections" / "foo.py").touch()
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                events = code_to_events("import collections.\t\n")
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, "import collections.foo")
+
+    def test_already_imported_stdlib_module_no_other_suggestions(self):
+        with (tempfile.TemporaryDirectory() as _dir,
+              patch.object(sys, "path", [_dir, *sys.path])):
+            dir = pathlib.Path(_dir)
+            (dir / "collections").mkdir()
+            (dir / "collections" / "__init__.py").touch()
+            (dir / "collections" / "foo.py").touch()
+
+            # collections found in dir, but was already imported
+            # from stdlib at startup -> suggest stdlib submodules only
+            events = code_to_events("import collections.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import collections.abc")
+
+    def test_already_imported_custom_module_no_suggestions(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              tempfile.TemporaryDirectory() as _dir2,
+              patch.object(sys, "path", [_dir2, _dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mymodule").mkdir()
+            (dir1 / "mymodule" / "__init__.py").touch()
+            (dir1 / "mymodule" / "foo.py").touch()
+            importlib.import_module("mymodule")
+
+            dir2 = pathlib.Path(_dir2)
+            (dir2 / "mymodule").mkdir()
+            (dir2 / "mymodule" / "__init__.py").touch()
+            (dir2 / "mymodule" / "bar.py").touch()
+            # Purge FileFinder cache after adding files
+            pkgutil.get_importer(_dir2).invalidate_caches()
+            # mymodule found in dir2 before dir1, but it was already imported
+            # from dir1 -> do not suggest dir2 submodules
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.")
+
+            del sys.modules["mymodule"]
+            # mymodule not imported anymore -> suggest dir2 submodules
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.bar")
+
+    def test_already_imported_custom_file_no_suggestions(self):
+        # Same as before, but mymodule from dir1 has no submodules
+        # -> propose nothing
+        with (tempfile.TemporaryDirectory() as _dir1,
+              tempfile.TemporaryDirectory() as _dir2,
+              patch.object(sys, "path", [_dir2, _dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mymodule").mkdir()
+            (dir1 / "mymodule.py").touch()
+            importlib.import_module("mymodule")
+
+            dir2 = pathlib.Path(_dir2)
+            (dir2 / "mymodule").mkdir()
+            (dir2 / "mymodule" / "__init__.py").touch()
+            (dir2 / "mymodule" / "bar.py").touch()
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.")
+            del sys.modules["mymodule"]
+
+    def test_already_imported_module_without_origin_or_spec(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              patch.object(sys, "path", [_dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            for mod in ("no_origin", "not_has_location", "no_spec"):
+                (dir1 / mod).mkdir()
+                (dir1 / mod / "__init__.py").touch()
+                (dir1 / mod / "foo.py").touch()
+                pkgutil.get_importer(_dir1).invalidate_caches()
+                module = importlib.import_module(mod)
+                assert module.__spec__
+                if mod == "no_origin":
+                    module.__spec__.origin = None
+                elif mod == "not_has_location":
+                    module.__spec__.has_location = False
+                else:
+                    module.__spec__ = None
+                events = code_to_events(f"import {mod}.\t\n")
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, f"import {mod}.")
+                del sys.modules[mod]
 
     def test_get_path_and_prefix(self):
         cases = (
@@ -1178,6 +1309,7 @@ class TestPyReplModuleCompleter(TestCase):
             'import ..foo',
             'import .foo.bar',
             'import foo; x = 1',
+            'import foo; 1,',
             'import a.; x = 1',
             'import a.b; x = 1',
             'import a.b.; x = 1',
@@ -1197,12 +1329,27 @@ class TestPyReplModuleCompleter(TestCase):
             'from foo import import',
             'from foo import from',
             'from foo import as',
+            'from \\x',  # _tokenize SyntaxError -> tokenize TokenError
+            'if 1:\n pass\n\tpass',  # _tokenize TabError -> tokenize TabError
         )
         for code in cases:
             parser = ImportParser(code)
             actual = parser.parse()
             with self.subTest(code=code):
                 self.assertEqual(actual, None)
+
+
+class TestHardcodedSubmodules(TestCase):
+    def test_hardcoded_stdlib_submodules_are_importable(self):
+        for parent_path, submodules in HARDCODED_SUBMODULES.items():
+            for module_name in submodules:
+                path = f"{parent_path}.{module_name}"
+                with self.subTest(path=path):
+                    # We can't use importlib.util.find_spec here,
+                    # since some hardcoded submodules parents are
+                    # not proper packages
+                    importlib.import_module(path)
+
 
 class TestPasteEvent(TestCase):
     def prepare_reader(self, events):
@@ -1368,6 +1515,9 @@ class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
         env.pop('PYTHON_BASIC_REPL', None)
+        # Ignore PYTHONSTARTUP to not pollute the output
+        # with an unrelated traceback. See GH-137568.
+        env.pop('PYTHONSTARTUP', None)
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
@@ -1402,10 +1552,10 @@ class TestMain(ReplTestCase):
         case2 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file and the .py source exists
-        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
+        case3 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file but there's no .py source file
-        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
+        case4 = f"{pre}, '__doc__', {post}" in output
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
 
@@ -1787,3 +1937,171 @@ class TestMain(ReplTestCase):
                     " outside of the Python REPL"
                 )
                 self.assertIn(hint, output)
+
+    @force_not_colorized
+    def test_no_newline(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        env["PYTHON_BASIC_REPL"] = "1"
+
+        commands = "print('Something pretty long', end='')\nexit()\n"
+        expected_output_sequence = "Something pretty long>>> exit()"
+
+        basic_output, basic_exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(basic_exit_code, 0)
+        self.assertIn(expected_output_sequence, basic_output)
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+
+        # Build patterns for escape sequences that don't affect cursor position
+        # or visual output. Use terminfo to get platform-specific sequences,
+        # falling back to hard-coded patterns for capabilities not in terminfo.
+        from _pyrepl.terminfo import TermInfo
+        ti = TermInfo(os.environ.get("TERM", ""))
+
+        safe_patterns = []
+
+        # smkx/rmkx - application cursor keys and keypad mode
+        smkx = ti.get("smkx")
+        rmkx = ti.get("rmkx")
+        if smkx:
+            safe_patterns.append(re.escape(smkx.decode("ascii")))
+        if rmkx:
+            safe_patterns.append(re.escape(rmkx.decode("ascii")))
+        if not smkx and not rmkx:
+            safe_patterns.append(r'\x1b\[\?1[hl]')  # application cursor keys
+            safe_patterns.append(r'\x1b[=>]')  # application keypad mode
+
+        # ich1 - insert character (only safe form that inserts exactly 1 char)
+        ich1 = ti.get("ich1")
+        if ich1:
+            safe_patterns.append(re.escape(ich1.decode("ascii")) + r'(?=[ -~])')
+        else:
+            safe_patterns.append(r'\x1b\[(?:1)?@(?=[ -~])')
+
+        # civis/cnorm - cursor visibility (may include cursor blinking control)
+        civis = ti.get("civis")
+        cnorm = ti.get("cnorm")
+        if civis:
+            safe_patterns.append(re.escape(civis.decode("ascii")))
+        if cnorm:
+            safe_patterns.append(re.escape(cnorm.decode("ascii")))
+        if not civis and not cnorm:
+            safe_patterns.append(r'\x1b\[\?25[hl]')  # cursor visibility
+            safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
+
+        # rmam / smam - automatic margins
+        rmam = ti.get("rmam")
+        smam = ti.get("smam")
+        if rmam:
+            safe_patterns.append(re.escape(rmam.decode("ascii")))
+        if smam:
+            safe_patterns.append(re.escape(smam.decode("ascii")))
+        if not rmam and not smam:
+            safe_patterns.append(r'\x1b\[\?7l') # turn off automatic margins
+            safe_patterns.append(r'\x1b\[\?7h') # turn on automatic margins
+
+        # Modern extensions not in standard terminfo - always use patterns
+        safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
+        safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
+        safe_patterns.append(r'\x1b\[\?[01]c')  # device attributes
+
+        safe_escapes = re.compile('|'.join(safe_patterns))
+        cleaned_output = safe_escapes.sub('', output)
+        self.assertIn(expected_output_sequence, cleaned_output)
+
+
+@skipUnless(sys.platform == "darwin", "macOS only")
+class TestMainAppleTerminal(TestMain):
+    """Test the REPL with Apple Terminal's TERM_PROGRAM set."""
+
+    def run_repl(self, repl_input, env=None, **kwargs):
+        if env is None:
+            env = os.environ.copy()
+        env["TERM_PROGRAM"] = "Apple_Terminal"
+        return super().run_repl(repl_input, env=env, **kwargs)
+
+
+class TestPyReplCtrlD(TestCase):
+    """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
+
+    Ctrl+D should:
+    - Exit on empty buffer (raises EOFError)
+    - Delete character when cursor is in middle of line
+    - Perform no operation when cursor is at end of line without newline
+    - Exit multiline mode when cursor is at end with trailing newline
+    - Run code up to that point when pressed on blank line with preceding lines
+    """
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_ctrl_d_empty_line(self):
+        """Test that pressing Ctrl+D on empty line exits the program"""
+        events = [
+            Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+        ]
+        reader = self.prepare_reader(events)
+        with self.assertRaises(EOFError):
+            multiline_input(reader)
+
+    def test_ctrl_d_multiline_with_new_line(self):
+        """Test that pressing Ctrl+D in multiline mode with trailing newline exits multiline mode"""
+        events = itertools.chain(
+            code_to_events("def f():\n    pass\n"),  # Enter multiline mode with trailing newline
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+            ],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertTrue(reader.finished)
+        self.assertEqual("def f():\n    pass\n", "".join(reader.buffer))
+
+    def test_ctrl_d_multiline_middle_of_line(self):
+        """Test that pressing Ctrl+D in multiline mode with cursor in middle deletes character"""
+        events = itertools.chain(
+            code_to_events("def f():\n    hello world"),  # Enter multiline mode
+            [
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))
+            ] * 5,  # move cursor to 'w' in "world"
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+            ], # Ctrl+D should delete 'w'
+        )
+        reader, _ = handle_all_events(events)
+        self.assertFalse(reader.finished)
+        self.assertEqual("def f():\n    hello orld", "".join(reader.buffer))
+
+    def test_ctrl_d_multiline_end_of_line_no_newline(self):
+        """Test that pressing Ctrl+D at end of line without newline performs no operation"""
+        events = itertools.chain(
+            code_to_events("def f():\n    hello"),  # Enter multiline mode, no trailing newline
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+            ],  # Ctrl+D should be no-op
+        )
+        reader, _ = handle_all_events(events)
+        self.assertFalse(reader.finished)
+        self.assertEqual("def f():\n    hello", "".join(reader.buffer))
+
+    def test_ctrl_d_single_line_middle_of_line(self):
+        """Test that pressing Ctrl+D in single line mode deletes current character"""
+        events = itertools.chain(
+            code_to_events("hello"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],  # move left
+            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],    # Ctrl+D
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual("hell", "".join(reader.buffer))
+
+    def test_ctrl_d_single_line_end_no_newline(self):
+        """Test that pressing Ctrl+D at end of single line without newline does nothing"""
+        events = itertools.chain(
+            code_to_events("hello"),  # cursor at end of line
+            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],  # Ctrl+D
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual("hello", "".join(reader.buffer))

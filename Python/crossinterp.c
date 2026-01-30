@@ -1038,7 +1038,7 @@ _PyXIData_ReleaseAndRawFree(_PyXIData_t *xidata)
 /* convenience utilities */
 /*************************/
 
-static const char *
+static char *
 _copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
 {
     Py_ssize_t size = -1;
@@ -1139,11 +1139,16 @@ _format_TracebackException(PyObject *tbexc)
     }
 
     Py_ssize_t size = -1;
-    const char *formatted = _copy_string_obj_raw(formatted_obj, &size);
+    char *formatted = _copy_string_obj_raw(formatted_obj, &size);
     Py_DECREF(formatted_obj);
-    // We remove trailing the newline added by TracebackException.format().
-    assert(formatted[size-1] == '\n');
-    ((char *)formatted)[size-1] = '\0';
+    if (formatted == NULL || size == 0) {
+        return formatted;
+    }
+    assert(formatted[size] == '\0');
+    // Remove a trailing newline if needed.
+    if (formatted[size-1] == '\n') {
+        formatted[size-1] = '\0';
+    }
     return formatted;
 }
 
@@ -1153,8 +1158,8 @@ _release_xid_data(_PyXIData_t *xidata, int rawfree)
 {
     PyObject *exc = PyErr_GetRaisedException();
     int res = rawfree
-        ? _PyXIData_Release(xidata)
-        : _PyXIData_ReleaseAndRawFree(xidata);
+        ? _PyXIData_ReleaseAndRawFree(xidata)
+        : _PyXIData_Release(xidata);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
         _PyXIData_Clear(NULL, xidata);
@@ -1805,6 +1810,15 @@ _PyXI_InitFailureUTF8(_PyXI_failure *failure,
 int
 _PyXI_InitFailure(_PyXI_failure *failure, _PyXI_errcode code, PyObject *obj)
 {
+    *failure = (_PyXI_failure){
+        .code = code,
+        .msg = NULL,
+        .msg_owned = 0,
+    };
+    if (obj == NULL) {
+        return 0;
+    }
+
     PyObject *msgobj = PyObject_Str(obj);
     if (msgobj == NULL) {
         return -1;
@@ -1813,7 +1827,7 @@ _PyXI_InitFailure(_PyXI_failure *failure, _PyXI_errcode code, PyObject *obj)
     // That happens automatically in _capture_current_exception().
     const char *msg = _copy_string_obj_raw(msgobj, NULL);
     Py_DECREF(msgobj);
-    if (PyErr_Occurred()) {
+    if (msg == NULL) {
         return -1;
     }
     *failure = (_PyXI_failure){
@@ -3176,7 +3190,7 @@ _PyXI_InitTypes(PyInterpreterState *interp)
                 "failed to initialize the cross-interpreter exception types");
     }
     // We would initialize heap types here too but that leads to ref leaks.
-    // Instead, we intialize them in _PyXI_Init().
+    // Instead, we initialize them in _PyXI_Init().
     return _PyStatus_OK();
 }
 

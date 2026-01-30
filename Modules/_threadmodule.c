@@ -429,7 +429,7 @@ force_done(void *arg)
 
 static int
 ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
-                   PyObject *kwargs)
+                   PyObject *kwargs, int daemon)
 {
     // Mark the handle as starting to prevent any other threads from doing so
     PyMutex_Lock(&self->mutex);
@@ -453,7 +453,8 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
         goto start_failed;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
+    uint8_t whence = daemon ? _PyThreadState_WHENCE_THREADING_DAEMON : _PyThreadState_WHENCE_THREADING;
+    boot->tstate = _PyThreadState_New(interp, whence);
     if (boot->tstate == NULL) {
         PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
@@ -711,6 +712,9 @@ PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
+        if (_PyOnceFlag_CallOnce(&self->handle->once, join_thread, self->handle) == -1) {
+            return NULL;
+        }
         Py_RETURN_TRUE;
     }
     else {
@@ -1913,7 +1917,7 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         add_to_shutdown_handles(state, handle);
     }
 
-    if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
+    if (ThreadHandle_start(handle, func, args, kwargs, daemon) < 0) {
         if (!daemon) {
             remove_from_shutdown_handles(handle);
         }
@@ -2196,9 +2200,10 @@ thread_stack_size(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|n:stack_size", &new_size))
         return NULL;
 
-    if (new_size < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "size must be 0 or a positive value");
+    Py_ssize_t min_size = _PyOS_MIN_STACK_SIZE + SYSTEM_PAGE_SIZE;
+    if (new_size != 0 && new_size < min_size) {
+        PyErr_Format(PyExc_ValueError,
+                     "size must be at least %zi bytes", min_size);
         return NULL;
     }
 
@@ -2425,10 +2430,8 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Wait for the thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
         if (ThreadHandle_join(handle, -1) < 0) {
-            PyErr_FormatUnraisable("Exception ignored while joining a thread "
-                                   "in _thread._shutdown()");
             ThreadHandle_decref(handle);
-            Py_RETURN_NONE;
+            return NULL;
         }
 
         ThreadHandle_decref(handle);

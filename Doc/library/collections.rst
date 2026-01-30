@@ -367,9 +367,11 @@ Several mathematical operations are provided for combining :class:`Counter`
 objects to produce multisets (counters that have counts greater than zero).
 Addition and subtraction combine counters by adding or subtracting the counts
 of corresponding elements.  Intersection and union return the minimum and
-maximum of corresponding counts.  Equality and inclusion compare
-corresponding counts.  Each operation can accept inputs with signed
-counts, but the output will exclude results with counts of zero or less.
+maximum of corresponding counts.  Symmetric difference returns the difference
+between the maximum and minimum of the corresponding counts. Equality and
+inclusion compare corresponding counts.  Each operation can accept inputs
+with signed counts, but the output will exclude results with counts of zero
+or below.
 
 .. doctest::
 
@@ -383,6 +385,8 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
+    >>> c ^ d                       # max(c[x], d[x]) - min(c[x], d[x])
+    Counter({'a': 2, 'b': 1})
     >>> c == d                      # equality:  c[x] == d[x]
     False
     >>> c <= d                      # inclusion:  c[x] <= d[x]
@@ -399,6 +403,9 @@ or subtracting from an empty counter.
 
 .. versionadded:: 3.3
     Added support for unary plus, unary minus, and in-place multiset operations.
+
+.. versionadded:: 3.15
+    Added support for the symmetric difference multiset operation, ``c ^ d``.
 
 .. note::
 
@@ -1202,7 +1209,7 @@ If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
     class LastUpdatedOrderedDict(OrderedDict):
-        'Store items in the order the keys were last added'
+        'Store items in the order that the keys were last updated.'
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)

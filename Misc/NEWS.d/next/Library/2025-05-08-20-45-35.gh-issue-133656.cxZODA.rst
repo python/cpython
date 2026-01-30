@@ -1,2 +1,0 @@
-Remove deprecated :meth:`!zipimport.zipimporter.load_module`. Use
-:meth:`zipimport.zipimporter.exec_module` instead.

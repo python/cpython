@@ -6,7 +6,6 @@
 import itertools
 import tkinter
 
-__version__ = "0.9"
 __all__ = ["NORMAL", "ROMAN", "BOLD", "ITALIC",
            "nametofont", "Font", "families", "names"]
 
@@ -115,6 +114,8 @@ class Font:
     def __setitem__(self, key, value):
         self.configure(**{key: value})
 
+    __iter__ = None  # prevent using __getitem__ for iteration
+
     def __del__(self):
         try:
             if self.delete_font:
@@ -196,6 +197,15 @@ def names(root=None):
     if root is None:
         root = tkinter._get_default_root('use font.names()')
     return root.tk.splitlist(root.tk.call("font", "names"))
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.9"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # --------------------------------------------------------------------

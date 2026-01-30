@@ -13,7 +13,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: abi_info
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
    An object containing information about the ABI of the currently running
    Python interpreter.
@@ -1176,10 +1176,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The size of the seed key of the hash algorithm
 
+   .. attribute:: hash_info.cutoff
+
+      Cutoff for small string DJBX33A optimization in range ``[1, cutoff)``.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Added *algorithm*, *hash_bits* and *seed_bits*
+      Added *algorithm*, *hash_bits*, *seed_bits*, and *cutoff*.
 
 
 .. data:: hexversion
@@ -1993,6 +1997,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
+   See :ref:`remote-debugging` for more information about the remote debugging
+   mechanism.
+
    .. audit-event:: sys.remote_exec pid script_path
 
       When the code is executed in the remote process, an
@@ -2011,6 +2018,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
+      See :pep:`768` for more details.
 
 
 .. function:: _enablelegacywindowsfsencoding()
@@ -2205,7 +2213,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Exceptions are now printed with colorful text.
 
    .. seealso::

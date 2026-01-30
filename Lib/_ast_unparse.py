@@ -658,9 +658,9 @@ class Unparser(NodeVisitor):
         unparser.set_precedence(_Precedence.TEST.next(), inner)
         return unparser.visit(inner)
 
-    def _write_interpolation(self, node, is_interpolation=False):
+    def _write_interpolation(self, node, use_str_attr=False):
         with self.delimit("{", "}"):
-            if is_interpolation:
+            if use_str_attr:
                 expr = node.str
             else:
                 expr = self._unparse_interpolation_value(node.value)
@@ -678,7 +678,8 @@ class Unparser(NodeVisitor):
         self._write_interpolation(node)
 
     def visit_Interpolation(self, node):
-        self._write_interpolation(node, is_interpolation=True)
+        # If `str` is set to `None`, use the `value` to generate the source code.
+        self._write_interpolation(node, use_str_attr=node.str is not None)
 
     def visit_Name(self, node):
         self.write(node.id)

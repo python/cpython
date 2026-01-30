@@ -2285,7 +2285,6 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
-    PyObject *bytes;
 
     CHECK_RELEASED(self);
 
@@ -2303,16 +2302,18 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
         }
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, ord) < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    return bytes;
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, ord) < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]
@@ -2344,28 +2345,35 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
 /*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
-    PyObject *bytes;
-    PyObject *ret;
 
     CHECK_RELEASED(self);
 
     if (MV_C_CONTIGUOUS(self->flags)) {
-        return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+        // in _Py_strhex_with_sep().
+        // See: https://github.com/python/cpython/issues/143195.
+        self->exports++;
+        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        self->exports--;
+        return ret;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, 'C') < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    ret = _Py_strhex_with_sep(
-            PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes),
-            sep, bytes_per_sep);
-    Py_DECREF(bytes);
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, 'C') < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    PyObject *ret = _Py_strhex_with_sep(
+        PyBytesWriter_GetData(writer),
+        PyBytesWriter_GetSize(writer),
+        sep, bytes_per_sep);
+    PyBytesWriter_Discard(writer);
 
     return ret;
 }
@@ -3223,9 +3231,16 @@ memory_hash(PyObject *_self)
                 "memoryview: hashing is restricted to formats 'B', 'b' or 'c'");
             return -1;
         }
-        if (view->obj != NULL && PyObject_Hash(view->obj) == -1) {
-            /* Keep the original error message */
-            return -1;
+        if (view->obj != NULL) {
+            // Prevent 'self' from being freed when computing the item's hash.
+            // See https://github.com/python/cpython/issues/142664.
+            self->exports++;
+            Py_hash_t h = PyObject_Hash(view->obj);
+            self->exports--;
+            if (h == -1) {
+                /* Keep the original error message */
+                return -1;
+            }
         }
 
         if (!MV_C_CONTIGUOUS(self->flags)) {

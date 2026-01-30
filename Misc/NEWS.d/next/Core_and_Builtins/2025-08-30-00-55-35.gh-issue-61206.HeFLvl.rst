@@ -1,1 +1,0 @@
-:mod:`zipimport` now supports zstandard compressed zip file entries.

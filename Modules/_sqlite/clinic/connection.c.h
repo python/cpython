@@ -209,7 +209,7 @@ exit:
 }
 
 PyDoc_STRVAR(blobopen__doc__,
-"blobopen($self, table, column, row, /, *, readonly=False, name=\'main\')\n"
+"blobopen($self, table, column, rowid, /, *, readonly=False, name=\'main\')\n"
 "--\n"
 "\n"
 "Open and return a BLOB object.\n"
@@ -218,8 +218,8 @@ PyDoc_STRVAR(blobopen__doc__,
 "    Table name.\n"
 "  column\n"
 "    Column name.\n"
-"  row\n"
-"    Row index.\n"
+"  rowid\n"
+"    Row id.\n"
 "  readonly\n"
 "    Open the BLOB without write permissions.\n"
 "  name\n"
@@ -1722,4 +1722,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=6cb96e557133d553 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16d44c1d8a45e622 input=a9049054013a1b77]*/

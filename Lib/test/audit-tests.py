@@ -8,6 +8,8 @@ module with arguments identifying each test.
 import contextlib
 import os
 import sys
+import unittest.mock
+from test.support import swap_item
 
 
 class TestHook:
@@ -671,6 +673,84 @@ def test_sys_remote_exec():
         assertEqual(event_pid, pid)
         assertEqual(event_script_path, tmp_file.name)
         assertEqual(remote_event_script_path, tmp_file.name)
+
+def test_import_module():
+    import importlib
+
+    with TestHook() as hook:
+        importlib.import_module("importlib")  # already imported, won't get logged
+        importlib.import_module("email") # standard library module
+        importlib.import_module("pythoninfo")  # random module
+        importlib.import_module(".audit_test_data.submodule", "test")  # relative import
+        importlib.import_module("test.audit_test_data.submodule2")  # absolute import
+        importlib.import_module("_testcapi")  # extension module
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
+
+def test_builtin__import__():
+    import importlib # noqa: F401
+
+    with TestHook() as hook:
+        __import__("importlib")
+        __import__("email")
+        __import__("pythoninfo")
+        __import__("audit_test_data.submodule", level=1, globals={"__package__": "test"})
+        __import__("test.audit_test_data.submodule2")
+        __import__("_testcapi")
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
+
+def test_import_statement():
+    import importlib # noqa: F401
+    # Set __package__ so relative imports work
+    with swap_item(globals(), "__package__", "test"):
+        with TestHook() as hook:
+            import importlib # noqa: F401
+            import email # noqa: F401
+            import pythoninfo # noqa: F401
+            from .audit_test_data import submodule # noqa: F401
+            import test.audit_test_data.submodule2 # noqa: F401
+            import _testcapi # noqa: F401
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    # Import statement ordering is different because the package is
+    # loaded first and then the submodule
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts

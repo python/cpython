@@ -322,6 +322,9 @@ def quote(s):
     if not s:
         return "''"
 
+    if not isinstance(s, str):
+        raise TypeError(f"expected string object, got {type(s).__name__!r}")
+
     # Use bytes.translate() for performance
     safe_chars = (b'%+,-./0123456789:=@'
                   b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'

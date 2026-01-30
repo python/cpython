@@ -1,2 +1,0 @@
-Allows creating a :class:`ctypes.CDLL` without name when passing a handle as
-an argument.

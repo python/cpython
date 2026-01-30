@@ -446,7 +446,7 @@ compress_lock_held(ZstdCompressor *self, Py_buffer *data,
     assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     size_t zstd_ret;
     PyObject *ret;
 
@@ -527,7 +527,7 @@ compress_mt_continue_lock_held(ZstdCompressor *self, Py_buffer *data)
     assert(PyMutex_IsLocked(&self->lock));
     ZSTD_inBuffer in;
     ZSTD_outBuffer out;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     size_t zstd_ret;
     PyObject *ret;
 
@@ -716,7 +716,7 @@ _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
                                                  unsigned long long size)
 /*[clinic end generated code: output=3a09e55cc0e3b4f9 input=b4c87bcbd5ce6111]*/
 {
-    // Error occured while converting argument, should be unreachable
+    // Error occurred while converting argument, should be unreachable
     assert(size != ZSTD_CONTENTSIZE_ERROR);
 
     /* Thread-safe code */

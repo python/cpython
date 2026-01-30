@@ -1,1 +1,0 @@
-Fix a bug in the JIT optimizer when round-tripping strings and tuples.

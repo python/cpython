@@ -406,37 +406,50 @@ class StrptimeTests(unittest.TestCase):
         (*_, offset), _, offset_fraction = _strptime._strptime("-013030.000001", "%z")
         self.assertEqual(offset, -(one_hour + half_hour + half_minute))
         self.assertEqual(offset_fraction, -1)
-        (*_, offset), _, offset_fraction = _strptime._strptime("+01:00", "%z")
-        self.assertEqual(offset, one_hour)
-        self.assertEqual(offset_fraction, 0)
-        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30", "%z")
-        self.assertEqual(offset, -(one_hour + half_hour))
-        self.assertEqual(offset_fraction, 0)
-        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30", "%z")
-        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
-        self.assertEqual(offset_fraction, 0)
-        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30.000001", "%z")
-        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
-        self.assertEqual(offset_fraction, -1)
-        (*_, offset), _, offset_fraction = _strptime._strptime("+01:30:30.001", "%z")
-        self.assertEqual(offset, one_hour + half_hour + half_minute)
-        self.assertEqual(offset_fraction, 1000)
-        (*_, offset), _, offset_fraction = _strptime._strptime("Z", "%z")
-        self.assertEqual(offset, 0)
-        self.assertEqual(offset_fraction, 0)
+
+        cases = [
+            ("+01:00", one_hour, 0),
+            ("-01:30", -(one_hour + half_hour), 0),
+            ("-01:30:30", -(one_hour + half_hour + half_minute), 0),
+            ("-01:30:30.000001", -(one_hour + half_hour + half_minute), -1),
+            ("+01:30:30.001", +(one_hour + half_hour + half_minute), 1000),
+            ("Z", 0, 0),
+        ]
+        for directive in ("%z", "%:z"):
+            for offset_str, expected_offset, expected_fraction in cases:
+                with self.subTest(offset_str=offset_str, directive=directive):
+                    (*_, offset), _, offset_fraction = _strptime._strptime(
+                        offset_str, directive
+                    )
+                    self.assertEqual(offset, expected_offset)
+                    self.assertEqual(offset_fraction, expected_fraction)
 
     def test_bad_offset(self):
-        with self.assertRaises(ValueError):
-            _strptime._strptime("-01:30:30.", "%z")
-        with self.assertRaises(ValueError):
-            _strptime._strptime("-0130:30", "%z")
-        with self.assertRaises(ValueError):
-            _strptime._strptime("-01:30:30.1234567", "%z")
-        with self.assertRaises(ValueError):
-            _strptime._strptime("-01:30:30:123456", "%z")
+        error_cases_any_z = [
+            "-01:30:30.",         # Decimal point not followed with digits
+            "-01:30:30.1234567",  # Too many digits after decimal point
+            "-01:30:30:123456",   # Colon as decimal separator
+            "-0130:30",           # Incorrect use of colons
+        ]
+        for directive in ("%z", "%:z"):
+            for timestr in error_cases_any_z:
+                with self.subTest(timestr=timestr, directive=directive):
+                    with self.assertRaises(ValueError):
+                        _strptime._strptime(timestr, directive)
+
+        required_colons_cases = ["-013030", "+0130", "-01:3030.123456"]
+        for timestr in required_colons_cases:
+            with self.subTest(timestr=timestr):
+                with self.assertRaises(ValueError):
+                    _strptime._strptime(timestr, "%:z")
+
         with self.assertRaises(ValueError) as err:
             _strptime._strptime("-01:3030", "%z")
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
+        with self.assertRaises(ValueError) as err:
+            _strptime._strptime("-01:3030", "%:z")
+        self.assertEqual("Missing colon in %:z before '30', got '-01:3030'",
+                         str(err.exception))
 
     @skip_if_buggy_ucrt_strfptime
     def test_timezone(self):
@@ -557,7 +570,7 @@ class StrptimeTests(unittest.TestCase):
     def test_date_locale2(self):
         # Test %x directive
         loc = locale.getlocale(locale.LC_TIME)[0]
-        if sys.platform.startswith('sunos'):
+        if sys.platform.startswith(('sunos', 'aix')):
             if loc in ('en_US', 'de_DE', 'ar_AE'):
                 self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))

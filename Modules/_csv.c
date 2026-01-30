@@ -918,7 +918,7 @@ parse_reset(ReaderObj *self)
 }
 
 static PyObject *
-Reader_iternext(PyObject *op)
+Reader_iternext_lock_held(PyObject *op)
 {
     ReaderObj *self = _ReaderObj_CAST(op);
 
@@ -983,6 +983,16 @@ Reader_iternext(PyObject *op)
     self->fields = NULL;
 err:
     return fields;
+}
+
+static PyObject *
+Reader_iternext(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = Reader_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static void
@@ -1303,15 +1313,8 @@ join_append_lineterminator(WriterObj *self)
     return 1;
 }
 
-PyDoc_STRVAR(csv_writerow_doc,
-"writerow($self, row, /)\n"
-"--\n\n"
-"Construct and write a CSV record from an iterable of fields.\n"
-"\n"
-"Non-string elements will be converted to string.");
-
 static PyObject *
-csv_writerow(PyObject *op, PyObject *seq)
+csv_writerow_lock_held(PyObject *op, PyObject *seq)
 {
     WriterObj *self = _WriterObj_CAST(op);
     DialectObj *dialect = self->dialect;
@@ -1411,6 +1414,23 @@ csv_writerow(PyObject *op, PyObject *seq)
     }
     result = PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
+    return result;
+}
+
+PyDoc_STRVAR(csv_writerow_doc,
+"writerow($self, row, /)\n"
+"--\n\n"
+"Construct and write a CSV record from an iterable of fields.\n"
+"\n"
+"Non-string elements will be converted to string.");
+
+static PyObject *
+csv_writerow(PyObject *op, PyObject *seq)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = csv_writerow_lock_held(op, seq);
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 

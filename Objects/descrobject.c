@@ -313,7 +313,7 @@ method_vectorcall_VARARGS(
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
-    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    PyObject *argstuple = PyTuple_FromArray(args+1, nargs-1);
     if (argstuple == NULL) {
         return NULL;
     }
@@ -338,7 +338,7 @@ method_vectorcall_VARARGS_KEYWORDS(
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
-    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    PyObject *argstuple = PyTuple_FromArray(args+1, nargs-1);
     if (argstuple == NULL) {
         return NULL;
     }

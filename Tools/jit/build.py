@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cflags", help="additional flags to pass to the compiler", default=""
     )
+    parser.add_argument("--llvm-version", help="LLVM version to use")
     args = parser.parse_args()
     for target in args.target:
         target.debug = args.debug
@@ -49,6 +50,8 @@ if __name__ == "__main__":
         target.verbose = args.verbose
         target.cflags = args.cflags
         target.pyconfig_dir = args.pyconfig_dir
+        if args.llvm_version:
+            target.llvm_version = args.llvm_version
         target.build(
             comment=comment,
             force=args.force,

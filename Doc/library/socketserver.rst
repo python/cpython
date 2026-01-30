@@ -24,7 +24,7 @@ There are four basic concrete server classes:
    :meth:`~BaseServer.server_activate`.  The other parameters are passed to
    the :class:`BaseServer` base class.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The default queue size is now ``socket.SOMAXCONN`` for :class:`socketserver.TCPServer`.
 
 .. class:: UDPServer(server_address, RequestHandlerClass, bind_and_activate=True)
@@ -546,7 +546,7 @@ The difference is that the ``readline()`` call in the second handler will call
 first handler had to use a ``recv()`` loop to accumulate data until a
 newline itself.  If it had just used a single ``recv()`` without the loop it
 would just have returned what has been received so far from the client.
-TCP is stream based: data arrives in the order it was sent, but there no
+TCP is stream based: data arrives in the order it was sent, but there is no
 correlation between client ``send()`` or ``sendall()`` calls and the number
 of ``recv()`` calls on the server required to receive it.
 

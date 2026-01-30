@@ -250,7 +250,7 @@ class PyclbrTest(TestCase):
                 'pdb',
                 # pyclbr does not handle elegantly `typing` or properties
                 ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals',
-                        '_InteractState'),
+                        '_InteractState', 'rlcompleter'),
             )
         cm('pydoc', ignore=('input', 'output',))  # properties
 

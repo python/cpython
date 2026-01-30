@@ -217,7 +217,7 @@ or any other SQLite browser, including the SQLite CLI.
          While reorganizing, as much as two times the size of the original database is required
          in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
 :mod:`dbm.gnu` --- GNU database manager
@@ -275,9 +275,6 @@ functionality like crash tolerance.
       * ``'s'``: Synchronized mode.
         Changes to the database will be written immediately to the file.
       * ``'u'``: Do not lock database.
-      * ``'m'``: Do not use :manpage:`mmap(2)`.
-        This may harm performance, but improve crash tolerance.
-        .. versionadded:: next
 
       Not all flags are valid for all versions of GDBM.
       See the :data:`open_flags` member for a list of supported flag characters.
@@ -522,7 +519,7 @@ The :mod:`!dbm.dumb` module defines the following:
          While reorganizing, no additional free disk space is required. However, be aware
          that this factor changes for each :mod:`dbm` submodule.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
    .. method:: dumbdbm.sync()
 

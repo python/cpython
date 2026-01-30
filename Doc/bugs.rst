@@ -19,6 +19,12 @@ If you find a bug in this documentation or would like to propose an improvement,
 please submit a bug report on the :ref:`issue tracker <using-the-tracker>`.  If you
 have a suggestion on how to fix it, include that as well.
 
+.. only:: translation
+
+   If the bug or suggested improvement concerns the translation of this
+   documentation, submit the report to the
+   `translation’s repository <TRANSLATION_REPO_>`_ instead.
+
 You can also open a discussion item on our
 `Documentation Discourse forum <https://discuss.python.org/c/documentation/26>`_.
 
