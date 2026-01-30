@@ -525,7 +525,7 @@ tracemalloc_alloc(int need_gil, int use_calloc,
         goto done;
     }
 
-    PyGILState_STATE gil_state;
+    PyGILState_STATE gil_state = PyGILState_UNLOCKED;
     if (need_gil) {
         gil_state = PyGILState_Ensure();
     }
@@ -575,7 +575,7 @@ tracemalloc_realloc(int need_gil, void *ctx, void *ptr, size_t new_size)
         goto done;
     }
 
-    PyGILState_STATE gil_state;
+    PyGILState_STATE gil_state = PyGILState_UNLOCKED;
     if (need_gil) {
         gil_state = PyGILState_Ensure();
     }
@@ -1207,11 +1207,14 @@ int
 PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
                     size_t size)
 {
+    PyGILState_STATE gil_state = PyGILState_UNLOCKED;
+
     if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing) == 0) {
         /* tracemalloc is not tracing: do nothing */
         return -2;
     }
-    PyGILState_STATE gil_state = PyGILState_Ensure();
+
+    gil_state = PyGILState_Ensure();
     TABLES_LOCK();
 
     int result;
