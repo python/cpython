@@ -113,6 +113,9 @@ _PyUOpSymPrint(JitOptRef ref)
         case JIT_SYM_COMPACT_INT:
             printf("<compact_int at %p>", (void *)sym);
             break;
+        case JIT_SYM_PREDICATE_TAG:
+            printf("<predicate at %p>", (void *)sym);
+            break;
         case JIT_SYM_DESCR_TAG: {
             PyTypeObject *descr_type = _PyType_LookupByVersion(sym->descr.type_version);
             if (descr_type) {
@@ -692,6 +695,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_PREDICATE_TAG:
         case JIT_SYM_DESCR_TAG:
             return -1;
         case JIT_SYM_KNOWN_CLASS_TAG:
@@ -1613,6 +1617,26 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     }
     _Py_uop_sym_apply_predicate_narrowing(ctx, ref, true);
     TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, subject), "predicate narrowing incorrectly narrowed subject (inverted/true)");
+
+    subject = _Py_uop_sym_new_unknown(ctx);
+    value = _Py_uop_sym_new_const(ctx, one_obj);
+    ref = _Py_uop_sym_new_predicate(ctx, subject, value, JIT_PRED_IS);
+    if (PyJitRef_IsNull(subject) || PyJitRef_IsNull(value) || PyJitRef_IsNull(ref)) {
+        goto fail;
+    }
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyBool_Type), "predicate is not boolean");
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == -1, "predicate is not unknown");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, ref) == false, "predicate is constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == NULL, "predicate is not NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == one_obj, "value is not 1");
+    _Py_uop_sym_set_const(ctx, ref, Py_False);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyBool_Type), "predicate is not boolean");
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == 0, "predicate is not False");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, ref) == true, "predicate is not constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == Py_False, "predicate is not False");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == one_obj, "value is not 1");
 
     val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
     if (val_big == NULL) {
