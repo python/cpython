@@ -3866,6 +3866,50 @@ class TestTracebackException(unittest.TestCase):
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
 
+    def test_name_error_punctuation_with_suggestions(self):
+        def format_error(message, name):
+            return self.format_error(NameError, message, name=name)
+
+        test_cases = [
+            ("a.", "time", "NameError: a. Did you forget to import 'time'?\n"),
+            ("b?", "time", "NameError: b? Did you forget to import 'time'?\n"),
+            ("c!", "time", "NameError: c! Did you forget to import 'time'?\n"),
+            ("d", "time", "NameError: d. Did you forget to import 'time'?\n"),
+            ("e", "foo123", "NameError: e\n"),
+        ]
+        for message, name, expected in test_cases:
+            with self.subTest(message=message):
+                message = format_error(message, name)
+                self.assertEqual(message, expected)
+
+        with self.subTest("stdlib module import suggestion"):
+            message = format_error("foo", "abc")
+            expected_message = (
+                "NameError: foo. Did you mean: 'abs'? "
+                "Or did you forget to import 'abc'?\n"
+            )
+            self.assertEqual(message, expected_message)
+
+        with self.subTest("'did you mean' suggestion"):
+            message = format_error("bar", "flaot")
+            expected_message = "NameError: bar. Did you mean: 'float'?\n"
+            self.assertEqual(message, expected_message)
+
+    def test_import_error_punctuation_handling_with_suggestions(self):
+        def format_error(message):
+            return self.format_error(ImportError, message, name="math", name_from="sinq")
+
+        test_cases = [
+            ("a.", "ImportError: a. Did you mean: 'sin'?\n"),
+            ("b?", "ImportError: b? Did you mean: 'sin'?\n"),
+            ("c!", "ImportError: c! Did you mean: 'sin'?\n"),
+            ("d", "ImportError: d. Did you mean: 'sin'?\n"),
+        ]
+        for message, expected in test_cases:
+            with self.subTest(message=message):
+                message = format_error(message)
+                self.assertEqual(message, expected)
+
     @requires_debug_ranges()
     def test_print(self):
         def f():
@@ -3902,6 +3946,14 @@ class TestTracebackException(unittest.TestCase):
                 raise FalseyException
         except FalseyException as e:
             self.assertIn(context_message, traceback.format_exception(e))
+
+    @staticmethod
+    def format_error(exc_type, exc_message, *args, **kwargs):
+        try:
+            raise exc_type(exc_message, *args, **kwargs)
+        except exc_type as e:
+            exc = traceback.TracebackException.from_exception(e)
+            return list(exc.format())[-1]
 
 
 class TestTracebackException_ExceptionGroups(unittest.TestCase):
