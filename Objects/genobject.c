@@ -10,6 +10,7 @@
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
 #include "pycore_genobject.h"     // _PyGen_SetStopIterationValue()
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_lock.h"          // _Py_yield()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
@@ -37,8 +38,20 @@ static PyObject* async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
     _Py_CAST(PyAsyncGenObject*, (op))
 
 #ifdef Py_GIL_DISABLED
+static bool
+gen_try_set_frame_state(PyGenObject *gen, int8_t *expected, int8_t state)
+{
+    if (*expected == FRAME_SUSPENDED_YIELD_FROM_LOCKED) {
+        // Wait for the in-progress gi_yieldfrom read to complete
+        _Py_yield();
+        *expected = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+        return false;
+    }
+    return _Py_atomic_compare_exchange_int8(&gen->gi_frame_state, expected, state);
+}
+
 # define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
-    _Py_atomic_compare_exchange_int8(&(gen)->gi_frame_state, &expected, (state))
+    gen_try_set_frame_state((gen), &(expected), (state))
 #else
 # define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
     ((gen)->gi_frame_state = (state), true)
@@ -470,9 +483,7 @@ gen_close(PyObject *self, PyObject *args)
             return NULL;
         }
 
-        assert(frame_state == FRAME_SUSPENDED_YIELD_FROM ||
-               frame_state == FRAME_SUSPENDED);
-
+        assert(FRAME_STATE_SUSPENDED(frame_state));
     } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING));
 
     int err = 0;
@@ -876,12 +887,26 @@ static PyObject *
 gen_getyieldfrom(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *gen = _PyGen_CAST(self);
-    int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
+#ifdef Py_GIL_DISABLED
+    int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+    do {
+        if (frame_state != FRAME_SUSPENDED_YIELD_FROM &&
+            frame_state != FRAME_SUSPENDED_YIELD_FROM_LOCKED)
+        {
+            Py_RETURN_NONE;
+        }
+    } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_SUSPENDED_YIELD_FROM_LOCKED));
+
+    PyObject *result = PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(&gen->gi_iframe));
+    _Py_atomic_store_int8_release(&gen->gi_frame_state, FRAME_SUSPENDED_YIELD_FROM);
+    return result;
+#else
+    int8_t frame_state = gen->gi_frame_state;
     if (frame_state != FRAME_SUSPENDED_YIELD_FROM) {
         Py_RETURN_NONE;
     }
-    // TODO: still not thread-safe with free threading
     return PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(&gen->gi_iframe));
+#endif
 }
 
 
