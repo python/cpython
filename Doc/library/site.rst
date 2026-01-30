@@ -82,14 +82,21 @@ with ``import`` (followed by space or tab) are executed.
    On Windows, a file whose name has the form :file:`._pth` is handled 
    differently; it is used by the Windows-only "embeddable distribution" 
    to provide a self-contained Python environment. See 
-   :ref:`finding_modules` for more details.
+   :ref:`finding-modules` for more details.
 
 .. note::
 
    An executable line in a :file:`.pth` file is run at every Python startup,
    regardless of whether a particular module is actually going to be used.
    Its impact should thus be kept to a minimum.
-   
+   The primary intended purpose of executable lines is to make the
+   corresponding module(s) importable
+   (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
+   Any other initialization is supposed to be done upon a module's
+   actual import, if and when it happens.
+   Limiting a code chunk to a single line is a deliberate measure
+   to discourage putting anything more complex here.
+
 .. versionchanged:: 3.13
    The :file:`.pth` files are now decoded by UTF-8 at first and then by the
    :term:`locale encoding` if it fails.
@@ -307,4 +314,3 @@ value greater than 2 if there is an error.
 
    * :pep:`370` -- Per user site-packages directory
    * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
-
