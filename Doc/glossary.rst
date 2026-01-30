@@ -160,9 +160,9 @@ Glossary
       On most builds of Python, having an attached thread state implies that the
       caller holds the :term:`GIL` for the current interpreter, so only
       one OS thread can have an attached thread state at a given moment. In
-      :term:`free-threaded <free threading>` builds of Python, threads can concurrently
-      hold an attached thread state, allowing for true parallelism of the bytecode
-      interpreter.
+      :term:`free-threaded builds <free-threaded builds>` of Python, threads can
+      concurrently hold an attached thread state, allowing for true parallelism of
+      the bytecode interpreter.
 
    attribute
       A value associated with an object which is usually referenced by name

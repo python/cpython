@@ -794,7 +794,7 @@ Object Protocol
    On a :term:`free-threaded build`, this checks if *op*'s
    :term:`reference count` is equal to one and additionally checks if *op*
    is only used by this thread. :c:expr:`Py_REFCNT(op) == 1` is **not**
-   thread-safe on free threaded builds; prefer this function.
+   thread-safe on free-threaded builds; prefer this function.
 
    The caller must hold an :term:`attached thread state`, despite the fact
    that this function doesn't call into the Python interpreter. This function
