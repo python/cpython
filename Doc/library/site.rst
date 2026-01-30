@@ -81,9 +81,8 @@ with ``import`` (followed by space or tab) are executed.
 .. note::
 
    On Windows, a file whose name has the form :file:`._pth` is handled
-   differently; it is used by the Windows-only "embeddable distribution"
-   to provide a self-contained Python environment. See
-   :ref:`finding-modules` for more details.
+   differently; it is used exclusively by the Windows-only "embeddable
+   distribution" to provide a self-contained Python environment.
 
 .. note::
 
