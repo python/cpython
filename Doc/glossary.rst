@@ -580,6 +580,13 @@ Glossary
       the :term:`global interpreter lock` which allows only one thread to
       execute Python bytecode at a time.  See :pep:`703`.
 
+   free-threaded build
+
+      A build of :term:`CPython` that supports :term:`free threading`,
+      configured using the :option:`--disable-gil` option before compilation.
+
+      See :ref:`freethreading-python-howto`.
+
    free variable
       Formally, as defined in the :ref:`language execution model <bind_names>`, a free
       variable is any variable used in a namespace which is not a local variable in that
