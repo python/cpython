@@ -159,21 +159,21 @@
                 </div>
                 <!-- Efficiency Bar -->
                 <div class="efficiency-section" id="efficiency-section" style="display: none;">
-                  <div class="efficiency-header">
-                    <span class="efficiency-label">Sampling Efficiency</span>
-                    <span class="efficiency-value" id="stat-efficiency">--</span>
+                  <div class="bar-header">
+                    <span class="bar-label">Sampling Efficiency</span>
+                    <span class="bar-value" id="stat-efficiency">--</span>
                   </div>
-                  <div class="efficiency-bar">
-                    <div class="efficiency-fill" id="efficiency-fill"></div>
+                  <div class="bar">
+                    <div class="bar-fill" id="efficiency-fill"></div>
                   </div>
-                  <div class="missed-samples-header">
-                    <span class="efficiency-label">Missed samples</span>
-                    <span class="efficiency-value" id="stat-missed-samples">--</span>
+                  <div class="bar-header">
+                    <span class="bar-label">Missed samples</span>
+                    <span class="bar-value" id="stat-missed-samples">--</span>
                   </div>
-                  <div class="efficiency-bar">
-                    <div class="efficiency-fill" id="missed-samples-fill"></div>
+                  <div class="bar">
+                    <div class="bar-fill" id="missed-samples-fill"></div>
                   </div>
- 
+
                 </div>
               </div>
             </section>
@@ -187,26 +187,51 @@
                 </svg>
               </button>
               <div class="section-content">
-                <div class="stats-grid">
-                  <div class="stat-tile stat-tile--green" id="gil-held-stat">
-                    <div class="stat-tile-value" id="gil-held-pct">--</div>
-                    <div class="stat-tile-label">GIL Held</div>
+                <div class="stats-container">
+                  <div class="stat-item" id="gil-held-stat">
+                    <div class="bar-header">
+                      <span class="bar-label">GIL Held</span>
+                      <span class="bar-value" id="gil-held-pct">--</span>
+                    </div>
+                    <div class="bar">
+                      <div class="bar-fill bar-fill--green" id="gil-held-fill"></div>
+                    </div>
                   </div>
-                  <div class="stat-tile stat-tile--red" id="gil-released-stat">
-                    <div class="stat-tile-value" id="gil-released-pct">--</div>
-                    <div class="stat-tile-label">GIL Released</div>
+                  <div class="stat-item" id="gil-released-stat">
+                    <div class="bar-header">
+                      <span class="bar-label">GIL Released</span>
+                      <span class="bar-value" id="gil-released-pct">--</span>
+                    </div>
+                    <div class="bar">
+                      <div class="bar-fill bar-fill--red" id="gil-released-fill"></div>
+                    </div>
                   </div>
-                  <div class="stat-tile stat-tile--yellow" id="gil-waiting-stat">
-                    <div class="stat-tile-value" id="gil-waiting-pct">--</div>
-                    <div class="stat-tile-label">Waiting GIL</div>
+                  <div class="stat-item" id="gil-waiting-stat">
+                    <div class="bar-header">
+                      <span class="bar-label">Waiting GIL</span>
+                      <span class="bar-value" id="gil-waiting-pct">--</span>
+                    </div>
+                    <div class="bar">
+                      <div class="bar-fill bar-fill--yellow" id="gil-waiting-fill"></div>
+                    </div>
                   </div>
-                  <div class="stat-tile stat-tile--purple" id="gc-stat">
-                    <div class="stat-tile-value" id="gc-pct">--</div>
-                    <div class="stat-tile-label">GC</div>
+                  <div class="stat-item" id="gc-stat">
+                    <div class="bar-header">
+                      <span class="bar-label">GC</span>
+                      <span class="bar-value" id="gc-pct">--</span>
+                    </div>
+                    <div class="bar">
+                      <div class="bar-fill bar-fill--purple" id="gc-fill"></div>
+                    </div>
                   </div>
-                  <div class="stat-tile stat-tile--red" id="exc-stat">
-                    <div class="stat-tile-value" id="exc-pct">--</div>
-                    <div class="stat-tile-label">Exception</div>
+                  <div class="stat-item" id="exc-stat">
+                    <div class="bar-header">
+                      <span class="bar-label">Exception</span>
+                      <span class="bar-value" id="exc-pct">--</span>
+                    </div>
+                    <div class="bar">
+                      <div class="bar-fill bar-fill--red" id="exc-fill"></div>
+                    </div>
                   </div>
                 </div>
               </div>

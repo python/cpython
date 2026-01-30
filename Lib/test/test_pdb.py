@@ -4093,6 +4093,23 @@ def bœr():
                     f.write("invalid")
                 self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
 
+    def test_readrc_current_dir(self):
+        with os_helper.temp_cwd() as cwd:
+            rc_path = os.path.join(cwd, ".pdbrc")
+            with open(rc_path, "w") as f:
+                f.write("invalid")
+            self.assertEqual(pdb.Pdb().rcLines[-1], "invalid")
+
+    def test_readrc_cwd_is_home(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.unset("HOME")
+            with os_helper.temp_cwd() as cwd, patch("os.path.expanduser"):
+                rc_path = os.path.join(cwd, ".pdbrc")
+                os.path.expanduser.return_value = rc_path
+                with open(rc_path, "w") as f:
+                    f.write("invalid")
+                self.assertEqual(pdb.Pdb().rcLines, ["invalid"])
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'

@@ -19,8 +19,6 @@ class HoleValue(enum.Enum):
     CODE = enum.auto()
     # The base address of the read-only data for this uop:
     DATA = enum.auto()
-    # The address of the current executor (exposed as _JIT_EXECUTOR):
-    EXECUTOR = enum.auto()
     # The base address of the "global" offset table located in the read-only data.
     # Shouldn't be present in the final stencils, since these are all replaced with
     # equivalent DATA values:
@@ -108,7 +106,6 @@ _PATCH_FUNCS = {
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
     HoleValue.DATA: "(uintptr_t)data",
-    HoleValue.EXECUTOR: "(uintptr_t)executor",
     HoleValue.GOT: "",
     # These should all have been turned into DATA values by process_relocations:
     HoleValue.OPARG: "instruction->oparg",
