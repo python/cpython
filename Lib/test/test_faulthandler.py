@@ -388,9 +388,11 @@ class FaultHandlerTests(unittest.TestCase):
 
     @skip_segfault_on_android
     def test_dump_ext_modules(self):
+        # Disable sys.stdlib_module_names
         code = """
             import faulthandler
             import sys
+            import math
             # Don't filter stdlib module names
             sys.stdlib_module_names = frozenset()
             faulthandler.enable()
@@ -403,8 +405,21 @@ class FaultHandlerTests(unittest.TestCase):
         if not match:
             self.fail(f"Cannot find 'Extension modules:' in {stderr!r}")
         modules = set(match.group(1).strip().split(', '))
-        for name in ('sys', 'faulthandler'):
+        for name in ('sys', 'faulthandler', 'math'):
             self.assertIn(name, modules)
+
+        # Ignore "math.integer" sub-module if "math" package is
+        # in sys.stdlib_module_names
+        code = """
+            import faulthandler
+            import math.integer
+            faulthandler.enable()
+            faulthandler._sigsegv()
+            """
+        stderr, exitcode = self.get_output(code)
+        stderr = '\n'.join(stderr)
+        match = re.search(r'^Extension modules:', stderr, re.MULTILINE)
+        self.assertIsNone(match)
 
     def test_is_enabled(self):
         orig_stderr = sys.stderr
