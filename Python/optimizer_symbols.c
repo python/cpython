@@ -985,18 +985,23 @@ _Py_uop_sym_get_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
 
-    // Only return tracked slot values if:
-    // 1. Symbol is a descr object with mappings allocated
-    // 2. No escape has occurred since last modification (state is fresh)
-    if (sym->tag == JIT_SYM_DESCR_TAG &&
-        sym->descr.descrs != NULL &&
-        sym->descr.last_modified_index >= ctx->last_escape_index)
-    {
-        for (int i = 0; i < sym->descr.num_descrs; i++) {
-            if (sym->descr.descrs[i].slot_index == slot_index) {
-                return PyJitRef_Wrap(allocation_base(ctx) + sym->descr.descrs[i].symbol);
+    switch (sym->tag) {
+        case JIT_SYM_DESCR_TAG:
+            // Only return tracked slot values if:
+            // 1. Symbol has mappings allocated
+            // 2. No escape has occurred since last modification (state is fresh)
+            if (sym->descr.descrs != NULL &&
+                sym->descr.last_modified_index >= ctx->last_escape_index)
+            {
+                for (int i = 0; i < sym->descr.num_descrs; i++) {
+                    if (sym->descr.descrs[i].slot_index == slot_index) {
+                        return PyJitRef_Wrap(allocation_base(ctx) + sym->descr.descrs[i].symbol);
+                    }
+                }
             }
-        }
+            break;
+        default:
+            break;
     }
 
     return _Py_uop_sym_new_not_null(ctx);
@@ -1019,8 +1024,11 @@ _Py_uop_sym_set_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, Jit
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     int curr_index = uop_buffer_length(&ctx->out_buffer);
 
-    if (sym->tag != JIT_SYM_DESCR_TAG) {
-        return _Py_uop_sym_new_not_null(ctx);
+    switch (sym->tag) {
+        case JIT_SYM_DESCR_TAG:
+            break;
+        default:
+            return _Py_uop_sym_new_not_null(ctx);
     }
 
     // Check escape
@@ -1639,7 +1647,8 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
                    "descr object has wrong type version");
 
     JitOptRef slot_val = _Py_uop_sym_new_const(ctx, val_42);
-    _Py_uop_sym_set_attr(ctx, descr_obj, 0, slot_val);
+    JitOptRef old_val = _Py_uop_sym_set_attr(ctx, descr_obj, 0, slot_val);
+    TEST_PREDICATE(_Py_uop_sym_is_null(old_val), "set_attr on new slot should return NULL");
     JitOptRef retrieved = _Py_uop_sym_get_attr(ctx, descr_obj, 0);
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_42,
                    "descr getattr(0) didn't return val_42");
@@ -1649,10 +1658,38 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, missing), "missing slot is const");
 
     JitOptRef slot_val2 = _Py_uop_sym_new_const(ctx, val_43);
-    _Py_uop_sym_set_attr(ctx, descr_obj, 0, slot_val2);
+    old_val = _Py_uop_sym_set_attr(ctx, descr_obj, 0, slot_val2);
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, old_val) == val_42,
+                   "set_attr should return old value (val_42)");
     retrieved = _Py_uop_sym_get_attr(ctx, descr_obj, 0);
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_43,
                    "descr getattr(0) didn't return val_43 after update");
+
+    // Test multiple slots
+    JitOptRef slot_val3 = _Py_uop_sym_new_const(ctx, val_42);
+    _Py_uop_sym_set_attr(ctx, descr_obj, 1, slot_val3);
+    retrieved = _Py_uop_sym_get_attr(ctx, descr_obj, 1);
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_42,
+                   "descr getattr(1) didn't return val_42");
+    retrieved = _Py_uop_sym_get_attr(ctx, descr_obj, 0);
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_43,
+                   "descr getattr(0) changed unexpectedly");
+
+    // Test escape invalidation
+    JitOptRef descr_obj3 = _Py_uop_sym_new_descr_object(ctx, 100);
+    JitOptRef escape_val = _Py_uop_sym_new_const(ctx, val_42);
+    _Py_uop_sym_set_attr(ctx, descr_obj3, 0, escape_val);
+    retrieved = _Py_uop_sym_get_attr(ctx, descr_obj3, 0);
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_42,
+                   "descr getattr before escape didn't return val_42");
+    // Simulate escape by setting last_escape_index higher
+    ctx->last_escape_index = INT_MAX;
+    retrieved = _Py_uop_sym_get_attr(ctx, descr_obj3, 0);
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, retrieved),
+                   "descr getattr after escape should not return const");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(retrieved),
+                   "descr getattr after escape should return not-null");
+    ctx->last_escape_index = 0;
 
     JitOptRef descr_obj2 = _Py_uop_sym_new_descr_object(ctx, 42);
     _Py_uop_sym_set_type_version(ctx, descr_obj2, 43);

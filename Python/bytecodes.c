@@ -2671,6 +2671,23 @@ dummy_func(
             Py_XDECREF(old_value);
         }
 
+        op(_STORE_ATTR_INSTANCE_VALUE_NULL, (offset/1, value, owner -- o)) {
+            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+
+            STAT_INC(STORE_ATTR, hit);
+            assert(_PyObject_GetManagedDict(owner_o) == NULL);
+            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
+            PyObject *old_value = *value_ptr;
+            DEOPT_IF(old_value != NULL);
+            FT_ATOMIC_STORE_PTR_RELEASE(*value_ptr, PyStackRef_AsPyObjectSteal(value));
+            PyDictValues *values = _PyObject_InlineValues(owner_o);
+            Py_ssize_t index = value_ptr - values->values;
+            _PyDictValues_AddToInsertionOrder(values, index);
+            UNLOCK_OBJECT(owner_o);
+            INPUTS_DEAD();
+            o = owner;
+        }
+
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
             _GUARD_TYPE_VERSION_AND_LOCK +

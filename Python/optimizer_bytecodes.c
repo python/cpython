@@ -106,6 +106,14 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
+        JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)offset, value);
+        if (sym_is_null(old_value)) {
+            ADD_OP(_STORE_ATTR_INSTANCE_VALUE_NULL, 0, offset);
+        }
+        o = owner;
+    }
+
+    op(_STORE_ATTR_INSTANCE_VALUE_NULL, (offset/1, value, owner -- o)) {
         (void)value;
         o = owner;
     }
@@ -132,6 +140,11 @@ dummy_func(void) {
         if (sym_is_null(old_value)) {
             ADD_OP(_STORE_ATTR_SLOT_NULL, 0, index);
         }
+        o = owner;
+    }
+
+    op(_STORE_ATTR_SLOT_NULL, (index/1, value, owner -- o)) {
+        (void)value;
         o = owner;
     }
 
@@ -941,7 +954,7 @@ dummy_func(void) {
         (void)args;
         callable = sym_new_not_null(ctx);
         PyTypeObject *tp = _PyType_LookupByVersion(type_version);
-        if (tp != NULL && tp->tp_basicsize > sizeof(PyObject) && !(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        if (tp != NULL) {
             self_or_null = sym_new_descr_object(ctx, type_version);
         } else {
             self_or_null = sym_new_not_null(ctx);

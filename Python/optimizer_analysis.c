@@ -506,9 +506,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        bool was_init_shim = CURRENT_FRAME_IS_INIT_SHIM();
-
-        if (!was_init_shim) {
+        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
             stack_pointer = ctx->frame->stack_pointer;
         }
 
@@ -524,14 +522,13 @@ optimize_uops(
                 DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
         }
-        bool is_init_shim = CURRENT_FRAME_IS_INIT_SHIM();
         // If no ADD_OP was called during this iteration, copy the original instruction
         if (ctx->out_buffer.next == out_ptr) {
             *(ctx->out_buffer.next++) = *this_instr;
         }
-        // Track escapes - but skip when in/from init shim frame, since self hasn't escaped yet
-        if ((_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG) &&
-            !was_init_shim && !is_init_shim)
+        // Track escapes - but skip when from init shim frame, since self hasn't escaped yet
+        bool is_init_shim = CURRENT_FRAME_IS_INIT_SHIM();
+        if ((_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG) && !is_init_shim)
         {
             ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer) - 1;
         }
