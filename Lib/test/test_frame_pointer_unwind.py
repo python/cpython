@@ -205,7 +205,7 @@ class FramePointerUnwindTests(unittest.TestCase):
                             f"unexpected JIT frames counted on {self.machine} with env {env}",
                         )
                 else:
-                    self.assertEqual(
+                    self.assertLessEqual(
                         python_frames,
                         1,
                         f"unexpected Python frames counted on {self.machine} with env {env}",

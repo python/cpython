@@ -57,6 +57,9 @@
 #define MODULE_NAME "_testinternalcapi"
 
 
+static const uintptr_t min_frame_pointer_addr = 0x1000;
+
+
 static PyObject *
 _get_current_module(void)
 {
@@ -170,18 +173,9 @@ classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
             }
             return "other";
         }
+        /* Module resolved but path unavailable: treat as non-JIT. */
+        return "other";
     }
-#ifdef _Py_JIT
-    if (jit_enabled && _PyJIT_AddressInJitCode(interp, addr)) {
-        return "jit";
-    }
-#endif
-    return "other";
-}
-#elif defined(__wasi__)
-static const char *
-classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
-{
 #ifdef _Py_JIT
     if (jit_enabled && _PyJIT_AddressInJitCode(interp, addr)) {
         return "jit";
@@ -368,7 +362,7 @@ manual_unwind_from_fp(uintptr_t *frame_pointer)
 
         uintptr_t *next_fp = (uintptr_t *)frame_pointer[0];
         // Stop if the frame pointer is extremely low.
-        if ((uintptr_t)next_fp < 0x1000) {
+        if ((uintptr_t)next_fp < min_frame_pointer_addr) {
             break;
         }
         uintptr_t next_addr = (uintptr_t)next_fp;
