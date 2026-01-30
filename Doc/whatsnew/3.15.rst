@@ -444,12 +444,17 @@ base64
 * Added the *wrapcol* parameter in :func:`~base64.b64encode`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
+* Added the *ignorechars* parameter in :func:`~base64.b64decode`.
+  (Contributed by Serhiy Storchaka in :gh:`144001`.)
 
 binascii
 --------
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+* Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`144001`.)
 
 
 calendar
@@ -603,8 +608,10 @@ math
 mimetypes
 ---------
 
+* Add ``application/dicom`` MIME type for ``.dcm`` extension. (Contributed by Benedikt Johannes in :gh:`144217`.)
 * Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -736,6 +743,27 @@ ssl
 
    (Contributed by Ron Frederick in :gh:`138252`.)
 
+subprocess
+----------
+
+* :meth:`subprocess.Popen.wait`: when ``timeout`` is not ``None`` and the
+  platform supports it, an efficient event-driven mechanism is used to wait for
+  process termination:
+
+  - Linux >= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`.
+  - macOS and other BSD variants use :func:`select.kqueue` + ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``.
+  - Windows keeps using ``WaitForSingleObject`` (unchanged).
+
+  If none of these mechanisms are available, the function falls back to the
+  traditional busy loop (non-blocking call and short sleeps).
+  (Contributed by Giampaolo Rodola in :gh:`83069`).
+
+symtable
+--------
+
+* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+  (Contributed by Yashp002 in :gh:`143504`.)
+
 
 sys
 ---
@@ -834,6 +862,18 @@ unittest
 * :func:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+urllib.parse
+------------
+
+* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlparse`,
+  :func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag` functions.
+  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunparse` and
+  :func:`~urllib.parse.urlunsplit` functions.
+  This allows to distinguish between empty and not defined URI components
+  and preserve empty components.
+  (Contributed by Serhiy Storchaka in :gh:`67041`.)
 
 
 venv
@@ -1436,6 +1476,12 @@ Build changes
   configuration file containing custom error messages for :term:`standard library`
   modules that are missing or packaged separately.
   (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
+
+* The new configure option :option:`--with-pymalloc-hugepages` enables huge
+  page support for :ref:`pymalloc <pymalloc>` arenas. When enabled, arena size
+  increases to 2 MiB and allocation uses ``MAP_HUGETLB`` (Linux) or
+  ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
+  On Windows, use ``build.bat --pymalloc-hugepages``.
 
 * Annotating anonymous mmap usage is now supported if Linux kernel supports
   :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
