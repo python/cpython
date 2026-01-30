@@ -20,6 +20,7 @@
 #include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
+#include "pycore_lazyimportobject.h"
 #include "pycore_list.h"          // _PyList_GetItemRef()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject

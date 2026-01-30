@@ -146,6 +146,7 @@
     <ClCompile Include="..\Objects\genobject.c" />
     <ClCompile Include="..\Objects\interpolationobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
+    <ClCompile Include="..\Objects\lazyimportobject.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />
     <ClCompile Include="..\Objects\memoryobject.c" />

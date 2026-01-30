@@ -357,8 +357,8 @@ codegen_addop_o(compiler *c, location loc,
 #define LOAD_ZERO_SUPER_METHOD -4
 
 static int
-codegen_addop_name(compiler *c, location loc,
-                   int opcode, PyObject *dict, PyObject *o)
+codegen_addop_name_custom(compiler *c, location loc, int opcode,
+                          PyObject *dict, PyObject *o, int shift, int low)
 {
     PyObject *mangled = _PyCompile_MaybeMangle(c, o);
     if (!mangled) {
@@ -369,40 +369,51 @@ codegen_addop_name(compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
+    ADDOP_I(c, loc, opcode, (arg << shift) | low);
+    return SUCCESS;
+}
+
+static int
+codegen_addop_name(compiler *c, location loc,
+                   int opcode, PyObject *dict, PyObject *o)
+{
+    int shift = 0, low = 0;
     if (opcode == LOAD_ATTR) {
-        arg <<= 1;
+        shift = 1;
     }
     if (opcode == LOAD_METHOD) {
         opcode = LOAD_ATTR;
-        arg <<= 1;
-        arg |= 1;
+        shift = 1;
+        low = 1;
     }
     if (opcode == LOAD_SUPER_ATTR) {
-        arg <<= 2;
-        arg |= 2;
+        shift = 2;
+        low = 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
         opcode = LOAD_SUPER_ATTR;
-        arg <<= 2;
-        arg |= 3;
+        shift = 2;
+        low = 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
         opcode = LOAD_SUPER_ATTR;
-        arg <<= 2;
+        shift = 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
         opcode = LOAD_SUPER_ATTR;
-        arg <<= 2;
-        arg |= 1;
+        shift = 2;
+        low = 1;
     }
-    ADDOP_I(c, loc, opcode, arg);
-    return SUCCESS;
+    return codegen_addop_name_custom(c, loc, opcode, dict, o, shift, low);
 }
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
     RETURN_IF_ERROR(codegen_addop_name((C), (LOC), (OP), METADATA(C)->u_ ## TYPE, (O)))
 
-static int
+#define ADDOP_NAME_CUSTOM(C, LOC, OP, O, TYPE, SHIFT, LOW) \
+    RETURN_IF_ERROR(codegen_addop_name_custom((C), (LOC), (OP), METADATA(C)->u_ ## TYPE, (O), SHIFT, LOW))
+
+    static int
 codegen_addop_j(instr_sequence *seq, location loc,
                 int opcode, jump_target_label target)
 {
@@ -2865,6 +2876,17 @@ codegen_import_as(compiler *c, location loc,
 }
 
 static int
+codegen_validate_lazy_import(compiler *c, location loc)
+{
+    if (_PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
+        return _PyCompile_Error(
+            c, loc, "lazy imports only allowed in module scope");
+    }
+
+    return SUCCESS;
+}
+
+static int
 codegen_import(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
@@ -2884,7 +2906,18 @@ codegen_import(compiler *c, stmt_ty s)
 
         ADDOP_LOAD_CONST(c, loc, zero);
         ADDOP_LOAD_CONST(c, loc, Py_None);
-        ADDOP_NAME(c, loc, IMPORT_NAME, alias->name, names);
+        if (s->v.Import.is_lazy) {
+            RETURN_IF_ERROR(codegen_validate_lazy_import(c, loc));
+            ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 1);
+        } else {
+            if (_PyCompile_InExceptionHandler(c) ||
+                _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
+                // force eager import in try/except block
+                ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 2);
+            } else {
+                ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 0);
+            }
+        }
 
         if (alias->asname) {
             r = codegen_import_as(c, loc, alias->name, alias->asname);
@@ -2930,13 +2963,29 @@ codegen_from_import(compiler *c, stmt_ty s)
 
     ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
+    identifier from = &_Py_STR(empty);
     if (s->v.ImportFrom.module) {
-        ADDOP_NAME(c, LOC(s), IMPORT_NAME, s->v.ImportFrom.module, names);
+        from = s->v.ImportFrom.module;
     }
-    else {
-        _Py_DECLARE_STR(empty, "");
-        ADDOP_NAME(c, LOC(s), IMPORT_NAME, &_Py_STR(empty), names);
+    if (s->v.ImportFrom.is_lazy) {
+        alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, 0);
+        if (PyUnicode_READ_CHAR(alias->name, 0) == '*') {
+            return _PyCompile_Error(c, LOC(s), "cannot lazy import *");
+        }
+        RETURN_IF_ERROR(codegen_validate_lazy_import(c, LOC(s)));
+        ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 1);
+    } else {
+        alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, 0);
+        if (_PyCompile_InExceptionHandler(c) ||
+            _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE ||
+            PyUnicode_READ_CHAR(alias->name, 0) == '*') {
+            // forced non-lazy import due to try/except or import *
+            ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 2);
+        } else {
+            ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 0);
+        }
     }
+
     for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         identifier store_name;

@@ -1114,7 +1114,8 @@ Imports
                     names=[
                         alias(name='x'),
                         alias(name='y'),
-                        alias(name='z')])])
+                        alias(name='z')],
+                    is_lazy=0)])
 
 
 .. class:: ImportFrom(module, names, level)
@@ -1135,7 +1136,8 @@ Imports
                         alias(name='x'),
                         alias(name='y'),
                         alias(name='z')],
-                    level=0)])
+                    level=0,
+                    is_lazy=0)])
 
 
 .. class:: alias(name, asname)
@@ -1153,7 +1155,8 @@ Imports
                     names=[
                         alias(name='a', asname='b'),
                         alias(name='c')],
-                    level=2)])
+                    level=2,
+                    is_lazy=0)])
 
 Control flow
 ^^^^^^^^^^^^

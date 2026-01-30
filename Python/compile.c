@@ -800,6 +800,26 @@ _PyCompile_TopFBlock(compiler *c)
     return &c->u->u_fblock[c->u->u_nfblocks - 1];
 }
 
+bool
+_PyCompile_InExceptionHandler(compiler *c)
+{
+    for (Py_ssize_t i = 0; i < c->u->u_nfblocks; i++) {
+        fblockinfo *block = &c->u->u_fblock[i];
+        switch (block->fb_type) {
+            case COMPILE_FBLOCK_TRY_EXCEPT:
+            case COMPILE_FBLOCK_FINALLY_TRY:
+            case COMPILE_FBLOCK_FINALLY_END:
+            case COMPILE_FBLOCK_EXCEPTION_HANDLER:
+            case COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER:
+            case COMPILE_FBLOCK_HANDLER_CLEANUP:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
+}
+
 void
 _PyCompile_DeferredAnnotations(compiler *c,
                                PyObject **deferred_annotations,

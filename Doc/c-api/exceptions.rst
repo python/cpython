@@ -1119,6 +1119,8 @@ Exception types
      * :exc:`FloatingPointError`
    * * .. c:var:: PyObject *PyExc_GeneratorExit
      * :exc:`GeneratorExit`
+   * * .. c:var:: PyObject *PyExc_ImportCycleError
+     * :exc:`ImportCycleError`
    * * .. c:var:: PyObject *PyExc_ImportError
      * :exc:`ImportError`
    * * .. c:var:: PyObject *PyExc_IndentationError
