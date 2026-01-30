@@ -783,6 +783,21 @@ also be used to improve performance.
 
    See also :envvar:`PYTHONMALLOC` environment variable.
 
+.. option:: --with-pymalloc-hugepages
+
+   Enable huge page support for :ref:`pymalloc <pymalloc>` arenas (disabled by
+   default). When enabled, the arena size on 64-bit platforms is increased to
+   2 MiB and arena allocation uses ``MAP_HUGETLB`` (Linux) or
+   ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
+
+   The configure script checks that the platform supports ``MAP_HUGETLB``
+   and emits a warning if it is not available.
+
+   On Windows, use the ``--pymalloc-hugepages`` flag with ``build.bat`` or
+   set the ``UsePymallocHugepages`` MSBuild property.
+
+   .. versionadded:: 3.15
+
 .. option:: --without-doc-strings
 
    Disable static documentation strings to reduce the memory footprint (enabled
