@@ -1339,7 +1339,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
    For types (tp_getattro == _Py_type_getattro), this can return
    a deferred reference to reduce reference count contention. */
 _PyStackRef
-PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
+_PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
     if (!PyUnicode_Check(name)) {

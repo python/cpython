@@ -10984,7 +10984,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     _PyCStackRef func_ref;
     _PyThreadState_PushCStackRef(tstate, &func_ref);
-    func_ref.ref = PyObject_GetAttrStackRef((PyObject *)type, &_Py_ID(__new__));
+    func_ref.ref = _PyObject_GetAttrStackRef((PyObject *)type, &_Py_ID(__new__));
     if (PyStackRef_IsNull(func_ref.ref)) {
         _PyThreadState_PopCStackRef(tstate, &func_ref);
         return NULL;

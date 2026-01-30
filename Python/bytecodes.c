@@ -2389,7 +2389,7 @@ dummy_func(
             }
             else {
                 /* Classic, pushes one value. */
-                attr = PyObject_GetAttrStackRef(PyStackRef_AsPyObjectBorrow(owner), name);
+                attr = _PyObject_GetAttrStackRef(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
                 ERROR_IF(PyStackRef_IsNull(attr));
             }
