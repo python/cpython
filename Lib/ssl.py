@@ -185,7 +185,7 @@ class _TLSContentType:
 class _TLSAlertType:
     """Alert types for TLSContentType.ALERT messages
 
-    See RFC 8466, section B.2
+    See RFC 8446, section B.2
     """
     CLOSE_NOTIFY = 0
     UNEXPECTED_MESSAGE = 10
@@ -1534,11 +1534,8 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     """Takes a certificate in binary DER format and returns the
     PEM version of it as a string."""
 
-    f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
-    ss = [PEM_HEADER]
-    ss += [f[i:i+64] for i in range(0, len(f), 64)]
-    ss.append(PEM_FOOTER + '\n')
-    return '\n'.join(ss)
+    f = str(base64.b64encode(der_cert_bytes, wrapcol=64), 'ASCII')
+    return f'{PEM_HEADER}\n{f}\n{PEM_FOOTER}\n'
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the

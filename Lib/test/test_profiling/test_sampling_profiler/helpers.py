@@ -38,12 +38,88 @@ skip_if_not_supported = unittest.skipIf(
 SubprocessInfo = namedtuple("SubprocessInfo", ["process", "socket"])
 
 
+def _wait_for_signal(sock, expected_signals, timeout=SHORT_TIMEOUT):
+    """
+    Wait for expected signal(s) from a socket with proper timeout and EOF handling.
+
+    Args:
+        sock: Connected socket to read from
+        expected_signals: Single bytes object or list of bytes objects to wait for
+        timeout: Socket timeout in seconds
+
+    Returns:
+        bytes: Complete accumulated response buffer
+
+    Raises:
+        RuntimeError: If connection closed before signal received or timeout
+    """
+    if isinstance(expected_signals, bytes):
+        expected_signals = [expected_signals]
+
+    sock.settimeout(timeout)
+    buffer = b""
+
+    while True:
+        # Check if all expected signals are in buffer
+        if all(sig in buffer for sig in expected_signals):
+            return buffer
+
+        try:
+            chunk = sock.recv(4096)
+            if not chunk:
+                raise RuntimeError(
+                    f"Connection closed before receiving expected signals. "
+                    f"Expected: {expected_signals}, Got: {buffer[-200:]!r}"
+                )
+            buffer += chunk
+        except socket.timeout:
+            raise RuntimeError(
+                f"Timeout waiting for signals. "
+                f"Expected: {expected_signals}, Got: {buffer[-200:]!r}"
+            ) from None
+        except OSError as e:
+            raise RuntimeError(
+                f"Socket error while waiting for signals: {e}. "
+                f"Expected: {expected_signals}, Got: {buffer[-200:]!r}"
+            ) from None
+
+
+def _cleanup_sockets(*sockets):
+    """Safely close multiple sockets, ignoring errors."""
+    for sock in sockets:
+        if sock is not None:
+            try:
+                sock.close()
+            except OSError:
+                pass
+
+
+def _cleanup_process(proc, timeout=SHORT_TIMEOUT):
+    """Terminate a process gracefully, escalating to kill if needed."""
+    if proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=timeout)
+        return
+    except subprocess.TimeoutExpired:
+        pass
+    proc.kill()
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        pass  # Process refuses to die, nothing more we can do
+
+
 @contextlib.contextmanager
-def test_subprocess(script):
+def test_subprocess(script, wait_for_working=False):
     """Context manager to create a test subprocess with socket synchronization.
 
     Args:
-        script: Python code to execute in the subprocess
+        script: Python code to execute in the subprocess. If wait_for_working
+                is True, script should send b"working" after starting work.
+        wait_for_working: If True, wait for both "ready" and "working" signals.
+                         Default False for backward compatibility.
 
     Yields:
         SubprocessInfo: Named tuple with process and socket objects
@@ -80,19 +156,18 @@ _test_sock.sendall(b"ready")
         # Wait for process to connect and send ready signal
         client_socket, _ = server_socket.accept()
         server_socket.close()
-        response = client_socket.recv(1024)
-        if response != b"ready":
-            raise RuntimeError(
-                f"Unexpected response from subprocess: {response!r}"
-            )
+        server_socket = None
+
+        # Wait for ready signal, and optionally working signal
+        if wait_for_working:
+            _wait_for_signal(client_socket, [b"ready", b"working"])
+        else:
+            _wait_for_signal(client_socket, b"ready")
 
         yield SubprocessInfo(proc, client_socket)
     finally:
-        if client_socket is not None:
-            client_socket.close()
-        if proc.poll() is None:
-            proc.kill()
-        proc.wait()
+        _cleanup_sockets(client_socket, server_socket)
+        _cleanup_process(proc)
 
 
 def close_and_unlink(file):

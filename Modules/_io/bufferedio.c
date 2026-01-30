@@ -1073,6 +1073,7 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
 
     PyBytesWriter *writer = PyBytesWriter_Create(n);
     if (writer == NULL) {
+        LEAVE_BUFFERED(self)
         return NULL;
     }
 

@@ -57,7 +57,6 @@ nested = runpy._run_module_code('x=1\\n', mod_name='<run>')
 implicit_namespace = {
     "__name__": None,
     "__file__": None,
-    "__cached__": None,
     "__package__": None,
     "__doc__": None,
     "__spec__": None
@@ -286,7 +285,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
     def _fix_ns_for_legacy_pyc(self, ns, alter_sys):
         char_to_add = "c"
         ns["__file__"] += char_to_add
-        ns["__cached__"] = ns["__file__"]
         spec = ns["__spec__"]
         new_spec = importlib.util.spec_from_file_location(spec.name,
                                                           ns["__file__"])
@@ -306,7 +304,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": mod_spec.cached,
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -347,7 +344,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": pkg_name,
             "__spec__": mod_spec,
         })
@@ -552,7 +548,6 @@ from ..uncle.cousin import nephew
         expected_ns.update({
             "__name__": run_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -632,7 +627,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": expected_name,
             "__file__": expected_file,
-            "__cached__": mod_cached,
             "__package__": "",
             "__spec__": mod_spec,
             "run_argv0": expected_argv0,

@@ -16,6 +16,7 @@ filename	funcname	name	reason
 ## indicators for resource availability/capability
 # (set during first init)
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/bootstrap_hash.c	py_getentropy	getentropy_works	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, *after* first init)
@@ -566,6 +567,10 @@ Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
 Modules/_testinternalcapi.c	-	pending_identify_result	-
+Modules/_testinternalcapi.c	-	Test_EvalFrame_Resumes	-
+Modules/_testinternalcapi.c	-	Test_EvalFrame_Loads	-
+Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Resumes	-
+Modules/_testinternalcapi/interpreter.c	-	Test_EvalFrame_Loads	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-
