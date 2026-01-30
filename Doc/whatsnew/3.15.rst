@@ -1482,6 +1482,8 @@ Build changes
   increases to 2 MiB and allocation uses ``MAP_HUGETLB`` (Linux) or
   ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
   On Windows, use ``build.bat --pymalloc-hugepages``.
+  At runtime, huge pages must be explicitly enabled by setting the
+  :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable to ``1``.
 
 * Annotating anonymous mmap usage is now supported if Linux kernel supports
   :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).

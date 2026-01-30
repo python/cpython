@@ -790,6 +790,12 @@ also be used to improve performance.
    2 MiB and arena allocation uses ``MAP_HUGETLB`` (Linux) or
    ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
 
+   Even when compiled with this option, huge pages are **not** used at runtime
+   unless the :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable is set
+   to ``1``. This opt-in is required because huge pages carry risks on Linux:
+   if the huge-page pool is exhausted, page faults (including copy-on-write
+   faults after :func:`os.fork`) deliver ``SIGBUS`` and kill the process.
+
    The configure script checks that the platform supports ``MAP_HUGETLB``
    and emits a warning if it is not available.
 

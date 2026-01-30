@@ -639,6 +639,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
+    config.pymalloc_hugepages = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config_set_string(&config, &config.pycache_prefix, L"conf_pycache_prefix");
@@ -795,6 +796,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONPROFILEIMPORTTIME=1");
     putenv("PYTHONNODEBUGRANGES=1");
     putenv("PYTHONMALLOCSTATS=1");
+    putenv("PYTHON_PYMALLOC_HUGEPAGES=1");
     putenv("PYTHONUTF8=1");
     putenv("PYTHONVERBOSE=1");
     putenv("PYTHONINSPECT=1");

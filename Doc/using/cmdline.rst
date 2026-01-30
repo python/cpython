@@ -1087,6 +1087,27 @@ conflict.
       It now has no effect if set to an empty string.
 
 
+.. envvar:: PYTHON_PYMALLOC_HUGEPAGES
+
+   If set to a non-zero integer, enable huge page support for
+   :ref:`pymalloc <pymalloc>` arenas.  Set to ``0`` or unset to disable.
+   Python must be compiled with :option:`--with-pymalloc-hugepages` for this
+   variable to have any effect.
+
+   When enabled, arena allocation uses ``MAP_HUGETLB`` (Linux) or
+   ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages if
+   huge pages are not available.
+
+   .. warning::
+
+      On Linux, if the huge-page pool is exhausted, page faults — including
+      copy-on-write faults triggered by :func:`os.fork` — deliver ``SIGBUS``
+      and kill the process.  Only enable this in environments where the
+      huge-page pool is properly sized and fork-safety is not a concern.
+
+   .. versionadded:: next
+
+
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
 
    If set to a non-empty string, the default :term:`filesystem encoding and
