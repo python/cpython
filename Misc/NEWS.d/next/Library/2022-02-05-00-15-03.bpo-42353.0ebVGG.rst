@@ -7,5 +7,4 @@ the term "match" to mean what Python uses the term "search" for. The
 unadorened "match" name in Python has been a frequent case of confusion and
 coding bugs due to the inconsistency with the rest if the software industry.
 
-No plans to remove and deprecate the existing ``match`` names exist. If that
-were to happen it would be at minimum 7 years in the future.
+We will never remove the original ``match`` name.
