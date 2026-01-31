@@ -148,6 +148,32 @@ class RaceTestBase:
         for t in threads:
             t.join()
 
+    def test_iter_length_hint_mutate(self):
+        s = set(range(2000))
+        it = iter(s)
+        stop = Event()
+
+        def reader():
+            while not stop.is_set():
+                it.__length_hint__()
+
+        def writer():
+            i = 0
+            while not stop.is_set():
+                s.add(i)
+                s.discard(i - 1)
+                i += 1
+
+        threads = [Thread(target=reader) for _ in range(4)]
+        threads.append(Thread(target=writer))
+
+        for t in threads:
+            t.start()
+
+        stop.set()
+
+        for t in threads:
+            t.join()
 
 @threading_helper.requires_working_threading()
 class SmallSetTest(RaceTestBase, unittest.TestCase):
