@@ -1056,7 +1056,8 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
-    if (si->si_set != NULL && si->si_used == si->si_set->used)
+    PySetObject *so = si->si_set;
+    if (so != NULL && si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used))
         len = si->len;
     return PyLong_FromSsize_t(len);
 }
