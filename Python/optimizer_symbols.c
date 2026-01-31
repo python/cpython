@@ -1030,7 +1030,6 @@ _Py_uop_sym_set_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, Jit
         case JIT_SYM_DESCR_TAG: {
             // Check escape
             if (sym->descr.last_escape_index < ctx->last_escape_index) {
-                printf("ESCAPING %d %d\n", sym->descr.last_escape_index, ctx->last_escape_index);
                 sym->descr.num_descrs = 0;
                 return _Py_uop_sym_new_unknown(ctx);
             }
