@@ -2677,8 +2677,7 @@ dummy_func(
             STAT_INC(STORE_ATTR, hit);
             assert(_PyObject_GetManagedDict(owner_o) == NULL);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
-            PyObject *old_value = *value_ptr;
-            DEOPT_IF(old_value != NULL);
+            assert(*value_ptr == NULL);
             FT_ATOMIC_STORE_PTR_RELEASE(*value_ptr, PyStackRef_AsPyObjectSteal(value));
             PyDictValues *values = _PyObject_InlineValues(owner_o);
             Py_ssize_t index = value_ptr - values->values;
@@ -2756,8 +2755,7 @@ dummy_func(
             DEOPT_IF(!LOCK_OBJECT(owner_o));
             char *addr = (char *)owner_o + index;
             STAT_INC(STORE_ATTR, hit);
-            PyObject *old_value = *(PyObject **)addr;
-            DEOPT_IF(old_value != NULL);
+            assert(*(PyObject **)addr == NULL);
             FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
             UNLOCK_OBJECT(owner_o);
             INPUTS_DEAD();

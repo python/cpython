@@ -526,9 +526,9 @@ optimize_uops(
         if (ctx->out_buffer.next == out_ptr) {
             *(ctx->out_buffer.next++) = *this_instr;
         }
-        // Track escapes - but skip when from init shim frame, since self hasn't escaped yet
         bool is_init_shim = CURRENT_FRAME_IS_INIT_SHIM();
-        if ((_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG) && !is_init_shim)
+        // Track escapes
+        if (_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG)
         {
             ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer) - 1;
         }

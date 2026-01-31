@@ -710,7 +710,13 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_set_eval_breaker_bit",
     "trigger_backoff_counter",
     "_PyThreadState_PopCStackRefSteal",
+    "_PyFrame_PushTrampolineUnchecked",
 )
+
+KNOWN_NON_ESCAPING_UOPS = {
+    # This only calls escaping functions in the error path.
+    "_CREATE_INIT_FRAME",
+}
 
 
 def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
@@ -965,7 +971,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = stmt_escapes(op.block)
+    escapes =  not (isinstance(op, parser.InstDef) and op.name in KNOWN_NON_ESCAPING_UOPS) and stmt_escapes(op.block)
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(op.block, 0)

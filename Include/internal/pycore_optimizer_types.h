@@ -116,7 +116,8 @@ typedef struct {
 typedef struct _jit_opt_descr {
     uint8_t tag;
     uint8_t num_descrs;
-    uint16_t last_modified_index;  // Index in out_buffer when this object was last modified
+    // Index in out_buffer when this object was last escaped
+    uint16_t last_escape_index;
     uint32_t type_version;
     JitOptDescrMapping *descrs;
 } JitOptDescrObject;

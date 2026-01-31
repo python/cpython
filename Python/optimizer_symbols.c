@@ -980,7 +980,7 @@ _Py_uop_sym_new_descr_object(JitOptContext *ctx, unsigned int type_version)
     res->descr.num_descrs = 0;
     res->descr.descrs = NULL;
     res->descr.type_version = type_version;
-    res->descr.last_modified_index = uop_buffer_length(&ctx->out_buffer);
+    res->descr.last_escape_index = uop_buffer_length(&ctx->out_buffer);
     return PyJitRef_Wrap(res);
 }
 
@@ -995,7 +995,7 @@ _Py_uop_sym_get_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index)
             // 1. Symbol has mappings allocated
             // 2. No escape has occurred since last modification (state is fresh)
             if (sym->descr.descrs != NULL &&
-                sym->descr.last_modified_index >= ctx->last_escape_index)
+                sym->descr.last_escape_index >= ctx->last_escape_index)
             {
                 for (int i = 0; i < sym->descr.num_descrs; i++) {
                     if (sym->descr.descrs[i].slot_index == slot_index) {
@@ -1026,57 +1026,56 @@ JitOptRef
 _Py_uop_sym_set_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, JitOptRef value)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
-    int curr_index = uop_buffer_length(&ctx->out_buffer);
-
     switch (sym->tag) {
-        case JIT_SYM_DESCR_TAG:
-            break;
-        default:
-            return _Py_uop_sym_new_not_null(ctx);
-    }
-
-    // Check escape
-    if (sym->descr.last_modified_index < ctx->last_escape_index) {
-        sym->descr.num_descrs = 0;
-    }
-
-    // Get old value before updating
-    JitOptRef old_value = PyJitRef_NULL;
-    if (sym->descr.descrs != NULL) {
-        for (int i = 0; i < sym->descr.num_descrs; i++) {
-            if (sym->descr.descrs[i].slot_index == slot_index) {
-                old_value = PyJitRef_Wrap(allocation_base(ctx) + sym->descr.descrs[i].symbol);
-                break;
+        case JIT_SYM_DESCR_TAG: {
+            // Check escape
+            if (sym->descr.last_escape_index < ctx->last_escape_index) {
+                printf("ESCAPING %d %d\n", sym->descr.last_escape_index, ctx->last_escape_index);
+                sym->descr.num_descrs = 0;
+                return _Py_uop_sym_new_unknown(ctx);
             }
-        }
-    }
 
-    // Update the last modified timestamp
-    sym->descr.last_modified_index = curr_index;
+            // Get old value before updating
+            JitOptRef old_value = _Py_uop_sym_new_unknown(ctx);
+            if (sym->descr.descrs != NULL) {
+                for (int i = 0; i < sym->descr.num_descrs; i++) {
+                    if (sym->descr.descrs[i].slot_index == slot_index) {
+                        old_value = PyJitRef_Wrap(allocation_base(ctx) + sym->descr.descrs[i].symbol);
+                        break;
+                    }
+                }
+            }
 
-    // Check if have arena space allocated
-    if (sym->descr.descrs == NULL) {
-        sym->descr.descrs = descr_arena_alloc(ctx);
-        if (sym->descr.descrs == NULL) {
-            return PyJitRef_IsNull(old_value) ? _Py_uop_sym_new_not_null(ctx) : old_value;
-        }
-    }
-    // Check if the slot already exists
-    for (int i = 0; i < sym->descr.num_descrs; i++) {
-        if (sym->descr.descrs[i].slot_index == slot_index) {
-            sym->descr.descrs[i].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
-            assert(!PyJitRef_IsNull(old_value));
-            return old_value;
-        }
-    }
-    // Add new mapping if there's space
-    if (sym->descr.num_descrs < MAX_SYMBOLIC_DESCR_SIZE) {
-        int idx = sym->descr.num_descrs++;
-        sym->descr.descrs[idx].slot_index = slot_index;
-        sym->descr.descrs[idx].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
-    }
+            // Check if have arena space allocated
+            if (sym->descr.descrs == NULL) {
+                sym->descr.descrs = descr_arena_alloc(ctx);
+                if (sym->descr.descrs == NULL) {
+                    ctx->done = true;
+                    ctx->out_of_space = true;
+                    return _Py_uop_sym_new_null(ctx);
+                }
+            }
+            // Check if the slot already exists
+            for (int i = 0; i < sym->descr.num_descrs; i++) {
+                if (sym->descr.descrs[i].slot_index == slot_index) {
+                    sym->descr.descrs[i].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
+                    assert(!_Py_uop_sym_is_null(old_value));
+                    return old_value;
+                }
+            }
+            // Add new mapping if there's space
+            if (sym->descr.num_descrs < MAX_SYMBOLIC_DESCR_SIZE) {
+                int idx = sym->descr.num_descrs++;
+                sym->descr.descrs[idx].slot_index = slot_index;
+                sym->descr.descrs[idx].symbol = (uint16_t)(PyJitRef_Unwrap(value) - allocation_base(ctx));
+            }
 
-    return PyJitRef_IsNull(old_value) ? PyJitRef_Borrow(_Py_uop_sym_new_null(ctx)) : old_value;
+            // No value there. Objects are initialized to NULL, so it's safe.
+            return _Py_uop_sym_new_null(ctx);
+        }
+        default:
+            return _Py_uop_sym_new_unknown(ctx);
+    }
 }
 
 // 0 on success, -1 on error.
