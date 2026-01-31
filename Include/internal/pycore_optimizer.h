@@ -246,6 +246,7 @@ PyJitRef_IsInvalid(JitOptRef ref)
 static inline JitOptRef
 PyJitRef_MakeUnique(JitOptRef ref)
 {
+    assert((ref.bits & REF_IS_UNIQUE) == 0);
     return (JitOptRef){ ref.bits | REF_IS_UNIQUE };
 }
 
