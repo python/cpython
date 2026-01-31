@@ -1816,6 +1816,24 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             sm.__init__(None)
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
+    def test_staticmethod_new_none_repr(self):
+        sm = staticmethod.__new__(staticmethod, None)
+        self.assertIsInstance(repr(sm), str)
+
+    def test_classmethod_new_none_repr(self):
+        cm = classmethod.__new__(classmethod, None)
+        self.assertIsInstance(repr(cm), str)
+
+    def test_staticmethod_func_readonly(self):
+        sm = staticmethod(lambda x: x)
+        with self.assertRaises(AttributeError):
+            sm.__func__ = None
+
+    def test_classmethod_func_readonly(self):
+        cm = classmethod(lambda x: x)
+        with self.assertRaises(AttributeError):
+            cm.__func__ = None
+
     @support.impl_detail("the module 'xxsubtype' is internal")
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_staticmethods_in_c(self):
