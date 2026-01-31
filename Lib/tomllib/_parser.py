@@ -214,7 +214,7 @@ class Flags:
     EXPLICIT_NEST = 1
 
     def __init__(self) -> None:
-        self._flags: dict[str, dict] = {}
+        self._flags: dict[str, dict[Any, Any]] = {}
         self._pending_flags: set[tuple[Key, int]] = set()
 
     def add_pending(self, key: Key, flag: int) -> None:
@@ -272,7 +272,7 @@ class NestedDict:
         key: Key,
         *,
         access_lists: bool = True,
-    ) -> dict:
+    ) -> dict[str, Any]:
         cont: Any = self.dict
         for k in key:
             if k not in cont:
@@ -282,7 +282,7 @@ class NestedDict:
                 cont = cont[-1]
             if not isinstance(cont, dict):
                 raise KeyError("There is no nest behind this key")
-        return cont
+        return cont  # type: ignore[no-any-return]
 
     def append_nest_to_list(self, key: Key) -> None:
         cont = self.get_or_create_nest(key[:-1])
@@ -486,9 +486,9 @@ def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
     return parse_basic_str(src, pos, multiline=False)
 
 
-def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]:
+def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list[Any]]:
     pos += 1
-    array: list = []
+    array: list[Any] = []
 
     pos = skip_comments_and_array_ws(src, pos)
     if src.startswith("]", pos):
@@ -510,7 +510,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]
             return pos + 1, array
 
 
-def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, dict]:
+def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, dict[str, Any]]:
     pos += 1
     nested_dict = NestedDict()
     flags = Flags()
@@ -741,7 +741,7 @@ def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
     instead of returning illegal types.
     """
     # The default `float` callable never returns illegal types. Optimize it.
-    if parse_float is float:  # type: ignore[comparison-overlap]
+    if parse_float is float:
         return float
 
     def safe_parse_float(float_str: str) -> Any:

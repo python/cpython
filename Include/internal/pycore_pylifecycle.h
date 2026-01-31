@@ -41,6 +41,7 @@ extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
+extern PyStatus _PyDateTime_InitTypes(PyInterpreterState *interp);
 
 /* Various internal finalizers */
 

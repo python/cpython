@@ -133,14 +133,18 @@ Literals
 
 Python supports string and bytes literals and various numeric literals:
 
-.. productionlist:: python-grammar
-   literal: `stringliteral` | `bytesliteral`
-          : | `integer` | `floatnumber` | `imagnumber`
+.. grammar-snippet::
+   :group: python-grammar
+
+   literal: `strings` | `NUMBER`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
 integer, floating-point number, complex number) with the given value.  The value
 may be approximated in the case of floating-point and imaginary (complex)
-literals.  See section :ref:`literals` for details.
+literals.
+See section :ref:`literals` for details.
+See section :ref:`string-concatenation` for details on ``strings``.
+
 
 .. index::
    triple: immutable; data; type
@@ -151,6 +155,58 @@ is less important than its value.  Multiple evaluations of literals with the
 same value (either the same occurrence in the program text or a different
 occurrence) may obtain the same object or a different object with the same
 value.
+
+
+.. _string-concatenation:
+
+String literal concatenation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multiple adjacent string or bytes literals (delimited by whitespace), possibly
+using different quoting conventions, are allowed, and their meaning is the same
+as their concatenation::
+
+   >>> "hello" 'world'
+   "helloworld"
+
+Formally:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   strings: ( `STRING` | `fstring`)+ | `tstring`+
+
+This feature is defined at the syntactical level, so it only works with literals.
+To concatenate string expressions at run time, the '+' operator may be used::
+
+   >>> greeting = "Hello"
+   >>> space = " "
+   >>> name = "Blaise"
+   >>> print(greeting + space + name)   # not: print(greeting space name)
+   Hello Blaise
+
+Literal concatenation can freely mix raw strings, triple-quoted strings,
+and formatted string literals.
+For example::
+
+   >>> "Hello" r', ' f"{name}!"
+   "Hello, Blaise!"
+
+This feature can be used to reduce the number of backslashes
+needed, to split long strings conveniently across long lines, or even to add
+comments to parts of strings. For example::
+
+   re.compile("[A-Za-z_]"       # letter or underscore
+              "[A-Za-z0-9_]*"   # letter, digit or underscore
+             )
+
+However, bytes literals may only be combined with other byte literals;
+not with string literals of any kind.
+Also, template string literals may only be combined with other template
+string literals::
+
+   >>> t"Hello" t"{name}!"
+   Template(strings=('Hello', '!'), interpolations=(...))
 
 
 .. _parenthesized:
@@ -210,17 +266,19 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist:: python-grammar
-   comprehension: `assignment_expression` `comp_for`
+   comprehension: `flexible_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
-:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
-In this case, the elements of the new container are those that would be produced
-by considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
-nesting from left to right, and evaluating the expression to produce an element
-each time the innermost block is reached.
+:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if`
+clauses.  In this case, the elements of the new container are those that would
+be produced by considering each of the :keyword:`!for` or :keyword:`!if`
+clauses a block, nesting from left to right, and evaluating the expression to
+produce an element each time the innermost block is reached.  If the expression
+is starred, the result will instead be unpacked to produce zero or more
+elements.
 
 However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
 the comprehension is executed in a separate implicitly nested scope. This ensures
@@ -264,6 +322,9 @@ See also :pep:`530`.
    Asynchronous comprehensions are now allowed inside comprehensions in
    asynchronous functions. Outer comprehensions implicitly become
    asynchronous.
+
+.. versionchanged:: next
+   Unpacking with the ``*`` operator is now allowed in the expression.
 
 
 .. _lists:
@@ -340,8 +401,8 @@ enclosed in curly braces:
 .. productionlist:: python-grammar
    dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
    dict_item_list: `dict_item` ("," `dict_item`)* [","]
+   dict_comprehension: `dict_item` `comp_for`
    dict_item: `expression` ":" `expression` | "**" `or_expr`
-   dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
 
@@ -363,10 +424,21 @@ earlier dict items and earlier dictionary unpackings.
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
 
-A dict comprehension, in contrast to list and set comprehensions, needs two
-expressions separated with a colon followed by the usual "for" and "if" clauses.
-When the comprehension is run, the resulting key and value elements are inserted
-in the new dictionary in the order they are produced.
+A dict comprehension may take one of two forms:
+
+- The first form  uses two expressions separated with a colon followed by the
+  usual "for" and "if" clauses.  When the comprehension is run, the resulting
+  key and value elements are inserted in the new dictionary in the order they
+  are produced.
+
+- The second form uses a single expression prefixed by the ``**`` dictionary
+  unpacking operator followed by the usual "for" and "if" clauses.  When the
+  comprehension is evaluated, the expression is evaluated and then unpacked,
+  inserting zero or more key/value pairs into the new dictionary.
+
+Both forms of dictionary comprehension retain the property that if the same key
+is specified multiple times, the associated value in the resulting dictionary
+will be the last one specified.
 
 .. index:: pair: immutable; object
            hashable
@@ -383,6 +455,8 @@ prevails.
    the key.  Starting with 3.8, the key is evaluated before the value, as
    proposed by :pep:`572`.
 
+.. versionchanged:: next
+   Unpacking with the ``**`` operator is now allowed in dictionary comprehensions.
 
 .. _genexpr:
 
@@ -397,7 +471,7 @@ Generator expressions
 A generator expression is a compact generator notation in parentheses:
 
 .. productionlist:: python-grammar
-   generator_expression: "(" `expression` `comp_for` ")"
+   generator_expression: "(" `flexible_expression` `comp_for` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
 for comprehensions, except that it is enclosed in parentheses instead of
@@ -406,8 +480,9 @@ brackets or curly braces.
 Variables used in the generator expression are evaluated lazily when the
 :meth:`~generator.__next__` method is called for the generator object (in the same
 fashion as normal generators).  However, the iterable expression in the
-leftmost :keyword:`!for` clause is immediately evaluated, so that an error
-produced by it will be emitted at the point where the generator expression
+leftmost :keyword:`!for` clause is immediately evaluated, and the
+:term:`iterator` is immediately created for that iterable, so that an error
+produced while creating the iterator will be emitted at the point where the generator expression
 is defined, rather than at the point where the first value is retrieved.
 Subsequent :keyword:`!for` clauses and any filter condition in the leftmost
 :keyword:`!for` clause cannot be evaluated in the enclosing scope as they may
@@ -625,8 +700,10 @@ is already executing raises a :exc:`ValueError` exception.
 
 .. method:: generator.close()
 
-   Raises a :exc:`GeneratorExit` at the point where the generator function was
-   paused.  If the generator function catches the exception and returns a
+   Raises a :exc:`GeneratorExit` exception at the point where the generator
+   function was paused (equivalent to calling ``throw(GeneratorExit)``).
+   The exception is raised by the yield expression where the generator was paused.
+   If the generator function catches the exception and returns a
    value, this value is returned from :meth:`close`.  If the generator function
    is already closed, or raises :exc:`GeneratorExit` (by not catching the
    exception), :meth:`close` returns :const:`None`.  If the generator yields a
@@ -1023,7 +1100,7 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: positional_item ("," positional_item)*
+   positional_arguments: `positional_item` ("," `positional_item`)*
    positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
@@ -1879,8 +1956,9 @@ Conditional expressions
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
 
-Conditional expressions (sometimes called a "ternary operator") have the lowest
-priority of all Python operations.
+A conditional expression (sometimes called a "ternary operator") is an
+alternative to the if-else statement. As it is an expression, it returns a value
+and can appear as a sub-expression.
 
 The expression ``x if C else y`` first evaluates the condition, *C* rather than *x*.
 If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
@@ -1928,7 +2006,7 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
-   starred_expression: ["*"] `or_expr`
+   starred_expression: "*" `or_expr` | `expression`
    flexible_expression: `assignment_expression` | `starred_expression`
    flexible_expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
    starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]

@@ -22,6 +22,7 @@ import operator
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
+from test.support import script_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
@@ -306,7 +307,7 @@ class CAPITest(unittest.TestCase):
                     CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
-                    r'Extension modules: _testcapi, _testinternalcapi \(total: 2\)\n')
+                    r'Extension modules: ')
         else:
             # Python built with NDEBUG macro defined:
             # test _Py_CheckFunctionResult() instead.
@@ -412,10 +413,14 @@ class CAPITest(unittest.TestCase):
             L = MyList((L,))
 
     @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_trashcan_python_class1(self):
         self.do_test_trashcan_python_class(list)
 
     @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_trashcan_python_class2(self):
         from _testcapi import MyList
         self.do_test_trashcan_python_class(MyList)
@@ -1637,6 +1642,36 @@ class TestPendingCalls(unittest.TestCase):
 
             self.assertEqual(actual, int(interpid))
 
+    @threading_helper.requires_working_threading()
+    def test_pending_call_creates_thread(self):
+        source = """
+        import _testinternalcapi
+        import threading
+        import time
+
+
+        def output():
+            print(24)
+            time.sleep(1)
+            print(42)
+
+
+        def callback():
+            threading.Thread(target=output).start()
+
+
+        def create_pending_call():
+            time.sleep(1)
+            _testinternalcapi.simple_pending_call(callback)
+
+
+        threading.Thread(target=create_pending_call).start()
+        """
+        return_code, stdout, stderr = script_helper.assert_python_ok('-c', textwrap.dedent(source))
+        self.assertEqual(return_code, 0)
+        self.assertEqual(stdout, f"24{os.linesep}42{os.linesep}".encode("utf-8"))
+        self.assertEqual(stderr, b"")
+
 
 class SubinterpreterTest(unittest.TestCase):
 
@@ -1944,6 +1979,43 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(ret, 0)
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
+
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @requires_subinterpreters
+    def test_pending_call_creates_thread_subinterpreter(self):
+        interpreters = import_helper.import_module("concurrent.interpreters")
+        r, w = os.pipe()
+        source = f"""if True:
+        import _testinternalcapi
+        import threading
+        import time
+        import os
+
+
+        def output():
+            time.sleep(1)
+            os.write({w}, b"x")
+            os.close({w})
+
+
+        def callback():
+            threading.Thread(target=output).start()
+
+
+        def create_pending_call():
+            time.sleep(1)
+            _testinternalcapi.simple_pending_call(callback)
+
+
+        threading.Thread(target=create_pending_call).start()
+        """
+        interp = interpreters.create()
+        interp.exec(source)
+        interp.close()
+        data = os.read(r, 1)
+        self.assertEqual(data, b"x")
+        os.close(r)
 
 
 @requires_subinterpreters

@@ -121,7 +121,7 @@ When creating DLLs in Windows, you can use the CPython library in two ways:
    :file:`Python.h` triggers an implicit, configure-aware link with the
    library.  The header file chooses :file:`pythonXY_d.lib` for Debug,
    :file:`pythonXY.lib` for Release, and :file:`pythonX.lib` for Release with
-   the `Limited API <stable-application-binary-interface>`_ enabled.
+   the :ref:`Limited API <stable-application-binary-interface>` enabled.
 
    To build two DLLs, spam and ni (which uses C functions found in spam), you
    could use these commands::

@@ -220,7 +220,7 @@ is the base class for dialogs defined in other supporting modules.
 
 .. class:: Dialog(master=None, **options)
 
-   .. method:: show(color=None, **options)
+   .. method:: show(**options)
 
       Render the Dialog window.
 

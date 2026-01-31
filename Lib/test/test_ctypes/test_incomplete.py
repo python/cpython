@@ -1,24 +1,28 @@
 import ctypes
 import unittest
-import warnings
-from ctypes import Structure, POINTER, pointer, c_char_p
+from ctypes import Structure, POINTER, pointer, c_char_p, c_int
 
+# String-based "incomplete pointers" were implemented in ctypes 0.6.3 (2003, when
+# ctypes was an external project). They made obsolete by the current
+# incomplete *types* (setting `_fields_` late) in 0.9.5 (2005).
+# ctypes was added to Python 2.5 (2006), without any mention in docs.
 
-# The incomplete pointer example from the tutorial
+# This tests incomplete pointer example from the old tutorial
+# (https://svn.python.org/projects/ctypes/tags/release_0_6_3/ctypes/docs/tutorial.stx)
 class TestSetPointerType(unittest.TestCase):
     def tearDown(self):
-        # to not leak references, we must clean _pointer_type_cache
-        ctypes._reset_cache()
+        ctypes._pointer_type_cache_fallback.clear()
 
     def test_incomplete_example(self):
-        lpcell = POINTER("cell")
+        with self.assertWarns(DeprecationWarning):
+            lpcell = POINTER("cell")
         class cell(Structure):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            ctypes.SetPointerType(lpcell, cell)
+        lpcell.set_type(cell)
+
+        self.assertIs(POINTER(cell), lpcell)
 
         c1 = cell()
         c1.name = b"foo"
@@ -37,13 +41,37 @@ class TestSetPointerType(unittest.TestCase):
         self.assertEqual(result, [b"foo", b"bar"] * 4)
 
     def test_deprecation(self):
-        lpcell = POINTER("cell")
+        with self.assertWarns(DeprecationWarning):
+            lpcell = POINTER("cell")
         class cell(Structure):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
 
+        lpcell.set_type(cell)
+        self.assertIs(POINTER(cell), lpcell)
+
+    def test_set_type_updates_format(self):
+        # gh-142966: set_type should update StgInfo.format
+        # to match the element type's format
         with self.assertWarns(DeprecationWarning):
-            ctypes.SetPointerType(lpcell, cell)
+            lp = POINTER("node")
+
+        class node(Structure):
+            _fields_ = [("value", c_int)]
+
+        # Get the expected format before set_type
+        node_format = memoryview(node()).format
+        expected_format = "&" + node_format
+
+        lp.set_type(node)
+
+        # Create instance to check format via memoryview
+        n = node(42)
+        p = lp(n)
+        actual_format = memoryview(p).format
+
+        # After set_type, the pointer's format should be "&<element_format>"
+        self.assertEqual(actual_format, expected_format)
 
 
 if __name__ == '__main__':

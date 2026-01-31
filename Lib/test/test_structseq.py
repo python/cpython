@@ -42,7 +42,7 @@ class StructSeqTest(unittest.TestCase):
         # os.stat() gives a complicated struct sequence.
         st = os.stat(__file__)
         rep = repr(st)
-        self.assertTrue(rep.startswith("os.stat_result"))
+        self.assertStartsWith(rep, "os.stat_result")
         self.assertIn("st_mode=", rep)
         self.assertIn("st_ino=", rep)
         self.assertIn("st_dev=", rep)
@@ -307,7 +307,7 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(t5.tm_mon, 2)
 
         # named invisible fields
-        self.assertTrue(hasattr(t, 'tm_zone'), f"{t} has no attribute 'tm_zone'")
+        self.assertHasAttr(t, 'tm_zone')
         with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
             t.tm_zone = 'some other zone'
         self.assertEqual(t2.tm_zone, t.tm_zone)

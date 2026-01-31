@@ -168,7 +168,7 @@ class Local:
 
     @staticmethod
     def register(name: str) -> "Local":
-        item = StackItem(name, None, "", False, True)
+        item = StackItem(name, "", False, True)
         return Local(item, None, True)
 
     def kill(self) -> None:
@@ -216,13 +216,18 @@ def array_or_scalar(var: StackItem | Local) -> str:
     return "array" if var.is_array() else "scalar"
 
 class Stack:
-    def __init__(self, extract_bits: bool=True, cast_type: str = "uintptr_t") -> None:
+    def __init__(self, check_stack_bounds: bool = False) -> None:
         self.base_offset = PointerOffset.zero()
         self.physical_sp = PointerOffset.zero()
         self.logical_sp = PointerOffset.zero()
         self.variables: list[Local] = []
-        self.extract_bits = extract_bits
-        self.cast_type = cast_type
+        self.check_stack_bounds = check_stack_bounds
+
+    def push_cache(self, cached_items:list[str], out: CWriter) -> None:
+        for i, name in enumerate(cached_items):
+            out.start_line()
+            out.emit(f"_PyStackRef _stack_item_{i} = {name};\n")
+            self.push(Local.register(f"_stack_item_{i}"))
 
     def drop(self, var: StackItem, check_liveness: bool) -> None:
         self.logical_sp = self.logical_sp.pop(var)
@@ -268,10 +273,8 @@ class Stack:
         self.base_offset = self.logical_sp
         if var.name in UNUSED or not var.used:
             return Local.unused(var, self.base_offset)
-        cast = f"({var.type})" if (not indirect and var.type) else ""
-        bits = ".bits" if cast and self.extract_bits else ""
         c_offset = (self.base_offset - self.physical_sp).to_c()
-        assign = f"{var.name} = {cast}{indirect}stack_pointer[{c_offset}]{bits};\n"
+        assign = f"{var.name} = {indirect}stack_pointer[{c_offset}];\n"
         out.emit(assign)
         self._print(out)
         return Local.from_memory(var, self.base_offset)
@@ -292,19 +295,15 @@ class Stack:
         out: CWriter,
         var: StackItem,
         stack_offset: PointerOffset,
-        cast_type: str,
-        extract_bits: bool,
     ) -> None:
-        cast = f"({cast_type})" if var.type else ""
-        bits = ".bits" if cast and extract_bits else ""
-        out.emit(f"stack_pointer[{stack_offset.to_c()}]{bits} = {cast}{var.name};\n")
+        out.emit(f"stack_pointer[{stack_offset.to_c()}] = {var.name};\n")
 
     def _save_physical_sp(self, out: CWriter) -> None:
         if self.physical_sp != self.logical_sp:
             diff = self.logical_sp - self.physical_sp
             out.start_line()
             out.emit(f"stack_pointer += {diff.to_c()};\n")
-            out.emit(f"assert(WITHIN_STACK_BOUNDS());\n")
+            out.emit(f"ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);\n")
             self.physical_sp = self.logical_sp
             self._print(out)
 
@@ -320,12 +319,21 @@ class Stack:
                 self._print(out)
                 var.memory_offset = var_offset
                 stack_offset = var_offset - self.physical_sp
-                Stack._do_emit(out, var.item, stack_offset, self.cast_type, self.extract_bits)
+                Stack._do_emit(out, var.item, stack_offset)
                 self._print(out)
             var_offset = var_offset.push(var.item)
 
+    def stack_bound_check(self, out: CWriter) -> None:
+        if not self.check_stack_bounds:
+            return
+        if self.physical_sp != self.logical_sp:
+            diff = self.logical_sp - self.physical_sp
+            out.start_line()
+            out.emit(f"CHECK_STACK_BOUNDS({diff});\n")
+
     def flush(self, out: CWriter) -> None:
         self._print(out)
+        self.stack_bound_check(out)
         self.save_variables(out)
         self._save_physical_sp(out)
         out.start_line()
@@ -350,11 +358,12 @@ class Stack:
             out.emit(self.as_comment() + "\n")
 
     def copy(self) -> "Stack":
-        other = Stack(self.extract_bits, self.cast_type)
+        other = Stack()
         other.base_offset = self.base_offset
         other.physical_sp = self.physical_sp
         other.logical_sp = self.logical_sp
         other.variables = [var.copy() for var in self.variables]
+        other.check_stack_bounds = self.check_stack_bounds
         return other
 
     def __eq__(self, other: object) -> bool:
@@ -483,7 +492,7 @@ class Storage:
     def _push_defined_outputs(self) -> None:
         defined_output = ""
         for output in self.outputs:
-            if output.in_local and not output.memory_offset:
+            if output.in_local and not output.memory_offset and not output.item.peek:
                 defined_output = output.name
         if not defined_output:
             return
@@ -496,7 +505,7 @@ class Storage:
                     f"Expected '{undefined}' to be defined before '{out.name}'"
             else:
                 undefined = out.name
-        while len(self.outputs) > self.peeks and not self.needs_defining(self.outputs[0]):
+        while len(self.outputs) > self.peeks and not self.needs_defining(self.outputs[self.peeks]):
             out = self.outputs.pop(self.peeks)
             self.stack.push(out)
 
@@ -507,6 +516,7 @@ class Storage:
         return False
 
     def flush(self, out: CWriter) -> None:
+        self._print(out)
         self.clear_dead_inputs()
         self._push_defined_outputs()
         self.stack.flush(out)

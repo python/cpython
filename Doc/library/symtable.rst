@@ -21,11 +21,17 @@ tables.
 Generating Symbol Tables
 ------------------------
 
-.. function:: symtable(code, filename, compile_type)
+.. function:: symtable(code, filename, compile_type, *, module=None)
 
    Return the toplevel :class:`SymbolTable` for the Python source *code*.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
+   The optional argument *module* specifies the module name.
+   It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
+   by module name.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 Examining Symbol Tables
@@ -174,6 +180,12 @@ Examining Symbol Tables
       Return a tuple containing names of :term:`free (closure) variables <closure variable>`
       in this function.
 
+   .. method:: get_cells()
+
+      Return a tuple containing names of :term:`cell variables <closure variable>` in this table.
+
+      .. versionadded:: next
+
 
 .. class:: Class
 
@@ -284,6 +296,12 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is referenced in its block, but not assigned
       to.
+
+   .. method:: is_cell()
+
+      Return ``True`` if the symbol is referenced but not assigned in a nested block.
+
+      .. versionadded:: next
 
    .. method:: is_free_class()
 

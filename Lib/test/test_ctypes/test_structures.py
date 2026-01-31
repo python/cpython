@@ -25,6 +25,7 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 1
+            _layout_ = 'ms'
         self.check_struct(X)
 
         self.assertEqual(sizeof(X), 9)
@@ -34,6 +35,7 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 2
+            _layout_ = 'ms'
         self.check_struct(X)
         self.assertEqual(sizeof(X), 10)
         self.assertEqual(X.b.offset, 2)
@@ -45,6 +47,7 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 4
+            _layout_ = 'ms'
         self.check_struct(X)
         self.assertEqual(sizeof(X), min(4, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(4, longlong_align))
@@ -53,27 +56,33 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 8
+            _layout_ = 'ms'
         self.check_struct(X)
 
         self.assertEqual(sizeof(X), min(8, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(8, longlong_align))
 
-
-        d = {"_fields_": [("a", "b"),
-                          ("b", "q")],
-             "_pack_": -1}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", "b"), ("b", "q")]
+                _pack_ = -1
+                _layout_ = "ms"
 
     @support.cpython_only
     def test_packed_c_limits(self):
         # Issue 15989
         import _testcapi
-        d = {"_fields_": [("a", c_byte)],
-             "_pack_": _testcapi.INT_MAX + 1}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
-        d = {"_fields_": [("a", c_byte)],
-             "_pack_": _testcapi.UINT_MAX + 2}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", c_byte)]
+                _pack_ = _testcapi.INT_MAX + 1
+                _layout_ = "ms"
+
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", c_byte)]
+                _pack_ = _testcapi.UINT_MAX + 2
+                _layout_ = "ms"
 
     def test_initializers(self):
         class Person(Structure):
@@ -684,6 +693,30 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             result = func(test8)
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
+
+    def test_do_not_share_pointer_type_cache_via_stginfo_clone(self):
+        # This test case calls PyCStgInfo_clone()
+        # for the Mid and Vector class definitions
+        # and checks that pointer_type cache not shared
+        # between subclasses.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        base_ptr = POINTER(Base)
+
+        class Mid(Base):
+            pass
+        Mid._fields_ = []
+        mid_ptr = POINTER(Mid)
+
+        class Vector(Mid):
+            pass
+
+        vector_ptr = POINTER(Vector)
+
+        self.assertIsNot(base_ptr, mid_ptr)
+        self.assertIsNot(base_ptr, vector_ptr)
+        self.assertIsNot(mid_ptr, vector_ptr)
 
 
 if __name__ == '__main__':

@@ -134,7 +134,7 @@ class ImportTests(unittest.TestCase):
         # CRASHES importmodule(NULL)
 
     def test_importmodulenoblock(self):
-        # Test deprecated PyImport_ImportModuleNoBlock()
+        # Test deprecated (stable ABI only) PyImport_ImportModuleNoBlock()
         importmodulenoblock = _testlimitedcapi.PyImport_ImportModuleNoBlock
         with check_warnings(('', DeprecationWarning)):
             self.check_import_func(importmodulenoblock)

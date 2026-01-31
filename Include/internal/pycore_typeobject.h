@@ -40,6 +40,7 @@ extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_FiniExtTypes(PyInterpreterState *interp);
 extern void _PyTypes_Fini(PyInterpreterState *);
 extern void _PyTypes_AfterFork(void);
+extern void _PyTypes_FiniCachedDescriptors(PyInterpreterState *);
 
 static inline PyObject **
 _PyStaticType_GET_WEAKREFS_LISTPTR(managed_static_type_state *state)
@@ -89,6 +90,9 @@ _PyType_GetModuleState(PyTypeObject *type)
 // function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
 
+PyAPI_FUNC(PyObject *) _PyType_LookupSubclasses(PyTypeObject *);
+PyAPI_FUNC(PyObject *) _PyType_InitSubclasses(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
@@ -134,7 +138,6 @@ extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
-extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
@@ -148,6 +151,14 @@ typedef int (*_py_validate_type)(PyTypeObject *);
 // tp_version_tag from the ``ty``.
 extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
 extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
+
+// Precalculates count of non-unique slots and fills wrapperbase.name_count.
+extern int _PyType_InitSlotDefs(PyInterpreterState *interp);
+
+// Like PyType_GetBaseByToken, but does not modify refcounts.
+// Cannot fail; arguments must be valid.
+PyAPI_FUNC(int)
+_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result);
 
 #ifdef __cplusplus
 }

@@ -585,6 +585,22 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    generate line tracing events.
 
 
+.. opcode:: NOT_TAKEN
+
+   Do nothing code.
+   Used by the interpreter to record :monitoring-event:`BRANCH_LEFT`
+   and :monitoring-event:`BRANCH_RIGHT` events for :mod:`sys.monitoring`.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: POP_TOP
 
    Removes the top-of-stack item::
@@ -752,7 +768,7 @@ not have to be) the original ``STACK[-2]``.
       end = STACK.pop()
       start = STACK.pop()
       container = STACK.pop()
-      values = STACK.pop()
+      value = STACK.pop()
       container[start:end] = value
 
    .. versionadded:: 3.12
@@ -1094,14 +1110,6 @@ iterations of the loop.
    .. versionadded:: 3.14
 
 
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Pushes ``co_consts[consti]`` onto the stack.
-   Can be used when the constant value is known to be immortal.
-
-   .. versionadded:: 3.14
-
-
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
@@ -1126,6 +1134,48 @@ iterations of the loop.
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
    .. versionadded:: 3.12
+
+
+.. opcode:: BUILD_TEMPLATE
+
+   Constructs a new :class:`~string.templatelib.Template` instance from a tuple
+   of strings and a tuple of interpolations and pushes the resulting object
+   onto the stack::
+
+      interpolations = STACK.pop()
+      strings = STACK.pop()
+      STACK.append(_build_template(strings, interpolations))
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: BUILD_INTERPOLATION (format)
+
+   Constructs a new :class:`~string.templatelib.Interpolation` instance from a
+   value and its source expression and pushes the resulting object onto the
+   stack.
+
+   If no conversion or format specification is present, ``format`` is set to
+   ``2``.
+
+   If the low bit of ``format`` is set, it indicates that the interpolation
+   contains a format specification.
+
+   If ``format >> 2`` is non-zero, it indicates that the interpolation
+   contains a conversion. The value of ``format >> 2`` is the conversion type
+   (``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
+   ``3`` for ``!a``)::
+
+      conversion = format >> 2
+      if format & 1:
+          format_spec = STACK.pop()
+      else:
+          format_spec = None
+      expression = STACK.pop()
+      value = STACK.pop()
+      STACK.append(_build_interpolation(value, expression, conversion, format_spec))
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: BUILD_TUPLE (count)
@@ -1592,7 +1642,7 @@ iterations of the loop.
 
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
-   :opcode:`LOAD_METHOD` for non-method calls.
+   :opcode:`!LOAD_METHOD` for non-method calls.
 
    .. versionadded:: 3.11
 
@@ -1623,8 +1673,12 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
+   * ``0x10`` the :term:`annotate function` for the function object
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.14
+      Added ``0x10`` to indicate the annotate function for the function object.
 
 
 .. opcode:: BUILD_SLICE (argc)
@@ -1667,7 +1721,7 @@ iterations of the loop.
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1680,7 +1734,7 @@ iterations of the loop.
       result = value.__format__("")
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1693,7 +1747,7 @@ iterations of the loop.
       result = value.__format__(spec)
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1913,14 +1967,15 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Marks the end of the code block associated with the last ``SETUP_FINALLY``,
    ``SETUP_CLEANUP`` or ``SETUP_WITH``.
 
+
 .. opcode:: JUMP
-.. opcode:: JUMP_NO_INTERRUPT
+            JUMP_NO_INTERRUPT
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
 .. opcode:: JUMP_IF_TRUE
-.. opcode:: JUMP_IF_FALSE
+            JUMP_IF_FALSE
 
    Conditional jumps which do not impact the stack. Replaced by the sequence
    ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
@@ -1934,12 +1989,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
-
-
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
 
 
 .. _opcode_collections:

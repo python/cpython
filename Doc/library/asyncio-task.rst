@@ -238,17 +238,23 @@ Creating Tasks
 
 -----------------------------------------------
 
-.. function:: create_task(coro, *, name=None, context=None)
+.. function:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
 
-   If *name* is not ``None``, it is set as the name of the task using
-   :meth:`Task.set_name`.
+   The full function signature is largely the same as that of the
+   :class:`Task` constructor (or factory) - all of the keyword arguments to
+   this function are passed through to that interface.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
+
+   An optional keyword-only *eager_start* argument allows specifying
+   if the task should execute eagerly during the call to create_task,
+   or be scheduled later. If *eager_start* is not passed the mode set
+   by :meth:`loop.set_task_factory` will be used.
 
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -290,6 +296,9 @@ Creating Tasks
    .. versionchanged:: 3.11
       Added the *context* parameter.
 
+   .. versionchanged:: 3.14
+      Added the *eager_start* parameter by passing on all *kwargs*.
+
 
 Task Cancellation
 =================
@@ -330,7 +339,7 @@ and reliable way to wait for all tasks in the group to finish.
 
    .. versionadded:: 3.11
 
-   .. method:: create_task(coro, *, name=None, context=None)
+   .. method:: create_task(coro, *, name=None, context=None, eager_start=None, **kwargs)
 
       Create a task in this task group.
       The signature matches that of :func:`asyncio.create_task`.
@@ -341,6 +350,10 @@ and reliable way to wait for all tasks in the group to finish.
       .. versionchanged:: 3.13
 
          Close the given coroutine if the task group is not active.
+
+      .. versionchanged:: 3.14
+
+         Passes on all *kwargs* to :meth:`loop.create_task`
 
 Example::
 
@@ -1180,6 +1193,7 @@ Introspection
 
    .. versionadded:: 3.4
 
+.. _asyncio-task-obj:
 
 Task Object
 ===========
@@ -1207,8 +1221,8 @@ Task Object
 
    To cancel a running Task use the :meth:`cancel` method.  Calling it
    will cause the Task to throw a :exc:`CancelledError` exception into
-   the wrapped coroutine.  If a coroutine is awaiting on a Future
-   object during cancellation, the Future object will be cancelled.
+   the wrapped coroutine.  If a coroutine is awaiting on a future-like
+   object during cancellation, the awaited object will be cancelled.
 
    :meth:`cancelled` can be used to check if the Task was cancelled.
    The method returns ``True`` if the wrapped coroutine did not
@@ -1396,6 +1410,10 @@ Task Object
       discouraged.  Should the coroutine nevertheless decide to suppress
       the cancellation, it needs to call :meth:`Task.uncancel` in addition
       to catching the exception.
+
+      If the Task being cancelled is currently awaiting on a future-like
+      object, that awaited object will also be cancelled. This cancellation
+      propagates down the entire chain of awaited objects.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.

@@ -2,7 +2,7 @@
 file descriptors on stdout.
 
 Usage:
-fd_stats.py: check all file descriptors
+fd_status.py: check all file descriptors (up to 255)
 fd_status.py fd1 fd2 ...: check only specified file descriptors
 """
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
             _MAXFD = os.sysconf("SC_OPEN_MAX")
         except:
             _MAXFD = 256
-        test_fds = range(0, _MAXFD)
+        test_fds = range(0, min(_MAXFD, 256))
     else:
         test_fds = map(int, sys.argv[1:])
     for fd in test_fds:
