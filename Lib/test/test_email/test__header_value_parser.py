@@ -247,6 +247,7 @@ class TestDeprecations(TestEmailBase):
         # names we expect to be deprecated.
         '_InvalidEwError',
         'rfc2047_matcher',
+        '_wsp_splitter',
         ))
     def test_deprecated_names(self, name):
         with check_all_warnings((
@@ -624,17 +625,21 @@ class TestParser(TestParserMixin, TestEmailBase):
     rfc_printable_ascii = bytes(range(33, 127)).decode('ascii')
     rfc_dtext_chars = rfc_printable_ascii.translate(str.maketrans('','',r'\[]'))
 
+    # XXX POSTDEP: delete from here...
+    #
     # _wsp_splitter
 
     @params
     def test__wsp_splitter(self, s, res):
-        self.assertEqual(parser._wsp_splitter(s, 1), res)
+        self.assertEqual(parser._deprecated__wsp_splitter(s, 1), res)
 
     params_test__wsp_splitter = Params(
         one_word = C('foo', ['foo']),
         two_words = C('foo def', ['foo', ' ', 'def']),
         ws_runs = C('foo \t def jik', ['foo', ' \t ', 'def jik']),
         )
+
+    # XXX POSTDEP: ...to here
 
 
     # _make_xtext
