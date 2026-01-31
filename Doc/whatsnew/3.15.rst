@@ -69,6 +69,8 @@ Summary -- Release highlights
   profiling tools <whatsnew315-profiling-package>`
 * :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
   profiling tools <whatsnew315-sampling-profiler>`
+* :pep:`798`: :ref:`Unpacking in Comprehensions
+  <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
@@ -187,6 +189,45 @@ available output formats, profiling modes, and configuration options.
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
+.. _whatsnew315-unpacking-in-comprehensions:
+
+:pep:`798`: Unpacking in Comprehensions
+---------------------------------------
+
+List, set, and dictionary comprehensions, as well as generator expressions, now
+support unpacking with ``*`` and ``**``.  This extends the unpacking syntax
+from :pep:`448` to comprehensions, providing a new syntax for combining an
+arbitrary number of iterables or dictionaries into a single flat structure.
+This new syntax is a direct alternative to nested comprehensions,
+:func:`itertools.chain`, and :meth:`itertools.chain.from_iterable`.  For
+example::
+
+    >>> lists = [[1, 2], [3, 4], [5]]
+    >>> [*L for L in lists]  # equivalent to [x for L in lists for x in L]
+    [1, 2, 3, 4, 5]
+
+    >>> sets = [{1, 2}, {2, 3}, {3, 4}]
+    >>> {*s for s in sets}  # equivalent to {x for s in sets for x in s}
+    {1, 2, 3, 4}
+
+    >>> dicts = [{'a': 1}, {'b': 2}, {'a': 3}]
+    >>> {**d for d in dicts}  # equivalent to {k: v for d in dicts for k,v in d.items()}
+    {'a': 3, 'b': 2}
+
+Generator expressions can similarly use unpacking to yield values from multiple
+iterables::
+
+    >>> gen = (*L for L in lists)  # equivalent to (x for L in lists for x in L)
+    >>> list(gen)
+    [1, 2, 3, 4, 5]
+
+This change also extends to asynchronous generator expressions, such that, for
+example, ``(*a async for a in agen())`` is equivalent to ``(x async for a in
+agen() for x in a)``.
+
+.. seealso:: :pep:`798` for further details.
+
+(Contributed by Adam Hartz in :gh:`143055`.)
 
 .. _whatsnew315-improved-error-messages:
 
