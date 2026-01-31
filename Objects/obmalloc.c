@@ -578,6 +578,9 @@ _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
     if (ptr == MAP_FAILED)
         return NULL;
     assert(ptr != NULL);
+#ifdef MADV_HUGEPAGE
+    (void)madvise(ptr, size, MADV_HUGEPAGE);
+#endif
     (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc");
     return ptr;
 #else
