@@ -1123,7 +1123,7 @@ _MissingWhitespaceAfterEWDefect = errors.InvalidHeaderDefect(
     "missing whitespace after encoded-word",
     )
 
-_wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
+_deprecated__wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(
     re.escape(''.join(ATOM_ENDS)))).match
 _non_token_end_matcher = re.compile(r"[^{}]+".format(
@@ -1189,7 +1189,7 @@ def _get_ptext_to_endchars(value, endchars):
     """
     if not value:
         return '', '', False
-    fragment, *remainder = _wsp_splitter(value, 1)
+    fragment, *remainder = _deprecated__wsp_splitter(value, 1)
     vchars = []
     escape = False
     had_qp = False
