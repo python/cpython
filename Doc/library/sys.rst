@@ -2007,15 +2007,19 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       import sys
       import tempfile
 
-      with tempfile.NamedTemporaryFile(
-          mode='w',
-          suffix='.py',
-          delete_on_close=False,
-      ) as f:
-          f.write("print('Hello from remote!')")
-          f.flush()
-          os.chmod(f.name, 0o644)  # Readable by group/other
+      # delete=False is required so the file persists after closing
+      f = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
+      try:
+          with f:
+              f.write("print('Hello from remote!')")
+              os.chmod(f.name, 0o644)
+
           sys.remote_exec(pid, f.name)
+      finally:
+          try:
+              os.unlink(f.name)
+          except OSError:
+              pass
 
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
