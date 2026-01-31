@@ -3,7 +3,7 @@
 from .util import FileWrapper, guess_scheme, is_hop_by_hop
 from .headers import Headers
 
-import sys, os, time
+import sys, os, time, re
 
 __all__ = [
     'BaseHandler', 'SimpleHandler', 'BaseCGIHandler', 'CGIHandler',
