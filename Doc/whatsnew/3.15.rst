@@ -743,6 +743,20 @@ ssl
 
    (Contributed by Ron Frederick in :gh:`138252`.)
 
+subprocess
+----------
+
+* :meth:`subprocess.Popen.wait`: when ``timeout`` is not ``None`` and the
+  platform supports it, an efficient event-driven mechanism is used to wait for
+  process termination:
+
+  - Linux >= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`.
+  - macOS and other BSD variants use :func:`select.kqueue` + ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``.
+  - Windows keeps using ``WaitForSingleObject`` (unchanged).
+
+  If none of these mechanisms are available, the function falls back to the
+  traditional busy loop (non-blocking call and short sleeps).
+  (Contributed by Giampaolo Rodola in :gh:`83069`).
 
 symtable
 --------
@@ -1462,6 +1476,12 @@ Build changes
   configuration file containing custom error messages for :term:`standard library`
   modules that are missing or packaged separately.
   (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
+
+* The new configure option :option:`--with-pymalloc-hugepages` enables huge
+  page support for :ref:`pymalloc <pymalloc>` arenas. When enabled, arena size
+  increases to 2 MiB and allocation uses ``MAP_HUGETLB`` (Linux) or
+  ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
+  On Windows, use ``build.bat --pymalloc-hugepages``.
 
 * Annotating anonymous mmap usage is now supported if Linux kernel supports
   :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
