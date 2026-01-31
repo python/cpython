@@ -6,7 +6,7 @@ An Informal Introduction to Python
 
 In the following examples, input and output are distinguished by the presence or
 absence of prompts (:term:`>>>` and :term:`...`): to repeat the example, you must type
-everything after the prompt, when the prompt appears; lines that do not begin
+everything shown after the prompt, when the prompt appears; lines that do not begin
 with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
