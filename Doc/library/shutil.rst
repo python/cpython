@@ -538,9 +538,17 @@ On Linux :func:`os.copy_file_range` or :func:`os.sendfile` is used.
 
 On Solaris :func:`os.sendfile` is used.
 
-On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
-instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used.
+On Windows, :func:`shutil.copy`, :func:`shutil.copy2`, :func:`shutil.copytree`,
+and :func:`shutil.move` use the native ``CopyFile2`` API (available on Windows 8
+and later) when possible. This performs the copy entirely in kernel space,
+supports copy-on-write, and avoids copying data through userspace buffers,
+resulting in significantly better performance—especially for large files or
+files on network shares.
+
+In contrast, :func:`shutil.copyfile` does **not** use ``CopyFile2``; it still
+performs a userspace read/write loop (albeit with a larger 1 MiB buffer since
+Python 3.8). Therefore, for best performance on Windows, prefer :func:`copy2`
+over :func:`copyfile` when preserving metadata (like timestamps) is acceptable.
 
 If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
