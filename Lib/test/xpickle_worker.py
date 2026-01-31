@@ -12,6 +12,7 @@ test_mod_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
 if sys.version_info >= (3, 5):
     import importlib.util
     spec = importlib.util.spec_from_file_location('test.picklecommon', test_mod_path)
+    sys.modules['test'] = type(sys)('test')
     test_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(test_module)
     sys.modules['test.picklecommon'] = test_module
