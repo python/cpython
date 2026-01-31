@@ -50,12 +50,6 @@ Note that holding an :term:`attached thread state` is not required for these API
    general, there shouldn't be a reason to explicitly call this, except to
    handle specific scenarios such as forking.
 
-These unstable functions let you access and set perf map information
-about the current frame from C code.
-
-Note: Appends the content of the parent frame to the current one in perf maps.
-Just like in frameobject.h.
-
 .. c:function:: int PyUnstable_CopyPerfMapFile(const char *parent_filename)
 
    Open the ``/tmp/perf-$pid.map`` file and append the content of *parent_filename*
@@ -65,7 +59,6 @@ Just like in frameobject.h.
    Linux). Return ``0`` on success, ``-1`` on failure.
 
    .. versionadded:: 3.13
-
 
 .. c:function:: int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *code)
 
@@ -80,7 +73,6 @@ Just like in frameobject.h.
    :return: 0 on success, -1 on failure.
 
    .. versionadded:: 3.13
-
 
 .. c:function:: int PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable)
 
