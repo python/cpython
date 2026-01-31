@@ -1697,6 +1697,12 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     retrieved = _Py_uop_sym_get_attr(ctx, descr_obj, 0);
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, retrieved) == val_43,
                    "descr getattr(0) changed unexpectedly");
+    // Test setattr with escape
+    ctx->last_escape_index = INT_MAX;
+    retrieved = _Py_uop_sym_set_attr(ctx, descr_obj, 1, slot_val3);
+    TEST_PREDICATE(PyJitRef_Unwrap(retrieved)->tag == JIT_SYM_UNKNOWN_TAG,
+                   "descr setattr should be unknown after escaping");
+    ctx->last_escape_index = 0;
 
     // Test escape invalidation
     JitOptRef descr_obj3 = _Py_uop_sym_new_descr_object(ctx, 100);
