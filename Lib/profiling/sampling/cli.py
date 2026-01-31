@@ -489,8 +489,8 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         "-o",
         "--output",
         dest="outfile",
-        help="Output path (default: stdout for pstats, auto-generated for others). "
-        "For heatmap: directory name (default: heatmap_PID)",
+        help="Output path (default: stdout for pstats text; with -o, pstats is binary). "
+        "Auto-generated for other formats. For heatmap: directory name (default: heatmap_PID)",
     )
     output_group.add_argument(
         "--browser",

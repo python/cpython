@@ -26,6 +26,7 @@ typedef _Py_CODEUNIT *(*jit_func)(
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
 void _PyJIT_Fini(void);
+PyAPI_FUNC(int) _PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr);
 
 #endif  // _Py_JIT
 

@@ -1,0 +1,1 @@
+Prevent a reference leak in module teardown at interpreter finalization.
