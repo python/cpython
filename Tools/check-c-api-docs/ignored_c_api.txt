@@ -71,20 +71,6 @@ PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
 # cpython/fileobject.h
 Py_UniversalNewlineFgets
-# cpython/setobject.h
-PySet_MINSIZE
-# cpython/genobject.h
-PyAsyncGenASend_CheckExact
-# cpython/longintrepr.h
-PyLong_BASE
-PyLong_MASK
-PyLong_SHIFT
-# cpython/pyerrors.h
-PyException_HEAD
-# cpython/ceval.h
-PyUnstable_CopyPerfMapFile
-PyUnstable_PerfTrampoline_CompileCode
-PyUnstable_PerfTrampoline_SetPersistAfterFork
 # cpython/pyframe.h
 PyUnstable_EXECUTABLE_KINDS
 PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
