@@ -180,6 +180,12 @@ Examining Symbol Tables
       Return a tuple containing names of :term:`free (closure) variables <closure variable>`
       in this function.
 
+   .. method:: get_cells()
+
+      Return a tuple containing names of :term:`cell variables <closure variable>` in this table.
+
+      .. versionadded:: next
+
 
 .. class:: Class
 
@@ -290,6 +296,12 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is referenced in its block, but not assigned
       to.
+
+   .. method:: is_cell()
+
+      Return ``True`` if the symbol is referenced but not assigned in a nested block.
+
+      .. versionadded:: next
 
    .. method:: is_free_class()
 

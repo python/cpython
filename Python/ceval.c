@@ -1321,8 +1321,6 @@ tier2_start:
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
-#undef ENABLE_SPECIALIZATION_FT
-#define ENABLE_SPECIALIZATION_FT 0
 
     uint16_t uopcode;
 #ifdef Py_STATS
@@ -1914,7 +1912,6 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
     FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_CLEARED);
-    ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_RETURN;
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
@@ -1922,6 +1919,9 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
+    // gh-143939: There must not be any escaping calls between setting
+    // the generator return kind and returning from _PyEval_EvalFrame.
+    ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_RETURN;
 }
 
 void
@@ -3391,7 +3391,9 @@ _PyEval_GetAwaitable(PyObject *iterable, int oparg)
     else if (PyCoro_CheckExact(iter)) {
         PyCoroObject *coro = (PyCoroObject *)iter;
         int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(coro->cr_frame_state);
-        if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
+        if (frame_state == FRAME_SUSPENDED_YIELD_FROM ||
+            frame_state == FRAME_SUSPENDED_YIELD_FROM_LOCKED)
+        {
             /* `iter` is a coroutine object that is being awaited. */
             Py_CLEAR(iter);
             _PyErr_SetString(PyThreadState_GET(), PyExc_RuntimeError,
