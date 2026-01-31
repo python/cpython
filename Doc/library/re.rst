@@ -1446,7 +1446,7 @@ when there is no match, you can test whether there was a match with a simple
    If a group is contained in a part of the pattern that matched multiple times,
    the last match is returned. ::
 
-      >>> m = re.search(r"(\w+) (\w+)", "Isaac Newton, physicist")
+      >>> m = re.search(r"\A(\w+) (\w+)", "Isaac Newton, physicist")
       >>> m.group(0)       # The entire match
       'Isaac Newton'
       >>> m.group(1)       # The first parenthesized subgroup.
@@ -1641,40 +1641,48 @@ representing the card with that value.
 
 To see if a given string is a valid hand, one could do the following::
 
-   >>> valid = re.compile(r"^[a2-9tjqk]{5}$")
-   >>> displaymatch(valid.search("akt5q"))  # Valid.
+   >>> valid_hand_re = re.compile(r"^[a2-9tjqk]{5}$")
+   >>> displaymatch(valid_hand_re.search("akt5q"))  # Valid.
    "<Match: 'akt5q', groups=()>"
-   >>> displaymatch(valid.search("akt5e"))  # Invalid.
-   >>> displaymatch(valid.search("akt"))    # Invalid.
-   >>> displaymatch(valid.search("727ak"))  # Valid.
+   >>> displaymatch(valid_hand_re.search("akt5e"))  # Invalid.
+   >>> displaymatch(valid_hand_re.search("akt"))    # Invalid.
+   >>> displaymatch(valid_hand_re.search("727ak"))  # Valid.
    "<Match: '727ak', groups=()>"
 
 That last hand, ``"727ak"``, contained a pair, or two of the same valued cards.
 To match this with a regular expression, one could use backreferences as such::
 
-   >>> pair = re.compile(r"^.*(.).*\1")
-   >>> displaymatch(pair.search("717ak"))     # Pair of 7s.
+   >>> pair_re = re.compile(r".*(.).*\1")
+   >>> displaymatch(pair_re.match("717ak"))     # Pair of 7s.
    "<Match: '717', groups=('7',)>"
-   >>> displaymatch(pair.search("718ak"))     # No pairs.
-   >>> displaymatch(pair.search("354aa"))     # Pair of aces.
+   >>> displaymatch(pair_re.match("718ak"))     # No pairs.
+   >>> displaymatch(pair_re.match("354aa"))     # Pair of aces.
    "<Match: '354aa', groups=('a',)>"
 
 To find out what card the pair consists of, one could use the
 :meth:`~Match.group` method of the match object in the following manner::
 
-   >>> pair = re.compile(r"^.*(.).*\1")
-   >>> pair.search("717ak").group(1)
+   >>> pair_re = re.compile(r".*(.).*\1")
+   >>> pair_re.prefixmatch("717ak").group(1)
    '7'
 
-   # Error because re.search() returns None, which doesn't have a group() method:
-   >>> pair.search("718ak").group(1)
+   # Error because prefixmatch() returns None, which doesn't have a group() method:
+   >>> pair_re.prefixmatch("718ak").group(1)
    Traceback (most recent call last):
      File "<pyshell#23>", line 1, in <module>
-       re.search(r".*(.).*\1", "718ak").group(1)
+       pair_re.prefixmatch("718ak").group(1)
    AttributeError: 'NoneType' object has no attribute 'group'
 
-   >>> pair.search("354aa").group(1)
+   >>> pair_re.prefixmatch("354aa").group(1)
    'a'
+
+The examples above use :meth:`~Pattern.match` and :meth:`~Pattern.prefixmatch`
+interchangeably because they are two names for the same method.
+:meth:`~Pattern.prefixmatch` was added in Python 3.15 as a more explicit name;
+use it when your code does not need to run on older Python versions.
+:meth:`~Pattern.search` with a ``^`` or ``\A`` anchor is equivalent, but using
+an explicit method name is clearer to readers of the code.
+See :ref:`prefixmatch-vs-match` for more on this topic.
 
 
 Simulating scanf()
