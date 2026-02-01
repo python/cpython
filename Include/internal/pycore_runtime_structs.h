@@ -31,6 +31,7 @@ struct _pymem_allocators {
         debug_alloc_api_t obj;
     } debug;
     int is_debug_enabled;
+    int use_hugepages;
     PyObjectArenaAllocator obj_arena;
 };
 

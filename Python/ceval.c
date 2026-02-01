@@ -1328,8 +1328,6 @@ tier2_start:
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
-#undef ENABLE_SPECIALIZATION_FT
-#define ENABLE_SPECIALIZATION_FT 0
 
     uint16_t uopcode;
 #ifdef Py_STATS
@@ -3400,7 +3398,9 @@ _PyEval_GetAwaitable(PyObject *iterable, int oparg)
     else if (PyCoro_CheckExact(iter)) {
         PyCoroObject *coro = (PyCoroObject *)iter;
         int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(coro->cr_frame_state);
-        if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
+        if (frame_state == FRAME_SUSPENDED_YIELD_FROM ||
+            frame_state == FRAME_SUSPENDED_YIELD_FROM_LOCKED)
+        {
             /* `iter` is a coroutine object that is being awaited. */
             Py_CLEAR(iter);
             _PyErr_SetString(PyThreadState_GET(), PyExc_RuntimeError,
