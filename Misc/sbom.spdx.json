@@ -6,11 +6,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "39e6f567a10e36b2e77727e98e60bbcb3eb3af0b"
+          "checksumValue": "f1b1126ed7da8f2068302e7a692b0600e6f94b07"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "122f2c27000472a201d337b9b31f7eb2b52d091b02857061a8880371612d9534"
+          "checksumValue": "31b15de82aa19a845156169a17a5488bf597e561b2c318d159ed583139b25e87"
         }
       ],
       "fileName": "Modules/expat/COPYING"
