@@ -274,15 +274,21 @@ class WindowsConsole(Console):
         if wlen(newline) == self.width:
             info = CONSOLE_SCREEN_BUFFER_INFO()
             if not GetConsoleScreenBufferInfo(OutHandle, info):
-                raise WinError(get_last_error())
-            win_y = int(info.dwCursorPosition.Y - info.srWindow.Top)
-            expected = y - self.__offset
-            if win_y == expected + 1:
-                # Terminal wrapped to next row.
-                self.posxy = 0, y + 1
+                err = get_last_error()
+                if err == 6:  # ERROR_INVALID_HANDLE
+                    # Best-effort fallback: cursor stays at end-of-line.
+                    self.posxy = self.width, y
+                else:
+                    raise WinError(err)
             else:
-                # Terminal did not wrap; cursor stays at end-of-line.
-                self.posxy = self.width, y
+                win_y = int(info.dwCursorPosition.Y - info.srWindow.Top)
+                expected = y - self.__offset
+                if win_y == expected + 1:
+                    # Terminal wrapped to next row.
+                    self.posxy = 0, y + 1
+                else:
+                    # Terminal did not wrap; cursor stays at end-of-line.
+                    self.posxy = self.width, y
         else:
             self.posxy = wlen(newline), y
 
