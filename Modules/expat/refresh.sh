@@ -24,6 +24,9 @@ curl --location "https://github.com/libexpat/libexpat/releases/download/${expect
 echo "${expected_libexpat_sha256} libexpat.tar.gz" | sha256sum --check
 
 # Step 2: Pull files from the libexpat distribution
+
+tar xzvf libexpat.tar.gz "expat-${expected_libexpat_version}/COPYING" --strip-components 2
+
 declare -a lib_files
 lib_files=(
   ascii.h
