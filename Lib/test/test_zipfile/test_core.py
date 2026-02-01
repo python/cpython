@@ -2531,6 +2531,10 @@ class OtherTests(unittest.TestCase):
 
     @requires_zlib()
     def test_full_overlap_different_names(self):
+        # The ZIP file contains two central directory entries with
+        # different names which refer to the same local header.
+        # The name of the local header matches the name of the first
+        # central directory entry.
         data = (
             b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
             b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00b\xed'
@@ -2560,6 +2564,10 @@ class OtherTests(unittest.TestCase):
 
     @requires_zlib()
     def test_full_overlap_different_names2(self):
+        # The ZIP file contains two central directory entries with
+        # different names which refer to the same local header.
+        # The name of the local header matches the name of the second
+        # central directory entry.
         data = (
             b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
             b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00a\xed'
@@ -2591,6 +2599,8 @@ class OtherTests(unittest.TestCase):
 
     @requires_zlib()
     def test_full_overlap_same_name(self):
+        # The ZIP file contains two central directory entries with
+        # the same name which refer to the same local header.
         data = (
             b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
             b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00a\xed'
@@ -2623,6 +2633,8 @@ class OtherTests(unittest.TestCase):
 
     @requires_zlib()
     def test_quoted_overlap(self):
+        # The ZIP file contains two files. The second local header
+        # is contained in the range of the first file.
         data = (
             b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05Y\xfc'
             b'8\x044\x00\x00\x00(\x04\x00\x00\x01\x00\x00\x00a\x00'
@@ -2654,6 +2666,7 @@ class OtherTests(unittest.TestCase):
 
     @requires_zlib()
     def test_overlap_with_central_dir(self):
+        # The local header offset is equal to the central directory offset.
         data = (
             b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
             b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
@@ -2668,11 +2681,15 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zi.header_offset, 0)
             self.assertEqual(zi.compress_size, 11)
             self.assertEqual(zi.file_size, 1033)
+            # Found central directory signature PK\x01\x02 instead of
+            # local header signature PK\x03\x04.
             with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number'):
                 zipf.read('a')
 
     @requires_zlib()
     def test_overlap_with_archive_comment(self):
+        # The local header is written after the central directory,
+        # in the archive comment.
         data = (
             b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
             b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'

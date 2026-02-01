@@ -183,8 +183,9 @@ class WindowsConsole(Console):
 
         while len(self.screen) < min(len(screen), self.height):
             self._hide_cursor()
-            self._move_relative(0, len(self.screen) - 1)
-            self.__write("\n")
+            if self.screen:
+                self._move_relative(0, len(self.screen) - 1)
+                self.__write("\n")
             self.posxy = 0, len(self.screen)
             self.screen.append("")
 
@@ -501,7 +502,7 @@ class WindowsConsole(Console):
         """Wipe the screen"""
         self.__write(CLEAR)
         self.posxy = 0, 0
-        self.screen = [""]
+        self.screen = []
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
@@ -553,7 +554,7 @@ class WindowsConsole(Console):
                 e.data += ch
         return e
 
-    def wait(self, timeout: float | None) -> bool:
+    def wait_for_event(self, timeout: float | None) -> bool:
         """Wait for an event."""
         if timeout is None:
             timeout = INFINITE
@@ -565,6 +566,15 @@ class WindowsConsole(Console):
         elif ret == WAIT_TIMEOUT:
             return False
         return True
+
+    def wait(self, timeout: float | None) -> bool:
+        """
+        Wait for events on the console.
+        """
+        return (
+            not self.event_queue.empty()
+            or self.wait_for_event(timeout)
+        )
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")

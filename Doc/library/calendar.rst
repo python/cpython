@@ -158,6 +158,11 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+   .. method:: prweek(theweek, width)
+
+      Print a week's calendar as returned by :meth:`formatweek` and without a
+      final newline.
+
 
    .. method:: formatday(theday, weekday, width)
 
