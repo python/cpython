@@ -258,10 +258,7 @@ class WindowsConsole(Console):
         """
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            err = get_last_error()
-            if err == 6:  # ERROR_INVALID_HANDLE
-                return None
-            raise WinError(err)
+            raise WinError(get_last_error())
 
         win_y = int(info.dwCursorPosition.Y - info.srWindow.Top)
         expected = y - self.__offset
