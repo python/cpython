@@ -261,7 +261,9 @@ PyJitRef_IsUnique(JitOptRef ref)
 static inline JitOptRef
 PyJitRef_StripBorrowInfo(JitOptRef ref)
 {
-    if (PyJitRef_IsUnique(ref)) return ref;
+    if (PyJitRef_IsUnique(ref)) {
+        return ref;
+    }
     return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) };
 }
 
