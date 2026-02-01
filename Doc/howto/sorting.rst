@@ -400,6 +400,11 @@ library provides several tools that do less work than a full sort:
   respectively.  These functions make a single pass over the input data and
   require almost no auxiliary memory.
 
+* :func:`minmax` returns both the smallest and largest values,
+respectively. This functions make a single pass over the input data and
+require almost no auxiliary memory. This function is useful if both `min` and
+`max` need to be called and thus is more efficient for larger datasets.
+
 * :func:`heapq.nsmallest` and :func:`heapq.nlargest` return
   the *n* smallest and largest values, respectively.  These functions
   make a single pass over the data keeping only *n* elements in memory

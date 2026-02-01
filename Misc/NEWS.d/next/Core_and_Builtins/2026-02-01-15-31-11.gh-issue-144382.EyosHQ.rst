@@ -1,0 +1,4 @@
+This creates a new builtin function called `minmax`, which does work similar
+to the functions `min` and `max`; however, is more efficient than running
+`min` and then `max` and computes the smallest and largest elements of the
+iterable in a single pass; rather than 2 passes.
