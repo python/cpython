@@ -289,9 +289,7 @@ class WindowsConsole(Console):
 
         self.__write(newline[x_pos:])
         if wlen(newline) == self.width:
-            did_wrap = self._has_wrapped_to_next_row(y)
-            if did_wrap is True:
-                # Terminal wrapped to next row.
+            if self._has_wrapped_to_next_row(y):
                 self.posxy = 0, y + 1
             else:
                 # Terminal did not wrap; cursor stays at end-of-line.
