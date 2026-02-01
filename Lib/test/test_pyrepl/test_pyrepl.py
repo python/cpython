@@ -2107,13 +2107,14 @@ class TestPyReplCtrlD(TestCase):
         self.assertEqual("hello", "".join(reader.buffer))
 
 
-@skipUnless(sys.platform == "win32", "Windows console VT behavior only")
-class TestWindowsConsoleVtEolWrap(TestCase):
+@skipUnless(sys.platform == "win32", "Windows console behavior only")
+class TestWindowsConsoleEolWrap(TestCase):
     """
-    When a line exactly fills the terminal width, VT terminals differ on whether
-    the cursor immediately wraps to the next row. In VT mode we must synchronize
-    our logical cursor position with the real console cursor.
+    When a line exactly fills the terminal width, Windows consoles differ on
+    whether the cursor immediately wraps to the next row (depends on host/mode).
+    We must synchronize our logical cursor position with the real console cursor.
     """
+
     def _make_console_like(self, *, width: int, offset: int, vt: bool):
         from _pyrepl import windows_console as wc
 
@@ -2135,45 +2136,40 @@ class TestWindowsConsoleVtEolWrap(TestCase):
 
         return con, wc
 
-    def test_vt_exact_width_line_did_wrap(self):
-        # Terminal wrapped to next row: posxy should become (0, y+1).
+    def _run_exact_width_case(self, *, vt: bool, did_wrap: bool):
         width = 10
         y = 3
-        con, wc = self._make_console_like(width=width, offset=0, vt=True)
+        con, wc = self._make_console_like(width=width, offset=0, vt=vt)
 
         def fake_gcsbi(_h, info):
-            info.dwCursorPosition.X = 0
-            # Visible window top = 0, cursor now on next visible row
             info.srWindow.Top = 0
-            info.dwCursorPosition.Y = y + 1
+            if did_wrap:
+                info.dwCursorPosition.X = 0
+                info.dwCursorPosition.Y = y + 1
+            else:
+                info.dwCursorPosition.X = width
+                info.dwCursorPosition.Y = y
             return True
 
         with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi), \
-            patch.object(wc, "OutHandle", 1):
-            old = ""
-            new = "a" * width
-            wc.WindowsConsole._WindowsConsole__write_changed_line(con, y, old, new, 0)
-        self.assertEqual(con.posxy, (0, y + 1))
-        self.assertNotIn((0, y + 1), [c.args for c in con._move_relative.mock_calls])
-
-    def test_vt_exact_width_line_did_not_wrap(self):
-        # Terminal did NOT wrap yet: posxy should stay at (width, y).
-        width = 10
-        y = 3
-        con, wc = self._make_console_like(width=width, offset=0, vt=True)
-
-        def fake_gcsbi(_h, info):
-            info.dwCursorPosition.X = width
-            info.srWindow.Top = 0
-            # Cursor remains on the same visible row
-            info.dwCursorPosition.Y = y
-            return True
-
-        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi), \
-            patch.object(wc, "OutHandle", 1):
+             patch.object(wc, "OutHandle", 1):
             old = ""
             new = "a" * width
             wc.WindowsConsole._WindowsConsole__write_changed_line(con, y, old, new, 0)
 
-        self.assertEqual(con.posxy, (width, y))
-        self.assertNotIn((0, y + 1), [c.args for c in con._move_relative.mock_calls])
+        if did_wrap:
+            self.assertEqual(con.posxy, (0, y + 1))
+            self.assertNotIn((0, y + 1), [c.args for c in con._move_relative.mock_calls])
+        else:
+            self.assertEqual(con.posxy, (width, y))
+            self.assertNotIn((0, y + 1), [c.args for c in con._move_relative.mock_calls])
+
+    def test_exact_width_line_did_wrap_vt_and_legacy(self):
+        for vt in (True, False):
+            with self.subTest(vt=vt):
+                self._run_exact_width_case(vt=vt, did_wrap=True)
+
+    def test_exact_width_line_did_not_wrap_vt_and_legacy(self):
+        for vt in (True, False):
+            with self.subTest(vt=vt):
+                self._run_exact_width_case(vt=vt, did_wrap=False)
