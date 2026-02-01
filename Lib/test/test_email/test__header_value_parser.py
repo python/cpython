@@ -2365,7 +2365,27 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_dot_atom_text
 
-    def test_get_dot_atom_text(self):
+    @params
+    def test_get_dot_atom_text(self, s, *args, **kw):
+        atom = self._test_parse(parser.get_dot_atom_text, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atom, parser.DotAtomText)
+        self.assertEqual(atom.token_type, 'dot-atom-text')
+        self.verify_terminal_types(atom, 'dot', 'atext')
+
+    params_test_get_dot_atom_text = old_api_only(
+
+        # a bare atext is valid in a dot-atom, so we should pass all the
+        # get_atext tests except the ones involving the dot.
+        include_unless(
+            lambda n, *a, **k:  'full_stop' in n,
+            label='from_test_get_atext',
+            )(params_test_get_atext),
+
+        )
+
+    def test_get_dot_atom_text_only(self):
         dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
             'foo.bar.bang', 'foo.bar.bang', 'foo.bar.bang', [], '')
         self.assertEqual(dot_atom_text.token_type, 'dot-atom-text')
@@ -2383,11 +2403,15 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_dot_atom_text('foo.bar.')
 
-    def test_get_dot_atom_text_raises_on_leading_non_atext(self):
+    def test_get_dot_atom_text_raises_on_leading_wsp(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_dot_atom_text(' foo.bar')
+
+    def test_get_dot_atom_text_raises_on_leading_at(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_dot_atom_text('@foo.bar')
+
+    def test_get_dot_atom_text_raises_on_leading_dquote(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_dot_atom_text('"foo.bar"')
 
