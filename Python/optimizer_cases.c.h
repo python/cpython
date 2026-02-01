@@ -1572,7 +1572,7 @@
                         ctx->frame->globals_checked_version = version;
                     }
                     if (ctx->frame->globals_checked_version == version) {
-                        cnst = convert_global_to_const(this_instr, globals, false);
+                        cnst = convert_global_to_const(this_instr, globals, false, false);
                     }
                 }
             }
@@ -1615,7 +1615,7 @@
                     ctx->builtins_watched = true;
                 }
                 if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                    cnst = convert_global_to_const(this_instr, builtins, false);
+                    cnst = convert_global_to_const(this_instr, builtins, false, false);
                 }
             }
             if (cnst == NULL) {
@@ -1875,6 +1875,7 @@
         case _LOAD_ATTR_MODULE: {
             JitOptRef owner;
             JitOptRef attr;
+            JitOptRef o;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
             uint16_t index = (uint16_t)this_instr->operand0;
@@ -1890,7 +1891,7 @@
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                         _Py_BloomFilter_Add(dependencies, dict);
-                        PyObject *res = convert_global_to_const(this_instr, dict, true);
+                        PyObject *res = convert_global_to_const(this_instr, dict, false, true);
                         if (res == NULL) {
                             attr = sym_new_not_null(ctx);
                         }
@@ -1903,7 +1904,12 @@
             if (PyJitRef_IsNull(attr)) {
                 attr = sym_new_not_null(ctx);
             }
+            o = owner;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
+            stack_pointer[0] = o;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -1930,8 +1936,7 @@
             JitOptRef o;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand0;
-            attr = sym_new_not_null(ctx);
-            (void)index;
+            attr = sym_get_attr(ctx, owner, (uint16_t)index);
             o = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -2006,6 +2011,25 @@
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint16_t offset = (uint16_t)this_instr->operand0;
+            JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)offset, value);
+            if (sym_is_null(old_value)) {
+                ADD_OP(_STORE_ATTR_INSTANCE_VALUE_NULL, 0, offset);
+            }
+            o = owner;
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = o;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _STORE_ATTR_INSTANCE_VALUE_NULL: {
+            JitOptRef owner;
+            JitOptRef value;
+            JitOptRef o;
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            uint16_t offset = (uint16_t)this_instr->operand0;
             (void)value;
             o = owner;
             CHECK_STACK_BOUNDS(-1);
@@ -2038,7 +2062,25 @@
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint16_t index = (uint16_t)this_instr->operand0;
-            (void)index;
+            JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)index, value);
+            if (sym_is_null(old_value)) {
+                ADD_OP(_STORE_ATTR_SLOT_NULL, 0, index);
+            }
+            o = owner;
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = o;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _STORE_ATTR_SLOT_NULL: {
+            JitOptRef owner;
+            JitOptRef value;
+            JitOptRef o;
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            uint16_t index = (uint16_t)this_instr->operand0;
             (void)value;
             o = owner;
             CHECK_STACK_BOUNDS(-1);
@@ -3206,11 +3248,15 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            (void)type_version;
             (void)args;
             callable = sym_new_not_null(ctx);
-            self_or_null = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = callable;
+            PyTypeObject *tp = _PyType_LookupByVersion(type_version);
+            if (tp != NULL) {
+                self_or_null = sym_new_descr_object(ctx, type_version);
+            } else {
+                self_or_null = sym_new_not_null(ctx);
+            }
             stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
@@ -3329,15 +3375,30 @@
             arg = stack_pointer[-1];
             callable = stack_pointer[-3];
             res = sym_new_type(ctx, &PyLong_Type);
-            Py_ssize_t tuple_length = sym_tuple_length(arg);
-            if (tuple_length >= 0) {
-                PyObject *temp = PyLong_FromSsize_t(tuple_length);
+            Py_ssize_t length = sym_tuple_length(arg);
+            if (length < 0 && sym_is_const(ctx, arg)) {
+                PyObject *const_val = sym_get_const(ctx, arg);
+                if (const_val != NULL) {
+                    if (PyUnicode_CheckExact(const_val)) {
+                        length = PyUnicode_GET_LENGTH(const_val);
+                    }
+                    else if (PyBytes_CheckExact(const_val)) {
+                        CHECK_STACK_BOUNDS(-2);
+                        stack_pointer[-3] = res;
+                        stack_pointer += -2;
+                        ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                        length = PyBytes_GET_SIZE(const_val);
+                        stack_pointer += 2;
+                    }
+                }
+            }
+            if (length >= 0) {
+                PyObject *temp = PyLong_FromSsize_t(length);
                 if (temp == NULL) {
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
-                       0, (uintptr_t)temp);
+                    ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
                 }
                 res = sym_new_const(ctx, temp);
                 CHECK_STACK_BOUNDS(-2);
@@ -4006,6 +4067,19 @@
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = value;
             stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _INSERT_1_LOAD_CONST_INLINE: {
+            JitOptRef res;
+            JitOptRef l;
+            res = sym_new_not_null(ctx);
+            l = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

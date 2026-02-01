@@ -38,6 +38,9 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+#define sym_new_descr_object _Py_uop_sym_new_descr_object
+#define sym_get_attr _Py_uop_sym_get_attr
+#define sym_set_attr _Py_uop_sym_set_attr
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
 
@@ -103,6 +106,14 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
+        JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)offset, value);
+        if (sym_is_null(old_value)) {
+            ADD_OP(_STORE_ATTR_INSTANCE_VALUE_NULL, 0, offset);
+        }
+        o = owner;
+    }
+
+    op(_STORE_ATTR_INSTANCE_VALUE_NULL, (offset/1, value, owner -- o)) {
         (void)value;
         o = owner;
     }
@@ -125,7 +136,14 @@ dummy_func(void) {
     }
 
     op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
-        (void)index;
+        JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)index, value);
+        if (sym_is_null(old_value)) {
+            ADD_OP(_STORE_ATTR_SLOT_NULL, 0, index);
+        }
+        o = owner;
+    }
+
+    op(_STORE_ATTR_SLOT_NULL, (index/1, value, owner -- o)) {
         (void)value;
         o = owner;
     }
@@ -694,7 +712,7 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
+    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, o)) {
         (void)dict_version;
         (void)index;
         attr = PyJitRef_NULL;
@@ -706,7 +724,7 @@ dummy_func(void) {
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
-                    PyObject *res = convert_global_to_const(this_instr, dict, true);
+                    PyObject *res = convert_global_to_const(this_instr, dict, false, true);
                     if (res == NULL) {
                         attr = sym_new_not_null(ctx);
                     }
@@ -721,6 +739,7 @@ dummy_func(void) {
             /* No conversion made. We don't know what `attr` is. */
             attr = sym_new_not_null(ctx);
         }
+        o = owner;
     }
 
     op (_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
@@ -748,8 +767,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
-        attr = sym_new_not_null(ctx);
-        (void)index;
+        attr = sym_get_attr(ctx, owner, (uint16_t)index);
         o = owner;
     }
 
@@ -933,10 +951,14 @@ dummy_func(void) {
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-        (void)type_version;
         (void)args;
         callable = sym_new_not_null(ctx);
-        self_or_null = sym_new_not_null(ctx);
+        PyTypeObject *tp = _PyType_LookupByVersion(type_version);
+        if (tp != NULL) {
+            self_or_null = sym_new_descr_object(ctx, type_version);
+        } else {
+            self_or_null = sym_new_not_null(ctx);
+        }
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
@@ -1455,15 +1477,28 @@ dummy_func(void) {
 
     op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
         res = sym_new_type(ctx, &PyLong_Type);
-        Py_ssize_t tuple_length = sym_tuple_length(arg);
-        if (tuple_length >= 0) {
-            PyObject *temp = PyLong_FromSsize_t(tuple_length);
+        Py_ssize_t length = sym_tuple_length(arg);
+
+        // Not a tuple, check if it's a const string
+        if (length < 0 && sym_is_const(ctx, arg)) {
+            PyObject *const_val = sym_get_const(ctx, arg);
+            if (const_val != NULL) {
+                if (PyUnicode_CheckExact(const_val)) {
+                    length = PyUnicode_GET_LENGTH(const_val);
+                }
+                else if (PyBytes_CheckExact(const_val)) {
+                    length = PyBytes_GET_SIZE(const_val);
+                }
+            }
+        }
+
+        if (length >= 0) {
+            PyObject *temp = PyLong_FromSsize_t(length);
             if (temp == NULL) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
-                           0, (uintptr_t)temp);
+                ADD_OP(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)temp);
             }
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
@@ -1572,7 +1607,7 @@ dummy_func(void) {
                 ctx->builtins_watched = true;
             }
             if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
-                cnst = convert_global_to_const(this_instr, builtins, false);
+                cnst = convert_global_to_const(this_instr, builtins, false, false);
             }
         }
         if (cnst == NULL) {
@@ -1611,7 +1646,7 @@ dummy_func(void) {
                     ctx->frame->globals_checked_version = version;
                 }
                 if (ctx->frame->globals_checked_version == version) {
-                    cnst = convert_global_to_const(this_instr, globals, false);
+                    cnst = convert_global_to_const(this_instr, globals, false, false);
                 }
             }
         }

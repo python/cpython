@@ -73,6 +73,7 @@ POST request.
 
 
 .. function:: b64decode(s, altchars=None, validate=False)
+              b64decode(s, altchars=None, validate=True, *, ignorechars)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -84,11 +85,17 @@ POST request.
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *validate* is false (the default), characters that are neither
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *validate* is true.
+   The default value of *validate* is ``True`` if *ignorechars* is specified,
+   ``False`` otherwise.
+
+   If *validate* is false, characters that are neither
    in the normal base-64 alphabet nor the alternative alphabet are
    discarded prior to the padding check, but the ``+`` and ``/`` characters
    keep their meaning if they are not in *altchars* (they will be discarded
    in future Python versions).
+
    If *validate* is true, these non-alphabet characters in the input
    result in a :exc:`binascii.Error`.
 
@@ -97,6 +104,10 @@ POST request.
    .. deprecated:: next
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
       is now deprecated.
+
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
 
 .. function:: standard_b64encode(s)

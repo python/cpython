@@ -2419,6 +2419,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_call_len_string(self):
+        def testfunc(n):
+            for _ in range(n):
+                _ = len("abc")
+                d = ''
+                _ = len(d)
+                _ = len(b"def")
+                _ = len(b"")
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CALL_LEN", uops)
+        self.assertEqual(count_ops(ex, "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW"), 4)
+
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
         # See https://github.com/python/cpython/issues/139393.
@@ -2882,6 +2897,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_LOAD_ATTR_INSTANCE_VALUE", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_load_attr_module(self):
+        def testfunc(n):
+            import math
+            x = 0
+            for _ in range(n):
+                y = math.pi
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn(("_LOAD_ATTR_MODULE", "_POP_TOP_NOP"), itertools.pairwise(uops))
+        self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
     def test_load_attr_with_hint(self):
         def testfunc(n):
@@ -3718,6 +3750,7 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(test_is_none, TIER2_THRESHOLD)
         self.assertEqual(res, True)
         self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
 
         self.assertIn("_IS_OP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
