@@ -1056,9 +1056,23 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
-    PySetObject *so = si->si_set;
-    if (so != NULL && si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used))
+#ifdef Py_GIL_DISABLED
+    PyObject *so_obj = FT_ATOMIC_LOAD_PTR_ACQUIRE(si->si_set);
+    if (so_obj != NULL) {
+        /* Turn borrowed si->si_set into a strong ref safely. */
+        if (_Py_TryIncrefCompare((PyObject **)&si->si_set, so_obj)) {
+            PySetObject *so = (PySetObject *)so_obj;
+            if (si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used)) {
+                len = si->len;
+            }
+            Py_DECREF(so_obj);
+        }
+    }
+#else
+    if (si->si_set != NULL && si->si_used == si->si_set->used) {
         len = si->len;
+    }
+#endif
     return PyLong_FromSsize_t(len);
 }
 
@@ -1125,7 +1139,11 @@ static PyObject *setiter_iternext(PyObject *self)
     Py_END_CRITICAL_SECTION();
     si->si_pos = i+1;
     if (key == NULL) {
+#ifdef Py_GIL_DISABLED
+        FT_ATOMIC_STORE_PTR_RELEASE(si->si_set, NULL);
+#else
         si->si_set = NULL;
+#endif
         Py_DECREF(so);
         return NULL;
     }
