@@ -2275,7 +2275,7 @@ Struct_pack_impl(PyStructObject *self, PyObject * const *values,
 Struct.pack_into
 
     buffer: Py_buffer(accept={rwbuffer})
-    offset as offset_obj: object
+    offset: Py_ssize_t
     /
     *values: array
 
@@ -2289,11 +2289,10 @@ help(struct) for more on format strings.
 
 static PyObject *
 Struct_pack_into_impl(PyStructObject *self, Py_buffer *buffer,
-                      PyObject *offset_obj, PyObject * const *values,
+                      Py_ssize_t offset, PyObject * const *values,
                       Py_ssize_t values_length)
-/*[clinic end generated code: output=b0c2ef496135dad3 input=d0de9b9f138c782d]*/
+/*[clinic end generated code: output=aa9d9a93f5f8f77b input=9d842a368ee14245]*/
 {
-    Py_ssize_t offset;
     _structmodulestate *state = get_struct_state_structinst(self);
 
     ENSURE_STRUCT_IS_READY(self);
@@ -2301,12 +2300,6 @@ Struct_pack_into_impl(PyStructObject *self, Py_buffer *buffer,
         PyErr_Format(state->StructError,
                      "pack_into expected %zd items for packing (got %zd)",
                      self->s_len, values_length);
-        return NULL;
-    }
-
-    /* Extract the offset from the first argument */
-    offset = PyNumber_AsSsize_t(offset_obj, PyExc_IndexError);
-    if (offset == -1 && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -2546,7 +2539,7 @@ pack_into
 
     format as s_object: cache_struct
     buffer: Py_buffer(accept={rwbuffer})
-    offset as offset_obj: object
+    offset: Py_ssize_t
     /
     *values: array
 
@@ -2560,11 +2553,11 @@ strings.
 
 static PyObject *
 pack_into_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer,
-               PyObject *offset_obj, PyObject * const *values,
+               Py_ssize_t offset, PyObject * const *values,
                Py_ssize_t values_length)
-/*[clinic end generated code: output=148ef659a490eec3 input=3c5fe5bd3b6fd396]*/
+/*[clinic end generated code: output=e8bf7d422b2088ef input=086867c0f5d8a8e4]*/
 {
-    return Struct_pack_into_impl(s_object, buffer, offset_obj,
+    return Struct_pack_into_impl(s_object, buffer, offset,
                                  values, values_length);
 }
 
