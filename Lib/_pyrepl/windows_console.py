@@ -247,6 +247,26 @@ class WindowsConsole(Console):
         if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
+    def _has_wrapped_to_next_row(self, y: int) -> bool | None:
+        """
+        Return whether the real console cursor wrapped to the next row.
+
+        Returns:
+            True  - cursor wrapped to the next visible row
+            False - cursor did not wrap
+            None  - cannot query the real cursor position (e.g. invalid handle)
+        """
+        info = CONSOLE_SCREEN_BUFFER_INFO()
+        if not GetConsoleScreenBufferInfo(OutHandle, info):
+            err = get_last_error()
+            if err == 6:  # ERROR_INVALID_HANDLE
+                return None
+            raise WinError(err)
+
+        win_y = int(info.dwCursorPosition.Y - info.srWindow.Top)
+        expected = y - self.__offset
+        return win_y == expected + 1
+
     def __write_changed_line(
         self, y: int, oldline: str, newline: str, px_coord: int
     ) -> None:
@@ -272,23 +292,13 @@ class WindowsConsole(Console):
 
         self.__write(newline[x_pos:])
         if wlen(newline) == self.width:
-            info = CONSOLE_SCREEN_BUFFER_INFO()
-            if not GetConsoleScreenBufferInfo(OutHandle, info):
-                err = get_last_error()
-                if err == 6:  # ERROR_INVALID_HANDLE
-                    # Best-effort fallback: cursor stays at end-of-line.
-                    self.posxy = self.width, y
-                else:
-                    raise WinError(err)
+            did_wrap = self._has_wrapped_to_next_row(y)
+            if did_wrap is True:
+                # Terminal wrapped to next row.
+                self.posxy = 0, y + 1
             else:
-                win_y = int(info.dwCursorPosition.Y - info.srWindow.Top)
-                expected = y - self.__offset
-                if win_y == expected + 1:
-                    # Terminal wrapped to next row.
-                    self.posxy = 0, y + 1
-                else:
-                    # Terminal did not wrap; cursor stays at end-of-line.
-                    self.posxy = self.width, y
+                # Terminal did not wrap; cursor stays at end-of-line.
+                self.posxy = self.width, y
         else:
             self.posxy = wlen(newline), y
 
