@@ -1588,9 +1588,12 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
         # to override zoneinfo.Zoneinfo.__init_subclass__.
         ZI._weak_cache = Cache()
 
-        with self.assertRaises(TypeError) as te:
+        with self.assertRaises(RuntimeError) as te:
             ZI("America/Los_Angeles")
-        self.assertEqual(str(te.exception), "expected ZI, got int")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
 
     def test_inconsistent_weak_cache_setdefault(self):
         class Cache:
@@ -1605,9 +1608,13 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
         # to override zoneinfo.Zoneinfo.__init_subclass__.
         ZI._weak_cache = Cache()
 
-        with self.assertRaises(TypeError) as te:
+        with self.assertRaises(RuntimeError) as te:
             ZI("America/Los_Angeles")
-        self.assertEqual(str(te.exception), "expected ZI, got int")
+        self.assertEqual(
+            str(te.exception),
+            "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
+        )
+
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
     module = py_zoneinfo
