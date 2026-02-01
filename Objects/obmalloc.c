@@ -13,6 +13,7 @@
 
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
+#include <stdio.h>                // fopen(), fgets(), sscanf()
 #ifdef WITH_MIMALLOC
 // Forward declarations of functions used in our mimalloc modifications
 static void _PyMem_mi_page_clear_qsbr(mi_page_t *page);
@@ -492,16 +493,57 @@ _PyMem_DefaultRawWcsdup(const wchar_t *str)
 #  endif
 #endif
 
+/* Return the system's default huge page size in bytes, or 0 if it
+ * cannot be determined.  The result is cached after the first call.
+ *
+ * This is Linux-only (/proc/meminfo).  On other systems that define
+ * MAP_HUGETLB the caller should skip huge pages gracefully. */
+#if defined(PYMALLOC_USE_HUGEPAGES) && defined(ARENAS_USE_MMAP) && defined(MAP_HUGETLB)
+static size_t
+_pymalloc_system_hugepage_size(void)
+{
+    static size_t hp_size = 0;
+    static int initialized = 0;
+
+    if (initialized) {
+        return hp_size;
+    }
+
+#ifdef __linux__
+    FILE *f = fopen("/proc/meminfo", "r");
+    if (f != NULL) {
+        char line[256];
+        while (fgets(line, sizeof(line), f)) {
+            unsigned long size_kb;
+            if (sscanf(line, "Hugepagesize: %lu kB", &size_kb) == 1) {
+                hp_size = (size_t)size_kb * 1024;
+                break;
+            }
+        }
+        fclose(f);
+    }
+#endif
+
+    initialized = 1;
+    return hp_size;
+}
+#endif
+
 void *
 _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
 {
 #ifdef MS_WINDOWS
 #  ifdef PYMALLOC_USE_HUGEPAGES
-    void *ptr = VirtualAlloc(NULL, size,
-                    MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
-                    PAGE_READWRITE);
-    if (ptr != NULL)
-        return ptr;
+    if (_PyRuntime.allocators.use_hugepages) {
+        SIZE_T lp_size = GetLargePageMinimum();
+        if (lp_size > 0 && size % lp_size == 0) {
+            void *ptr = VirtualAlloc(NULL, size,
+                            MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES,
+                            PAGE_READWRITE);
+            if (ptr != NULL)
+                return ptr;
+        }
+    }
     /* Fall back to regular pages */
 #  endif
     return VirtualAlloc(NULL, size,
@@ -510,12 +552,23 @@ _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
     void *ptr;
 #  ifdef PYMALLOC_USE_HUGEPAGES
 #    ifdef MAP_HUGETLB
-    ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
-               MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB, -1, 0);
-    if (ptr != MAP_FAILED) {
-        assert(ptr != NULL);
-        (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc:hugepage");
-        return ptr;
+    if (_PyRuntime.allocators.use_hugepages) {
+        size_t hp_size = _pymalloc_system_hugepage_size();
+        /* Only use huge pages if the arena size is a multiple of the
+         * system's default huge page size.  When the arena is smaller
+         * than the huge page, mmap still succeeds but silently
+         * allocates an entire huge page; the subsequent munmap with
+         * the smaller arena size then fails with EINVAL, leaking
+         * all of that memory. */
+        if (hp_size > 0 && size % hp_size == 0) {
+            ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
+                       MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB, -1, 0);
+            if (ptr != MAP_FAILED) {
+                assert(ptr != NULL);
+                (void)_PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc:hugepage");
+                return ptr;
+            }
+        }
     }
     /* Fall back to regular pages */
 #    endif
