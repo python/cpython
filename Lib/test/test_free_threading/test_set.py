@@ -148,32 +148,62 @@ class RaceTestBase:
         for t in threads:
             t.join()
 
-    def test_iter_length_hint_mutate(self):
+    def test_length_hint_used_race(self):
         s = set(range(2000))
         it = iter(s)
-        stop = Event()
+
+        NUM_LOOPS = 50_000
+        barrier = Barrier(2)
 
         def reader():
-            while not stop.is_set():
+            barrier.wait()
+            for _ in range(NUM_LOOPS):
                 it.__length_hint__()
 
         def writer():
+            barrier.wait()
             i = 0
-            while not stop.is_set():
+            for _ in range(NUM_LOOPS):
                 s.add(i)
                 s.discard(i - 1)
                 i += 1
 
-        threads = [Thread(target=reader) for _ in range(4)]
-        threads.append(Thread(target=writer))
+        t1 = Thread(target=reader)
+        t2 = Thread(target=writer)
+        t1.start(); t2.start()
+        t1.join(); t2.join()
 
-        for t in threads:
-            t.start()
+    def test_length_hint_exhaust_race(self):
+        NUM_LOOPS = 10_000
+        INNER_HINTS = 20
+        barrier = Barrier(2)
+        box = {"it": None}
 
-        stop.set()
+        def exhauster():
+            for _ in range(NUM_LOOPS):
+                s = set(range(256))
+                box["it"] = iter(s)
+                barrier.wait()          # start together
+                try:
+                    while True:
+                        next(box["it"])
+                except StopIteration:
+                    pass
+                barrier.wait()          # end iteration
 
-        for t in threads:
-            t.join()
+        def reader():
+            for _ in range(NUM_LOOPS):
+                barrier.wait()
+                it = box["it"]
+                for _ in range(INNER_HINTS):
+                    it.__length_hint__()
+                barrier.wait()
+
+        t1 = Thread(target=reader)
+        t2 = Thread(target=exhauster)
+        t1.start(); t2.start()
+        t1.join(); t2.join()
+
 
 @threading_helper.requires_working_threading()
 class SmallSetTest(RaceTestBase, unittest.TestCase):
