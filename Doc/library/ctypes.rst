@@ -896,7 +896,7 @@ invalid non-\ ``NULL`` pointers would crash Python)::
 Thread safety without the GIL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-From Python 3.13 onward, the :term:`GIL` can be disabled on :term:`free threaded <free threading>` builds.
+From Python 3.13 onward, the :term:`GIL` can be disabled on the :term:`free-threaded build`.
 In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
 
    .. code-block:: pycon
