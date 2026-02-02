@@ -1,0 +1,15 @@
+name: Documentation
+description: Report a problem with the documentation
+labels: ["docs"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!NOTE]
+        > Trivial changes (for example typos) don’t require an issue before opening a PR.
+  - type: textarea
+    attributes:
+      label: "Documentation"
+      description: "A clear and concise description of the issue."
+    validations:
+      required: true
