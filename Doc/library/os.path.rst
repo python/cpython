@@ -103,12 +103,11 @@ the :mod:`glob` module.)
 
    .. danger::
 
+      This function may return invalid paths because it works a
+      character at a time.
       If you need a **common path prefix**, then the algorithm
       implemented in this function is not secure. Use
       :func:`commonpath` for finding a common path prefix.
-      This function may return invalid paths because it works a
-      character at a time.  To obtain a valid path, see
-      :func:`commonpath`.
 
       ::
 
