@@ -1,0 +1,6 @@
+Add :attr:`~generator.gi_state`, :attr:`~coroutine.cr_state`, and
+:attr:`~types.AsyncGeneratorType.ag_state` attributes that return the current
+state of generators, coroutines, and async generators as a string (e.g.,
+``GEN_RUNNING``). The :mod:`inspect` module functions
+:func:`~inspect.getgeneratorstate`, :func:`~inspect.getcoroutinestate`, and
+:func:`~inspect.getasyncgenstate` now return these attributes directly.
