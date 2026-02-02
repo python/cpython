@@ -291,6 +291,7 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b64decode(data_str, altchars=altchars), res)
             eq(base64.b64decode(data, altchars=altchars_str), res)
             eq(base64.b64decode(data_str, altchars=altchars_str), res)
+            eq(base64.b64decode(data, altchars=altchars, ignorechars=b'\n'), res)
 
         self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+')
         self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+/-')
@@ -370,26 +371,28 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(r, b'\xff\xff\xff')
         self.assertEqual(str(cm.warning),
                          error % ('/', "altchars=b'-_' and validate=True"))
-        with self.assertWarns(FutureWarning) as cm:
-            r = base64.b64decode(b'++++', altchars=b'-_', ignorechars=b'+')
-        self.assertEqual(r, b'\xfb\xef\xbe')
-        self.assertEqual(str(cm.warning),
-                         discarded % ('+', "altchars=b'-_' and ignorechars=b'+'"))
-        with self.assertWarns(FutureWarning) as cm:
-            r = base64.b64decode(b'////', altchars=b'-_', ignorechars=b'/')
-        self.assertEqual(r, b'\xff\xff\xff')
-        self.assertEqual(str(cm.warning),
-                         discarded % ('/', "altchars=b'-_' and ignorechars=b'/'"))
-        with self.assertWarns(DeprecationWarning) as cm:
-            r = base64.b64decode(b'++++////', altchars=b'-_', ignorechars=b'+')
+        r = base64.b64decode(b'++++', altchars=b'-_', ignorechars=b'+')
+        self.assertEqual(r, b'')
+        r = base64.b64decode(b'////', altchars=b'-_', ignorechars=b'/')
+        self.assertEqual(r, b'')
+        r = base64.b64decode(b'++++////', altchars=b'-_', validate=False, ignorechars=b'')
+        self.assertEqual(r, b'')
+        with self.assertRaisesRegex(binascii.Error, 'Only base64 data is allowed'):
+            base64.b64decode(b'////', altchars=b'-_', ignorechars=b'')
+        with self.assertRaisesRegex(binascii.Error, 'Only base64 data is allowed'):
+            base64.b64decode(b'++++', altchars=b'-_', ignorechars=b'')
+        r = base64.b64decode(b'++++YWJj----____', altchars=b'-_', ignorechars=b'+')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
+        r = base64.b64decode(b'////YWJj----____', altchars=b'-_', ignorechars=b'/')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
+        r = base64.b64decode(b'++++,,,,', altchars=b'+,', ignorechars=b'+')
         self.assertEqual(r, b'\xfb\xef\xbe\xff\xff\xff')
-        self.assertEqual(str(cm.warning),
-                         error % ('/', "altchars=b'-_' and validate=True"))
-        with self.assertWarns(DeprecationWarning) as cm:
-            r = base64.b64decode(b'++++////', altchars=b'-_', ignorechars=b'/')
+        r = base64.b64decode(b'////YWJj++++,,,,', altchars=b'+,', ignorechars=b'/')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
+        r = base64.b64decode(b'----////', altchars=b'-/', ignorechars=b'/')
         self.assertEqual(r, b'\xfb\xef\xbe\xff\xff\xff')
-        self.assertEqual(str(cm.warning),
-                         error % ('+', "altchars=b'-_' and validate=True"))
+        r = base64.b64decode(b'++++YWJj----////', altchars=b'-/', ignorechars=b'+')
+        self.assertEqual(r, b'abc\xfb\xef\xbe\xff\xff\xff')
 
         with self.assertWarns(FutureWarning) as cm:
             self.assertEqual(base64.urlsafe_b64decode(b'++++'), b'\xfb\xef\xbe')

@@ -89,49 +89,37 @@ def b64decode(s, altchars=None, validate=_NOT_SPECIFIED, *, ignorechars=_NOT_SPE
     s = _bytes_from_decode_data(s)
     if validate is _NOT_SPECIFIED:
         validate = ignorechars is not _NOT_SPECIFIED
-    if ignorechars is _NOT_SPECIFIED:
-        ignorechars = b''
     badchar = None
-    badchar_strict = False
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
         if len(altchars) != 2:
             raise ValueError(f'invalid altchars: {altchars!r}')
-        for b in b'+/':
-            if b not in altchars and b in s:
-                if badchar is None:
-                    badchar = b
-                if not validate:
-                    break
-                if not isinstance(ignorechars, (bytes, bytearray)):
-                    ignorechars = memoryview(ignorechars).cast('B')
-                if b not in ignorechars:
-                    badchar_strict = True
+        if ignorechars is _NOT_SPECIFIED:
+            for b in b'+/':
+                if b not in altchars and b in s:
                     badchar = b
                     break
-        s = s.translate(bytes.maketrans(altchars, b'+/'))
+            s = s.translate(bytes.maketrans(altchars, b'+/'))
+        else:
+            trans = bytes.maketrans(b'+/' + altchars, altchars + b'+/')
+            s = s.translate(trans)
+            ignorechars = ignorechars.translate(trans)
+    if ignorechars is _NOT_SPECIFIED:
+        ignorechars = b''
     result = binascii.a2b_base64(s, strict_mode=validate,
                                  ignorechars=ignorechars)
     if badchar is not None:
         import warnings
-        if badchar_strict:
+        if validate:
             warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
                           f'with altchars={altchars!r} and validate=True '
                           f'will be an error in future Python versions',
                           DeprecationWarning, stacklevel=2)
         else:
-            ignorechars = bytes(ignorechars)
-            if ignorechars:
-                warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
-                              f'with altchars={altchars!r} '
-                              f'and ignorechars={ignorechars!r} '
-                              f'will be discarded in future Python versions',
-                              FutureWarning, stacklevel=2)
-            else:
-                warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
-                              f'with altchars={altchars!r} and validate=False '
-                              f'will be discarded in future Python versions',
-                              FutureWarning, stacklevel=2)
+            warnings.warn(f'invalid character {chr(badchar)!a} in Base64 data '
+                          f'with altchars={altchars!r} and validate=False '
+                          f'will be discarded in future Python versions',
+                          FutureWarning, stacklevel=2)
     return result
 
 
