@@ -104,7 +104,7 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
         if not have_python_version(cls.py_version):
             py_version_str = ".".join(map(str, cls.py_version))
             raise unittest.SkipTest(f'Python {py_version_str} not available')
-        cls.addClassCleanup(cls.close_worker)
+        cls.addClassCleanup(cls.finish_worker)
         # Override the default pickle protocol to match what xpickle worker
         # will be running.
         highest_protocol = highest_proto_for_py_version(cls.py_version)
@@ -114,7 +114,7 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
                                                 highest_protocol))
 
     @classmethod
-    def start_worker(cls):
+    def start_worker(cls, python):
         target = os.path.join(os.path.dirname(__file__), 'xpickle_worker.py')
         worker = subprocess.Popen([*python, target],
                                   stdin=subprocess.PIPE,
@@ -123,9 +123,10 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
                                   # For windows bpo-17023.
                                   shell=is_windows)
         cls.worker = worker
+        return worker
 
     @classmethod
-    def close_worker(cls):
+    def finish_worker(cls):
         worker = cls.worker
         if worker is None:
             return
@@ -149,14 +150,7 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
         """
         worker = cls.worker
         if worker is None:
-            target = os.path.join(os.path.dirname(__file__), 'xpickle_worker.py')
-            worker = subprocess.Popen([*python, target],
-                                      stdin=subprocess.PIPE,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE,
-                                      # For windows bpo-17023.
-                                      shell=is_windows)
-            cls.worker = worker
+            worker = cls.start_worker(python)
 
         try:
             worker.stdin.write(struct.pack('!i', len(data)) + data)
@@ -179,7 +173,7 @@ class AbstractCompatTests(pickletester.AbstractPickleTests):
             _, stderr = worker.communicate()
             raise RuntimeError(stderr)
         except:
-            cls.close_worker()
+            cls.finish_worker()
             raise
 
     def dumps(self, arg, proto=0, **kwargs):
