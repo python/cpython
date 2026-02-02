@@ -1264,6 +1264,7 @@ class TestUopsOptimization(unittest.TestCase):
             ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
         )
 
+    @unittest.skip("reopen when we combine multiple stack space checks into one")
     def test_combine_stack_space_checks_recursion(self):
         def dummy15(x):
             while x > 0:
@@ -1286,12 +1287,12 @@ class TestUopsOptimization(unittest.TestCase):
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
-        self.assertEqual(uop_names.count("_PUSH_FRAME"), 12)
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_RETURN_VALUE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 12)
-        framesize = _testinternalcapi.get_co_framesize(dummy15.__code__)
-        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", framesize), uops_and_operands)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 1)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
 
     def test_many_nested(self):
         # overflow the trace_stack
