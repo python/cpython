@@ -1088,13 +1088,19 @@ dummy_func(void) {
     }
 
     op(_CHECK_STACK_SPACE, (unused, unused, unused[oparg] -- unused, unused, unused[oparg])) {
+        assert((this_instr + 1)->opcode == _CHECK_RECURSION_REMAINING);
+        assert((this_instr + 4)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 4));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        ADD_OP(_CHECK_STACK_SPACE_OPERAND, 0, co->co_framesize);
+        REPLACE_OP((this_instr + 1), _NOP, 0, 0);
     }
 
     op (_CHECK_STACK_SPACE_OPERAND, (framesize/2 -- )) {
         (void)framesize;
-        /* We should never see _CHECK_STACK_SPACE_OPERANDs.
-        * They are only created at the end of this pass. */
-        Py_UNREACHABLE();
     }
 
     op(_PUSH_FRAME, (new_frame -- )) {

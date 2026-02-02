@@ -3031,6 +3031,15 @@
         }
 
         case _CHECK_STACK_SPACE: {
+            assert((this_instr + 1)->opcode == _CHECK_RECURSION_REMAINING);
+            assert((this_instr + 4)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 4));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            ADD_OP(_CHECK_STACK_SPACE_OPERAND, 0, co->co_framesize);
+            REPLACE_OP((this_instr + 1), _NOP, 0, 0);
             break;
         }
 
@@ -3938,7 +3947,6 @@
         case _CHECK_STACK_SPACE_OPERAND: {
             uint32_t framesize = (uint32_t)this_instr->operand0;
             (void)framesize;
-            Py_UNREACHABLE();
             break;
         }
 
