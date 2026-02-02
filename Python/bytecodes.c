@@ -568,6 +568,7 @@ dummy_func(
 
         macro(TO_BOOL_ALWAYS_TRUE) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _REPLACE_WITH_TRUE +
             POP_TOP;
@@ -1107,6 +1108,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_GETITEM) =
+            _RECORD_TOS +
             unused/5 + // Skip over the counter and cache
             _CHECK_PEP_523 +
             _BINARY_OP_SUBSCR_CHECK_FUNC +
@@ -1267,7 +1269,7 @@ dummy_func(
         // The stack effect here is a bit misleading.
         // retval is popped from the stack, but res
         // is pushed to a different frame, the callers' frame.
-        inst(RETURN_VALUE, (retval -- res)) {
+        op(_RETURN_VALUE, (retval -- res)) {
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
             DEAD(retval);
@@ -1291,9 +1293,13 @@ dummy_func(
             ERROR_IF(err);
         }
 
+        macro(RETURN_VALUE) =
+            _RECORD_CALLER_CODE +
+            _RETURN_VALUE;
+
         macro(INSTRUMENTED_RETURN_VALUE) =
             _RETURN_VALUE_EVENT +
-            RETURN_VALUE;
+            _RETURN_VALUE;
 
         inst(GET_AITER, (obj -- iter)) {
             unaryfunc getter = NULL;
@@ -1434,7 +1440,7 @@ dummy_func(
             _SEND_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(YIELD_VALUE, (retval -- value)) {
+        op(_YIELD_VALUE, (retval -- value)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1470,6 +1476,10 @@ dummy_func(
             LLTRACE_RESUME_FRAME();
         }
 
+        macro(YIELD_VALUE) =
+            _RECORD_CALLER_CODE +
+            _YIELD_VALUE;
+
         tier1 op(_YIELD_VALUE_EVENT, (val -- val)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
@@ -1485,7 +1495,7 @@ dummy_func(
 
         macro(INSTRUMENTED_YIELD_VALUE) =
             _YIELD_VALUE_EVENT +
-            YIELD_VALUE;
+            _YIELD_VALUE;
 
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -2445,6 +2455,7 @@ dummy_func(
 
         macro(LOAD_ATTR_INSTANCE_VALUE) =
             unused/1 + // Skip over the counter
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
             _LOAD_ATTR_INSTANCE_VALUE +
@@ -2526,6 +2537,7 @@ dummy_func(
 
         macro(LOAD_ATTR_WITH_HINT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_WITH_HINT +
             POP_TOP +
@@ -2551,6 +2563,7 @@ dummy_func(
 
         macro(LOAD_ATTR_SLOT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
             POP_TOP +
@@ -2581,8 +2594,9 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
             unused/1 +
-            _CHECK_ATTR_CLASS +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
+            _CHECK_ATTR_CLASS +
             _LOAD_ATTR_CLASS +
             _PUSH_NULL_CONDITIONAL;
 
@@ -2604,8 +2618,9 @@ dummy_func(
 
         macro(LOAD_ATTR_PROPERTY) =
             unused/1 +
-            _CHECK_PEP_523 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
+            _CHECK_PEP_523 +
             unused/2 +
             _LOAD_ATTR_PROPERTY_FRAME +
             _SAVE_RETURN_OFFSET +
@@ -2715,6 +2730,7 @@ dummy_func(
 
         macro(STORE_ATTR_WITH_HINT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _STORE_ATTR_WITH_HINT +
             POP_TOP;
@@ -2735,6 +2751,7 @@ dummy_func(
 
         macro(STORE_ATTR_SLOT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _STORE_ATTR_SLOT +
             POP_TOP;
@@ -3021,7 +3038,7 @@ dummy_func(
                     oparg >>= 8;
                     insert_exec_at--;
                 }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg, NULL);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, stack_pointer, 0, NULL, oparg, NULL);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -3506,6 +3523,7 @@ dummy_func(
         }
 
         macro(FOR_ITER_GEN) =
+            _RECORD_NOS +
             unused/1 +
             _CHECK_PEP_523 +
             _FOR_ITER_GEN_FRAME +
@@ -3640,6 +3658,7 @@ dummy_func(
 
         macro(LOAD_ATTR_METHOD_WITH_VALUES) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
             _GUARD_KEYS_VERSION +
@@ -3658,6 +3677,7 @@ dummy_func(
 
         macro(LOAD_ATTR_METHOD_NO_DICT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             unused/2 +
             _LOAD_ATTR_METHOD_NO_DICT;
@@ -3672,6 +3692,7 @@ dummy_func(
 
         macro(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
             _GUARD_KEYS_VERSION +
@@ -3688,6 +3709,7 @@ dummy_func(
 
         macro(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             unused/2 +
             _LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
@@ -3711,6 +3733,7 @@ dummy_func(
 
         macro(LOAD_ATTR_METHOD_LAZY_DICT) =
             unused/1 +
+            _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_METHOD_LAZY_DICT +
             unused/1 +
@@ -3879,6 +3902,7 @@ dummy_func(
         }
 
         macro(CALL_PY_GENERAL) =
+            _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
@@ -3909,6 +3933,7 @@ dummy_func(
         }
 
         macro(CALL_BOUND_METHOD_GENERAL) =
+            _RECORD_BOUND_METHOD +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_METHOD_VERSION +
@@ -3948,6 +3973,7 @@ dummy_func(
         }
 
         macro(CALL_NON_PY_GENERAL) =
+            _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             unused/2 +
             _CHECK_IS_NOT_PY_CALLABLE +
@@ -4021,6 +4047,7 @@ dummy_func(
         }
 
         macro(CALL_BOUND_METHOD_EXACT_ARGS) =
+            _RECORD_BOUND_METHOD +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
@@ -4035,6 +4062,7 @@ dummy_func(
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
+            _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
@@ -4187,6 +4215,7 @@ dummy_func(
         }
 
         macro(CALL_ALLOC_AND_ENTER_INIT) =
+            _RECORD_CALLABLE +
             unused/1 +
             _CHECK_PEP_523 +
             _CHECK_AND_ALLOCATE_OBJECT +
@@ -4227,6 +4256,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_CLASS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_CLASS +
@@ -4262,6 +4292,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_O) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_O +
@@ -4294,6 +4325,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_FAST) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_FAST +
@@ -4320,6 +4352,7 @@ dummy_func(
         }
 
         macro(CALL_BUILTIN_FAST_WITH_KEYWORDS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_FAST_WITH_KEYWORDS +
@@ -4463,6 +4496,7 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_O) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_O +
@@ -4505,6 +4539,7 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
@@ -4543,6 +4578,7 @@ dummy_func(
         }
 
         macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
+            _RECORD_CALLABLE +
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_NOARGS +
@@ -4968,6 +5004,7 @@ dummy_func(
         }
 
         macro(CALL_EX_PY) =
+            _RECORD_4OS +
             unused/1 +
             _CHECK_PEP_523 +
             _MAKE_CALLARGS_A_TUPLE +
@@ -5037,7 +5074,7 @@ dummy_func(
             *ptr = attr;
         }
 
-        inst(RETURN_GENERATOR, (-- res)) {
+        op(_RETURN_GENERATOR, (-- res)) {
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -5059,6 +5096,10 @@ dummy_func(
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
         }
+
+        macro(RETURN_GENERATOR) =
+            _RECORD_CALLER_CODE +
+            _RETURN_GENERATOR;
 
         inst(BUILD_SLICE, (args[oparg] -- slice)) {
             PyObject *start_o = PyStackRef_AsPyObjectBorrow(args[0]);
@@ -5588,7 +5629,7 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg, previous_executor);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
@@ -5607,34 +5648,74 @@ dummy_func(
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(_PUSH_FRAME);
+            _Py_CODEUNIT *target = frame->instr_ptr;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(_PUSH_FRAME);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(YIELD_VALUE);
+            _Py_CODEUNIT *target = frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(YIELD_VALUE);
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(RETURN_VALUE);
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(RETURN_VALUE);
+                frame->instr_ptr += frame->return_offset;
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr +  IP_OFFSET_OF(RETURN_GENERATOR);
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += IP_OFFSET_OF(RETURN_GENERATOR);
+                frame->instr_ptr += frame->return_offset;
                 EXIT_IF(true);
+            }
+        }
+
+        /* Record ops for jit tracer.
+         *
+         * NOTE: These uops are NOPs for normal evaluation.
+         * They are only executed during trace recording */
+
+        tier2 op(_RECORD_TOS, (tos -- tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(tos));
+        }
+
+        tier2 op(_RECORD_TOS_TYPE, (tos -- tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(tos)));
+        }
+
+        tier2 op(_RECORD_NOS, (nos, tos -- nos, tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(nos));
+        }
+
+        tier2 op(_RECORD_4OS, (value, _3os, nos, tos -- value, _3os, nos, tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(value));
+        }
+
+        tier2 op(_RECORD_CALLABLE, (func, self, args[oparg] -- func, self, args[oparg])) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(func));
+        }
+
+        tier2 op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            if (Py_TYPE(callable_o) == &PyMethod_Type) {
+                PyObject *func = ((PyMethodObject *)callable_o)->im_func;
+                RECORD_VALUE(func);
+            }
+        }
+
+        tier2 op(_RECORD_CALLER_CODE, ( -- )) {
+            _PyInterpreterFrame *caller_frame = frame->previous;
+            if (caller_frame->owner < FRAME_OWNED_BY_INTERPRETER) {
+                PyCodeObject *code = _PyFrame_GetCode(frame->previous);
+                RECORD_VALUE(code);
             }
         }
 
@@ -5802,6 +5883,9 @@ dummy_func(
                 opcode == INTERPRETER_EXIT ||
                 (opcode >= MIN_INSTRUMENTED_OPCODE && opcode != ENTER_EXECUTOR)
             );
+            _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+            _PyJitTracerState *tracer = _tstate->jit_tracer_state;
+            assert(tracer != NULL);
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             if (full) {
                 LEAVE_TRACING();
@@ -5809,13 +5893,7 @@ dummy_func(
                 ERROR_IF(err < 0);
                 DISPATCH();
             }
-            // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
-            // in the optimizer. So we have to reflect in the trace correctly.
-            _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-            // JIT should have disabled super instructions, as we can
-            // do these optimizations ourselves in the JIT.
-            _PyJitTracerState *tracer = _tstate->jit_tracer_state;
-            assert(tracer != NULL);
+            Py_CLEAR(tracer->prev_state.recorded_value);
             tracer->prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (tracer->prev_state.instr_code != (PyCodeObject *)prev_code) {
@@ -5827,6 +5905,12 @@ dummy_func(
             tracer->prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
+            }
+
+            uint8_t record_func_index = _PyOpcode_RecordFunctionIndices[opcode];
+            if (record_func_index) {
+                _Py_RecordFuncPtr doesnt_escape = _PyOpcode_RecordFunctions[record_func_index];
+                doesnt_escape(frame, stack_pointer, oparg, &tracer->prev_state.recorded_value);
             }
             DISPATCH_GOTO_NON_TRACING();
 #else
