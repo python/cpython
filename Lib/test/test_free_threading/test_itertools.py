@@ -100,7 +100,7 @@ class ItertoolsThreading(unittest.TestCase):
             barrier.wait()
             while True:
                 try:
-                    v = next(it)
+                    next(it)
                 except StopIteration:
                     break
 
