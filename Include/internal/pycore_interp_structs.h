@@ -1006,6 +1006,11 @@ struct _is {
 #endif
 #endif
 
+    struct {
+        _PyRWMutex lock;
+        Py_ssize_t countdown;
+    } finalization_guards;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     // _initial_thread should be the last field of PyInterpreterState.

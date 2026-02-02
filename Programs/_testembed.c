@@ -2595,6 +2595,95 @@ test_gilstate_after_finalization(void)
     return PyThread_detach_thread(handle);
 }
 
+
+const char *THREAD_CODE = \
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
+
+typedef struct {
+    PyInterpreterGuard guard;
+    int done;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyThreadView refs[4];
+    refs[0] = PyThreadState_Ensure(data->guard);
+    refs[1] = PyThreadState_Ensure(data->guard);
+    refs[2] = PyThreadState_Ensure(data->guard);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    refs[3] = PyThreadState_Ensure(data->guard);
+    assert(refs[0] != 0);
+    assert(refs[1] != 0);
+    assert(refs[2] != 0);
+    assert(refs[3] != 0);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    PyThreadState_Release(refs[3]);
+    PyGILState_Release(gstate);
+    PyThreadState_Release(refs[2]);
+    PyThreadState_Release(refs[1]);
+    PyThreadState_Release(refs[0]);
+    PyInterpreterGuard_Release(data->guard);
+    data->done = 1;
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_initialize();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterGuard guard = PyInterpreterGuard_FromCurrent();
+    if (guard == 0) {
+        return -1;
+    };
+    ThreadData data = { guard };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterGuard_Release(guard);
+        return -1;
+    }
+    // We hold an interpreter guard, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
+    Py_Finalize();
+    assert(data.done == 1);
+    return 0;
+}
+
+static int
+test_main_interpreter_view(void)
+{
+    _testembed_initialize();
+
+    // Main interpreter is initialized and ready.
+    PyInterpreterView view = PyUnstable_InterpreterView_FromDefault();
+    assert(view != 0);
+
+    PyInterpreterGuard guard = PyInterpreterGuard_FromView(view);
+    assert(guard != 0);
+    PyInterpreterGuard_Release(guard);
+
+    Py_Finalize();
+
+    // We shouldn't be able to get locks for the interpreter now
+    guard = PyInterpreterGuard_FromView(view);
+    assert(guard == 0);
+
+    PyInterpreterView_Close(view);
+
+    return 0;
+}
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -2687,6 +2776,8 @@ static struct TestCase TestCases[] = {
     {"test_create_module_from_initfunc", test_create_module_from_initfunc},
     {"test_inittab_submodule_multiphase", test_inittab_submodule_multiphase},
     {"test_inittab_submodule_singlephase", test_inittab_submodule_singlephase},
+    {"test_thread_state_ensure", test_thread_state_ensure},
+    {"test_main_interpreter_view", test_main_interpreter_view},
     {NULL, NULL}
 };
 
