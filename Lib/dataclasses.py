@@ -431,28 +431,6 @@ def _tuple_str(obj_name, fields):
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
 
-# NOTE: This is a (simplified) vendored copy of `inspect.unwrap` to speed up import time
-def _unwrap(func):
-    """Get the object wrapped by *func*.
-
-   Follows the chain of :attr:`__wrapped__` attributes returning the last
-   object in the chain.
-
-   :exc:`ValueError` is raised if a cycle is encountered.
-    """
-    f = func  # remember the original func for error reporting
-    # Memoise by id to tolerate non-hashable objects, but store objects to
-    # ensure they aren't destroyed, which would allow their IDs to be reused.
-    memo = {id(f): f}
-    recursion_limit = sys.getrecursionlimit()
-    while not isinstance(func, type) and hasattr(func, '__wrapped__'):
-        func = func.__wrapped__
-        id_func = id(func)
-        if (id_func in memo) or (len(memo) >= recursion_limit):
-            raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
-        memo[id_func] = func
-    return func
-
 
 class _FuncBuilder:
     def __init__(self, globals):
@@ -1009,6 +987,7 @@ class AutoDocstring:
     """
 
     def __get__(self, _obj, cls):
+        # TODO: Make this top-level lazy import once PEP810 lands
         import inspect
 
         try:
@@ -1410,8 +1389,12 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # make an update, since all closures for a class will share a
     # given cell.
     for member in newcls.__dict__.values():
+
         # If this is a wrapped function, unwrap it.
-        member = _unwrap(member)
+        if not isinstance(member, type) and hasattr(member, '__wrapped__'):
+            # TODO: Make this top-level lazy import once PEP810 lands
+            import inspect
+            member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):
