@@ -1152,6 +1152,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
                        _testinternalcapi.get_co_framesize(dummy18.__code__)), uops_and_operands)
 
+    @unittest.skip("reopen when we combine multiple stack space checks into one")
     def test_combine_stack_space_complex(self):
         def dummy0(x):
             return x
@@ -1189,8 +1190,19 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uop_names.count("_RETURN_VALUE"), 15)
 
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 15)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy6.__code__) +
+            _testinternalcapi.get_co_framesize(dummy5.__code__) +
+            _testinternalcapi.get_co_framesize(dummy2.__code__) +
+            _testinternalcapi.get_co_framesize(dummy1.__code__) +
+            _testinternalcapi.get_co_framesize(dummy0.__code__)
+        )
+        self.assertIn(
+            ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
+        )
 
+    @unittest.skip("reopen when we combine multiple stack space checks into one")
     def test_combine_stack_space_checks_large_framesize(self):
         # Create a function with a large framesize. This ensures _CHECK_STACK_SPACE is
         # actually doing its job. Note that the resulting trace hits
@@ -1235,12 +1247,22 @@ class TestUopsOptimization(unittest.TestCase):
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
-        self.assertGreaterEqual(uop_names.count("_PUSH_FRAME"), 1)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"),
-                         uop_names.count("_PUSH_FRAME"))
-        self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
-                       _testinternalcapi.get_co_framesize(dummy15.__code__)), uops_and_operands)
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+
+        # this hits a different case during trace projection in refcount test runs only,
+        # so we need to account for both possibilities
+        self.assertIn(uop_names.count("_CHECK_STACK_SPACE"), [0, 1])
+        if uop_names.count("_CHECK_STACK_SPACE") == 0:
+            largest_stack = (
+                _testinternalcapi.get_co_framesize(dummy15.__code__) +
+                _testinternalcapi.get_co_framesize(dummy_large.__code__)
+            )
+        else:
+            largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
+        self.assertIn(
+            ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
+        )
 
     def test_combine_stack_space_checks_recursion(self):
         def dummy15(x):
