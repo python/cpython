@@ -2383,41 +2383,45 @@ class TestParser(TestParserMixin, TestEmailBase):
             label='from_test_get_atext',
             )(params_test_get_atext),
 
+        test_get_dot_atom_text_only = C(
+            'foo.bar.bang', 'foo.bar.bang', 'foo.bar.bang', [], '')
+            ,
+
+        test_get_dot_atom_text_raises_on_leading_dot = C(
+                                     '.foo.bar',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
+
+        test_get_dot_atom_text_raises_on_trailing_dot = C(
+                                     'foo.bar.',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
+
+        test_get_dot_atom_text_raises_on_leading_wsp = C(
+                                     ' foo.bar',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
+
+        test_get_dot_atom_text_raises_on_leading_at = C(
+                                     '@foo.bar',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
+
+        test_get_dot_atom_text_raises_on_leading_dquote = C(
+                                     '"foo.bar"',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
+
+        test_get_dot_atom_text_trailing_text_preserved = C(
+            'foo@bar', 'foo', 'foo', [], '@bar')
+            ,
+
+        test_get_dot_atom_text_trailing_ws_preserved = C(
+            'foo .bar', 'foo', 'foo', [], ' .bar')
+            ,
+
         )
 
-    def test_get_dot_atom_text_only(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo.bar.bang', 'foo.bar.bang', 'foo.bar.bang', [], '')
-        self.assertEqual(dot_atom_text.token_type, 'dot-atom-text')
-        self.assertEqual(len(dot_atom_text), 5)
-
-    def test_get_dot_atom_text_raises_on_leading_dot(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('.foo.bar')
-
-    def test_get_dot_atom_text_raises_on_trailing_dot(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('foo.bar.')
-
-    def test_get_dot_atom_text_raises_on_leading_wsp(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text(' foo.bar')
-
-    def test_get_dot_atom_text_raises_on_leading_at(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('@foo.bar')
-
-    def test_get_dot_atom_text_raises_on_leading_dquote(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom_text('"foo.bar"')
-
-    def test_get_dot_atom_text_trailing_text_preserved(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo@bar', 'foo', 'foo', [], '@bar')
-
-    def test_get_dot_atom_text_trailing_ws_preserved(self):
-        dot_atom_text = self._test_get_x(parser.get_dot_atom_text,
-            'foo .bar', 'foo', 'foo', [], ' .bar')
 
     # get_dot_atom
 
