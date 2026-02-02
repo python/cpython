@@ -55,8 +55,8 @@ Note that holding an :term:`attached thread state` is not required for these API
    Open the ``/tmp/perf-$pid.map`` file and append the content of *parent_filename*
    to it.
 
-   This function is only available on platforms that support perf maps (currently
-   Linux). Return ``0`` on success, ``-1`` on failure.
+   This function is available on all platforms but only generates output on platforms
+   that support perf maps (currently only Linux). On other platforms, it does nothing.
 
    .. versionadded:: 3.13
 
