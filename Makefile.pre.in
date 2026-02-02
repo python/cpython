@@ -2149,7 +2149,7 @@ Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 .PHONY: regen-cases
 regen-cases: \
         regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
-		regen-generated-cases regen-executor-cases regen-optimizer-cases \
+		regen-generated-cases regen-executor-cases regen-optimizer-cases regen-record-functions \
 		regen-opcode-metadata regen-uop-metadata regen-test-cases regen-test-opcode-targets
 
 .PHONY: regen-opcode-ids
@@ -2181,6 +2181,12 @@ regen-generated-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+
+.PHONY: regen-record-functions
+regen-record-functions:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/record_function_generator.py \
+	    -o $(srcdir)/Python/record_functions.c.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/record_functions.c.h $(srcdir)/Python/record_functions.c.h.new
 
 .PHONY: regen-test-cases
 regen-test-cases:
@@ -2234,7 +2240,8 @@ Python/ceval.o: \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
 		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Python/opcode_targets.h
+		$(srcdir)/Python/opcode_targets.h \
+		$(srcdir)/Python/record_functions.c.h
 
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h

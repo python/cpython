@@ -177,6 +177,7 @@ dummy_func(void) {
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
         assert(type_version);
+        assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
         } else {
