@@ -2011,6 +2011,8 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
 #define BLACK "#000000"
 #define LOOP "#00c000"
 
+#ifdef Py_STATS
+
 static const char *COLORS[10] = {
     "9",
     "8",
@@ -2023,8 +2025,6 @@ static const char *COLORS[10] = {
     "1",
     WHITE,
 };
-
-#ifdef Py_STATS
 const char *
 get_background_color(_PyUOpInstruction const *inst, uint64_t max_hotness)
 {
