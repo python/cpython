@@ -786,6 +786,14 @@ class TestTranforms(BytecodeTestCase):
                 self.assertNotInBytecode(code, "SWAP")
 
     def test_static_swaps_match_class(self):
+        swaps = {
+            "C(a=a, b=_, c=_)",
+            "C(a=a, b=_, c=c)",
+            "C(a=a, b=b, c=_)",
+            "C(a=a, b=b, c=c)",
+            "C(a=_, b=b, c=_)",
+            "C(a=_, b=b, c=c)",
+        }
         forms = [
             "C({}, {}, {})",
             "C({}, {}, c={})",
@@ -797,7 +805,12 @@ class TestTranforms(BytecodeTestCase):
                 pattern = form.format(a, b, c)
                 with self.subTest(pattern):
                     code = compile_pattern_with_fast_locals(pattern)
-                    self.assertNotInBytecode(code, "SWAP")
+                    if pattern in swaps:
+                        # Swaps are expected here. Class patterns without
+                        # positional sub-patterns are evaluated depth first.
+                        self.assertInBytecode(code, "SWAP")
+                    else:
+                        self.assertNotInBytecode(code, "SWAP")
 
     def test_static_swaps_match_sequence(self):
         swaps = {"*_, b, c", "a, *_, c", "a, b, *_"}
