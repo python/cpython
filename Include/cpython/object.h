@@ -295,10 +295,10 @@ PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
-PyAPI_FUNC(void) PyUnstable_Object_Dump(PyObject *);
+PyAPI_FUNC(void) PyObject_Dump(PyObject *);
 
 // Alias for backward compatibility
-#define _PyObject_Dump PyUnstable_Object_Dump
+#define _PyObject_Dump PyObject_Dump
 
 Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
@@ -391,7 +391,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
    but compile away to nothing if NDEBUG is defined.
 
    However, before aborting, Python will also try to call
-   PyUnstable_Object_Dump() on the given object. This may be of use when
+   PyObject_Dump() on the given object. This may be of use when
    investigating bugs in which a particular object is corrupt (e.g. buggy a
    tp_visit method in an extension module breaking the garbage collector), to
    help locate the broken objects.

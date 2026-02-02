@@ -25,14 +25,6 @@ class BaseExceptionGroup "PyBaseExceptionGroupObject *" "&PyExc_BaseExceptionGro
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b7c45e78cff8edc3]*/
 
 
-/* Compatibility aliases */
-PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
-PyObject *PyExc_IOError = NULL;  // borrowed ref
-#ifdef MS_WINDOWS
-PyObject *PyExc_WindowsError = NULL;  // borrowed ref
-#endif
-
-
 static struct _Py_exc_state*
 get_exc_state(void)
 {
@@ -2528,6 +2520,13 @@ MiddlingExtendsException(PyExc_OSError, ProcessLookupError, OSError,
 MiddlingExtendsException(PyExc_OSError, TimeoutError, OSError,
                          "Timeout expired.");
 
+/* Compatibility aliases */
+PyObject *PyExc_EnvironmentError = (PyObject *)&_PyExc_OSError;  // borrowed ref
+PyObject *PyExc_IOError = (PyObject *)&_PyExc_OSError;  // borrowed ref
+#ifdef MS_WINDOWS
+PyObject *PyExc_WindowsError = (PyObject *)&_PyExc_OSError;  // borrowed ref
+#endif
+
 /*
  *    EOFError extends Exception
  */
@@ -4599,23 +4598,17 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     if (PyDict_SetItemString(mod_dict, "ExceptionGroup", PyExc_ExceptionGroup)) {
         return -1;
     }
-
-#define INIT_ALIAS(NAME, TYPE) \
-    do { \
-        PyExc_ ## NAME = PyExc_ ## TYPE; \
-        if (PyDict_SetItemString(mod_dict, # NAME, PyExc_ ## TYPE)) { \
-            return -1; \
-        } \
-    } while (0)
-
-    INIT_ALIAS(EnvironmentError, OSError);
-    INIT_ALIAS(IOError, OSError);
+    if (PyDict_SetItemString(mod_dict, "EnvironmentError", PyExc_OSError)) {
+        return -1;
+    }
+    if (PyDict_SetItemString(mod_dict, "IOError", PyExc_OSError)) {
+        return -1;
+    }
 #ifdef MS_WINDOWS
-    INIT_ALIAS(WindowsError, OSError);
+    if (PyDict_SetItemString(mod_dict, "WindowsError", PyExc_OSError)) {
+        return -1;
+    }
 #endif
-
-#undef INIT_ALIAS
-
     return 0;
 }
 

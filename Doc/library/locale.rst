@@ -370,8 +370,6 @@ The :mod:`locale` module defines the following exception and functions:
    determined.
    The "C" locale is represented as ``(None, None)``.
 
-   .. deprecated-removed:: 3.11 3.15
-
 
 .. function:: getlocale(category=LC_CTYPE)
 

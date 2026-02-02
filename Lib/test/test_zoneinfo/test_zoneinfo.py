@@ -252,6 +252,8 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
         bad_zones = [
             b"",  # Empty file
             b"AAAA3" + b" " * 15,  # Bad magic
+            # Truncated V2 file (should not loop indefinitely)
+            b"TZif2" + (b"\x00" * 39) + b"TZif2" + (b"\x00" * 39) + b"\n" + b"Part",
         ]
 
         for bad_zone in bad_zones:

@@ -15,35 +15,11 @@ let coldCodeHidden = false;
 // ============================================================================
 
 function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('heatmap-theme', next);
-
-    // Update theme button icon
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
-        btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
-    }
+    toggleAndSaveTheme();
     applyLineColors();
 
     // Rebuild scroll marker with new theme colors
     buildScrollMarker();
-}
-
-function restoreUIState() {
-    // Restore theme
-    const savedTheme = localStorage.getItem('heatmap-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const btn = document.getElementById('theme-btn');
-        if (btn) {
-            btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
-            btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
-        }
-    }
 }
 
 // ============================================================================
@@ -601,10 +577,12 @@ function populateBytecodePanel(panel, button) {
         else if (specPct >= 33) specClass = 'medium';
 
         // Build specialization summary
+        const instruction_word = instructions.length === 1 ? 'instruction' : 'instructions';
+        const sample_word = totalSamples === 1 ? 'sample' : 'samples';
         let html = `<div class="bytecode-spec-summary ${specClass}">
             <span class="spec-pct">${specPct}%</span>
             <span class="spec-label">specialized</span>
-            <span class="spec-detail">(${specializedCount}/${instructions.length} instructions, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} samples)</span>
+            <span class="spec-detail">(${specializedCount}/${instructions.length} ${instruction_word}, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} ${sample_word})</span>
         </div>`;
 
         html += '<div class="bytecode-header">' +
