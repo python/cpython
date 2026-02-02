@@ -556,7 +556,7 @@ module_from_def_and_spec(
 #undef DEF_SLOT_CASE
 #undef COPY_DEF_SLOT
 #undef COPY_NONDEF_SLOT
-#undef _COPY_COMMON_SLOT
+#undef COPY_NONNULL_SLOT
     }
 
 #ifdef Py_GIL_DISABLED
