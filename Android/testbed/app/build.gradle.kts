@@ -94,10 +94,13 @@ android {
         }
 
         // This controls the API level of the maxVersion managed emulator, which is used
-        // by CI and cibuildwheel. 34 takes up too much disk space (#142289), 35 has
-        // issues connecting to the internet (#142387), and 36 and later are not
-        // available as aosp_atd images yet.
-        targetSdk = 33
+        // by CI and cibuildwheel.
+        //  * 33 has excessive buffering in the logcat client
+        //    (https://cs.android.com/android/_/android/platform/system/logging/+/d340721894f223327339010df59b0ac514308826).
+        //  * 34 consumes too much disk space on GitHub Actions (#142289).
+        //  * 35 has issues connecting to the internet (#142387).
+        //  * 36 and later are not available as aosp_atd images yet.
+        targetSdk = 32
 
         versionCode = 1
         versionName = "1.0"
