@@ -2550,6 +2550,8 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
+      >>> 'spam, spam, spam'.rindex('spam')
+      12
       >>> 'spam, spam, spam'.rindex('eggs')
       Traceback (most recent call last):
         File "<stdin-0>", line 1, in <module>
@@ -2740,7 +2742,7 @@ expression support in the :mod:`re` module).
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
    If omitted or ``None``, the *chars* argument defaults to removing whitespace.
-   The *chars* argument is not a prefix or suffix; rather, all combinations of its
+   The *chars* argument is not a prefix or suffix; rather, all comrbinations of its
    values are stripped::
 
       >>> '   spacious   '.strip()
