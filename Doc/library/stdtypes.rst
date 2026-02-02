@@ -2163,6 +2163,8 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
+      >>> 'spam, spam, spam'.index('spam')
+      0
       >>> 'spam, spam, spam'.index('eggs')
       Traceback (most recent call last):
         File "<python-input-0>", line 1, in <module>
