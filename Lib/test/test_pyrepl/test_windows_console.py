@@ -41,6 +41,7 @@ class WindowsConsoleTests(TestCase):
         console._hide_cursor = MagicMock()
         console._show_cursor = MagicMock()
         console._getscrollbacksize = MagicMock(42)
+        console._has_wrapped_to_next_row = MagicMock(return_value=False)
         console.out = MagicMock()
 
         height = kwargs.get("height", 25)

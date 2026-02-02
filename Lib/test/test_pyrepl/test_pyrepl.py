@@ -2205,28 +2205,3 @@ class TestHasWrappedToNextRow(TestCase):
         with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi), \
              patch.object(wc, "OutHandle", 1):
             self.assertIs(con._has_wrapped_to_next_row(y), False)
-
-    def test_returns_none_on_invalid_handle(self):
-        con, wc = self._make_console_like(offset=0)
-        y = 3
-
-        def fake_gcsbi(_h, info):
-            return False
-
-        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi), \
-             patch.object(wc, "OutHandle", 1), \
-             patch.object(wc, "get_last_error", return_value=6):  # ERROR_INVALID_HANDLE
-            self.assertIs(con._has_wrapped_to_next_row(y), None)
-
-    def test_raises_on_unexpected_error(self):
-        con, wc = self._make_console_like(offset=0)
-        y = 3
-
-        def fake_gcsbi(_h, info):
-            return False
-
-        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi), \
-             patch.object(wc, "OutHandle", 1), \
-             patch.object(wc, "get_last_error", return_value=5):  # ERROR_ACCESS_DENIED
-            with self.assertRaises(OSError):
-                con._has_wrapped_to_next_row(y)

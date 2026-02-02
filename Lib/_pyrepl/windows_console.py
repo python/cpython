@@ -247,14 +247,9 @@ class WindowsConsole(Console):
         if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
-    def _has_wrapped_to_next_row(self, y: int) -> bool | None:
+    def _has_wrapped_to_next_row(self, y: int) -> bool:
         """
-        Return whether the real console cursor wrapped to the next row.
-
-        Returns:
-            True  - cursor wrapped to the next visible row
-            False - cursor did not wrap
-            None  - cannot query the real cursor position (e.g. invalid handle)
+        Return True if the real console cursor wrapped to the next visible row.
         """
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
