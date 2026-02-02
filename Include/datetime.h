@@ -197,7 +197,7 @@ typedef struct {
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
 static inline PyDateTime_CAPI *
-PyDateTime_IMPORT(void) {
+_PyDateTime_IMPORT(void) {
     PyDateTime_CAPI *val = _Py_atomic_load_ptr(&PyDateTimeAPI);
     if (val == NULL) {
         PyDateTime_CAPI *capi = (PyDateTime_CAPI *)PyCapsule_Import(
@@ -211,6 +211,8 @@ PyDateTime_IMPORT(void) {
     }
     return val;
 }
+
+#define PyDateTime_IMPORT _PyDateTime_IMPORT()
 
 /* Macro for access to the UTC singleton */
 #define PyDateTime_TimeZone_UTC PyDateTimeAPI->TimeZone_UTC
