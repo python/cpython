@@ -1,6 +1,6 @@
 import unittest
 from threading import Thread, Barrier
-from itertools import batched, chain, cycle
+from itertools import batched, chain, combinations_with_replacement, cycle
 from test.support import threading_helper
 
 
@@ -89,6 +89,32 @@ class ItertoolsThreading(unittest.TestCase):
 
             barrier.reset()
 
+    @threading_helper.reap_threads
+    def test_combinations_with_replacement(self):
+        number_of_threads = 6
+        number_of_iterations = 100
+        data = tuple(range(3))
+
+        barrier = Barrier(number_of_threads)
+        def work(it):
+            barrier.wait()
+            while True:
+                try:
+                    v = next(it)
+                except StopIteration:
+                    break
+
+        for _ in range(number_of_iterations):
+            cwr_iterator = combinations_with_replacement(data, 2)
+            worker_threads = []
+            for _ in range(number_of_threads):
+                worker_threads.append(
+                    Thread(target=work, args=[cwr_iterator]))
+
+            with threading_helper.start_threads(worker_threads):
+                pass
+
+            barrier.reset()
 
 
 if __name__ == "__main__":
