@@ -1561,31 +1561,39 @@ _PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
     if (!PyModule_Check(module) ||
         ((PyModuleObject *)module)->md_requires_gil)
     {
-        if (_PyEval_EnableGILPermanent(tstate)) {
-            int warn_result = PyErr_WarnFormat(
-                PyExc_RuntimeWarning,
-                1,
-                "The global interpreter lock (GIL) has been enabled to load "
-                "module '%U', which has not declared that it can run safely "
-                "without the GIL. To override this behavior and keep the GIL "
-                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
-                module_name
-            );
-            if (warn_result < 0) {
-                return warn_result;
-            }
+        if (PyModule_Check(module)) {
+            assert(((PyModuleObject *)module)->md_token_is_def);
         }
-
-        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
-            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
-                               module_name);
+        if (_PyImport_EnableGILAndWarn(tstate, module_name) < 0) {
+            return -1;
         }
     }
     else {
         _PyEval_DisableGIL(tstate);
     }
 
+    return 0;
+}
+
+int
+_PyImport_EnableGILAndWarn(PyThreadState *tstate, PyObject *module_name)
+{
+    if (_PyEval_EnableGILPermanent(tstate)) {
+        return PyErr_WarnFormat(
+            PyExc_RuntimeWarning,
+            1,
+            "The global interpreter lock (GIL) has been enabled to load "
+            "module '%U', which has not declared that it can run safely "
+            "without the GIL. To override this behavior and keep the GIL "
+            "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+            module_name
+        );
+    }
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+        PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                            module_name);
+    }
     return 0;
 }
 #endif
@@ -1995,7 +2003,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
         if (!PyErr_Occurred()) {
             PyErr_Format(
                 PyExc_SystemError,
-                "slot export function for module %s failed without setting an exception",
+                "module export hook for module %R failed without setting an exception",
                 info->name);
         }
         return NULL;
@@ -2003,7 +2011,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
     if (PyErr_Occurred()) {
         PyErr_Format(
             PyExc_SystemError,
-            "slot export function for module %s raised unreported exception",
+            "module export hook for module %R raised unreported exception",
             info->name);
     }
     PyObject *result = PyModule_FromSlotsAndSpec(slots, spec);
@@ -2375,12 +2383,12 @@ is_builtin(PyObject *name)
     return 0;
 }
 
-static PyModInitFunction
-lookup_inittab_initfunc(const struct _Py_ext_module_loader_info* info)
+static struct _inittab*
+lookup_inittab_entry(const struct _Py_ext_module_loader_info* info)
 {
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(info->name, p->name)) {
-            return (PyModInitFunction)p->initfunc;
+            return p;
         }
     }
     // not found
@@ -2422,16 +2430,28 @@ create_builtin(
         _extensions_cache_delete(info.path, info.name);
     }
 
-    PyModInitFunction p0 = initfunc;
-    if (p0 == NULL) {
-        p0 = lookup_inittab_initfunc(&info);
-        if (p0 == NULL) {
-            /* Cannot re-init internal module ("sys" or "builtins") */
-            assert(is_core_module(tstate->interp, info.name, info.path));
-            mod = import_add_module(tstate, info.name);
+    PyModInitFunction p0 = NULL;
+    if (initfunc == NULL) {
+        struct _inittab *entry = lookup_inittab_entry(&info);
+        if (entry == NULL) {
+            mod = NULL;
+            _PyErr_SetModuleNotFoundError(name);
             goto finally;
         }
+
+        p0 = (PyModInitFunction)entry->initfunc;
     }
+    else {
+        p0 = initfunc;
+    }
+
+    if (p0 == NULL) {
+        /* Cannot re-init internal module ("sys" or "builtins") */
+        assert(is_core_module(tstate->interp, info.name, info.path));
+        mod = import_add_module(tstate, info.name);
+        goto finally;
+    }
+
 
 #ifdef Py_GIL_DISABLED
     // This call (and the corresponding call to _PyImport_CheckGILForModule())
@@ -3819,7 +3839,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *abs_name = NULL;
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
-    PyObject *package = NULL;
     PyInterpreterState *interp = tstate->interp;
     int has_from;
 
@@ -3948,7 +3967,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
   error:
     Py_XDECREF(abs_name);
     Py_XDECREF(mod);
-    Py_XDECREF(package);
     if (final_mod == NULL) {
         remove_importlib_frames(tstate);
     }
@@ -4412,6 +4430,12 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
+    if (PyUnicode_GetLength(name) == 0) {
+        PyErr_Format(PyExc_ValueError, "name must not be empty");
+        Py_DECREF(name);
+        return NULL;
+    }
+
     PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_DECREF(name);
     return mod;
@@ -4738,6 +4762,7 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
+    FILE *fp = NULL;
     PyObject *mod = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
@@ -4780,15 +4805,11 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     /* We would move this (and the fclose() below) into
      * _PyImport_GetModuleExportHooks(), but it isn't clear if the intervening
      * code relies on fp still being open. */
-    FILE *fp;
     if (file != NULL) {
         fp = Py_fopen(info.filename, "r");
         if (fp == NULL) {
             goto finally;
         }
-    }
-    else {
-        fp = NULL;
     }
 
     PyModInitFunction p0 = NULL;
@@ -4796,7 +4817,9 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     _PyImport_GetModuleExportHooks(&info, fp, &p0, &ex0);
     if (ex0) {
         mod = import_run_modexport(tstate, ex0, &info, spec);
-        goto cleanup;
+        // Modules created from slots handle GIL enablement (Py_mod_gil slot)
+        // when they're created.
+        goto finally;
     }
     if (p0 == NULL) {
         goto finally;
@@ -4819,13 +4842,10 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 #endif
 
-cleanup:
-    // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
-    if (fp) {
+finally:
+    if (fp != NULL) {
         fclose(fp);
     }
-
-finally:
     _Py_ext_module_loader_info_clear(&info);
     return mod;
 }

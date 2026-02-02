@@ -1,4 +1,0 @@
-Fix inferring *dest* from a single-dash long option in :mod:`argparse`. If a
-short option and a single-dash long option are passed to
-:meth:`!add_argument`, *dest* is now inferred from the single-dash long
-option.

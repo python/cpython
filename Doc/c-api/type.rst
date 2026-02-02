@@ -283,8 +283,8 @@ Type Objects
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
    are not necessarily defined in the same module as their superclass.
    See :c:type:`PyCMethod` to get the class that defines the method.
-   See :c:func:`PyType_GetModuleByDef` for cases when :c:type:`!PyCMethod` cannot
-   be used.
+   See :c:func:`PyType_GetModuleByToken` for cases when :c:type:`!PyCMethod`
+   cannot be used.
 
    .. versionadded:: 3.9
 
@@ -304,10 +304,10 @@ Type Objects
    .. versionadded:: 3.9
 
 
-.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+.. c:function:: PyObject* PyType_GetModuleByToken(PyTypeObject *type, const void *mod_token)
 
-   Find the first superclass whose module was created from
-   the given :c:type:`PyModuleDef` *def*, and return that module.
+   Find the first superclass whose module has the given
+   :ref:`module token <ext-module-token>`, and return that module.
 
    If no module is found, raises a :py:class:`TypeError` and returns ``NULL``.
 
@@ -317,6 +317,23 @@ Type Objects
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
 
+   .. versionadded:: 3.15
+
+
+.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+
+   Find the first superclass whose module was created from the given
+   :c:type:`PyModuleDef` *def*, or whose :ref:`module token <ext-module-token>`
+   is equal to *def*, and return that module.
+
+   Note that modules created from a :c:type:`PyModuleDef` always have their
+   token set to the :c:type:`PyModuleDef`'s address.
+   In other words, this function is equivalent to
+   :c:func:`PyType_GetModuleByToken`, except that it:
+
+   - returns a borrowed reference, and
+   - has a non-``void*`` argument type (which is a cosmetic difference in C).
+
    The returned reference is :term:`borrowed <borrowed reference>` from *type*,
    and will be valid as long as you hold a reference to *type*.
    Do not release it with :c:func:`Py_DECREF` or similar.
@@ -324,10 +341,10 @@ Type Objects
    .. versionadded:: 3.11
 
 
-.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *tp_token, PyTypeObject **result)
 
    Find the first superclass in *type*'s :term:`method resolution order` whose
-   :c:macro:`Py_tp_token` token is equal to the given one.
+   :c:macro:`Py_tp_token` token is equal to *tp_token*.
 
    * If found, set *\*result* to a new :term:`strong reference`
      to it and return ``1``.
@@ -338,7 +355,7 @@ Type Objects
    The *result* argument may be ``NULL``, in which case *\*result* is not set.
    Use this if you need only the return value.
 
-   The *token* argument may not be ``NULL``.
+   The *tp_token* argument may not be ``NULL``.
 
    .. versionadded:: 3.14
 

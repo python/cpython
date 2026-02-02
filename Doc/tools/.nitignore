@@ -6,7 +6,6 @@ Doc/c-api/descriptor.rst
 Doc/c-api/float.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
-Doc/c-api/module.rst
 Doc/c-api/stable.rst
 Doc/c-api/typeobj.rst
 Doc/library/ast.rst
@@ -24,7 +23,6 @@ Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/pickletools.rst
-Doc/library/profile.rst
 Doc/library/pyexpat.rst
 Doc/library/select.rst
 Doc/library/socket.rst
