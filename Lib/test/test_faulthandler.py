@@ -388,12 +388,11 @@ class FaultHandlerTests(unittest.TestCase):
 
     @skip_segfault_on_android
     def test_dump_ext_modules(self):
-        # Disable sys.stdlib_module_names
+        # Don't filter stdlib module names: disable sys.stdlib_module_names
         code = """
             import faulthandler
             import sys
             import math
-            # Don't filter stdlib module names
             sys.stdlib_module_names = frozenset()
             faulthandler.enable()
             faulthandler._sigsegv()
@@ -418,8 +417,7 @@ class FaultHandlerTests(unittest.TestCase):
             """
         stderr, exitcode = self.get_output(code)
         stderr = '\n'.join(stderr)
-        match = re.search(r'^Extension modules:', stderr, re.MULTILINE)
-        self.assertIsNone(match)
+        self.assertNotIn('Extension modules:', stderr)
 
     def test_is_enabled(self):
         orig_stderr = sys.stderr

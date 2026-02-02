@@ -3405,7 +3405,8 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
                     }
                     assert(key_len > len);
 
-                    // Ignore "math.integer" if key starts with "math."
+                    // Ignore sub-modules of stdlib packages. For example,
+                    // ignore "math.integer" if key starts with "math.".
                     Py_UCS4 ch = PyUnicode_ReadChar(key, len);
                     if (ch == '.') {
                         is_stdlib_ext = 1;

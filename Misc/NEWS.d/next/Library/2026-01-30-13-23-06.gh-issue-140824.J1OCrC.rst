@@ -1,3 +1,2 @@
 When :mod:`faulthandler` dumps the list of third-party extension modules,
-ignore ``math.integer`` sub-module since ``math`` package is part of
-:data:`sys.stdlib_module_names`. Patch by Victor Stinner.
+ignore sub-modules of stdlib packages. Patch by Victor Stinner.
