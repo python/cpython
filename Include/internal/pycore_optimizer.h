@@ -37,10 +37,15 @@ typedef struct _JitOptContext {
     // Arena for the symbolic types.
     ty_arena t_arena;
 
+    // Arena for the descriptor mappings.
+    descr_arena d_arena;
+
     JitOptRef *n_consumed;
     JitOptRef *limit;
     JitOptRef locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
     _PyJitUopBuffer out_buffer;
+    // Index of the last escaped uop in out_buffer.
+    int last_escape_index;
 } JitOptContext;
 
 
@@ -295,6 +300,9 @@ extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value,
 extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
 extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_descr_object(JitOptContext *ctx, unsigned int type_version);
+extern JitOptRef _Py_uop_sym_get_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index);
+extern JitOptRef _Py_uop_sym_set_attr(JitOptContext *ctx, JitOptRef ref, uint16_t slot_index, JitOptRef value);
 extern JitOptRef _Py_uop_sym_new_predicate(JitOptContext *ctx, JitOptRef lhs_ref, JitOptRef rhs_ref, JitOptPredicateKind kind);
 extern void _Py_uop_sym_apply_predicate_narrowing(JitOptContext *ctx, JitOptRef sym, bool branch_is_true);
 
