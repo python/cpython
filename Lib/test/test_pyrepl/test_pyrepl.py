@@ -2112,8 +2112,7 @@ class TestWindowsConsoleEolWrap(TestCase):
     """
     When a line exactly fills the terminal width, Windows consoles differ on
     whether the cursor immediately wraps to the next row (depends on host/mode).
-    We must synchronize our logical cursor position with the real console cursor
-    when possible, and degrade gracefully when it cannot be queried.
+    We use _has_wrapped_to_next_row() to determine the actual behavior.
     """
 
     def _make_console_like(self, *, width: int, offset: int, vt: bool):
@@ -2137,7 +2136,7 @@ class TestWindowsConsoleEolWrap(TestCase):
 
         return con, wc
 
-    def _run_exact_width_case(self, *, vt: bool, did_wrap: bool | None):
+    def _run_exact_width_case(self, *, vt: bool, did_wrap: bool):
         width = 10
         y = 3
         con, wc = self._make_console_like(width=width, offset=0, vt=vt)
@@ -2147,7 +2146,7 @@ class TestWindowsConsoleEolWrap(TestCase):
             new = "a" * width
             wc.WindowsConsole._WindowsConsole__write_changed_line(con, y, old, new, 0)
 
-        if did_wrap is True:
+        if did_wrap:
             self.assertEqual(con.posxy, (0, y + 1))
             self.assertNotIn((0, y + 1), [c.args for c in con._move_relative.mock_calls])
         else:
@@ -2163,12 +2162,6 @@ class TestWindowsConsoleEolWrap(TestCase):
         for vt in (True, False):
             with self.subTest(vt=vt):
                 self._run_exact_width_case(vt=vt, did_wrap=False)
-
-    def test_exact_width_line_unknown_wrap_vt_and_legacy(self):
-        # real cursor may be unavailable.
-        for vt in (True, False):
-            with self.subTest(vt=vt):
-                self._run_exact_width_case(vt=vt, did_wrap=None)
 
 
 @skipUnless(sys.platform == "win32", "Windows console behavior only")
