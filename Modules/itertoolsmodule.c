@@ -2856,7 +2856,7 @@ permutations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-permutations_next(PyObject *op)
+permutations_next_lock_held(PyObject *op)
 {
     permutationsobject *po = permutationsobject_CAST(op);
     PyObject *elem;
@@ -2944,6 +2944,16 @@ permutations_next(PyObject *op)
 empty:
     po->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+permutations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = permutations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef permuations_methods[] = {

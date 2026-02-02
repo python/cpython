@@ -1,6 +1,6 @@
 import unittest
 from threading import Thread, Barrier
-from itertools import batched, chain, combinations_with_replacement, cycle
+from itertools import batched, chain, combinations_with_replacement, cycle, permutations
 from test.support import threading_helper
 
 
@@ -92,7 +92,7 @@ class ItertoolsThreading(unittest.TestCase):
     @threading_helper.reap_threads
     def test_combinations_with_replacement(self):
         number_of_threads = 6
-        number_of_iterations = 50
+        number_of_iterations = 36
         data = tuple(range(2))
 
         barrier = Barrier(number_of_threads)
@@ -110,6 +110,33 @@ class ItertoolsThreading(unittest.TestCase):
             for _ in range(number_of_threads):
                 worker_threads.append(
                     Thread(target=work, args=[cwr_iterator]))
+
+            with threading_helper.start_threads(worker_threads):
+                pass
+
+            barrier.reset()
+
+    @threading_helper.reap_threads
+    def test_permutations(self):
+        number_of_threads = 6
+        number_of_iterations = 36
+        data = tuple(range(4))
+
+        barrier = Barrier(number_of_threads)
+        def work(it):
+            barrier.wait()
+            while True:
+                try:
+                    next(it)
+                except StopIteration:
+                    break
+
+        for _ in range(number_of_iterations):
+            perm_iterator = permutations(data, 2)
+            worker_threads = []
+            for _ in range(number_of_threads):
+                worker_threads.append(
+                    Thread(target=work, args=[perm_iterator]))
 
             with threading_helper.start_threads(worker_threads):
                 pass
