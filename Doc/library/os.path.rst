@@ -101,7 +101,7 @@ the :mod:`glob` module.)
    prefix of all strings in *list*.  If *list* is empty, return the empty string
    (``''``).
 
-   .. danger::
+   .. warning::
 
       This function may return invalid paths because it works a
       character at a time.
