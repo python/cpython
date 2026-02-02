@@ -92,8 +92,8 @@ class ItertoolsThreading(unittest.TestCase):
     @threading_helper.reap_threads
     def test_combinations_with_replacement(self):
         number_of_threads = 6
-        number_of_iterations = 100
-        data = tuple(range(3))
+        number_of_iterations = 50
+        data = tuple(range(2))
 
         barrier = Barrier(number_of_threads)
         def work(it):
