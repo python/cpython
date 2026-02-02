@@ -10159,7 +10159,7 @@ wrap_init(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
 }
 
 static PyObject *
-tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
+tp_new_wrapper(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyTypeObject *staticbase;
     PyObject *arg0, *res;
@@ -10171,13 +10171,13 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
     }
     PyTypeObject *type = (PyTypeObject *)self;
 
-    if (!PyTuple_Check(args) || PyTuple_GET_SIZE(args) < 1) {
+    if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(): not enough arguments",
                      type->tp_name);
         return NULL;
     }
-    arg0 = PyTuple_GET_ITEM(args, 0);
+    arg0 = args[0];
     if (!PyType_Check(arg0)) {
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(X): X is not a type object (%s)",
@@ -10219,16 +10219,26 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
-    if (args == NULL)
+    PyObject *args_tuple = PyTuple_FromArray(args + 1, nargs - 1);
+    if (args_tuple == NULL) {
         return NULL;
-    res = type->tp_new(subtype, args, kwds);
-    Py_DECREF(args);
+    }
+    PyObject *kwds = NULL;
+    if (kwnames != NULL) {
+        kwds = _PyStack_AsDict(args + nargs, kwnames);
+        if (kwds == NULL) {
+            Py_DECREF(args_tuple);
+            return NULL;
+        }
+    }
+    res = type->tp_new(subtype, args_tuple, kwds);
+    Py_DECREF(args_tuple);
+    Py_XDECREF(kwds);
     return res;
 }
 
 static struct PyMethodDef tp_new_methoddef[] = {
-    {"__new__", _PyCFunction_CAST(tp_new_wrapper), METH_VARARGS|METH_KEYWORDS,
+    {"__new__", _PyCFunction_CAST(tp_new_wrapper), METH_FASTCALL|METH_KEYWORDS,
      PyDoc_STR("__new__($type, *args, **kwargs)\n--\n\n"
                "Create and return a new object.  "
                "See help(type) for accurate signature.")},
