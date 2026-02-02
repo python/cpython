@@ -431,22 +431,14 @@ def _tuple_str(obj_name, fields):
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
 
-# NOTE: This is a vendored copy of `inspect.unwrap` to speed up import time
-def _unwrap(func, *, stop=None):
+# NOTE: This is a (simplified) vendored copy of `inspect.unwrap` to speed up import time
+def _unwrap(func):
     """Get the object wrapped by *func*.
 
    Follows the chain of :attr:`__wrapped__` attributes returning the last
    object in the chain.
 
-   *stop* is an optional callback accepting an object in the wrapper chain
-   as its sole argument that allows the unwrapping to be terminated early if
-   the callback returns a true value. If the callback never returns a true
-   value, the last object in the chain is returned as usual. For example,
-   :func:`signature` uses this to stop unwrapping if any object in the
-   chain has a ``__signature__`` attribute defined.
-
    :exc:`ValueError` is raised if a cycle is encountered.
-
     """
     f = func  # remember the original func for error reporting
     # Memoise by id to tolerate non-hashable objects, but store objects to
@@ -454,8 +446,6 @@ def _unwrap(func, *, stop=None):
     memo = {id(f): f}
     recursion_limit = sys.getrecursionlimit()
     while not isinstance(func, type) and hasattr(func, '__wrapped__'):
-        if stop is not None and stop(func):
-            break
         func = func.__wrapped__
         id_func = id(func)
         if (id_func in memo) or (len(memo) >= recursion_limit):
