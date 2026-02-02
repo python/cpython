@@ -1083,7 +1083,8 @@ static void* perf_map_jit_init(void) {
         0                        // Offset 0 (first page)
     );
 
-    if (perf_jit_map_state.mapped_buffer == NULL) {
+    if (perf_jit_map_state.mapped_buffer == MAP_FAILED) {
+        perf_jit_map_state.mapped_buffer = NULL;
         close(fd);
         return NULL;  // Memory mapping failed
     }

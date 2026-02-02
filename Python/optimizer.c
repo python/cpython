@@ -1050,7 +1050,6 @@ _PyJit_TryInitializeTracing(
     tracer->initial_state.exit = exit;
     tracer->initial_state.stack_depth = curr_stackdepth;
     tracer->initial_state.chain_depth = chain_depth;
-    tracer->prev_state.instr_frame = frame;
     tracer->prev_state.dependencies_still_valid = true;
     tracer->prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
     tracer->prev_state.instr = curr_instr;
@@ -1994,6 +1993,8 @@ find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
 #define BLACK "#000000"
 #define LOOP "#00c000"
 
+#ifdef Py_STATS
+
 static const char *COLORS[10] = {
     "9",
     "8",
@@ -2006,8 +2007,6 @@ static const char *COLORS[10] = {
     "1",
     WHITE,
 };
-
-#ifdef Py_STATS
 const char *
 get_background_color(_PyUOpInstruction const *inst, uint64_t max_hotness)
 {

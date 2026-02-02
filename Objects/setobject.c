@@ -1368,6 +1368,26 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
     return make_new_set(type, iterable);
 }
 
+// gh-140232: check whether a frozenset can be untracked from the GC
+static void
+_PyFrozenSet_MaybeUntrack(PyObject *op)
+{
+    assert(op != NULL);
+    // subclasses of a frozenset can generate reference cycles, so do not untrack
+    if (!PyFrozenSet_CheckExact(op)) {
+        return;
+    }
+    // if no elements of a frozenset are tracked by the GC, we untrack the object
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next((PySetObject *)op, &pos, &entry)) {
+        if (_PyObject_GC_MAY_BE_TRACKED(entry->key)) {
+            return;
+        }
+    }
+    _PyObject_GC_UNTRACK(op);
+}
+
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
@@ -1379,7 +1399,11 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         /* frozenset(f) is idempotent */
         return Py_NewRef(iterable);
     }
-    return make_new_set(type, iterable);
+    PyObject *obj = make_new_set(type, iterable);
+    if (obj != NULL) {
+        _PyFrozenSet_MaybeUntrack(obj);
+    }
+    return obj;
 }
 
 static PyObject *
@@ -2932,7 +2956,11 @@ PySet_New(PyObject *iterable)
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-    return make_new_set(&PyFrozenSet_Type, iterable);
+    PyObject *result = make_new_set(&PyFrozenSet_Type, iterable);
+    if (result != NULL) {
+        _PyFrozenSet_MaybeUntrack(result);
+    }
+    return result;
 }
 
 Py_ssize_t
@@ -3010,6 +3038,11 @@ PySet_Add(PyObject *anyset, PyObject *key)
         // API limits the usage of `PySet_Add` to "fill in the values of brand
         // new frozensets before they are exposed to other code". In this case,
         // this can be done without a lock.
+        // Since another key is added to the set, we must track the frozenset
+        // if needed.
+        if (PyFrozenSet_CheckExact(anyset) && !PyObject_GC_IsTracked(anyset) && PyObject_GC_IsTracked(key)) {
+            _PyObject_GC_TRACK(anyset);
+        }
         return set_add_key((PySetObject *)anyset, key);
     }
 

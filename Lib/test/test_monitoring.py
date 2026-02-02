@@ -12,7 +12,7 @@ import types
 import unittest
 
 import test.support
-from test.support import import_helper, requires_specialization_ft, script_helper
+from test.support import import_helper, requires_specialization, script_helper
 
 _testcapi = import_helper.import_module("_testcapi")
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
@@ -1047,7 +1047,7 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_no_unwind_for_shim_frame(self):
         class ValueErrorRaiser:
             def __init__(self):
