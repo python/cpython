@@ -1642,7 +1642,7 @@ iterations of the loop.
 
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
-   :opcode:`!LOAD_METHOD` for non-method calls.
+   :opcode:`LOAD_ATTR` for non-method calls.
 
    .. versionadded:: 3.11
 
