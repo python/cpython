@@ -2383,42 +2383,54 @@ class TestParser(TestParserMixin, TestEmailBase):
             label='from_test_get_atext',
             )(params_test_get_atext),
 
-        test_get_dot_atom_text_only = C(
-            'foo.bar.bang', 'foo.bar.bang', 'foo.bar.bang', [], '')
-            ,
-
-        test_get_dot_atom_text_raises_on_leading_dot = C(
-                                     '.foo.bar',
-                    exception=(errors.HeaderParseError, '.*'),
+        only = C(
+            'foo.bar.bang',
+            'foo.bar.bang',
+            'foo.bar.bang',
+            [],
+            '',
             ),
 
-        test_get_dot_atom_text_raises_on_trailing_dot = C(
-                                     'foo.bar.',
-                    exception=(errors.HeaderParseError, '.*'),
+        raises_on_leading_dot = C(
+            '.foo.bar',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_dot_atom_text_raises_on_leading_wsp = C(
-                                     ' foo.bar',
-                    exception=(errors.HeaderParseError, '.*'),
+        raises_on_trailing_dot = C(
+            'foo.bar.',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_dot_atom_text_raises_on_leading_at = C(
-                                     '@foo.bar',
-                    exception=(errors.HeaderParseError, '.*'),
+        raises_on_leading_wsp = C(
+            ' foo.bar',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_dot_atom_text_raises_on_leading_dquote = C(
-                                     '"foo.bar"',
-                    exception=(errors.HeaderParseError, '.*'),
+        raises_on_leading_at = C(
+            '@foo.bar',
+            exception=(errors.HeaderParseError, '.*'),
             ),
 
-        test_get_dot_atom_text_trailing_text_preserved = C(
-            'foo@bar', 'foo', 'foo', [], '@bar')
-            ,
+        raises_on_leading_dquote = C(
+            '"foo.bar"',
+            exception=(errors.HeaderParseError, '.*'),
+            ),
 
-        test_get_dot_atom_text_trailing_ws_preserved = C(
-            'foo .bar', 'foo', 'foo', [], ' .bar')
-            ,
+        trailing_text_preserved = C(
+            'foo@bar',
+            'foo',
+            'foo',
+            [],
+            '@bar',
+            ),
+
+        trailing_ws_preserved = C(
+            'foo .bar',
+            'foo',
+            'foo',
+            [],
+            ' .bar',
+            ),
 
         )
 
