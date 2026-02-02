@@ -7169,12 +7169,7 @@
             values = &stack_pointer[0];
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
             assert(PyTuple_CheckExact(seq_o));
-            if (PyTuple_GET_SIZE(seq_o) != oparg) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = seq;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(PyTuple_GET_SIZE(seq_o) == oparg);
             if (!_PyObject_IsUniquelyReferenced(seq_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = seq;
