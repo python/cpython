@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        > [!IMPORTANT]
+        > [!NOTE]
         > Trivial changes (for example typos) don’t require an issue before opening a PR.
   - type: textarea
     attributes:
