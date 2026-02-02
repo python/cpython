@@ -18265,11 +18265,6 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (tstate->py_recursion_remaining <= 1) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
-            }
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18282,12 +18277,6 @@
             uint32_t framesize = (uint32_t)CURRENT_OPERAND0_32();
             assert(framesize <= INT_MAX);
             if (!_PyThreadState_HasStackSpace(tstate, framesize)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (tstate->py_recursion_remaining <= 1) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -18313,13 +18302,6 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (tstate->py_recursion_remaining <= 1) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache1 = _stack_item_1;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(2);
-                JUMP_TO_JUMP_TARGET();
-            }
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
@@ -18336,14 +18318,6 @@
             uint32_t framesize = (uint32_t)CURRENT_OPERAND0_32();
             assert(framesize <= INT_MAX);
             if (!_PyThreadState_HasStackSpace(tstate, framesize)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache2 = _stack_item_2;
-                _tos_cache1 = _stack_item_1;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(3);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (tstate->py_recursion_remaining <= 1) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = _stack_item_1;
