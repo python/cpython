@@ -543,7 +543,7 @@ async def logcat_task(context, initial_devices):
 
             # Put high-level messages on stderr so they're highlighted in the
             # buildbot logs. This will include Python's own stderr.
-            stream = sys.stderr if priority > LogPriority.WARN else sys.stdout
+            stream = sys.stderr if priority >= LogPriority.WARN else sys.stdout
 
             # The app's stdout and stderr should be passed through transparently
             # to our own corresponding streams.
