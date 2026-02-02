@@ -92,7 +92,12 @@ android {
             }
             throw GradleException("Failed to find API level in $androidEnvFile")
         }
-        targetSdk = 35
+
+        // This controls the API level of the maxVersion managed emulator, which is used
+        // by CI and cibuildwheel. 34 takes up too much disk space (#142289), 35 has
+        // issues connecting to the internet (#142387), and 36 and later are not
+        // available as aosp_atd images yet.
+        targetSdk = 33
 
         versionCode = 1
         versionName = "1.0"
