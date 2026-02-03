@@ -1555,8 +1555,16 @@ static PyMethodDef cm_methodlist[] = {
     {NULL} /* Sentinel */
 };
 
-static PyObject *cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-static PyObject *sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static PyObject *
+cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    classmethod *cm = (classmethod *)PyType_GenericAlloc(type, 0);
+    if (cm == NULL)
+        return NULL;
+    cm->cm_callable = Py_NewRef(Py_None);
+    cm->cm_dict = NULL;
+    return (PyObject *)cm;
+}
 
 static PyObject*
 cm_repr(PyObject *self)
@@ -1642,6 +1650,7 @@ PyClassMethod_New(PyObject *callable)
     return (PyObject *)cm;
 }
 
+<<<<<<< HEAD
 static PyObject *
 cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1653,6 +1662,8 @@ cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     cm->cm_dict = NULL;
     return (PyObject *)cm;
 }
+=======
+>>>>>>> c60a558e2e4 (Initialize staticmethod/classmethod callables in tp_new)
 
 
 /* Static method object */
@@ -1816,6 +1827,17 @@ sm_repr(PyObject *self)
     return PyUnicode_FromFormat("<staticmethod(%R)>", callable);
 }
 
+static PyObject *
+sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    staticmethod *sm = (staticmethod *)PyType_GenericAlloc(type, 0);
+    if (sm == NULL)
+        return NULL;
+    sm->sm_callable = Py_NewRef(Py_None);
+    sm->sm_dict = NULL;
+    return (PyObject *)sm;
+}
+
 PyDoc_STRVAR(staticmethod_doc,
 "staticmethod(function, /)\n\
 --\n\
@@ -1887,16 +1909,5 @@ PyStaticMethod_New(PyObject *callable)
     if (sm != NULL) {
         sm->sm_callable = Py_NewRef(callable);
     }
-    return (PyObject *)sm;
-}
-
-static PyObject *
-sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    staticmethod *sm = (staticmethod *)PyType_GenericAlloc(type, 0);
-    if (sm == NULL)
-        return NULL;
-    sm->sm_callable = Py_NewRef(Py_None);
-    sm->sm_dict = NULL;
     return (PyObject *)sm;
 }
