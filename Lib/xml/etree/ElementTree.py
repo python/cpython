@@ -799,19 +799,21 @@ def _get_writer(file_or_filename, encoding):
 def _namespaces(elem, default_namespace=None):
     # identify namespaces used in this tree
 
-    # maps qnames to *encoded* prefix:local names
-    qnames = {None: None}
+    # maps qnames to *encoded* prefix:local names,
+    # value is a pair of prefix:local strings,
+    # second value is for attribute names
+    qnames = {None: (None, None)}
 
     # maps uri:s to prefixes
     namespaces = {}
-    if default_namespace:
-        namespaces[default_namespace] = ""
 
-    def add_qname(qname):
+    def serialize_qname(qname, is_attr):
         # calculate serialized qname representation
-        try:
-            if qname[:1] == "{":
-                uri, tag = qname[1:].rsplit("}", 1)
+        if qname[:1] == "{":
+            uri, local = qname[1:].rsplit("}", 1)
+            if not is_attr and uri == default_namespace:
+                prefix = ""
+            else:
                 prefix = namespaces.get(uri)
                 if prefix is None:
                     prefix = _namespace_map.get(uri)
@@ -819,43 +821,59 @@ def _namespaces(elem, default_namespace=None):
                         prefix = "ns%d" % len(namespaces)
                     if prefix != "xml":
                         namespaces[uri] = prefix
-                if prefix:
-                    qnames[qname] = "%s:%s" % (prefix, tag)
-                else:
-                    qnames[qname] = tag # default element
+            if prefix:
+                return "%s:%s" % (prefix, local)
             else:
-                if default_namespace:
-                    # FIXME: can this be handled in XML 1.0?
-                    raise ValueError(
-                        "cannot use non-qualified names with "
-                        "default_namespace option"
-                        )
-                qnames[qname] = qname
-        except TypeError:
-            _raise_serialization_error(qname)
+                return local # default element
+        else:
+            if not is_attr and default_namespace:
+                # FIXME: can this be handled in XML 1.0?
+                raise ValueError(
+                    "cannot use non-qualified name (<%s>) with "
+                    "default_namespace option" % qname
+                    )
+            return qname
+
+    def add_qname(qname, is_attr=False):
+        ser_tag, ser_attr = qnames.get(qname, (None, None))
+        if is_attr:
+            if ser_attr is None:
+                ser_attr = serialize_qname(qname, True)
+                if not default_namespace:
+                    ser_tag = ser_attr
+                qnames[qname] = (ser_tag, ser_attr)
+        else:
+            if ser_tag is None:
+                ser_tag = serialize_qname(qname, False)
+                if not default_namespace:
+                    ser_attr = ser_tag
+                qnames[qname] = (ser_tag, ser_attr)
 
     # populate qname and namespaces table
     for elem in elem.iter():
         tag = elem.tag
         if isinstance(tag, QName):
-            if tag.text not in qnames:
-                add_qname(tag.text)
+            add_qname(tag.text)
         elif isinstance(tag, str):
-            if tag not in qnames:
-                add_qname(tag)
+            add_qname(tag)
         elif tag is not None and tag is not Comment and tag is not PI:
             _raise_serialization_error(tag)
         for key, value in elem.items():
             if isinstance(key, QName):
                 key = key.text
-            if key not in qnames:
-                add_qname(key)
-            if isinstance(value, QName) and value.text not in qnames:
+            elif not isinstance(key, str):
+                _raise_serialization_error(key)
+            add_qname(key, is_attr=True)
+            if isinstance(value, QName):
                 add_qname(value.text)
         text = elem.text
-        if isinstance(text, QName) and text.text not in qnames:
+        if isinstance(text, QName):
             add_qname(text.text)
-    return qnames, namespaces
+
+    prefix_map = {prefix: ns for ns, prefix in namespaces.items()}
+    if default_namespace:
+        prefix_map[""] = default_namespace
+    return qnames, prefix_map
 
 def _serialize_xml(write, elem, qnames, namespaces,
                    short_empty_elements, **kwargs):
@@ -866,7 +884,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
     elif tag is ProcessingInstruction:
         write("<?%s?>" % text)
     else:
-        tag = qnames[tag]
+        tag = qnames[tag][0]
         if tag is None:
             if text:
                 write(_escape_cdata(text))
@@ -878,8 +896,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
-                    for v, k in sorted(namespaces.items(),
-                                       key=lambda x: x[1]):  # sort on prefix
+                    for k, v in sorted(namespaces.items()):
                         if k:
                             k = ":" + k
                         write(" xmlns%s=\"%s\"" % (
@@ -890,10 +907,10 @@ def _serialize_xml(write, elem, qnames, namespaces,
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
-                        v = qnames[v.text]
+                        v = qnames[v.text][0]
                     else:
                         v = _escape_attrib(v)
-                    write(" %s=\"%s\"" % (qnames[k], v))
+                    write(" %s=\"%s\"" % (qnames[k][1], v))
             if text or len(elem) or not short_empty_elements:
                 write(">")
                 if text:
@@ -919,7 +936,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     elif tag is ProcessingInstruction:
         write("<?%s?>" % _escape_cdata(text))
     else:
-        tag = qnames[tag]
+        tag = qnames[tag][0]
         if tag is None:
             if text:
                 write(_escape_cdata(text))
@@ -930,8 +947,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
             items = list(elem.items())
             if items or namespaces:
                 if namespaces:
-                    for v, k in sorted(namespaces.items(),
-                                       key=lambda x: x[1]):  # sort on prefix
+                    for k, v in sorted(namespaces.items()):
                         if k:
                             k = ":" + k
                         write(" xmlns%s=\"%s\"" % (
@@ -942,11 +958,11 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
-                        v = qnames[v.text]
+                        v = qnames[v.text][0]
                     else:
                         v = _escape_attrib_html(v)
                     # FIXME: handle boolean attributes
-                    write(" %s=\"%s\"" % (qnames[k], v))
+                    write(" %s=\"%s\"" % (qnames[k][1], v))
             write(">")
             ltag = tag.lower()
             if text:
