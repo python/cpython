@@ -994,9 +994,9 @@ Helper functions
 .. function:: commonprefix(list, /)
 
    Return the longest string prefix (taken character-by-character) that is a
-   prefix of all string in  *list*.  If *list* is empty, return the empty string
-   (``''``).
+   prefix of all the strings in *list*.  If *list* is empty, return the empty
+   string (``''``).
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
       Moved to the :mod:`string` module from the :mod:`os.path` module.

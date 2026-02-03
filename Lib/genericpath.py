@@ -107,7 +107,8 @@ def commonprefix(m, /):
     "Given a list of pathnames, returns the longest common leading component"
     import warnings
     warnings.warn('os.path.commonprefix() is deprecated. Use '
-                  'os.path.commonpath() or string.commonprefix() instead.',
+                  'os.path.commonpath() for longest path prefix, or '
+                  'string.commonprefix() for longest string prefix.',
                   category=DeprecationWarning,
                   stacklevel=2)
     import string

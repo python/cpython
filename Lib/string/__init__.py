@@ -49,8 +49,9 @@ def capwords(s, sep=None):
 
 
 def commonprefix(m, /):
-    "Given a list of strings, returns the longest common leading component"
-    if not m: return ''
+    """Given a list of strings, returns the longest common leading component."""
+    if not m:
+        return ''
     # Note that previously this function was in the 'os.path' module, hence the
     # handling for paths. Maintain compatibility so users have a 1-to-1 drop-in.
     # Some people pass in a list of pathname parts to operate in an OS-agnostic
