@@ -116,6 +116,10 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filter
       >>> reobj.match('foobar.txt')
       <re.Match object; span=(0, 10), match='foobar.txt'>
 
+   .. versionchanged:: 3.14
+      The generated regular expression now uses ``\z`` instead of ``\Z``.
+      Both are equivalent; ``\Z`` is still accepted for compatibility.
+
 
 .. seealso::
 
