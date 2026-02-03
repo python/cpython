@@ -1,1 +1,1 @@
-Fix missing exception handling in :mod:`_remote_debugging` when ``debug=False``. The ``set_exception_cause`` macro now always sets an exception to satisfy the C API contract, fixing intermittent assertion failures. Exception chaining with ``debug=True`` is preserved. Patch by Taegyun Kim.
+Fix crash in ``_remote_debugging`` that caused ``test_external_inspection`` to intermittently fail. Patch by Taegyun Kim.
