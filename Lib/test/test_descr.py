@@ -1831,7 +1831,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             sm.__init__(None)
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
-    def test_staticmethod_new_none_repr(self):
+    def test_staticmethod_new(self):
         sm = staticmethod.__new__(staticmethod, None)
         self.assertIsInstance(repr(sm), str)
 
