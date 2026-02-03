@@ -92,29 +92,24 @@ dummy_func(void) {
         if (sym_is_null(value)) {
             ctx->done = true;
         }
-        if (PyJitRef_IsUnique(value)) {
-            value = PyJitRef_StripReferenceInfo(value);
-        }
+        value = PyJitRef_RemoveUnique(value);
     }
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
-        if (PyJitRef_IsUnique(value)) {
-            value = PyJitRef_StripReferenceInfo(value);
-        }
+        value = PyJitRef_RemoveUnique(value);
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = PyJitRef_Borrow(GETLOCAL(oparg));
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         JitOptRef temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
-        if (PyJitRef_IsUnique(value)) {
-            value = PyJitRef_StripReferenceInfo(value);
-        }
+        value = PyJitRef_RemoveUnique(value);
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
@@ -130,6 +125,7 @@ dummy_func(void) {
     op(_SWAP_FAST, (value -- trash)) {
         JitOptRef tmp = GETLOCAL(oparg);
         GETLOCAL(oparg) = value;
+        // GETLOCAL(oparg) = PyJitRef_RemoveUnique(value);
         trash = tmp;
     }
 
@@ -696,7 +692,7 @@ dummy_func(void) {
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
-        bottom = PyJitRef_IsUnique(bottom) ? PyJitRef_StripReferenceInfo(bottom) : bottom;
+        bottom = PyJitRef_RemoveUnique(bottom);
         top = bottom;
     }
 

@@ -33,9 +33,7 @@
             if (sym_is_null(value)) {
                 ctx->done = true;
             }
-            if (PyJitRef_IsUnique(value)) {
-                value = PyJitRef_StripReferenceInfo(value);
-            }
+            value = PyJitRef_RemoveUnique(value);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -46,9 +44,7 @@
         case _LOAD_FAST: {
             JitOptRef value;
             value = GETLOCAL(oparg);
-            if (PyJitRef_IsUnique(value)) {
-                value = PyJitRef_StripReferenceInfo(value);
-            }
+            value = PyJitRef_RemoveUnique(value);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -59,6 +55,7 @@
         case _LOAD_FAST_BORROW: {
             JitOptRef value;
             value = PyJitRef_Borrow(GETLOCAL(oparg));
+            assert(!PyJitRef_IsUnique(value));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -71,9 +68,7 @@
             value = GETLOCAL(oparg);
             JitOptRef temp = sym_new_null(ctx);
             GETLOCAL(oparg) = temp;
-            if (PyJitRef_IsUnique(value)) {
-                value = PyJitRef_StripReferenceInfo(value);
-            }
+            value = PyJitRef_RemoveUnique(value);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -3691,7 +3686,7 @@
             JitOptRef top;
             bottom = stack_pointer[-1 - (oparg-1)];
             assert(oparg > 0);
-            bottom = PyJitRef_IsUnique(bottom) ? PyJitRef_StripReferenceInfo(bottom) : bottom;
+            bottom = PyJitRef_RemoveUnique(bottom);
             top = bottom;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1 - (oparg-1)] = bottom;
