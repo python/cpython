@@ -1,6 +1,5 @@
 """Utilities for with-statement contexts.  See PEP 343."""
 import abc
-from inspect import getattr_static, _descriptor_get
 import os
 import sys
 import _collections_abc
@@ -472,6 +471,7 @@ class suppress(AbstractContextManager):
 
 def _lookup_special(obj, name, default):
     # Follow the standard lookup behaviour for special methods.
+    from inspect import getattr_static, _descriptor_get
     cls = type(obj)
     try:
         descr = getattr_static(cls, name)
