@@ -1832,6 +1832,24 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(a, a1)
         self.assertEqual(d, d1)
 
+    def test_staticmethod_new(self):
+        sm = staticmethod.__new__(staticmethod, None)
+        self.assertEqual(repr(sm), '<staticmethod(None)>')
+
+    def test_classmethod_new(self):
+        cm = classmethod.__new__(classmethod, None)
+        self.assertIsInstance(repr(cm), str)
+
+    def test_staticmethod_func_readonly(self):
+        sm = staticmethod(lambda x: x)
+        with self.assertRaises(AttributeError):
+            sm.__func__ = None
+
+    def test_classmethod_func_readonly(self):
+        cm = classmethod(lambda x: x)
+        with self.assertRaises(AttributeError):
+            cm.__func__ = None
+
     def test_classic(self):
         # Testing classic classes...
         class C:

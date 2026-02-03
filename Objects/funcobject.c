@@ -1555,11 +1555,24 @@ static PyMethodDef cm_methodlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyObject *
+cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    classmethod *cm = (classmethod *)PyType_GenericAlloc(type, 0);
+    if (cm == NULL) {
+        return NULL;
+    }
+    cm->cm_callable = Py_None;
+    cm->cm_dict = NULL;
+    return (PyObject *)cm;
+}
+
 static PyObject*
 cm_repr(PyObject *self)
 {
     classmethod *cm = _PyClassMethod_CAST(self);
-    return PyUnicode_FromFormat("<classmethod(%R)>", cm->cm_callable);
+    PyObject *callable = cm->cm_callable != NULL ? cm->cm_callable : Py_None;
+    return PyUnicode_FromFormat("<classmethod(%R)>", callable);
 }
 
 PyDoc_STRVAR(classmethod_doc,
@@ -1623,7 +1636,7 @@ PyTypeObject PyClassMethod_Type = {
     offsetof(classmethod, cm_dict),             /* tp_dictoffset */
     cm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    PyType_GenericNew,                          /* tp_new */
+    cm_new,                                     /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 
@@ -1637,6 +1650,7 @@ PyClassMethod_New(PyObject *callable)
     }
     return (PyObject *)cm;
 }
+
 
 
 /* Static method object */
@@ -1796,7 +1810,20 @@ static PyObject*
 sm_repr(PyObject *self)
 {
     staticmethod *sm = _PyStaticMethod_CAST(self);
-    return PyUnicode_FromFormat("<staticmethod(%R)>", sm->sm_callable);
+    PyObject *callable = sm->sm_callable != NULL ? sm->sm_callable : Py_None;
+    return PyUnicode_FromFormat("<staticmethod(%R)>", callable);
+}
+
+static PyObject *
+sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    staticmethod *sm = (staticmethod *)PyType_GenericAlloc(type, 0);
+    if (sm == NULL) {
+        return NULL;
+    }
+    sm->sm_callable = Py_None;
+    sm->sm_dict = NULL;
+    return (PyObject *)sm;
 }
 
 PyDoc_STRVAR(staticmethod_doc,
@@ -1858,7 +1885,7 @@ PyTypeObject PyStaticMethod_Type = {
     offsetof(staticmethod, sm_dict),            /* tp_dictoffset */
     sm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    PyType_GenericNew,                          /* tp_new */
+    sm_new,                                     /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 
