@@ -1609,6 +1609,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
                 PyObject *value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
                     PyErr_FormatUnraisable("Exception ignored on removing modules");
+                    Py_DECREF(key);
                     continue;
                 }
                 CLEAR_MODULE(key, value);

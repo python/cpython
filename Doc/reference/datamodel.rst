@@ -541,6 +541,7 @@ Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
+   single: __builtins__ (function attribute)
    single: __closure__ (function attribute)
    single: __globals__ (function attribute)
    pair: global; namespace
@@ -550,6 +551,12 @@ Special read-only attributes
 
    * - Attribute
      - Meaning
+
+   * - .. attribute:: function.__builtins__
+     - A reference to the :class:`dictionary <dict>` that holds the function's
+       builtins namespace.
+
+       .. versionadded:: 3.10
 
    * - .. attribute:: function.__globals__
      - A reference to the :class:`dictionary <dict>` that holds the function's

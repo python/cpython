@@ -235,6 +235,17 @@ class PointersTestCase(unittest.TestCase):
         ptr.set_type(c_int)
         self.assertIs(ptr._type_, c_int)
 
+    def test_pointer_proto_missing_argtypes_error(self):
+        class BadType(ctypes._Pointer):
+            # _type_ is intentionally missing
+            pass
+
+        func = ctypes.pythonapi.Py_GetVersion
+        func.argtypes = (BadType,)
+
+        with self.assertRaises(ctypes.ArgumentError):
+            func(object())
+
 
 if __name__ == '__main__':
     unittest.main()
