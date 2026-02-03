@@ -62,6 +62,14 @@ The :mod:`secrets` module provides functions for generating secure
 tokens, suitable for applications such as password resets,
 hard-to-guess URLs, and similar.
 
+.. data:: DEFAULT_ENTROPY
+
+   The default number of bytes of randomness used by the ``token_*``
+   functions when *nbytes* is not specified.  This is an opaque value
+   that may change at any time, including during maintenance releases.
+   Users who need a specific amount of entropy should explicitly pass
+   the *nbytes* argument.
+
 .. function:: token_bytes([nbytes=None])
 
    Return a random byte string containing *nbytes* number of bytes.
