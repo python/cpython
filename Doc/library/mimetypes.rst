@@ -301,12 +301,17 @@ than one MIME-type database; it provides an interface similar to the one of the
 
    .. method:: MimeTypes.add_type(type, ext, strict=True)
 
-      Add a mapping from the MIME type *type* to the extension *ext*. When the
+      Add a mapping from the MIME type *type* to the extension *ext*.
+      Valid extensions start with a '.' or are empty. When the
       extension is already known, the new type will replace the old one. When the type
       is already known the extension will be added to the list of known extensions.
 
       When *strict* is ``True`` (the default), the mapping will be added to the
       official MIME types, otherwise to the non-standard ones.
+
+      .. deprecated-removed:: 3.14 3.16
+         Invalid, undotted extensions will raise a
+         :exc:`ValueError` in Python 3.16.
 
 
 .. _mimetypes-cli:

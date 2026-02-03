@@ -17,11 +17,11 @@ class PythonSuite {
     fun testPython() {
         val start = System.currentTimeMillis()
         try {
-            val context =
+            val status = PythonTestRunner(
                 InstrumentationRegistry.getInstrumentation().targetContext
-            val args =
-                InstrumentationRegistry.getArguments().getString("pythonArgs", "")
-            val status = PythonTestRunner(context).run(args)
+            ).run(
+                InstrumentationRegistry.getArguments().getString("pythonArgs")!!,
+            )
             assertEquals(0, status)
         } finally {
             // Make sure the process lives long enough for the test script to

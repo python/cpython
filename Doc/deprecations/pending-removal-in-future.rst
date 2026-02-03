@@ -13,11 +13,8 @@ although there is currently no date scheduled for their removal.
     deprecated.
   * The :class:`argparse.FileType` type converter is deprecated.
 
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
 * :mod:`builtins`:
 
-  * ``bool(NotImplemented)``.
   * Generators: ``throw(type, exc, tb)`` and ``athrow(type, exc, tb)``
     signature is deprecated: use ``throw(exc)`` and ``athrow(exc)`` instead,
     the single argument signature.
@@ -49,6 +46,8 @@ although there is currently no date scheduled for their removal.
   :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
+* :mod:`codecs`: use :func:`open` instead of :func:`codecs.open`. (:gh:`133038`)
+
 * :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
   instead.
 
@@ -77,7 +76,7 @@ although there is currently no date scheduled for their removal.
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
-* :mod:`os`: Calling :func:`os.register_at_fork` in multi-threaded process.
+* :mod:`os`: Calling :func:`os.register_at_fork` in a multi-threaded process.
 
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
   deprecated, use an exception instance.
@@ -88,8 +87,6 @@ although there is currently no date scheduled for their removal.
   replacement strings can now only contain ASCII letters and digits and
   underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
-
-* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
 * :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
   Python 3.12; use the *onexc* parameter instead.
@@ -153,3 +150,6 @@ although there is currently no date scheduled for their removal.
   :class:`~xml.etree.ElementTree.Element` is deprecated. In a future release it
   will always return ``True``. Prefer explicit ``len(elem)`` or
   ``elem is not None`` tests instead.
+
+* :func:`sys._clear_type_cache` is deprecated:
+  use :func:`sys._clear_internal_caches` instead.

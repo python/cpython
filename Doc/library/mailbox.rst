@@ -917,7 +917,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    copied; furthermore, any format-specific information is converted insofar as
    possible if *message* is a :class:`!Message` instance. If *message* is a string,
    a byte string,
-   or a file, it should contain an :rfc:`2822`\ -compliant message, which is read
+   or a file, it should contain an :rfc:`5322`\ -compliant message, which is read
    and parsed.  Files should be open in binary mode, but text mode files
    are accepted for backward compatibility.
 

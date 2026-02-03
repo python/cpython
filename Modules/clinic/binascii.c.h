@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(binascii_a2b_uu__doc__,
@@ -115,20 +116,26 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base64__doc__,
-"a2b_base64($module, data, /, *, strict_mode=False)\n"
+"a2b_base64($module, data, /, *, strict_mode=<unrepresentable>,\n"
+"           ignorechars=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Decode a line of base64 data.\n"
 "\n"
 "  strict_mode\n"
-"    When set to True, bytes that are not part of the base64 standard are not allowed.\n"
-"    The same applies to excess data after padding (= / ==).");
+"    When set to true, bytes that are not part of the base64 standard are\n"
+"    not allowed.  The same applies to excess data after padding (= / ==).\n"
+"    Set to True by default if ignorechars is specified, False otherwise.\n"
+"  ignorechars\n"
+"    A byte string containing characters to ignore from the input when\n"
+"    strict_mode is true.");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
     {"a2b_base64", _PyCFunction_CAST(binascii_a2b_base64), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base64__doc__},
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode);
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
+                         Py_buffer *ignorechars);
 
 static PyObject *
 binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -136,7 +143,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -145,7 +152,7 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(strict_mode), },
+        .ob_item = { &_Py_ID(strict_mode), &_Py_ID(ignorechars), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -154,17 +161,18 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "strict_mode", NULL};
+    static const char * const _keywords[] = {"", "strict_mode", "ignorechars", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "a2b_base64",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
-    int strict_mode = 0;
+    int strict_mode = -1;
+    Py_buffer ignorechars = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -177,23 +185,35 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    strict_mode = PyObject_IsTrue(args[1]);
-    if (strict_mode < 0) {
+    if (args[1]) {
+        strict_mode = PyObject_IsTrue(args[1]);
+        if (strict_mode < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyObject_GetBuffer(args[2], &ignorechars, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_a2b_base64_impl(module, &data, strict_mode);
+    return_value = binascii_a2b_base64_impl(module, &data, strict_mode, &ignorechars);
 
 exit:
     /* Cleanup for data */
     if (data.obj)
        PyBuffer_Release(&data);
+    /* Cleanup for ignorechars */
+    if (ignorechars.obj) {
+       PyBuffer_Release(&ignorechars);
+    }
 
     return return_value;
 }
 
 PyDoc_STRVAR(binascii_b2a_base64__doc__,
-"b2a_base64($module, data, /, *, newline=True)\n"
+"b2a_base64($module, data, /, *, wrapcol=0, newline=True)\n"
 "--\n"
 "\n"
 "Base64-code line of data.");
@@ -202,7 +222,8 @@ PyDoc_STRVAR(binascii_b2a_base64__doc__,
     {"b2a_base64", _PyCFunction_CAST(binascii_b2a_base64), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base64__doc__},
 
 static PyObject *
-binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline);
+binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
+                         int newline);
 
 static PyObject *
 binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -210,7 +231,7 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -219,7 +240,7 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(newline), },
+        .ob_item = { &_Py_ID(wrapcol), &_Py_ID(newline), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -228,16 +249,17 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "newline", NULL};
+    static const char * const _keywords[] = {"", "wrapcol", "newline", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "b2a_base64",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
+    size_t wrapcol = 0;
     int newline = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -251,12 +273,20 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    newline = PyObject_IsTrue(args[1]);
+    if (args[1]) {
+        if (!_PyLong_Size_t_Converter(args[1], &wrapcol)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    newline = PyObject_IsTrue(args[2]);
     if (newline < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_b2a_base64_impl(module, &data, newline);
+    return_value = binascii_b2a_base64_impl(module, &data, wrapcol, newline);
 
 exit:
     /* Cleanup for data */
@@ -292,9 +322,21 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (crc == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &crc, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
     return_value = binascii_crc_hqx_impl(module, &data, crc);
 
@@ -336,9 +378,21 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (crc == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &crc, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     _return_value = binascii_crc32_impl(module, &data, crc);
@@ -788,4 +842,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=adb855a2797c3cad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13f0a4b0f5d3fcb4 input=a9049054013a1b77]*/

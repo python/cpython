@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern PyObject* _PyFunction_Vectorcall(
+PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,
     size_t nargsf,
@@ -34,6 +34,18 @@ PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version, PyObject **p_cod
 
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);
+
+
+/* See pycore_code.h for explanation about what "stateless" means. */
+
+PyAPI_FUNC(int)
+_PyFunction_VerifyStateless(PyThreadState *, PyObject *);
+
+static inline PyObject* _PyFunction_GET_BUILTINS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_builtins;
+}
+#define _PyFunction_GET_BUILTINS(func) _PyFunction_GET_BUILTINS(_PyObject_CAST(func))
+
 
 #ifdef __cplusplus
 }

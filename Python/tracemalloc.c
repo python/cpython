@@ -36,7 +36,7 @@ static int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
    would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
 #define tables_lock _PyRuntime.tracemalloc.tables_lock
-#define TABLES_LOCK() PyMutex_LockFlags(&tables_lock, _Py_LOCK_DONT_DETACH)
+#define TABLES_LOCK() PyMutex_Lock(&tables_lock)
 #define TABLES_UNLOCK() PyMutex_Unlock(&tables_lock)
 
 
@@ -46,7 +46,7 @@ typedef struct tracemalloc_frame frame_t;
 typedef struct tracemalloc_traceback traceback_t;
 
 #define TRACEBACK_SIZE(NFRAME) \
-        (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
+        (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME))
 
 static const int MAX_NFRAME = UINT16_MAX;
 
@@ -230,7 +230,7 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = filename = _PyFrame_GetCode(pyframe)->co_filename;
+    PyObject *filename = _PyFrame_GetCode(pyframe)->co_filename;
     if (filename == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the filename of the code object");
@@ -329,8 +329,9 @@ traceback_new(void)
     traceback->nframe = 0;
     traceback->total_nframe = 0;
     traceback_get_frames(traceback);
-    if (traceback->nframe == 0)
-        return &tracemalloc_empty_traceback;
+    if (traceback->nframe == 0) {
+        return tracemalloc_empty_traceback;
+    }
     traceback->hash = traceback_hash(traceback);
 
     /* intern the traceback */
@@ -754,12 +755,18 @@ _PyTraceMalloc_Init(void)
         return _PyStatus_NO_MEMORY();
     }
 
-    tracemalloc_empty_traceback.nframe = 1;
-    tracemalloc_empty_traceback.total_nframe = 1;
+    assert(tracemalloc_empty_traceback == NULL);
+    tracemalloc_empty_traceback = raw_malloc(TRACEBACK_SIZE(1));
+    if (tracemalloc_empty_traceback  == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    tracemalloc_empty_traceback->nframe = 1;
+    tracemalloc_empty_traceback->total_nframe = 1;
     /* borrowed reference */
-    tracemalloc_empty_traceback.frames[0].filename = &_Py_STR(anon_unknown);
-    tracemalloc_empty_traceback.frames[0].lineno = 0;
-    tracemalloc_empty_traceback.hash = traceback_hash(&tracemalloc_empty_traceback);
+    tracemalloc_empty_traceback->frames[0].filename = &_Py_STR(anon_unknown);
+    tracemalloc_empty_traceback->frames[0].lineno = 0;
+    tracemalloc_empty_traceback->hash = traceback_hash(tracemalloc_empty_traceback);
 
     tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
     return _PyStatus_OK();
@@ -782,6 +789,9 @@ tracemalloc_deinit(void)
     _Py_hashtable_destroy(tracemalloc_filenames);
 
     PyThread_tss_delete(&tracemalloc_reentrant_key);
+
+    raw_free(tracemalloc_empty_traceback);
+    tracemalloc_empty_traceback = NULL;
 }
 
 
@@ -840,7 +850,7 @@ _PyTraceMalloc_Start(int max_nframe)
 
     /* everything is ready: start tracing Python memory allocations */
     TABLES_LOCK();
-    tracemalloc_config.tracing = 1;
+    _Py_atomic_store_int_relaxed(&tracemalloc_config.tracing, 1);
     TABLES_UNLOCK();
 
     return 0;
@@ -857,7 +867,7 @@ _PyTraceMalloc_Stop(void)
     }
 
     /* stop tracing Python memory allocations */
-    tracemalloc_config.tracing = 0;
+    _Py_atomic_store_int_relaxed(&tracemalloc_config.tracing, 0);
 
     /* unregister the hook on memory allocators */
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
@@ -1197,6 +1207,10 @@ int
 PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
                     size_t size)
 {
+    if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing) == 0) {
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
     PyGILState_STATE gil_state = PyGILState_Ensure();
     TABLES_LOCK();
 
@@ -1218,6 +1232,11 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 int
 PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 {
+    if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing) == 0) {
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
+
     TABLES_LOCK();
 
     int result;

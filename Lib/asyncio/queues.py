@@ -227,9 +227,6 @@ class Queue(mixins._LoopBoundMixin):
         been processed (meaning that a task_done() call was received for every
         item that had been put() into the queue).
 
-        shutdown(immediate=True) calls task_done() for each remaining item in
-        the queue.
-
         Raises ValueError if called more times than there were items placed in
         the queue.
         """
@@ -256,9 +253,11 @@ class Queue(mixins._LoopBoundMixin):
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
-        All blocked callers of put() and get() will be unblocked. If
-        'immediate', a task is marked as done for each item remaining in
-        the queue, which may unblock callers of join().
+        All blocked callers of put() and get() will be unblocked.
+
+        If 'immediate', the queue is drained and unfinished tasks
+        is reduced by the number of drained tasks.  If unfinished tasks
+        is reduced to zero, callers of Queue.join are unblocked.
         """
         self._is_shutdown = True
         if immediate:

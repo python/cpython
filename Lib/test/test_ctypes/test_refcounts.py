@@ -3,7 +3,7 @@ import gc
 import sys
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import import_helper, thread_unsafe
 from test.support import script_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
@@ -13,7 +13,7 @@ OtherCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_ulonglong)
 
 dll = ctypes.CDLL(_ctypes_test.__file__)
 
-
+@thread_unsafe('not thread safe')
 class RefcountTestCase(unittest.TestCase):
     @support.refcount_test
     def test_1(self):
@@ -82,7 +82,7 @@ class RefcountTestCase(unittest.TestCase):
         gc.collect()
         self.assertEqual(sys.getrefcount(func), orig_refcount)
 
-
+@thread_unsafe('not thread safe')
 class AnotherLeak(unittest.TestCase):
     def test_callback(self):
         proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int)

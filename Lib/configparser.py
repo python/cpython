@@ -541,6 +541,8 @@ class ExtendedInterpolation(Interpolation):
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
                         option, section, rawval, ":".join(path)) from None
+                if v is None:
+                    continue
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
                                            dict(parser.items(sect, raw=True)),
@@ -792,7 +794,8 @@ class RawConfigParser(MutableMapping):
         """
         elements_added = set()
         for section, keys in dictionary.items():
-            section = str(section)
+            if section is not UNNAMED_SECTION:
+                section = str(section)
             try:
                 self.add_section(section)
             except (DuplicateSectionError, ValueError):
@@ -1216,11 +1219,14 @@ class RawConfigParser(MutableMapping):
 
     def _validate_key_contents(self, key):
         """Raises an InvalidWriteError for any keys containing
-        delimiters or that match the section header pattern"""
+        delimiters or that begins with the section header pattern"""
         if re.match(self.SECTCRE, key):
-            raise InvalidWriteError("Cannot write keys matching section pattern")
-        if any(delim in key for delim in self._delimiters):
-            raise InvalidWriteError("Cannot write key that contains delimiters")
+            raise InvalidWriteError(
+                f"Cannot write key {key}; begins with section pattern")
+        for delim in self._delimiters:
+            if delim in key:
+                raise InvalidWriteError(
+                    f"Cannot write key {key}; contains delimiter {delim}")
 
     def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for illegal non-string values.

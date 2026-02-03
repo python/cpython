@@ -605,7 +605,7 @@ How *do* you spell that odd word, anyways?
         # bug 1146.  Prevent a long word to be wrongly wrapped when the
         # preceding word is exactly one character shorter than the width
         self.check_wrap(self.text, 12,
-                        ['Did you say ',
+                        ['Did you say',
                          '"supercalifr',
                          'agilisticexp',
                          'ialidocious?',
@@ -633,7 +633,7 @@ How *do* you spell that odd word, anyways?
 
     def test_max_lines_long(self):
         self.check_wrap(self.text, 12,
-                        ['Did you say ',
+                        ['Did you say',
                          '"supercalifr',
                          'agilisticexp',
                          '[...]'],
@@ -764,6 +764,13 @@ some (including a hanging indent).'''
 # Despite the similar names, DedentTestCase is *not* the inverse
 # of IndentTestCase!
 class DedentTestCase(unittest.TestCase):
+
+    def test_type_error(self):
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
+            dedent(0)
+
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
+            dedent(b'')
 
     def assertUnchanged(self, text):
         """assert that dedent() has no effect on 'text'"""

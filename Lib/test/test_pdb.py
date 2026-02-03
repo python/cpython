@@ -1,6 +1,9 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
+import _colorize
 import doctest
+import gc
+import io
 import os
 import pdb
 import sys
@@ -17,7 +20,7 @@ from asyncio.events import _set_event_loop_policy
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
-from test.support import force_not_colorized, has_socket_support, os_helper
+from test.support import has_socket_support, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
@@ -224,10 +227,6 @@ def test_pdb_basic_commands():
     BAZ
     """
 
-def reset_Breakpoint():
-    import bdb
-    bdb.Breakpoint.clearBreakpoints()
-
 def test_pdb_breakpoint_commands():
     """Test basic commands related to breakpoints.
 
@@ -237,11 +236,6 @@ def test_pdb_breakpoint_commands():
     ...     print(2)
     ...     print(3)
     ...     print(4)
-
-    First, need to clear bdb state that might be left over from previous tests.
-    Otherwise, the new breakpoints might get assigned different numbers.
-
-    >>> reset_Breakpoint()
 
     Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
@@ -367,8 +361,6 @@ def test_pdb_breakpoint_commands():
 
 def test_pdb_breakpoint_ignore_and_condition():
     """
-    >>> reset_Breakpoint()
-
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     for i in range(5):
@@ -384,26 +376,26 @@ def test_pdb_breakpoint_ignore_and_condition():
     ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(2)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[0]>(2)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) break 4
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>:4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[0]>:4
     (Pdb) ignore 1 2
     Will ignore next 2 crossings of breakpoint 1.
     (Pdb) continue
     0
     1
-    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(4)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[0]>(4)test_function()
     -> print(i)
     (Pdb) condition 1 i == 4
     New condition set for breakpoint 1.
     (Pdb) continue
     2
     3
-    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(4)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[0]>(4)test_function()
     -> print(i)
     (Pdb) clear 1
-    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>:4
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[0]>:4
     (Pdb) continue
     4
     """
@@ -420,8 +412,6 @@ def test_pdb_breakpoint_on_annotated_function_def():
     >>> def foobar[T]() -> int:
     ...     return 0
 
-    >>> reset_Breakpoint()
-
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     pass
@@ -433,7 +423,7 @@ def test_pdb_breakpoint_on_annotated_function_def():
     ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[4]>(2)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[3]>(2)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) break foo
     Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[0]>:2
@@ -452,8 +442,6 @@ def test_pdb_commands():
     ...     print(1)
     ...     print(2)
     ...     print(3)
-
-    >>> reset_Breakpoint()
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'b 3',
@@ -501,13 +489,6 @@ def test_pdb_breakpoint_with_filename():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     mod2.func88()
     ...     mod2.func114()
-    ...     # Be a good citizen and clean up the mess
-    ...     reset_Breakpoint()
-
-    First, need to clear bdb state that might be left over from previous tests.
-    Otherwise, the new breakpoints might get assigned different numbers.
-
-    >>> reset_Breakpoint()
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
     ...     'break test.test_inspect.inspect_fodder2:90',
@@ -535,7 +516,6 @@ def test_pdb_breakpoint_with_filename():
 def test_pdb_breakpoint_on_disabled_line():
     """New breakpoint on once disabled line should work
 
-    >>> reset_Breakpoint()
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     for i in range(3):
@@ -552,23 +532,23 @@ def test_pdb_breakpoint_on_disabled_line():
     ...     'c'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(2)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[0]>(2)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) break 5
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:5
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[0]>:5
     (Pdb) c
-    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(5)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[0]>(5)test_function()
     -> print(j)
     (Pdb) clear 1
-    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:5
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[0]>:5
     (Pdb) break 4
-    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[0]>:4
     (Pdb) c
     0
-    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(4)test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[0]>(4)test_function()
     -> j = i * 2
     (Pdb) clear 2
-    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:4
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[0]>:4
     (Pdb) c
     2
     4
@@ -577,7 +557,6 @@ def test_pdb_breakpoint_on_disabled_line():
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
     """Breakpoints are remembered between interactive sessions
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...    'import test.test_pdb',
     ...    'break test.test_pdb.do_something',
@@ -662,7 +641,6 @@ def test_pdb_break_anywhere():
     >>> def test_function():
     ...     caller()
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'b 3',
     ...     'c',
@@ -1776,7 +1754,6 @@ def test_pdb_return_to_different_file():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     pprint.pprint(A())
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'b A.__repr__',
     ...     'continue',
@@ -2031,7 +2008,6 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
@@ -2166,6 +2142,179 @@ if not SKIP_CORO_TESTS:
             -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
             (Pdb) $_asynctask
             <Task pending name=... coro=<test() running at <doctest test.test_pdb.test_pdb_asynctask[1]>:2> ...
+            (Pdb) continue
+            """
+
+        def test_pdb_await_support():
+            """Testing await support in pdb
+
+            >>> import asyncio
+
+            >>> async def test():
+            ...     print("hello")
+            ...     await asyncio.sleep(0)
+            ...     print("world")
+            ...     return 42
+
+            >>> async def main():
+            ...     import pdb
+            ...     task = asyncio.create_task(test())
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            ...     pass
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     'x = await task',
+            ...     'p x',
+            ...     'x = await test()',
+            ...     'p x',
+            ...     'new_task = asyncio.create_task(test())',
+            ...     'await new_task',
+            ...     'await non_exist()',
+            ...     's',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) x = await task
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p x
+            42
+            (Pdb) x = await test()
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p x
+            42
+            (Pdb) new_task = asyncio.create_task(test())
+            (Pdb) await new_task
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) await non_exist()
+            *** NameError: name 'non_exist' is not defined
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) s
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(5)main()
+            -> pass
+            (Pdb) continue
+            """
+
+        def test_pdb_await_with_breakpoint():
+            """Testing await support with breakpoints set in tasks
+
+            >>> import asyncio
+
+            >>> async def test():
+            ...     x = 2
+            ...     await asyncio.sleep(0)
+            ...     return 42
+
+            >>> async def main():
+            ...     import pdb
+            ...     task = asyncio.create_task(test())
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     'b test',
+            ...     'k = await task',
+            ...     'n',
+            ...     'p x',
+            ...     'continue',
+            ...     'p k',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) b test
+            Breakpoint 1 at <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>:2
+            (Pdb) k = await task
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>(2)test()
+            -> x = 2
+            (Pdb) n
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>(3)test()
+            -> await asyncio.sleep(0)
+            (Pdb) p x
+            2
+            (Pdb) continue
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p k
+            42
+            (Pdb) continue
+            """
+
+        def test_pdb_await_contextvar():
+            """Testing await support context vars
+
+            >>> import asyncio
+            >>> import contextvars
+
+            >>> var = contextvars.ContextVar('var')
+
+            >>> async def get_var():
+            ...     return var.get()
+
+            >>> async def set_var(val):
+            ...     var.set(val)
+            ...     return var.get()
+
+            >>> async def main():
+            ...     var.set(42)
+            ...     import pdb
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([
+            ...     'p var.get()',
+            ...     'print(await get_var())',
+            ...     'print(await asyncio.create_task(set_var(100)))',
+            ...     'p var.get()',
+            ...     'print(await set_var(99))',
+            ...     'p var.get()',
+            ...     'print(await get_var())',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            42
+            (Pdb) print(await get_var())
+            42
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) print(await asyncio.create_task(set_var(100)))
+            100
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            42
+            (Pdb) print(await set_var(99))
+            99
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            99
+            (Pdb) print(await get_var())
+            99
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) continue
             """
 
@@ -2501,7 +2650,6 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_gen',
     ...                    'continue',
     ...                    'next',
@@ -2578,6 +2726,39 @@ def test_pdb_next_command_subiterator():
     (Pdb) next
     > <doctest test.test_pdb.test_pdb_next_command_subiterator[2]>(5)test_function()
     -> x = 123
+    (Pdb) continue
+    """
+
+def test_pdb_breakpoint_with_throw():
+    """GH-132536: PY_THROW event should not be turned off
+
+    >>> def gen():
+    ...    yield 0
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     g = gen()
+    ...     try:
+    ...         g.throw(TypeError)
+    ...     except TypeError:
+    ...         pass
+
+    >>> with PdbTestInput([
+    ...     'b 7',
+    ...     'continue',
+    ...     'clear 1',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_with_throw[1]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) b 7
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_with_throw[1]>:7
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_breakpoint_with_throw[1]>(7)test_function()
+    -> pass
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_with_throw[1]>:7
     (Pdb) continue
     """
 
@@ -2772,7 +2953,6 @@ def test_pdb_issue_20766():
     ...         print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     ...         i += 1
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput(['continue',
     ...                    'continue']):
     ...     test_function()
@@ -2795,7 +2975,6 @@ def test_pdb_issue_43318():
     ...     print(2)
     ...     print(3)
     ...     print(4)
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'break 3',
     ...     'clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3',
@@ -2832,7 +3011,6 @@ def test_pdb_issue_gh_91742():
     ...    about()
 
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'step',
     ...     'step',
@@ -2879,7 +3057,6 @@ def test_pdb_issue_gh_94215():
     ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...    func()
 
-    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'step',
     ...     'step',
@@ -3055,6 +3232,37 @@ def test_pdb_issue_gh_127321():
     """
 
 
+def test_pdb_issue_gh_136057():
+    """See GH-136057
+    "step" and "next" commands should be able to get over list comprehensions
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'next',
+    ...     'next',
+    ...     'step',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) step
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()->None
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
@@ -3110,8 +3318,6 @@ def test_pdb_f_trace_lines():
 
     pdb should work even if f_trace_lines is set to False on some frames.
 
-    >>> reset_Breakpoint()
-
     >>> def test_function():
     ...     import sys
     ...     frame = sys._getframe()
@@ -3124,7 +3330,7 @@ def test_pdb_f_trace_lines():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_f_trace_lines[1]>(5)test_function()
+    > <doctest test.test_pdb.test_pdb_f_trace_lines[0]>(5)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
     """
@@ -3272,7 +3478,51 @@ def test_pdb_issue_gh_65052():
     (Pdb) continue
     """
 
+def test_pdb_commands_last_breakpoint():
+    """See GH-142834
 
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     foo = 1
+    ...     bar = 2
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 4',
+    ...     'break 3',
+    ...     'clear 2',
+    ...     'commands',
+    ...     'p "success"',
+    ...     'end',
+    ...     'continue',
+    ...     'clear 1',
+    ...     'commands',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
+    (Pdb) break 3
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
+    (Pdb) clear 2
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
+    (Pdb) commands
+    (com) p "success"
+    (com) end
+    (Pdb) continue
+    'success'
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(4)test_function()
+    -> bar = 2
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
+    (Pdb) commands
+    *** cannot set commands: no existing breakpoint
+    (Pdb) continue
+    """
+
+
+@support.force_not_colorized_test_class
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
@@ -3354,6 +3604,35 @@ class PdbTestCase(unittest.TestCase):
         self.assertEqual(
             expected, pdb.find_function(func_name, os_helper.TESTFN))
 
+    def _fd_dir_for_pipe_targets(self):
+        """Return a directory exposing live file descriptors, if any."""
+        return self._proc_fd_dir() or self._dev_fd_dir()
+
+    def _proc_fd_dir(self):
+        """Return /proc-backed fd dir when it can be used for pipes."""
+        # GH-142836: Opening /proc/self/fd entries for pipes raises EACCES on
+        # Solaris, so prefer other mechanisms there.
+        if sys.platform.startswith("sunos"):
+            return None
+
+        proc_fd = "/proc/self/fd"
+        if os.path.isdir(proc_fd) and os.path.exists(os.path.join(proc_fd, '0')):
+            return proc_fd
+        return None
+
+    def _dev_fd_dir(self):
+        """Return /dev-backed fd dir when usable."""
+        dev_fd = "/dev/fd"
+        if os.path.isdir(dev_fd) and os.path.exists(os.path.join(dev_fd, '0')):
+            if sys.platform.startswith("freebsd"):
+                try:
+                    if os.stat("/dev").st_dev == os.stat(dev_fd).st_dev:
+                        return None
+                except FileNotFoundError:
+                    return None
+            return dev_fd
+        return None
+
     def test_find_function_empty_file(self):
         self._assert_find_function(b'', 'foo', None)
 
@@ -3372,6 +3651,20 @@ def quux():
             'bœr',
             ('bœr', 5),
         )
+
+    def test_print_stack_entry_uses_dynamic_line_prefix(self):
+        """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
+        stdout = io.StringIO()
+        p = pdb.Pdb(stdout=stdout)
+
+        # Get the current frame to use for printing
+        frame = sys._getframe()
+
+        with support.swap_attr(pdb, 'line_prefix', 'CUSTOM_PREFIX> '):
+            p.print_stack_entry((frame, frame.f_lineno))
+
+        # Check if the custom prefix appeared in the output
+        self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
 
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
@@ -3411,6 +3704,47 @@ def bœr():
 
         stdout, _ = self.run_pdb_script(script, commands)
         self.assertIn('None', stdout)
+
+    def test_script_target_anonymous_pipe(self):
+        """
+        _ScriptTarget doesn't fail on an anonymous pipe.
+
+        GH-142315
+        """
+        fd_dir = self._fd_dir_for_pipe_targets()
+        if fd_dir is None:
+            self.skipTest('anonymous pipe targets require /proc/self/fd or /dev/fd')
+
+        read_fd, write_fd = os.pipe()
+
+        def safe_close(fd):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+        self.addCleanup(safe_close, read_fd)
+        self.addCleanup(safe_close, write_fd)
+
+        pipe_path = os.path.join(fd_dir, str(read_fd))
+        if not os.path.exists(pipe_path):
+            self.skipTest('fd directory does not expose anonymous pipes')
+
+        script_source = 'marker = "via_pipe"\n'
+        os.write(write_fd, script_source.encode('utf-8'))
+        os.close(write_fd)
+
+        original_path0 = sys.path[0]
+        self.addCleanup(sys.path.__setitem__, 0, original_path0)
+
+        target = pdb._ScriptTarget(pipe_path)
+        code_text = target.code
+        namespace = target.namespace
+        exec(code_text, namespace)
+
+        self.assertEqual(namespace['marker'], 'via_pipe')
+        self.assertEqual(namespace['__file__'], target.filename)
+        self.assertIsNone(namespace['__spec__'])
 
     def test_find_function_first_executable_line(self):
         code = textwrap.dedent("""\
@@ -3567,7 +3901,6 @@ def bœr():
         self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
-    @force_not_colorized
     def test_issue16180(self):
         # A syntax error in the debuggee.
         script = "def f: pass\n"
@@ -3581,7 +3914,6 @@ def bœr():
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stderr))
 
-    @force_not_colorized
     def test_issue84583(self):
         # A syntax error from ast.literal_eval should not make pdb exit.
         script = "import ast; ast.literal_eval('')\n"
@@ -3761,6 +4093,23 @@ def bœr():
                     f.write("invalid")
                 self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
 
+    def test_readrc_current_dir(self):
+        with os_helper.temp_cwd() as cwd:
+            rc_path = os.path.join(cwd, ".pdbrc")
+            with open(rc_path, "w") as f:
+                f.write("invalid")
+            self.assertEqual(pdb.Pdb().rcLines[-1], "invalid")
+
+    def test_readrc_cwd_is_home(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.unset("HOME")
+            with os_helper.temp_cwd() as cwd, patch("os.path.expanduser"):
+                rc_path = os.path.join(cwd, ".pdbrc")
+                os.path.expanduser.return_value = rc_path
+                with open(rc_path, "w") as f:
+                    f.write("invalid")
+                self.assertEqual(pdb.Pdb().rcLines, ["invalid"])
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'
@@ -3800,7 +4149,10 @@ def bœr():
         commands = """
             continue
         """
-        self._run_pdb(["calendar", "-m"], commands, expected_returncode=2)
+        self._run_pdb(["calendar", "-m"], commands, expected_returncode=1)
+
+        _, stderr = self._run_pdb(["-m", "calendar", "-p", "1"], commands)
+        self.assertIn("unrecognized arguments: -p", stderr)
 
         stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
         self.assertIn("December", stdout)
@@ -4261,11 +4613,20 @@ def bœr():
         mod = _create_fake_frozen_module()
         mod.func()
         """
-        commands = """
+        commands_list = """
             break 20
             continue
             step
+            break 4
             list
+            quit
+        """
+        commands_longlist = """
+            break 20
+            continue
+            step
+            break 4
+            longlist
             quit
         """
         with open('gh93696.py', 'w') as f:
@@ -4276,9 +4637,14 @@ def bœr():
 
         self.addCleanup(os_helper.unlink, 'gh93696.py')
         self.addCleanup(os_helper.unlink, 'gh93696_host.py')
-        stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
-        # verify that pdb found the source of the "frozen" function
-        self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+        # verify that pdb found the source of the "frozen" function and it
+        # shows the breakpoint at the correct line for both list and longlist
+        for commands in (commands_list, commands_longlist):
+            stdout, _ = self._run_pdb(["gh93696_host.py"], commands)
+            self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+            self.assertIn('4 B', stdout, "breakpoint not found")
+            self.assertIn('-> def func():', stdout, "stack entry not found")
 
     def test_empty_file(self):
         script = ''
@@ -4350,6 +4716,41 @@ def bœr():
                 'q'
             ]))
             self.assertIn('break in bar', stdout)
+
+    @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
+    def test_async_break(self):
+        script = """
+            import asyncio
+
+            async def main():
+                pass
+
+            asyncio.run(main())
+        """
+        commands = """
+            break main
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:5")
+        self.assertIn("pass", stdout)
+
+    def test_issue_59000(self):
+        script = """
+            def foo():
+                pass
+
+            class C:
+                def foo(self):
+                    pass
+        """
+        commands = """
+            break C.foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
 
 class ChecklineTests(unittest.TestCase):
@@ -4440,7 +4841,7 @@ class PdbTestInline(unittest.TestCase):
             y
         """
 
-        stdout, stderr = self._run_script(script, commands)
+        stdout, stderr = self._run_script(script, commands, expected_returncode=1)
         self.assertIn("2", stdout)
         self.assertIn("Quit anyway", stdout)
         # Closing stdin will quit the debugger anyway so we need to confirm
@@ -4470,7 +4871,7 @@ class PdbTestInline(unittest.TestCase):
             y
         """
 
-        stdout, stderr = self._run_script(script, commands)
+        stdout, stderr = self._run_script(script, commands, expected_returncode=1)
         # Normal exit should not print anything to stderr
         self.assertEqual(stderr, "")
         # The quit prompt should be printed exactly once
@@ -4500,6 +4901,75 @@ class PdbTestInline(unittest.TestCase):
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
 
+    def test_readline_not_imported(self):
+        """GH-138860
+        Directly or indirectly importing readline might deadlock a subprocess
+        if it's launched with process_group=0 or preexec_fn=setpgrp
+
+        It's also a pattern that readline is never imported with just import pdb.
+
+        This test is to ensure that readline is not imported for import pdb.
+        It's possible that we have a good reason to do that in the future.
+        """
+
+        script = textwrap.dedent("""
+            import sys
+            import pdb
+            if "readline" in sys.modules:
+                print("readline imported")
+        """)
+        commands = ""
+        stdout, stderr = self._run_script(script, commands)
+        self.assertNotIn("readline imported", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_alternate_stdin(self):
+        script = textwrap.dedent("""
+            import pdb
+            import io
+
+            input_data = io.StringIO("p 40 + 2\\nc\\n")
+            pdb.Pdb(stdin=input_data).set_trace()
+        """)
+        commands = ""
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn("42", stdout)
+        self.assertEqual(stderr, "")
+
+
+@support.force_colorized_test_class
+class PdbTestColorize(unittest.TestCase):
+    def setUp(self):
+        self._original_can_colorize = _colorize.can_colorize
+        # Force colorize to be enabled because we are sending data
+        # to a StringIO
+        _colorize.can_colorize = lambda *args, **kwargs: True
+
+    def tearDown(self):
+        _colorize.can_colorize = self._original_can_colorize
+
+    def test_code_display(self):
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertIn("\x1b", output.getvalue())
+
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=False)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertNotIn("\x1b", output.getvalue())
+
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output)
+        p.set_trace(commands=['ll', 'c'])
+        self.assertNotIn("\x1b", output.getvalue())
+
+    def test_stack_entry(self):
+        output = io.StringIO()
+        p = pdb.Pdb(stdout=output, colorize=True)
+        p.set_trace(commands=['w', 'c'])
+        self.assertIn("\x1b", output.getvalue())
+
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
@@ -4524,9 +4994,12 @@ class TestREPLSession(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
 
 
+@support.force_not_colorized_test_class
 @support.requires_subprocess()
 class PdbTestReadline(unittest.TestCase):
-    def setUpClass():
+
+    @classmethod
+    def setUpClass(cls):
         # Ensure that the readline module is loaded
         # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module('readline')
@@ -4625,14 +5098,37 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'I love Python', output)
 
+    @unittest.skipIf(sys.platform.startswith('freebsd'),
+                     '\\x08 is not interpreted as backspace on FreeBSD')
+    def test_multiline_auto_indent(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        input = b"def f(x):\n"
+        input += b"if x > 0:\n"
+        input += b"x += 1\n"
+        input += b"return x\n"
+        # We need to do backspaces to remove the auto-indentation
+        input += b"\x08\x08\x08\x08else:\n"
+        input += b"return -x\n"
+        input += b"\n"
+        input += b"f(-21-21)\n"
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'42', output)
+
     def test_multiline_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
         """)
 
         input = b"def func():\n"
-        # Complete: \treturn 40 + 2
-        input += b"\tret\t 40 + 2\n"
+        # Auto-indent
+        # Complete: return 40 + 2
+        input += b"ret\t 40 + 2\n"
         input += b"\n"
         # Complete: func()
         input += b"fun\t()\n"
@@ -4642,6 +5138,8 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'42', output)
 
+    @unittest.skipIf(sys.platform.startswith('freebsd'),
+                     '\\x08 is not interpreted as backspace on FreeBSD')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -4652,12 +5150,13 @@ class PdbTestReadline(unittest.TestCase):
         # if the completion is not working as expected
         input = textwrap.dedent("""\
             def func():
-            \ta = 1
-             \ta += 1
-              \ta += 1
-               \tif a > 0:
-                    a += 1
-            \t\treturn a
+            a = 1
+            \x08\ta += 1
+            \x08\x08\ta += 1
+            \x08\x08\x08\ta += 1
+            \x08\x08\x08\x08\tif a > 0:
+            a += 1
+            \x08\x08\x08\x08return a
 
             func()
             c
@@ -4665,8 +5164,36 @@ class PdbTestReadline(unittest.TestCase):
 
         output = run_pty(script, input)
 
-        self.assertIn(b'4', output)
+        self.assertIn(b'5', output)
         self.assertNotIn(b'Error', output)
+
+    def test_interact_completion(self):
+        script = textwrap.dedent("""
+            value = "speci"
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # Enter interact mode
+        input = b"interact\n"
+        # Should fail to complete 'display' because that's a pdb command
+        input += b"disp\t\n"
+        # 'value' should still work
+        input += b"val\t + 'al'\n"
+        # Let's define a function to test <tab>
+        input += b"def f():\n"
+        input += b"\treturn 42\n"
+        input += b"\n"
+        input += b"f() * 2\n"
+        # Exit interact mode
+        input += b"exit()\n"
+        # continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b"'disp' is not defined", output)
+        self.assertIn(b'special', output)
+        self.assertIn(b'84', output)
 
 
 def load_tests(loader, tests, pattern):
@@ -4683,6 +5210,25 @@ def load_tests(loader, tests, pattern):
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.
         _set_event_loop_policy(None)
+
+        # A doctest of pdb could have residues. For example, pdb could still
+        # be running, or breakpoints might be left uncleared. These residues
+        # could potentially interfere with the following test, especially
+        # when we switch backends. Here we clear all the residues to restore
+        # to its pre-test state.
+
+        # clear all the breakpoints left
+        import bdb
+        bdb.Breakpoint.clearBreakpoints()
+
+        # Stop tracing and clear the pdb instance cache
+        if pdb.Pdb._last_pdb_instance:
+            pdb.Pdb._last_pdb_instance.stop_trace()
+            pdb.Pdb._last_pdb_instance = None
+
+        # If garbage objects are collected right after we start tracing, we
+        # could stop at __del__ of the object which would fail the test.
+        gc.collect()
 
     tests.addTest(
         doctest.DocTestSuite(

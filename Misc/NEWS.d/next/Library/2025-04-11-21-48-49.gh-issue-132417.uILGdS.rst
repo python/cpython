@@ -1,3 +1,0 @@
-Fix a ``NULL`` pointer dereference when a C function called using
-:mod:`ctypes` with ``restype`` :class:`~ctypes.py_object` returns
-``NULL``.

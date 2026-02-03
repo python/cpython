@@ -16,6 +16,14 @@ class BaseRobotTest:
     bad = []
     site_maps = None
 
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        # Remove tests that do nothing.
+        if not cls.good:
+            cls.test_good_urls = None
+        if not cls.bad:
+            cls.test_bad_urls = None
+
     def setUp(self):
         lines = io.StringIO(self.robots_txt).readlines()
         self.parser = urllib.robotparser.RobotFileParser()
@@ -231,9 +239,16 @@ class DisallowQueryStringTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 User-agent: *
 Disallow: /some/path?name=value
+Disallow: /another/path?
+Disallow: /yet/one/path?name=value&more
     """
-    good = ['/some/path']
-    bad = ['/some/path?name=value']
+    good = ['/some/path', '/some/path?',
+            '/some/path%3Fname=value', '/some/path?name%3Dvalue',
+            '/another/path', '/another/path%3F',
+            '/yet/one/path?name=value%26more']
+    bad = ['/some/path?name=value'
+           '/another/path?', '/another/path?name=value',
+           '/yet/one/path?name=value&more']
 
 
 class UseFirstUserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
@@ -249,15 +264,79 @@ Disallow: /another/path
     bad = ['/some/path']
 
 
-class EmptyQueryStringTest(BaseRobotTest, unittest.TestCase):
-    # normalize the URL first (#17403)
+class PercentEncodingTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 User-agent: *
-Allow: /some/path?
-Disallow: /another/path?
-    """
-    good = ['/some/path?']
-    bad = ['/another/path?']
+Disallow: /a1/Z-._~ # unreserved characters
+Disallow: /a2/%5A%2D%2E%5F%7E # percent-encoded unreserved characters
+Disallow: /u1/%F0%9F%90%8D # percent-encoded ASCII Unicode character
+Disallow: /u2/%f0%9f%90%8d
+Disallow: /u3/\U0001f40d # raw non-ASCII Unicode character
+Disallow: /v1/%F0 # percent-encoded non-ASCII octet
+Disallow: /v2/%f0
+Disallow: /v3/\udcf0 # raw non-ASCII octet
+Disallow: /p1%xy # raw percent
+Disallow: /p2%
+Disallow: /p3%25xy # percent-encoded percent
+Disallow: /p4%2525xy # double percent-encoded percent
+Disallow: /john%20smith # space
+Disallow: /john doe
+Disallow: /trailingspace%20
+Disallow: /question%3Fq=v # not query
+Disallow: /hash%23f # not fragment
+Disallow: /dollar%24
+Disallow: /asterisk%2A
+Disallow: /sub/dir
+Disallow: /slash%2F
+Disallow: /query/question?q=%3F
+Disallow: /query/raw/question?q=?
+Disallow: /query/eq?q%3Dv
+Disallow: /query/amp?q=v%26a
+"""
+    good = [
+        '/u1/%F0', '/u1/%f0',
+        '/u2/%F0', '/u2/%f0',
+        '/u3/%F0', '/u3/%f0',
+        '/p1%2525xy', '/p2%f0', '/p3%2525xy', '/p4%xy', '/p4%25xy',
+        '/question?q=v',
+        '/dollar', '/asterisk',
+        '/query/eq?q=v',
+        '/query/amp?q=v&a',
+    ]
+    bad = [
+        '/a1/Z-._~', '/a1/%5A%2D%2E%5F%7E',
+        '/a2/Z-._~', '/a2/%5A%2D%2E%5F%7E',
+        '/u1/%F0%9F%90%8D', '/u1/%f0%9f%90%8d', '/u1/\U0001f40d',
+        '/u2/%F0%9F%90%8D', '/u2/%f0%9f%90%8d', '/u2/\U0001f40d',
+        '/u3/%F0%9F%90%8D', '/u3/%f0%9f%90%8d', '/u3/\U0001f40d',
+        '/v1/%F0', '/v1/%f0', '/v1/\udcf0', '/v1/\U0001f40d',
+        '/v2/%F0', '/v2/%f0', '/v2/\udcf0', '/v2/\U0001f40d',
+        '/v3/%F0', '/v3/%f0', '/v3/\udcf0', '/v3/\U0001f40d',
+        '/p1%xy', '/p1%25xy',
+        '/p2%', '/p2%25', '/p2%2525', '/p2%xy',
+        '/p3%xy', '/p3%25xy',
+        '/p4%2525xy',
+        '/john%20smith', '/john smith',
+        '/john%20doe', '/john doe',
+        '/trailingspace%20', '/trailingspace ',
+        '/question%3Fq=v',
+        '/hash#f', '/hash%23f',
+        '/dollar$', '/dollar%24',
+        '/asterisk*', '/asterisk%2A',
+        '/sub/dir', '/sub%2Fdir',
+        '/slash%2F', '/slash/',
+        '/query/question?q=?', '/query/question?q=%3F',
+        '/query/raw/question?q=?', '/query/raw/question?q=%3F',
+        '/query/eq?q%3Dv',
+        '/query/amp?q=v%26a',
+    ]
+    # other reserved characters
+    for c in ":/#[]@!$&'()*+,;=":
+        robots_txt += f'Disallow: /raw{c}\nDisallow: /pc%{ord(c):02X}\n'
+        bad.append(f'/raw{c}')
+        bad.append(f'/raw%{ord(c):02X}')
+        bad.append(f'/pc{c}')
+        bad.append(f'/pc%{ord(c):02X}')
 
 
 class DefaultEntryTest(BaseRequestRateTest, unittest.TestCase):
@@ -299,26 +378,17 @@ Disallow: /cyberworld/map/\
         self.assertEqual(str(self.parser), self.expected_output)
 
 
-class RobotHandler(BaseHTTPRequestHandler):
-
-    def do_GET(self):
-        self.send_error(403, "Forbidden access")
-
-    def log_message(self, format, *args):
-        pass
-
-
 @unittest.skipUnless(
     support.has_socket_support,
     "Socket server requires working socket."
 )
-class PasswordProtectedSiteTestCase(unittest.TestCase):
+class BaseLocalNetworkTestCase:
 
     def setUp(self):
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
 
-        self.server = HTTPServer((socket_helper.HOST, 0), RobotHandler)
+        self.server = HTTPServer((socket_helper.HOST, 0), self.RobotHandler)
 
         self.t = threading.Thread(
             name='HTTPServer serving',
@@ -334,6 +404,57 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.server.shutdown()
         self.t.join()
         self.server.server_close()
+
+
+SAMPLE_ROBOTS_TXT = b'''\
+User-agent: test_robotparser
+Disallow: /utf8/\xf0\x9f\x90\x8d
+Disallow: /non-utf8/\xf0
+Disallow: //[spam]/path
+'''
+
+
+class LocalNetworkTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+    class RobotHandler(BaseHTTPRequestHandler):
+
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(SAMPLE_ROBOTS_TXT)
+
+        def log_message(self, format, *args):
+            pass
+
+    @threading_helper.reap_threads
+    def testRead(self):
+        # Test that reading a weird robots.txt doesn't fail.
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + '/robots.txt'
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(robots_url)
+        parser.read()
+        # And it can even interpret the weird paths in some reasonable way.
+        agent = 'test_robotparser'
+        self.assertTrue(parser.can_fetch(agent, robots_url))
+        self.assertTrue(parser.can_fetch(agent, url + '/utf8/'))
+        self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
+        self.assertFalse(parser.can_fetch(agent, url + '/utf8/%F0%9F%90%8D'))
+        self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
+        self.assertTrue(parser.can_fetch(agent, url + '/non-utf8/'))
+        self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/%F0'))
+        self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/\U0001f40d'))
+        self.assertFalse(parser.can_fetch(agent, url + '/%2F[spam]/path'))
+
+
+class PasswordProtectedSiteTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+    class RobotHandler(BaseHTTPRequestHandler):
+
+        def do_GET(self):
+            self.send_error(403, "Forbidden access")
+
+        def log_message(self, format, *args):
+            pass
 
     @threading_helper.reap_threads
     def testPasswordProtectedSite(self):

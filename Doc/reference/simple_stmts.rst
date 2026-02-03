@@ -465,8 +465,8 @@ Deletion of a target list recursively deletes each target, from left to right.
 
 Deletion of a name removes the binding of that name from the local or global
 namespace, depending on whether the name occurs in a :keyword:`global` statement
-in the same code block.  If the name is unbound, a :exc:`NameError` exception
-will be raised.
+in the same code block.  Trying to delete an unbound name raises a
+:exc:`NameError` exception.
 
 .. index:: pair: attribute; deletion
 
@@ -831,6 +831,9 @@ where the :keyword:`import` statement occurs.
 
 .. index:: single: __all__ (optional module attribute)
 
+.. attribute:: module.__all__
+   :no-typesetting:
+
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence
 of strings which are names defined or imported by that module.  The names
@@ -971,9 +974,16 @@ as globals. It would be impossible to assign to a global variable without
 :keyword:`!global`, although free variables may refer to globals without being
 declared global.
 
-The :keyword:`global` statement applies to the entire scope of a function or
-class body. A :exc:`SyntaxError` is raised if a variable is used or
+The :keyword:`!global` statement applies to the entire current scope
+(module, function body or class definition).
+A :exc:`SyntaxError` is raised if a variable is used or
 assigned to prior to its global declaration in the scope.
+
+At the module level, all variables are global, so a :keyword:`!global`
+statement has no effect.
+However, variables must still not be used or
+assigned to prior to their :keyword:`!global` declaration.
+This requirement is relaxed in the interactive prompt (:term:`REPL`).
 
 .. index::
    pair: built-in function; exec

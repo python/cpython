@@ -359,7 +359,7 @@ Usually, a method is called right after it is bound::
 
    x.f()
 
-In the :class:`!MyClass` example, this will return the string ``'hello world'``.
+If ``x = MyClass()``, as above, this will return the string ``'hello world'``.
 However, it is not necessary to call a method right away: ``x.f`` is a method
 object, and can be stored away and called at a later time.  For example::
 
@@ -663,6 +663,9 @@ Taken together, these properties make it possible to design reliable and
 extensible classes with multiple inheritance.  For more detail, see
 :ref:`python_2.3_mro`.
 
+In some cases multiple inheritance is not allowed; see :ref:`multiple-inheritance`
+for details.
+
 
 .. _tut-private:
 
@@ -926,6 +929,25 @@ Examples::
    >>> list(data[i] for i in range(len(data)-1, -1, -1))
    ['f', 'l', 'o', 'g']
 
+   >>> x = [[1,2,3], [], [4, 5]]
+   >>> g = (*i for i in x)
+   >>> list(g)
+   [1, 2, 3, 4, 5]
+
+In most cases, generator expressions must be wrapped in parentheses.  As a
+special case, however, when provided as the sole argument to a function (as in
+the examples involving ``sum``, ``set``, ``max``, and ``list`` above), the
+generator expression does not need to be wrapped in an additional set of
+parentheses.  That is to say, the following two pieces of code are semantically
+equivalent::
+
+   >>> f(x for x in y)
+   >>> f((x for x in y))
+
+as are the following::
+
+   >>> f(*x for x in y)
+   >>> f((*x for x in y))
 
 
 .. rubric:: Footnotes
