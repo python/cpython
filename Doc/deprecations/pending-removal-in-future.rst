@@ -78,6 +78,9 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`os`: Calling :func:`os.register_at_fork` in a multi-threaded process.
 
+* :mod:`os.path`: :func:`os.path.commonprefix` is deprecated, use either
+  :func:`os.path.commonpath` or :func:`string.commonprefix` instead.
+
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
   deprecated, use an exception instance.
 
