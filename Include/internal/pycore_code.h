@@ -160,6 +160,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
 
+typedef struct {
+    _Py_BackoffCounter counter;
+} _PyCallFunctionExCache;
+
+#define INLINE_CACHE_ENTRIES_CALL_FUNCTION_EX CACHE_ENTRIES(_PyCallFunctionExCache)
+
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
  * the "fast locals" storage array of execution frames.  The compiler
@@ -286,17 +292,7 @@ extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
 
-#ifdef Py_GIL_DISABLED
-// gh-115999 tracks progress on addressing this.
-#define ENABLE_SPECIALIZATION 0
-// Use this to enable specialization families once they are thread-safe. All
-// uses will be replaced with ENABLE_SPECIALIZATION once all families are
-// thread-safe.
-#define ENABLE_SPECIALIZATION_FT 1
-#else
 #define ENABLE_SPECIALIZATION 1
-#define ENABLE_SPECIALIZATION_FT ENABLE_SPECIALIZATION
-#endif
 
 /* Specialization functions, these are exported only for other re-generated
  * interpreters to call */
@@ -326,6 +322,7 @@ PyAPI_FUNC(void) _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
+PyAPI_FUNC(void) _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
@@ -556,7 +553,7 @@ _PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 
 // Return a pointer to the thread-local bytecode for the current thread,
 // creating it if necessary.
-extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
+PyAPI_FUNC(_Py_CODEUNIT *) _PyCode_GetTLBC(PyCodeObject *co);
 
 // Reserve an index for the current thread into thread-local bytecode
 // arrays
