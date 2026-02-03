@@ -1,4 +1,5 @@
 import io
+import platform
 import queue
 import re
 import subprocess
@@ -15,6 +16,8 @@ from unittest.mock import patch
 
 if sys.platform != "android":
     raise unittest.SkipTest("Android-specific")
+
+api_level = platform.android_ver().api_level
 
 # (name, level, fileno)
 STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
