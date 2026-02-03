@@ -38,7 +38,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL
-#include "pycore_weakref.h"
 
 #include <stdbool.h>
 
