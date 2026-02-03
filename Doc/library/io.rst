@@ -720,7 +720,7 @@ than raw I/O does.
    contains initial data.
 
    Methods may be used from multiple threads without external locking in
-   :term:`free threading` builds.
+   :term:`free-threaded builds <free-threaded build>`.
 
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:

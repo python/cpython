@@ -121,8 +121,8 @@ class TestForwardRefFormat(unittest.TestCase):
             beta: +some,
             gamma: some < obj,
             delta: some | {obj: module},
-            epsilon: some | {obj, module},
-            zeta: some | [obj],
+            epsilon: some | {obj},
+            zeta: some | [obj, module],
             eta: some | (),
         ):
             pass
@@ -158,11 +158,11 @@ class TestForwardRefFormat(unittest.TestCase):
 
         epsilon_anno = anno["epsilon"]
         self.assertIsInstance(epsilon_anno, ForwardRef)
-        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj, module}", owner=f))
+        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj}", owner=f))
 
         zeta_anno = anno["zeta"]
         self.assertIsInstance(zeta_anno, ForwardRef)
-        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj]", owner=f))
+        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj, module]", owner=f))
 
         eta_anno = anno["eta"]
         self.assertIsInstance(eta_anno, ForwardRef)
