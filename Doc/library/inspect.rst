@@ -360,6 +360,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``f_generator`` attribute to frames.
 
+.. versionchanged:: next
+
+   Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
+   coroutines, and ``ag_state`` attribute to async generators.
+
 .. function:: getmembers(object[, predicate])
 
    Return all the members of an object in a list of ``(name, value)``
