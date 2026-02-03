@@ -5254,10 +5254,10 @@ written in Python, such as a mail server's external command delivery program.
    .. versionadded:: 3.7
 
 
-.. function:: spawnl(mode, path, ...)
-              spawnle(mode, path, ..., env)
-              spawnlp(mode, file, ...)
-              spawnlpe(mode, file, ..., env)
+.. function:: spawnl(mode, path, arg0, arg1, ...)
+              spawnle(mode, path, arg0, arg1, ..., env)
+              spawnlp(mode, file, arg0, arg1, ...)
+              spawnlpe(mode, file, arg0, arg1, ..., env)
               spawnv(mode, path, args)
               spawnve(mode, path, args, env)
               spawnvp(mode, file, args)
