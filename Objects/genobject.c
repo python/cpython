@@ -943,7 +943,7 @@ gen_getstate(PyObject *self, void *Py_UNUSED(ignored))
 
     assert(frame_state >= 0 &&
            (size_t)frame_state < Py_ARRAY_LENGTH(state_strings));
-    return Py_NewRef(state_strings[frame_state]);
+    return state_strings[frame_state];
 }
 
 static PyObject *
@@ -1330,7 +1330,7 @@ cr_getstate(PyObject *self, void *Py_UNUSED(ignored))
 
     assert(frame_state >= 0 &&
            (size_t)frame_state < Py_ARRAY_LENGTH(state_strings));
-    return Py_NewRef(state_strings[frame_state]);
+    return state_strings[frame_state];
 }
 
 static PyGetSetDef coro_getsetlist[] = {
@@ -1778,7 +1778,7 @@ ag_getstate(PyObject *self, void *Py_UNUSED(ignored))
 
     assert(frame_state >= 0 &&
            (size_t)frame_state < Py_ARRAY_LENGTH(state_strings));
-    return Py_NewRef(state_strings[frame_state]);
+    return state_strings[frame_state];
 }
 
 static PyGetSetDef async_gen_getsetlist[] = {
