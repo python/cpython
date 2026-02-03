@@ -990,12 +990,3 @@ Helper functions
    or ``None``, runs of whitespace characters are replaced by a single space
    and leading and trailing whitespace are removed, otherwise *sep* is used to
    split and join the words.
-
-.. function:: commonprefix(list, /)
-
-   Return the longest string prefix (taken character-by-character) that is a
-   prefix of all the strings in *list*.  If *list* is empty, return the empty
-   string (``''``).
-
-   .. versionadded:: next
-      Moved to the :mod:`string` module from the :mod:`os.path` module.

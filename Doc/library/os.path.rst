@@ -121,8 +121,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
    .. deprecated:: next
-      Deprecated in favor of :func:`os.path.commonpath` for path prefixes and
-      :func:`string.commonprefix` for string prefixes.
+      Deprecated in favor of :func:`os.path.commonpath` for path prefixes.
 
 
 .. function:: dirname(path, /)

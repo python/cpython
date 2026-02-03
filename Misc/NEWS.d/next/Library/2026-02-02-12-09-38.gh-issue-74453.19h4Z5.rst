@@ -1,4 +1,2 @@
 Deprecate :func:`os.path.commonprefix` in favor of
-:func:`os.path.commonpath` for path segment prefixes
-and :func:`string.commonprefix` for character prefixes.
-
+:func:`os.path.commonpath` for path segment prefixes.

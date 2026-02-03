@@ -1,7 +1,6 @@
 """Various utility functions."""
 
 from collections import namedtuple, Counter
-from string import commonprefix
 
 __unittest = True
 
@@ -21,13 +20,25 @@ def _shorten(s, prefixlen, suffixlen):
         s = '%s[%d chars]%s' % (s[:prefixlen], skip, s[len(s) - suffixlen:])
     return s
 
+def _commonprefix(m, /):
+    if not m:
+        return ""
+    m = sorted(m)
+    prefix = m[0]
+    for item in m[1:]:
+        for i in range(len(prefix)):
+            if item[i] != prefix[i]:
+                prefix = prefix[:i]
+                break
+    return prefix
+
 def _common_shorten_repr(*args):
     args = tuple(map(safe_repr, args))
     maxlen = max(map(len, args))
     if maxlen <= _MAX_LENGTH:
         return args
 
-    prefix = commonprefix(args)
+    prefix = _commonprefix(args)
     prefixlen = len(prefix)
 
     common_len = _MAX_LENGTH - \

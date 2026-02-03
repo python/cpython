@@ -107,12 +107,26 @@ def commonprefix(m, /):
     "Given a list of pathnames, returns the longest common leading component"
     import warnings
     warnings.warn('os.path.commonprefix() is deprecated. Use '
-                  'os.path.commonpath() for longest path prefix, or '
-                  'string.commonprefix() for longest string prefix.',
+                  'os.path.commonpath() for longest path prefix.',
                   category=DeprecationWarning,
                   stacklevel=2)
-    import string
-    return string.commonprefix(m)
+    return _commonprefix(m)
+
+def _commonprefix(m, /):
+    "Internal implementation of commonprefix()"
+    if not m: return ''
+    # Some people pass in a list of pathname parts to operate in an OS-agnostic
+    # fashion; don't try to translate in that case as that's an abuse of the
+    # API and they are already doing what they need to be OS-agnostic and so
+    # they most likely won't be using an os.PathLike object in the sublists.
+    if not isinstance(m[0], (list, tuple)):
+        m = tuple(map(os.fspath, m))
+    s1 = min(m)
+    s2 = max(m)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            return s1[:i]
+    return s1
 
 # Are two stat buffers (obtained from stat, fstat or lstat)
 # describing the same file?
