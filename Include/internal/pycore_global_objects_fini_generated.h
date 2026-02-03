@@ -13,7 +13,7 @@ static inline void
 _PyStaticObject_CheckRefcnt(PyObject *obj) {
     if (!_Py_IsImmortal(obj)) {
         fprintf(stderr, "Immortal Object has less refcnt than expected.\n");
-        PyUnstable_Object_Dump(obj);
+        PyObject_Dump(obj);
     }
 }
 #endif
@@ -1797,6 +1797,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ident));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(identity_hint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignore));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignorechars));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(imag));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(implieslink));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(importlib));
@@ -2142,6 +2143,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(which));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(who));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(withdata));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wrapcol));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(writable));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write_through));

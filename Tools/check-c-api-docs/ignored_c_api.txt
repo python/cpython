@@ -18,11 +18,6 @@ Py_HasFileSystemDefaultEncoding
 Py_UTF8Mode
 # pyhash.h
 Py_HASH_EXTERNAL
-# exports.h
-PyAPI_DATA
-Py_EXPORTED_SYMBOL
-Py_IMPORTED_SYMBOL
-Py_LOCAL_SYMBOL
 # modsupport.h
 PyABIInfo_FREETHREADING_AGNOSTIC
 # moduleobject.h
@@ -71,28 +66,15 @@ PyCF_MASK
 PyCF_MASK_OBSOLETE
 PyCF_SOURCE_IS_UTF8
 # cpython/descrobject.h
-PyDescr_COMMON
 PyDescr_NAME
 PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
 # cpython/fileobject.h
-PyFile_NewStdPrinter
-PyStdPrinter_Type
 Py_UniversalNewlineFgets
-# cpython/setobject.h
-PySet_MINSIZE
 # cpython/ceval.h
 PyUnstable_CopyPerfMapFile
 PyUnstable_PerfTrampoline_CompileCode
 PyUnstable_PerfTrampoline_SetPersistAfterFork
-# cpython/genobject.h
-PyAsyncGenASend_CheckExact
-# cpython/longintrepr.h
-PyLong_BASE
-PyLong_MASK
-PyLong_SHIFT
-# cpython/pyerrors.h
-PyException_HEAD
 # cpython/pyframe.h
 PyUnstable_EXECUTABLE_KINDS
 PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
@@ -101,9 +83,6 @@ PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
 PyUnstable_EXECUTABLE_KIND_SKIP
 # cpython/pylifecycle.h
 Py_FrozenMain
-# cpython/unicodeobject.h
-PyUnicode_IS_COMPACT
-PyUnicode_IS_COMPACT_ASCII
 # pythonrun.h
 PyErr_Display
 # cpython/objimpl.h
