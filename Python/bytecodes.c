@@ -30,7 +30,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
 #include "pycore_template.h"      // _PyTemplate_Build()
-#include "pycore_tuple.h"         // _PyTuple_EmptyExactDealloc(), _PyTuple_ITEMS()
+#include "pycore_tuple.h"         // _PyTuple_Free(), _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
 #include "pycore_dict.h"
@@ -1672,7 +1672,7 @@ dummy_func(
         }
 
         op(_UNPACK_SEQUENCE_UNIQUE_TUPLE, (seq -- values[oparg])) {
-            PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
             assert(PyTuple_CheckExact(seq_o));
             assert(PyTuple_GET_SIZE(seq_o) == oparg);
             DEOPT_IF(!_PyObject_IsUniquelyReferenced(seq_o));
@@ -1680,9 +1680,9 @@ dummy_func(
             PyObject **items = _PyTuple_ITEMS(seq_o);
             for (int i = oparg; --i >= 0; ) {
                 *values++ = PyStackRef_FromPyObjectSteal(items[i]);
-                items[i] = NULL;
             }
-            PyStackRef_CLOSE_SPECIALIZED(seq, _PyTuple_EmptyExactDealloc);
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
         }
 
         macro(UNPACK_SEQUENCE_LIST) =
