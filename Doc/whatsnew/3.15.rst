@@ -867,6 +867,56 @@ tkinter
   with outdated names.
   (Contributed by Serhiy Storchaka in :gh:`143754`)
 
+
+.. _whatsnew315-tomllib-1-1-0:
+
+tomllib
+-------
+
+* The :mod:`tomllib` module now supports TOML 1.1.0.
+  This is a backwards compatible update, meaning that all valid TOML 1.0.0
+  documents are parsed the same way.
+
+  The changes, according to the `official TOML changelog`_, are:
+
+  - Allow newlines and trailing commas in inline tables.
+
+    Previously an inline table had to be on a single line and couldn't end
+    with a trailing comma. This is now relaxed so that the following is valid:
+
+    .. syntax highlighting needs TOML 1.1.0 support in Pygments,
+       see https://github.com/pygments/pygments/issues/3026
+
+    .. code-block:: text
+
+       tbl = {
+          key      = "a string",
+          moar-tbl =  {
+             key = 1,
+          },
+       }
+
+  - Add ``\xHH`` notation to basic strings for codepoints under 255,
+    and the ``\e`` escape for the escape character:
+
+    .. code-block:: text
+
+       null = "null byte: \x00; letter a: \x61"
+       csi = "\e["
+
+  - Seconds in datetime and time values are now optional.
+    The following are now valid:
+
+    .. code-block:: text
+
+       dt = 2010-02-03 14:15
+       t  = 14:15
+
+  (Contributed by Taneli Hukkinen in :gh:`142956`.)
+
+.. _official TOML changelog: https://github.com/toml-lang/toml/blob/main/CHANGELOG.md
+
+
 types
 ------
 
