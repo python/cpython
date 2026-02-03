@@ -17,7 +17,9 @@ for parsing and creating XML data.
    This module will use a fast implementation whenever available.
 
 .. deprecated:: 3.3
-   The :mod:`!xml.etree.cElementTree` module is deprecated.
+   The :mod:`!xml.etree.cElementTree` module, which is an alias for
+   :mod:`xml.etree.ElementTree`, is deprecated. Use :mod:`xml.etree.ElementTree`
+   directly instead.
 
 
 .. note::
