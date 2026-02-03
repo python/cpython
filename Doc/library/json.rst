@@ -12,7 +12,7 @@
 --------------
 
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
-:rfc:`7159` (which obsoletes :rfc:`4627`) and by
+:rfc:`8259` (which obsoletes :rfc:`7159`) and by
 `ECMA-404 <https://ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
@@ -615,7 +615,7 @@ Exceptions
 Standard Compliance and Interoperability
 ----------------------------------------
 
-The JSON format is specified by :rfc:`7159` and by
+The JSON format is specified by :rfc:`8259` and by
 `ECMA-404 <https://ecma-international.org/publications-and-standards/standards/ecma-404/>`_.
 This section details this module's level of compliance with the RFC.
 For simplicity, :class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and
@@ -704,7 +704,7 @@ Top-level Non-Object, Non-Array Values
 The old version of JSON specified by the obsolete :rfc:`4627` required that
 the top-level value of a JSON text must be either a JSON object or array
 (Python :class:`dict` or :class:`list`), and could not be a JSON null,
-boolean, number, or string value.  :rfc:`7159` removed that restriction, and
+boolean, number, or string value.  :rfc:`8259` removed that restriction, and
 this module does not and has never implemented that restriction in either its
 serializer or its deserializer.
 
@@ -833,8 +833,8 @@ Command-line options
 
 .. rubric:: Footnotes
 
-.. [#rfc-errata] As noted in `the errata for RFC 7159
-   <https://www.rfc-editor.org/errata_search.php?rfc=7159>`_,
+.. [#rfc-errata] As noted in `the errata for RFC 8259
+   <https://www.rfc-editor.org/errata_search.php?rfc=8259>`_,
    JSON permits literal U+2028 (LINE SEPARATOR) and
    U+2029 (PARAGRAPH SEPARATOR) characters in strings, whereas JavaScript
    (as of ECMAScript Edition 5.1) does not.
