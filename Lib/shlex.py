@@ -313,7 +313,18 @@ def split(s, comments=False, posix=True):
 
 
 def join(split_command):
-    """Return a shell-escaped string from *split_command*."""
+    """Concatenate the tokens of the list *split_command* and return a string.
+
+    This is the inverse of :func:`split`: the returned value is
+    shell-escaped to protect against injection, so the split of the
+    result equals *split_command*.
+
+        >>> from shlex import split, join
+        >>> split('echo "hello world"')
+        ['echo', 'hello world']
+        >>> join(['echo', 'hello world'])
+        "echo 'hello world'"
+    """
     return ' '.join(quote(arg) for arg in split_command)
 
 
