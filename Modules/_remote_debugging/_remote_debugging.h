@@ -174,15 +174,15 @@ typedef enum _WIN32_THREADSTATE {
 #define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
 
 /* Exception cause macro */
-#define set_exception_cause(unwinder, exc_type, message) \
-    do { \
-        if (!PyErr_ExceptionMatches(PyExc_PermissionError)) { \
-            if (!PyErr_Occurred()) { \
-                PyErr_SetString(exc_type, message); \
-            } else if (unwinder->debug) { \
-                _PyErr_FormatFromCause(exc_type, "%s", message); \
-            } \
-        } \
+#define set_exception_cause(unwinder, exc_type, message)          \
+    do {                                                          \
+        if (!PyErr_ExceptionMatches(PyExc_PermissionError)) {     \
+            if (!PyErr_Occurred()) {                              \
+                PyErr_SetString(exc_type, message);               \
+            } else if (unwinder->debug) {                         \
+                _PyErr_FormatFromCause(exc_type, "%s", message);  \
+            }                                                     \
+        }                                                         \
     } while (0)
 
 /* ============================================================================
