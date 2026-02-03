@@ -1356,7 +1356,7 @@ are always available.  They are listed here in alphabetical order.
    integer file descriptor of the file to be wrapped.  (If a file descriptor is
    given, it is closed when the returned I/O object is closed unless *closefd*
    is set to ``False``.)  The value passed as *file* is stored in the
-   :attr:`~io.IOBase.name` attribute of the returned file object.
+   :attr:`~io.FileIO.name` attribute of the returned file object.
 
    *mode* is an optional string that specifies the mode in which the file is
    opened.  It defaults to ``'r'`` which means open for reading in text mode.
