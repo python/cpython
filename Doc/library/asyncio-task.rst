@@ -766,6 +766,11 @@ Timeouts
     The context manager produced by :func:`asyncio.timeout` can be
     rescheduled to a different deadline and inspected.
 
+    .. note::
+
+       Prefer using :func:`asyncio.timeout` or :func:`asyncio.timeout_at`
+       rather than instantiating :class:`Timeout` directly.
+
     .. class:: Timeout(when)
 
        An :ref:`asynchronous context manager <async-context-managers>`
