@@ -94,10 +94,13 @@ android {
         }
 
         // This controls the API level of the maxVersion managed emulator, which is used
-        // by CI and cibuildwheel. 34 takes up too much disk space (#142289), 35 has
-        // issues connecting to the internet (#142387), and 36 and later are not
-        // available as aosp_atd images yet.
-        targetSdk = 33
+        // by CI and cibuildwheel.
+        //  * 33 has excessive buffering in the logcat client
+        //    (https://cs.android.com/android/_/android/platform/system/logging/+/d340721894f223327339010df59b0ac514308826).
+        //  * 34 consumes too much disk space on GitHub Actions (#142289).
+        //  * 35 has issues connecting to the internet (#142387).
+        //  * 36 and later are not available as aosp_atd images yet.
+        targetSdk = 32
 
         versionCode = 1
         versionName = "1.0"
@@ -130,9 +133,10 @@ android {
         path("src/main/c/CMakeLists.txt")
     }
 
-    // Set this property to something non-empty, otherwise it'll use the default
-    // list, which ignores asset directories beginning with an underscore.
-    aaptOptions.ignoreAssetsPattern = ".git"
+    // Set this property to something nonexistent but non-empty. Otherwise it'll use the
+    // default list, which ignores asset directories beginning with an underscore, and
+    // maybe also other files required by tests.
+    aaptOptions.ignoreAssetsPattern = "android-testbed-dont-ignore-anything"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -234,6 +238,12 @@ androidComponents.onVariants { variant ->
                     from(cwd)
                 }
             }
+
+            // A filename ending with .gz will be automatically decompressed
+            // while building the APK. Avoid this by adding a dash to the end,
+            // and add an extra dash to any filenames that already end with one.
+            // This will be undone in MainActivity.kt.
+            rename(""".*(\.gz|-)""", "$0-")
         }
     }
 
