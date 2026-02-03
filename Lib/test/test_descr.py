@@ -1835,7 +1835,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         sm = staticmethod.__new__(staticmethod, None)
         self.assertEqual(repr(sm), '<staticmethod(None)>')
 
-    def test_classmethod_new_none_repr(self):
+    def test_classmethod_new(self):
         cm = classmethod.__new__(classmethod, None)
         self.assertEqual(repr(cm), '<classmethod(None)>')
 
