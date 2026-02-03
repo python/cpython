@@ -336,7 +336,7 @@ complete listing.
    information was lost.
 
    On release builds of Python, this is roughly equivalent to
-   :c:expr:`(smaller) value` (in C++, ``static_cast<smaller>(value)`` will be
+   ``(smaller) value`` (in C++, ``static_cast<smaller>(value)`` will be
    used instead).
 
    On debug builds (implying that :c:macro:`Py_DEBUG` is defined), this asserts
