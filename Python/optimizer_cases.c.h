@@ -108,7 +108,7 @@
             JitOptRef trash;
             value = stack_pointer[-1];
             JitOptRef tmp = GETLOCAL(oparg);
-            GETLOCAL(oparg) = value;
+            GETLOCAL(oparg) = PyJitRef_RemoveUnique(value);
             trash = tmp;
             stack_pointer[-1] = trash;
             break;

@@ -124,8 +124,7 @@ dummy_func(void) {
 
     op(_SWAP_FAST, (value -- trash)) {
         JitOptRef tmp = GETLOCAL(oparg);
-        GETLOCAL(oparg) = value;
-        // GETLOCAL(oparg) = PyJitRef_RemoveUnique(value);
+        GETLOCAL(oparg) = PyJitRef_RemoveUnique(value);
         trash = tmp;
     }
 
