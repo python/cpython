@@ -2163,6 +2163,8 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
+      >>> 'spam, spam, spam'.index('spam')
+      0
       >>> 'spam, spam, spam'.index('eggs')
       Traceback (most recent call last):
         File "<python-input-0>", line 1, in <module>
@@ -2546,6 +2548,20 @@ expression support in the :mod:`re` module).
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rindex('spam')
+      12
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin-0>", line 1, in <module>
+          'spam, spam, spam'.rindex('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`index` and :meth:`find`.
 
 
 .. method:: str.rjust(width, fillchar=' ', /)
