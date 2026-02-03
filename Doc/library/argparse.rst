@@ -1922,8 +1922,9 @@ Subcommands
       >>> parser = argparse.ArgumentParser(prog='chicken.py')
       >>> subparsers = parser.add_subparsers()
       >>> fly = subparsers.add_parser('fly', deprecated=True)
-      >>> args = parser.parse_args(['fly'])  # doctest: +SKIP
+      >>> args = parser.parse_args(['fly'])
       chicken.py: warning: command 'fly' is deprecated
+      Namespace()
 
    All other keyword arguments are passed directly to the
    :class:`!ArgumentParser` constructor.
