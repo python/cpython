@@ -871,12 +871,12 @@ exit:
 }
 
 PyDoc_STRVAR(itertools_filterfalse__doc__,
-"filterfalse(function, iterable, /)\n"
+"filterfalse(predicate, iterable, /)\n"
 "--\n"
 "\n"
-"Return those items of iterable for which function(item) is false.\n"
+"Return those items of iterable for which predicate(item) is false.\n"
 "\n"
-"If function is None, return the items that are false.");
+"If predicate is None, return the items that are false.");
 
 static PyObject *
 itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq);
@@ -980,4 +980,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7f385837b13edbeb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a44797ba1e4a8cce input=a9049054013a1b77]*/

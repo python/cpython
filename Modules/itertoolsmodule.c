@@ -3245,17 +3245,17 @@ typedef struct {
 /*[clinic input]
 @classmethod
 itertools.filterfalse.__new__
-    function as func: object
+    predicate as func: object
     iterable as seq: object
     /
-Return those items of iterable for which function(item) is false.
+Return those items of iterable for which predicate(item) is false.
 
-If function is None, return the items that are false.
+If predicate is None, return the items that are false.
 [clinic start generated code]*/
 
 static PyObject *
 itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=55f87eab9fc0484e input=2d684a2c66f99cde]*/
+/*[clinic end generated code: output=55f87eab9fc0484e input=a7df36679f5f66d6]*/
 {
     PyObject *it;
     filterfalseobject *lz;
