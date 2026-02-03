@@ -530,6 +530,17 @@ code before trusting a returned component part.  Does that ``scheme`` make
 sense?  Is that a sensible ``path``?  Is there anything strange about that
 ``hostname``?  etc.
 
+.. warning::
+
+   :func:`urlsplit` (and :func:`urlparse`) does not consider a URL's
+   :attr:`~urllib.parse.SplitResult.netloc` to be present unless
+   it is preceded by ``//``.  This means that, for example, the URL
+   ``///example.com/path`` will be parsed with an empty ``netloc`` and a
+   ``path`` of ``/example.com/path``.  This behavior may lead to open redirect
+   vulnerabilities in applications that rely on checking the ``netloc`` to
+   validate redirect URLs.  Always carefully validate redirect targets,
+   preferably using an allowlist of known-safe URLs or hosts.
+
 What constitutes a URL is not universally well defined.  Different applications
 have different needs and desired constraints.  For instance the living `WHATWG
 spec`_ describes what user facing web clients such as a web browser require.
