@@ -51,9 +51,15 @@ This module provides one exception and one type object:
    Alias for :exc:`ExpatError`.
 
 
+.. class:: xmlparser
+
+   The type of XML parser objects returned by the :func:`ParserCreate` function.
+   This type is available as ``xml.parsers.expat.XMLParserType``.
+
+
 .. data:: XMLParserType
 
-   The type of the return values from the :func:`ParserCreate` function.
+   Alias for :class:`xmlparser`.
 
 The :mod:`xml.parsers.expat` module contains two functions:
 
