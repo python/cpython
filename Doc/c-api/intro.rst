@@ -184,7 +184,7 @@ complete listing.
 
    Both *integer* and *positions* can be evaluated more than once;
    consequently, avoid directly passing a function call or some other
-   expensive operation to this macro. Instead, store the result as a
+   operation with side-effects to this macro. Instead, store the result as a
    variable and then pass it.
 
    *type* is unused and only kept for backwards compatibility. Historically,
@@ -343,7 +343,7 @@ complete listing.
    that no information was lost with the cast from *larger* to *smaller*.
 
    *value*, *larger*, and *smaller* may all be evaluated more than once in the
-   expression; consequently, do not pass an expensive operation directly to
+   expression; consequently, do not pass an expression with side-effects directly to
    this macro.
 
 .. c:macro:: Py_STRINGIFY(x)
