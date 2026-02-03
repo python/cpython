@@ -3112,6 +3112,12 @@ class TestDateTime(TestDate):
                 result = self.theclass.strptime(string, format)
                 self.assertEqual(result, target)
 
+    def test_strptime_conflicting_directives(self):
+        # gh-124549: warn when using conflicting directives
+        with self.assertWarns(SyntaxWarning) as cm:
+            self.theclass.strptime("2025 26", "%Y %y")
+        self.assertIn("conflicting directives", str(cm.warning))
+
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
         t = self.theclass(2004, 12, 31, 6, 22, 33)
