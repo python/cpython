@@ -1333,11 +1333,23 @@ extern "C" {
 }
 
 #define _Py_str_identifiers_INIT { \
+    INIT_ID(AGEN_CLOSED), \
+    INIT_ID(AGEN_CREATED), \
+    INIT_ID(AGEN_RUNNING), \
+    INIT_ID(AGEN_SUSPENDED), \
     INIT_ID(CANCELLED), \
+    INIT_ID(CORO_CLOSED), \
+    INIT_ID(CORO_CREATED), \
+    INIT_ID(CORO_RUNNING), \
+    INIT_ID(CORO_SUSPENDED), \
     INIT_ID(Emax), \
     INIT_ID(Emin), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
+    INIT_ID(GEN_CLOSED), \
+    INIT_ID(GEN_CREATED), \
+    INIT_ID(GEN_RUNNING), \
+    INIT_ID(GEN_SUSPENDED), \
     INIT_ID(JSONDecodeError), \
     INIT_ID(PENDING), \
     INIT_ID(Py_Repr), \
