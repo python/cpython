@@ -34,71 +34,72 @@ class GenericTest:
                                 .format(self.pathmodule.__name__, attr))
 
     def test_commonprefix(self):
-        commonprefix = self.pathmodule.commonprefix
-        self.assertEqual(
-            commonprefix([]),
-            ""
-        )
-        self.assertEqual(
-            commonprefix(["/home/swenson/spam", "/home/swen/spam"]),
-            "/home/swen"
-        )
-        self.assertEqual(
-            commonprefix(["/home/swen/spam", "/home/swen/eggs"]),
-            "/home/swen/"
-        )
-        self.assertEqual(
-            commonprefix(["/home/swen/spam", "/home/swen/spam"]),
-            "/home/swen/spam"
-        )
-        self.assertEqual(
-            commonprefix(["home:swenson:spam", "home:swen:spam"]),
-            "home:swen"
-        )
-        self.assertEqual(
-            commonprefix([":home:swen:spam", ":home:swen:eggs"]),
-            ":home:swen:"
-        )
-        self.assertEqual(
-            commonprefix([":home:swen:spam", ":home:swen:spam"]),
-            ":home:swen:spam"
-        )
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            commonprefix = self.pathmodule.commonprefix
+            self.assertEqual(
+                commonprefix([]),
+                ""
+            )
+            self.assertEqual(
+                commonprefix(["/home/swenson/spam", "/home/swen/spam"]),
+                "/home/swen"
+            )
+            self.assertEqual(
+                commonprefix(["/home/swen/spam", "/home/swen/eggs"]),
+                "/home/swen/"
+            )
+            self.assertEqual(
+                commonprefix(["/home/swen/spam", "/home/swen/spam"]),
+                "/home/swen/spam"
+            )
+            self.assertEqual(
+                commonprefix(["home:swenson:spam", "home:swen:spam"]),
+                "home:swen"
+            )
+            self.assertEqual(
+                commonprefix([":home:swen:spam", ":home:swen:eggs"]),
+                ":home:swen:"
+            )
+            self.assertEqual(
+                commonprefix([":home:swen:spam", ":home:swen:spam"]),
+                ":home:swen:spam"
+            )
 
-        self.assertEqual(
-            commonprefix([b"/home/swenson/spam", b"/home/swen/spam"]),
-            b"/home/swen"
-        )
-        self.assertEqual(
-            commonprefix([b"/home/swen/spam", b"/home/swen/eggs"]),
-            b"/home/swen/"
-        )
-        self.assertEqual(
-            commonprefix([b"/home/swen/spam", b"/home/swen/spam"]),
-            b"/home/swen/spam"
-        )
-        self.assertEqual(
-            commonprefix([b"home:swenson:spam", b"home:swen:spam"]),
-            b"home:swen"
-        )
-        self.assertEqual(
-            commonprefix([b":home:swen:spam", b":home:swen:eggs"]),
-            b":home:swen:"
-        )
-        self.assertEqual(
-            commonprefix([b":home:swen:spam", b":home:swen:spam"]),
-            b":home:swen:spam"
-        )
+            self.assertEqual(
+                commonprefix([b"/home/swenson/spam", b"/home/swen/spam"]),
+                b"/home/swen"
+            )
+            self.assertEqual(
+                commonprefix([b"/home/swen/spam", b"/home/swen/eggs"]),
+                b"/home/swen/"
+            )
+            self.assertEqual(
+                commonprefix([b"/home/swen/spam", b"/home/swen/spam"]),
+                b"/home/swen/spam"
+            )
+            self.assertEqual(
+                commonprefix([b"home:swenson:spam", b"home:swen:spam"]),
+                b"home:swen"
+            )
+            self.assertEqual(
+                commonprefix([b":home:swen:spam", b":home:swen:eggs"]),
+                b":home:swen:"
+            )
+            self.assertEqual(
+                commonprefix([b":home:swen:spam", b":home:swen:spam"]),
+                b":home:swen:spam"
+            )
 
-        testlist = ['', 'abc', 'Xbcd', 'Xb', 'XY', 'abcd',
-                    'aXc', 'abd', 'ab', 'aX', 'abcX']
-        for s1 in testlist:
-            for s2 in testlist:
-                p = commonprefix([s1, s2])
-                self.assertStartsWith(s1, p)
-                self.assertStartsWith(s2, p)
-                if s1 != s2:
-                    n = len(p)
-                    self.assertNotEqual(s1[n:n+1], s2[n:n+1])
+            testlist = ['', 'abc', 'Xbcd', 'Xb', 'XY', 'abcd',
+                        'aXc', 'abd', 'ab', 'aX', 'abcX']
+            for s1 in testlist:
+                for s2 in testlist:
+                    p = commonprefix([s1, s2])
+                    self.assertStartsWith(s1, p)
+                    self.assertStartsWith(s2, p)
+                    if s1 != s2:
+                        n = len(p)
+                        self.assertNotEqual(s1[n:n+1], s2[n:n+1])
 
     def test_getsize(self):
         filename = os_helper.TESTFN
@@ -606,8 +607,9 @@ class PathLikeTests(unittest.TestCase):
         self.assertPathEqual(os.path.isdir)
 
     def test_path_commonprefix(self):
-        self.assertEqual(os.path.commonprefix([self.file_path, self.file_name]),
-                         self.file_name)
+        with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
+            self.assertEqual(os.path.commonprefix([self.file_path, self.file_name]),
+                             self.file_name)
 
     def test_path_getsize(self):
         self.assertPathEqual(os.path.getsize)

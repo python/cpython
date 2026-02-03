@@ -432,7 +432,7 @@ def dedent(text):
         msg = f'expected str object, not {type(text).__qualname__!r}'
         raise TypeError(msg) from None
 
-    # Get length of leading whitespace, inspired by ``os.path.commonprefix()``.
+    # Get length of leading whitespace, inspired by ``string.commonprefix()``.
     non_blank_lines = [l for l in lines if l and not l.isspace()]
     l1 = min(non_blank_lines, default='')
     l2 = max(non_blank_lines, default='')

@@ -3,6 +3,7 @@ import string
 from string import Template
 import types
 from test.support import cpython_only
+from test.support import os_helper
 from test.support.import_helper import ensure_lazy_imports
 
 
@@ -39,6 +40,97 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(string.capwords('   aBc  DeF   '), 'Abc Def')
         self.assertEqual(string.capwords('\taBc\tDeF\t'), 'Abc Def')
         self.assertEqual(string.capwords('\taBc\tDeF\t', '\t'), '\tAbc\tDef\t')
+
+    def test_commonprefix(self):
+        self.assertEqual(
+            string.commonprefix([]),
+            ""
+        )
+        self.assertEqual(
+            string.commonprefix(["a", "b"]),
+            ""
+        )
+        self.assertEqual(
+            string.commonprefix(["/home/swenson/spam", "/home/swen/spam"]),
+            "/home/swen"
+        )
+        self.assertEqual(
+            string.commonprefix(["/home/swen/spam", "/home/swen/eggs"]),
+            "/home/swen/"
+        )
+        self.assertEqual(
+            string.commonprefix(["/home/swen/spam", "/home/swen/spam"]),
+            "/home/swen/spam"
+        )
+        self.assertEqual(
+            string.commonprefix(["home:swenson:spam", "home:swen:spam"]),
+            "home:swen"
+        )
+        self.assertEqual(
+            string.commonprefix([":home:swen:spam", ":home:swen:eggs"]),
+            ":home:swen:"
+        )
+        self.assertEqual(
+            string.commonprefix([":home:swen:spam", ":home:swen:spam"]),
+            ":home:swen:spam"
+        )
+
+        self.assertEqual(
+            string.commonprefix([b"/home/swenson/spam", b"/home/swen/spam"]),
+            b"/home/swen"
+        )
+        self.assertEqual(
+            string.commonprefix([b"/home/swen/spam", b"/home/swen/eggs"]),
+            b"/home/swen/"
+        )
+        self.assertEqual(
+            string.commonprefix([b"/home/swen/spam", b"/home/swen/spam"]),
+            b"/home/swen/spam"
+        )
+        self.assertEqual(
+            string.commonprefix([b"home:swenson:spam", b"home:swen:spam"]),
+            b"home:swen"
+        )
+        self.assertEqual(
+            string.commonprefix([b":home:swen:spam", b":home:swen:eggs"]),
+            b":home:swen:"
+        )
+        self.assertEqual(
+            string.commonprefix([b":home:swen:spam", b":home:swen:spam"]),
+            b":home:swen:spam"
+        )
+
+        testlist = ['', 'abc', 'Xbcd', 'Xb', 'XY', 'abcd',
+                    'aXc', 'abd', 'ab', 'aX', 'abcX']
+        for s1 in testlist:
+            for s2 in testlist:
+                p = string.commonprefix([s1, s2])
+                self.assertStartsWith(s1, p)
+                self.assertStartsWith(s2, p)
+                if s1 != s2:
+                    n = len(p)
+                    self.assertNotEqual(s1[n:n+1], s2[n:n+1])
+
+    def test_commonprefix_paths(self):
+        # Test backwards-compatibility with os.path.commonprefix()
+        # This function must handle PathLike objects.
+        file_name = os_helper.TESTFN
+        file_path = os_helper.FakePath(file_name)
+        self.assertEqual(string.commonprefix([file_path, file_name]),
+                         file_name)
+
+    def test_commonprefix_sequence_of_str(self):
+        # Test backwards-compatibility with os.path.commonprefix()
+        # This function must handle lists and tuples of strings.
+        for type_ in (tuple, list):
+            seq1 = type_(["abc", "de", "fgh"])
+            seq2 = type_(["abc", "def", "gh"])
+            self.assertEqual(string.commonprefix([seq1, seq2]),
+                             type_(["abc"]))
+
+            seq1 = type_(["ab"])
+            seq2 = type_(["ac"])
+            self.assertEqual(string.commonprefix([seq1, seq2]), type_([]))
 
     def test_basic_formatter(self):
         fmt = string.Formatter()

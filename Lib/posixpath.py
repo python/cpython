@@ -26,6 +26,7 @@ import errno
 import os
 import sys
 import stat
+import string
 import genericpath
 from genericpath import *
 
@@ -542,7 +543,7 @@ def relpath(path, start=None):
         start_list = start_tail.split(sep) if start_tail else []
         path_list = path_tail.split(sep) if path_tail else []
         # Work out how much of the filepath is shared by start and path.
-        i = len(commonprefix([start_list, path_list]))
+        i = len(string.commonprefix([start_list, path_list]))
 
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:

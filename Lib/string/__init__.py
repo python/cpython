@@ -15,8 +15,8 @@ printable -- a string containing all ASCII characters considered printable
 """
 
 __all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
-           "digits", "hexdigits", "octdigits", "printable", "punctuation",
-           "whitespace", "Formatter", "Template"]
+           "commonprefix", "digits", "hexdigits", "octdigits", "printable",
+           "punctuation", "whitespace", "Formatter", "Template"]
 
 import _string
 
@@ -46,6 +46,26 @@ def capwords(s, sep=None):
 
     """
     return (sep or ' ').join(map(str.capitalize, s.split(sep)))
+
+
+def commonprefix(m, /):
+    "Given a list of strings, returns the longest common leading component"
+    if not m: return ''
+    # Note that previously this function was in the 'os.path' module, hence the
+    # handling for paths. Maintain compatibility so users have a 1-to-1 drop-in.
+    # Some people pass in a list of pathname parts to operate in an OS-agnostic
+    # fashion; don't try to translate in that case as that's an abuse of the
+    # API and they are already doing what they need to be OS-agnostic and so
+    # they most likely won't be using an os.PathLike object in the sublists.
+    if not isinstance(m[0], (list, tuple)):
+        import os
+        m = tuple(map(os.fspath, m))
+    s1 = min(m)
+    s2 = max(m)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            return s1[:i]
+    return s1
 
 
 ####################################################################

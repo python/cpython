@@ -117,6 +117,10 @@ the :mod:`glob` module.)
         >>> os.path.commonpath(['/usr/lib', '/usr/local/lib'])
         '/usr'
 
+   .. versionchanged:: 3.15
+      Deprecated in favor of :func:`os.path.commonpath` for path prefixes and
+      :func:`string.commonprefix` for string prefixes.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
