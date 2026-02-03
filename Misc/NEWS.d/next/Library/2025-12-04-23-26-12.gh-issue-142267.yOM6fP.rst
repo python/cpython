@@ -1,1 +1,0 @@
-Improve :mod:`argparse` performance by caching the formatter used for argument validation.

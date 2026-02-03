@@ -631,11 +631,14 @@ jobs:
       matrix:
         sanitizer:
           - address
-          - undefined
-          - memory
         oss-fuzz-project-name:
           - cpython3
           - python3-libraries
+        include:
+          - sanitizer: undefined
+            oss-fuzz-project-name: cpython3
+          - sanitizer: memory
+            oss-fuzz-project-name: cpython3
         exclude:
           # Note that the 'no-exclude' sentinel below is to prevent
           # an empty string value from excluding all jobs and causing
