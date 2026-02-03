@@ -69,8 +69,8 @@ or on combining URL components into a URL string.
       :options: +NORMALIZE_WHITESPACE
 
       >>> from urllib.parse import urlparse
-      >>> urlparse("scheme://netloc/path;parameters?query#fragment")
-      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+      >>> urlparse("http://netloc/path;parameters?query#fragment")
+      ParseResult(scheme='http', netloc='netloc', path='/path', params='parameters',
                   query='query', fragment='fragment')
       >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
       ...              "highlight=params#url-parsing")
