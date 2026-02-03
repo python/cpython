@@ -1435,6 +1435,7 @@ class AbstractUnpickleTests:
         self.assertEqual(self.loads(b'cbuiltins\nint\n)R.'), 0)
         self.check_unpickling_error(TypeError, b'N)R.')
         self.check_unpickling_error(TypeError, b'cbuiltins\nint\nNR.')
+        self.check_unpickling_error(TypeError, b'cbuiltins\nint\nNR.')
 
     def test_bad_newobj(self):
         error = (pickle.UnpicklingError, TypeError)
