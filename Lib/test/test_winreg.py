@@ -275,6 +275,16 @@ class LocalWinregTests(BaseWinregTests):
                                                 reserved=REG_OPTION_VOLATILE)
             self._read_test_data(HKEY_CURRENT_USER, OpenKey=ok)
 
+        # TypeError cases
+        with self.assertRaises(TypeError):
+            OpenKeyEx(HKEY_CURRENT_USER, test_key_name, 0, KEY_READ, 0)
+        with self.assertRaises(TypeError):
+            OpenKeyEx(HKEY_CURRENT_USER, test_key_name, 0, KEY_READ, options=0)
+        with self.assertRaises(TypeError):
+            OpenKeyEx(HKEY_CURRENT_USER, test_key_name, 1, KEY_READ, reserved=1)
+        with self.assertRaises(TypeError):
+            OpenKeyEx(HKEY_CURRENT_USER, test_key_name, options=1, reserved=1)
+
         self._delete_test_data(HKEY_CURRENT_USER)
 
     def test_create_only(self):

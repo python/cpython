@@ -1444,6 +1444,11 @@ winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
+    if (options != 0 && reserved != 0) {
+        PyErr_SetString(PyExc_TypeError,
+            "cannot specify both 'options' and 'reserved' parameters");
+        return NULL;
+    }
     if (reserved != 0) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "reserved is deprecated, use options instead.", 1))
@@ -1453,7 +1458,7 @@ winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
         options = reserved;
     }
     Py_BEGIN_ALLOW_THREADS
-    rc = RegOpenKeyExW(key, sub_key, reserved, access, &retKey);
+    rc = RegOpenKeyExW(key, sub_key, options, access, &retKey);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "RegOpenKeyEx");
