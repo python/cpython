@@ -1833,6 +1833,7 @@
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
             assert(type_version);
+            assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
             if (sym_matches_type_version(owner, type_version)) {
                 ADD_OP(_NOP, 0, 0);
             } else {
@@ -1936,7 +1937,8 @@
             JitOptRef o;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand0;
-            attr = sym_get_attr(ctx, owner, (uint16_t)index);
+            attr = sym_new_not_null(ctx);
+            (void)index;
             o = owner;
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
@@ -2011,25 +2013,6 @@
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint16_t offset = (uint16_t)this_instr->operand0;
-            JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)offset, value);
-            if (sym_is_null(old_value)) {
-                ADD_OP(_STORE_ATTR_INSTANCE_VALUE_NULL, 0, offset);
-            }
-            o = owner;
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = o;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _STORE_ATTR_INSTANCE_VALUE_NULL: {
-            JitOptRef owner;
-            JitOptRef value;
-            JitOptRef o;
-            owner = stack_pointer[-1];
-            value = stack_pointer[-2];
-            uint16_t offset = (uint16_t)this_instr->operand0;
             (void)value;
             o = owner;
             CHECK_STACK_BOUNDS(-1);
@@ -2062,25 +2045,7 @@
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint16_t index = (uint16_t)this_instr->operand0;
-            JitOptRef old_value = sym_set_attr(ctx, owner, (uint16_t)index, value);
-            if (sym_is_null(old_value)) {
-                ADD_OP(_STORE_ATTR_SLOT_NULL, 0, index);
-            }
-            o = owner;
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = o;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _STORE_ATTR_SLOT_NULL: {
-            JitOptRef owner;
-            JitOptRef value;
-            JitOptRef o;
-            owner = stack_pointer[-1];
-            value = stack_pointer[-2];
-            uint16_t index = (uint16_t)this_instr->operand0;
+            (void)index;
             (void)value;
             o = owner;
             CHECK_STACK_BOUNDS(-1);
@@ -3031,6 +2996,13 @@
         }
 
         case _CHECK_STACK_SPACE: {
+            assert((this_instr + 4)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 4));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            ADD_OP(_CHECK_STACK_SPACE_OPERAND, 0, co->co_framesize);
             break;
         }
 
@@ -3228,15 +3200,11 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
+            (void)type_version;
             (void)args;
             callable = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = callable;
-            PyTypeObject *tp = _PyType_LookupByVersion(type_version);
-            if (tp != NULL) {
-                self_or_null = sym_new_descr_object(ctx, type_version);
-            } else {
-                self_or_null = sym_new_not_null(ctx);
-            }
             stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
@@ -3938,7 +3906,6 @@
         case _CHECK_STACK_SPACE_OPERAND: {
             uint32_t framesize = (uint32_t)this_instr->operand0;
             (void)framesize;
-            Py_UNREACHABLE();
             break;
         }
 
@@ -4213,6 +4180,34 @@
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
+            break;
+        }
+
+        case _RECORD_TOS: {
+            break;
+        }
+
+        case _RECORD_TOS_TYPE: {
+            break;
+        }
+
+        case _RECORD_NOS: {
+            break;
+        }
+
+        case _RECORD_4OS: {
+            break;
+        }
+
+        case _RECORD_CALLABLE: {
+            break;
+        }
+
+        case _RECORD_BOUND_METHOD: {
+            break;
+        }
+
+        case _RECORD_CALLER_CODE: {
             break;
         }
 

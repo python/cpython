@@ -201,10 +201,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_PROPERTY_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_GUARD_DORV_NO_DICT] = HAS_EXIT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = HAS_ESCAPES_FLAG,
-    [_STORE_ATTR_INSTANCE_VALUE_NULL] = HAS_DEOPT_FLAG,
     [_STORE_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR_SLOT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_ATTR_SLOT_NULL] = HAS_DEOPT_FLAG,
     [_COMPARE_OP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_COMPARE_OP_FLOAT] = HAS_ARG_FLAG,
     [_COMPARE_OP_INT] = HAS_ARG_FLAG,
@@ -376,6 +374,13 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_IP_YIELD_VALUE] = HAS_EXIT_FLAG,
     [_GUARD_IP_RETURN_VALUE] = HAS_EXIT_FLAG,
     [_GUARD_IP_RETURN_GENERATOR] = HAS_EXIT_FLAG,
+    [_RECORD_TOS] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_TOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_NOS] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_4OS] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_CALLABLE] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_BOUND_METHOD] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_CALLER_CODE] = HAS_RECORDS_VALUE_FLAG,
 };
 
 const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -1885,15 +1890,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_STORE_ATTR_INSTANCE_VALUE_NULL] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 1, 0, _STORE_ATTR_INSTANCE_VALUE_NULL_r01 },
-            { 1, 1, _STORE_ATTR_INSTANCE_VALUE_NULL_r11 },
-            { 1, 2, _STORE_ATTR_INSTANCE_VALUE_NULL_r21 },
-            { 2, 3, _STORE_ATTR_INSTANCE_VALUE_NULL_r32 },
-        },
-    },
     [_STORE_ATTR_WITH_HINT] = {
         .best = { 2, 2, 2, 2 },
         .entries = {
@@ -1910,15 +1906,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { 1, 2, _STORE_ATTR_SLOT_r21 },
             { -1, -1, -1 },
-        },
-    },
-    [_STORE_ATTR_SLOT_NULL] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 1, 0, _STORE_ATTR_SLOT_NULL_r01 },
-            { 1, 1, _STORE_ATTR_SLOT_NULL_r11 },
-            { 1, 2, _STORE_ATTR_SLOT_NULL_r21 },
-            { 2, 3, _STORE_ATTR_SLOT_NULL_r32 },
         },
     },
     [_COMPARE_OP] = {
@@ -3835,16 +3822,8 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_DORV_NO_DICT_r22] = _GUARD_DORV_NO_DICT,
     [_GUARD_DORV_NO_DICT_r33] = _GUARD_DORV_NO_DICT,
     [_STORE_ATTR_INSTANCE_VALUE_r21] = _STORE_ATTR_INSTANCE_VALUE,
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r01] = _STORE_ATTR_INSTANCE_VALUE_NULL,
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r11] = _STORE_ATTR_INSTANCE_VALUE_NULL,
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r21] = _STORE_ATTR_INSTANCE_VALUE_NULL,
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r32] = _STORE_ATTR_INSTANCE_VALUE_NULL,
     [_STORE_ATTR_WITH_HINT_r21] = _STORE_ATTR_WITH_HINT,
     [_STORE_ATTR_SLOT_r21] = _STORE_ATTR_SLOT,
-    [_STORE_ATTR_SLOT_NULL_r01] = _STORE_ATTR_SLOT_NULL,
-    [_STORE_ATTR_SLOT_NULL_r11] = _STORE_ATTR_SLOT_NULL,
-    [_STORE_ATTR_SLOT_NULL_r21] = _STORE_ATTR_SLOT_NULL,
-    [_STORE_ATTR_SLOT_NULL_r32] = _STORE_ATTR_SLOT_NULL,
     [_COMPARE_OP_r21] = _COMPARE_OP,
     [_COMPARE_OP_FLOAT_r03] = _COMPARE_OP_FLOAT,
     [_COMPARE_OP_FLOAT_r13] = _COMPARE_OP_FLOAT,
@@ -5197,6 +5176,13 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_PY_FRAME_GENERAL_r01] = "_PY_FRAME_GENERAL_r01",
     [_PY_FRAME_KW] = "_PY_FRAME_KW",
     [_PY_FRAME_KW_r11] = "_PY_FRAME_KW_r11",
+    [_RECORD_4OS] = "_RECORD_4OS",
+    [_RECORD_BOUND_METHOD] = "_RECORD_BOUND_METHOD",
+    [_RECORD_CALLABLE] = "_RECORD_CALLABLE",
+    [_RECORD_CALLER_CODE] = "_RECORD_CALLER_CODE",
+    [_RECORD_NOS] = "_RECORD_NOS",
+    [_RECORD_TOS] = "_RECORD_TOS",
+    [_RECORD_TOS_TYPE] = "_RECORD_TOS_TYPE",
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
     [_REPLACE_WITH_TRUE_r02] = "_REPLACE_WITH_TRUE_r02",
     [_REPLACE_WITH_TRUE_r12] = "_REPLACE_WITH_TRUE_r12",
@@ -5262,18 +5248,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_STORE_ATTR_r20] = "_STORE_ATTR_r20",
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
     [_STORE_ATTR_INSTANCE_VALUE_r21] = "_STORE_ATTR_INSTANCE_VALUE_r21",
-    [_STORE_ATTR_INSTANCE_VALUE_NULL] = "_STORE_ATTR_INSTANCE_VALUE_NULL",
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r01] = "_STORE_ATTR_INSTANCE_VALUE_NULL_r01",
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r11] = "_STORE_ATTR_INSTANCE_VALUE_NULL_r11",
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r21] = "_STORE_ATTR_INSTANCE_VALUE_NULL_r21",
-    [_STORE_ATTR_INSTANCE_VALUE_NULL_r32] = "_STORE_ATTR_INSTANCE_VALUE_NULL_r32",
     [_STORE_ATTR_SLOT] = "_STORE_ATTR_SLOT",
     [_STORE_ATTR_SLOT_r21] = "_STORE_ATTR_SLOT_r21",
-    [_STORE_ATTR_SLOT_NULL] = "_STORE_ATTR_SLOT_NULL",
-    [_STORE_ATTR_SLOT_NULL_r01] = "_STORE_ATTR_SLOT_NULL_r01",
-    [_STORE_ATTR_SLOT_NULL_r11] = "_STORE_ATTR_SLOT_NULL_r11",
-    [_STORE_ATTR_SLOT_NULL_r21] = "_STORE_ATTR_SLOT_NULL_r21",
-    [_STORE_ATTR_SLOT_NULL_r32] = "_STORE_ATTR_SLOT_NULL_r32",
     [_STORE_ATTR_WITH_HINT] = "_STORE_ATTR_WITH_HINT",
     [_STORE_ATTR_WITH_HINT_r21] = "_STORE_ATTR_WITH_HINT_r21",
     [_STORE_DEREF] = "_STORE_DEREF",
@@ -5735,13 +5711,9 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _STORE_ATTR_INSTANCE_VALUE:
             return 2;
-        case _STORE_ATTR_INSTANCE_VALUE_NULL:
-            return 2;
         case _STORE_ATTR_WITH_HINT:
             return 2;
         case _STORE_ATTR_SLOT:
-            return 2;
-        case _STORE_ATTR_SLOT_NULL:
             return 2;
         case _COMPARE_OP:
             return 2;
@@ -6084,6 +6056,20 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_IP_RETURN_VALUE:
             return 0;
         case _GUARD_IP_RETURN_GENERATOR:
+            return 0;
+        case _RECORD_TOS:
+            return 0;
+        case _RECORD_TOS_TYPE:
+            return 0;
+        case _RECORD_NOS:
+            return 0;
+        case _RECORD_4OS:
+            return 0;
+        case _RECORD_CALLABLE:
+            return 0;
+        case _RECORD_BOUND_METHOD:
+            return 0;
+        case _RECORD_CALLER_CODE:
             return 0;
         default:
             return -1;

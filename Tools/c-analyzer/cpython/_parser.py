@@ -80,6 +80,7 @@ EXCLUDED = format_conf_lines([
     'Python/generated_cases.c.h',
     'Python/executor_cases.c.h',
     'Python/optimizer_cases.c.h',
+    'Python/record_functions.c.h',
     'Python/opcode_targets.h',
     'Modules/_testinternalcapi/test_targets.h',
     'Modules/_testinternalcapi/test_cases.c.h',

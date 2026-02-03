@@ -421,7 +421,7 @@ General Options
       :no-typesetting:
 
    Enables support for running Python without the :term:`global interpreter
-   lock` (GIL): free threading build.
+   lock` (GIL): :term:`free-threaded build`.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
