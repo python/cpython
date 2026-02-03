@@ -1838,7 +1838,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
     def test_classmethod_new(self):
         cm = classmethod.__new__(classmethod, None)
-        self.assertIsInstance(repr(cm), str)
+        self.assertEqual(repr(cm), '<classmethod(None)>')
 
     def test_staticmethod_func_readonly(self):
         sm = staticmethod(lambda x: x)
