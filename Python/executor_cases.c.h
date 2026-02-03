@@ -20498,6 +20498,33 @@
             break;
         }
 
+        case _RETURN_VALUE_HEAP_SAFE_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef retval;
+            _PyStackRef res;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            retval = _stack_item_0;
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            _PyStackRef temp = retval;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(STACK_LEVEL() == 0);
+            _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LOAD_IP(frame->return_offset);
+            res = temp;
+            LLTRACE_RESUME_FRAME();
+            _tos_cache0 = res;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         /* _TRACE_RECORD is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
 

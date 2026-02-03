@@ -1244,6 +1244,13 @@
                 ctx->done = true;
                 break;
             }
+            bool is_heap_safe = !PyJitRef_IsBorrowed(retval) ||
+            sym_is_immortal(PyJitRef_Unwrap(retval));
+            bool is_generator = returning_code->co_flags &
+            (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+            if (is_heap_safe && !is_generator) {
+                ADD_OP(_RETURN_VALUE_HEAP_SAFE, 0, 0);
+            }
             int returning_stacklevel = this_instr->operand1;
             if (ctx->curr_frame_depth >= 2) {
                 PyCodeObject *expected_code = ctx->frames[ctx->curr_frame_depth - 2].code;
@@ -4180,6 +4187,13 @@
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
+            break;
+        }
+
+        case _RETURN_VALUE_HEAP_SAFE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
             break;
         }
 

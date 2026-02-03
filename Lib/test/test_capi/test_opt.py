@@ -1022,6 +1022,45 @@ class TestUopsOptimization(unittest.TestCase):
         # Constant narrowing allows constant folding for second comparison
         self.assertLessEqual(count_ops(ex, "_COMPARE_OP_STR"), 1)
 
+    def test_return_value_heap_safe_optimization(self):
+
+        # Return immortal constant (small int)
+        def return_immortal_int(x):
+            y = 42
+            return y
+
+        # Return computed value (owned reference)
+        def return_computed(x):
+            return x + 1
+
+        # Return None (immortal)
+        def return_none(x):
+            result = None
+            return result
+
+        # Return True/False (immortal)
+        def return_bool(x):
+            if x > 0:
+                return True
+            return False
+
+        def testfunc(n):
+            total = 0
+            for _ in range(n):
+                a = return_immortal_int(1)
+                b = return_computed(1)
+                c = return_none(1)
+                d = return_bool(1)
+                total += a + b + (0 if c is None else 1) + d
+            return total
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 45)  # 42 + 2 + 0 + 1
+        self.assertIsNotNone(ex)
+        uop_names = get_opnames(ex)
+        self.assertIn("_RETURN_VALUE_HEAP_SAFE", uop_names)
+        self.assertGreaterEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 4)
+
     def test_combine_stack_space_checks_sequential(self):
         def dummy12(x):
             return x - 1
@@ -1043,7 +1082,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
-        self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
+        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         # Each call gets its own _CHECK_STACK_SPACE_OPERAND
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 2)
@@ -1073,7 +1112,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
-        self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
+        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 2)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
@@ -1106,7 +1145,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
-        self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
+        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 4)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
@@ -1142,7 +1181,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
-        self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
+        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 4)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND",

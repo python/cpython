@@ -969,6 +969,19 @@ dummy_func(void) {
             ctx->done = true;
             break;
         }
+
+        // Check if we can use the optimized RETURN_VALUE_HEAP_SAFE.
+        // This is possible when:
+        // The return value is not borrowed or is immortal
+        // AND the function is not a generator/coroutine/async generator.
+        bool is_heap_safe = !PyJitRef_IsBorrowed(retval) ||
+                           sym_is_immortal(PyJitRef_Unwrap(retval));
+        bool is_generator = returning_code->co_flags &
+            (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+        if (is_heap_safe && !is_generator) {
+            ADD_OP(_RETURN_VALUE_HEAP_SAFE, 0, 0);
+        }
+
         int returning_stacklevel = this_instr->operand1;
         if (ctx->curr_frame_depth >= 2) {
             PyCodeObject *expected_code = ctx->frames[ctx->curr_frame_depth - 2].code;

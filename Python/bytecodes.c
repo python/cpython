@@ -5677,6 +5677,25 @@ dummy_func(
             }
         }
 
+        tier2 op(_RETURN_VALUE_HEAP_SAFE, (retval -- res)) {
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            // The retval is already heap-safe, so we just need to
+            // transfer ownership without any reference count changes.
+            _PyStackRef temp = retval;
+            DEAD(retval);
+            SAVE_STACK();
+            assert(STACK_LEVEL() == 0);
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            RELOAD_STACK();
+            LOAD_IP(frame->return_offset);
+            res = temp;
+            LLTRACE_RESUME_FRAME();
+        }
+
         /* Record ops for jit tracer.
          *
          * NOTE: These uops are NOPs for normal evaluation.
