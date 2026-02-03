@@ -998,5 +998,4 @@ Helper functions
    string (``''``).
 
    .. versionadded:: next
-
       Moved to the :mod:`string` module from the :mod:`os.path` module.
