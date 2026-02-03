@@ -687,6 +687,29 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
    Read the current file as bytes.
 
+.. method:: Path.glob(pattern)
+
+   Iterate over all files in the directory represented by this path that
+   match the given relative glob *pattern*, yielding :class:`~zipfile.Path`
+   objects. The *pattern* must not be empty.
+
+   .. versionadded:: 3.12
+
+.. method:: Path.rglob(pattern)
+
+   Recursively iterate over all files matching the given relative glob
+   *pattern*. This is equivalent to calling :meth:`~Path.glob` with ``"**/``
+   added in front of the pattern.
+
+   .. versionadded:: 3.12
+
+.. method:: Path.match(path_pattern)
+
+   Match this path against the provided glob-style *path_pattern*. Return
+   ``True`` if matching is successful, ``False`` otherwise.
+
+   .. versionadded:: 3.12
+
 .. method:: Path.joinpath(*other)
 
    Return a new Path object with each of the *other* arguments
