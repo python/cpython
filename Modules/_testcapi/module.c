@@ -271,10 +271,12 @@ module_from_def_slot(PyObject *self, PyObject *spec)
     return result;
 }
 
+static const char parrot_name[] = "test_capi/parrot";
+static const char parrot_doc[] = "created from redundant information";
 static PyModuleDef parrot_def = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "test_capi/parrot",
-    .m_doc = "created from redundant information",
+    .m_name = (void*)parrot_name,
+    .m_doc = (void*)parrot_doc,
     .m_size = 123,
     .m_methods = a_methoddef_array,
     .m_traverse = noop_traverse,
@@ -283,8 +285,8 @@ static PyModuleDef parrot_def = {
     .m_slots = NULL /* set below */,
 };
 static PyModuleDef_Slot parrot_slots[] = {
-    {Py_mod_name, "test_capi/parrot"},
-    {Py_mod_doc, "created from redundant information"},
+    {Py_mod_name, (void*)parrot_name},
+    {Py_mod_doc, (void*)parrot_doc},
     {Py_mod_state_size, (void*)123},
     {Py_mod_methods, a_methoddef_array},
     {Py_mod_state_traverse, noop_traverse},
