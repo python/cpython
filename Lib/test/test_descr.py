@@ -1833,7 +1833,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
     def test_staticmethod_new(self):
         sm = staticmethod.__new__(staticmethod, None)
-        self.assertIsInstance(repr(sm), str)
+        self.assertEqual(repr(sm), '<staticmethod(None)>')
 
     def test_classmethod_new_none_repr(self):
         cm = classmethod.__new__(classmethod, None)
