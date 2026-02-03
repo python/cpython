@@ -1,0 +1,1 @@
+Fix deadlock from multiprocessing.Pool worker death without communication.
