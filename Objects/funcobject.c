@@ -1652,7 +1652,6 @@ PyClassMethod_New(PyObject *callable)
 }
 
 
-
 /* Static method object */
 
 /* A static method does not receive an implicit first argument.
