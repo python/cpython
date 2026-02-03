@@ -1648,7 +1648,7 @@ cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     classmethod *cm = (classmethod *)PyType_GenericAlloc(type, 0);
     if (cm == NULL)
         return NULL;
-    cm->cm_callable = Py_NewRef(Py_None);
+    cm->cm_callable = Py_None;
     cm->cm_dict = NULL;
     return (PyObject *)cm;
 }
