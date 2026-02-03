@@ -6184,7 +6184,6 @@
                 JUMP_TO_JUMP_TARGET();
             }
             getitem = PyStackRef_FromPyObjectNew(getitem_o);
-            STAT_INC(BINARY_OP, hit);
             _tos_cache2 = getitem;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = container;
@@ -6203,6 +6202,7 @@
             getitem = stack_pointer[-1];
             sub = stack_pointer[-2];
             container = stack_pointer[-3];
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -6227,6 +6227,7 @@
             getitem = _stack_item_0;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -6252,6 +6253,7 @@
             getitem = _stack_item_1;
             sub = _stack_item_0;
             container = stack_pointer[-1];
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -6278,6 +6280,7 @@
             getitem = _stack_item_2;
             sub = _stack_item_1;
             container = _stack_item_0;
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -20140,6 +20143,41 @@
             _Py_CODEUNIT *target = frame->instr_ptr;
             SET_CURRENT_CACHED_VALUES(0);
             GOTO_TIER_ONE(target);
+        }
+
+        case _GUARD_CODE_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (code == Py_None) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                printf("Guard Code failed: code is None\n");
+                fflush(stdout);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                printf("Guard Code failed: expected version %ud, actual version %ud\n", version, ((PyCodeObject *)code)->co_version);
+                fflush(stdout);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            if (code == Py_None) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache0 = PyStackRef_ZERO_BITS;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
         }
 
         case _GUARD_IP__PUSH_FRAME_r00: {
