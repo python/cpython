@@ -97,15 +97,17 @@ the :mod:`glob` module.)
 
 .. function:: commonprefix(list, /)
 
-   Return the longest path prefix (taken character-by-character) that is a
-   prefix of all paths in  *list*.  If *list* is empty, return the empty string
+   Return the longest string prefix (taken character-by-character) that is a
+   prefix of all strings in *list*.  If *list* is empty, return the empty string
    (``''``).
 
-   .. note::
+   .. warning::
 
       This function may return invalid paths because it works a
-      character at a time.  To obtain a valid path, see
-      :func:`commonpath`.
+      character at a time.
+      If you need a **common path prefix**, then the algorithm
+      implemented in this function is not secure. Use
+      :func:`commonpath` for finding a common path prefix.
 
       ::
 
