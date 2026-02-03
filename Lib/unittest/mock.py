@@ -1847,7 +1847,7 @@ class _patch_dict(object):
     """
     Patch a dictionary, or dictionary like object, and restore the dictionary
     to its original state after the test, where the restored dictionary is
-    a copy of the dictionary as it was before the test.
+    a shallow copy of the dictionary as it was before the test.
 
     `in_dict` can be a dictionary or a mapping like container. If it is a
     mapping then it must at least support getting, setting and deleting items
