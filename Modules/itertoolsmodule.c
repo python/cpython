@@ -3063,7 +3063,7 @@ accumulate_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-accumulate_next(PyObject *op)
+accumulate_next_lock_held(PyObject *op)
 {
     accumulateobject *lz = accumulateobject_CAST(op);
     PyObject *val, *newtotal;
@@ -3093,6 +3093,16 @@ accumulate_next(PyObject *op)
     Py_INCREF(newtotal);
     Py_SETREF(lz->total, newtotal);
     return newtotal;
+}
+
+static PyObject *
+accumulate_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = accumulate_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyType_Slot accumulate_slots[] = {
