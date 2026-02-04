@@ -509,7 +509,7 @@ class HeaderTests(TestCase):
                 headers = Headers()
                 self.assertRaises(ValueError, headers.__setitem__, f"key{c0}", "val")
                 self.assertRaises(ValueError, headers.add_header, f"key{c0}", "val", param="param")
-                # HTAB is allowed in values, not names.
+                # HTAB (\x09) is allowed in values, not names.
                 if c0 == "\t":
                     headers["key"] = f"val{c0}"
                     headers.add_header("key", f"val{c0}")

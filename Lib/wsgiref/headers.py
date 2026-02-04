@@ -43,10 +43,11 @@ class Headers:
                 self._convert_string_type(k, name=True)
                 self._convert_string_type(v)
 
-    def _convert_string_type(self, value, *, name=False):
+    def _convert_string_type(self, value, *, name):
         """Convert/check value type."""
         if type(value) is str:
-            if (_name_disallowed_re if name else _value_disallowed_re).search(value):
+            regex = (_name_disallowed_re if name else _value_disallowed_re)
+            if regex.search(value):
                 raise ValueError("Control characters not allowed in headers")
             return value
         raise AssertionError("Header names/values must be"
