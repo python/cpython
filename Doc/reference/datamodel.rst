@@ -326,7 +326,7 @@ to negative slice positions.
 Note that no error is raised if a slice position is less than zero or larger
 than the length of the sequence.
 
-If *start* is missing or ``None``, slicing behaves as if *start* was zero.
+If *start* is missing or :data:`None`, slicing behaves as if *start* was zero.
 If *stop* is missing or ``None``, slicing behaves as if *stop* was equal to
 the length of the sequence.
 

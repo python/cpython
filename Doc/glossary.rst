@@ -1494,7 +1494,7 @@ Glossary
       the ``3`` in ``items[3]``.
       Usually used to select an element of a container.
       Also called a :term:`key` when subscripting a :term:`mapping`,
-      or :term:`index` when subscripting a :term:`sequence`.
+      or an :term:`index` when subscripting a :term:`sequence`.
 
    synchronization primitive
       A basic building block for coordinating (synchronizing) the execution of
