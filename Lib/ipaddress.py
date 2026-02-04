@@ -1407,7 +1407,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             The IPv4-mapped IPv6 address per RFC 4291.
 
         """
-        return IPv6Address(f'::ffff:{self}')
+        return IPv6Address((0xFFFF << 32) + self._ip)
 
 
 class IPv4Interface(IPv4Address):
