@@ -548,6 +548,16 @@ concurrent.futures
   (Contributed by Jonathan Berg in :gh:`139486`.)
 
 
+contextlib
+----------
+
+* Added support for arbitrary descriptors :meth:`!__enter__`,
+  :meth:`!__exit__`, :meth:`!__aenter__`, and :meth:`!__aexit__` in
+  :class:`~contextlib.ExitStack` and :class:`contextlib.AsyncExitStack`, for
+  consistency with the :keyword:`with` and :keyword:`async with` statements.
+  (Contributed by Serhiy Storchaka in :gh:`144386`.)
+
+
 dataclasses
 -----------
 
