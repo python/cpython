@@ -20151,31 +20151,100 @@
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
             PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (code == Py_None) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                printf("Guard Code failed: code is None\n");
-                fflush(stdout);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
             }
             if (((PyCodeObject *)code)->co_version != version) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                printf("Guard Code failed: expected version %ud, actual version %ud\n", version, ((PyCodeObject *)code)->co_version);
-                fflush(stdout);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
             }
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (code == Py_None) {
                 UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
             if (((PyCodeObject *)code)->co_version != version) {
                 UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
-            _tos_cache0 = PyStackRef_ZERO_BITS;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(0);
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_r22: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (code == Py_None) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (code == Py_None) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache2 = _stack_item_2;
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(3);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache2 = _stack_item_2;
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(3);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache2 = _stack_item_2;
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
