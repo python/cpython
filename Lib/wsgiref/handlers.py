@@ -240,7 +240,7 @@ class BaseHandler:
 
         self.status = status
         self.headers = self.headers_class(headers)
-        status = self._convert_string_type(status, "Status", name=True)
+        status = self._convert_string_type(status, "Status", name=False)
         self._validate_status(status)
 
         if __debug__:
