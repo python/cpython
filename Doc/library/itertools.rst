@@ -1238,7 +1238,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 
     >>> list(running_median([8.5, 9.5, 7.5, 7.0]))
-   [8.5, 9.0, 8.5, 8.0]
+    [8.5, 9.0, 8.5, 8.0]
 
 
     >>> for _ in loops(5):
