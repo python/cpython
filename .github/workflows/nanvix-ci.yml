@@ -11,7 +11,9 @@ on:
       - nanvix/**
   workflow_dispatch:
   repository_dispatch:
-    types: [nanvix-minor-release, nanvix-major-release]
+    # Triggered by sqlite when it completes a release (dependency chain)
+    # sqlite already depends on zlib, so zlib is guaranteed to be ready
+    types: [sqlite-release]
 
 permissions:
   contents: write
@@ -459,7 +461,7 @@ jobs:
       - build
     if: >-
       ${{ always() && github.event_name == 'repository_dispatch' &&
-          (github.event.action == 'nanvix-minor-release' || github.event.action == 'nanvix-major-release') &&
+          (github.event.action == 'sqlite-release') &&
           needs.build.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
@@ -470,14 +472,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const isMajor = context.payload.action === 'nanvix-major-release';
-            const releaseType = isMajor ? 'major' : 'minor';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const title = `Nanvix ${releaseType} release CI failure (run ${context.runNumber})`;
+            const title = `Dependency release CI failure (run ${context.runNumber})`;
             const body = [
-              `The Nanvix ${releaseType} release CI workflow failed.`,
+              `The cpython CI workflow failed after dependency release.`,
+              `- Trigger: ${context.payload.action}`,
               `- Run: [#${context.runNumber}](${runUrl})`,
               `- SHA: ${context.sha}`,
               `- build: ${process.env.BUILD_RESULT}`,
