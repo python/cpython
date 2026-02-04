@@ -416,6 +416,13 @@ jobs:
           # Release tag format: {commit-sha}-nanvix-{nanvix-sha}
           # This enables easy lookup of releases built with a specific Nanvix version
           RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
+
+          # Delete existing release if it exists (idempotent re-runs)
+          if gh release view "$RELEASE_TAG" &>/dev/null; then
+            echo "Deleting existing release: $RELEASE_TAG"
+            gh release delete "$RELEASE_TAG" --yes --cleanup-tag || true
+          fi
+
           gh release create "$RELEASE_TAG" \
             --title "Build ${GITHUB_SHA::7}" \
             --notes "Automated build from branch ${{ github.ref_name }} at commit ${{ github.sha }}.
