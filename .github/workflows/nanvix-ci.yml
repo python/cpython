@@ -11,9 +11,9 @@ on:
       - nanvix/**
   workflow_dispatch:
   repository_dispatch:
-    # Triggered by sqlite when it completes a release (dependency chain)
+    # Triggered by sqlite or openssl when they complete a release (dependency chain)
     # sqlite already depends on zlib, so zlib is guaranteed to be ready
-    types: [sqlite-release]
+    types: [sqlite-release, openssl-release]
 
 permissions:
   contents: write
