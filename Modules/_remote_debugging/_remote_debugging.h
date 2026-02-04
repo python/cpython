@@ -173,24 +173,13 @@ typedef enum _WIN32_THREADSTATE {
 #define THREAD_STATUS_GIL_REQUESTED       (1 << 3)
 #define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
 
-/* Exception cause macro - chains context to existing exceptions in debug mode.
- * This macro assumes an exception has already been set by the failing function.
- * If no exception exists, this indicates a bug that should be fixed. */
-#define set_exception_cause(unwinder, exc_type, message)                                      \
-    do {                                                                                      \
-        if (!PyErr_ExceptionMatches(PyExc_PermissionError)) {                                 \
-            if (PyErr_Occurred()) {                                                           \
-                if (unwinder->debug) {                                                        \
-                    /* Chain exception with context */                                        \
-                    _PyErr_FormatFromCause(exc_type, "%s", message);                          \
-                }                                                                             \
-            } else {                                                                          \
-                /* BUG: Exception should have been set by caller */                           \
-                /* Fallback prevents crash; assert catches bug in debug builds */             \
-                PyErr_SetString(exc_type, message);                                           \
-                assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
-            }                                                                                 \
-        }                                                                                     \
+/* Exception cause macro */
+#define set_exception_cause(unwinder, exc_type, message)                              \
+    do {                                                                              \
+        assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
+        if (unwinder->debug) {                                                        \
+            _set_debug_exception_cause(exc_type, message);                            \
+        }                                                                             \
     } while (0)
 
 /* ============================================================================
