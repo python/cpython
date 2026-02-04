@@ -343,7 +343,7 @@ pairwise_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-pairwise_next(PyObject *op)
+pairwise_next_lock_held(PyObject *op)
 {
     pairwiseobject *po = pairwiseobject_CAST(op);
     PyObject *it = po->it;
@@ -380,7 +380,7 @@ pairwise_next(PyObject *op)
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
-        PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+        PyTuple_SET_ITEM(result, 0, old);
         PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
         Py_DECREF(last_old);
         Py_DECREF(last_new);
@@ -391,13 +391,25 @@ pairwise_next(PyObject *op)
     else {
         result = PyTuple_New(2);
         if (result != NULL) {
-            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+            PyTuple_SET_ITEM(result, 0, old);
             PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
+        }
+        else {
+            Py_DECREF(old);
         }
     }
 
     Py_XSETREF(po->old, new);
-    Py_DECREF(old);
+    return result;
+}
+
+static PyObject *
+pairwise_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = pairwise_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
     return result;
 }
 
