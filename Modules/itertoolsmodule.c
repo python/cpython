@@ -366,7 +366,7 @@ pairwise_next_lock_held(PyObject *op)
             return NULL;
         }
     }
-    Py_INCREF(old);
+    Py_INCREF(old); // needed because of reentant calls via call to the iterator
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
@@ -380,7 +380,7 @@ pairwise_next_lock_held(PyObject *op)
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
-        PyTuple_SET_ITEM(result, 0, old);
+        PyTuple_SET_ITEM(result, 0, old); // consume the reference from old
         PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
         Py_DECREF(last_old);
         Py_DECREF(last_new);
