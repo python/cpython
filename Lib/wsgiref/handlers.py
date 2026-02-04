@@ -260,7 +260,7 @@ class BaseHandler:
         if status[3] != " ":
             raise AssertionError("Status message must have a space after code")
 
-    def _convert_string_type(self, value, title, *, name=True):
+    def _convert_string_type(self, value, title, *, name):
         """Convert/check value type."""
         if type(value) is str:
             if (_name_disallowed if name else _value_disallowed).search(value):
