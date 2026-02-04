@@ -488,7 +488,7 @@ Pure paths provide the following methods and properties:
 
    .. versionchanged:: 3.14
 
-      A single dot ("``.``") is now considered a valid suffix.
+      A single dot ("``.``") is considered a valid suffix.
 
 
 .. method:: PurePath.as_posix()
