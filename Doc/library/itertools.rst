@@ -860,7 +860,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return chain([value], iterable)
 
    def running_mean(iterable):
-       "Yield the cumulative arithmetic mean."
+       "Yield the average of all values seen so far."
        # running_mean([8.5, 9.5, 7.5, 7.0]) -> 8.5 9.0 8.5 8.0
        return map(truediv, accumulate(iterable), count(1))
 
