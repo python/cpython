@@ -1472,16 +1472,16 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-cm_init(classmethod *cm, PyObject *callable)
+cm_set_callable(classmethod *cm, PyObject *callable)
 {
-    assert(cm->cm_callable == NULL);
     assert(callable != NULL);
-    cm->cm_callable = Py_NewRef(callable);
-
-    if (functools_wraps((PyObject *)cm, cm->cm_callable) < 0) {
-        return -1;
+    if (cm->cm_callable == callable) {
+        // cm_init() sets the same callable than cm_new()
+        return 0;
     }
-    return 0;
+
+    Py_XSETREF(cm->cm_callable, Py_NewRef(callable));
+    return functools_wraps((PyObject *)cm, cm->cm_callable);
 }
 
 static PyObject *
@@ -1499,11 +1499,26 @@ cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (cm == NULL) {
         return NULL;
     }
-    if (cm_init(cm, callable) < 0) {
+    if (cm_set_callable(cm, callable) < 0) {
         Py_DECREF(cm);
         return NULL;
     }
     return (PyObject *)cm;
+}
+
+static int
+cm_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    if (!_PyArg_NoKeywords("classmethod", kwds)) {
+        return -1;
+    }
+    PyObject *callable;  // borrowed ref
+    if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable)) {
+        return -1;
+    }
+
+    classmethod *cm = (classmethod *)self;
+    return cm_set_callable(cm, callable);
 }
 
 static PyMemberDef cm_memberlist[] = {
@@ -1632,7 +1647,7 @@ PyTypeObject PyClassMethod_Type = {
     cm_descr_get,                               /* tp_descr_get */
     0,                                          /* tp_descr_set */
     offsetof(classmethod, cm_dict),             /* tp_dictoffset */
-    0,                                          /* tp_init */
+    cm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     cm_new,                                     /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
@@ -1646,7 +1661,7 @@ PyClassMethod_New(PyObject *callable)
     if (cm == NULL) {
         return NULL;
     }
-    if (cm_init(cm, callable) < 0) {
+    if (cm_set_callable(cm, callable) < 0) {
         Py_DECREF(cm);
         return NULL;
     }
@@ -1718,16 +1733,16 @@ sm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-sm_init(staticmethod *sm, PyObject *callable)
+sm_set_callable(staticmethod *sm, PyObject *callable)
 {
-    assert(sm->sm_callable == NULL);
     assert(callable != NULL);
-    sm->sm_callable = Py_NewRef(callable);
-
-    if (functools_wraps((PyObject *)sm, sm->sm_callable) < 0) {
-        return -1;
+    if (sm->sm_callable == callable) {
+        // sm_init() sets the same callable than sm_new()
+        return 0;
     }
-    return 0;
+
+    Py_XSETREF(sm->sm_callable, Py_NewRef(callable));
+    return functools_wraps((PyObject *)sm, sm->sm_callable);
 }
 
 static PyObject *
@@ -1745,11 +1760,26 @@ sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (sm == NULL) {
         return NULL;
     }
-    if (sm_init(sm, callable) < 0) {
+    if (sm_set_callable(sm, callable) < 0) {
         Py_DECREF(sm);
         return NULL;
     }
     return (PyObject *)sm;
+}
+
+static int
+sm_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    if (!_PyArg_NoKeywords("staticmethod", kwds)) {
+        return -1;
+    }
+    PyObject *callable;  // borrowed ref
+    if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable)) {
+        return -1;
+    }
+
+    staticmethod *sm = (staticmethod *)self;
+    return sm_set_callable(sm, callable);
 }
 
 static PyObject*
@@ -1882,7 +1912,7 @@ PyTypeObject PyStaticMethod_Type = {
     sm_descr_get,                               /* tp_descr_get */
     0,                                          /* tp_descr_set */
     offsetof(staticmethod, sm_dict),            /* tp_dictoffset */
-    0,                                          /* tp_init */
+    sm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     sm_new,                                     /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
@@ -1896,7 +1926,7 @@ PyStaticMethod_New(PyObject *callable)
     if (sm == NULL) {
         return NULL;
     }
-    if (sm_init(sm, callable) < 0) {
+    if (sm_set_callable(sm, callable) < 0) {
         Py_DECREF(sm);
         return NULL;
     }
