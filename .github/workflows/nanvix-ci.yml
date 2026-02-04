@@ -449,7 +449,7 @@ jobs:
       - build
     if: >-
       ${{ always() && github.event_name == 'repository_dispatch' &&
-          (github.event.action == 'sqlite-release') &&
+          (github.event.action == 'sqlite-release' || github.event.action == 'openssl-release') &&
           needs.build.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
