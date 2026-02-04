@@ -861,7 +861,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def running_mean(iterable):
        "Yield the average of all values seen so far."
-       # running_mean([8.5, 9.5, 7.5, 7.0]) -> 8.5 9.0 8.5 8.0
+       # running_mean([8.5, 9.5, 7.5, 6.5]) -> 8.5 9.0 8.5 8.0
        return map(truediv, accumulate(iterable), count(1))
 
    def repeatfunc(function, times=None, *args):
@@ -1237,7 +1237,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
     [(0, 'a'), (1, 'b'), (2, 'c')]
 
 
-    >>> list(running_mean([8.5, 9.5, 7.5, 7.0]))
+    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
     [8.5, 9.0, 8.5, 8.0]
 
 
