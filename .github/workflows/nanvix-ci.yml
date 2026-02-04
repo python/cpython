@@ -50,6 +50,10 @@ jobs:
   build:
     needs: get-nanvix-info
     runs-on: ubuntu-latest
+    outputs:
+      zlib_tag: ${{ steps.zlib-dep.outputs.zlib_tag }}
+      sqlite_tag: ${{ steps.sqlite-dep.outputs.sqlite_tag }}
+      openssl_tag: ${{ steps.openssl-dep.outputs.openssl_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -326,22 +330,6 @@ jobs:
           tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C dist "${ARTIFACT_NAME}"
           echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
 
-      - name: Save Dependency Info
-        run: |
-          set -euo pipefail
-          mkdir -p dep-info
-          echo "${ZLIB_TAG}" > dep-info/zlib-tag.txt
-          echo "${SQLITE_TAG}" > dep-info/sqlite-tag.txt
-          echo "${OPENSSL_TAG}" > dep-info/openssl-tag.txt
-          echo "Saved dependency info: zlib=${ZLIB_TAG}, sqlite=${SQLITE_TAG}, openssl=${OPENSSL_TAG}"
-
-      - name: Upload Dependency Info
-        uses: actions/upload-artifact@v4
-        with:
-          name: dep-info-${{ matrix.platform }}-${{ matrix.process-mode }}
-          path: dep-info/
-          retention-days: 7
-
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -365,12 +353,6 @@ jobs:
           path: release-artifacts
           pattern: cpython-*
 
-      - name: Download Dependency Info
-        uses: actions/download-artifact@v4
-        with:
-          path: dep-info-artifacts
-          pattern: dep-info-*
-
       - name: Prepare Release Assets
         run: |
           set -euo pipefail
@@ -380,16 +362,17 @@ jobs:
 
       - name: Get Dependency Tags
         id: deps
+        env:
+          ZLIB_TAG: ${{ needs.build.outputs.zlib_tag }}
+          SQLITE_TAG: ${{ needs.build.outputs.sqlite_tag }}
+          OPENSSL_TAG: ${{ needs.build.outputs.openssl_tag }}
         run: |
           set -euo pipefail
-          # Get dependency tags from any matrix build (they all use the same)
-          # Use find to get one file to avoid broken pipe with cat|head
-          ZLIB_TAG_FILE=$(find dep-info-artifacts -name "zlib-tag.txt" | head -1)
-          SQLITE_TAG_FILE=$(find dep-info-artifacts -name "sqlite-tag.txt" | head -1)
-          OPENSSL_TAG_FILE=$(find dep-info-artifacts -name "openssl-tag.txt" | head -1)
-          ZLIB_TAG=$(cat "$ZLIB_TAG_FILE")
-          SQLITE_TAG=$(cat "$SQLITE_TAG_FILE")
-          OPENSSL_TAG=$(cat "$OPENSSL_TAG_FILE")
+          # Dependency tags come from job outputs (all matrix builds use the same)
+          echo "Using dependency tags from job outputs:"
+          echo "  zlib: ${ZLIB_TAG}"
+          echo "  sqlite: ${SQLITE_TAG}"
+          echo "  openssl: ${OPENSSL_TAG}"
           # Extract commit SHA from each tag (format: {commit-sha}-nanvix-{nanvix-sha})
           ZLIB_SHA=$(echo "$ZLIB_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
           SQLITE_SHA=$(echo "$SQLITE_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
@@ -400,7 +383,6 @@ jobs:
           echo "sqlite_sha=${SQLITE_SHA}" >> "$GITHUB_OUTPUT"
           echo "openssl_tag=${OPENSSL_TAG}" >> "$GITHUB_OUTPUT"
           echo "openssl_sha=${OPENSSL_SHA}" >> "$GITHUB_OUTPUT"
-          echo "Using dependency tags: zlib=${ZLIB_TAG}, sqlite=${SQLITE_TAG}, openssl=${OPENSSL_TAG}"
 
       - name: Get Nanvix Release Info
         id: nanvix-release
