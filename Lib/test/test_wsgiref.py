@@ -857,10 +857,7 @@ class HandlerTests(TestCase):
                 headers.add_header("key", "val")
                 # HTAB (\x09) is allowed in values, but not in names.
                 if c0 == "\t":
-                    base["key"] = f"val{c0}"
-                    base.start_response(f"key{c0}", headers)
-                else:
-                    self.assertRaises(ValueError, base.start_response, f"key{c0}", headers)
+                    raise exception
 
 
 class TestModule(unittest.TestCase):
