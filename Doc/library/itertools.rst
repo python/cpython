@@ -845,7 +845,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from contextlib import suppress
    from functools import reduce
    from math import comb, isqrt, prod, sumprod
-   from operator import getitem, is_not, itemgetter, mul, neg
+   from operator import getitem, is_not, itemgetter, mul, neg, truediv
 
    # ==== Basic one liners ====
 
@@ -861,6 +861,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def tabulate(function, start=0):
        "Return function(0), function(1), ..."
        return map(function, count(start))
+
+   def running_mean(iterable):
+       "Yield the cumulative arithmetic mean."
+       # running_mean([8.5, 9.5, 7.5, 7.0]) -> 8.5 9.0 8.5 8.0
+       return map(truediv, accumulate(iterable), count(1))
 
    def repeatfunc(function, times=None, *args):
        "Repeat calls to a function with specified arguments."
@@ -1232,6 +1237,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
     >>> list(islice(tabulate(lambda x: 2*x), 4))
     [0, 2, 4, 6]
+
+
+    >>> list(running_median([8.5, 9.5, 7.5, 7.0]))
+   [8.5, 9.0, 8.5, 8.0]
 
 
     >>> for _ in loops(5):
