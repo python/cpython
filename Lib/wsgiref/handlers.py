@@ -263,7 +263,8 @@ class BaseHandler:
     def _convert_string_type(self, value, title, *, name):
         """Convert/check value type."""
         if type(value) is str:
-            if (_name_disallowed if name else _value_disallowed).search(value):
+            regex = (_name_disallowed_re if name else _value_disallowed_re)
+            if regex.search(value):
                 raise ValueError("Control characters not allowed in headers and values")
             return value
         raise AssertionError(
