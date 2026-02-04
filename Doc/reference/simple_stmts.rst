@@ -91,11 +91,10 @@ attributes or items of mutable objects:
          : | "[" [`target_list`] "]"
          : | `attributeref`
          : | `subscription`
-         : | `slicing`
          : | "*" `target`
 
-(See section :ref:`primaries` for the syntax definitions for *attributeref*,
-*subscription*, and *slicing*.)
+(See section :ref:`primaries` for the syntax definitions for *attributeref*
+and *subscription*.)
 
 An assignment statement evaluates the expression list (remember that this can be
 a single expression or a comma-separated list, the latter yielding a tuple) and
@@ -107,8 +106,8 @@ right.
    pair: target; list
 
 Assignment is defined recursively depending on the form of the target (list).
-When a target is part of a mutable object (an attribute reference, subscription
-or slicing), the mutable object must ultimately perform the assignment and
+When a target is part of a mutable object (an attribute reference or
+subscription), the mutable object must ultimately perform the assignment and
 decide about its validity, and may raise an exception if the assignment is
 unacceptable.  The rules observed by various types and the exceptions raised are
 given with the definition of the object types (see section :ref:`types`).
@@ -189,9 +188,14 @@ Assignment of an object to a single target is recursively defined as follows.
      pair: object; mutable
 
 * If the target is a subscription: The primary expression in the reference is
-  evaluated.  It should yield either a mutable sequence object (such as a list)
-  or a mapping object (such as a dictionary).  Next, the subscript expression is
   evaluated.
+  Next, the subscript expression is evaluated.
+  Then, the primary's :meth:`~object.__setitem__` method is called with
+  two arguments: the subscript and the assigned object.
+
+  Typically, :meth:`~object.__setitem__` is defined on mutable sequence objects
+  (such as lists) and mapping objects (such as dictionaries), and behaves as
+  follows.
 
   .. index::
      pair: object; sequence
@@ -214,28 +218,19 @@ Assignment of an object to a single target is recursively defined as follows.
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
-  For user-defined objects, the :meth:`~object.__setitem__` method is called with
-  appropriate arguments.
-
   .. index:: pair: slicing; assignment
 
-* If the target is a slicing: The primary expression in the reference is
-  evaluated.  It should yield a mutable sequence object (such as a list).  The
-  assigned object should be a sequence object of the same type.  Next, the lower
-  and upper bound expressions are evaluated, insofar they are present; defaults
-  are zero and the sequence's length.  The bounds should evaluate to integers.
+  If the target is a slicing: The primary expression should evaluate to
+  a mutable sequence object (such as a list).
+  The assigned object should be :term:`iterable`.
+  The slicing's lower and upper bounds should be integers; if they are ``None``
+  (or not present), the defaults are zero and the sequence's length.
   If either bound is negative, the sequence's length is added to it.  The
   resulting bounds are clipped to lie between zero and the sequence's length,
   inclusive.  Finally, the sequence object is asked to replace the slice with
   the items of the assigned sequence.  The length of the slice may be different
   from the length of the assigned sequence, thus changing the length of the
   target sequence, if the target sequence allows it.
-
-.. impl-detail::
-
-   In the current implementation, the syntax for targets is taken to be the same
-   as for expressions, and invalid syntax is rejected during the code generation
-   phase, causing less detailed error messages.
 
 Although the definition of assignment implies that overlaps between the
 left-hand side and the right-hand side are 'simultaneous' (for example ``a, b =
@@ -281,7 +276,7 @@ operation and an assignment statement:
 
 .. productionlist:: python-grammar
    augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
-   augtarget: `identifier` | `attributeref` | `subscription` | `slicing`
+   augtarget: `identifier` | `attributeref` | `subscription`
    augop: "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
         : | ">>=" | "<<=" | "&=" | "^=" | "|="
 
@@ -470,7 +465,7 @@ in the same code block.  Trying to delete an unbound name raises a
 
 .. index:: pair: attribute; deletion
 
-Deletion of attribute references, subscriptions and slicings is passed to the
+Deletion of attribute references and subscriptions is passed to the
 primary object involved; deletion of a slicing is in general equivalent to
 assignment of an empty slice of the right type (but even this is determined by
 the sliced object).
