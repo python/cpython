@@ -388,9 +388,16 @@ jobs:
           ZLIB_TAG=$(cat "$ZLIB_TAG_FILE")
           SQLITE_TAG=$(cat "$SQLITE_TAG_FILE")
           OPENSSL_TAG=$(cat "$OPENSSL_TAG_FILE")
+          # Extract commit SHA from each tag (format: {commit-sha}-nanvix-{nanvix-sha})
+          ZLIB_SHA=$(echo "$ZLIB_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
+          SQLITE_SHA=$(echo "$SQLITE_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
+          OPENSSL_SHA=$(echo "$OPENSSL_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
           echo "zlib_tag=${ZLIB_TAG}" >> "$GITHUB_OUTPUT"
+          echo "zlib_sha=${ZLIB_SHA}" >> "$GITHUB_OUTPUT"
           echo "sqlite_tag=${SQLITE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "sqlite_sha=${SQLITE_SHA}" >> "$GITHUB_OUTPUT"
           echo "openssl_tag=${OPENSSL_TAG}" >> "$GITHUB_OUTPUT"
+          echo "openssl_sha=${OPENSSL_SHA}" >> "$GITHUB_OUTPUT"
           echo "Using dependency tags: zlib=${ZLIB_TAG}, sqlite=${SQLITE_TAG}, openssl=${OPENSSL_TAG}"
 
       - name: Get Nanvix Release Info
@@ -416,8 +423,11 @@ jobs:
           NANVIX_NAME: ${{ steps.nanvix-release.outputs.name }}
           NANVIX_PUBLISHED: ${{ steps.nanvix-release.outputs.published }}
           ZLIB_TAG: ${{ steps.deps.outputs.zlib_tag }}
+          ZLIB_SHA: ${{ steps.deps.outputs.zlib_sha }}
           SQLITE_TAG: ${{ steps.deps.outputs.sqlite_tag }}
+          SQLITE_SHA: ${{ steps.deps.outputs.sqlite_sha }}
           OPENSSL_TAG: ${{ steps.deps.outputs.openssl_tag }}
+          OPENSSL_SHA: ${{ steps.deps.outputs.openssl_sha }}
         run: |
           # Release tag format: {commit-sha}-nanvix-{nanvix-sha}
           # This enables easy lookup of releases built with a specific Nanvix version
@@ -438,9 +448,9 @@ jobs:
           - Nanvix SHA: \`${NANVIX_SHA}\`
 
           **Dependencies:**
-          - zlib: \`${ZLIB_TAG}\`
-          - sqlite: \`${SQLITE_TAG}\`
-          - openssl: \`${OPENSSL_TAG}\`" \
+          - zlib: [\`${ZLIB_TAG}\`](https://github.com/nanvix/zlib/releases/tag/${ZLIB_TAG})
+          - sqlite: [\`${SQLITE_TAG}\`](https://github.com/nanvix/sqlite/releases/tag/${SQLITE_TAG})
+          - openssl: [\`${OPENSSL_TAG}\`](https://github.com/nanvix/openssl/releases/tag/${OPENSSL_TAG})" \
             --latest \
             release-assets/*.tar.bz2
 
