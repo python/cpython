@@ -139,8 +139,8 @@ jobs:
           SQLITE_RELEASE_BODY=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
             "https://api.github.com/repos/nanvix/sqlite/releases/tags/${MATCHING_RELEASE_TAG}" 2>/dev/null | jq -r '.body // ""')
 
-          # Extract zlib tag from release body (format: "- zlib: `tag-here`")
-          ZLIB_TAG_FROM_SQLITE=$(echo "$SQLITE_RELEASE_BODY" | grep -oP '(?<=- zlib: `)[^`]+' || echo "")
+          # Extract zlib tag from release body.
+          ZLIB_TAG_FROM_SQLITE=$(echo "$SQLITE_RELEASE_BODY" | grep -oP '(?<=- zlib: \[`)[^`]+' || echo "")
           if [[ -n "$ZLIB_TAG_FROM_SQLITE" ]]; then
             echo "Found zlib tag from SQLite release: $ZLIB_TAG_FROM_SQLITE"
             echo "ZLIB_TAG=${ZLIB_TAG_FROM_SQLITE}" >> "$GITHUB_ENV"
