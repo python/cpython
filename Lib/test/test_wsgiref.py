@@ -853,8 +853,7 @@ class HandlerTests(TestCase):
         for c0 in control_characters_c0():
             with self.subTest(c0):
                 base = BaseHandler()
-                test = [('x','y')]
-                headers = Headers(test[:])
+                headers = [('x','y')]
                 headers.add_header("key", "val")
                 # HTAB (\x09) is allowed in values, but not in names.
                 if c0 == "\t":
