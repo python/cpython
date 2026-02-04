@@ -177,6 +177,7 @@ dummy_func(void) {
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
         assert(type_version);
+        assert(this_instr[-1].opcode == _RECORD_TOS_TYPE);
         if (sym_matches_type_version(owner, type_version)) {
             ADD_OP(_NOP, 0, 0);
         } else {
@@ -1067,13 +1068,17 @@ dummy_func(void) {
     }
 
     op(_CHECK_STACK_SPACE, (unused, unused, unused[oparg] -- unused, unused, unused[oparg])) {
+        assert((this_instr + 4)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 4));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        ADD_OP(_CHECK_STACK_SPACE_OPERAND, 0, co->co_framesize);
     }
 
     op (_CHECK_STACK_SPACE_OPERAND, (framesize/2 -- )) {
         (void)framesize;
-        /* We should never see _CHECK_STACK_SPACE_OPERANDs.
-        * They are only created at the end of this pass. */
-        Py_UNREACHABLE();
     }
 
     op(_PUSH_FRAME, (new_frame -- )) {
