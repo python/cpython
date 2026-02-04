@@ -2115,7 +2115,7 @@ class TestWindowsConsoleEolWrap(TestCase):
     We use _has_wrapped_to_next_row() to determine the actual behavior.
     """
 
-    def _make_console_like(self, *, width: int, offset: int, vt: bool):
+    def _make_console_like(self, *, width: int, vt: bool):
         from _pyrepl import windows_console as wc
 
         con = object.__new__(wc.WindowsConsole)
@@ -2124,7 +2124,7 @@ class TestWindowsConsoleEolWrap(TestCase):
         con.width = width
         con.screen = []
         con.posxy = (0, 0)
-        setattr(con, "_WindowsConsole__offset", offset)
+        setattr(con, "_WindowsConsole__offset", 0)
         setattr(con, "_WindowsConsole__vt_support", vt)
 
         # Stub out side-effecting methods used by __write_changed_line()
@@ -2139,7 +2139,7 @@ class TestWindowsConsoleEolWrap(TestCase):
     def _run_exact_width_case(self, *, vt: bool, did_wrap: bool):
         width = 10
         y = 3
-        con, wc = self._make_console_like(width=width, offset=0, vt=vt)
+        con, wc = self._make_console_like(width=width, vt=vt)
 
         with patch.object(con, "_has_wrapped_to_next_row", return_value=did_wrap):
             old = ""
@@ -2166,15 +2166,15 @@ class TestWindowsConsoleEolWrap(TestCase):
 
 @skipUnless(sys.platform == "win32", "Windows console behavior only")
 class TestHasWrappedToNextRow(TestCase):
-    def _make_console_like(self, *, offset: int):
+    def _make_console_like(self):
         from _pyrepl import windows_console as wc
 
         con = object.__new__(wc.WindowsConsole)
-        setattr(con, "_WindowsConsole__offset", offset)
+        setattr(con, "_WindowsConsole__offset", 0)
         return con, wc
 
     def test_returns_true_when_wrapped(self):
-        con, wc = self._make_console_like(offset=0)
+        con, wc = self._make_console_like()
         y = 3
 
         def fake_gcsbi(_h, info):
@@ -2182,12 +2182,11 @@ class TestHasWrappedToNextRow(TestCase):
             info.dwCursorPosition.Y = y + 1
             return True
 
-        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi), \
-             patch.object(wc, "OutHandle", 1):
-            self.assertIs(con._has_wrapped_to_next_row(y), True)
+        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi):
+            self.assertTrue(con._has_wrapped_to_next_row(y))
 
     def test_returns_false_when_not_wrapped(self):
-        con, wc = self._make_console_like(offset=0)
+        con, wc = self._make_console_like()
         y = 3
 
         def fake_gcsbi(_h, info):
@@ -2195,6 +2194,5 @@ class TestHasWrappedToNextRow(TestCase):
             info.dwCursorPosition.Y = y
             return True
 
-        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi), \
-             patch.object(wc, "OutHandle", 1):
-            self.assertIs(con._has_wrapped_to_next_row(y), False)
+        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi):
+            self.assertFalse(con._has_wrapped_to_next_row(y))
