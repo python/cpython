@@ -2741,8 +2741,6 @@ expression support in the :mod:`re` module).
 
       >>> 'Python'.startswith('Py')
       True
-      >>> 'a tuple of prefixes'.startswith(('at', 'in'))
-      False
       >>> 'a tuple of prefixes'.startswith(('at', 'a'))
       True
       >>> 'Python is amazing'.startswith('is', 7)
