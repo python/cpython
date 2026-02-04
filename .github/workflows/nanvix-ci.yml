@@ -423,7 +423,7 @@ jobs:
           # This enables easy lookup of releases built with a specific Nanvix version
           RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
           gh release create "$RELEASE_TAG" \
-            --title "Build ${GITHUB_SHA::7} (Nanvix ${NANVIX_SHA})" \
+            --title "Build ${GITHUB_SHA::7}" \
             --notes "Automated build from branch ${{ github.ref_name }} at commit ${{ github.sha }}.
 
           **Build Information:**
