@@ -3393,11 +3393,25 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
             Py_hash_t hash;
             // if stdlib_module_names is not NULL, it is always a frozenset.
             while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
-                if (PyUnicode_Check(item)
-                    && PyUnicode_Compare(key, item) == 0)
-                {
-                    is_stdlib_ext = 1;
-                    break;
+                if (!PyUnicode_Check(item)) {
+                    continue;
+                }
+                Py_ssize_t len = PyUnicode_GET_LENGTH(item);
+                if (PyUnicode_Tailmatch(key, item, 0, len, -1) == 1) {
+                    Py_ssize_t key_len = PyUnicode_GET_LENGTH(key);
+                    if (key_len == len) {
+                        is_stdlib_ext = 1;
+                        break;
+                    }
+                    assert(key_len > len);
+
+                    // Ignore sub-modules of stdlib packages. For example,
+                    // ignore "math.integer" if key starts with "math.".
+                    Py_UCS4 ch = PyUnicode_ReadChar(key, len);
+                    if (ch == '.') {
+                        is_stdlib_ext = 1;
+                        break;
+                    }
                 }
             }
             if (is_stdlib_ext) {
