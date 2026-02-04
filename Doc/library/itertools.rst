@@ -1237,7 +1237,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
     [(0, 'a'), (1, 'b'), (2, 'c')]
 
 
-    >>> list(running_median([8.5, 9.5, 7.5, 7.0]))
+    >>> list(running_mean([8.5, 9.5, 7.5, 7.0]))
     [8.5, 9.0, 8.5, 8.0]
 
 
