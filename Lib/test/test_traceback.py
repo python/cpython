@@ -4255,15 +4255,18 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
             analization = None
             ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = None
 
-        self.assertIn("'finalization'", self.get_suggestion(A(), 'ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ'))
+        suggestion = self.get_suggestion(A(), 'ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ')
+        self.assertIn("'finalization'", suggestion)
+        self.assertNotIn("analization", suggestion)
 
         class B:
             attr_a = None
-            attr_µ = None
+            attr_µ = None  # attr_\xb5
 
         suggestion = self.get_suggestion(B(), 'attr_\xb5')
         self.assertIn("'attr_\u03bc'", suggestion)
         self.assertIn(r"'attr_\u03bc'", suggestion)
+        self.assertNotIn("attr_a", suggestion)
 
 
 class GetattrSuggestionTests(BaseSuggestionTests):
@@ -4898,6 +4901,22 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         instance = A()
         actual = self.get_suggestion(instance.foo)
         self.assertIn("self.finalization", actual)
+        self.assertNotIn("ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ", actual)
+        self.assertNotIn("analization", actual)
+
+        class B:
+            def __init__(self):
+                self.attr_µ = None  # attr_\xb5
+            def foo(self):
+                attr_a = 1
+                x = attr_µ  # attr_\xb5
+
+        instance = B()
+        actual = self.get_suggestion(instance.foo)
+        self.assertIn("self.attr_\u03bc", actual)
+        self.assertIn(r"self.attr_\u03bc", actual)
+        self.assertNotIn("attr_\xb5", actual)
+        self.assertNotIn("attr_a", actual)
 
     def test_unbound_local_error_with_instance(self):
         class A:
