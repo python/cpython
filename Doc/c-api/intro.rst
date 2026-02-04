@@ -186,8 +186,8 @@ Utilities
 
 .. c:macro:: Py_GETENV(s)
 
-   Like :c:expr:`getenv(s)`, but returns ``NULL`` if :option:`-E` was passed on the
-   command line (see :c:member:`PyConfig.use_environment`).
+   Like :samp:`getenv({s})`, but returns ``NULL`` if :option:`-E` was passed
+   on the command line (see :c:member:`PyConfig.use_environment`).
 
 .. c:macro:: Py_UNREACHABLE()
 
