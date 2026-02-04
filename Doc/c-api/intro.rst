@@ -383,7 +383,7 @@ to the C language.
 
 .. c:macro:: Py_DEPRECATED(version)
 
-   Use this to declare APIs that were deprecated in a specific CPYthon version.
+   Use this to declare APIs that were deprecated in a specific CPython version.
    The macro must be placed before the symbol name.
 
    Example::
