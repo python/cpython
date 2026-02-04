@@ -854,6 +854,8 @@ class HandlerTests(TestCase):
             with self.subTest(c0):
                 base = BaseHandler()
                 headers = Headers()
+                headers["key"] = f"val{c0}"
+                headers.add_header("key", "val")
                 # HTAB (\x09) is allowed in values, but not in names.
                 if c0 == "\t":
                     base["key"] = f"val{c0}"
