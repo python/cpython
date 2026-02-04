@@ -437,7 +437,7 @@ jobs:
           - Commit: [${NANVIX_SHA_FULL}](https://github.com/nanvix/nanvix/commit/${NANVIX_SHA_FULL})
           - Nanvix SHA: \`${NANVIX_SHA}\`
 
-          **Dependencies (exact tags for reproducibility):**
+          **Dependencies:**
           - zlib: \`${ZLIB_TAG}\`
           - sqlite: \`${SQLITE_TAG}\`
           - openssl: \`${OPENSSL_TAG}\`" \
