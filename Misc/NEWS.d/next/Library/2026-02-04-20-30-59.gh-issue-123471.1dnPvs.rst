@@ -1,0 +1,1 @@
+Make concurrent iteration over :class:`itertools.accumulate` safe under free-threading.
