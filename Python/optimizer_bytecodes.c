@@ -1416,6 +1416,8 @@ dummy_func(void) {
             ADD_OP(_NOP, 0, 0);
         }
     }
+
+
     op(_GUARD_TOS_SLICE, (tos -- tos)){
         if (sym_matches_type(tos, &PySlice_Type)){
             ADD_OP(_NOP, 0, 0);
