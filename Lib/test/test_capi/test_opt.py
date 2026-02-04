@@ -2045,6 +2045,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS", uops)
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
 
+    def test_remove_guard_for_known_type_slice(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                l = [1, 2, 3]
+                slice_obj = slice(0, 1)
+                x += l[slice_obj][0] # guarded
+                x += l[slice_obj][0] # unguarded
+            return x
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        uops = get_opnames(ex)
+
+        count = count_ops(ex, "_GUARD_TOS_SLICE")
+        self.assertEqual(count, 1)
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
+
     def test_binary_subcsr_str_int_narrows_to_str(self):
         def testfunc(n):
             x = []
