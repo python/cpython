@@ -4250,6 +4250,24 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(A(), 'blech')
         self.assertNotIn("Did you mean", actual)
 
+    def test_suggestions_not_normalized(self):
+        class A:
+            analization = None
+            ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = None
+
+        suggestion = self.get_suggestion(A(), 'ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ')
+        self.assertIn("'finalization'", suggestion)
+        self.assertNotIn("analization", suggestion)
+
+        class B:
+            attr_a = None
+            attr_µ = None  # attr_\xb5
+
+        suggestion = self.get_suggestion(B(), 'attr_\xb5')
+        self.assertIn("'attr_\u03bc'", suggestion)
+        self.assertIn(r"'attr_\u03bc'", suggestion)
+        self.assertNotIn("attr_a", suggestion)
+
 
 class GetattrSuggestionTests(BaseSuggestionTests):
     def test_suggestions_no_args(self):
@@ -4871,6 +4889,34 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         instance = A()
         actual = self.get_suggestion(instance.foo)
         self.assertIn("self.blech", actual)
+
+    def test_name_error_with_instance_not_normalized(self):
+        class A:
+            def __init__(self):
+                self.ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = None
+            def foo(self):
+                analization = 1
+                x = ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ
+
+        instance = A()
+        actual = self.get_suggestion(instance.foo)
+        self.assertIn("self.finalization", actual)
+        self.assertNotIn("ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ", actual)
+        self.assertNotIn("analization", actual)
+
+        class B:
+            def __init__(self):
+                self.attr_µ = None  # attr_\xb5
+            def foo(self):
+                attr_a = 1
+                x = attr_µ  # attr_\xb5
+
+        instance = B()
+        actual = self.get_suggestion(instance.foo)
+        self.assertIn("self.attr_\u03bc", actual)
+        self.assertIn(r"self.attr_\u03bc", actual)
+        self.assertNotIn("attr_\xb5", actual)
+        self.assertNotIn("attr_a", actual)
 
     def test_unbound_local_error_with_instance(self):
         class A:
