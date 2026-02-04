@@ -61,7 +61,7 @@ class Headers:
         """Set the value of a header."""
         del self[name]
         self._headers.append(
-            (self._convert_string_type(name, name=True), self._convert_string_type(val)))
+            (self._convert_string_type(name, name=True), self._convert_string_type(val, name=False)))
 
     def __delitem__(self,name):
         """Delete all occurrences of a header, if present.
@@ -157,7 +157,7 @@ class Headers:
         result = self.get(name)
         if result is None:
             self._headers.append((self._convert_string_type(name, name=True),
-                self._convert_string_type(value)))
+                self._convert_string_type(value, name=False)))
             return value
         else:
             return result
@@ -180,13 +180,13 @@ class Headers:
         """
         parts = []
         if _value is not None:
-            _value = self._convert_string_type(_value)
+            _value = self._convert_string_type(_value, name=False)
             parts.append(_value)
         for k, v in _params.items():
             k = self._convert_string_type(k, name=True)
             if v is None:
                 parts.append(k.replace('_', '-'))
             else:
-                v = self._convert_string_type(v)
+                v = self._convert_string_type(v, name=False)
                 parts.append(_formatparam(k.replace('_', '-'), v))
         self._headers.append((self._convert_string_type(_name, name=True), "; ".join(parts)))
