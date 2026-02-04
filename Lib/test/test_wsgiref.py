@@ -849,6 +849,17 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
 
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                base = BaseHandler()
+                # HTAB (\x09) is allowed in values, but not in names.
+                if c0 == "\t":
+                    base["key"] = f"val{c0}"
+                    base.start_response(f"key{c0}", headers)
+                else:
+                    self.assertRaises(ValueError, base.start_response, f"key{c0}", headers)
+
 
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
