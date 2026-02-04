@@ -158,3 +158,5 @@ Python/frozen_modules/MANIFEST
 !/Python/
 
 .z.cache
+.nanvix-configured
+python.elf
