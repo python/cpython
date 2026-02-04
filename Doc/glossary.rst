@@ -1481,6 +1481,12 @@ Glossary
    stdlib
       An abbreviation of :term:`standard library`.
 
+   steal
+      In Python's C API, "*stealing*" an argument means that ownership of the
+      argument is transferred to the called function.
+      Generally, functions that "steal" an argument do so even if they fail.
+      See also :ref:`api-refcountdetails`.
+
    strong reference
       In Python's C API, a strong reference is a reference to an object
       which is owned by the code holding the reference.  The strong
