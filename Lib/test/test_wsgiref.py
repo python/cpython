@@ -857,7 +857,7 @@ class HandlerTests(TestCase):
                 headers.add_header("key", "val")
                 # HTAB (\x09) is allowed in values, but not in names.
                 if c0 == "\t":
-                    raise exception
+                    raise TypeError("If this is not triggered it's not reachable")
 
 
 class TestModule(unittest.TestCase):
