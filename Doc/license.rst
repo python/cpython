@@ -1209,7 +1209,7 @@ from https://github.com/conda-forge/python-feedstock which contains the followin
 license::
 
   BSD-3-Clause license
-  Copyright (c) 2015-2022, conda-forge contributors
+  Copyright (c) 2015-2026, conda-forge contributors
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
