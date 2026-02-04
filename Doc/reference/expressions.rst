@@ -1143,17 +1143,15 @@ Formal subscription grammar
 .. grammar-snippet::
    :group: python-grammar
 
-   subscription: `primary` '[' `subscript` ']'
-   subscript:    `slice` | `tuple_slices`
-   tuple_slices: ','.(`slice` | `starred_expression`)+ [',']
-   slice:        `proper_slice` | `assignment_expression`
-   proper_slice: [`expression`] ":" [`expression`] [ ":" [`expression`] ]
+   subscription:     `primary` '[' `subscript` ']'
+   subscript:        `single_subscript` | `tuple_subscript`
+   single_subscript: `proper_slice` | `assignment_expression`
+   proper_slice:     [`expression`] ":" [`expression`] [ ":" [`expression`] ]
+   tuple_subscript:  ','.(`single_subscript` | `starred_expression`)+ [',']
 
-There is a semantic difference between the alternatives for *subscript*.
-If *subscript* contains only one unstarred *slice* without a trailing comma,
-it will evaluate to the value of that *slice*.
-Otherwise, *subscript* will evaluate to a :class:`tuple` containing
-the items of *tuple_slices*.
+Recall that the ``|`` operator :ref:`denotes *ordered choice* <notation>`.
+Specifically, in :token:`!subscript`, if both alternatives of would match, the
+first (:token:`!single_subscript`) has priority.
 
 .. index::
    pair: object; callable
