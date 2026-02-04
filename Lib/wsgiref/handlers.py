@@ -16,8 +16,8 @@ _monthname = [None, # Dummy so we can use 1-based month numbers
               "Jan", "Feb", "Mar", "Apr", "May", "Jun",
               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-_name_disallowed = re.compile(r'[\x00-\x1F\x7F]')
-_value_disallowed = re.compile(r'[\x00-\x08\x0A-\x1F\x7F]')
+_name_disallowed_re = re.compile(r'[\x00-\x1F\x7F]')
+_value_disallowed_re = re.compile(r'[\x00-\x08\x0A-\x1F\x7F]')
 
 def format_date_time(timestamp):
     year, month, day, hh, mm, ss, wd, y, z = time.gmtime(timestamp)
