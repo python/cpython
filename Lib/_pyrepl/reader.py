@@ -214,7 +214,7 @@ class Reader:
     lxy: tuple[int, int] = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
     can_colorize: bool = False
-    gen_colors: Callable[[str], Iterator[ColorSpan]] = field(default=gen_colors)
+    gen_colors: Callable[[str], Iterator[ColorSpan]] = gen_colors
     threading_hook: Callback | None = None
 
     ## cached metadata to speed up screen refreshes
