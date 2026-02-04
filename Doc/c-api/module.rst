@@ -900,8 +900,8 @@ or code that creates modules dynamically.
 
 .. c:function:: int PyModule_Add(PyObject *module, const char *name, PyObject *value)
 
-   Similar to :c:func:`PyModule_AddObjectRef`, but "steals" a reference
-   to *value*.
+   Similar to :c:func:`PyModule_AddObjectRef`, but ":term:`steals <steal>`"
+   a reference to *value* (even on error).
    It can be called with a result of function that returns a new reference
    without bothering to check its result or even saving it to a variable.
 
@@ -916,8 +916,8 @@ or code that creates modules dynamically.
 
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
-   Similar to :c:func:`PyModule_AddObjectRef`, but steals a reference to
-   *value* on success (if it returns ``0``).
+   Similar to :c:func:`PyModule_AddObjectRef`, but :term:`steals <steal>`
+   a reference to *value* on success (if it returns ``0``).
 
    The new :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef`
    functions are recommended, since it is

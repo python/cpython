@@ -88,8 +88,10 @@ List Objects
 
    .. note::
 
-      This function "steals" a reference to *item* and discards a reference to
-      an item already in the list at the affected position.
+      This function ":term:`steals <steal>`" a reference to *item*,
+      even on error.
+      On success, it discards a reference to an item already in the list
+      at the affected position (unless it was NULL).
 
 
 .. c:function:: void PyList_SET_ITEM(PyObject *list, Py_ssize_t i, PyObject *o)
@@ -103,7 +105,7 @@ List Objects
 
    .. note::
 
-      This macro "steals" a reference to *item*, and, unlike
+      This macro ":term:`steals <steal>`" a reference to *item*, and, unlike
       :c:func:`PyList_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in *list* at position *i* will be
       leaked.
