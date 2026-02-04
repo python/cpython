@@ -13,8 +13,6 @@ jobs:
     timeout-minutes: 60
     env:
       WASMTIME_VERSION: 38.0.3
-      WASI_SDK_VERSION: 29
-      WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
@@ -26,18 +24,22 @@ jobs:
       uses: bytecodealliance/actions/wasmtime/setup@v1
       with:
         version: ${{ env.WASMTIME_VERSION }}
-    - name: "Restore WASI SDK"
-      id: cache-wasi-sdk
-      uses: actions/cache@v5
-      with:
-        path: ${{ env.WASI_SDK_PATH }}
-        key: ${{ runner.os }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}
-    - name: "Install WASI SDK"  # Hard-coded to x64.
-      if: steps.cache-wasi-sdk.outputs.cache-hit != 'true'
+    - name: "Read WASI SDK version"
+      id: wasi-sdk-version
       run: |
-        mkdir "${WASI_SDK_PATH}" && \
-        curl -s -S --location "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/wasi-sdk-${WASI_SDK_VERSION}.0-arm64-linux.tar.gz" | \
-        tar --strip-components 1 --directory "${WASI_SDK_PATH}" --extract --gunzip
+        import tomllib
+        from pathlib import Path
+        import os
+        config = tomllib.loads(Path("Platforms/WASI/config.toml").read_text())
+        version = config["targets"]["wasi-sdk"]
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"version={version}\n")
+      shell: python
+    - name: "Install WASI SDK"
+      id: install-wasi-sdk
+      uses: bytecodealliance/setup-wasi-sdk-action@v3
+      with:
+        version: ${{ steps.wasi-sdk-version.outputs.version }}
     - name: "Add ccache to PATH"
       run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: "Install Python"
@@ -53,6 +55,8 @@ jobs:
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Platforms/WASI configure-host -- --config-cache
+      env:
+        WASI_SDK_PATH: ${{ steps.install-wasi-sdk.outputs.wasi-sdk-path }}
     - name: "Make host"
       run: python3 Platforms/WASI make-host
     - name: "Display build info"
