@@ -2684,7 +2684,7 @@ cwr_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-cwr_next(PyObject *op)
+cwr_next_lock_held(PyObject *op)
 {
     cwrobject *co = cwrobject_CAST(op);
     PyObject *elem;
@@ -2761,6 +2761,16 @@ cwr_next(PyObject *op)
 empty:
     co->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+cwr_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = cwr_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef cwr_methods[] = {
@@ -2943,7 +2953,7 @@ permutations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-permutations_next(PyObject *op)
+permutations_next_lock_held(PyObject *op)
 {
     permutationsobject *po = permutationsobject_CAST(op);
     PyObject *elem;
@@ -3031,6 +3041,16 @@ permutations_next(PyObject *op)
 empty:
     po->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+permutations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = permutations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef permuations_methods[] = {
