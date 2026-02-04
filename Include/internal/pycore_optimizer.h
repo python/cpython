@@ -90,6 +90,7 @@ typedef struct _PyJitTracerPreviousState {
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;
     _PyBloomFilter dependencies;
+    PyObject *recorded_value; // Strong, may be NULL
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerTranslatorState {
@@ -336,13 +337,19 @@ PyAPI_FUNC(int) _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate,
 PyAPI_FUNC(int)
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
-    _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
+    _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth, _PyExitData *exit,
     int oparg, _PyExecutorObject *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
 void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
+
+#ifdef _Py_TIER2
+typedef void (*_Py_RecordFuncPtr)(_PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
+PyAPI_DATA(const _Py_RecordFuncPtr) _PyOpcode_RecordFunctions[];
+PyAPI_DATA(const uint8_t) _PyOpcode_RecordFunctionIndices[256];
+#endif
 
 #ifdef __cplusplus
 }
