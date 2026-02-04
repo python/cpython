@@ -300,12 +300,15 @@ class TestNtpath(NtpathTestCase):
 
     def test_commonprefix(self):
         with warnings_helper.check_warnings((".*commonpath().*", DeprecationWarning)):
-            tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
-                   "/home/swen")
-            tester('ntpath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',
-                   "\\home\\swen\\")
-            tester('ntpath.commonprefix(["/home/swen/spam", "/home/swen/spam"])',
-                   "/home/swen/spam")
+            self.do_test_commonprefix()
+
+    def do_test_commonprefix(self):
+        tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
+               "/home/swen")
+        tester('ntpath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',
+               "\\home\\swen\\")
+        tester('ntpath.commonprefix(["/home/swen/spam", "/home/swen/spam"])',
+               "/home/swen/spam")
 
     def test_join(self):
         tester('ntpath.join("")', '')

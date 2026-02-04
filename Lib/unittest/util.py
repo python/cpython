@@ -20,17 +20,15 @@ def _shorten(s, prefixlen, suffixlen):
         s = '%s[%d chars]%s' % (s[:prefixlen], skip, s[len(s) - suffixlen:])
     return s
 
-def _commonprefix(m, /):
+def _common_prefix(m):
     if not m:
         return ""
-    m = sorted(m)
-    prefix = m[0]
-    for item in m[1:]:
-        for i in range(len(prefix)):
-            if item[i] != prefix[i]:
-                prefix = prefix[:i]
-                break
-    return prefix
+    s1 = min(m)
+    s2 = max(m)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            return s1[:i]
+    return s1
 
 def _common_shorten_repr(*args):
     args = tuple(map(safe_repr, args))
@@ -38,7 +36,7 @@ def _common_shorten_repr(*args):
     if maxlen <= _MAX_LENGTH:
         return args
 
-    prefix = _commonprefix(args)
+    prefix = _common_prefix(args)
     prefixlen = len(prefix)
 
     common_len = _MAX_LENGTH - \
