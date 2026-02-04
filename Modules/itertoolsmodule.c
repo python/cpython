@@ -366,7 +366,7 @@ pairwise_next_lock_held(PyObject *op)
             return NULL;
         }
     }
-    Py_INCREF(old);
+    Py_INCREF(old); // needed because of reentant calls via call to the iterator
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
