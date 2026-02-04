@@ -859,10 +859,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # prepend(1, [2, 3, 4]) → 1 2 3 4
        return chain([value], iterable)
 
-   def tabulate(function, start=0):
-       "Return function(0), function(1), ..."
-       return map(function, count(start))
-
    def running_mean(iterable):
        "Yield the cumulative arithmetic mean."
        # running_mean([8.5, 9.5, 7.5, 7.0]) -> 8.5 9.0 8.5 8.0
@@ -1239,10 +1235,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
     >>> list(enumerate('abc'))
     [(0, 'a'), (1, 'b'), (2, 'c')]
-
-
-    >>> list(islice(tabulate(lambda x: 2*x), 4))
-    [0, 2, 4, 6]
 
 
     >>> list(running_median([8.5, 9.5, 7.5, 7.0]))
@@ -1813,6 +1805,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
     # Old recipes and their tests which are guaranteed to continue to work.
 
+    def tabulate(function, start=0):
+        "Return function(0), function(1), ..."
+        return map(function, count(start))
+
     def old_sumprod_recipe(vec1, vec2):
         "Compute a sum of products."
         return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
@@ -1891,6 +1887,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 .. doctest::
     :hide:
+
+    >>> list(islice(tabulate(lambda x: 2*x), 4))
+    [0, 2, 4, 6]
+
 
     >>> dotproduct([1,2,3], [4,5,6])
     32
