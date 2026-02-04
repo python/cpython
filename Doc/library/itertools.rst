@@ -847,6 +847,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from math import comb, isqrt, prod, sumprod
    from operator import getitem, is_not, itemgetter, mul, neg, truediv
 
+
    # ==== Basic one liners ====
 
    def take(n, iterable):
@@ -917,6 +918,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Returns True if all the elements are equal to each other."
        # all_equal('4٤௪౪໔', key=int) → True
        return len(take(2, groupby(iterable, key))) <= 1
+
 
    # ==== Data pipelines ====
 
@@ -1026,6 +1028,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
            while True:
                yield function()
 
+
    # ==== Mathematical operations ====
 
    def multinomial(*counts):
@@ -1045,6 +1048,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # sum_of_squares([10, 20, 30]) → 1400
        return sumprod(*tee(iterable))
 
+
    # ==== Matrix operations ====
 
    def reshape(matrix, columns):
@@ -1062,6 +1066,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80) (41, 60)
        n = len(m2[0])
        return batched(starmap(sumprod, product(m1, transpose(m2))), n)
+
 
    # ==== Polynomial arithmetic ====
 
@@ -1118,6 +1123,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(mul, coefficients, powers))
+
 
    # ==== Number theory ====
 
