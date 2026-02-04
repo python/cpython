@@ -37,7 +37,7 @@ jobs:
       shell: python
     - name: "Install WASI SDK"
       id: install-wasi-sdk
-      uses: bytecodealliance/setup-wasi-sdk-action@v1
+      uses: bytecodealliance/setup-wasi-sdk-action@dcd040abc428fe35253676ef0e6379fba9bf8f9f
       with:
         version: ${{ steps.wasi-sdk-version.outputs.version }}
     - name: "Add ccache to PATH"
