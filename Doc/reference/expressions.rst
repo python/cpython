@@ -977,7 +977,7 @@ a :class:`dict`::
 In the subscription syntax, the object being subscribed -- a
 :ref:`primary <primaries>` -- is followed by a :dfn:`subscript` in
 square brackets.
-In the simplest case, the subscript is single expression.
+In the simplest case, the subscript is a single expression.
 
 Depending on the type of the object being subscribed, the subscript is
 sometimes called a :term:`key` (for mappings), :term:`index` (for sequences),
@@ -1149,8 +1149,8 @@ Formal subscription grammar
    proper_slice:     [`expression`] ":" [`expression`] [ ":" [`expression`] ]
    tuple_subscript:  ','.(`single_subscript` | `starred_expression`)+ [',']
 
-Recall that the ``|`` operator :ref:`denotes *ordered choice* <notation>`.
-Specifically, in :token:`!subscript`, if both alternatives of would match, the
+Recall that the ``|`` operator :ref:`denotes ordered choice <notation>`.
+Specifically, in :token:`!subscript`, if both alternatives would match, the
 first (:token:`!single_subscript`) has priority.
 
 .. index::

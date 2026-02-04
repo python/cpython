@@ -225,7 +225,6 @@ Assignment of an object to a single target is recursively defined as follows.
   The assigned object should be :term:`iterable`.
   The slicing's lower and upper bounds should be integers; if they are ``None``
   (or not present), the defaults are zero and the sequence's length.
-  The bounds should evaluate to integers.
   If either bound is negative, the sequence's length is added to it.  The
   resulting bounds are clipped to lie between zero and the sequence's length,
   inclusive.  Finally, the sequence object is asked to replace the slice with
