@@ -1,1 +1,0 @@
-:mod:`mimetypes`: Update mime type for ``.ai`` files to ``application/pdf``.

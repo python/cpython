@@ -15,6 +15,14 @@ def run_pty(script, input=b"dummy input\r", env=None):
     output = bytearray()
     [master, slave] = pty.openpty()
     args = (sys.executable, '-c', script)
+
+    # Isolate readline from personal init files by setting INPUTRC
+    # to an empty file. See also GH-142353.
+    if env is None:
+        env = {**os.environ.copy(), "INPUTRC": os.devnull}
+    else:
+        env.setdefault("INPUTRC", os.devnull)
+
     proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
     os.close(slave)
     with ExitStack() as cleanup:

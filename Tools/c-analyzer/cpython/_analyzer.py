@@ -76,6 +76,7 @@ _OTHER_SUPPORTED_TYPES = {
     'PyBufferProcs',
     'PyStructSequence_Field[]',
     'PyStructSequence_Desc',
+    'PyABIInfo',
 }
 
 # XXX We should normalize all cases to a single name,

@@ -67,7 +67,7 @@ module Python
          | Set(expr* elts)
          | ListComp(expr elt, comprehension* generators)
          | SetComp(expr elt, comprehension* generators)
-         | DictComp(expr key, expr value, comprehension* generators)
+         | DictComp(expr key, expr? value, comprehension* generators)
          | GeneratorExp(expr elt, comprehension* generators)
          -- the grammar constrains where yield expressions can occur
          | Await(expr value)
@@ -114,7 +114,7 @@ module Python
                     attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     arguments = (arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs,
-                 expr* kw_defaults, arg? kwarg, expr* defaults)
+                 expr?* kw_defaults, arg? kwarg, expr* defaults)
 
     arg = (identifier arg, expr? annotation, string? type_comment)
            attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)

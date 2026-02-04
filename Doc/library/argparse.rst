@@ -645,6 +645,27 @@ are set.
 
 .. versionadded:: 3.14
 
+To highlight inline code in your description or epilog text, you can use
+backticks::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     epilog='''Examples:
+   ...   `python -m myapp --verbose`
+   ...   `python -m myapp --config settings.json`
+   ... ''')
+
+When colors are enabled, the text inside backticks will be displayed in a
+distinct color to help examples stand out. When colors are disabled, backticks
+are preserved as-is, which is readable in plain text.
+
+.. note::
+
+   Backtick markup only applies to description and epilog text. It does not
+   apply to individual argument ``help`` strings.
+
+.. versionadded:: 3.15
+
 
 The add_argument() method
 -------------------------
@@ -732,7 +753,7 @@ upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
-   >>> parser.parse_args(['--foo-bar', 'FOO-BAR']
+   >>> parser.parse_args(['--foo-bar', 'FOO-BAR'])
    Namespace(foo_bar='FOO-BAR')
    >>> parser.print_help()
    usage:  [-h] [--foo-bar FOO-BAR]
@@ -767,9 +788,9 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=42)
 
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
-  ``'store_const'`` used for storing the values ``True`` and ``False``
-  respectively.  In addition, they create default values of ``False`` and
-  ``True`` respectively::
+  ``'store_const'`` that respectively store the values ``True`` and ``False``
+  with default values of ``False`` and
+  ``True``::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_true')
@@ -789,8 +810,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo 1 --foo 2'.split())
     Namespace(foo=['0', '1', '2'])
 
-* ``'append_const'`` - This stores a list, and appends the value specified by
-  the const_ keyword argument to the list; note that the const_ keyword
+* ``'append_const'`` - This appends the value specified by
+  the const_ keyword argument to a list; note that the const_ keyword
   argument defaults to ``None``. The ``'append_const'`` action is typically
   useful when multiple arguments need to store constants to the same list. For
   example::
@@ -801,8 +822,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<class 'str'>, <class 'int'>])
 
-* ``'extend'`` - This stores a list and appends each item from the multi-value
-  argument list to it.
+* ``'extend'`` - This appends each item from a multi-value
+  argument to a list.
   The ``'extend'`` action is typically used with the nargs_ keyword argument
   value ``'+'`` or ``'*'``.
   Note that when nargs_ is ``None`` (the default) or ``'?'``, each
@@ -816,7 +837,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
   .. versionadded:: 3.8
 
-* ``'count'`` - This counts the number of times a keyword argument occurs. For
+* ``'count'`` - This counts the number of times an argument occurs. For
   example, this is useful for increasing verbosity levels::
 
     >>> parser = argparse.ArgumentParser()
@@ -1322,8 +1343,12 @@ attribute is determined by the ``dest`` keyword argument of
 
 For optional argument actions, the value of ``dest`` is normally inferred from
 the option strings.  :class:`ArgumentParser` generates the value of ``dest`` by
-taking the first long option string and stripping away the initial ``--``
-string.  If no long option strings were supplied, ``dest`` will be derived from
+taking the first double-dash long option string and stripping away the initial
+``-`` characters.
+If no double-dash long option strings were supplied, ``dest`` will be derived
+from the first single-dash long option string by stripping the initial ``-``
+character.
+If no long option strings were supplied, ``dest`` will be derived from
 the first short option string by stripping the initial ``-`` character.  Any
 internal ``-`` characters will be converted to ``_`` characters to make sure
 the string is a valid attribute name.  The examples below illustrate this
@@ -1331,11 +1356,12 @@ behavior::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('-f', '--foo-bar', '--foo')
+   >>> parser.add_argument('-q', '-quz')
    >>> parser.add_argument('-x', '-y')
-   >>> parser.parse_args('-f 1 -x 2'.split())
-   Namespace(foo_bar='1', x='2')
-   >>> parser.parse_args('--foo 1 -y 2'.split())
-   Namespace(foo_bar='1', x='2')
+   >>> parser.parse_args('-f 1 -q 2 -x 3'.split())
+   Namespace(foo_bar='1', quz='2', x='3')
+   >>> parser.parse_args('--foo 1 -quz 2 -y 3'.split())
+   Namespace(foo_bar='1', quz='2', x='2')
 
 ``dest`` allows a custom attribute name to be provided::
 
@@ -1343,6 +1369,9 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+.. versionchanged:: 3.15
+   Single-dash long option now takes precedence over short options.
 
 
 .. _deprecated:
@@ -1437,7 +1466,17 @@ this API may be passed as the ``action`` parameter to
        >>> parser.parse_args(['--no-foo'])
        Namespace(foo=False)
 
+   Single-dash long options are also supported.
+   For example, negative option ``-nofoo`` is automatically added for
+   positive option ``-foo``.
+   But no additional options are added for short options such as ``-f``.
+
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.15
+      Added support for single-dash options.
+
+      Added support for alternate prefix_chars_.
 
 
 The parse_args() method
@@ -1661,7 +1700,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Sub-commands
+Subcommands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1690,7 +1729,7 @@ Sub-commands
    * *description* - description for the sub-parser group in help output, by
      default ``None``
 
-   * *prog* - usage information that will be displayed with sub-command help,
+   * *prog* - usage information that will be displayed with subcommand help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
@@ -1700,7 +1739,7 @@ Sub-commands
    * action_ - the basic type of action to be taken when this argument is
      encountered at the command line
 
-   * dest_ - name of the attribute under which sub-command name will be
+   * dest_ - name of the attribute under which subcommand name will be
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default

@@ -1,7 +1,0 @@
-Fixes a regression in GC performance for a growing heap composed mostly of
-small tuples.
-
-*  Counts number of actually tracked objects, instead of trackable objects.
-   This ensures that untracking tuples has the desired effect of reducing GC overhead.
-*  Does not track most untrackable tuples during creation.
-   This prevents large numbers of small tuples causing excessive GCs.

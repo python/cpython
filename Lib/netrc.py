@@ -95,7 +95,7 @@ class netrc:
         while 1:
             # Look for a machine, default, or macdef top-level keyword
             saved_lineno = lexer.lineno
-            toplevel = tt = lexer.get_token()
+            tt = lexer.get_token()
             if not tt:
                 break
             elif tt[0] == '#':

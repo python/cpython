@@ -148,13 +148,14 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             if (last_was_str) {
                 PyObject *laststring = PyTuple_GET_ITEM(strings, stringsidx - 1);
                 PyObject *concat = PyUnicode_Concat(laststring, item);
-                Py_DECREF(laststring);
                 if (!concat) {
                     Py_DECREF(strings);
                     Py_DECREF(interpolations);
                     return NULL;
                 }
+                /* Replace laststring with concat */
                 PyTuple_SET_ITEM(strings, stringsidx - 1, concat);
+                Py_DECREF(laststring);
             }
             else {
                 PyTuple_SET_ITEM(strings, stringsidx++, Py_NewRef(item));

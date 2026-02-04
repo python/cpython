@@ -56,7 +56,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         raise analysis_error(ex.args[0], inst.where) from None
     seen = {"unused"}
     for part in inst.parts:
-        if not isinstance(part, Uop):
+        if not isinstance(part, Uop) or part.properties.records_value:
             continue
         for var in part.stack.inputs:
             if var.used and var.name not in seen:
@@ -160,7 +160,7 @@ def generate_tier1(
 #if !_Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode)
+        switch (dispatch_code)
 #endif
         {{
 #endif /* _Py_TAIL_CALL_INTERP */
@@ -259,6 +259,8 @@ def generate_tier1_cases(
         offset = 1  # The instruction itself
         stack = Stack()
         for part in inst.parts:
+            if part.properties.records_value:
+                continue
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
             reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)

@@ -283,8 +283,8 @@ Type Objects
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
    are not necessarily defined in the same module as their superclass.
    See :c:type:`PyCMethod` to get the class that defines the method.
-   See :c:func:`PyType_GetModuleByDef` for cases when :c:type:`!PyCMethod` cannot
-   be used.
+   See :c:func:`PyType_GetModuleByToken` for cases when :c:type:`!PyCMethod`
+   cannot be used.
 
    .. versionadded:: 3.9
 
@@ -304,10 +304,10 @@ Type Objects
    .. versionadded:: 3.9
 
 
-.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+.. c:function:: PyObject* PyType_GetModuleByToken(PyTypeObject *type, const void *mod_token)
 
-   Find the first superclass whose module was created from
-   the given :c:type:`PyModuleDef` *def*, and return that module.
+   Find the first superclass whose module has the given
+   :ref:`module token <ext-module-token>`, and return that module.
 
    If no module is found, raises a :py:class:`TypeError` and returns ``NULL``.
 
@@ -317,6 +317,23 @@ Type Objects
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
 
+   .. versionadded:: 3.15
+
+
+.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+
+   Find the first superclass whose module was created from the given
+   :c:type:`PyModuleDef` *def*, or whose :ref:`module token <ext-module-token>`
+   is equal to *def*, and return that module.
+
+   Note that modules created from a :c:type:`PyModuleDef` always have their
+   token set to the :c:type:`PyModuleDef`'s address.
+   In other words, this function is equivalent to
+   :c:func:`PyType_GetModuleByToken`, except that it:
+
+   - returns a borrowed reference, and
+   - has a non-``void*`` argument type (which is a cosmetic difference in C).
+
    The returned reference is :term:`borrowed <borrowed reference>` from *type*,
    and will be valid as long as you hold a reference to *type*.
    Do not release it with :c:func:`Py_DECREF` or similar.
@@ -324,10 +341,10 @@ Type Objects
    .. versionadded:: 3.11
 
 
-.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *tp_token, PyTypeObject **result)
 
    Find the first superclass in *type*'s :term:`method resolution order` whose
-   :c:macro:`Py_tp_token` token is equal to the given one.
+   :c:macro:`Py_tp_token` token is equal to *tp_token*.
 
    * If found, set *\*result* to a new :term:`strong reference`
      to it and return ``1``.
@@ -338,7 +355,7 @@ Type Objects
    The *result* argument may be ``NULL``, in which case *\*result* is not set.
    Use this if you need only the return value.
 
-   The *token* argument may not be ``NULL``.
+   The *tp_token* argument may not be ``NULL``.
 
    .. versionadded:: 3.14
 
@@ -383,8 +400,8 @@ The following functions and structs are used to create
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
-   If *bases* is ``NULL``, the *Py_tp_bases* slot is used instead.
-   If that also is ``NULL``, the *Py_tp_base* slot is used instead.
+   If *bases* is ``NULL``, the :c:data:`Py_tp_bases` slot is used instead.
+   If that also is ``NULL``, the :c:data:`Py_tp_base` slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
 
    The *module* argument can be used to record the module in which the new
@@ -590,9 +607,9 @@ The following functions and structs are used to create
       :c:type:`PyAsyncMethods` with an added ``Py_`` prefix.
       For example, use:
 
-      * ``Py_tp_dealloc`` to set :c:member:`PyTypeObject.tp_dealloc`
-      * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
-      * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
+      * :c:data:`Py_tp_dealloc` to set :c:member:`PyTypeObject.tp_dealloc`
+      * :c:data:`Py_nb_add` to set :c:member:`PyNumberMethods.nb_add`
+      * :c:data:`Py_sq_length` to set :c:member:`PySequenceMethods.sq_length`
 
       An additional slot is supported that does not correspond to a
       :c:type:`!PyTypeObject` struct field:
@@ -611,7 +628,7 @@ The following functions and structs are used to create
 
       If it is not possible to switch to a ``MANAGED`` flag (for example,
       for vectorcall or to support Python older than 3.12), specify the
-      offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+      offset in :c:data:`Py_tp_members`.
       See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
       for details.
 
@@ -638,8 +655,8 @@ The following functions and structs are used to create
          under the :ref:`limited API <limited-c-api>`.
 
       .. versionchanged:: 3.14
-         The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
-         using ``Py_tp_vectorcall``.  See the field's documentation
+         The field :c:member:`~PyTypeObject.tp_vectorcall` can now be set
+         using :c:data:`Py_tp_vectorcall`.  See the field's documentation
          for details.
 
    .. c:member:: void *pfunc
@@ -649,7 +666,7 @@ The following functions and structs are used to create
 
       *pfunc* values may not be ``NULL``, except for the following slots:
 
-      * ``Py_tp_doc``
+      * :c:data:`Py_tp_doc`
       * :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
         rather than ``NULL``)
 

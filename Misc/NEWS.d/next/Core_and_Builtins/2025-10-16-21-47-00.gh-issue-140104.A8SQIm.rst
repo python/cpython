@@ -1,2 +1,0 @@
-Fix a bug with exception handling in the JIT. Patch by Ken Jin. Bug reported
-by Daniel Diniz.

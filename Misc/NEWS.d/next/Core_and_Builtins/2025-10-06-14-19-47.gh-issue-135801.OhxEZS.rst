@@ -1,6 +1,0 @@
-Many functions related to compiling or parsing Python code, such as
-:func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`, and
-:func:`importlib.abc.InspectLoader.source_to_code` now allow to specify
-the module name.
-It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
-by module name.
