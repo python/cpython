@@ -1622,6 +1622,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
                 PyObject *value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
                     PyErr_FormatUnraisable("Exception ignored while removing modules");
+                    Py_DECREF(key);
                     continue;
                 }
                 CLEAR_MODULE(key, value);
@@ -2435,7 +2436,7 @@ new_interpreter(PyThreadState **tstate_p,
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
-    runtime->gilstate.check_enabled = 0;
+    _Py_atomic_store_int_relaxed(&runtime->gilstate.check_enabled, 0);
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();

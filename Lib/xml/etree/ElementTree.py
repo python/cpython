@@ -263,12 +263,15 @@ class Element:
         ValueError is raised if a matching element could not be found.
 
         """
-        # assert iselement(element)
         try:
             self._children.remove(subelement)
         except ValueError:
+            # to align the error type with the C implementation
+            if isinstance(subelement, type) or not iselement(subelement):
+                raise TypeError('expected an Element, not %s' %
+                                type(subelement).__name__) from None
             # to align the error message with the C implementation
-            raise ValueError("Element.remove(x): element not found") from None
+            raise ValueError(f"{subelement!r} not in {self!r}") from None
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.

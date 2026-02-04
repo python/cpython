@@ -567,6 +567,7 @@ Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
+   single: __builtins__ (function attribute)
    single: __closure__ (function attribute)
    single: __globals__ (function attribute)
    pair: global; namespace
@@ -576,6 +577,12 @@ Special read-only attributes
 
    * - Attribute
      - Meaning
+
+   * - .. attribute:: function.__builtins__
+     - A reference to the :class:`dictionary <dict>` that holds the function's
+       builtins namespace.
+
+       .. versionadded:: 3.10
 
    * - .. attribute:: function.__globals__
      - A reference to the :class:`dictionary <dict>` that holds the function's
@@ -1839,6 +1846,12 @@ Slice objects
 Slice objects are used to represent slices for
 :meth:`~object.__getitem__`
 methods.  They are also created by the built-in :func:`slice` function.
+
+.. versionadded:: 3.15
+
+   The :func:`slice` type now supports :ref:`subscription <subscriptions>`. For
+   example, ``slice[float]`` may be used in type annotations to indicate a slice
+   containing :type:`float` objects.
 
 .. index::
    single: start (slice object attribute)

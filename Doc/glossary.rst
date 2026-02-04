@@ -160,9 +160,9 @@ Glossary
       On most builds of Python, having an attached thread state implies that the
       caller holds the :term:`GIL` for the current interpreter, so only
       one OS thread can have an attached thread state at a given moment. In
-      :term:`free-threaded <free threading>` builds of Python, threads can concurrently
-      hold an attached thread state, allowing for true parallelism of the bytecode
-      interpreter.
+      :term:`free-threaded builds <free-threaded build>` of Python, threads can
+      concurrently hold an attached thread state, allowing for true parallelism of
+      the bytecode interpreter.
 
    attribute
       A value associated with an object which is usually referenced by name
@@ -579,6 +579,13 @@ Glossary
       simultaneously within the same interpreter.  This is in contrast to
       the :term:`global interpreter lock` which allows only one thread to
       execute Python bytecode at a time.  See :pep:`703`.
+
+   free-threaded build
+
+      A build of :term:`CPython` that supports :term:`free threading`,
+      configured using the :option:`--disable-gil` option before compilation.
+
+      See :ref:`freethreading-python-howto`.
 
    free variable
       Formally, as defined in the :ref:`language execution model <bind_names>`, a free

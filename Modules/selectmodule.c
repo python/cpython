@@ -427,7 +427,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     return ret;
 }
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 /*
  * poll() support
  */
@@ -626,7 +626,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     PyObject *result_list = NULL;
     int poll_result, i, j;
     PyObject *value = NULL, *num = NULL;
-    PyTime_t timeout = -1, ms = -1, deadline = 0;
+    PyTime_t timeout = -1, deadline = 0;
     int async_err = 0;
 
     if (timeout_obj != Py_None) {
@@ -639,15 +639,28 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
             }
             return NULL;
         }
+    }
 
-        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
-        if (ms < INT_MIN || ms > INT_MAX) {
-            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+#ifdef HAVE_PPOLL
+    struct timespec ts, *ts_p = NULL;
+
+    if (timeout_obj != Py_None) {
+        if (_PyTime_AsTimespec(timeout, &ts) < 0) {
             return NULL;
         }
 
         if (timeout >= 0) {
-            deadline = _PyDeadline_Init(timeout);
+            ts_p = &ts;
+        }
+    }
+#else
+    PyTime_t ms = -1;
+
+    if (timeout_obj != Py_None) {
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+        if (ms < INT_MIN || ms > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+            return NULL;
         }
     }
 
@@ -660,6 +673,11 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
 #else
         ms = -1;
 #endif
+    }
+#endif
+
+    if (timeout >= 0) {
+        deadline = _PyDeadline_Init(timeout);
     }
 
     /* Avoid concurrent poll() invocation, issue 8865 */
@@ -681,7 +699,11 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+#ifdef HAVE_PPOLL
+        poll_result = ppoll(self->ufds, self->ufd_len, ts_p, NULL);
+#else
         poll_result = poll(self->ufds, self->ufd_len, (int)ms);
+#endif
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
@@ -699,8 +721,16 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
                 poll_result = 0;
                 break;
             }
+#ifdef HAVE_PPOLL
+            if (_PyTime_AsTimespec(timeout, &ts) < 0) {
+                poll_result = -1;
+                break;
+            }
+            assert(ts_p == &ts);
+#else
             ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
-            /* retry poll() with the recomputed timeout */
+#endif
+            /* retry poll()/ppoll() with the recomputed timeout */
         }
     } while (1);
 
@@ -2466,7 +2496,7 @@ static PyGetSetDef kqueue_queue_getsetlist[] = {
 
 #include "clinic/selectmodule.c.h"
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 
 static PyMethodDef poll_methods[] = {
     SELECT_POLL_REGISTER_METHODDEF
@@ -2661,7 +2691,7 @@ _select_exec(PyObject *m)
     ADD_INT(PIPE_BUF);
 #endif
 
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if (defined(HAVE_POLL) || defined(HAVE_PPOLL)) && !defined(HAVE_BROKEN_POLL)
 #ifdef __APPLE__
     if (select_have_broken_poll()) {
         if (PyObject_DelAttrString(m, "poll") == -1) {

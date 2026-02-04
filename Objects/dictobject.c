@@ -1615,7 +1615,9 @@ lookup_threadsafe_unicode(PyDictKeysObject *dk, PyObject *key, Py_hash_t hash, _
 Py_ssize_t
 _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
 {
-    PyDictKeysObject *dk = _Py_atomic_load_ptr(&mp->ma_keys);
+    ensure_shared_on_read(mp);
+
+    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
         Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, value_addr);
         if (ix != DKIX_KEY_CHANGED) {
@@ -1669,19 +1671,27 @@ _PyDict_GetMethodStackRef(PyDictObject *mp, PyObject *key, _PyStackRef *method)
     Py_hash_t hash = hash_unicode_key(key);
 
 #ifdef Py_GIL_DISABLED
-    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
-    if (dk->dk_kind == DICT_KEYS_UNICODE) {
-        _PyStackRef ref;
-        Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, &ref);
-        if (ix >= 0) {
-            assert(!PyStackRef_IsNull(ref));
-            PyStackRef_XSETREF(*method, ref);
-            return 1;
+    // NOTE: We can only do the fast-path lookup if we are on the owning
+    // thread or if the dict is already marked as shared so that the load
+    // of ma_keys is safe without a lock. We cannot call ensure_shared_on_read()
+    // in this code path without incref'ing the dict because the dict is a
+    // borrowed reference protected by QSBR, and acquiring the lock could lead
+    // to a quiescent state (allowing the dict to be freed).
+    if (_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp)) {
+        PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
+        if (dk->dk_kind == DICT_KEYS_UNICODE) {
+            _PyStackRef ref;
+            Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, &ref);
+            if (ix >= 0) {
+                assert(!PyStackRef_IsNull(ref));
+                PyStackRef_XSETREF(*method, ref);
+                return 1;
+            }
+            else if (ix == DKIX_EMPTY) {
+                return 0;
+            }
+            assert(ix == DKIX_KEY_CHANGED);
         }
-        else if (ix == DKIX_EMPTY) {
-            return 0;
-        }
-        assert(ix == DKIX_KEY_CHANGED);
     }
 #endif
 
@@ -1877,7 +1887,7 @@ static int
 insertdict(PyDictObject *mp,
            PyObject *key, Py_hash_t hash, PyObject *value)
 {
-    PyObject *old_value;
+    PyObject *old_value = NULL;
     Py_ssize_t ix;
 
     ASSERT_DICT_LOCKED(mp);
@@ -1898,11 +1908,14 @@ insertdict(PyDictObject *mp,
             goto Fail;
     }
 
-    if (ix == DKIX_EMPTY) {
+    if (old_value == NULL) {
         // insert_combined_dict() will convert from non DICT_KEYS_GENERAL table
         // into DICT_KEYS_GENERAL table if key is not Unicode.
         // We don't convert it before _Py_dict_lookup because non-Unicode key
         // may change generic table into Unicode table.
+        //
+        // NOTE: ix may not be DKIX_EMPTY because split table may have key
+        // without value.
         if (insert_combined_dict(mp, hash, key, value) < 0) {
             goto Fail;
         }
@@ -2346,10 +2359,9 @@ dict_unhashable_type(PyObject *key)
 }
 
 Py_ssize_t
-_PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
+_PyDict_LookupIndexAndValue(PyDictObject *mp, PyObject *key, PyObject **value)
 {
     // TODO: Thread safety
-    PyObject *value;
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
 
@@ -2359,7 +2371,14 @@ _PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
         return -1;
     }
 
-    return _Py_dict_lookup(mp, key, hash, &value);
+    return _Py_dict_lookup(mp, key, hash, value);
+}
+
+Py_ssize_t
+_PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
+{
+    PyObject *value; // discarded
+    return _PyDict_LookupIndexAndValue(mp, key, &value);
 }
 
 /* Same as PyDict_GetItemWithError() but with hash supplied by caller.
