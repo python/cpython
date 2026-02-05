@@ -78,6 +78,14 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`os`: Calling :func:`os.register_at_fork` in a multi-threaded process.
 
+* :mod:`os.path`: :func:`os.path.commonprefix` is deprecated, use
+  :func:`os.path.commonpath` for path prefixes. The :func:`os.path.commonprefix`
+  function is being deprecated due to having a misleading name and module.
+  The function is not safe to use for path prefixes despite being included in a
+  module about path manipulation, meaning it is easy to accidentally
+  introduce path traversal vulnerabilities into Python programs by using this
+  function.
+
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
   deprecated, use an exception instance.
 
