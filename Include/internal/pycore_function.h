@@ -48,7 +48,7 @@ static inline PyObject* _PyFunction_GET_BUILTINS(PyObject *func) {
 
 
 /* Get the callable wrapped by a staticmethod.
-   Returns a borrowed reference, or NULL if uninitialized.
+   Returns a borrowed reference.
    The caller must ensure 'sm' is a staticmethod object. */
 extern PyObject *_PyStaticMethod_GetFunc(PyObject *sm);
 
