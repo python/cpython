@@ -704,6 +704,13 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pickle
+------
+
+* Add support for pickling private methods and nested classes.
+  (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
+
+
 resource
 --------
 
@@ -968,10 +975,10 @@ unittest
 urllib.parse
 ------------
 
-* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlparse`,
-  :func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag` functions.
-  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunparse` and
-  :func:`~urllib.parse.urlunsplit` functions.
+* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlsplit`,
+  :func:`~urllib.parse.urlparse` and :func:`~urllib.parse.urldefrag` functions.
+  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunsplit` and
+  :func:`~urllib.parse.urlunparse` functions.
   This allows to distinguish between empty and not defined URI components
   and preserve empty components.
   (Contributed by Serhiy Storchaka in :gh:`67041`.)

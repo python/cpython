@@ -306,7 +306,7 @@ class BaseXYTestCase(unittest.TestCase):
         # issue 1466065: Test some invalid characters.
         tests = ((b'%3d==', b'\xdd', b'%$'),
                  (b'$3d==', b'\xdd', b'%$'),
-                 (b'[==', b'', None),
+                 (b'[==', b'', b'[='),
                  (b'YW]3=', b'am', b']'),
                  (b'3{d==', b'\xdd', b'{}'),
                  (b'3d}==', b'\xdd', b'{}'),
@@ -314,6 +314,12 @@ class BaseXYTestCase(unittest.TestCase):
                  (b'!', b'', b'@!'),
                  (b"YWJj\n", b"abc", b'\n'),
                  (b'YWJj\nYWI=', b'abcab', b'\n'),
+                 (b'=YWJj', b'abc', b'='),
+                 (b'Y=WJj', b'abc', b'='),
+                 (b'Y==WJj', b'abc', b'='),
+                 (b'Y===WJj', b'abc', b'='),
+                 (b'YW=Jj', b'abc', b'='),
+                 (b'YWJj=', b'abc', b'='),
                  (b'YW\nJj', b'abc', b'\n'),
                  (b'YW\nJj', b'abc', bytearray(b'\n')),
                  (b'YW\nJj', b'abc', memoryview(b'\n')),
@@ -335,9 +341,8 @@ class BaseXYTestCase(unittest.TestCase):
             with self.assertRaises(binascii.Error):
                 # Even empty ignorechars enables the strict mode.
                 base64.b64decode(bstr, ignorechars=b'')
-            if ignorechars is not None:
-                r = base64.b64decode(bstr, ignorechars=ignorechars)
-                self.assertEqual(r, res)
+            r = base64.b64decode(bstr, ignorechars=ignorechars)
+            self.assertEqual(r, res)
 
         with self.assertRaises(TypeError):
             base64.b64decode(b'', ignorechars='')
