@@ -91,7 +91,7 @@ List Objects
       This function ":term:`steals <steal>`" a reference to *item*,
       even on error.
       On success, it discards a reference to an item already in the list
-      at the affected position (unless it was NULL).
+      at the affected position (unless it was ``NULL``).
 
 
 .. c:function:: void PyList_SET_ITEM(PyObject *list, Py_ssize_t i, PyObject *o)
