@@ -8,7 +8,6 @@ if sys.platform != 'win32':  # pragma: no cover
 import _winapi
 import msvcrt
 import os
-import random
 import subprocess
 import warnings
 
@@ -51,7 +50,7 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     h1 = h2 = None
     try:
         while True:
-            address = r'\\.\pipe\python-pipe-' + random.randbytes(8).hex()
+            address = r'\\.\pipe\python-pipe-' + os.urandom(8).hex()
             try:
                 h1 = _winapi.CreateNamedPipe(
                     address, openmode, _winapi.PIPE_WAIT,
