@@ -156,86 +156,8 @@ defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
 
-
-Arithmetic Utilities
---------------------
-
-.. c:macro:: Py_ABS(x)
-
-   Return the absolute value of ``x``.
-   The argument may be evaluated twice.
-
-   If the result cannot be represented (for example, if ``x`` has
-   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
-   undefined.
-
-   Corresponds roughly to :samp:`(({x}) < 0 ? -({x}) : ({x}))`
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_MAX(x, y)
-             Py_MIN(x, y)
-
-   Return the larger or smaller of the arguments, respectively.
-   Any arguments may be evaluated twice.
-
-   :c:macro:`!Py_MAX` corresponds roughly to
-   :samp:`((({x}) > ({y})) ? ({x}) : ({y}))`.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
-   Similar to ``integer >> positions``, but forces sign extension, as the C
-   standard does not define whether a right-shift of a signed integer will
-   perform sign extension or a zero-fill.
-
-   *integer* should be any signed integer type.
-   *positions* is the number of positions to shift to the right.
-
-   Both *integer* and *positions* can be evaluated more than once;
-   consequently, avoid directly passing a function call or some other
-   operation with side-effects to this macro. Instead, store the result as a
-   variable and then pass it.
-
-   *type* is unused and only kept for backwards compatibility. Historically,
-   *type* was used to cast *integer*.
-
-   .. versionchanged:: 3.1
-
-      This macro is now valid for all signed integer types, not just those for
-      which ``unsigned type`` is legal. As a result, *type* is no longer
-      used.
-
-.. c:macro:: Py_SAFE_DOWNCAST(value, larger, smaller)
-   Cast *value* to type *smaller* from type *larger*, validating that no
-   information was lost.
-
-   On release builds of Python, this is roughly equivalent to
-   ``(smaller) value`` (in C++, ``static_cast<smaller>(value)`` will be
-   used instead).
-
-   On debug builds (implying that :c:macro:`Py_DEBUG` is defined), this asserts
-   that no information was lost with the cast from *larger* to *smaller*.
-
-   *value*, *larger*, and *smaller* may all be evaluated more than once in the
-   expression; consequently, do not pass an expression with side-effects
-   directly to this macro.
-
-.. c:macro:: Py_CHARMASK(c)
-
-   Argument must be a character or an integer in the range [-128, 127] or [0,
-   255].  This macro returns ``c`` cast to an ``unsigned char``.
-
-
-Python-specific utilities
--------------------------
-
-.. c:macro:: Py_GETENV(s)
-
-   Like :samp:`getenv({s})`, but returns ``NULL`` if :option:`-E` was passed
-   on the command line (see :c:member:`PyConfig.use_environment`).
-
 .. c:macro:: Py_CAN_START_THREADS
+
    If this macro is defined, then the current system is able to start threads.
 
    Currently, all systems supported by CPython (per :pep:`11`), with the
@@ -243,8 +165,14 @@ Python-specific utilities
 
    .. versionadded:: 3.13
 
-Docstring utilities
-^^^^^^^^^^^^^^^^^^^
+.. c:macro:: Py_GETENV(s)
+
+   Like :samp:`getenv({s})`, but returns ``NULL`` if :option:`-E` was passed
+   on the command line (see :c:member:`PyConfig.use_environment`).
+
+
+Docstring macros
+----------------
 
 .. c:macro:: PyDoc_STRVAR(name, str)
 
@@ -288,8 +216,9 @@ Docstring utilities
          "A genus of constricting snakes in the Pythonidae family native "
          "to the tropics and subtropics of the Eastern Hemisphere.");
 
-General Utilities
------------------
+
+General utility macros
+----------------------
 
 The following macros common tasks not specific to Python.
 
@@ -300,8 +229,79 @@ The following macros common tasks not specific to Python.
 
    .. versionadded:: 3.4
 
-Assertions
-^^^^^^^^^^
+.. c:macro:: Py_GCC_ATTRIBUTE(name)
+
+   Use a GCC attribute *name*, hiding it from compilers that don't support GCC
+   attributes (such as MSVC).
+
+   This expands to :samp:`__attribute__(({name)})` on a GCC compiler,
+   and expands to nothing on compilers that don't support GCC attributes.
+
+
+Numeric utilities
+^^^^^^^^^^^^^^^^^
+
+.. c:macro:: Py_ABS(x)
+
+   Return the absolute value of ``x``.
+
+   The argument may be evaluated more than once.
+   Consequently, do not pass an expression with side-effects directly
+   to this macro.
+
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
+
+   Corresponds roughly to :samp:`(({x}) < 0 ? -({x}) : ({x}))`
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_MAX(x, y)
+             Py_MIN(x, y)
+
+   Return the larger or smaller of the arguments, respectively.
+
+   Any arguments may be evaluated more than once.
+   Consequently, do not pass an expression with side-effects directly
+   to this macro.
+
+   :c:macro:`!Py_MAX` corresponds roughly to
+   :samp:`((({x}) > ({y})) ? ({x}) : ({y}))`.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
+
+   Similar to :samp:`{integer} >> {positions{`, but forces sign extension,
+   as the C standard does not define whether a right-shift of a signed
+   integer will perform sign extension or a zero-fill.
+
+   *integer* should be any signed integer type.
+   *positions* is the number of positions to shift to the right.
+
+   Both *integer* and *positions* can be evaluated more than once;
+   consequently, avoid directly passing a function call or some other
+   operation with side-effects to this macro. Instead, store the result as a
+   variable and then pass it.
+
+   *type* is unused and only kept for backwards compatibility. Historically,
+   *type* was used to cast *integer*.
+
+   .. versionchanged:: 3.1
+
+      This macro is now valid for all signed integer types, not just those for
+      which ``unsigned type`` is legal. As a result, *type* is no longer
+      used.
+
+.. c:macro:: Py_CHARMASK(c)
+
+   Argument must be a character or an integer in the range [-128, 127] or [0,
+   255].  This macro returns ``c`` cast to an ``unsigned char``.
+
+
+Assertion utilities
+^^^^^^^^^^^^^^^^^^^
 
 .. c:macro:: Py_UNREACHABLE()
 
@@ -314,7 +314,8 @@ Assertions
    avoids a warning about unreachable code.  For example, the macro is
    implemented with ``__builtin_unreachable()`` on GCC in release mode.
 
-   In debug mode, the macro compiles to a call to :c:func:`Py_FatalError`.
+   In debug mode, and on unsupported compilers, the macro expands to a call to
+   :c:func:`Py_FatalError`.
 
    A use for ``Py_UNREACHABLE()`` is following a call a function that
    never returns but that is not declared ``_Noreturn``.
@@ -326,6 +327,22 @@ Assertions
    be reported to caller, :c:func:`Py_FatalError` can be used.
 
    .. versionadded:: 3.7
+
+.. c:macro:: Py_SAFE_DOWNCAST(value, larger, smaller)
+
+   Cast *value* to type *smaller* from type *larger*, validating that no
+   information was lost.
+
+   On release builds of Python, this is roughly equivalent to
+   :samp:`(({smaller}) {value})`
+   (in C++, :samp:`static_cast<{smaller}>({value})` will be used instead).
+
+   On debug builds (implying that :c:macro:`Py_DEBUG` is defined), this asserts
+   that no information was lost with the cast from *larger* to *smaller*.
+
+   *value*, *larger*, and *smaller* may all be evaluated more than once in the
+   expression; consequently, do not pass an expression with side-effects
+   directly to this macro.
 
 .. c:macro:: Py_BUILD_ASSERT(cond)
 
@@ -352,16 +369,9 @@ Assertions
 
    .. versionadded:: 3.3
 
-Size helpers
-^^^^^^^^^^^^
 
-.. c:macro:: Py_MEMBER_SIZE(type, member)
-
-   Return the size of a structure (*type*) *member* in bytes.
-
-   Corresponds roughly to :samp:`sizeof((({type} *)NULL)->{member})`.
-
-   .. versionadded:: 3.6
+Type size utilities
+^^^^^^^^^^^^^^^^^^^
 
 .. c:macro:: Py_ARRAY_LENGTH(array)
 
@@ -376,8 +386,23 @@ Size helpers
 
       sizeof(array) / sizeof((array)[0])
 
-Macro helpers
-^^^^^^^^^^^^^
+.. c:macro:: Py_MEMBER_SIZE(type, member)
+
+   Return the size of a structure (*type*) *member* in bytes.
+
+   Corresponds roughly to :samp:`sizeof((({type} *)NULL)->{member})`.
+
+   .. versionadded:: 3.6
+
+
+Macro definition utilities
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: Py_FORCE_EXPANSION(X)
+
+   This is equivalent to :samp:`{X}`, which is useful for token-pasting in
+   macros, as macro expansions in *X* are forcefully evaluated by the
+   preprocessor.
 
 .. c:macro:: Py_STRINGIFY(x)
 
@@ -385,18 +410,6 @@ Macro helpers
    ``"123"``.
 
    .. versionadded:: 3.4
-
-.. c:macro:: Py_FORCE_EXPANSION(X)
-   This is equivalent to ``X``, which is useful for token-pasting in
-   macros, as macro expansions in *X* are forcefully evaluated by the
-   preprocessor.
-
-.. c:macro:: Py_GCC_ATTRIBUTE(name)
-   Use a GCC attribute *name*, hiding it from compilers that don't support GCC
-   attributes (such as MSVC).
-
-   This expands to ``__attribute__((name))`` on a GCC compiler, and expands
-   to nothing on compilers that don't support GCC attributes.
 
 
 Declaration utilities
@@ -515,9 +528,9 @@ Outdated macros
 
 The following macros have been used to features that have been standardized
 in C11.
-They are still available for code that uses them.
 
 .. c:macro:: Py_ALIGNED(num)
+
    Specify alignment to *num* bytes on compilers that support it.
 
    Consider using the C11 standard ``_Alignas`` specifier over this macro.
@@ -528,10 +541,10 @@ They are still available for code that uses them.
    Use *number* as a ``long long`` or ``unsigned long long`` integer literal,
    respectively.
 
-   Expands to *number* followed by `LL`` or ``LLU``, respectively, but will
+   Expands to *number* followed by ``LL`` or ``LLU``, respectively, but will
    expand to some compiler-specific suffixes on some older compilers.
 
-   Consider using the C99 standard suffixes ``LL` and ``LLU`` directly.
+   Consider using the C99 standard suffixes ``LL`` and ``LLU`` directly.
 
 .. c:macro:: Py_MEMCPY(dest, src, n)
 
