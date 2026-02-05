@@ -6,6 +6,7 @@
 #include "pycore_moduleobject.h"      // _PyModule_GetState()
 #include "pycore_typeobject.h"        // _PyType_GetModuleState()
 #include "pycore_object.h"            // _PyObject_GC_TRACK()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_SSIZE_RELAXED()
 #include "pycore_tuple.h"             // _PyTuple_ITEMS()
 
 #include <stddef.h>                   // offsetof()
@@ -1620,33 +1621,39 @@ islice_next(PyObject *op)
     Py_ssize_t oldnext;
     PyObject *(*iternext)(PyObject *);
 
-    if (it == NULL)
+    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
+    if (cnt < 0)
         return NULL;
 
     iternext = *Py_TYPE(it)->tp_iternext;
-    while (lz->cnt < lz->next) {
+    while (cnt < lz->next) {
         item = iternext(it);
         if (item == NULL)
             goto empty;
         Py_DECREF(item);
-        lz->cnt++;
+        cnt++;
     }
-    if (stop != -1 && lz->cnt >= stop)
+    if (stop != -1 && cnt >= stop)
         goto empty;
     item = iternext(it);
     if (item == NULL)
         goto empty;
-    lz->cnt++;
-    oldnext = lz->next;
+    cnt++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->cnt, cnt);
+    oldnext = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->next);
     /* The (size_t) cast below avoids the danger of undefined
        behaviour from signed integer overflow. */
-    lz->next += (size_t)lz->step;
-    if (lz->next < oldnext || (stop != -1 && lz->next > stop))
-        lz->next = stop;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->next, oldnext + (size_t)lz->step);
+    if (lz->next < oldnext || (stop != -1 && lz->next > stop)) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->next, stop);
+    }
     return item;
 
 empty:
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->cnt, -1);
+#ifndef PY_GIL_DISABLED
     Py_CLEAR(lz->it);
+#endif
     return NULL;
 }
 
@@ -3555,7 +3562,7 @@ count_next(PyObject *op)
     PyObject *returned;
     Py_ssize_t cnt;
 
-    cnt = _Py_atomic_load_ssize_relaxed(&lz->cnt);
+    cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
     for (;;) {
         if (cnt == PY_SSIZE_T_MAX) {
             Py_BEGIN_CRITICAL_SECTION(lz);
