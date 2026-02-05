@@ -81,7 +81,6 @@ class TestFrameRaces(unittest.TestCase):
         run_with_frame(lambda frame: repr(frame))
 
     def test_concurrent_f_trace_write(self):
-        """Test writing to f_trace of a live frame."""
         def trace_func(frame, event, arg):
             return trace_func
 
@@ -92,7 +91,7 @@ class TestFrameRaces(unittest.TestCase):
         run_with_frame(writer)
 
     def test_concurrent_f_trace_read_write(self):
-        """Test concurrent reads and writes of f_trace on a live frame."""
+        # Test concurrent reads and writes of f_trace on a live frame.
         def trace_func(frame, event, arg):
             return trace_func
 
@@ -106,7 +105,6 @@ class TestFrameRaces(unittest.TestCase):
         run_with_frame([reader, writer, reader, writer])
 
     def test_concurrent_f_trace_opcodes_write(self):
-        """Test writing to f_trace_opcodes of a live frame."""
         def writer(frame):
             frame.f_trace_opcodes = True
             frame.f_trace_opcodes = False
@@ -114,7 +112,7 @@ class TestFrameRaces(unittest.TestCase):
         run_with_frame(writer)
 
     def test_concurrent_f_trace_opcodes_read_write(self):
-        """Test concurrent reads and writes of f_trace_opcodes on a live frame."""
+        # Test concurrent reads and writes of f_trace_opcodes on a live frame.
         def reader(frame):
             _ = frame.f_trace_opcodes
 
@@ -125,7 +123,7 @@ class TestFrameRaces(unittest.TestCase):
         run_with_frame([reader, writer, reader, writer])
 
     def test_concurrent_frame_clear(self):
-        """Test race between frame.clear() and attribute reads."""
+        # Test race between frame.clear() and attribute reads.
         def create_frame():
             x = 1
             y = 2
