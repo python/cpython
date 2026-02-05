@@ -1060,7 +1060,8 @@ static int
 _pysqlite_drop_unused_blob_references(pysqlite_Connection* self)
 {
     /* we only need to do this once in a while */
-    if (self->created_blobs++ < 200) {
+    self->created_blobs++;
+    if (self->created_blobs < 200 || self->created_blobs < PyList_GET_SIZE(self->blobs) / 4) {
         return 0;
     }
 
