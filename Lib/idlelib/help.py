@@ -148,7 +148,7 @@ class HelpParser(HTMLParser):
     def handle_data(self, data):
         "Handle date segments in help.html."
         if not self.hdrlink:
-            d = data if self.pre else data.replace('\n', ' ')
+            d = data if self.pre else data.replace('\n', ' ').replace('\r', ' ')
             if self.tags == 'h1':
                 try:
                     self.hprefix = d[:d.index(' ')]
