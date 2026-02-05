@@ -424,18 +424,18 @@ test_critical_sections_stw(PyObject *self, PyObject *Py_UNUSED(args))
     //
     // With the fix, the STW requester detects world_stopped and skips locking.
 
-    const Py_ssize_t NUM_THREADS = 2;
+    #define STW_NUM_THREADS 2
     struct test_data_stw test_data = {
         .obj = PyDict_New(),
-        .num_threads = NUM_THREADS,
+        .num_threads = STW_NUM_THREADS,
     };
     if (test_data.obj == NULL) {
         return NULL;
     }
 
-    PyThread_handle_t handles[NUM_THREADS];
-    PyThread_ident_t idents[NUM_THREADS];
-    for (Py_ssize_t i = 0; i < NUM_THREADS; i++) {
+    PyThread_handle_t handles[STW_NUM_THREADS];
+    PyThread_ident_t idents[STW_NUM_THREADS];
+    for (Py_ssize_t i = 0; i < STW_NUM_THREADS; i++) {
         PyThread_start_joinable_thread(&thread_stw, &test_data,
                                        &idents[i], &handles[i]);
     }
@@ -454,9 +454,10 @@ test_critical_sections_stw(PyObject *self, PyObject *Py_UNUSED(args))
 
     _PyEval_StartTheWorld(interp);
 
-    for (Py_ssize_t i = 0; i < NUM_THREADS; i++) {
+    for (Py_ssize_t i = 0; i < STW_NUM_THREADS; i++) {
         PyThread_join_thread(handles[i]);
     }
+    #undef STW_NUM_THREADS
     Py_DECREF(test_data.obj);
     Py_RETURN_NONE;
 }
