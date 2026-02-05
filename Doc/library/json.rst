@@ -18,12 +18,17 @@ is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
 
+.. note::
+   The term "object" in the context of JSON processing in Python can be
+   ambiguous. All values in Python are objects. In JSON, an object refers to
+   any data wrapped in curly braces, similar to a Python dictionary.
+
 .. warning::
    Be cautious when parsing JSON data from untrusted sources. A malicious
    JSON string may cause the decoder to consume considerable CPU and memory
    resources. Limiting the size of data to be parsed is recommended.
 
-:mod:`json` exposes an API familiar to users of the standard library
+This module exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
 
 Encoding basic Python object hierarchies::
@@ -60,7 +65,7 @@ Pretty printing::
         "6": 7
     }
 
-Specializing JSON object encoding::
+Customizing JSON object encoding::
 
    >>> import json
    >>> def custom_json(obj):
@@ -83,7 +88,7 @@ Decoding JSON::
     >>> json.load(io)
     ['streaming API']
 
-Specializing JSON object decoding::
+Customizing JSON object decoding::
 
     >>> import json
     >>> def as_complex(dct):
@@ -178,8 +183,10 @@ Basic Usage
 
    :param bool ensure_ascii:
       If ``True`` (the default), the output is guaranteed to
-      have all incoming non-ASCII characters escaped.
-      If ``False``, these characters will be outputted as-is.
+      have all incoming non-ASCII and non-printable characters escaped.
+      If ``False``, all characters will be outputted as-is, except for
+      the characters that must be escaped: quotation mark, reverse solidus,
+      and the control characters U+0000 through U+001F.
 
    :param bool check_circular:
       If ``False``, the circular reference check for container types is skipped
@@ -279,7 +286,7 @@ Basic Usage
 
    :param object_hook:
       If set, a function that is called with the result of
-      any object literal decoded (a :class:`dict`).
+      any JSON object literal decoded (a :class:`dict`).
       The return value of this function will be used
       instead of the :class:`dict`.
       This feature can be used to implement custom decoders,
@@ -289,7 +296,7 @@ Basic Usage
 
    :param object_pairs_hook:
       If set, a function that is called with the result of
-      any object literal decoded with an ordered list of pairs.
+      any JSON object literal decoded with an ordered list of pairs.
       The return value of this function will be used
       instead of the :class:`dict`.
       This feature can be used to implement custom decoders.
@@ -486,12 +493,14 @@ Encoders and Decoders
    (to raise :exc:`TypeError`).
 
    If *skipkeys* is false (the default), a :exc:`TypeError` will be raised when
-   trying to encode keys that are not :class:`str`, :class:`int`, :class:`float`
-   or ``None``.  If *skipkeys* is true, such items are simply skipped.
+   trying to encode keys that are not :class:`str`, :class:`int`, :class:`float`,
+   :class:`bool` or ``None``.  If *skipkeys* is true, such items are simply skipped.
 
    If *ensure_ascii* is true (the default), the output is guaranteed to
-   have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
-   false, these characters will be output as-is.
+   have all incoming non-ASCII and non-printable characters escaped.
+   If *ensure_ascii* is false, all characters will be output as-is, except for
+   the characters that must be escaped: quotation mark, reverse solidus,
+   and the control characters U+0000 through U+001F.
 
    If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
@@ -631,7 +640,7 @@ UTF-32, with UTF-8 being the recommended default for maximum interoperability.
 
 As permitted, though not required, by the RFC, this module's serializer sets
 *ensure_ascii=True* by default, thus escaping the output so that the resulting
-strings only contain ASCII characters.
+strings only contain printable ASCII characters.
 
 Other than the *ensure_ascii* parameter, this module is defined strictly in
 terms of conversion between Python objects and

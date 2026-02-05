@@ -60,7 +60,7 @@ The :mod:`gc` module provides the following functions:
    The effect of calling ``gc.collect()`` while the interpreter is already
    performing a collection is undefined.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       ``generation=1`` performs an increment of collection.
 
 
@@ -83,13 +83,13 @@ The :mod:`gc` module provides the following functions:
    returned. If *generation* is not ``None``, return only the objects as follows:
 
    * 0: All objects in the young generation
-   * 1: No objects, as there is no generation 1 (as of Python 3.13)
+   * 1: No objects, as there is no generation 1 (as of Python 3.14)
    * 2: All objects in the old generation
 
    .. versionchanged:: 3.8
       New *generation* parameter.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       Generation 1 is removed
 
    .. audit-event:: gc.get_objects generation gc.get_objects
@@ -108,9 +108,18 @@ The :mod:`gc` module provides the following functions:
 
    * ``uncollectable`` is the total number of objects which were found
      to be uncollectable (and were therefore moved to the :data:`garbage`
-     list) inside this generation.
+     list) inside this generation;
+
+   * ``candidates`` is the total number of objects in this generation which were
+     considered for collection and traversed;
+
+   * ``duration`` is the total time in seconds spent in collections for this
+     generation.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.15
+      Add ``duration`` and ``candidates``.
 
 
 .. function:: set_threshold(threshold0, [threshold1, [threshold2]])
@@ -128,6 +137,11 @@ The :mod:`gc` module provides the following functions:
    starts. For each collection, all the objects in the young generation and some
    fraction of the old generation is collected.
 
+   In the free-threaded build, the increase in process memory usage is also
+   checked before running the collector.  If the memory usage has not increased
+   by 10% since the last collection and the net number of object allocations
+   has not exceeded 40 times *threshold0*, the collection is not run.
+
    The fraction of the old generation that is collected is **inversely** proportional
    to *threshold1*. The larger *threshold1* is, the slower objects in the old generation
    are collected.
@@ -137,7 +151,7 @@ The :mod:`gc` module provides the following functions:
 
    See `Garbage collector design <https://devguide.python.org/garbage_collector>`_ for more information.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       *threshold2* is ignored
 
 
@@ -308,6 +322,12 @@ values but should not rebind them):
       "uncollectable": When *phase* is "stop", the number of objects
       that could not be collected and were put in :data:`garbage`.
 
+      "candidates": When *phase* is "stop", the total number of objects in this
+      generation which were considered for collection and traversed.
+
+      "duration": When *phase* is "stop", the time in seconds spent in the
+      collection.
+
    Applications can add their own callbacks to this list.  The primary
    use cases are:
 
@@ -319,6 +339,9 @@ values but should not rebind them):
       types when they appear in :data:`garbage`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.15
+      Add "duration" and "candidates".
 
 
 The following constants are provided for use with :func:`set_debug`:

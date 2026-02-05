@@ -1,1 +1,0 @@
-Fix regression in ``traceback.print_last()``.

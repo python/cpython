@@ -74,6 +74,7 @@ class TestDict(TestCase):
             last = -1
             while True:
                 if CUR == last:
+                    time.sleep(0.001)
                     continue
                 elif CUR == OBJECT_COUNT:
                     break
@@ -227,6 +228,44 @@ class TestDict(TestCase):
 
             self.assertEqual(count, 0)
 
+    def test_racing_object_get_set_dict(self):
+        e = Exception()
+
+        def writer():
+            for i in range(10000):
+                e.__dict__ = {1:2}
+
+        def reader():
+            for i in range(10000):
+                e.__dict__
+
+        t1 = Thread(target=writer)
+        t2 = Thread(target=reader)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
+
+    def test_racing_dict_update_and_method_lookup(self):
+        # gh-144295: test race between dict modifications and method lookups.
+        # Uses BytesIO because the race requires a type without Py_TPFLAGS_INLINE_VALUES
+        # for the _PyDict_GetMethodStackRef code path.
+        import io
+        obj = io.BytesIO()
+
+        def writer():
+            for _ in range(10000):
+                obj.x = 1
+                del obj.x
+
+        def reader():
+            for _ in range(10000):
+                obj.getvalue()
+
+        t1 = Thread(target=writer)
+        t2 = Thread(target=reader)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
 
 if __name__ == "__main__":
     unittest.main()

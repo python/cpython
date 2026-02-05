@@ -228,7 +228,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
             goto error;
         }
 
-        if (num < 0 || num >= PyLong_BASE) {
+        if (num < 0 || num >= (long)PyLong_BASE) {
             PyErr_SetString(PyExc_ValueError, "digit doesn't fit into digit");
             goto error;
         }

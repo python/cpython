@@ -31,7 +31,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
@@ -82,33 +82,10 @@ typedef int Tcl_Size;
 
 #ifdef HAVE_CREATEFILEHANDLER
 
-/* This bit is to ensure that TCL_UNIX_FD is defined and doesn't interfere
-   with the proper calculation of FHANDLETYPE == TCL_UNIX_FD below. */
-#ifndef TCL_UNIX_FD
-#  ifdef TCL_WIN_SOCKET
-#    define TCL_UNIX_FD (! TCL_WIN_SOCKET)
-#  else
-#    define TCL_UNIX_FD 1
-#  endif
-#endif
-
-/* Tcl_CreateFileHandler() changed several times; these macros deal with the
-   messiness.  In Tcl 8.0 and later, it is not available on Windows (and on
-   Unix, only because Jack added it back); when available on Windows, it only
-   applies to sockets. */
-
-#ifdef MS_WINDOWS
-#define FHANDLETYPE TCL_WIN_SOCKET
-#else
-#define FHANDLETYPE TCL_UNIX_FD
-#endif
-
 /* If Tcl can wait for a Unix file descriptor, define the EventHook() routine
    which uses this to handle Tcl events while the user is typing commands. */
 
-#if FHANDLETYPE == TCL_UNIX_FD
 #define WAIT_FOR_STDIN
-#endif
 
 #endif /* HAVE_CREATEFILEHANDLER */
 
@@ -145,7 +122,7 @@ _get_tcl_lib_path(void)
         int stat_return_value;
         PyObject *prefix;
 
-        (void) _PySys_GetOptionalAttrString("base_prefix", &prefix);
+        (void) PySys_GetOptionalAttrString("base_prefix", &prefix);
         if (prefix == NULL) {
             return NULL;
         }
@@ -258,7 +235,6 @@ static PyThread_type_lock tcl_lock = 0;
 
 #ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
-typedef PyThreadState *ThreadSpecificData;
 #define tcl_tstate \
     (*(PyThreadState**)Tcl_GetThreadData(&state_key, sizeof(PyThreadState*)))
 #else
@@ -598,8 +574,12 @@ Tkapp_New(const char *screenName, const char *className,
 
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
+#if TCL_MAJOR_VERSION >= 9
+    v->threaded = 1;
+#else
     v->threaded = Tcl_GetVar2Ex(v->interp, "tcl_platform", "threaded",
                                 TCL_GLOBAL_ONLY) != NULL;
+#endif
     v->thread_id = Tcl_GetCurrentThread();
     v->dispatching = 0;
     v->trace = NULL;
@@ -906,11 +886,14 @@ static PyType_Slot PyTclObject_Type_slots[] = {
 };
 
 static PyType_Spec PyTclObject_Type_spec = {
-    "_tkinter.Tcl_Obj",
-    sizeof(PyTclObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    PyTclObject_Type_slots,
+    .name = "_tkinter.Tcl_Obj",
+    .basicsize = sizeof(PyTclObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = PyTclObject_Type_slots,
 };
 
 
@@ -963,6 +946,40 @@ asBignumObj(PyObject *value)
     return result;
 }
 
+static Tcl_Obj* AsObj(PyObject *value);
+
+static Tcl_Obj*
+TupleAsObj(PyObject *value, int wrapped)
+{
+    Tcl_Obj *result = NULL;
+    Py_ssize_t size = PyTuple_GET_SIZE(value);
+    if (size == 0) {
+        return Tcl_NewListObj(0, NULL);
+    }
+    if (!CHECK_SIZE(size, sizeof(Tcl_Obj *))) {
+        PyErr_SetString(PyExc_OverflowError,
+                        wrapped ? "list is too long" : "tuple is too long");
+        return NULL;
+    }
+    Tcl_Obj **argv = (Tcl_Obj **)PyMem_Malloc(((size_t)size) * sizeof(Tcl_Obj *));
+    if (argv == NULL) {
+      PyErr_NoMemory();
+      return NULL;
+    }
+    for (Py_ssize_t i = 0; i < size; i++) {
+        Tcl_Obj *item = AsObj(PyTuple_GET_ITEM(value, i));
+        if (item == NULL) {
+            goto exit;
+        }
+        argv[i] = item;
+    }
+    result = Tcl_NewListObj((int)size, argv);
+
+exit:
+    PyMem_Free(argv);
+    return result;
+}
+
 static Tcl_Obj*
 AsObj(PyObject *value)
 {
@@ -1009,28 +1026,17 @@ AsObj(PyObject *value)
     if (PyFloat_Check(value))
         return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
 
-    if (PyTuple_Check(value) || PyList_Check(value)) {
-        Tcl_Obj **argv;
-        Py_ssize_t size, i;
+    if (PyTuple_Check(value)) {
+        return TupleAsObj(value, false);
+    }
 
-        size = PySequence_Fast_GET_SIZE(value);
-        if (size == 0)
-            return Tcl_NewListObj(0, NULL);
-        if (!CHECK_SIZE(size, sizeof(Tcl_Obj *))) {
-            PyErr_SetString(PyExc_OverflowError,
-                            PyTuple_Check(value) ? "tuple is too long" :
-                                                   "list is too long");
+    if (PyList_Check(value)) {
+        PyObject *value_as_tuple = PyList_AsTuple(value);
+        if (value_as_tuple == NULL) {
             return NULL;
         }
-        argv = (Tcl_Obj **) PyMem_Malloc(((size_t)size) * sizeof(Tcl_Obj *));
-        if (!argv) {
-          PyErr_NoMemory();
-          return NULL;
-        }
-        for (i = 0; i < size; i++)
-          argv[i] = AsObj(PySequence_Fast_GET_ITEM(value,i));
-        result = Tcl_NewListObj((int)size, argv);
-        PyMem_Free(argv);
+        result = TupleAsObj(value_as_tuple, true);
+        Py_DECREF(value_as_tuple);
         return result;
     }
 
@@ -2010,8 +2016,8 @@ _tkinter.tkapp.getint
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=88cf293fae307cfe input=034026997c5b91f8]*/
+_tkinter_tkapp_getint_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=5f75d31b260d4086 input=034026997c5b91f8]*/
 {
     char *s;
     Tcl_Obj *value;
@@ -2055,8 +2061,8 @@ _tkinter.tkapp.getdouble
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_getdouble(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=c52b138bd8b956b9 input=22015729ce9ef7f8]*/
+_tkinter_tkapp_getdouble_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=432433f2f52b09b6 input=22015729ce9ef7f8]*/
 {
     char *s;
     double v;
@@ -2094,8 +2100,8 @@ _tkinter.tkapp.getboolean
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_getboolean(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=726a9ae445821d91 input=7f11248ef8f8776e]*/
+_tkinter_tkapp_getboolean_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=3b05597cf2bfbd9f input=7f11248ef8f8776e]*/
 {
     char *s;
     int v;
@@ -2258,8 +2264,8 @@ _tkinter.tkapp.splitlist
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=13b51d34386d36fb input=2b2e13351e3c0b53]*/
+_tkinter_tkapp_splitlist_impl(TkappObject *self, PyObject *arg)
+/*[clinic end generated code: output=e517f462159c3000 input=2b2e13351e3c0b53]*/
 {
     char *list;
     Tcl_Size argc, i;
@@ -2676,8 +2682,8 @@ _tkinter.tkapp.deletefilehandler
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_deletefilehandler(TkappObject *self, PyObject *file)
-/*[clinic end generated code: output=b53cc96ebf9476fd input=abbec19d66312e2a]*/
+_tkinter_tkapp_deletefilehandler_impl(TkappObject *self, PyObject *file)
+/*[clinic end generated code: output=30b2c6ed195b0410 input=abbec19d66312e2a]*/
 {
     int tfile;
 
@@ -3010,8 +3016,8 @@ Set the tracing function.
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_tkapp_settrace(TkappObject *self, PyObject *func)
-/*[clinic end generated code: output=847f6ebdf46e84fa input=31b260d46d3d018a]*/
+_tkinter_tkapp_settrace_impl(TkappObject *self, PyObject *func)
+/*[clinic end generated code: output=8c59938bc9005607 input=31b260d46d3d018a]*/
 {
     if (func == Py_None) {
         func = NULL;
@@ -3212,6 +3218,8 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _tkinter.setbusywaitinterval
 
     new_val: int
@@ -3224,7 +3232,7 @@ It should be set to a divisor of the maximum time between frames in an animation
 
 static PyObject *
 _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
-/*[clinic end generated code: output=42bf7757dc2d0ab6 input=deca1d6f9e6dae47]*/
+/*[clinic end generated code: output=42bf7757dc2d0ab6 input=07b82a04b56625e1]*/
 {
     if (new_val < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -3236,6 +3244,7 @@ _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
 }
 
 /*[clinic input]
+@permit_long_summary
 _tkinter.getbusywaitinterval -> int
 
 Return the current busy-wait interval between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.
@@ -3243,7 +3252,7 @@ Return the current busy-wait interval between successive calls to Tcl_DoOneEvent
 
 static int
 _tkinter_getbusywaitinterval_impl(PyObject *module)
-/*[clinic end generated code: output=23b72d552001f5c7 input=a695878d2d576a84]*/
+/*[clinic end generated code: output=23b72d552001f5c7 input=62d5b36ddab3976b]*/
 {
     return Tkinter_busywaitinterval;
 }
@@ -3264,11 +3273,14 @@ static PyType_Slot Tktt_Type_slots[] = {
 };
 
 static PyType_Spec Tktt_Type_spec = {
-    "_tkinter.tktimertoken",
-    sizeof(TkttObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tktt_Type_slots,
+    .name = "_tkinter.tktimertoken",
+    .basicsize = sizeof(TkttObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Tktt_Type_slots,
 };
 
 
@@ -3320,11 +3332,14 @@ static PyType_Slot Tkapp_Type_slots[] = {
 
 
 static PyType_Spec Tkapp_Type_spec = {
-    "_tkinter.tkapp",
-    sizeof(TkappObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tkapp_Type_slots,
+    .name = "_tkinter.tkapp",
+    .basicsize = sizeof(TkappObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Tkapp_Type_slots,
 };
 
 static PyMethodDef moduleMethods[] =
@@ -3546,7 +3561,7 @@ PyInit__tkinter(void)
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
-    (void) _PySys_GetOptionalAttrString("executable", &uexe);
+    (void) PySys_GetOptionalAttrString("executable", &uexe);
     if (uexe && PyUnicode_Check(uexe)) {   // sys.executable can be None
         cexe = PyUnicode_EncodeFSDefault(uexe);
         Py_DECREF(uexe);

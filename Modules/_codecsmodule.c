@@ -32,6 +32,7 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
+#include "pycore_unicodeobject.h" // _PyUnicode_EncodeCharmap
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -91,6 +92,7 @@ _codecs_unregister(PyObject *module, PyObject *search_function)
 }
 
 /*[clinic input]
+@permit_long_summary
 _codecs.lookup
     encoding: str
     /
@@ -100,7 +102,7 @@ Looks up a codec tuple in the Python codec registry and returns a CodecInfo obje
 
 static PyObject *
 _codecs_lookup_impl(PyObject *module, const char *encoding)
-/*[clinic end generated code: output=9f0afa572080c36d input=3c572c0db3febe9c]*/
+/*[clinic end generated code: output=9f0afa572080c36d input=02227d5429491ab3]*/
 {
     return _PyCodec_Lookup(encoding);
 }
@@ -200,55 +202,50 @@ _codecs_escape_encode_impl(PyObject *module, PyObject *data,
                            const char *errors)
 /*[clinic end generated code: output=4af1d477834bab34 input=8f4b144799a94245]*/
 {
-    Py_ssize_t size;
-    Py_ssize_t newsize;
-    PyObject *v;
-
-    size = PyBytes_GET_SIZE(data);
+    Py_ssize_t size = PyBytes_GET_SIZE(data);
     if (size > PY_SSIZE_T_MAX / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "string is too large to encode");
             return NULL;
     }
-    newsize = 4*size;
-    v = PyBytes_FromStringAndSize(NULL, newsize);
+    Py_ssize_t newsize = 4*size;
 
-    if (v == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(newsize);
+    if (writer == NULL) {
         return NULL;
     }
-    else {
-        Py_ssize_t i;
-        char c;
-        char *p = PyBytes_AS_STRING(v);
+    char *p = PyBytesWriter_GetData(writer);
 
-        for (i = 0; i < size; i++) {
-            /* There's at least enough room for a hex escape */
-            assert(newsize - (p - PyBytes_AS_STRING(v)) >= 4);
-            c = PyBytes_AS_STRING(data)[i];
-            if (c == '\'' || c == '\\')
-                *p++ = '\\', *p++ = c;
-            else if (c == '\t')
-                *p++ = '\\', *p++ = 't';
-            else if (c == '\n')
-                *p++ = '\\', *p++ = 'n';
-            else if (c == '\r')
-                *p++ = '\\', *p++ = 'r';
-            else if (c < ' ' || c >= 0x7f) {
-                *p++ = '\\';
-                *p++ = 'x';
-                *p++ = Py_hexdigits[(c & 0xf0) >> 4];
-                *p++ = Py_hexdigits[c & 0xf];
-            }
-            else
-                *p++ = c;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        /* There's at least enough room for a hex escape */
+        assert(newsize - (p - (char*)PyBytesWriter_GetData(writer)) >= 4);
+
+        char c = PyBytes_AS_STRING(data)[i];
+        if (c == '\'' || c == '\\') {
+            *p++ = '\\'; *p++ = c;
         }
-        *p = '\0';
-        if (_PyBytes_Resize(&v, (p - PyBytes_AS_STRING(v)))) {
-            return NULL;
+        else if (c == '\t') {
+            *p++ = '\\'; *p++ = 't';
+        }
+        else if (c == '\n') {
+            *p++ = '\\'; *p++ = 'n';
+        }
+        else if (c == '\r') {
+            *p++ = '\\'; *p++ = 'r';
+        }
+        else if (c < ' ' || c >= 0x7f) {
+            *p++ = '\\';
+            *p++ = 'x';
+            *p++ = Py_hexdigits[(c & 0xf0) >> 4];
+            *p++ = Py_hexdigits[c & 0xf];
+        }
+        else {
+            *p++ = c;
         }
     }
 
-    return codec_tuple(v, size);
+    PyObject *decoded = PyBytesWriter_FinishWithPointer(writer, p);
+    return codec_tuple(decoded, size);
 }
 
 /* --- Decoder ------------------------------------------------------------ */
@@ -674,7 +671,7 @@ _codecs_utf_7_encode_impl(PyObject *module, PyObject *str,
                           const char *errors)
 /*[clinic end generated code: output=0feda21ffc921bc8 input=2546dbbb3fa53114]*/
 {
-    return codec_tuple(_PyUnicode_EncodeUTF7(str, 0, 0, errors),
+    return codec_tuple(_PyUnicode_EncodeUTF7(str, errors),
                        PyUnicode_GET_LENGTH(str));
 }
 
@@ -1021,6 +1018,47 @@ _codecs_lookup_error_impl(PyObject *module, const char *name)
     return PyCodec_LookupError(name);
 }
 
+extern int _Py_normalize_encoding(const char *, char *, size_t, int);
+
+/*[clinic input]
+_codecs._normalize_encoding
+    encoding: unicode
+
+Normalize an encoding name *encoding*.
+
+Used for encodings.normalize_encoding. Does not convert to lower case.
+[clinic start generated code]*/
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding)
+/*[clinic end generated code: output=d27465d81e361f8e input=3ff3f4d64995b988]*/
+{
+    Py_ssize_t len;
+    const char *cstr = PyUnicode_AsUTF8AndSize(encoding, &len);
+    if (cstr == NULL) {
+        return NULL;
+    }
+
+    if (len > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "encoding is too large");
+        return NULL;
+    }
+
+    char *normalized = PyMem_Malloc(len + 1);
+    if (normalized == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    if (!_Py_normalize_encoding(cstr, normalized, len + 1, 0)) {
+        PyMem_Free(normalized);
+        return NULL;
+    }
+
+    PyObject *result = PyUnicode_FromString(normalized);
+    PyMem_Free(normalized);
+    return result;
+}
+
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
@@ -1070,6 +1108,7 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
+    _CODECS__NORMALIZE_ENCODING_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

@@ -1,6 +1,6 @@
 # Check every path through every method of UserDict
 
-from test import mapping_tests, support
+from test import mapping_tests
 import unittest
 import collections
 
@@ -166,7 +166,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
 
     def test_missing(self):
         # Make sure UserDict doesn't have a __missing__ method
-        self.assertEqual(hasattr(collections.UserDict, "__missing__"), False)
+        self.assertNotHasAttr(collections.UserDict, "__missing__")
         # Test several cases:
         # (D) subclass defines __missing__ method returning a value
         # (E) subclass defines __missing__ method raising RuntimeError

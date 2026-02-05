@@ -48,6 +48,7 @@ CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
 LOAD_SPECIAL = opmap['LOAD_SPECIAL']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
+LOAD_FAST_BORROW_LOAD_FAST_BORROW = opmap['LOAD_FAST_BORROW_LOAD_FAST_BORROW']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
 IS_OP = opmap['IS_OP']
@@ -529,7 +530,6 @@ class Formatter:
         fields.append(instr.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
         if instr.arg is not None:
-            arg = repr(instr.arg)
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
@@ -608,7 +608,7 @@ class ArgResolver:
                 assert lbl is not None
                 preposition = "from" if deop == END_ASYNC_FOR else "to"
                 argrepr = f"{preposition} L{lbl}"
-            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
+            elif deop in (LOAD_FAST_LOAD_FAST, LOAD_FAST_BORROW_LOAD_FAST_BORROW, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
                 val1, argrepr1 = _get_name_info(arg1, self.varname_from_oparg)
@@ -1130,7 +1130,7 @@ class Bytecode:
 def main(args=None):
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-C', '--show-caches', action='store_true',
                         help='show inline caches')
     parser.add_argument('-O', '--show-offsets', action='store_true',

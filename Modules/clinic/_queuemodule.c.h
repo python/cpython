@@ -64,9 +64,11 @@ _queue_SimpleQueue_put(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(item), &_Py_ID(block), &_Py_ID(timeout), },
     };
     #undef NUM_KEYWORDS
@@ -142,9 +144,11 @@ _queue_SimpleQueue_put_nowait(PyObject *self, PyObject *const *args, Py_ssize_t 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(item), },
     };
     #undef NUM_KEYWORDS
@@ -209,9 +213,11 @@ _queue_SimpleQueue_get(PyObject *self, PyTypeObject *cls, PyObject *const *args,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(block), &_Py_ID(timeout), },
     };
     #undef NUM_KEYWORDS
@@ -352,4 +358,34 @@ _queue_SimpleQueue_qsize(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e04e15a1b959c700 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_queue_SimpleQueue___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Returns size in memory, in bytes.");
+
+#define _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_queue_SimpleQueue___sizeof__, METH_NOARGS, _queue_SimpleQueue___sizeof____doc__},
+
+static Py_ssize_t
+_queue_SimpleQueue___sizeof___impl(simplequeueobject *self);
+
+static PyObject *
+_queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _return_value = _queue_SimpleQueue___sizeof___impl((simplequeueobject *)self);
+    Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=4af5d1b1ea31ac7d input=a9049054013a1b77]*/

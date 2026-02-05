@@ -1806,17 +1806,10 @@ _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
-
-
-
-PyDoc_STRVAR(
-    Overlapped_WSARecvFrom_doc,
-    "RecvFile(handle, size, flags) -> Overlapped[(message, (host, port))]\n\n"
-    "Start overlapped receive");
 
 /*[clinic input]
 _overlapped.Overlapped.WSARecvFrom
@@ -1880,7 +1873,7 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
     case ERROR_IO_PENDING:
         Py_RETURN_NONE;
     default:
-        self->type = TYPE_NOT_STARTED;
+        Overlapped_clear(self);
         return SetFromWindowsErr(err);
     }
 }
@@ -1947,7 +1940,7 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
     case ERROR_IO_PENDING:
         Py_RETURN_NONE;
     default:
-        self->type = TYPE_NOT_STARTED;
+        Overlapped_clear(self);
         return SetFromWindowsErr(err);
     }
 }

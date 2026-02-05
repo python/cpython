@@ -1,2 +1,0 @@
-Fix possible crashes related to concurrent
-change and use of the :mod:`sys` module attributes.

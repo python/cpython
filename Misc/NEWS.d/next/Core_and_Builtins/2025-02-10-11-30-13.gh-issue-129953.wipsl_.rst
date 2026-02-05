@@ -1,4 +1,0 @@
-The internal (evaluation) stack is now spilled to memory whenever execution
-esacpes from the interpreter or JIT compiled code. This should have no
-observable effect in either Python or builtin extensions, but will allow
-various important optimizations in the future.

@@ -440,7 +440,7 @@ class _ExecutorManagerThread(threading.Thread):
         work_item = self.pending_work_items.pop(result_item.work_id, None)
         # work_item can be None if another process terminated (see above)
         if work_item is not None:
-            if result_item.exception:
+            if result_item.exception is not None:
                 work_item.future.set_exception(result_item.exception)
             else:
                 work_item.future.set_result(result_item.result)
@@ -474,9 +474,23 @@ class _ExecutorManagerThread(threading.Thread):
         bpe = BrokenProcessPool("A process in the process pool was "
                                 "terminated abruptly while the future was "
                                 "running or pending.")
+        cause_str = None
         if cause is not None:
-            bpe.__cause__ = _RemoteTraceback(
-                f"\n'''\n{''.join(cause)}'''")
+            cause_str = ''.join(cause)
+        else:
+            # No cause known, so report any processes that have
+            # terminated with nonzero exit codes, e.g. from a
+            # segfault. Multiple may terminate simultaneously,
+            # so include all of them in the traceback.
+            errors = []
+            for p in self.processes.values():
+                if p.exitcode is not None and p.exitcode != 0:
+                    errors.append(f"Process {p.pid} terminated abruptly "
+                                  f"with exit code {p.exitcode}")
+            if errors:
+                cause_str = "\n".join(errors)
+        if cause_str:
+            bpe.__cause__ = _RemoteTraceback(f"\n'''\n{cause_str}'''")
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
@@ -755,6 +769,11 @@ class ProcessPoolExecutor(_base.Executor):
                 self._executor_manager_thread_wakeup
 
     def _adjust_process_count(self):
+        # gh-132969: avoid error when state is reset and executor is still running,
+        # which will happen when shutdown(wait=False) is called.
+        if self._processes is None:
+            return
+
         # if there's an idle process, we don't need to spawn a new one.
         if self._idle_worker_semaphore.acquire(blocking=False):
             return
@@ -813,7 +832,7 @@ class ProcessPoolExecutor(_base.Executor):
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
 
-    def map(self, fn, *iterables, timeout=None, chunksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1, buffersize=None):
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
@@ -824,6 +843,11 @@ class ProcessPoolExecutor(_base.Executor):
             chunksize: If greater than one, the iterables will be chopped into
                 chunks of size chunksize and submitted to the process pool.
                 If set to one, the items in the list will be sent one at a time.
+            buffersize: The number of submitted tasks whose results have not
+                yet been yielded. If the buffer is full, iteration over the
+                iterables pauses until a result is yielded from the buffer.
+                If None, all input elements are eagerly collected, and a task is
+                submitted for each.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
@@ -839,7 +863,8 @@ class ProcessPoolExecutor(_base.Executor):
 
         results = super().map(partial(_process_chunk, fn),
                               itertools.batched(zip(*iterables), chunksize),
-                              timeout=timeout)
+                              timeout=timeout,
+                              buffersize=buffersize)
         return _chain_from_iterable_of_lists(results)
 
     def shutdown(self, wait=True, *, cancel_futures=False):

@@ -811,6 +811,14 @@ pathlib
   :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
   the path's case sensitivity, allowing for more precise control over the matching process.
 
+platform
+--------
+
+* Add support for detecting Windows 11 and Windows Server releases past 2012.
+  Previously, lookups on Windows Server platforms newer than Windows Server 2012
+  and on Windows 11 would return ``Windows-10``.
+  (Contributed by Steve Dower in :gh:`89545`.)
+
 pdb
 ---
 
@@ -1183,9 +1191,23 @@ Deprecated
   replaced by :data:`calendar.JANUARY` and :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
-* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
-  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
-  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+* :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
+
+  Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj`` implements
+  the :ref:`buffer protocol <bufferobjects>` at runtime. For use in type
+  annotations, either use :class:`~collections.abc.Buffer` or a union
+  that explicitly specifies the types your code supports (e.g.,
+  ``bytes | bytearray | memoryview``).
+
+  :class:`!ByteString` was originally intended to be an abstract class that
+  would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+  However, since the ABC never had any methods, knowing that an object was an
+  instance of :class:`!ByteString` never actually told you anything useful
+  about the object. Other common buffer types such as :class:`memoryview` were
+  also never understood as subtypes of :class:`!ByteString` (either at
+  runtime or by static type checkers).
+
+  See :pep:`PEP 688 <688#current-options>` for more details.
   (Contributed by Shantanu Jain in :gh:`91896`.)
 
 * :mod:`datetime`: :class:`datetime.datetime`'s :meth:`~datetime.datetime.utcnow` and
@@ -1293,7 +1315,7 @@ Deprecated
     :class:`collections.abc.Hashable` and :class:`collections.abc.Sized` respectively, are
     deprecated. (:gh:`94309`.)
 
-  * :class:`!typing.ByteString`, deprecated since Python 3.9, now causes a
+  * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
     :exc:`DeprecationWarning` to be emitted when it is used.
     (Contributed by Alex Waygood in :gh:`91896`.)
 
@@ -1315,7 +1337,7 @@ Deprecated
   it was :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* Setting :attr:`~module.__package__` or :attr:`~module.__cached__` on a
+* Setting :attr:`~module.__package__` or ``__cached__`` on a
   module is deprecated, and will cease to be set or taken into consideration by
   the import system in Python 3.14. (Contributed by Brett Cannon in :gh:`65961`.)
 
@@ -1338,6 +1360,12 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2222,6 +2250,8 @@ Deprecated
 .. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 

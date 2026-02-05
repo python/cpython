@@ -9,12 +9,15 @@ expression.  They cache the compiled regular expressions for speed.
 The function translate(PATTERN) returns a regular expression
 corresponding to PATTERN.  (It does not compile it.)
 """
+
+import functools
+import itertools
 import os
 import posixpath
 import re
-import functools
 
-__all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
+__all__ = ["filter", "filterfalse", "fnmatch", "fnmatchcase", "translate"]
+
 
 def fnmatch(name, pat):
     """Test whether FILENAME matches PATTERN.
@@ -35,6 +38,7 @@ def fnmatch(name, pat):
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
+
 @functools.lru_cache(maxsize=32768, typed=True)
 def _compile_pattern(pat):
     if isinstance(pat, bytes):
@@ -44,6 +48,7 @@ def _compile_pattern(pat):
     else:
         res = translate(pat)
     return re.compile(res).match
+
 
 def filter(names, pat):
     """Construct a list from those elements of the iterable NAMES that match PAT."""
@@ -60,6 +65,22 @@ def filter(names, pat):
             if match(os.path.normcase(name)):
                 result.append(name)
     return result
+
+
+def filterfalse(names, pat):
+    """Construct a list from those elements of the iterable NAMES that do not match PAT."""
+    pat = os.path.normcase(pat)
+    match = _compile_pattern(pat)
+    if os.path is posixpath:
+        # normcase on posix is NOP. Optimize it away from the loop.
+        return list(itertools.filterfalse(match, names))
+
+    result = []
+    for name in names:
+        if match(os.path.normcase(name)) is None:
+            result.append(name)
+    return result
+
 
 def fnmatchcase(name, pat):
     """Test whether FILENAME matches PATTERN, including case.
@@ -80,8 +101,10 @@ def translate(pat):
     parts, star_indices = _translate(pat, '*', '.')
     return _join_translated_parts(parts, star_indices)
 
+
 _re_setops_sub = re.compile(r'([&~|])').sub
 _re_escape = functools.lru_cache(maxsize=512)(re.escape)
+
 
 def _translate(pat, star, question_mark):
     res = []
@@ -162,7 +185,7 @@ def _translate(pat, star, question_mark):
 
 def _join_translated_parts(parts, star_indices):
     if not star_indices:
-        return fr'(?s:{"".join(parts)})\Z'
+        return fr'(?s:{"".join(parts)})\z'
     iter_star_indices = iter(star_indices)
     j = next(iter_star_indices)
     buffer = parts[:j]  # fixed pieces at the start
@@ -183,4 +206,4 @@ def _join_translated_parts(parts, star_indices):
     append('.*')
     extend(parts[i:])
     res = ''.join(buffer)
-    return fr'(?s:{res})\Z'
+    return fr'(?s:{res})\z'

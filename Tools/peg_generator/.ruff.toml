@@ -1,0 +1,22 @@
+extend = "../../.ruff.toml"  # Inherit the project-wide settings
+
+extend-exclude = [
+    # Generated files:
+    "Tools/peg_generator/pegen/grammar_parser.py",
+]
+
+[lint]
+select = [
+    "F",       # pyflakes
+    "I",       # isort
+    "UP",      # pyupgrade
+    "RUF100",  # Ban unused `# noqa` comments
+    "PGH004",  # Ban blanket `# noqa` comments (only ignore specific error codes)
+]
+unfixable = [
+    # The autofixes sometimes do the wrong things for these;
+    # it's better to have to manually look at the code and see how it needs fixing
+    "F841",  # Detects unused variables
+    "F601",  # Detects dictionaries that have duplicate keys
+    "F602",  # Also detects dictionaries that have duplicate keys
+]

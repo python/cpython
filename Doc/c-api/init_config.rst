@@ -102,7 +102,7 @@ Error Handling
    * Set *\*err_msg* and return ``1`` if an error is set.
    * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
 
-   An error message is an UTF-8 encoded string.
+   An error message is a UTF-8 encoded string.
 
    If *config* has an exit code, format the exit code as an error
    message.
@@ -320,7 +320,7 @@ Configuration Options
    * - ``"cpu_count"``
      - :c:member:`cpu_count <PyConfig.cpu_count>`
      - ``int``
-     - Read-only
+     - Public
    * - ``"dev_mode"``
      - :c:member:`dev_mode <PyConfig.dev_mode>`
      - ``bool``
@@ -363,7 +363,7 @@ Configuration Options
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
-     - ``bool``
+     - ``int``
      - Read-only
    * - ``"inspect"``
      - :c:member:`inspect <PyConfig.inspect>`
@@ -505,6 +505,10 @@ Configuration Options
      - :c:member:`use_hash_seed <PyConfig.use_hash_seed>`
      - ``bool``
      - Read-only
+   * - ``"use_system_logger"``
+     - :c:member:`use_system_logger <PyConfig.use_system_logger>`
+     - ``bool``
+     - Read-only
    * - ``"user_site_directory"``
      - :c:member:`user_site_directory <PyConfig.user_site_directory>`
      - ``bool``
@@ -574,8 +578,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * ``list[str]``
    * ``dict[str, str]``
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -597,8 +601,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Return a new reference on success.
    * Set an exception and return ``NULL`` on error.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -612,8 +616,10 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
    * Raise a :exc:`TypeError` if *value* has not the proper type.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
+
+   .. audit-event:: cpython.PyConfig_Set name,value c.PyConfig_Set
 
    .. versionadded:: 3.14
 
@@ -969,9 +975,7 @@ PyPreConfig
       Set to ``0`` or ``1`` by the :option:`-X utf8 <-X>` command line option
       and the :envvar:`PYTHONUTF8` environment variable.
 
-      Also set to ``1`` if the ``LC_CTYPE`` locale is ``C`` or ``POSIX``.
-
-      Default: ``-1`` in Python config and ``0`` in isolated config.
+      Default: ``1``.
 
 
 .. _c-preinit:
@@ -1274,6 +1278,11 @@ PyConfig
 
       Default: ``0``.
 
+      .. deprecated-removed:: 3.15 3.17
+
+         The :option:`-b` and :option:`!-bb` options will become no-op in 3.17.
+         :c:member:`~PyConfig.bytes_warning` member will be removed in 3.17.
+
    .. c:member:: int warn_default_encoding
 
       If non-zero, emit a :exc:`EncodingWarning` warning when :class:`io.TextIOWrapper`
@@ -1471,12 +1480,18 @@ PyConfig
 
    .. c:member:: int import_time
 
-      If non-zero, profile import time.
+      If ``1``, profile import time.
+      If ``2``, include additional output that indicates
+      when an imported module has already been loaded.
 
-      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      Set by the :option:`-X importtime <-X>` option and the
       :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
 
       Default: ``0``.
+
+     .. versionchanged:: 3.14
+
+        Added support for ``import_time = 2``
 
    .. c:member:: int inspect
 
@@ -1927,9 +1942,10 @@ PyConfig
 
       Only available on macOS 10.12 and later, and on iOS.
 
-      Default: ``0`` (don't use system log).
+      Default: ``0`` (don't use the system log) on macOS; ``1`` on iOS (use the
+      system log).
 
-      .. versionadded:: 3.13.2
+      .. versionadded:: 3.14
 
    .. c:member:: int user_site_directory
 
@@ -2098,7 +2114,7 @@ initialization::
 
         /* Specify sys.path explicitly */
         /* If you want to modify the default set of paths, finish
-           initialization first and then use PySys_GetObject("path") */
+           initialization first and then use PySys_GetAttrString("path") */
         config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");
@@ -2247,6 +2263,7 @@ If a ``._pth`` file is present:
 * Set :c:member:`~PyConfig.isolated` to ``1``.
 * Set :c:member:`~PyConfig.use_environment` to ``0``.
 * Set :c:member:`~PyConfig.site_import` to ``0``.
+* Set :c:member:`~PyConfig.user_site_directory` to ``0`` (since 3.15).
 * Set :c:member:`~PyConfig.safe_path` to ``1``.
 
 If :c:member:`~PyConfig.home` is not set and a ``pyvenv.cfg`` file is present in
@@ -2265,6 +2282,12 @@ The ``__PYVENV_LAUNCHER__`` environment variable is used to set
    :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix`, are now
    set to the ``pyvenv.cfg`` directory. This was previously done by :mod:`site`,
    therefore affected by :option:`-S`.
+
+
+.. versionchanged:: 3.15
+
+   :c:member:`~PyConfig.user_site_directory` is now set to ``0`` when a
+   ``._pth`` file is present.
 
 
 Py_GetArgcArgv()

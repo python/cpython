@@ -60,7 +60,7 @@ for speed.
 .. date: 2024-05-03-18-01-26
 .. gh-issue: 95382
 .. nonce: 73FSEv
-.. section: Core and Builtins
+.. section: Library
 
 Improve performance of :func:`json.dumps` and :func:`json.dump` when using
 the argument *indent*. Depending on the data the encoding using

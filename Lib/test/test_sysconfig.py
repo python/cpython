@@ -9,6 +9,7 @@ import json
 import textwrap
 from copy import copy
 
+from test import support
 from test.support import (
     captured_stdout,
     is_android,
@@ -19,7 +20,7 @@ from test.support import (
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
-                                    change_cwd)
+                                    change_cwd, EnvironmentVarGuard)
 from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
@@ -31,7 +32,6 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
-import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
@@ -185,7 +185,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         # The include directory on POSIX isn't exactly the same as before,
         # but it is "within"
         sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv', vars=vars)
-        self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
+        self.assertStartsWith(sysconfig_includedir, incpath + os.sep)
 
     def test_nt_venv_scheme(self):
         # The following directories were hardcoded in the venv module
@@ -352,6 +352,13 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
             self.assertEqual(get_platform(), 'macosx-10.4-%s' % arch)
 
+        for macver in range(11, 16):
+            _osx_support._remove_original_values(get_config_vars())
+            get_config_vars()['CFLAGS'] = ('-fno-strict-overflow -Wsign-compare -Wunreachable-code'
+                                        '-arch arm64 -fno-common -dynamic -DNDEBUG -g -O3 -Wall')
+            get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = f"{macver}.0"
+            self.assertEqual(get_platform(), 'macosx-%d.0-arm64' % macver)
+
         # linux debian sarge
         os.name = 'posix'
         sys.version = ('2.3.5 (#1, Jul  4 2007, 17:28:59) '
@@ -455,20 +462,20 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
         major, minor = sys.version_info[:2]
-        if sys.platform == 'win32':
-            self.assertTrue(library.startswith(f'python{major}{minor}'))
-            self.assertTrue(library.endswith('.dll'))
+        abiflags = sysconfig.get_config_var('ABIFLAGS')
+        if sys.platform.startswith('win'):
+            self.assertEqual(library, f'python{major}{minor}{abiflags}.dll')
             self.assertEqual(library, ldlibrary)
         elif is_apple_mobile:
             framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
             self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
-            self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
-            self.assertTrue(library.endswith('.a'))
+            self.assertStartsWith(library, f'libpython{major}.{minor}')
+            self.assertEndsWith(library, '.a')
             if sys.platform == 'darwin' and sys._framework:
                 self.skipTest('gh-110824: skip LDLIBRARY test for framework build')
             else:
-                self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
+                self.assertStartsWith(ldlibrary, f'libpython{major}.{minor}')
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
@@ -530,13 +537,10 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
             # <srcdir>/PC/pyconfig.h.in always exists even if unused
-            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h.in')
-            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
             pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
             if os.name == 'nt':
-                # <executable dir>/pyconfig.h exists on Windows in a build tree
-                pyconfig_h = os.path.join(sys.executable, '..', 'pyconfig.h')
+                pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
                 self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
@@ -571,8 +575,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                 expected_suffixes = 'i386-linux-gnu.so', 'x86_64-linux-gnux32.so', 'i386-linux-musl.so'
             else: # 8 byte pointer size
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
-            self.assertTrue(suffix.endswith(expected_suffixes),
-                            f'unexpected suffix {suffix!r}')
+            self.assertEndsWith(suffix, expected_suffixes)
 
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):
@@ -584,13 +587,69 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             "aarch64": "aarch64-linux-android",
             "armv7l": "arm-linux-androideabi",
         }[machine]
-        self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
-                        f"{machine=}, {suffix=}")
+        self.assertEndsWith(suffix, f"-{expected_triplet}.so")
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
-        self.assertTrue(suffix.endswith('-darwin.so'), suffix)
+        self.assertEndsWith(suffix, '-darwin.so')
+
+    def test_always_set_py_debug(self):
+        self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
+        Py_DEBUG = sysconfig.get_config_var('Py_DEBUG')
+        self.assertIn(Py_DEBUG, (0, 1))
+        self.assertEqual(Py_DEBUG, support.Py_DEBUG)
+
+    def test_always_set_py_gil_disabled(self):
+        self.assertIn('Py_GIL_DISABLED', sysconfig.get_config_vars())
+        Py_GIL_DISABLED = sysconfig.get_config_var('Py_GIL_DISABLED')
+        self.assertIn(Py_GIL_DISABLED, (0, 1))
+        self.assertEqual(Py_GIL_DISABLED, support.Py_GIL_DISABLED)
+
+    def test_abiflags(self):
+        # If this test fails on some platforms, maintainers should update the
+        # test to make it pass, rather than changing the definition of ABIFLAGS.
+        self.assertIn('abiflags', sysconfig.get_config_vars())
+        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
+        abiflags = sysconfig.get_config_var('abiflags')
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        self.assertIsInstance(abiflags, str)
+        self.assertIsInstance(ABIFLAGS, str)
+        self.assertIn(abiflags, ABIFLAGS)
+        if os.name == 'nt':
+            self.assertEqual(abiflags, '')
+
+        if not sys.platform.startswith('win'):
+            valid_abiflags = ('', 't', 'd', 'td')
+        else:
+            # Windows uses '_d' rather than 'd'; see also test_abi_debug below
+            valid_abiflags = ('', 't', '_d', 't_d')
+
+        self.assertIn(ABIFLAGS, valid_abiflags)
+
+    def test_abi_debug(self):
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        if support.Py_DEBUG:
+            self.assertIn('d', ABIFLAGS)
+        else:
+            self.assertNotIn('d', ABIFLAGS)
+
+        # The 'd' flag should always be the last one on Windows.
+        # On Windows, the debug flag is used differently with a underscore prefix.
+        # For example, `python{X}.{Y}td` on Unix and `python{X}.{Y}t_d.exe` on Windows.
+        if support.Py_DEBUG and sys.platform.startswith('win'):
+            self.assertEndsWith(ABIFLAGS, '_d')
+
+    def test_abi_thread(self):
+        abi_thread = sysconfig.get_config_var('abi_thread')
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        self.assertIsInstance(abi_thread, str)
+        if support.Py_GIL_DISABLED:
+            self.assertEqual(abi_thread, 't')
+            self.assertIn('t', ABIFLAGS)
+        else:
+            self.assertEqual(abi_thread, '')
+            self.assertNotIn('t', ABIFLAGS)
 
     @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
@@ -643,7 +702,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
         system_config_vars = get_config_vars()
 
-        ignore_keys = set()
+        # Keys dependent on uncontrollable external context
+        ignore_keys = {'userbase'}
         # Keys dependent on Python being run outside the build directrory
         if sysconfig.is_python_build():
             ignore_keys |= {'srcdir'}
@@ -655,11 +715,11 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
         # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
         if sysconfig._installation_is_relocated():
-            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase', 'srcdir'}
 
         for key in ignore_keys:
-            json_config_vars.pop(key)
-            system_config_vars.pop(key)
+            json_config_vars.pop(key, None)
+            system_config_vars.pop(key, None)
 
         self.assertEqual(system_config_vars, json_config_vars)
 
@@ -704,8 +764,13 @@ class MakefileTests(unittest.TestCase):
             print("var3=42", file=makefile)
             print("var4=$/invalid", file=makefile)
             print("var5=dollar$$5", file=makefile)
-            print("var6=${var3}/lib/python3.5/config-$(VAR2)$(var5)"
+            print("var6=${var7}/lib/python3.5/config-$(VAR2)$(var5)"
                   "-x86_64-linux-gnu", file=makefile)
+            print("var7=${var3}", file=makefile)
+            print("var8=$$(var3)", file=makefile)
+            print("var9=$(var10)(var3)", file=makefile)
+            print("var10=$$", file=makefile)
+            print("var11=$${ORIGIN}${var5}", file=makefile)
         vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
@@ -714,6 +779,74 @@ class MakefileTests(unittest.TestCase):
             'var4': '$/invalid',
             'var5': 'dollar$5',
             'var6': '42/lib/python3.5/config-b42dollar$5-x86_64-linux-gnu',
+            'var7': 42,
+            'var8': '$(var3)',
+            'var9': '$(var3)',
+            'var10': '$',
+            'var11': '${ORIGIN}dollar$5',
+        })
+
+    def _test_parse_makefile_recursion(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as makefile:
+            print("var1=var1=$(var1)", file=makefile)
+            print("var2=var3=$(var3)", file=makefile)
+            print("var3=var2=$(var2)", file=makefile)
+        vars = _parse_makefile(TESTFN)
+        self.assertEqual(vars, {
+            'var1': 'var1=',
+            'var2': 'var3=var2=',
+            'var3': 'var2=',
+        })
+
+    def test_parse_makefile_renamed_vars(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as makefile:
+            print("var1=$(CFLAGS)", file=makefile)
+            print("PY_CFLAGS=-Wall $(CPPFLAGS)", file=makefile)
+            print("PY_LDFLAGS=-lm", file=makefile)
+            print("var2=$(LDFLAGS)", file=makefile)
+            print("var3=$(CPPFLAGS)", file=makefile)
+        with EnvironmentVarGuard() as env:
+            env.clear()
+            vars = _parse_makefile(TESTFN)
+        self.assertEqual(vars, {
+            'var1': '-Wall',
+            'CFLAGS': '-Wall',
+            'PY_CFLAGS': '-Wall',
+            'LDFLAGS': '-lm',
+            'PY_LDFLAGS': '-lm',
+            'var2': '-lm',
+            'var3': '',
+        })
+
+    def test_parse_makefile_keep_unresolved(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as makefile:
+            print("var1=value", file=makefile)
+            print("var2=$/", file=makefile)
+            print("var3=$/$(var1)", file=makefile)
+            print("var4=var5=$(var5)", file=makefile)
+            print("var5=$/$(var1)", file=makefile)
+            print("var6=$(var1)$/", file=makefile)
+            print("var7=var8=$(var8)", file=makefile)
+            print("var8=$(var1)$/", file=makefile)
+        vars = _parse_makefile(TESTFN)
+        self.assertEqual(vars, {
+            'var1': 'value',
+            'var2': '$/',
+            'var3': '$/value',
+            'var4': 'var5=$/value',
+            'var5': '$/value',
+            'var6': 'value$/',
+            'var7': 'var8=value$/',
+            'var8': 'value$/',
+        })
+        vars = _parse_makefile(TESTFN, keep_unresolved=False)
+        self.assertEqual(vars, {
+            'var1': 'value',
+            'var4': 'var5=',
+            'var7': 'var8=',
         })
 
 

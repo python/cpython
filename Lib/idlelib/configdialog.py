@@ -435,7 +435,7 @@ class FontPage(Frame):
         self.font_name.set(font.lower())
 
     def set_samples(self, event=None):
-        """Update update both screen samples with the font settings.
+        """Update both screen samples with the font settings.
 
         Called on font initialization and change events.
         Accesses font_name, font_size, and font_bold Variables.

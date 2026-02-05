@@ -14,7 +14,7 @@ import time
 import unittest
 from test import support
 from test.support import (
-    is_apple, is_apple_mobile, os_helper, threading_helper
+    force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper
 )
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
@@ -253,7 +253,6 @@ class WakeupFDTests(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
-    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_set_wakeup_fd_result(self):
         r1, w1 = os.pipe()
@@ -272,7 +271,6 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), w2)
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
-    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     @unittest.skipUnless(support.has_socket_support, "needs working sockets.")
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
@@ -293,7 +291,6 @@ class WakeupFDTests(unittest.TestCase):
     # On Windows, files are always blocking and Windows does not provide a
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
-    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_set_wakeup_fd_blocking(self):
         rfd, wfd = os.pipe()
@@ -356,6 +353,7 @@ class WakeupSignalTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @force_not_colorized
     def test_wakeup_write_error(self):
         # Issue #16105: write() errors in the C signal handler should not
         # pass silently.
