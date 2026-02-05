@@ -704,6 +704,13 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pickle
+------
+
+* Add support for pickling private methods and nested classes.
+  (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
+
+
 resource
 --------
 
