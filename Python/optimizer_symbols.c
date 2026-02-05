@@ -4,6 +4,7 @@
 
 #include "pycore_code.h"
 #include "pycore_frame.h"
+#include "pycore_interpframe.h"
 #include "pycore_long.h"
 #include "pycore_optimizer.h"
 #include "pycore_stats.h"
@@ -25,25 +26,25 @@ state represents no information, and the BOTTOM state represents contradictory
 information. Though symbols logically progress through all intermediate nodes,
 we often skip in-between states for convenience:
 
-   UNKNOWN-------------------+
-   |     |                   |
-NULL     |                   |
-|        |                   |   <- Anything below this level is an object.
-|        NON_NULL-+          |
-|          |      |          |   <- Anything below this level has a known type version.
-|    TYPE_VERSION |          |
-|    |            |          |   <- Anything below this level has a known type.
-|    KNOWN_CLASS  |          |
-|    |  |  |   |  |          PREDICATE
-|    |  | INT* |  |          |
-|    |  |  |   |  |          |   <- Anything below this level has a known truthiness.
-|    |  |  |   |  TRUTHINESS |
-|    |  |  |   |  |          |
-| TUPLE |  |   |  |          |
-|    |  |  |   |  |          |   <- Anything below this level is a known constant.
-|    KNOWN_VALUE--+----------+
-|    |                           <- Anything below this level is unreachable.
+   UNKNOWN-------------------+------+
+   |     |                   |      |
+NULL     |                   |   RECORDED_VALUE*
+|        |                   |      |            <- Anything below this level is an object.
+|        NON_NULL-+          |      |
+|          |      |          |      |            <- Anything below this level has a known type version.
+|    TYPE_VERSION |          |      |
+|    |            |          |      |            <- Anything below this level has a known type.
+|    KNOWN_CLASS  |          |      |
+|    |  |  |   |  |  PREDICATE   RECORDED_VALUE(known type)
+|    |  | INT* |  |          |      |
+|    |  |  |   |  |          |      |            <- Anything below this level has a known truthiness.
+| TUPLE |  |   |  TRUTHINESS |      |
+|    |  |  |   |  |          |      |            <- Anything below this level is a known constant.
+|    KNOWN_VALUE--+----------+------+
+|    |                                           <- Anything below this level is unreachable.
 BOTTOM
+
+
 
 For example, after guarding that the type of an UNKNOWN local is int, we can
 narrow the symbol to KNOWN_CLASS (logically progressing though NON_NULL and
@@ -54,6 +55,7 @@ the same symbol, that would be a contradiction, and the symbol would be set to
 BOTTOM (indicating that the code is unreachable).
 
 INT* is a limited range int, currently a "compact" int.
+RECORDED_VALUE* includes RECORDED_TYPE and RECORDED_GEN_FUNC
 
 */
 
@@ -81,7 +83,8 @@ _PyUOpSymPrint(JitOptRef ref)
         return;
     }
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
-    switch (sym->tag) {
+    JitSymType tag = sym->tag;
+    switch (tag) {
         case JIT_SYM_UNKNOWN_TAG:
             printf("<? at %p>", (void *)sym);
             break;
@@ -116,8 +119,17 @@ _PyUOpSymPrint(JitOptRef ref)
         case JIT_SYM_PREDICATE_TAG:
             printf("<predicate at %p>", (void *)sym);
             break;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            printf("<recorded value %p>", sym->recorded_value.value);
+            break;
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            printf("<recorded type %s>", sym->recorded_type.type->tp_name);
+            break;
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            printf("<recorded gen func at %p>", (void *)sym);
+            break;
         default:
-            printf("<tag=%d at %p>", sym->tag, (void *)sym);
+            printf("<tag=%d at %p>", tag, (void *)sym);
             break;
     }
 }
@@ -304,7 +316,30 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
                 sym_set_bottom(ctx, sym);
             }
             return;
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            if (typ != &PyGen_Type) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
         case JIT_SYM_BOTTOM_TAG:
+            return;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            if (Py_TYPE(sym->recorded_value.value) == typ) {
+                sym->recorded_value.known_type = true;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            if (sym->recorded_type.type == typ) {
+                sym->tag = JIT_SYM_KNOWN_CLASS_TAG;
+                sym->cls.version = 0;
+                sym->cls.type = typ;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
             return;
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
@@ -361,6 +396,12 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
                 return false;
             };
             return true;
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            if (PyGen_Type.tp_version_tag != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            return true;
         case JIT_SYM_TYPE_VERSION_TAG:
             if (sym->version.version != version) {
                 sym_set_bottom(ctx, sym);
@@ -387,6 +428,29 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
                 return false;
             }
             return true;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            if (Py_TYPE(sym->recorded_value.value)->tp_version_tag == version) {
+                sym->recorded_value.known_type = true;
+                sym->tag = JIT_SYM_KNOWN_CLASS_TAG;
+                sym->cls.type = Py_TYPE(sym->recorded_value.value);
+                sym->cls.version = version;
+                return true;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            if (sym->recorded_type.type->tp_version_tag == version) {
+                sym->tag = JIT_SYM_KNOWN_CLASS_TAG;
+                sym->cls.type = sym->recorded_type.type;
+                sym->cls.version = version;
+                return true;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
     }
     Py_UNREACHABLE();
 }
@@ -398,6 +462,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
             sym_set_bottom(ctx, sym);
             return;
         case JIT_SYM_KNOWN_CLASS_TAG:
@@ -437,6 +502,11 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             return;
         case JIT_SYM_BOTTOM_TAG:
             return;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            /* The given value might contradict the recorded one,
+             * in which case we could return bottom.
+             * Just discard the recorded value for now */
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
             make_const(sym, const_val);
@@ -592,6 +662,12 @@ _Py_uop_sym_get_type(JitOptRef ref)
         case JIT_SYM_BOTTOM_TAG:
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            return NULL;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            if (sym->recorded_value.known_type) {
+                return Py_TYPE(sym->recorded_value.value);
+            }
             return NULL;
         case JIT_SYM_KNOWN_CLASS_TAG:
             return sym->cls.type;
@@ -606,7 +682,8 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return &PyBool_Type;
         case JIT_SYM_COMPACT_INT:
             return &PyLong_Type;
-
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            return &PyGen_Type;
     }
     Py_UNREACHABLE();
 }
@@ -621,6 +698,8 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
         case JIT_SYM_BOTTOM_TAG:
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_RECORDED_VALUE_TAG:
+        case JIT_SYM_RECORDED_TYPE_TAG:
             return 0;
         case JIT_SYM_TYPE_VERSION_TAG:
             return sym->version.version;
@@ -635,6 +714,8 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
             return PyBool_Type.tp_version_tag;
         case JIT_SYM_COMPACT_INT:
             return PyLong_Type.tp_version_tag;
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            return PyGen_Type.tp_version_tag;
     }
     Py_UNREACHABLE();
 }
@@ -658,11 +739,69 @@ _Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version)
     return _Py_uop_sym_get_type_version(sym) == version;
 }
 
+PyObject *
+_Py_uop_sym_get_probable_value(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_RECORDED_TYPE_TAG:
+        case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_KNOWN_CLASS_TAG:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            return NULL;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            return sym->recorded_value.value;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            return sym->value.value;
+    }
+    Py_UNREACHABLE();
+}
+
+PyCodeObject *
+_Py_uop_sym_get_probable_func_code(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag == JIT_SYM_RECORDED_GEN_FUNC_TAG) {
+        return (PyCodeObject *)PyFunction_GET_CODE(sym->recorded_gen_func.func);
+    }
+    PyObject *obj = _Py_uop_sym_get_probable_value(ref);
+    if (obj != NULL) {
+        if (PyFunction_Check(obj)) {
+            return (PyCodeObject *)PyFunction_GET_CODE(obj);
+        }
+    }
+    return NULL;
+}
+
+PyFunctionObject *
+_Py_uop_sym_get_probable_function(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag == JIT_SYM_RECORDED_GEN_FUNC_TAG) {
+        return sym->recorded_gen_func.func;
+    }
+    PyObject *obj = _Py_uop_sym_get_probable_value(ref);
+    if (obj != NULL && PyFunction_Check(obj)) {
+        return (PyFunctionObject *)obj;
+    }
+    return NULL;
+}
+
 int
 _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
-    switch(sym->tag) {
+    JitSymType tag = sym->tag;
+    switch (tag) {
         case JIT_SYM_NULL_TAG:
         case JIT_SYM_TYPE_VERSION_TAG:
         case JIT_SYM_BOTTOM_TAG:
@@ -670,6 +809,9 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_UNKNOWN_TAG:
         case JIT_SYM_COMPACT_INT:
         case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_RECORDED_VALUE_TAG:
+        case JIT_SYM_RECORDED_TYPE_TAG:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
             return -1;
         case JIT_SYM_KNOWN_CLASS_TAG:
             /* TODO :
@@ -681,7 +823,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_TUPLE_TAG:
             return sym->tuple.length != 0;
         case JIT_SYM_TRUTHINESS_TAG:
-            ;
+        {
             JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
             int truthiness = _Py_uop_sym_truthiness(ctx,
                                                     PyJitRef_Wrap(value));
@@ -691,6 +833,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
             truthiness ^= sym->truthiness.invert;
             make_const(sym, truthiness ? Py_True : Py_False);
             return truthiness;
+        }
     }
     PyObject *value = sym->value.value;
     /* Only handle a few known safe types */
@@ -801,6 +944,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
             sym_set_bottom(ctx, sym);
             return;
         case JIT_SYM_KNOWN_CLASS_TAG:
@@ -832,6 +976,11 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_BOTTOM_TAG:
         case JIT_SYM_COMPACT_INT:
             return;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            /* The given value might contradict the recorded one,
+             * in which case we could return bottom.
+             * Just discard the recorded value for now */
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
             sym->tag = JIT_SYM_COMPACT_INT;
@@ -941,6 +1090,222 @@ _Py_uop_sym_new_compact_int(JitOptContext *ctx)
     return PyJitRef_Wrap(sym);
 }
 
+void
+_Py_uop_sym_set_recorded_value(JitOptContext *ctx, JitOptRef ref, PyObject *value)
+{
+    // It is possible for value to be NULL due to respecialization
+    // during execution of the traced instruction.
+    if (value == NULL) {
+        return;
+    }
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_BOTTOM_TAG:
+            return;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_RECORDED_VALUE_TAG;
+            sym->recorded_value.known_type = false;
+            sym->recorded_value.value = value;
+            return;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            if (sym->recorded_value.value != value) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            if (sym->recorded_type.type == Py_TYPE(value)) {
+                sym->tag = JIT_SYM_RECORDED_VALUE_TAG;
+                sym->recorded_value.known_type = false;
+                sym->recorded_value.value = value;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type == Py_TYPE(value)) {
+                sym->tag = JIT_SYM_RECORDED_VALUE_TAG;
+                sym->recorded_value.known_type = true;
+                sym->recorded_value.value = value;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            return;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version == Py_TYPE(value)->tp_version_tag) {
+                sym->tag = JIT_SYM_RECORDED_VALUE_TAG;
+                sym->recorded_value.known_type = true;
+                sym->recorded_value.value = value;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        // In these cases the original information is more valuable
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_COMPACT_INT:
+            return;
+    }
+    Py_UNREACHABLE();
+}
+void
+_Py_uop_sym_set_recorded_gen_func(JitOptContext *ctx, JitOptRef ref, PyFunctionObject *value)
+{
+    // It is possible for value to be NULL due to respecialization
+    // during execution of the traced instruction.
+    if (value == NULL) {
+        return;
+    }
+    assert(!PyJitRef_IsNull(ref));
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_RECORDED_VALUE_TAG:
+        case JIT_SYM_KNOWN_VALUE_TAG:
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_COMPACT_INT:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_BOTTOM_TAG:
+            return;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_RECORDED_GEN_FUNC_TAG;
+            sym->recorded_gen_func.func = value;
+            return;
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            if (sym->recorded_type.type == &PyGen_Type) {
+                sym->tag = JIT_SYM_RECORDED_GEN_FUNC_TAG;
+                sym->recorded_gen_func.func = value;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type == &PyGen_Type) {
+                sym->tag = JIT_SYM_RECORDED_GEN_FUNC_TAG;
+                sym->recorded_gen_func.func = value;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version == PyGen_Type.tp_version_tag) {
+                sym->tag = JIT_SYM_RECORDED_GEN_FUNC_TAG;
+                sym->recorded_gen_func.func = value;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            if (sym->recorded_gen_func.func != value) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+    }
+    Py_UNREACHABLE();
+}
+
+void
+_Py_uop_sym_set_recorded_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *type)
+{
+    // It is possible for type to be NULL due to respecialization
+    // during execution of the traced instruction.
+    if (type == NULL) {
+        return;
+    }
+    assert(PyType_Check((PyObject *)type));
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_BOTTOM_TAG:
+            return;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_RECORDED_TYPE_TAG;
+            sym->recorded_type.type = type;
+            return;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            if (Py_TYPE(sym->recorded_value.value) != type) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            if (sym->recorded_type.type != type) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            return;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            return;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version == type->tp_version_tag) {
+                sym->tag = JIT_SYM_KNOWN_CLASS_TAG;
+                sym->cls.type = type;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        // In these cases the original information is more valuable
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            return;
+    }
+    Py_UNREACHABLE();
+}
+
+// 0 on success, -1 on error.
+_Py_UOpsAbstractFrame *
+_Py_uop_frame_new_from_symbol(
+    JitOptContext *ctx,
+    JitOptRef callable,
+    int curr_stackentries,
+    JitOptRef *args,
+    int arg_len)
+{
+    PyCodeObject *co = _Py_uop_sym_get_probable_func_code(callable);
+    if (co == NULL) {
+        ctx->done = true;
+        return NULL;
+    }
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stackentries, args, arg_len);
+    if (frame == NULL) {
+        return NULL;
+    }
+    PyFunctionObject *func = _Py_uop_sym_get_probable_function(callable);
+    if (func != NULL) {
+        assert(PyFunction_Check(func));
+        frame->func = func;
+    }
+    assert(frame->stack_pointer != NULL);
+    return frame;
+}
+
 // 0 on success, -1 on error.
 _Py_UOpsAbstractFrame *
 _Py_uop_frame_new(
@@ -950,6 +1315,7 @@ _Py_uop_frame_new(
     JitOptRef *args,
     int arg_len)
 {
+    assert(co != NULL);
     if (ctx->curr_frame_depth >= MAX_ABSTRACT_FRAME_DEPTH) {
         ctx->done = true;
         ctx->out_of_space = true;
@@ -988,13 +1354,13 @@ _Py_uop_frame_new(
         frame->locals[i] = local;
     }
 
-
     // Initialize the stack as well
     for (int i = 0; i < curr_stackentries; i++) {
         JitOptRef stackvar = _Py_uop_sym_new_unknown(ctx);
         frame->stack[i] = stackvar;
     }
 
+    assert(frame->locals != NULL);
     return frame;
 }
 
@@ -1052,6 +1418,7 @@ _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries)
 
     if (ctx->curr_frame_depth >= 1) {
         ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
+        assert(ctx->frame->locals != NULL);
 
         // We returned to the correct code. Nothing to do here.
         if (co == ctx->frame->code) {
@@ -1079,6 +1446,7 @@ _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries)
 
     ctx->curr_frame_depth++;
     ctx->frame = new_frame;
+    assert(ctx->frame->locals != NULL);
 
     return 0;
 }
@@ -1111,6 +1479,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     PyObject *val_43 = NULL;
     PyObject *val_big = NULL;
     PyObject *tuple = NULL;
+    PyFunctionObject *func = NULL;
 
     // Use a single 'sym' variable so copy-pasting tests is easier.
     JitOptRef ref = _Py_uop_sym_new_unknown(ctx);
@@ -1521,11 +1890,118 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "43 is not an int");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref_int) == val_43, "43 isn't 43");
 
+    // Test recorded values
+
+    /* Test that recorded values aren't treated as known values*/
+    JitOptRef rv1 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_value(ctx, rv1, val_42);
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rv1, &PyLong_Type), "recorded value is treated as known");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rv1) == NULL, "recorded value is treated as known");
+    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(rv1), "recorded value is treated as known");
+
+    /* Test that setting type or value narrows correctly */
+    JitOptRef rv2 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_value(ctx, rv2, val_42);
+    _Py_uop_sym_set_const(ctx, rv2, val_42);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rv2, &PyLong_Type), "recorded value doesn't narrow");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rv2) == val_42, "recorded value doesn't narrow");
+
+    JitOptRef rv3 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_value(ctx, rv3, val_42);
+    _Py_uop_sym_set_type(ctx, rv3, &PyLong_Type);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rv3, &PyLong_Type), "recorded value doesn't narrow");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rv3) == NULL, "recorded value with type is treated as known");
+
+    JitOptRef rv4 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_value(ctx, rv4, val_42);
+    _Py_uop_sym_set_type_version(ctx, rv4, PyLong_Type.tp_version_tag);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rv4, &PyLong_Type), "recorded value doesn't narrow");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rv4) == NULL, "recorded value with type is treated as known");
+
+    // test recorded types
+
+    /* Test that recorded type aren't treated as known values*/
+    JitOptRef rt1 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_type(ctx, rt1, &PyLong_Type);
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(rt1, &PyLong_Type), "recorded type is treated as known");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rt1) == NULL, "recorded type is treated as known value");
+
+    /* Test that setting type or value narrows correctly */
+    JitOptRef rt2 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_type(ctx, rt2, &PyLong_Type);
+    _Py_uop_sym_set_const(ctx, rt2, val_42);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rt2, &PyLong_Type), "recorded value doesn't narrow");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rt2) == val_42, "recorded value doesn't narrow");
+
+    JitOptRef rt3 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_type(ctx, rt3, &PyLong_Type);
+    _Py_uop_sym_set_type(ctx, rt3, &PyLong_Type);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rt3, &PyLong_Type), "recorded value doesn't narrow");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rt3) == NULL, "known type is treated as known value");
+
+    JitOptRef rt4 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_type(ctx, rt4, &PyLong_Type);
+    _Py_uop_sym_set_type_version(ctx, rt4, PyLong_Type.tp_version_tag);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rt4, &PyLong_Type), "recorded value doesn't narrow");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rt4) == NULL, "recorded value with type is treated as known");
+
+    // test recorded gen function
+
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        goto fail;
+    }
+    PyCodeObject *code = PyCode_NewEmpty(__FILE__, "uop_symbols_test", __LINE__);
+    if (code == NULL) {
+        goto fail;
+    }
+    func = (PyFunctionObject *)PyFunction_New((PyObject *)code, dict);
+    if (func == NULL) {
+        goto fail;
+    }
+
+    /* Test that recorded type aren't treated as known values*/
+    JitOptRef rg1 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_gen_func(ctx, rg1, func);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg1) == NULL, "recorded gen func is treated as known value");
+
+    /* Test that setting type narrows correctly */
+
+    JitOptRef rg2 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_gen_func(ctx, rg2, func);
+    _Py_uop_sym_set_type(ctx, rg2, &PyGen_Type);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg2) == NULL, "known type is treated as known value");
+
+    JitOptRef rg3 = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_recorded_gen_func(ctx, rg3, func);
+    _Py_uop_sym_set_type_version(ctx, rg3, PyGen_Type.tp_version_tag);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(rg1, &PyGen_Type), "recorded gen func not treated as generator");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, rg3) == NULL, "recorded value with type is treated as known");
+
+    /* Test contradictions */
+    _Py_uop_sym_set_type(ctx, rv1, &PyFloat_Type);
+     TEST_PREDICATE(_Py_uop_sym_is_bottom(rv1), "recorded value cast to other type isn't bottom");
+    _Py_uop_sym_set_type_version(ctx, rv2, PyFloat_Type.tp_version_tag);
+     TEST_PREDICATE(_Py_uop_sym_is_bottom(rv2), "recorded value cast to other type version isn't bottom");
+
+    _Py_uop_sym_set_type(ctx, rt1, &PyFloat_Type);
+     TEST_PREDICATE(_Py_uop_sym_is_bottom(rv1), "recorded type cast to other type isn't bottom");
+    _Py_uop_sym_set_type_version(ctx, rt2, PyFloat_Type.tp_version_tag);
+     TEST_PREDICATE(_Py_uop_sym_is_bottom(rv2), "recorded type cast to other type version isn't bottom");
+
+    _Py_uop_sym_set_type(ctx, rg1, &PyFloat_Type);
+     TEST_PREDICATE(_Py_uop_sym_is_bottom(rg1), "recorded gen func cast to other type isn't bottom");
+    _Py_uop_sym_set_type_version(ctx, rg2, PyFloat_Type.tp_version_tag);
+     TEST_PREDICATE(_Py_uop_sym_is_bottom(rg2), "recorded gen func cast to other type version isn't bottom");
+
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
     Py_DECREF(val_big);
     Py_DECREF(tuple);
+    Py_DECREF(func);
     Py_RETURN_NONE;
 
 fail:
@@ -1533,7 +2009,8 @@ fail:
     Py_XDECREF(val_42);
     Py_XDECREF(val_43);
     Py_XDECREF(val_big);
-    Py_DECREF(tuple);
+    Py_XDECREF(tuple);
+    Py_XDECREF(func);
     return NULL;
 }
 
