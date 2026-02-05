@@ -20,7 +20,6 @@ import array
 import collections.abc
 import socket
 import random
-import resource
 import logging
 import shutil
 import subprocess
@@ -81,6 +80,11 @@ try:
     import msvcrt
 except ImportError:
     msvcrt = None
+
+try:
+    import resource
+except ImportError:
+    resource = None
 
 
 if support.HAVE_ASAN_FORK_BUG:
