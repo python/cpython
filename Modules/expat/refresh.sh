@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_7_3"
-expected_libexpat_version="2.7.3"
-expected_libexpat_sha256="821ac9710d2c073eaf13e1b1895a9c9aa66c1157a99635c639fbff65cdbdd732"
+expected_libexpat_tag="R_2_7_4"
+expected_libexpat_version="2.7.4"
+expected_libexpat_sha256="461ecc8aa98ab1a68c2db788175665d1a4db640dc05bf0e289b6ea17122144ec"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
@@ -24,6 +24,9 @@ curl --location "https://github.com/libexpat/libexpat/releases/download/${expect
 echo "${expected_libexpat_sha256} libexpat.tar.gz" | sha256sum --check
 
 # Step 2: Pull files from the libexpat distribution
+
+tar xzvf libexpat.tar.gz "expat-${expected_libexpat_version}/COPYING" --strip-components 2
+
 declare -a lib_files
 lib_files=(
   ascii.h
@@ -54,4 +57,13 @@ rm libexpat.tar.gz
 # Step 3: Add the namespacing include to expat_external.h
 sed -i 's/#  define Expat_External_INCLUDED 1/&\n\/* Namespace external symbols to allow multiple libexpat version to\n   co-exist. \*\/\n#include "pyexpatns.h"/' expat_external.h
 
-echo "Updated; verify all is okay using git diff and git status."
+echo "
+Updated! next steps:
+- Verify all is okay:
+    git diff
+    git status
+- Regenerate the sbom file
+    make regen-sbom
+- Update warning count in Tools/build/.warningignore_macos
+    (use info from CI if not on a Mac)
+"
