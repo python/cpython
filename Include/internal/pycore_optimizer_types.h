@@ -41,6 +41,9 @@ typedef enum _JitSymType {
     JIT_SYM_TRUTHINESS_TAG = 9,
     JIT_SYM_COMPACT_INT = 10,
     JIT_SYM_PREDICATE_TAG = 11,
+    JIT_SYM_RECORDED_VALUE_TAG = 12,
+    JIT_SYM_RECORDED_TYPE_TAG = 13,
+    JIT_SYM_RECORDED_GEN_FUNC_TAG = 14,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -87,6 +90,24 @@ typedef struct {
     uint16_t rhs;
 } JitOptPredicate;
 
+typedef struct _jit_opt_recorded_value {
+    uint8_t tag;
+    bool known_type;
+    PyObject *value;
+} JitOptRecordedValue;
+
+typedef struct _jit_opt_recorded_type {
+    uint8_t tag;
+    PyTypeObject *type;
+} JitOptRecordedType;
+
+/* Represents a generator, but we record the
+ * function as the generator is emphemeral */
+typedef struct _jit_opt_recorded_gen_func {
+    uint8_t tag;
+    PyFunctionObject *func;
+} JitOptRecordedGenFunc;
+
 typedef struct {
     uint8_t tag;
 } JitOptCompactInt;
@@ -100,6 +121,9 @@ typedef union _jit_opt_symbol {
     JitOptTruthiness truthiness;
     JitOptCompactInt compact;
     JitOptPredicate predicate;
+    JitOptRecordedValue recorded_value;
+    JitOptRecordedType recorded_type;
+    JitOptRecordedGenFunc recorded_gen_func;
 } JitOptSymbol;
 
 // This mimics the _PyStackRef API

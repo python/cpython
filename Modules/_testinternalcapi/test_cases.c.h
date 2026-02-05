@@ -749,11 +749,11 @@
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 getitem = PyStackRef_FromPyObjectNew(getitem_o);
-                STAT_INC(BINARY_OP, hit);
             }
             // _BINARY_OP_SUBSCR_INIT_CALL
             {
                 sub = stack_pointer[-1];
+                STAT_INC(BINARY_OP, hit);
                 _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
                 pushed_frame->localsplus[0] = container;
                 pushed_frame->localsplus[1] = sub;
@@ -10449,33 +10449,30 @@
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
             _PyStackRef res;
-            // _RETURN_GENERATOR
-            {
-                assert(PyStackRef_FunctionCheck(frame->f_funcobj));
-                PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (gen == NULL) {
-                    JUMP_TO_LABEL(error);
-                }
-                assert(STACK_LEVEL() <= 2);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
-                frame->instr_ptr++;
-                _PyFrame_Copy(frame, gen_frame);
-                assert(frame->frame_obj == NULL);
-                gen->gi_frame_state = FRAME_CREATED;
-                gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-                _Py_LeaveRecursiveCallPy(tstate);
-                _PyInterpreterFrame *prev = frame->previous;
-                _PyThreadState_PopFrame(tstate, frame);
-                frame = tstate->current_frame = prev;
-                LOAD_IP(frame->return_offset);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
-                LLTRACE_RESUME_FRAME();
+            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
+            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (gen == NULL) {
+                JUMP_TO_LABEL(error);
             }
+            assert(STACK_LEVEL() <= 2);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
+            frame->instr_ptr++;
+            _PyFrame_Copy(frame, gen_frame);
+            assert(frame->frame_obj == NULL);
+            gen->gi_frame_state = FRAME_CREATED;
+            gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
+            _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *prev = frame->previous;
+            _PyThreadState_PopFrame(tstate, frame);
+            frame = tstate->current_frame = prev;
+            LOAD_IP(frame->return_offset);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
+            LLTRACE_RESUME_FRAME();
             stack_pointer[0] = res;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10492,24 +10489,21 @@
             INSTRUCTION_STATS(RETURN_VALUE);
             _PyStackRef retval;
             _PyStackRef res;
-            // _RETURN_VALUE
-            {
-                retval = stack_pointer[-1];
-                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-                _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(STACK_LEVEL() == 0);
-                _Py_LeaveRecursiveCallPy(tstate);
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                LOAD_IP(frame->return_offset);
-                res = temp;
-                LLTRACE_RESUME_FRAME();
-            }
+            retval = stack_pointer[-1];
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(STACK_LEVEL() == 0);
+            _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LOAD_IP(frame->return_offset);
+            res = temp;
+            LLTRACE_RESUME_FRAME();
             stack_pointer[0] = res;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -12326,40 +12320,37 @@
             INSTRUCTION_STATS(YIELD_VALUE);
             _PyStackRef retval;
             _PyStackRef value;
-            // _YIELD_VALUE
-            {
-                retval = stack_pointer[-1];
-                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-                frame->instr_ptr++;
-                PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
-                assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
-                assert(oparg == 0 || oparg == 1);
-                _PyStackRef temp = retval;
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                tstate->exc_info = gen->gi_exc_state.previous_item;
-                gen->gi_exc_state.previous_item = NULL;
-                _Py_LeaveRecursiveCallPy(tstate);
-                _PyInterpreterFrame *gen_frame = frame;
-                frame = tstate->current_frame = frame->previous;
-                gen_frame->previous = NULL;
-                ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
-                FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
-                assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-                #if TIER_ONE
-                assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
+            retval = stack_pointer[-1];
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            frame->instr_ptr++;
+            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+            assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
+            assert(oparg == 0 || oparg == 1);
+            _PyStackRef temp = retval;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
+            _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *gen_frame = frame;
+            frame = tstate->current_frame = frame->previous;
+            gen_frame->previous = NULL;
+            ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
+            FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            #if TIER_ONE
+            assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
                   frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
-                #endif
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-                value = PyStackRef_MakeHeapSafe(temp);
-                LLTRACE_RESUME_FRAME();
-            }
+            #endif
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+            value = PyStackRef_MakeHeapSafe(temp);
+            LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

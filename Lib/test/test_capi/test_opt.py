@@ -978,50 +978,6 @@ class TestUopsOptimization(unittest.TestCase):
         # Constant narrowing allows constant folding for second comparison
         self.assertLessEqual(count_ops(ex, "_COMPARE_OP_FLOAT"), 1)
 
-    def test_compare_str_eq_narrows_to_constant(self):
-        def f(n):
-            def return_hello():
-                return "hello"
-
-            hits = 0
-            v = return_hello()
-            for _ in range(n):
-                if v == "hello":
-                    if v == "hello":
-                        hits += 1
-            return hits
-
-        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        # Constant narrowing allows constant folding for second comparison
-        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_STR"), 1)
-
-    def test_compare_str_ne_narrows_to_constant(self):
-        def f(n):
-            def return_hello():
-                return "hello"
-
-            hits = 0
-            v = return_hello()
-            for _ in range(n):
-                if v != "hello":
-                    hits += 1000
-                else:
-                    if v == "hello":
-                        hits += 1
-            return hits
-
-        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        # Constant narrowing allows constant folding for second comparison
-        self.assertLessEqual(count_ops(ex, "_COMPARE_OP_STR"), 1)
-
     def test_combine_stack_space_checks_sequential(self):
         def dummy12(x):
             return x - 1
