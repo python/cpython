@@ -1076,7 +1076,7 @@ _pysqlite_drop_unused_blob_references(pysqlite_Connection* self)
     for (Py_ssize_t i = 0; i < imax; i++) {
         PyObject* weakref = PyList_GET_ITEM(self->blobs, i);
         if (_PyWeakref_IsDead(weakref)) {
-          continue;
+            continue;
         }
         if (PyList_Append(new_list, weakref) != 0) {
             Py_DECREF(new_list);
