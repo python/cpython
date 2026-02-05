@@ -87,6 +87,9 @@ POST request.
 
    If *ignorechars* is specified, it should be a :term:`bytes-like object`
    containing characters to ignore from the input when *validate* is true.
+   If *ignorechars* contains the pad character ``'='``,  the pad characters
+   presented before the end of the encoded data and the excess pad characters
+   will be ignored.
    The default value of *validate* is ``True`` if *ignorechars* is specified,
    ``False`` otherwise.
 
