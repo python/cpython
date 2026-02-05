@@ -3357,18 +3357,15 @@ class TestParser(TestParserMixin, TestEmailBase):
             return
         self.assertIsInstance(atom, parser.DotAtomText)
         self.assertEqual(atom.token_type, 'dot-atom-text')
-        self.verify_terminal_types(atom, 'dot', 'atext')
+        # There can be fws inside encoded words.
+        self.verify_terminal_types(atom, 'dot', 'atext', 'fws')
 
-    params_test_get_dot_atom_text = old_api_only(
+    params_test_get_dot_atom_text = for_each_api(
 
         # a bare atext is valid in a dot-atom, so we should pass all the
         # get_atext_sequence tests except the ones involving the dot.
         include_unless(
-            lambda n, *a, **k:  'full_stop' in n
-                # XXX XXX disable ew tests until get_dot_atom_text refactored
-                or 'ew_' in str(n)
-                # XXX XXX disable the test involving an escaped repr likewise.
-                or n.has_all('no_atext_before_special_or_wsp', 'HT'),
+            lambda n, *a, **k:  'full_stop' in n,
             label='from_test_get_atext',
             )(params_test_get_atext_sequence),
 
@@ -3389,7 +3386,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         **for_each_character(RFC_SPECIALS + RFC_WSP)(
             raises_on_leading_special_or_wsp = C(
                 '{char}foo.bar',
-                exception=(errors.HeaderParseError, r'expected.*{echar}foo\.'),
+                exception=(errors.HeaderParseError, r'expected.*{erchar}foo\.'),
                 ),
             ),
 
@@ -3423,6 +3420,55 @@ class TestParser(TestParserMixin, TestEmailBase):
                 errors.HeaderParseError,
                 r'(?=.*expected)(?=.*atom)(?=.*\.\.bar)',
                 ),
+            ),
+
+        ew = C(
+            '=?UTF-8?q?foo?=',
+            stringified='foo',
+            ew_indexes=[0],
+            ),
+
+        two_ew_two_atoms = C(
+            '=?UTF-8?q?foo?= =?UTF-8?q?bar?=',
+            stringified='foo',
+            remainder=' =?UTF-8?q?bar?=',
+            ew_indexes=[0],
+            ),
+
+        # The tests above are the only RFC valid way for an encoded word to be
+        # in a dot-atom-text, but we're going to be generous.
+
+        two_ew_with_dot = C(
+            '=?UTF-8?q?foo?=.=?UTF-8?q?bar?=',
+            stringified='foo.bar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 16],
+            ),
+
+        two_ew_no_dot = C(
+            '=?UTF-8?q?foo?==?UTF-8?q?bar?=',
+            stringified='foobar',
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                ],
+            ew_indexes=[0, 15],
+            ),
+
+        mixed_ews_and_atext = C(
+            'foo.bar=?UTF-8?q?_foo?=bar.=?UTF-8?q?foo?=bar',
+            stringified='foo.bar foobar.foobar',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
+            # XXX XXX indexes will change during the refactor.
+            ew_indexes=[7, 27],
             ),
 
         )
@@ -3533,22 +3579,23 @@ class TestParser(TestParserMixin, TestEmailBase):
             comments=['hey'],
             ),
 
-        # XXX XXX These additional EW cases not already tested by the atom
-        # tests will be fully decoded after refactoring.
-
         mixed_ews_and_atext = C(
             '(hey)foo.bar=?UTF-8?q?_foo?=bar.=?UTF-8?q?foo?=bar (hey)',
-            #stringified='(hey)foo.bar foobar.foobar (hey)',
-            value=' foo.bar=?UTF-8?q?_foo?=bar.=?UTF-8?q?foo?=bar ',
-            #value=' foo.bar foobar.foobar ',
-            #defects=[
-            #    missing_whitespace_before_ew_defect,
-            #    missing_whitespace_after_ew_defect,
-            #    missing_whitespace_before_ew_defect,
-            #    missing_whitespace_after_ew_defect,
-            #    ],
+            stringified='(hey)foo.bar foobar.foobar (hey)',
+            value=' foo.bar foobar.foobar ',
+            defects=[
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                ],
             comments=['hey', 'hey'],
+            # XXX XXX indexes will change during the refactor.
+            ew_indexes=[7, 27],
             ),
+
+        # XXX XXX This additional EW case not already tested by the atom
+        # tests will be fully decoded after refactoring.
 
         two_ew_with_dot = C(
             '=?UTF-8?q?foo?=.=?UTF-8?q?bar?=(hey)',
