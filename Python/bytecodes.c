@@ -1659,6 +1659,18 @@ dummy_func(
             PyStackRef_CLOSE(seq);
         }
 
+        op(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, (seq -- val1, val0)) {
+            assert(oparg == 2);
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            assert(PyTuple_CheckExact(seq_o));
+            DEOPT_IF(PyTuple_GET_SIZE(seq_o) != 2);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
+        }
+
         macro(UNPACK_SEQUENCE_TUPLE) =
             _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE;
 
