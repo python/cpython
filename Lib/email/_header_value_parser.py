@@ -1821,24 +1821,53 @@ def get_atom(value, start):
         atom.append(token)
     return atom, start
 
-def get_dot_atom_text(value):
-    """ dot-text = 1*atext *("." 1*atext)
+@_deprecate_old_api
+def get_dot_atom_text(value, start):
+    """ dot-atom-text = 1*atext *("." 1*atext)
+
+    Return a DotAtomText containing all characters up to the next non-'.'
+    special or WSP outside of an enocded word or the end of value, and the
+    index of the special, WSP, or the len of value, decoding any encoded words.
+    All ValueTerminals returned should have the type 'atext'.  '.' characters
+    should be returned as ValueTermibnals of token_type 'dot'.
+
+    Encoded words should be decoded even if there is non-whitespace around
+    them, and whether or not they contain any RFC invalid whitespace.  Register
+    defects for any missing whitespace.
+
+    Register defects if there are any non-printable or undecodable characters
+    in the non-whitespace tokens.
 
     """
+    # The only legitimate way an encoded word can be in a dot-atom-text
+    # position is if it is the only thing there.  Following our policy of
+    # generous decoding we accept them anywhere in the dot-atom-text.  The only
+    # defects we're registering are the whitespace defects.  An encoded word is
+    # legitimate here; it's the whitespace that's wrong.  To get it right the
+    # text, including the dots, would end up inside the encoded word.
     dot_atom_text = DotAtomText()
-    if not value or value[0] in ATOM_ENDS:
-        raise errors.HeaderParseError("expected atom at a start of "
-            "dot-atom-text but found '{}'".format(value))
-    while value and value[0] not in ATOM_ENDS:
-        token, value = get_atext(value)
-        dot_atom_text.append(token)
-        if value and value[0] == '.':
+    vlen = len(value)
+    if start >= vlen or value[start] in ATOM_ENDS:
+        raise errors.HeaderParseError(
+            f"expected atom at a start of dot-atom-text"
+            f" but found {value[start:]!r}"
+            )
+    while start < vlen and value[start] not in ATOM_ENDS:
+        token, start = get_atext_sequence(value, start)
+        if token[0].token_type == 'encoded-word' and dot_atom_text:
+                dot_atom_text.defects.append(_MissingWhitespaceBeforeEWDefect)
+        dot_atom_text.extend(token)
+        if start < vlen and value[start] == '.':
+            if dot_atom_text[-1].token_type == 'encoded-word':
+                dot_atom_text.defects.append(_MissingWhitespaceAfterEWDefect)
             dot_atom_text.append(DOT)
-            value = value[1:]
+            start += 1
     if dot_atom_text[-1] is DOT:
-        raise errors.HeaderParseError("expected atom at end of dot-atom-text "
-            "but found '{}'".format('.'+value))
-    return dot_atom_text, value
+        raise errors.HeaderParseError(
+            f"expected atom at end of dot-atom-text"
+            f" but found {value[start-1:]!r}"
+            )
+    return dot_atom_text, start
 
 def get_dot_atom(value):
     """ dot-atom = [CFWS] dot-atom-text [CFWS]
