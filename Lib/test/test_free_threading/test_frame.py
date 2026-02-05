@@ -122,6 +122,62 @@ class TestFrameRaces(unittest.TestCase):
 
         run_with_frame([reader, writer, reader, writer])
 
+    def test_concurrent_f_locals_read_values(self):
+        def runner():
+            a = 1
+            b = "hello"
+            c = [1, 2, 3]
+            for i in range(100):
+                a += i
+
+        def reader(frame):
+            locals_dict = frame.f_locals
+            list(locals_dict.keys())
+            list(locals_dict.values())
+
+        run_with_frame(reader, runner=runner)
+
+    def test_concurrent_f_locals_write(self):
+        def runner():
+            x = 0
+            for i in range(100):
+                x += i
+
+        def writer(frame):
+            frame.f_locals["new_var"] = 42
+
+        run_with_frame(writer, runner=runner)
+
+    def test_concurrent_f_locals_read_write(self):
+        def runner():
+            a = 1
+            b = 2
+            for i in range(100):
+                a += i
+
+        def reader(frame):
+            _ = frame.f_locals.get("a")
+            _ = frame.f_locals.get("b")
+
+        def writer(frame):
+            frame.f_locals["a"] = 42
+
+        run_with_frame([reader, writer, reader, writer], runner=runner)
+
+    def test_concurrent_f_locals_iteration(self):
+        def runner():
+            a = 1
+            b = "hello"
+            c = [1, 2, 3]
+            for i in range(100):
+                a += i
+
+        def iterator(frame):
+            for key, value in frame.f_locals.items():
+                pass
+
+        run_with_frame(iterator, runner=runner)
+
     def test_concurrent_frame_clear(self):
         # Test race between frame.clear() and attribute reads.
         def create_frame():
