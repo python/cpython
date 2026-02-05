@@ -845,7 +845,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from contextlib import suppress
    from functools import reduce
    from math import comb, isqrt, prod, sumprod
-   from operator import getitem, is_not, itemgetter, mul, neg
+   from operator import getitem, is_not, itemgetter, mul, neg, truediv
+
 
    # ==== Basic one liners ====
 
@@ -858,9 +859,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # prepend(1, [2, 3, 4]) → 1 2 3 4
        return chain([value], iterable)
 
-   def tabulate(function, start=0):
-       "Return function(0), function(1), ..."
-       return map(function, count(start))
+   def running_mean(iterable):
+       "Yield the average of all values seen so far."
+       # running_mean([8.5, 9.5, 7.5, 6.5]) -> 8.5 9.0 8.5 8.0
+       return map(truediv, accumulate(iterable), count(1))
 
    def repeatfunc(function, times=None, *args):
        "Repeat calls to a function with specified arguments."
@@ -912,6 +914,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Returns True if all the elements are equal to each other."
        # all_equal('4٤௪౪໔', key=int) → True
        return len(take(2, groupby(iterable, key))) <= 1
+
 
    # ==== Data pipelines ====
 
@@ -1021,6 +1024,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
            while True:
                yield function()
 
+
    # ==== Mathematical operations ====
 
    def multinomial(*counts):
@@ -1040,6 +1044,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # sum_of_squares([10, 20, 30]) → 1400
        return sumprod(*tee(iterable))
 
+
    # ==== Matrix operations ====
 
    def reshape(matrix, columns):
@@ -1057,6 +1062,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80) (41, 60)
        n = len(m2[0])
        return batched(starmap(sumprod, product(m1, transpose(m2))), n)
+
 
    # ==== Polynomial arithmetic ====
 
@@ -1113,6 +1119,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(mul, coefficients, powers))
+
 
    # ==== Number theory ====
 
@@ -1230,8 +1237,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
     [(0, 'a'), (1, 'b'), (2, 'c')]
 
 
-    >>> list(islice(tabulate(lambda x: 2*x), 4))
-    [0, 2, 4, 6]
+    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
+    [8.5, 9.0, 8.5, 8.0]
 
 
     >>> for _ in loops(5):
@@ -1798,6 +1805,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
     # Old recipes and their tests which are guaranteed to continue to work.
 
+    def tabulate(function, start=0):
+        "Return function(0), function(1), ..."
+        return map(function, count(start))
+
     def old_sumprod_recipe(vec1, vec2):
         "Compute a sum of products."
         return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
@@ -1876,6 +1887,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 .. doctest::
     :hide:
+
+    >>> list(islice(tabulate(lambda x: 2*x), 4))
+    [0, 2, 4, 6]
+
 
     >>> dotproduct([1,2,3], [4,5,6])
     32
