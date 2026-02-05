@@ -11,6 +11,11 @@
 
 --------------
 
+.. warning::
+
+   :mod:`wsgiref` is a reference implementation and is not recommended for
+   production. The module only implements basic security checks.
+
 The Web Server Gateway Interface (WSGI) is a standard interface between web
 server software and web applications written in Python. Having a standard
 interface makes it easy to use an application that supports WSGI with a number
