@@ -41,7 +41,7 @@ class Headers:
         if __debug__:
             for k, v in headers:
                 self._convert_string_type(k, name=True)
-                self._convert_string_type(v)
+                self._convert_string_type(v, name=False)
 
     def _convert_string_type(self, value, *, name):
         """Convert/check value type."""
