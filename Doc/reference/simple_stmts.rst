@@ -867,6 +867,8 @@ determine dynamically the modules to be loaded.
 
 .. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
 
+.. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
+
 .. _future:
 
 Future statements
