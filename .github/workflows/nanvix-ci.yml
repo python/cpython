@@ -75,6 +75,7 @@ jobs:
     env:
       NANVIX_SHA: ${{ needs.get-nanvix-info.outputs.sha }}
       NANVIX_SHA_FULL: ${{ needs.get-nanvix-info.outputs.sha_full }}
+      USER: runner
     steps:
       - uses: actions/checkout@v4
 
