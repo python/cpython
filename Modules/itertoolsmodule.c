@@ -1618,15 +1618,16 @@ islice_next(PyObject *op)
     PyObject *item;
     PyObject *it = lz->it;
     Py_ssize_t stop = lz->stop;
-    Py_ssize_t oldnext;
     PyObject *(*iternext)(PyObject *);
 
-    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
-    if (cnt < 0)
+    Py_ssize_t step = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->step);
+    if (step < 0)
         return NULL;
 
+    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
+    Py_ssize_t oldnext = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->next);
     iternext = *Py_TYPE(it)->tp_iternext;
-    while (cnt < lz->next) {
+    while (cnt < oldnext) {
         item = iternext(it);
         if (item == NULL)
             goto empty;
@@ -1640,10 +1641,10 @@ islice_next(PyObject *op)
         goto empty;
     cnt++;
     FT_ATOMIC_STORE_SSIZE_RELAXED(lz->cnt, cnt);
-    oldnext = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->next);
+
     /* The (size_t) cast below avoids the danger of undefined
        behaviour from signed integer overflow. */
-    Py_ssize_t new_next = oldnext + (size_t)lz->step
+    Py_ssize_t new_next = oldnext + (size_t)step;
     FT_ATOMIC_STORE_SSIZE_RELAXED(lz->next, new_next);
     if (new_next < oldnext || (stop != -1 && new_next > stop)) {
         FT_ATOMIC_STORE_SSIZE_RELAXED(lz->next, stop);
@@ -1651,7 +1652,7 @@ islice_next(PyObject *op)
     return item;
 
 empty:
-    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->cnt, -1);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->step, -1);
 #ifndef PY_GIL_DISABLED
     Py_CLEAR(lz->it);
 #endif
