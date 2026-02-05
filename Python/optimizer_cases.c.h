@@ -1441,12 +1441,31 @@
             break;
         }
 
+        case _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE: {
+            JitOptRef val2;
+            JitOptRef val1;
+            JitOptRef val0;
+            val2 = sym_new_not_null(ctx);
+            val1 = sym_new_not_null(ctx);
+            val0 = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[-1] = val2;
+            stack_pointer[0] = val1;
+            stack_pointer[1] = val0;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _UNPACK_SEQUENCE_TUPLE: {
             JitOptRef seq;
             JitOptRef *values;
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
-            if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
+            if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 3) {
+                ADD_OP(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, oparg, 0);
+            }
+            else if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
                 ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
             }
             for (int i = 0; i < oparg; i++) {

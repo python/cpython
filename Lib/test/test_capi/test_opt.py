@@ -1954,16 +1954,16 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_unique_tuple_unpack(self):
         def f(n):
-            def triplet(x):
-                return (x, x, x)
+            def four_tuple(x):
+                return (x, x, x, x)
             hits = 0
             for i in range(n):
-                x, y, z = triplet(1)
-                hits += x + y + z
+                w, x, y, z = four_tuple(1)
+                hits += w + x + y + z
             return hits
 
         res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertEqual(res, TIER2_THRESHOLD * 4)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
 
@@ -1973,11 +1973,50 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_non_unique_tuple_unpack(self):
         def f(n):
-            def triplet(x):
+            def four_tuple(x):
+                return (x, x, x, x)
+            hits = 0
+            for i in range(n):
+                t = four_tuple(1)
+                w, x, y, z = t
+                hits += w + x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 4)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+
+    def test_unique_three_tuple_unpack(self):
+        def f(n):
+            def three_tuple(x):
                 return (x, x, x)
             hits = 0
             for i in range(n):
-                t = triplet(1)
+                x, y, z = three_tuple(1)
+                hits += x + y + z
+            return hits
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BUILD_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_TUPLE", uops)
+
+    def test_non_unique_three_tuple_unpack(self):
+        def f(n):
+            def three_tuple(x):
+                return (x, x, x)
+            hits = 0
+            for i in range(n):
+                t = three_tuple(1)
                 x, y, z = t
                 hits += x + y + z
             return hits
@@ -1989,7 +2028,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_BUILD_TUPLE", uops)
         self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
-        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_TUPLE", uops)
+        self.assertNotIn("_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE", uops)
 
     def test_unique_two_tuple_unpack(self):
         def f(n):

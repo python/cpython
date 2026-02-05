@@ -1320,7 +1320,10 @@ dummy_func(void) {
     }
 
     op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
-        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
+        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 3) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, oparg, 0);
+        }
+        else if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
             ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
         }
         for (int i = 0; i < oparg; i++) {
