@@ -118,66 +118,78 @@ class BinASCIITest(unittest.TestCase):
         # empty strings. TBD: shouldn't it raise an exception instead ?
         self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), b'')
 
-    def test_base64_strict_mode(self):
-        # Test base64 with strict mode on
-        def _assertRegexTemplate(assert_regex: str, data: bytes, non_strict_mode_expected_result: bytes):
+    def test_base64_bad_padding(self):
+        # Test malformed padding
+        def _assertRegexTemplate(assert_regex, data,
+                                 non_strict_mode_expected_result):
+            data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, assert_regex):
-                binascii.a2b_base64(self.type2test(data), strict_mode=True)
-            self.assertEqual(binascii.a2b_base64(self.type2test(data), strict_mode=False),
+                binascii.a2b_base64(data, strict_mode=True)
+            self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
                              non_strict_mode_expected_result)
-            self.assertEqual(binascii.a2b_base64(self.type2test(data)),
+            self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
+                                                 ignorechars=b'='),
+                             non_strict_mode_expected_result)
+            self.assertEqual(binascii.a2b_base64(data),
                              non_strict_mode_expected_result)
 
-        def assertExcessData(data, non_strict_mode_expected_result: bytes):
-            _assertRegexTemplate(r'(?i)Excess data', data, non_strict_mode_expected_result)
+        def assertLeadingPadding(*args):
+            _assertRegexTemplate(r'(?i)Leading padding', *args)
 
-        def assertNonBase64Data(data, non_strict_mode_expected_result: bytes):
-            _assertRegexTemplate(r'(?i)Only base64 data', data, non_strict_mode_expected_result)
+        def assertDiscontinuousPadding(*args):
+            _assertRegexTemplate(r'(?i)Discontinuous padding', *args)
 
-        def assertLeadingPadding(data, non_strict_mode_expected_result: bytes):
-            _assertRegexTemplate(r'(?i)Leading padding', data, non_strict_mode_expected_result)
+        def assertExcessPadding(*args):
+            _assertRegexTemplate(r'(?i)Excess padding', *args)
 
-        def assertDiscontinuousPadding(data, non_strict_mode_expected_result: bytes):
-            _assertRegexTemplate(r'(?i)Discontinuous padding', data, non_strict_mode_expected_result)
+        def assertInvalidLength(*args):
+            _assertRegexTemplate(r'(?i)Invalid.+number of data characters', *args)
 
-        def assertExcessPadding(data, non_strict_mode_expected_result: bytes):
-            _assertRegexTemplate(r'(?i)Excess padding', data, non_strict_mode_expected_result)
-
-        # Test excess data exceptions
-        assertExcessData(b'ab==a', b'i')
         assertExcessPadding(b'ab===', b'i')
         assertExcessPadding(b'ab====', b'i')
-        assertNonBase64Data(b'ab==:', b'i')
-        assertExcessData(b'abc=a', b'i\xb7')
-        assertNonBase64Data(b'abc=:', b'i\xb7')
-        assertNonBase64Data(b'ab==\n', b'i')
         assertExcessPadding(b'abc==', b'i\xb7')
         assertExcessPadding(b'abc===', b'i\xb7')
         assertExcessPadding(b'abc====', b'i\xb7')
         assertExcessPadding(b'abc=====', b'i\xb7')
 
-        # Test non-base64 data exceptions
-        assertNonBase64Data(b'\nab==', b'i')
-        assertNonBase64Data(b'ab:(){:|:&};:==', b'i')
-        assertNonBase64Data(b'a\nb==', b'i')
-        assertNonBase64Data(b'a\x00b==', b'i')
-
-        # Test malformed padding
         assertLeadingPadding(b'=', b'')
         assertLeadingPadding(b'==', b'')
         assertLeadingPadding(b'===', b'')
         assertLeadingPadding(b'====', b'')
         assertLeadingPadding(b'=====', b'')
+        assertLeadingPadding(b'=abcd', b'i\xb7\x1d')
+        assertLeadingPadding(b'==abcd', b'i\xb7\x1d')
+        assertLeadingPadding(b'===abcd', b'i\xb7\x1d')
+        assertLeadingPadding(b'====abcd', b'i\xb7\x1d')
+        assertLeadingPadding(b'=====abcd', b'i\xb7\x1d')
+
+        assertInvalidLength(b'a=b==', b'i')
+        assertInvalidLength(b'a=bc=', b'i\xb7')
+        assertInvalidLength(b'a=bc==', b'i\xb7')
+        assertInvalidLength(b'a=bcd', b'i\xb7\x1d')
+        assertInvalidLength(b'a=bcd=', b'i\xb7\x1d')
+
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
-        assertDiscontinuousPadding(b'ab=ab==', b'i\xb6\x9b')
-        assertNonBase64Data(b'ab=:=', b'i')
+        assertDiscontinuousPadding(b'ab=cd', b'i\xb7\x1d')
+        assertDiscontinuousPadding(b'ab=cd==', b'i\xb7\x1d')
+
         assertExcessPadding(b'abcd=', b'i\xb7\x1d')
         assertExcessPadding(b'abcd==', b'i\xb7\x1d')
         assertExcessPadding(b'abcd===', b'i\xb7\x1d')
         assertExcessPadding(b'abcd====', b'i\xb7\x1d')
         assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd==', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd===', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd====', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd=efgh', b'i\xb7\x1dy\xf8!')
+        assertExcessPadding(b'abcd==efgh', b'i\xb7\x1dy\xf8!')
+        assertExcessPadding(b'abcd===efgh', b'i\xb7\x1dy\xf8!')
+        assertExcessPadding(b'abcd====efgh', b'i\xb7\x1dy\xf8!')
+        assertExcessPadding(b'abcd=====efgh', b'i\xb7\x1dy\xf8!')
 
     def test_base64_invalidchars(self):
+        # Test non-base64 data exceptions
         def assertNonBase64Data(data, expected, ignorechars):
             data = self.type2test(data)
             assert_regex = r'(?i)Only base64 data'
@@ -195,10 +207,11 @@ class BinASCIITest(unittest.TestCase):
         assertNonBase64Data(b'ab:(){:|:&};:==', b'i', ignorechars=b':;(){}|&')
         assertNonBase64Data(b'a\nb==', b'i', ignorechars=b'\n')
         assertNonBase64Data(b'a\x00b==', b'i', ignorechars=b'\x00')
+        assertNonBase64Data(b'ab:==', b'i', ignorechars=b':')
+        assertNonBase64Data(b'ab=:=', b'i', ignorechars=b':')
         assertNonBase64Data(b'ab==:', b'i', ignorechars=b':')
         assertNonBase64Data(b'abc=:', b'i\xb7', ignorechars=b':')
         assertNonBase64Data(b'ab==\n', b'i', ignorechars=b'\n')
-        assertNonBase64Data(b'ab=:=', b'i', ignorechars=b':')
         assertNonBase64Data(b'a\nb==', b'i', ignorechars=bytearray(b'\n'))
         assertNonBase64Data(b'a\nb==', b'i', ignorechars=memoryview(b'\n'))
 
@@ -221,11 +234,37 @@ class BinASCIITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             binascii.a2b_base64(data, ignorechars=None)
 
+    def test_base64_excess_data(self):
+        # Test excess data exceptions
+        def assertExcessData(data, non_strict_expected,
+                             ignore_padchar_expected=None):
+            assert_regex = r'(?i)Excess data'
+            data = self.type2test(data)
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base64(data, strict_mode=True)
+            self.assertEqual(binascii.a2b_base64(data, strict_mode=False),
+                             non_strict_expected)
+            if ignore_padchar_expected is not None:
+                self.assertEqual(binascii.a2b_base64(data, strict_mode=True,
+                                                     ignorechars=b'='),
+                                 ignore_padchar_expected)
+            self.assertEqual(binascii.a2b_base64(data), non_strict_expected)
+
+        assertExcessData(b'ab==c', b'i')
+        assertExcessData(b'ab==cd', b'i', b'i\xb7\x1d')
+        assertExcessData(b'abc=d', b'i\xb7', b'i\xb7\x1d')
+
     def test_base64errors(self):
         # Test base64 with invalid padding
-        def assertIncorrectPadding(data):
+        def assertIncorrectPadding(data, strict_mode=True):
+            data = self.type2test(data)
             with self.assertRaisesRegex(binascii.Error, r'(?i)Incorrect padding'):
-                binascii.a2b_base64(self.type2test(data))
+                binascii.a2b_base64(data)
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Incorrect padding'):
+                binascii.a2b_base64(data, strict_mode=False)
+            if strict_mode:
+                with self.assertRaisesRegex(binascii.Error, r'(?i)Incorrect padding'):
+                    binascii.a2b_base64(data, strict_mode=True)
 
         assertIncorrectPadding(b'ab')
         assertIncorrectPadding(b'ab=')
@@ -233,16 +272,22 @@ class BinASCIITest(unittest.TestCase):
         assertIncorrectPadding(b'abcdef')
         assertIncorrectPadding(b'abcdef=')
         assertIncorrectPadding(b'abcdefg')
-        assertIncorrectPadding(b'a=b=')
-        assertIncorrectPadding(b'a\nb=')
+        assertIncorrectPadding(b'a=b=', strict_mode=False)
+        assertIncorrectPadding(b'a\nb=', strict_mode=False)
 
         # Test base64 with invalid number of valid characters (1 mod 4)
-        def assertInvalidLength(data):
+        def assertInvalidLength(data, strict_mode=True):
             n_data_chars = len(re.sub(br'[^A-Za-z0-9/+]', br'', data))
+            data = self.type2test(data)
             expected_errmsg_re = \
                 r'(?i)Invalid.+number of data characters.+' + str(n_data_chars)
             with self.assertRaisesRegex(binascii.Error, expected_errmsg_re):
-                binascii.a2b_base64(self.type2test(data))
+                binascii.a2b_base64(data)
+            with self.assertRaisesRegex(binascii.Error, expected_errmsg_re):
+                binascii.a2b_base64(data, strict_mode=False)
+            if strict_mode:
+                with self.assertRaisesRegex(binascii.Error, expected_errmsg_re):
+                    binascii.a2b_base64(data, strict_mode=True)
 
         assertInvalidLength(b'a')
         assertInvalidLength(b'a=')
@@ -250,7 +295,8 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'a===')
         assertInvalidLength(b'a' * 5)
         assertInvalidLength(b'a' * (4 * 87 + 1))
-        assertInvalidLength(b'A\tB\nC ??DE')  # only 5 valid characters
+        assertInvalidLength(b'A\tB\nC ??DE', # only 5 valid characters
+                            strict_mode=False)
 
     def test_uu(self):
         MAX_UU = 45
