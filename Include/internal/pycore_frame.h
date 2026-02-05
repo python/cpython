@@ -44,18 +44,16 @@ extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
 /* other API */
 
 typedef enum _framestate {
-    FRAME_CREATED = -4,
-    FRAME_SUSPENDED = -3,
-    FRAME_SUSPENDED_YIELD_FROM = -2,
-    FRAME_SUSPENDED_YIELD_FROM_LOCKED = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
+    FRAME_CREATED = 0,
+    FRAME_SUSPENDED = 1,
+    FRAME_SUSPENDED_YIELD_FROM = 2,
+    FRAME_SUSPENDED_YIELD_FROM_LOCKED = 3,
+    FRAME_EXECUTING = 4,
+    FRAME_CLEARED = 5
 } PyFrameState;
 
 #define FRAME_STATE_SUSPENDED(S) ((S) >= FRAME_SUSPENDED && (S) <= FRAME_SUSPENDED_YIELD_FROM_LOCKED)
-#define FRAME_STATE_FINISHED(S) ((S) >= FRAME_COMPLETED)
-
+#define FRAME_STATE_FINISHED(S) ((S) == FRAME_CLEARED)
 #ifdef __cplusplus
 }
 #endif
