@@ -1,0 +1,1 @@
+Improve performance of dict object by replacing PyTuple_Pack with PyTuple_FromArray for small tuples.
