@@ -1643,8 +1643,9 @@ islice_next(PyObject *op)
     oldnext = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->next);
     /* The (size_t) cast below avoids the danger of undefined
        behaviour from signed integer overflow. */
-    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->next, oldnext + (size_t)lz->step);
-    if (lz->next < oldnext || (stop != -1 && lz->next > stop)) {
+    Py_ssize_t new_next = oldnext + (size_t)lz->step
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->next, new_next);
+    if (new_next < oldnext || (stop != -1 && new_next > stop)) {
         FT_ATOMIC_STORE_SSIZE_RELAXED(lz->next, stop);
     }
     return item;
