@@ -1111,7 +1111,10 @@ class TracebackException:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
@@ -1129,7 +1132,10 @@ class TracebackException:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
             if issubclass(exc_type, NameError):
                 wrong_name = getattr(exc_value, "name", None)
                 if wrong_name is not None and wrong_name in sys.stdlib_module_names:
@@ -1464,10 +1470,11 @@ class TracebackException:
                 # Convert 1-based column offset to 0-based index into stripped text
                 colno = offset - 1 - spaces
                 end_colno = end_offset - 1 - spaces
-                caretspace = ' '
                 if colno >= 0:
-                    # non-space whitespace (likes tabs) must be kept for alignment
-                    caretspace = ((c if c.isspace() else ' ') for c in ltext[:colno])
+                    # Calculate display width to account for wide characters
+                    dp_colno = _display_width(ltext, colno)
+                    highlighted = ltext[colno:end_colno]
+                    caret_count = _display_width(highlighted) if highlighted else (end_colno - colno)
                     start_color = end_color = ""
                     if colorize:
                         # colorize from colno to end_colno
@@ -1480,9 +1487,9 @@ class TracebackException:
                         end_color = theme.reset
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
-                        "".join(caretspace),
+                        ' ' * dp_colno,
                         start_color,
-                        ('^' * (end_colno - colno)),
+                        '^' * caret_count,
                         end_color,
                     )
                 else:
@@ -1653,6 +1660,13 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
+    not_normalized = False
+    if not wrong_name.isascii():
+        from unicodedata import normalize
+        normalized_name = normalize('NFKC', wrong_name)
+        if normalized_name != wrong_name:
+            not_normalized = True
+            wrong_name = normalized_name
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
@@ -1698,6 +1712,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_builtins)
         )
         d = [x for x in d if isinstance(x, str)]
+        if not_normalized and wrong_name in d:
+            return wrong_name
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
@@ -1710,6 +1726,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if has_wrong_name:
                 return f"self.{wrong_name}"
 
+    if not_normalized and wrong_name in d:
+        return wrong_name
     try:
         import _suggestions
     except ImportError:

@@ -364,6 +364,9 @@ ABC hierarchy::
     .. versionchanged:: 3.7
        Introduced the optional :meth:`get_resource_reader` method.
 
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
+
     .. method:: create_module(spec)
 
        A method that returns the module object to use when
@@ -387,47 +390,6 @@ ABC hierarchy::
 
        .. versionchanged:: 3.6
           :meth:`create_module` must also be defined.
-
-    .. method:: load_module(fullname)
-
-        A legacy method for loading a module.  If the module cannot be
-        loaded, :exc:`ImportError` is raised, otherwise the loaded module is
-        returned.
-
-        If the requested module already exists in :data:`sys.modules`, that
-        module should be used and reloaded.
-        Otherwise the loader should create a new module and insert it into
-        :data:`sys.modules` before any loading begins, to prevent recursion
-        from the import.  If the loader inserted a module and the load fails, it
-        must be removed by the loader from :data:`sys.modules`; modules already
-        in :data:`sys.modules` before the loader began execution should be left
-        alone.
-
-        The loader should set several attributes on the module
-        (note that some of these attributes can change when a module is
-        reloaded):
-
-        - :attr:`module.__name__`
-        - :attr:`module.__file__`
-        - :attr:`module.__cached__` *(deprecated)*
-        - :attr:`module.__path__`
-        - :attr:`module.__package__` *(deprecated)*
-        - :attr:`module.__loader__` *(deprecated)*
-
-        When :meth:`exec_module` is available then backwards-compatible
-        functionality is provided.
-
-        .. versionchanged:: 3.4
-           Raise :exc:`ImportError` when called instead of
-           :exc:`NotImplementedError`.  Functionality provided when
-           :meth:`exec_module` is available.
-
-        .. deprecated-removed:: 3.4 3.15
-           The recommended API for loading a module is :meth:`exec_module`
-           (and :meth:`create_module`).  Loaders should implement it instead of
-           :meth:`load_module`.  The import machinery takes care of all the
-           other responsibilities of :meth:`load_module` when
-           :meth:`exec_module` is implemented.
 
 
 .. class:: ResourceLoader
@@ -534,13 +496,6 @@ ABC hierarchy::
 
        .. versionadded:: 3.4
 
-    .. method:: load_module(fullname)
-
-       Implementation of :meth:`Loader.load_module`.
-
-       .. deprecated-removed:: 3.4 3.15
-          use :meth:`exec_module` instead.
-
 
 .. class:: ExecutionLoader
 
@@ -574,6 +529,9 @@ ABC hierarchy::
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
+
    .. attribute:: name
 
       The name of the module the loader can handle.
@@ -581,13 +539,6 @@ ABC hierarchy::
    .. attribute:: path
 
       Path to the file of the module.
-
-   .. method:: load_module(fullname)
-
-      Calls super's ``load_module()``.
-
-      .. deprecated-removed:: 3.4 3.15
-         Use :meth:`Loader.exec_module` instead.
 
    .. method:: get_filename(fullname)
       :abstractmethod:
@@ -619,6 +570,9 @@ ABC hierarchy::
     loading where only bytecode is provided.  Bytecode files are an
     optimization to speed up loading by removing the parsing step of Python's
     compiler, and so no bytecode-specific API is exposed.
+
+    .. versionchanged:: 3.15
+       Removed the ``load_module()`` method.
 
     .. method:: path_stats(path)
 
@@ -673,13 +627,6 @@ ABC hierarchy::
 
        .. versionadded:: 3.4
 
-    .. method:: load_module(fullname)
-
-       Concrete implementation of :meth:`Loader.load_module`.
-
-       .. deprecated-removed:: 3.4 3.15
-          Use :meth:`exec_module` instead.
-
     .. method:: get_source(fullname)
 
         Concrete implementation of :meth:`InspectLoader.get_source`.
@@ -691,172 +638,6 @@ ABC hierarchy::
         :meth:`ExecutionLoader.get_filename`) is a file named
         ``__init__`` when the file extension is removed **and** the module name
         itself does not end in ``__init__``.
-
-
-.. class:: ResourceReader
-
-    *Superseded by TraversableResources*
-
-    An :term:`abstract base class` to provide the ability to read
-    *resources*.
-
-    From the perspective of this ABC, a *resource* is a binary
-    artifact that is shipped within a package. Typically this is
-    something like a data file that lives next to the ``__init__.py``
-    file of the package. The purpose of this class is to help abstract
-    out the accessing of such data files so that it does not matter if
-    the package and its data file(s) are stored e.g. in a zip file
-    versus on the file system.
-
-    For any of methods of this class, a *resource* argument is
-    expected to be a :term:`path-like object` which represents
-    conceptually just a file name. This means that no subdirectory
-    paths should be included in the *resource* argument. This is
-    because the location of the package the reader is for, acts as the
-    "directory". Hence the metaphor for directories and file
-    names is packages and resources, respectively. This is also why
-    instances of this class are expected to directly correlate to
-    a specific package (instead of potentially representing multiple
-    packages or a module).
-
-    Loaders that wish to support resource reading are expected to
-    provide a method called ``get_resource_reader(fullname)`` which
-    returns an object implementing this ABC's interface. If the module
-    specified by fullname is not a package, this method should return
-    :const:`None`. An object compatible with this ABC should only be
-    returned when the specified module is a package.
-
-    .. versionadded:: 3.7
-
-    .. deprecated-removed:: 3.12 3.14
-       Use :class:`importlib.resources.abc.TraversableResources` instead.
-
-    .. method:: open_resource(resource)
-       :abstractmethod:
-
-        Returns an opened, :term:`file-like object` for binary reading
-        of the *resource*.
-
-        If the resource cannot be found, :exc:`FileNotFoundError` is
-        raised.
-
-    .. method:: resource_path(resource)
-       :abstractmethod:
-
-        Returns the file system path to the *resource*.
-
-        If the resource does not concretely exist on the file system,
-        raise :exc:`FileNotFoundError`.
-
-    .. method:: is_resource(name)
-       :abstractmethod:
-
-        Returns ``True`` if the named *name* is considered a resource.
-        :exc:`FileNotFoundError` is raised if *name* does not exist.
-
-    .. method:: contents()
-       :abstractmethod:
-
-        Returns an :term:`iterable` of strings over the contents of
-        the package. Do note that it is not required that all names
-        returned by the iterator be actual resources, e.g. it is
-        acceptable to return names for which :meth:`is_resource` would
-        be false.
-
-        Allowing non-resource names to be returned is to allow for
-        situations where how a package and its resources are stored
-        are known a priori and the non-resource names would be useful.
-        For instance, returning subdirectory names is allowed so that
-        when it is known that the package and resources are stored on
-        the file system then those subdirectory names can be used
-        directly.
-
-        The abstract method returns an iterable of no items.
-
-
-.. class:: Traversable
-
-    An object with a subset of :class:`pathlib.Path` methods suitable for
-    traversing directories and opening files.
-
-    For a representation of the object on the file-system, use
-    :meth:`importlib.resources.as_file`.
-
-    .. versionadded:: 3.9
-
-    .. deprecated-removed:: 3.12 3.14
-       Use :class:`importlib.resources.abc.Traversable` instead.
-
-    .. attribute:: name
-
-       Abstract. The base name of this object without any parent references.
-
-    .. method:: iterdir()
-       :abstractmethod:
-
-       Yield ``Traversable`` objects in ``self``.
-
-    .. method:: is_dir()
-       :abstractmethod:
-
-       Return ``True`` if ``self`` is a directory.
-
-    .. method:: is_file()
-       :abstractmethod:
-
-       Return ``True`` if ``self`` is a file.
-
-    .. method:: joinpath(child)
-       :abstractmethod:
-
-       Return Traversable child in ``self``.
-
-    .. method:: __truediv__(child)
-       :abstractmethod:
-
-       Return ``Traversable`` child in ``self``.
-
-    .. method:: open(mode='r', *args, **kwargs)
-       :abstractmethod:
-
-       *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
-       suitable for reading (same as :attr:`pathlib.Path.open`).
-
-       When opening as text, accepts encoding parameters such as those
-       accepted by :class:`io.TextIOWrapper`.
-
-    .. method:: read_bytes()
-
-       Read contents of ``self`` as bytes.
-
-    .. method:: read_text(encoding=None)
-
-       Read contents of ``self`` as text.
-
-
-.. class:: TraversableResources
-
-    An abstract base class for resource readers capable of serving
-    the :meth:`importlib.resources.files` interface. Subclasses
-    :class:`importlib.resources.abc.ResourceReader` and provides
-    concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
-    abstract methods. Therefore, any loader supplying
-    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
-
-    Loaders that wish to support resource reading are expected to
-    implement this interface.
-
-    .. versionadded:: 3.9
-
-    .. deprecated-removed:: 3.12 3.14
-       Use :class:`importlib.resources.abc.TraversableResources` instead.
-
-    .. method:: files()
-       :abstractmethod:
-
-       Returns a :class:`importlib.resources.abc.Traversable` object for the loaded
-       package.
-
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
@@ -1103,6 +884,9 @@ find and load modules.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
+
    .. attribute:: name
 
       The name of the module that this loader will handle.
@@ -1123,15 +907,6 @@ find and load modules.
 
       Concrete implementation of :meth:`importlib.abc.SourceLoader.set_data`.
 
-   .. method:: load_module(name=None)
-
-      Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
-      specifying the name of the module to load is optional.
-
-      .. deprecated-removed:: 3.6 3.15
-
-         Use :meth:`importlib.abc.Loader.exec_module` instead.
-
 
 .. class:: SourcelessFileLoader(fullname, path)
 
@@ -1144,6 +919,9 @@ find and load modules.
    format.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
 
    .. attribute:: name
 
@@ -1165,15 +943,6 @@ find and load modules.
 
       Returns ``None`` as bytecode files have no source when this loader is
       used.
-
-   .. method:: load_module(name=None)
-
-   Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
-   specifying the name of the module to load is optional.
-
-   .. deprecated-removed:: 3.6 3.15
-
-      Use :meth:`importlib.abc.Loader.exec_module` instead.
 
 
 .. class:: ExtensionFileLoader(fullname, path)
@@ -1306,8 +1075,7 @@ find and load modules.
 
    .. attribute:: cached
 
-      The filename of a compiled version of the module's code
-      (see :attr:`module.__cached__`).
+      The filename of a compiled version of the module's code.
       The :term:`finder` should always set this attribute but it may be ``None``
       for modules that do not need compiled code stored.
 
@@ -1409,7 +1177,7 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
-.. function:: cache_from_source(path, debug_override=None, *, optimization=None)
+.. function:: cache_from_source(path, *, optimization=None)
 
    Return the :pep:`3147`/:pep:`488` path to the byte-compiled file associated
    with the source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
@@ -1428,12 +1196,6 @@ an :term:`importer`.
    ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.
 
-   The *debug_override* parameter is deprecated and can be used to override
-   the system's value for ``__debug__``. A ``True`` value is the equivalent of
-   setting *optimization* to the empty string. A ``False`` value is the same as
-   setting *optimization* to ``1``. If both *debug_override* an *optimization*
-   are not ``None`` then :exc:`TypeError` is raised.
-
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.5
@@ -1442,6 +1204,9 @@ an :term:`importer`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      The *debug_override* parameter was removed.
 
 
 .. function:: source_from_cache(path)

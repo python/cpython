@@ -51,7 +51,7 @@ The :rfc:`4648` encodings are suitable for encoding binary data so that it can b
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.
 
-.. function:: b64encode(s, altchars=None)
+.. function:: b64encode(s, altchars=None, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base64 and return the encoded
    :class:`bytes`.
@@ -61,11 +61,19 @@ POST request.
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
+
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
+   .. versionchanged:: 3.15
+      Added the *wrapcol* parameter.
+
 
 .. function:: b64decode(s, altchars=None, validate=False)
+              b64decode(s, altchars=None, validate=True, *, ignorechars)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -77,15 +85,33 @@ POST request.
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *validate* is ``False`` (the default), characters that are neither
-   in the normal base-64 alphabet nor the alternative alphabet are
-   discarded prior to the padding check.  If *validate* is ``True``,
-   these non-alphabet characters in the input result in a
-   :exc:`binascii.Error`.
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *validate* is true.
+   If *ignorechars* contains the pad character ``'='``,  the pad characters
+   presented before the end of the encoded data and the excess pad characters
+   will be ignored.
+   The default value of *validate* is ``True`` if *ignorechars* is specified,
+   ``False`` otherwise.
+
+   If *validate* is false, characters that are neither
+   in the normal base-64 alphabet nor (if *ignorechars* is not specified)
+   the alternative alphabet are
+   discarded prior to the padding check, but the ``+`` and ``/`` characters
+   keep their meaning if they are not in *altchars* (they will be discarded
+   in future Python versions).
+
+   If *validate* is true, these non-alphabet characters in the input
+   result in a :exc:`binascii.Error`.
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
-   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
+
+   .. deprecated:: next
+      Accepting the ``+`` and ``/`` characters with an alternative alphabet
+      is now deprecated.
+
 
 .. function:: standard_b64encode(s)
 
@@ -115,6 +141,9 @@ POST request.
    alphabet, which substitutes ``-`` instead of ``+`` and ``_`` instead of
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
+
+   .. deprecated:: next
+      Accepting the ``+`` and ``/`` characters is now deprecated.
 
 
 .. function:: b32encode(s)
@@ -214,9 +243,9 @@ Refer to the documentation of the individual functions for more information.
    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
    feature is not supported by the "standard" Ascii85 encoding.
 
-   *wrapcol* controls whether the output should have newline (``b'\n'``)
-   characters added to it. If this is non-zero, each output line will be
-   at most this many characters long, excluding the trailing newline.
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
 
    *pad* controls whether the input is padded to a multiple of 4
    before encoding. Note that the ``btoa`` implementation always pads.
@@ -239,8 +268,7 @@ Refer to the documentation of the individual functions for more information.
    *adobe* controls whether the input sequence is in Adobe Ascii85 format
    (i.e. is framed with <~ and ~>).
 
-   *ignorechars* should be a :term:`bytes-like object` or ASCII string
-   containing characters to ignore
+   *ignorechars* should be a byte string containing characters to ignore
    from the input. This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
@@ -267,13 +295,19 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.4
 
 
-.. function:: z85encode(s)
+.. function:: z85encode(s, pad=False)
 
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
    and return the encoded :class:`bytes`.  See `Z85  specification
    <https://rfc.zeromq.org/spec/32/>`_ for more information.
 
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.15
+      The *pad* parameter was added.
 
 
 .. function:: z85decode(s)

@@ -168,6 +168,13 @@ class Logcat:
         # message.
         message = message.replace(b"\x00", b"\xc0\x80")
 
+        # On API level 30 and higher, Logcat will strip any number of leading
+        # newlines. This is visible in all `logcat` modes, even --binary. Work
+        # around this by adding a leading space, which shouldn't make any
+        # difference to the log's usability.
+        if message.startswith(b"\n"):
+            message = b" " + message
+
         with self._lock:
             now = time()
             self._bucket_level += (

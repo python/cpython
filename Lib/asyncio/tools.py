@@ -27,10 +27,10 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: str|FrameInfo) -> str:
     if not isinstance(elem, str):
-        if elem.lineno == 0 and elem.filename == "":
+        if elem.location.lineno == 0 and elem.filename == "":
             return f"{elem.funcname}"
         else:
-            return f"{elem.funcname} {elem.filename}:{elem.lineno}"
+            return f"{elem.funcname} {elem.filename}:{elem.location.lineno}"
     return elem
 
 

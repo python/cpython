@@ -107,6 +107,46 @@ header files properly declare the entry points to be ``extern "C"``. As a result
 there is no need to do anything special to use the API from C++.
 
 
+.. _capi-system-includes:
+
+System includes
+---------------
+
+   :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   The implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.13 or newer:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.11 or newer:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
+
+.. note::
+
+   Since Python may define some pre-processor definitions which affect the standard
+   headers on some systems, you *must* include :file:`Python.h` before any standard
+   headers are included.
+
+
 Useful macros
 =============
 
@@ -126,6 +166,35 @@ complete listing.
    undefined.
 
    .. versionadded:: 3.3
+
+.. c:macro:: Py_ALIGNED(num)
+
+   Specify alignment to *num* bytes on compilers that support it.
+
+   Consider using the C11 standard ``_Alignas`` specifier over this macro.
+
+.. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
+
+   Similar to ``integer >> positions``, but forces sign extension, as the C
+   standard does not define whether a right-shift of a signed integer will
+   perform sign extension or a zero-fill.
+
+   *integer* should be any signed integer type.
+   *positions* is the number of positions to shift to the right.
+
+   Both *integer* and *positions* can be evaluated more than once;
+   consequently, avoid directly passing a function call or some other
+   operation with side-effects to this macro. Instead, store the result as a
+   variable and then pass it.
+
+   *type* is unused and only kept for backwards compatibility. Historically,
+   *type* was used to cast *integer*.
+
+   .. versionchanged:: 3.1
+
+      This macro is now valid for all signed integer types, not just those for
+      which ``unsigned type`` is legal. As a result, *type* is no longer
+      used.
 
 .. c:macro:: Py_ALWAYS_INLINE
 
@@ -149,6 +218,15 @@ complete listing.
 
    .. versionadded:: 3.11
 
+.. c:macro:: Py_CAN_START_THREADS
+
+   If this macro is defined, then the current system is able to start threads.
+
+   Currently, all systems supported by CPython (per :pep:`11`), with the
+   exception of some WebAssembly platforms, support starting threads.
+
+   .. versionadded:: 3.13
+
 .. c:macro:: Py_CHARMASK(c)
 
    Argument must be a character or an integer in the range [-128, 127] or [0,
@@ -166,10 +244,34 @@ complete listing.
    .. versionchanged:: 3.8
       MSVC support was added.
 
+.. c:macro:: Py_FORCE_EXPANSION(X)
+
+   This is equivalent to ``X``, which is useful for token-pasting in
+   macros, as macro expansions in *X* are forcefully evaluated by the
+   preprocessor.
+
+.. c:macro:: Py_GCC_ATTRIBUTE(name)
+
+   Use a GCC attribute *name*, hiding it from compilers that don't support GCC
+   attributes (such as MSVC).
+
+   This expands to ``__attribute__((name))`` on a GCC compiler, and expands
+   to nothing on compilers that don't support GCC attributes.
+
 .. c:macro:: Py_GETENV(s)
 
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (see :c:member:`PyConfig.use_environment`).
+
+.. c:macro:: Py_LL(number)
+
+   Use *number* as a ``long long`` integer literal.
+
+   This usally expands to *number* followed by ``LL``, but will expand to some
+   compiler-specific suffixes (such as ``I64``) on older compilers.
+
+   In modern versions of Python, this macro is not very useful, as C99 and
+   later require the ``LL`` suffix to be valid for an integer.
 
 .. c:macro:: Py_LOCAL(type)
 
@@ -181,6 +283,14 @@ complete listing.
 
    Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
    be inlined.
+
+.. c:macro:: Py_LOCAL_SYMBOL
+
+   Macro used to declare a symbol as local to the shared library (hidden).
+   On supported platforms, it ensures the symbol is not exported.
+
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("hidden")))``.
 
 .. c:macro:: Py_MAX(x, y)
 
@@ -220,12 +330,36 @@ complete listing.
 
    .. versionadded:: 3.11
 
+.. c:macro:: Py_SAFE_DOWNCAST(value, larger, smaller)
+
+   Cast *value* to type *smaller* from type *larger*, validating that no
+   information was lost.
+
+   On release builds of Python, this is roughly equivalent to
+   ``(smaller) value`` (in C++, ``static_cast<smaller>(value)`` will be
+   used instead).
+
+   On debug builds (implying that :c:macro:`Py_DEBUG` is defined), this asserts
+   that no information was lost with the cast from *larger* to *smaller*.
+
+   *value*, *larger*, and *smaller* may all be evaluated more than once in the
+   expression; consequently, do not pass an expression with side-effects directly to
+   this macro.
+
 .. c:macro:: Py_STRINGIFY(x)
 
    Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
    ``"123"``.
 
    .. versionadded:: 3.4
+
+.. c:macro:: Py_ULL(number)
+
+   Similar to :c:macro:`Py_LL`, but *number* will be an ``unsigned long long``
+   literal instead. This is done by appending ``U`` to the result of ``Py_LL``.
+
+   In modern versions of Python, this macro is not very useful, as C99 and
+   later require the ``ULL``/``LLU`` suffixes to be valid for an integer.
 
 .. c:macro:: Py_UNREACHABLE()
 
@@ -334,6 +468,48 @@ complete listing.
    This is roughly equivalent to::
 
       sizeof(array) / sizeof((array)[0])
+
+
+.. c:macro:: Py_EXPORTED_SYMBOL
+
+   Macro used to declare a symbol (function or data) as exported.
+   On Windows, this expands to ``__declspec(dllexport)``.
+   On compatible versions of GCC/Clang, it
+   expands to ``__attribute__((visibility("default")))``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: Py_IMPORTED_SYMBOL
+
+   Macro used to declare a symbol as imported.
+   On Windows, this expands to ``__declspec(dllimport)``.
+   This macro is for defining the C API itself; extension modules should not use it.
+
+
+.. c:macro:: PyAPI_FUNC(type)
+
+   Macro used by CPython to declare a function as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+
+.. c:macro:: PyAPI_DATA(type)
+
+   Macro used by CPython to declare a public global variable as part of the C API.
+   Its expansion depends on the platform and build configuration.
+   This macro is intended for defining CPython's C API itself;
+   extension modules should not use it for their own symbols.
+
+.. c:macro:: Py_VA_COPY
+
+   This is a :term:`soft deprecated` alias to the C99-standard ``va_copy``
+   function.
+
+   Historically, this would use a compiler-specific method to copy a ``va_list``.
+
+   .. versionchanged:: 3.6
+      This is now an alias to ``va_copy``.
 
 
 .. _api-objects:
