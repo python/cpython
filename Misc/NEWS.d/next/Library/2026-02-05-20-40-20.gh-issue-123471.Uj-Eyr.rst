@@ -1,1 +1,0 @@
-Make concurrent iterations over :class:`itertools.islice` safe under free-threading.
