@@ -1,0 +1,93 @@
+# Known removed HTML IDs:
+
+c-api/complex.html: complex-numbers-as-python-objects
+
+c-api/extension-modules.html: initialization-function
+
+c-api/import.html: c.PyImport_ImportModuleNoBlock
+
+c-api/init.html: c.Py_GetExecPrefix
+c-api/init.html: c.Py_GetPath
+c-api/init.html: c.Py_GetPrefix
+c-api/init.html: c.Py_GetProgramFullPath
+c-api/init.html: c.Py_GetProgramName
+c-api/init.html: c.Py_GetPythonHome
+
+c-api/module.html: module-definitions
+c-api/module.html: module-slots
+
+c-api/stable.html: c-api-stability
+
+c-api/sys.html: c.PySys_ResetWarnOptions
+
+c-api/weakref.html: c.PyWeakref_GET_OBJECT
+c-api/weakref.html: c.PyWeakref_GetObject
+
+extending/extending.html: a-simple-example
+extending/extending.html: back-to-the-example
+extending/extending.html: backtoexample
+extending/extending.html: compilation-and-linkage
+extending/extending.html: extending-python-with-c-or-c
+extending/extending.html: extending-simpleexample
+extending/extending.html: intermezzo-errors-and-exceptions
+extending/extending.html: methodtable
+extending/extending.html: the-module-s-method-table-and-initialization-function
+
+extending/index.html: creating-extensions-without-third-party-tools
+
+howto/perf_profiling.html: python-support-for-the-linux-perf-profiler
+
+library/dis.html: opcode-LOAD_CONST_IMMORTAL
+
+library/ftplib.html: ftplib.FTP_TLS.ssl_version
+
+library/http.server.html: cmdoption-http.server-cgi
+library/http.server.html: http.server.CGIHTTPRequestHandler
+library/http.server.html: http.server.CGIHTTPRequestHandler.cgi_directories
+library/http.server.html: http.server.CGIHTTPRequestHandler.do_POST
+
+library/importlib.html: importlib.abc.FileLoader.load_module
+library/importlib.html: importlib.abc.InspectLoader.load_module
+library/importlib.html: importlib.abc.Loader.load_module
+library/importlib.html: importlib.abc.SourceLoader.load_module
+library/importlib.html: importlib.machinery.SourceFileLoader.load_module
+library/importlib.html: importlib.machinery.SourcelessFileLoader.load_module
+
+library/pathlib.html: pathlib.PurePath.is_reserved
+
+library/platform.html: java-platform
+library/platform.html: platform.java_ver
+
+library/profile.html: cmdoption-cProfile-m
+library/profile.html: cmdoption-cProfile-o
+library/profile.html: cmdoption-cProfile-s
+library/profile.html: instant-user-s-manual
+library/profile.html: introduction-to-the-profilers
+library/profile.html: module-cProfile
+library/profile.html: module-pstats
+library/profile.html: profile-and-cprofile-module-reference
+library/profile.html: profile-cli
+library/profile.html: profile-instant
+library/profile.html: profile-stats
+library/profile.html: profiler-introduction
+library/profile.html: pstats.Stats
+library/profile.html: pstats.Stats.add
+library/profile.html: pstats.Stats.dump_stats
+library/profile.html: pstats.Stats.get_stats_profile
+library/profile.html: pstats.Stats.print_callees
+library/profile.html: pstats.Stats.print_callers
+library/profile.html: pstats.Stats.print_stats
+library/profile.html: pstats.Stats.reverse_order
+library/profile.html: pstats.Stats.sort_stats
+library/profile.html: pstats.Stats.strip_dirs
+library/profile.html: the-python-profilers
+library/profile.html: the-stats-class
+
+library/typing.html: typing.no_type_check_decorator
+
+library/wave.html: wave.Wave_read.getmark
+library/wave.html: wave.Wave_read.getmarkers
+
+library/zipimport.html: zipimport.zipimporter.load_module
+
+reference/datamodel.html: module.__cached__
