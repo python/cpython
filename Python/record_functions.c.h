@@ -27,6 +27,19 @@ void _PyOpcode_RecordFunction_NOS(_PyInterpreterFrame *frame, _PyStackRef *stack
     Py_INCREF(*recorded_value);
 }
 
+void _PyOpcode_RecordFunction_NOS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+    _PyStackRef nos;
+    nos = stack_pointer[-2];
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
+    if (PyGen_Check(obj)) {
+        _PyFrame_SetStackPointer(frame, stack_pointer);
+        PyObject *func = (PyObject *)_PyFrame_GetFunction(&((PyGenObject *)obj)->gi_iframe);
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+        *recorded_value = (PyObject *)func;
+        Py_INCREF(*recorded_value);
+    }
+}
+
 void _PyOpcode_RecordFunction_4OS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
     _PyStackRef value;
     value = stack_pointer[-4];
@@ -52,27 +65,21 @@ void _PyOpcode_RecordFunction_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackR
     }
 }
 
-void _PyOpcode_RecordFunction_CALLER_CODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
-    _PyInterpreterFrame *caller_frame = frame->previous;
-    if (caller_frame->owner < FRAME_OWNED_BY_INTERPRETER) {
-        PyCodeObject *code = _PyFrame_GetCode(frame->previous);
-        *recorded_value = (PyObject *)code;
-        Py_INCREF(*recorded_value);
-    }
+void _PyOpcode_RecordFunction_CODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
+    *recorded_value = (PyObject *)NULL;
+    Py_INCREF(*recorded_value);
 }
 
 #define _RECORD_TOS_TYPE_INDEX 1
-#define _RECORD_TOS_INDEX 2
-#define _RECORD_CALLER_CODE_INDEX 3
-#define _RECORD_NOS_INDEX 4
-#define _RECORD_CALLABLE_INDEX 5
-#define _RECORD_BOUND_METHOD_INDEX 6
-#define _RECORD_4OS_INDEX 7
+#define _RECORD_NOS_INDEX 2
+#define _RECORD_NOS_GEN_FUNC_INDEX 3
+#define _RECORD_CALLABLE_INDEX 4
+#define _RECORD_BOUND_METHOD_INDEX 5
+#define _RECORD_4OS_INDEX 6
 const uint8_t _PyOpcode_RecordFunctionIndices[256] = {
         [TO_BOOL_ALWAYS_TRUE] = _RECORD_TOS_TYPE_INDEX,
-        [BINARY_OP_SUBSCR_GETITEM] = _RECORD_TOS_INDEX,
-        [RETURN_VALUE] = _RECORD_CALLER_CODE_INDEX,
-        [YIELD_VALUE] = _RECORD_CALLER_CODE_INDEX,
+        [BINARY_OP_SUBSCR_GETITEM] = _RECORD_NOS_INDEX,
+        [SEND_GEN] = _RECORD_NOS_GEN_FUNC_INDEX,
         [LOAD_ATTR_INSTANCE_VALUE] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_WITH_HINT] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_SLOT] = _RECORD_TOS_TYPE_INDEX,
@@ -80,7 +87,7 @@ const uint8_t _PyOpcode_RecordFunctionIndices[256] = {
         [LOAD_ATTR_PROPERTY] = _RECORD_TOS_TYPE_INDEX,
         [STORE_ATTR_WITH_HINT] = _RECORD_TOS_TYPE_INDEX,
         [STORE_ATTR_SLOT] = _RECORD_TOS_TYPE_INDEX,
-        [FOR_ITER_GEN] = _RECORD_NOS_INDEX,
+        [FOR_ITER_GEN] = _RECORD_NOS_GEN_FUNC_INDEX,
         [LOAD_ATTR_METHOD_WITH_VALUES] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_METHOD_NO_DICT] = _RECORD_TOS_TYPE_INDEX,
         [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = _RECORD_TOS_TYPE_INDEX,
@@ -100,15 +107,13 @@ const uint8_t _PyOpcode_RecordFunctionIndices[256] = {
         [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = _RECORD_CALLABLE_INDEX,
         [CALL_METHOD_DESCRIPTOR_NOARGS] = _RECORD_CALLABLE_INDEX,
         [CALL_EX_PY] = _RECORD_4OS_INDEX,
-        [RETURN_GENERATOR] = _RECORD_CALLER_CODE_INDEX,
 };
 
-const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[8] = {
+const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[7] = {
         [0] = NULL,
         [_RECORD_TOS_TYPE_INDEX] = _PyOpcode_RecordFunction_TOS_TYPE,
-        [_RECORD_TOS_INDEX] = _PyOpcode_RecordFunction_TOS,
-        [_RECORD_CALLER_CODE_INDEX] = _PyOpcode_RecordFunction_CALLER_CODE,
         [_RECORD_NOS_INDEX] = _PyOpcode_RecordFunction_NOS,
+        [_RECORD_NOS_GEN_FUNC_INDEX] = _PyOpcode_RecordFunction_NOS_GEN_FUNC,
         [_RECORD_CALLABLE_INDEX] = _PyOpcode_RecordFunction_CALLABLE,
         [_RECORD_BOUND_METHOD_INDEX] = _PyOpcode_RecordFunction_BOUND_METHOD,
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,

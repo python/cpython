@@ -370,6 +370,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TIER2_RESUME_CHECK] = HAS_PERIODIC_FLAG,
     [_COLD_EXIT] = HAS_SYNC_SP_FLAG,
     [_COLD_DYNAMIC_EXIT] = HAS_SYNC_SP_FLAG,
+    [_GUARD_CODE] = HAS_EXIT_FLAG,
     [_GUARD_IP__PUSH_FRAME] = HAS_EXIT_FLAG,
     [_GUARD_IP_YIELD_VALUE] = HAS_EXIT_FLAG,
     [_GUARD_IP_RETURN_VALUE] = HAS_EXIT_FLAG,
@@ -377,10 +378,11 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_RECORD_TOS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_TOS_TYPE] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_NOS] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_NOS_GEN_FUNC] = HAS_ESCAPES_FLAG | HAS_RECORDS_VALUE_FLAG,
     [_RECORD_4OS] = HAS_RECORDS_VALUE_FLAG,
     [_RECORD_CALLABLE] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
     [_RECORD_BOUND_METHOD] = HAS_ARG_FLAG | HAS_RECORDS_VALUE_FLAG,
-    [_RECORD_CALLER_CODE] = HAS_RECORDS_VALUE_FLAG,
+    [_RECORD_CODE] = HAS_RECORDS_VALUE_FLAG,
 };
 
 const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -3402,6 +3404,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_GUARD_CODE] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_CODE_r00 },
+            { 1, 1, _GUARD_CODE_r11 },
+            { 2, 2, _GUARD_CODE_r22 },
+            { 3, 3, _GUARD_CODE_r33 },
+        },
+    },
     [_GUARD_IP__PUSH_FRAME] = {
         .best = { 0, 1, 2, 3 },
         .entries = {
@@ -4210,6 +4221,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_TIER2_RESUME_CHECK_r33] = _TIER2_RESUME_CHECK,
     [_COLD_EXIT_r00] = _COLD_EXIT,
     [_COLD_DYNAMIC_EXIT_r00] = _COLD_DYNAMIC_EXIT,
+    [_GUARD_CODE_r00] = _GUARD_CODE,
+    [_GUARD_CODE_r11] = _GUARD_CODE,
+    [_GUARD_CODE_r22] = _GUARD_CODE,
+    [_GUARD_CODE_r33] = _GUARD_CODE,
     [_GUARD_IP__PUSH_FRAME_r00] = _GUARD_IP__PUSH_FRAME,
     [_GUARD_IP__PUSH_FRAME_r11] = _GUARD_IP__PUSH_FRAME,
     [_GUARD_IP__PUSH_FRAME_r22] = _GUARD_IP__PUSH_FRAME,
@@ -4640,6 +4655,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_CALLABLE_TYPE_1_r13] = "_GUARD_CALLABLE_TYPE_1_r13",
     [_GUARD_CALLABLE_TYPE_1_r23] = "_GUARD_CALLABLE_TYPE_1_r23",
     [_GUARD_CALLABLE_TYPE_1_r33] = "_GUARD_CALLABLE_TYPE_1_r33",
+    [_GUARD_CODE] = "_GUARD_CODE",
+    [_GUARD_CODE_r00] = "_GUARD_CODE_r00",
+    [_GUARD_CODE_r11] = "_GUARD_CODE_r11",
+    [_GUARD_CODE_r22] = "_GUARD_CODE_r22",
+    [_GUARD_CODE_r33] = "_GUARD_CODE_r33",
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_NO_DICT_r01] = "_GUARD_DORV_NO_DICT_r01",
     [_GUARD_DORV_NO_DICT_r11] = "_GUARD_DORV_NO_DICT_r11",
@@ -5179,8 +5199,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_RECORD_4OS] = "_RECORD_4OS",
     [_RECORD_BOUND_METHOD] = "_RECORD_BOUND_METHOD",
     [_RECORD_CALLABLE] = "_RECORD_CALLABLE",
-    [_RECORD_CALLER_CODE] = "_RECORD_CALLER_CODE",
+    [_RECORD_CODE] = "_RECORD_CODE",
     [_RECORD_NOS] = "_RECORD_NOS",
+    [_RECORD_NOS_GEN_FUNC] = "_RECORD_NOS_GEN_FUNC",
     [_RECORD_TOS] = "_RECORD_TOS",
     [_RECORD_TOS_TYPE] = "_RECORD_TOS_TYPE",
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
@@ -6049,6 +6070,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _COLD_DYNAMIC_EXIT:
             return 0;
+        case _GUARD_CODE:
+            return 0;
         case _GUARD_IP__PUSH_FRAME:
             return 0;
         case _GUARD_IP_YIELD_VALUE:
@@ -6063,13 +6086,15 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _RECORD_NOS:
             return 0;
+        case _RECORD_NOS_GEN_FUNC:
+            return 0;
         case _RECORD_4OS:
             return 0;
         case _RECORD_CALLABLE:
             return 0;
         case _RECORD_BOUND_METHOD:
             return 0;
-        case _RECORD_CALLER_CODE:
+        case _RECORD_CODE:
             return 0;
         default:
             return -1;
