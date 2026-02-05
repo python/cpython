@@ -2397,19 +2397,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             exception=(errors.HeaderParseError, '.*'),
             ),
 
-        raises_on_leading_wsp = C(
-            ' foo.bar',
-            exception=(errors.HeaderParseError, '.*'),
-            ),
-
-        raises_on_leading_at = C(
-            '@foo.bar',
-            exception=(errors.HeaderParseError, '.*'),
-            ),
-
-        raises_on_leading_dquote = C(
-            '"foo.bar"',
-            exception=(errors.HeaderParseError, '.*'),
+        **for_each_character(RFC_SPECIALS + RFC_WSP)(
+            raises_on_leading_special_or_wsp = C(
+                '{char}foo.bar',
+                exception=(errors.HeaderParseError, r'expected.*{echar}foo\.'),
+                ),
             ),
 
         trailing_text_preserved = C(
