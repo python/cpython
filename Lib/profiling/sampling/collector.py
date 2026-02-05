@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 from .constants import (
+    DEFAULT_LOCATION,
     THREAD_STATUS_HAS_GIL,
     THREAD_STATUS_ON_CPU,
     THREAD_STATUS_GIL_REQUESTED,
     THREAD_STATUS_UNKNOWN,
+    THREAD_STATUS_HAS_EXCEPTION,
+    _INTERNAL_FRAME_SUFFIXES,
 )
 
 try:
@@ -12,10 +15,66 @@ except ImportError:
     # Fallback definition if _remote_debugging is not available
     FrameInfo = None
 
+
+def normalize_location(location):
+    """Normalize location to a 4-tuple format.
+
+    Args:
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+
+    Returns:
+        tuple: (lineno, end_lineno, col_offset, end_col_offset)
+    """
+    if location is None:
+        return DEFAULT_LOCATION
+    return location
+
+
+def extract_lineno(location):
+    """Extract lineno from location.
+
+    Args:
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+
+    Returns:
+        int: The line number (0 for synthetic frames)
+    """
+    if location is None:
+        return 0
+    return location[0]
+
+def _is_internal_frame(frame):
+    if isinstance(frame, tuple):
+        filename = frame[0] if frame else ""
+    else:
+        filename = getattr(frame, "filename", "")
+
+    if not filename:
+        return False
+
+    return filename.endswith(_INTERNAL_FRAME_SUFFIXES)
+
+
+def filter_internal_frames(frames):
+    if not frames:
+        return frames
+
+    return [f for f in frames if not _is_internal_frame(f)]
+
+
 class Collector(ABC):
     @abstractmethod
-    def collect(self, stack_frames):
-        """Collect profiling data from stack frames."""
+    def collect(self, stack_frames, timestamps_us=None):
+        """Collect profiling data from stack frames.
+
+        Args:
+            stack_frames: List of InterpreterInfo objects
+            timestamps_us: Optional list of timestamps in microseconds. If provided
+                (from binary replay with RLE batching), use these instead of current
+                time. If None, collectors should use time.monotonic() or similar.
+                The list may contain multiple timestamps when samples are batched
+                together (same stack, different times).
+        """
 
     def collect_failed_sample(self):
         """Collect data about a failed sample attempt."""
@@ -23,6 +82,10 @@ class Collector(ABC):
     @abstractmethod
     def export(self, filename):
         """Export collected data to a file."""
+
+    @staticmethod
+    def _filter_internal_frames(frames):
+        return filter_internal_frames(frames)
 
     def _iter_all_frames(self, stack_frames, skip_idle=False):
         for interpreter_info in stack_frames:
@@ -37,7 +100,10 @@ class Collector(ABC):
                         continue
                 frames = thread_info.frame_info
                 if frames:
-                    yield frames, thread_info.thread_id
+                    # Filter out internal profiler frames from the bottom of the stack
+                    frames = self._filter_internal_frames(frames)
+                    if frames:
+                        yield frames, thread_info.thread_id
 
     def _iter_async_frames(self, awaited_info_list):
         # Phase 1: Index tasks and build parent relationships with pre-computed selection
@@ -48,6 +114,17 @@ class Collector(ABC):
 
         # Phase 3: Build linear stacks from each leaf to root (optimized - no sorting!)
         yield from self._build_linear_stacks(leaf_task_ids, task_map, child_to_parent)
+
+    def _iter_stacks(self, stack_frames, skip_idle=False):
+        """Yield (frames, thread_id) for all stacks, handling both sync and async modes."""
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            for frames, thread_id, _ in self._iter_async_frames(stack_frames):
+                if frames:
+                    yield frames, thread_id
+        else:
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
+                if frames:
+                    yield frames, thread_id
 
     def _build_task_graph(self, awaited_info_list):
         task_map = {}
@@ -117,11 +194,11 @@ class Collector(ABC):
                     selected_parent, parent_count = parent_info
                     if parent_count > 1:
                         task_name = f"{task_name} ({parent_count} parents)"
-                    frames.append(FrameInfo(("<task>", 0, task_name)))
+                    frames.append(FrameInfo(("<task>", None, task_name, None)))
                     current_id = selected_parent
                 else:
                     # Root task - no parent
-                    frames.append(FrameInfo(("<task>", 0, task_name)))
+                    frames.append(FrameInfo(("<task>", None, task_name, None)))
                     current_id = None
 
             # Yield the complete stack if we collected any frames
@@ -141,7 +218,7 @@ class Collector(ABC):
 
         Returns:
             tuple: (aggregate_status_counts, has_gc_frame, per_thread_stats)
-                - aggregate_status_counts: dict with has_gil, on_cpu, etc.
+                - aggregate_status_counts: dict with has_gil, on_cpu, has_exception, etc.
                 - has_gc_frame: bool indicating if any thread has GC frames
                 - per_thread_stats: dict mapping thread_id to per-thread counts
         """
@@ -150,6 +227,7 @@ class Collector(ABC):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,
         }
         has_gc_frame = False
@@ -171,6 +249,8 @@ class Collector(ABC):
                     status_counts["gil_requested"] += 1
                 if status_flags & THREAD_STATUS_UNKNOWN:
                     status_counts["unknown"] += 1
+                if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+                    status_counts["has_exception"] += 1
 
                 # Track per-thread statistics
                 thread_id = getattr(thread_info, "thread_id", None)
@@ -181,6 +261,7 @@ class Collector(ABC):
                             "on_cpu": 0,
                             "gil_requested": 0,
                             "unknown": 0,
+                            "has_exception": 0,
                             "total": 0,
                             "gc_samples": 0,
                         }
@@ -196,6 +277,8 @@ class Collector(ABC):
                         thread_stats["gil_requested"] += 1
                     if status_flags & THREAD_STATUS_UNKNOWN:
                         thread_stats["unknown"] += 1
+                    if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+                        thread_stats["has_exception"] += 1
 
                     # Check for GC frames in this thread
                     frames = getattr(thread_info, "frame_info", None)

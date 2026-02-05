@@ -1,1 +1,0 @@
-Fix a bug in the :mod:`email.policy.default` folding algorithm which incorrectly resulted in a doubled newline when a line ending at exactly max_line_length was followed by an unfoldable token.

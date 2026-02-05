@@ -711,9 +711,9 @@ _PyObject_IsFreed(PyObject *op)
 }
 
 
-/* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
+/* For debugging convenience. */
 void
-PyUnstable_Object_Dump(PyObject* op)
+PyObject_Dump(PyObject* op)
 {
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
@@ -1263,7 +1263,10 @@ PyObject *
 _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 {
     PyObject *result;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+_Py_COMP_DIAG_POP
     if (!oname)
         return NULL;
     result = PyObject_GetAttr(v, oname);
@@ -2443,13 +2446,17 @@ static PyTypeObject* static_types[] = {
     &PyBaseObject_Type,
     &PyType_Type,
 
+    // PyStaticMethod_Type and PyCFunction_Type are used by PyType_Ready()
+    // on other types and so must be initialized first.
+    &PyStaticMethod_Type,
+    &PyCFunction_Type,
+
     // Static types with base=&PyBaseObject_Type
     &PyAsyncGen_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
     &PyBytesIter_Type,
     &PyBytes_Type,
-    &PyCFunction_Type,
     &PyCallIter_Type,
     &PyCapsule_Type,
     &PyCell_Type,
@@ -2506,7 +2513,6 @@ static PyTypeObject* static_types[] = {
     &PySetIter_Type,
     &PySet_Type,
     &PySlice_Type,
-    &PyStaticMethod_Type,
     &PyStdPrinter_Type,
     &PySuper_Type,
     &PyTraceBack_Type,
@@ -2759,8 +2765,12 @@ PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
     _PyStackRef *stackpointer = frame->stackpointer;
     while (stackpointer > base) {
         stackpointer--;
-        if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
-            return PyStackRef_IsHeapSafe(*stackpointer);
+        _PyStackRef ref = *stackpointer;
+        if (PyStackRef_IsTaggedInt(ref)) {
+            continue;
+        }
+        if (op == PyStackRef_AsPyObjectBorrow(ref)) {
+            return PyStackRef_IsHeapSafe(ref);
         }
     }
     return 0;
@@ -3150,7 +3160,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
-        PyUnstable_Object_Dump(obj);
+        PyObject_Dump(obj);
 
         fprintf(stderr, "\n");
         fflush(stderr);

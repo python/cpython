@@ -31,6 +31,7 @@ struct _pymem_allocators {
         debug_alloc_api_t obj;
     } debug;
     int is_debug_enabled;
+    int use_hugepages;
     PyObjectArenaAllocator obj_arena;
 };
 
@@ -77,9 +78,7 @@ struct _fileutils_state {
 struct _parser_runtime_state {
 #ifdef Py_DEBUG
     long memo_statistics[_PYPEGEN_NSTATISTICS];
-#ifdef Py_GIL_DISABLED
     PyMutex mutex;
-#endif
 #else
     int _not_used;
 #endif

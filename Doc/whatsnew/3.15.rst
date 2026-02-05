@@ -67,10 +67,15 @@ Summary -- Release highlights
 
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
   profiling tools <whatsnew315-profiling-package>`
+* :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
+  profiling tools <whatsnew315-sampling-profiler>`
+* :pep:`798`: :ref:`Unpacking in Comprehensions
+  <whatsnew315-unpacking-in-comprehensions>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
+* :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
 
@@ -82,14 +87,14 @@ New features
 :pep:`799`: A dedicated profiling package
 -----------------------------------------
 
-A new :mod:`!profiling` module has been added to organize Python's built-in
+A new :mod:`profiling` module has been added to organize Python's built-in
 profiling tools under a single, coherent namespace. This module contains:
 
-* :mod:`!profiling.tracing`: deterministic function-call tracing (relocated from
-  :mod:`cProfile`).
-* :mod:`!profiling.sampling`: a new statistical sampling profiler (named Tachyon).
+* :mod:`profiling.tracing`: deterministic function-call tracing (relocated from
+  ``cProfile``).
+* :mod:`profiling.sampling`: a new statistical sampling profiler (named Tachyon).
 
-The :mod:`cProfile` module remains as an alias for backwards compatibility.
+The ``cProfile`` module remains as an alias for backwards compatibility.
 The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 
 .. seealso:: :pep:`799` for further details.
@@ -102,11 +107,16 @@ The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 Tachyon: High frequency statistical sampling profiler
 -----------------------------------------------------
 
+.. image:: ../library/tachyon-logo.png
+   :alt: Tachyon profiler logo
+   :align: center
+   :width: 200px
+
 A new statistical sampling profiler (Tachyon) has been added as
-:mod:`!profiling.sampling`. This profiler enables low-overhead performance analysis of
+:mod:`profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
-Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
+Unlike deterministic profilers (such as :mod:`profiling.tracing`) that instrument
 every function call, the sampling profiler periodically captures stack traces from
 running processes.  This approach provides virtually zero overhead while achieving
 sampling rates of **up to 1,000,000 Hz**, making it the fastest sampling profiler
@@ -139,6 +149,8 @@ Key features include:
     and blocking. Use this to identify CPU-bound bottlenecks and optimize computational work.
   * **GIL-holding time** (``--mode gil``): Measures time spent holding Python's Global Interpreter
     Lock. Use this to identify which threads dominate GIL usage in multi-threaded applications.
+  * **Exception handling time** (``--mode exception``): Captures samples only from threads with
+    an active exception. Use this to analyze exception handling overhead.
 
 * **Thread-aware profiling**: Option to profile all threads (``-a``) or just the main thread,
   essential for understanding multi-threaded application behavior.
@@ -168,8 +180,54 @@ Key features include:
   (``--async-aware``). See which coroutines are consuming time, with options to show only
   running tasks or all tasks including those waiting.
 
+* **Opcode-level profiling**: Gather bytecode opcode information for instruction-level
+  profiling (``--opcodes``). Shows which bytecode instructions are executing, including
+  specializations from the adaptive interpreter.
+
+See :mod:`profiling.sampling` for the complete documentation, including all
+available output formats, profiling modes, and configuration options.
+
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
+.. _whatsnew315-unpacking-in-comprehensions:
+
+:pep:`798`: Unpacking in Comprehensions
+---------------------------------------
+
+List, set, and dictionary comprehensions, as well as generator expressions, now
+support unpacking with ``*`` and ``**``.  This extends the unpacking syntax
+from :pep:`448` to comprehensions, providing a new syntax for combining an
+arbitrary number of iterables or dictionaries into a single flat structure.
+This new syntax is a direct alternative to nested comprehensions,
+:func:`itertools.chain`, and :meth:`itertools.chain.from_iterable`.  For
+example::
+
+    >>> lists = [[1, 2], [3, 4], [5]]
+    >>> [*L for L in lists]  # equivalent to [x for L in lists for x in L]
+    [1, 2, 3, 4, 5]
+
+    >>> sets = [{1, 2}, {2, 3}, {3, 4}]
+    >>> {*s for s in sets}  # equivalent to {x for s in sets for x in s}
+    {1, 2, 3, 4}
+
+    >>> dicts = [{'a': 1}, {'b': 2}, {'a': 3}]
+    >>> {**d for d in dicts}  # equivalent to {k: v for d in dicts for k,v in d.items()}
+    {'a': 3, 'b': 2}
+
+Generator expressions can similarly use unpacking to yield values from multiple
+iterables::
+
+    >>> gen = (*L for L in lists)  # equivalent to (x for L in lists for x in L)
+    >>> list(gen)
+    [1, 2, 3, 4, 5]
+
+This change also extends to asynchronous generator expressions, such that, for
+example, ``(*a async for a in agen())`` is equivalent to ``(x async for a in
+agen() for x in a)``.
+
+.. seealso:: :pep:`798` for further details.
+
+(Contributed by Adam Hartz in :gh:`143055`.)
 
 .. _whatsnew315-improved-error-messages:
 
@@ -381,6 +439,13 @@ Other language changes
   for any class.
   (Contributed by Serhiy Storchaka in :gh:`41779`.)
 
+* Allowed defining any :ref:`__slots__ <slots>` for a class derived from
+  :class:`tuple` (including classes created by :func:`collections.namedtuple`).
+  (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
+* The :class:`slice` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
 New modules
 ===========
@@ -406,6 +471,32 @@ argparse
 * Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
+
+* Added backtick markup support in description and epilog text to highlight
+  inline code when color output is enabled.
+  (Contributed by Savannah Ostrowski in :gh:`142390`.)
+
+base64
+------
+
+* Added the *pad* parameter in :func:`~base64.z85encode`.
+  (Contributed by Hauke Dämpfling in :gh:`143103`.)
+
+* Added the *wrapcol* parameter in :func:`~base64.b64encode`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+* Added the *ignorechars* parameter in :func:`~base64.b64decode`.
+  (Contributed by Serhiy Storchaka in :gh:`144001`.)
+
+binascii
+--------
+
+* Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
+
+* Added the *ignorechars* parameter in :func:`~binascii.a2b_base64`.
+  (Contributed by Serhiy Storchaka in :gh:`144001`.)
+
 
 calendar
 --------
@@ -455,6 +546,16 @@ concurrent.futures
   The resulting traceback will now tell you the PID and exit code of the
   terminated process.
   (Contributed by Jonathan Berg in :gh:`139486`.)
+
+
+contextlib
+----------
+
+* Added support for arbitrary descriptors :meth:`!__enter__`,
+  :meth:`!__exit__`, :meth:`!__aenter__`, and :meth:`!__aexit__` in
+  :class:`~contextlib.ExitStack` and :class:`contextlib.AsyncExitStack`, for
+  consistency with the :keyword:`with` and :keyword:`async with` statements.
+  (Contributed by Serhiy Storchaka in :gh:`144386`.)
 
 
 dataclasses
@@ -541,6 +642,9 @@ locale
   but included in the language code.
   (Contributed by Serhiy Storchaka in :gh:`137729`.)
 
+* Undeprecate the :func:`locale.getdefaultlocale` function.
+  (Contributed by Victor Stinner in :gh:`130796`.)
+
 
 math
 ----
@@ -555,8 +659,10 @@ math
 mimetypes
 ---------
 
+* Add ``application/dicom`` MIME type for ``.dcm`` extension. (Contributed by Benedikt Johannes in :gh:`144217`.)
 * Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
@@ -570,6 +676,11 @@ mmap
   if it is ``False``, the file handle corresponding to *fileno* will
   not be duplicated.
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+* Added the :meth:`mmap.mmap.set_name` method
+  to annotate an anonymous memory mapping
+  if Linux kernel supports :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  (Contributed by Donghee Na in :gh:`142419`.)
 
 
 os
@@ -683,6 +794,27 @@ ssl
 
    (Contributed by Ron Frederick in :gh:`138252`.)
 
+subprocess
+----------
+
+* :meth:`subprocess.Popen.wait`: when ``timeout`` is not ``None`` and the
+  platform supports it, an efficient event-driven mechanism is used to wait for
+  process termination:
+
+  - Linux >= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`.
+  - macOS and other BSD variants use :func:`select.kqueue` + ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``.
+  - Windows keeps using ``WaitForSingleObject`` (unchanged).
+
+  If none of these mechanisms are available, the function falls back to the
+  traditional busy loop (non-blocking call and short sleeps).
+  (Contributed by Giampaolo Rodola in :gh:`83069`).
+
+symtable
+--------
+
+* Add :meth:`symtable.Function.get_cells` and :meth:`symtable.Symbol.is_cell` methods.
+  (Contributed by Yashp002 in :gh:`143504`.)
+
 
 sys
 ---
@@ -739,6 +871,62 @@ tkinter
   using Tcl's ``-all`` and ``-overlap`` options.
   (Contributed by Rihaan Meher in :gh:`130848`)
 
+* Added new methods :meth:`!pack_content`, :meth:`!place_content` and
+  :meth:`!grid_content` which use Tk commands with new names (introduced
+  in Tk 8.6) instead of :meth:`!*_slaves` methods which use Tk commands
+  with outdated names.
+  (Contributed by Serhiy Storchaka in :gh:`143754`)
+
+
+.. _whatsnew315-tomllib-1-1-0:
+
+tomllib
+-------
+
+* The :mod:`tomllib` module now supports TOML 1.1.0.
+  This is a backwards compatible update, meaning that all valid TOML 1.0.0
+  documents are parsed the same way.
+
+  The changes, according to the `official TOML changelog`_, are:
+
+  - Allow newlines and trailing commas in inline tables.
+
+    Previously an inline table had to be on a single line and couldn't end
+    with a trailing comma. This is now relaxed so that the following is valid:
+
+    .. syntax highlighting needs TOML 1.1.0 support in Pygments,
+       see https://github.com/pygments/pygments/issues/3026
+
+    .. code-block:: text
+
+       tbl = {
+          key      = "a string",
+          moar-tbl =  {
+             key = 1,
+          },
+       }
+
+  - Add ``\xHH`` notation to basic strings for codepoints under 255,
+    and the ``\e`` escape for the escape character:
+
+    .. code-block:: text
+
+       null = "null byte: \x00; letter a: \x61"
+       csi = "\e["
+
+  - Seconds in datetime and time values are now optional.
+    The following are now valid:
+
+    .. code-block:: text
+
+       dt = 2010-02-03 14:15
+       t  = 14:15
+
+  (Contributed by Taneli Hukkinen in :gh:`142956`.)
+
+.. _official TOML changelog: https://github.com/toml-lang/toml/blob/main/CHANGELOG.md
+
+
 types
 ------
 
@@ -758,6 +946,16 @@ unicodedata
   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
   (Contributed by Stan Ulbrych in :gh:`129117`.)
 
+* Add the :func:`~unicodedata.iter_graphemes`
+  function to iterate over grapheme clusters according to rules defined in
+  `Unicode Standard Annex #29, "Unicode Text Segmentation"
+  <https://www.unicode.org/reports/tr29/>`_.
+  Add :func:`~unicodedata.grapheme_cluster_break`,
+  :func:`~unicodedata.indic_conjunct_break` and
+  :func:`~unicodedata.extended_pictographic` functions to get the properties
+  of the character which are related to the above algorithm.
+  (Contributed by Serhiy Storchaka and Guillaume Sanchez in :gh:`74902`.)
+
 
 unittest
 --------
@@ -765,6 +963,18 @@ unittest
 * :func:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+urllib.parse
+------------
+
+* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlsplit`,
+  :func:`~urllib.parse.urlparse` and :func:`~urllib.parse.urldefrag` functions.
+  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunsplit` and
+  :func:`~urllib.parse.urlunparse` functions.
+  This allows to distinguish between empty and not defined URI components
+  and preserve empty components.
+  (Contributed by Serhiy Storchaka in :gh:`67041`.)
 
 
 venv
@@ -823,11 +1033,119 @@ zlib
 Optimizations
 =============
 
+* Builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to the MSVC team including Hulon Jenkins.)
+
+base64 & binascii
+-----------------
+
+* CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
+  faster thanks to simple CPU pipelining optimizations.
+  (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
+
 csv
 ---
 
 * :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
+
+
+.. _whatsnew315-jit:
+
+Upgraded JIT compiler
+=====================
+
+Results from the `pyperformance <https://github.com/python/pyperformance>`__
+benchmark suite report
+`4-5% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-vultr-x86_64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+geometric mean performance improvement for the JIT over the standard CPython
+interpreter built with all optimizations enabled on x86-64 Linux. On AArch64
+macOS, the JIT has a
+`7-8% <https://raw.githubusercontent.com/facebookexperimental/free-threading-benchmarking/refs/heads/main/results/bm-20260110-3.15.0a3%2B-aa8578d-JIT/bm-20260110-macm4pro-arm64-python-aa8578dc54df2af9daa3-3.15.0a3%2B-aa8578d-vs-base.svg>`__
+speedup over the :ref:`tail calling interpreter <whatsnew314-tail-call-interpreter>`
+with all optimizations enabled. The speedups for JIT
+builds versus no JIT builds range from roughly 15% slowdown to over
+100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
+x86-64 Linux and AArch64 macOS systems.
+
+.. attention::
+    These results are not yet final.
+
+The major upgrades to the JIT are:
+
+* LLVM 21 build-time dependency
+* New tracing frontend
+* Basic register allocation in the JIT
+* More JIT optimizations
+* Better machine code generation
+
+.. rubric:: LLVM 21 build-time dependency
+
+The JIT compiler now uses LLVM 21 for build-time stencil generation. As
+always, LLVM is only needed when building CPython with the JIT enabled;
+end users running Python do not need LLVM installed. Instructions for
+installing LLVM can be found in the `JIT compiler documentation
+<https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
+for all supported platforms.
+
+(Contributed by Savannah Ostrowski in :gh:`140973`.)
+
+.. rubric:: A new tracing frontend
+
+The JIT compiler now supports significantly more bytecode operations and
+control flow than in Python 3.14, enabling speedups on a wider variety of
+code. For example, simple Python object creation is now understood by the
+3.15 JIT compiler. Overloaded operations and generators are also partially
+supported. This was made possible by an overhauled JIT tracing frontend
+that records actual execution paths through code, rather than estimating
+them as the previous implementation did.
+
+(Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
+Mark Shannon in :gh:`141703`.)
+
+.. rubric:: Basic register allocation in the JIT
+
+A basic form of register allocation has been added to the JIT compiler's
+optimizer. This allows the JIT compiler to avoid certain stack operations
+altogether and instead operate on registers. This allows the JIT to produce
+more efficient traces by avoiding reads and writes to memory.
+
+(Contributed by Mark Shannon in :gh:`135379`.)
+
+.. rubric:: More JIT optimizations
+
+More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
+is now performed. This means when the JIT compiler detects that certain user
+code results in constants, the code can be simplified by the JIT.
+
+(Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
+
+The JIT avoids :term:`reference count`\ s where possible. This generally
+reduces the cost of most operations in Python.
+
+(Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
+Reiden Ong, Noam Cohen, Tomas Roun, PuQing, and Cajetan Rodrigues in :gh:`134584`.)
+
+.. rubric:: Better machine code generation
+
+The JIT compiler's machine code generator now produces better machine code
+for x86-64 and AArch64 macOS and Linux targets. In general, users should
+experience lower memory usage for generated machine code and more efficient
+machine code versus the old JIT.
+
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
+Additional optimizations for AArch64 contributed by Mark Shannon and
+Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
 Removed
@@ -972,6 +1290,15 @@ Deprecated
 New deprecations
 ----------------
 
+* :mod:`base64`:
+
+  * Accepting the ``+`` and ``/`` characters with an alternative alphabet in
+    :func:`~base64.b64decode` and :func:`~base64.urlsafe_b64decode` is now
+    deprecated.
+    In future Python versions they will be errors in the strict mode and
+    discarded in the non-strict mode.
+    (Contributed by Serhiy Storchaka in :gh:`125346`.)
+
 * CLI:
 
   * Deprecate :option:`-b` and :option:`!-bb` command-line options
@@ -998,14 +1325,16 @@ New deprecations
 
 * ``__version__``
 
-  * The ``__version__`` attribute has been deprecated in these standard library
-    modules and will be removed in Python 3.20.
-    Use :py:data:`sys.version_info` instead.
+  * The ``__version__``, ``version`` and ``VERSION`` attributes have been
+    deprecated in these standard library modules and will be removed in
+    Python 3.20. Use :py:data:`sys.version_info` instead.
 
     - :mod:`argparse`
     - :mod:`csv`
+    - :mod:`ctypes`
     - :mod:`!ctypes.macholib`
     - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+    - :mod:`http.server`
     - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
@@ -1018,6 +1347,10 @@ New deprecations
     - :mod:`tabnanny`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
+    - :mod:`wsgiref.simple_server`
+    - :mod:`xml.etree.ElementTree`
+    - :mod:`!xml.sax.expatreader`
+    - :mod:`xml.sax.handler`
     - :mod:`zlib`
 
     (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
@@ -1027,6 +1360,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
@@ -1082,7 +1417,7 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
-* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+* Add :c:func:`PyObject_Dump` to dump an object to ``stderr``.
   It should only be used for debugging.
   (Contributed by Victor Stinner in :gh:`141070`.)
 
@@ -1194,6 +1529,13 @@ Deprecated C APIs
   use the :c:type:`PyBytesWriter` API instead.
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
+  :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
+  3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
+  the module state, then call :c:func:`PyObject_CallMethod` or
+  :c:func:`PyObject_GetAttr`.
+  (Contributed by Victor Stinner in :gh:`141049`.)
+
 * Deprecate :c:member:`~PyComplexObject.cval` field of the
   :c:type:`PyComplexObject` type.
   Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
@@ -1236,6 +1578,20 @@ Build changes
   modules that are missing or packaged separately.
   (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
 
+* The new configure option :option:`--with-pymalloc-hugepages` enables huge
+  page support for :ref:`pymalloc <pymalloc>` arenas. When enabled, arena size
+  increases to 2 MiB and allocation uses ``MAP_HUGETLB`` (Linux) or
+  ``MEM_LARGE_PAGES`` (Windows) with automatic fallback to regular pages.
+  On Windows, use ``build.bat --pymalloc-hugepages``.
+  At runtime, huge pages must be explicitly enabled by setting the
+  :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable to ``1``.
+
+* Annotating anonymous mmap usage is now supported if Linux kernel supports
+  :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
+  and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
+  (Contributed by Donghee Na in :gh:`141770`)
+
 
 Porting to Python 3.15
 ======================
@@ -1260,7 +1616,7 @@ that may require changes to your code.
   :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`137044`.)
 
-* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
+* :meth:`mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
 
 * A resource warning is now emitted for an unclosed

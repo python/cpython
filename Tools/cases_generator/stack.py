@@ -223,6 +223,12 @@ class Stack:
         self.variables: list[Local] = []
         self.check_stack_bounds = check_stack_bounds
 
+    def push_cache(self, cached_items:list[str], out: CWriter) -> None:
+        for i, name in enumerate(cached_items):
+            out.start_line()
+            out.emit(f"_PyStackRef _stack_item_{i} = {name};\n")
+            self.push(Local.register(f"_stack_item_{i}"))
+
     def drop(self, var: StackItem, check_liveness: bool) -> None:
         self.logical_sp = self.logical_sp.pop(var)
         if self.variables:
@@ -486,7 +492,7 @@ class Storage:
     def _push_defined_outputs(self) -> None:
         defined_output = ""
         for output in self.outputs:
-            if output.in_local and not output.memory_offset:
+            if output.in_local and not output.memory_offset and not output.item.peek:
                 defined_output = output.name
         if not defined_output:
             return
@@ -510,6 +516,7 @@ class Storage:
         return False
 
     def flush(self, out: CWriter) -> None:
+        self._print(out)
         self.clear_dead_inputs()
         self._push_defined_outputs()
         self.stack.flush(out)

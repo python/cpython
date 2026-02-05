@@ -348,6 +348,7 @@ def isgenerator(object):
         gi_frame        frame object or possibly None once the generator has
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
+        gi_suspended    set to 1 when the generator is suspended at a yield point, 0 otherwise
         gi_yieldfrom    object being iterated by yield from or None
 
         __iter__()      defined to support iteration over container
@@ -1812,13 +1813,7 @@ def getgeneratorstate(generator):
       GEN_SUSPENDED: Currently suspended at a yield expression.
       GEN_CLOSED: Execution has completed.
     """
-    if generator.gi_running:
-        return GEN_RUNNING
-    if generator.gi_suspended:
-        return GEN_SUSPENDED
-    if generator.gi_frame is None:
-        return GEN_CLOSED
-    return GEN_CREATED
+    return generator.gi_state
 
 
 def getgeneratorlocals(generator):
@@ -1854,13 +1849,7 @@ def getcoroutinestate(coroutine):
       CORO_SUSPENDED: Currently suspended at an await expression.
       CORO_CLOSED: Execution has completed.
     """
-    if coroutine.cr_running:
-        return CORO_RUNNING
-    if coroutine.cr_suspended:
-        return CORO_SUSPENDED
-    if coroutine.cr_frame is None:
-        return CORO_CLOSED
-    return CORO_CREATED
+    return coroutine.cr_state
 
 
 def getcoroutinelocals(coroutine):
@@ -1893,13 +1882,7 @@ def getasyncgenstate(agen):
       AGEN_SUSPENDED: Currently suspended at a yield expression.
       AGEN_CLOSED: Execution has completed.
     """
-    if agen.ag_running:
-        return AGEN_RUNNING
-    if agen.ag_suspended:
-        return AGEN_SUSPENDED
-    if agen.ag_frame is None:
-        return AGEN_CLOSED
-    return AGEN_CREATED
+    return agen.ag_state
 
 
 def getasyncgenlocals(agen):
@@ -2140,7 +2123,6 @@ def _signature_strip_non_python_syntax(signature):
 
     current_parameter = 0
     OP = token.OP
-    ERRORTOKEN = token.ERRORTOKEN
 
     # token stream always starts with ENCODING token, skip it
     t = next(token_stream)
@@ -3408,20 +3390,20 @@ def _main():
         sys.exit(1)
 
     if args.details:
-        print('Target: {}'.format(target))
-        print('Origin: {}'.format(getsourcefile(module)))
-        print('Cached: {}'.format(module.__cached__))
+        print(f'Target: {target}')
+        print(f'Origin: {getsourcefile(module)}')
+        print(f'Cached: {module.__spec__.cached}')
         if obj is module:
-            print('Loader: {}'.format(repr(module.__loader__)))
+            print(f'Loader: {module.__loader__!r}')
             if hasattr(module, '__path__'):
-                print('Submodule search path: {}'.format(module.__path__))
+                print(f'Submodule search path: {module.__path__}')
         else:
             try:
                 __, lineno = findsource(obj)
             except Exception:
                 pass
             else:
-                print('Line: {}'.format(lineno))
+                print(f'Line: {lineno}')
 
         print()
     else:
