@@ -848,7 +848,7 @@ expat
 -----
 
 The :mod:`pyexpat <xml.parsers.expat>` extension is built using an included copy of the expat
-sources unless the build is configured ``--with-system-expat``:
+sources unless the build is configured :option:`--with-system-expat`:
 
 .. literalinclude:: ../Modules/expat/COPYING
   :language: text
