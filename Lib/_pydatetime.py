@@ -214,6 +214,9 @@ def _need_normalize_century():
     return _normalize_century
 
 def _make_dash_replacement(ch, timetuple):
+    if ch not in 'dmHIMSjUWVy':
+        raise ValueError('invalid format string')
+
     fmt = '%' + ch
     val = _time.strftime(fmt, timetuple)
     return val.lstrip('0') or '0'

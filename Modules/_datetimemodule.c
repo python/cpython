@@ -2056,6 +2056,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         /* non-0-pad Windows and Android support */
         else if (ch == '-' && i < flen) {
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
+            if (strchr("dmHIMSjUWVy", (int)next_ch) == NULL) {
+                PyErr_SetString(PyExc_ValueError, "invalid format string");
+                goto Error;
+            }
             i++;
 
             Py_XDECREF(dash_replacement);
