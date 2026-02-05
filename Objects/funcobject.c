@@ -1928,7 +1928,7 @@ PyStaticMethod_New(PyObject *callable)
     if (sm == NULL) {
         return NULL;
     }
-    _PyObject_SetDeferredRefcount(sm);
+    _PyObject_SetDeferredRefcount((PyObject*)sm);
     if (sm_set_callable(sm, callable) < 0) {
         Py_DECREF(sm);
         return NULL;
