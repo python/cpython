@@ -69,6 +69,7 @@ jobs:
     name: ${{ matrix.platform }}-${{ matrix.process-mode }}
     container:
       image: nanvix/toolchain:v0.11.x-minimal
+      options: --device /dev/kvm
     defaults:
       run:
         shell: bash
