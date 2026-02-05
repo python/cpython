@@ -317,7 +317,7 @@ and writing to platform dependent files:
 Codec Base Classes
 ------------------
 
-The :mod:`codecs` module defines a set of base classes which define the
+The :mod:`!codecs` module defines a set of base classes which define the
 interfaces for working with codec objects, and can also be used as the basis
 for custom codec implementations.
 

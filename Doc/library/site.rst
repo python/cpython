@@ -51,11 +51,11 @@ added path for configuration files.
 
 .. versionchanged:: 3.14
 
-   :mod:`site` is no longer responsible for updating :data:`sys.prefix` and
+   :mod:`!site` is no longer responsible for updating :data:`sys.prefix` and
    :data:`sys.exec_prefix` on :ref:`sys-path-init-virtual-environments`. This is
    now done during the :ref:`path initialization <sys-path-init>`. As a result,
    under :ref:`sys-path-init-virtual-environments`, :data:`sys.prefix` and
-   :data:`sys.exec_prefix` no longer depend on the :mod:`site` initialization,
+   :data:`sys.exec_prefix` no longer depend on the :mod:`!site` initialization,
    and are therefore unaffected by :option:`-S`.
 
 .. _site-virtual-environments-configuration:
@@ -275,7 +275,7 @@ Command-line interface
 
 .. program:: site
 
-The :mod:`site` module also provides a way to get the user directories from the
+The :mod:`!site` module also provides a way to get the user directories from the
 command line:
 
 .. code-block:: shell-session

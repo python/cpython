@@ -83,7 +83,7 @@ created.  Socket addresses are represented as follows:
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
   scope_id)`` is used, where *flowinfo* and *scope_id* represent the ``sin6_flowinfo``
   and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
-  :mod:`socket` module methods, *flowinfo* and *scope_id* can be omitted just for
+  :mod:`!socket` module methods, *flowinfo* and *scope_id* can be omitted just for
   backward compatibility.  Note, however, omission of *scope_id* can cause problems
   in manipulating scoped IPv6 addresses.
 
@@ -302,7 +302,7 @@ generalization of this based on timeouts is supported through
 Module contents
 ---------------
 
-The module :mod:`socket` exports the following elements.
+The module :mod:`!socket` exports the following elements.
 
 
 Exceptions
@@ -1031,7 +1031,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 Other functions
 '''''''''''''''
 
-The :mod:`socket` module also offers various network-related services:
+The :mod:`!socket` module also offers various network-related services:
 
 
 .. function:: close(fd)
@@ -2427,7 +2427,7 @@ lead to this error::
 This is because the previous execution has left the socket in a ``TIME_WAIT``
 state, and can't be immediately reused.
 
-There is a :mod:`socket` flag to set, in order to prevent this,
+There is a :mod:`!socket` flag to set, in order to prevent this,
 :const:`socket.SO_REUSEADDR`::
 
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
