@@ -1,0 +1,2 @@
+Upgrade bundled pip to 26.0.1 and setuptools to 80.10.2. This addresses
+CVE-2023-5752, CVE-2025-8869, CVE-2024-23949, and CVE-2024-24049.
