@@ -2446,13 +2446,17 @@ static PyTypeObject* static_types[] = {
     &PyBaseObject_Type,
     &PyType_Type,
 
+    // PyStaticMethod_Type and PyCFunction_Type are used by PyType_Ready()
+    // on other types and so must be initialized first.
+    &PyStaticMethod_Type,
+    &PyCFunction_Type,
+
     // Static types with base=&PyBaseObject_Type
     &PyAsyncGen_Type,
     &PyByteArrayIter_Type,
     &PyByteArray_Type,
     &PyBytesIter_Type,
     &PyBytes_Type,
-    &PyCFunction_Type,
     &PyCallIter_Type,
     &PyCapsule_Type,
     &PyCell_Type,
@@ -2509,7 +2513,6 @@ static PyTypeObject* static_types[] = {
     &PySetIter_Type,
     &PySet_Type,
     &PySlice_Type,
-    &PyStaticMethod_Type,
     &PyStdPrinter_Type,
     &PySuper_Type,
     &PyTraceBack_Type,
