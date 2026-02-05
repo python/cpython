@@ -1,0 +1,3 @@
+Fix :mod:`multiprocessing` ``forkserver`` bug which prevented starting of
+the forkserver if the total length of command line arguments in ``sys.argv``
+exceeded the maximum length of a single command line argument.
