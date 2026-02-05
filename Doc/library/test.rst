@@ -39,7 +39,7 @@ written using a "traditional" testing style that compares output printed to
 .. _writing-tests:
 
 Writing Unit Tests for the :mod:`!test` package
-----------------------------------------------
+-----------------------------------------------
 
 It is preferred that tests that use the :mod:`unittest` module follow a few
 guidelines. One is to name the test module by starting it with ``test_`` and end

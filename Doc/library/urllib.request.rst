@@ -1486,7 +1486,7 @@ some point in the future.
 
 
 :mod:`!urllib.request` Restrictions
-----------------------------------
+-----------------------------------
 
 .. index::
    pair: HTTP; protocol

@@ -28,7 +28,7 @@ modules and functions can be found in the following sections.
 .. include:: ../includes/wasm-mobile-notavail.rst
 
 Using the :mod:`!subprocess` Module
-----------------------------------
+-----------------------------------
 
 The recommended approach to invoking subprocesses is to use the :func:`run`
 function for all use cases it can handle. For more advanced use cases, the
@@ -1346,7 +1346,7 @@ calls these functions.
 .. _subprocess-replacements:
 
 Replacing Older Functions with the :mod:`!subprocess` Module
------------------------------------------------------------
+------------------------------------------------------------
 
 In this section, "a becomes b" means that b can be used as a replacement for a.
 

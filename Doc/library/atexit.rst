@@ -79,7 +79,7 @@ a cleanup function is undefined.
 .. _atexit-example:
 
 :mod:`!atexit` Example
----------------------
+----------------------
 
 The following simple example demonstrates how a module can initialize a counter
 from a file when it is imported and save the counter's updated value

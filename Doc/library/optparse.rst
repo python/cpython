@@ -816,7 +816,7 @@ The following two methods can be used to print and get the ``version`` string:
 .. _optparse-how-optparse-handles-errors:
 
 How :mod:`!optparse` handles errors
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are two broad classes of errors that :mod:`!optparse` has to worry about:
 programmer errors and user errors.  Programmer errors are usually erroneous
@@ -1971,7 +1971,7 @@ arguments::
 .. _optparse-extending-optparse:
 
 Extending :mod:`!optparse`
--------------------------
+--------------------------
 
 Since the two major controlling factors in how :mod:`!optparse` interprets
 command-line options are the action and type of each option, the most likely
