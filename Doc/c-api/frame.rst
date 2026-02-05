@@ -274,10 +274,9 @@ Unless using :pep:`523`, you will not need this.
 
    .. code-block:: c
 
-      // Check if a frame should be skipped
+      int kind = PyUnstable_Frame_GetExecutableKind(frame)
+
       if (kind == PyUnstable_EXECUTABLE_KIND_SKIP) {
-          // This is an internal frame (like a Tier 2 optimizer frame)
-          // Tools should ignore it.
           continue;
       }
 
