@@ -831,7 +831,9 @@ where the :keyword:`import` statement occurs.
 
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence
-of strings which are names defined or imported by that module.  The names
+of strings which are names defined or imported by that module.
+Names containing non-ASCII characters must be in the `normalization form`_
+NFKC; see :ref:`lexical-names-nonascii` for details.  The names
 given in ``__all__`` are all considered public and are required to exist.  If
 ``__all__`` is not defined, the set of public names includes all names found
 in the module's namespace which do not begin with an underscore character
