@@ -4118,6 +4118,33 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, descr=descr):
                     self.assertRaises(TypeError, self.dumps, descr, proto)
 
+    def test_private_methods(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        obj = PrivateMethods(42)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj.get_method(), proto))
+                self.assertEqual(unpickled(), 42)
+                unpickled = self.loads(self.dumps(obj.get_unbound_method(), proto))
+                self.assertEqual(unpickled(obj), 42)
+                unpickled = self.loads(self.dumps(obj.get_classmethod(), proto))
+                self.assertEqual(unpickled(), 43)
+                unpickled = self.loads(self.dumps(obj.get_staticmethod(), proto))
+                self.assertEqual(unpickled(), 44)
+
+    def test_private_nested_classes(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        cls1 = PrivateNestedClasses.get_nested()
+        cls2 = cls1.get_nested2()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(cls1, proto))
+                self.assertIs(unpickled, cls1)
+                unpickled = self.loads(self.dumps(cls2, proto))
+                self.assertIs(unpickled, cls2)
+
     def test_object_with_attrs(self):
         obj = Object()
         obj.a = 1
