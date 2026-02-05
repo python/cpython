@@ -214,9 +214,6 @@ def _need_normalize_century():
     return _normalize_century
 
 def _make_dash_replacement(ch, timetuple):
-    if ch not in 'dmHIMSjUWVy':
-        raise ValueError('invalid format string')
-
     fmt = '%' + ch
     val = _time.strftime(fmt, timetuple)
     return val.lstrip('0') or '0'
@@ -296,10 +293,13 @@ def _wrap_strftime(object, format, timetuple):
                     if i < n:
                         next_ch = format[i]
                         i += 1
-                        if sys.platform in ['win32', 'android']:
-                            push(_make_dash_replacement(next_ch, timetuple))
+                        if next_ch not in 'dmHIMSjUWVy':
+                            push('%%-' + next_ch)
                         else:
-                            push('%-' + next_ch)
+                            if sys.platform in ['win32', 'android']:
+                                push(_make_dash_replacement(next_ch, timetuple))
+                            else:
+                                push('%-' + next_ch)
                     else:
                         push('%-')
                 else:

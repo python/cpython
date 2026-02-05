@@ -1600,20 +1600,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         self.assertEqual(t.strftime("%-j. %-U. %-W. %-V."), "61. 9. 9. 9.")
 
-        if platform.system() in ("Windows", "Android"):
-            # invalid %-format specifiers must raise ValueError
-            self.assertRaises(ValueError, t.strftime, "%-1")
-            self.assertRaises(ValueError, t.strftime, "%--")
-            self.assertRaises(ValueError, t.strftime, "%-p")
-            self.assertRaises(ValueError, t.strftime, "%-#")
-        elif platform.system() in ("Darwin", "iOS", "FreeBSD"):
-            self.assertEqual(t.strftime("%-1"), "1")
-            self.assertEqual(t.strftime("%--"), "-")
-            self.assertEqual(t.strftime("%-#"), "#")
-        else:
-            self.assertEqual(t.strftime("%-1"), "%-1")
-            self.assertEqual(t.strftime("%--"), "%--")
-            self.assertEqual(t.strftime("%-#"), "%-#")
+        # unsupported %-format specifiers are passed through unchanged.
+        self.assertEqual(t.strftime("%-1"), "%-1")
+        self.assertEqual(t.strftime("%--"), "%--")
+        self.assertEqual(t.strftime("%-#"), "%-#")
 
         self.assertRaises(TypeError, t.strftime) # needs an arg
         self.assertRaises(TypeError, t.strftime, "one", "two") # too many args

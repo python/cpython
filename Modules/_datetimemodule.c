@@ -2052,24 +2052,31 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-        #if defined(MS_WINDOWS) || defined(__ANDROID__)
         /* non-0-pad Windows and Android support */
         else if (ch == '-' && i < flen) {
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
-            if (strchr("dmHIMSjUWVy", (int)next_ch) == NULL) {
-                PyErr_SetString(PyExc_ValueError, "invalid format string");
-                goto Error;
-            }
             i++;
 
-            Py_XDECREF(dash_replacement);
-            dash_replacement = make_dash_replacement(object, next_ch, timetuple);
-            if (dash_replacement == NULL) {
-                goto Error;
+            if (strchr("dmHIMSjUWVy", (int)next_ch) == NULL) {
+                replacement = PyUnicode_FromFormat("%%%%-%c", (char)next_ch);
+                if (replacement == NULL) {
+                    goto Error;
+                }
             }
-            replacement = dash_replacement;
+            else {
+                #if defined(MS_WINDOWS) || defined(__ANDROID__)
+                Py_XDECREF(dash_replacement);
+
+                dash_replacement = make_dash_replacement(object, next_ch, timetuple);
+                if (dash_replacement == NULL) {
+                    goto Error;
+                }
+                replacement = dash_replacement;
+                #else
+                continue;
+                #endif
+            }
         }
-        #endif
         else {
             /* percent followed by something else */
             continue;
