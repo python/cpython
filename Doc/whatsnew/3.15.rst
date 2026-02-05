@@ -940,6 +940,16 @@ warnings
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
 
+winreg
+------
+
+* Add *options* and *create_only* parameters to :func:`winreg.CreateKeyEx`.
+  (Contributed by AN Long in :gh:`129903`.)
+
+* Add *options* parameter to :func:`winreg.OpenKeyEx`.
+  (Contributed by AN Long in :gh:`129903`.)
+
+
 xml.parsers.expat
 -----------------
 

@@ -129,6 +129,9 @@ This module offers the following functions:
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
+   .. versionchanged:: 3.15
+      Added *options* and *create_only* parameters.
+
 
 .. function:: DeleteKey(key, sub_key)
 
@@ -361,7 +364,7 @@ This module offers the following functions:
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
-   .. deprecated-removed:: 3.14 3.16
+   .. deprecated-removed:: 3.15 3.17
       *reserved* is deprecated and will be removed in the future.
       Please use :func:`OpenKeyEx` instead.
 
@@ -402,10 +405,10 @@ This module offers the following functions:
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: 3.15
       Added *options* parameter.
 
-   .. deprecated-removed:: 3.14 3.16
+   .. deprecated-removed:: 3.15 3.17
       *reserved* is deprecated and will be removed in the future.
       Please use *options* instead.
 
