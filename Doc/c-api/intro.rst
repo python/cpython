@@ -177,7 +177,7 @@ Docstring macros
 .. c:macro:: PyDoc_STRVAR(name, str)
 
    Creates a variable with name *name* that can be used in docstrings.
-   If Python is built :option:`without docstrings <--without-doc-strings>`,
+   If Python is built without docstrings (:option:`--without-doc-strings`),
    the value will be an empty string.
 
    Example::
@@ -195,7 +195,7 @@ Docstring macros
 .. c:macro:: PyDoc_STR(str)
 
    Expands to the given input string, or an empty string
-   if docstrings are :option:`disabled <--without-doc-strings>`.
+   if docstrings are disabled (:option:`--without-doc-strings`).
 
    Example::
 
@@ -273,7 +273,7 @@ Numeric utilities
 
 .. c:macro:: Py_ARITHMETIC_RIGHT_SHIFT(type, integer, positions)
 
-   Similar to :samp:`{integer} >> {positions{`, but forces sign extension,
+   Similar to :samp:`{integer} >> {positions}`, but forces sign extension,
    as the C standard does not define whether a right-shift of a signed
    integer will perform sign extension or a zero-fill.
 
