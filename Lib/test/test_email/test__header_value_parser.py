@@ -2385,10 +2385,6 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         only = C(
             'foo.bar.bang',
-            'foo.bar.bang',
-            'foo.bar.bang',
-            [],
-            '',
             ),
 
         raises_on_leading_dot = C(
@@ -2418,18 +2414,12 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         trailing_text_preserved = C(
             'foo@bar',
-            'foo',
-            'foo',
-            [],
-            '@bar',
+            remainder='@bar',
             ),
 
         trailing_ws_preserved = C(
             'foo .bar',
-            'foo',
-            'foo',
-            [],
-            ' .bar',
+            remainder=' .bar',
             ),
 
         )
