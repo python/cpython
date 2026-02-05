@@ -1813,13 +1813,7 @@ def getgeneratorstate(generator):
       GEN_SUSPENDED: Currently suspended at a yield expression.
       GEN_CLOSED: Execution has completed.
     """
-    if generator.gi_running:
-        return GEN_RUNNING
-    if generator.gi_suspended:
-        return GEN_SUSPENDED
-    if generator.gi_frame is None:
-        return GEN_CLOSED
-    return GEN_CREATED
+    return generator.gi_state
 
 
 def getgeneratorlocals(generator):
@@ -1855,13 +1849,7 @@ def getcoroutinestate(coroutine):
       CORO_SUSPENDED: Currently suspended at an await expression.
       CORO_CLOSED: Execution has completed.
     """
-    if coroutine.cr_running:
-        return CORO_RUNNING
-    if coroutine.cr_suspended:
-        return CORO_SUSPENDED
-    if coroutine.cr_frame is None:
-        return CORO_CLOSED
-    return CORO_CREATED
+    return coroutine.cr_state
 
 
 def getcoroutinelocals(coroutine):
@@ -1894,13 +1882,7 @@ def getasyncgenstate(agen):
       AGEN_SUSPENDED: Currently suspended at a yield expression.
       AGEN_CLOSED: Execution has completed.
     """
-    if agen.ag_running:
-        return AGEN_RUNNING
-    if agen.ag_suspended:
-        return AGEN_SUSPENDED
-    if agen.ag_frame is None:
-        return AGEN_CLOSED
-    return AGEN_CREATED
+    return agen.ag_state
 
 
 def getasyncgenlocals(agen):
