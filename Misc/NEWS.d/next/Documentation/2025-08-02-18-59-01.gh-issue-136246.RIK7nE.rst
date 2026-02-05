@@ -1,0 +1,3 @@
+A new "Improve this page" link is available in the left-hand sidebar of the
+docs, offering links to create GitHub issues, discussion forum posts, or
+pull requests.
