@@ -1451,7 +1451,7 @@ winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     }
     if (reserved != 0) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "reserved is deprecated, use options instead.", 1))
+            "reserved is deprecated, use OpenKeyEx with options parameter instead.", 1))
         {
             return NULL;
         }
