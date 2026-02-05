@@ -2128,6 +2128,7 @@ class PydocUrlHandlerTest(PydocBaseTest):
             ("index", "Pydoc: Index of Modules"),
             ("topics", "Pydoc: Topics"),
             ("keywords", "Pydoc: Keywords"),
+            ("symbols", "Pydoc: Symbols"),
             ("pydoc", "Pydoc: module pydoc"),
             ("get?key=pydoc", "Pydoc: module pydoc"),
             ("search?key=pydoc", "Pydoc: Search Results"),
