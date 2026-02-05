@@ -50,7 +50,9 @@ cannot be used with HMAC.
    .. versionadded:: 3.7
 
 
-An HMAC object has the following methods:
+.. class:: HMAC
+
+   An HMAC object has the following methods:
 
 .. method:: HMAC.update(msg)
 

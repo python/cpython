@@ -28,8 +28,10 @@ The character set, :data:`string.ascii_letters`, :data:`string.digits` and
 in a cookie name (as :attr:`~Morsel.key`).
 
 .. versionchanged:: 3.3
-   Allowed ':' as a valid cookie name character.
+   Allowed '``:``' as a valid cookie name character.
 
+.. versionchanged:: 3.15
+   Allowed '``"``' as a valid cookie value character.
 
 .. note::
 
@@ -292,9 +294,9 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    Set-Cookie: chips=ahoy
    Set-Cookie: vienna=finger
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=;"
    >>> C = cookies.SimpleCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
@@ -314,3 +316,10 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
+   >>> import json
+   >>> C = cookies.SimpleCookie()
+   >>> C.load(f'cookies=7; mixins="{json.dumps({"chips": "dark chocolate"})}"; state=gooey')
+   >>> print(C)
+   Set-Cookie: cookies=7
+   Set-Cookie: mixins="{"chips": "dark chocolate"}"
+   Set-Cookie: state=gooey

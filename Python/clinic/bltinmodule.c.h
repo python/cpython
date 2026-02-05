@@ -114,7 +114,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_abs__doc__,
-"abs($module, x, /)\n"
+"abs($module, number, /)\n"
 "--\n"
 "\n"
 "Return the absolute value of the argument.");
@@ -159,7 +159,7 @@ PyDoc_STRVAR(builtin_ascii__doc__,
     {"ascii", (PyCFunction)builtin_ascii, METH_O, builtin_ascii__doc__},
 
 PyDoc_STRVAR(builtin_bin__doc__,
-"bin($module, number, /)\n"
+"bin($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the binary representation of an integer.\n"
@@ -238,7 +238,8 @@ PyDoc_STRVAR(builtin_chr__doc__,
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
-"        dont_inherit=False, optimize=-1, *, _feature_version=-1)\n"
+"        dont_inherit=False, optimize=-1, *, module=None,\n"
+"        _feature_version=-1)\n"
 "--\n"
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
@@ -260,7 +261,7 @@ PyDoc_STRVAR(builtin_compile__doc__,
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize, int feature_version);
+                     int optimize, PyObject *modname, int feature_version);
 
 static PyObject *
 builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -268,7 +269,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 7
+    #define NUM_KEYWORDS 8
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -277,7 +278,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(source), &_Py_ID(filename), &_Py_ID(mode), &_Py_ID(flags), &_Py_ID(dont_inherit), &_Py_ID(optimize), &_Py_ID(_feature_version), },
+        .ob_item = { &_Py_ID(source), &_Py_ID(filename), &_Py_ID(mode), &_Py_ID(flags), &_Py_ID(dont_inherit), &_Py_ID(optimize), &_Py_ID(module), &_Py_ID(_feature_version), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -286,21 +287,22 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "_feature_version", NULL};
+    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "module", "_feature_version", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "compile",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[7];
+    PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *source;
-    PyObject *filename;
+    PyObject *filename = NULL;
     const char *mode;
     int flags = 0;
     int dont_inherit = 0;
     int optimize = -1;
+    PyObject *modname = Py_None;
     int feature_version = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -359,14 +361,23 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    feature_version = PyLong_AsInt(args[6]);
+    if (args[6]) {
+        modname = args[6];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    feature_version = PyLong_AsInt(args[7]);
     if (feature_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
+    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, modname, feature_version);
 
 exit:
+    /* Cleanup for filename */
+    Py_XDECREF(filename);
+
     return return_value;
 }
 
@@ -729,7 +740,7 @@ PyDoc_STRVAR(builtin_hash__doc__,
     {"hash", (PyCFunction)builtin_hash, METH_O, builtin_hash__doc__},
 
 PyDoc_STRVAR(builtin_hex__doc__,
-"hex($module, number, /)\n"
+"hex($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the hexadecimal representation of an integer.\n"
@@ -750,7 +761,7 @@ PyDoc_STRVAR(builtin_aiter__doc__,
     {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
 
 PyDoc_STRVAR(builtin_anext__doc__,
-"anext($module, aiterator, default=<unrepresentable>, /)\n"
+"anext($module, async_iterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return the next item from the async iterator.\n"
@@ -819,7 +830,7 @@ builtin_locals(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(builtin_oct__doc__,
-"oct($module, number, /)\n"
+"oct($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the octal representation of an integer.\n"
@@ -831,10 +842,16 @@ PyDoc_STRVAR(builtin_oct__doc__,
     {"oct", (PyCFunction)builtin_oct, METH_O, builtin_oct__doc__},
 
 PyDoc_STRVAR(builtin_ord__doc__,
-"ord($module, c, /)\n"
+"ord($module, character, /)\n"
 "--\n"
 "\n"
-"Return the Unicode code point for a one-character string.");
+"Return the ordinal value of a character.\n"
+"\n"
+"If the argument is a one-character string, return the Unicode code\n"
+"point of that character.\n"
+"\n"
+"If the argument is a bytes or bytearray object of length 1, return its\n"
+"single byte value.");
 
 #define BUILTIN_ORD_METHODDEF    \
     {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
@@ -911,7 +928,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_print__doc__,
-"print($module, /, *args, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
+"print($module, /, *objects, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
 "--\n"
 "\n"
 "Prints the values to a stream, or to sys.stdout by default.\n"
@@ -929,8 +946,8 @@ PyDoc_STRVAR(builtin_print__doc__,
     {"print", _PyCFunction_CAST(builtin_print), METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject * const *args,
-                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+builtin_print_impl(PyObject *module, PyObject * const *objects,
+                   Py_ssize_t objects_length, PyObject *sep, PyObject *end,
                    PyObject *file, int flush);
 
 static PyObject *
@@ -967,8 +984,8 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject * const *__clinic_args;
-    Py_ssize_t args_length;
+    PyObject * const *objects;
+    Py_ssize_t objects_length;
     PyObject *sep = Py_None;
     PyObject *end = Py_None;
     PyObject *file = Py_None;
@@ -1005,9 +1022,9 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto exit;
     }
 skip_optional_kwonly:
-    __clinic_args = args;
-    args_length = nargs;
-    return_value = builtin_print_impl(module, __clinic_args, args_length, sep, end, file, flush);
+    objects = args;
+    objects_length = nargs;
+    return_value = builtin_print_impl(module, objects, objects_length, sep, end, file, flush);
 
 exit:
     return return_value;
@@ -1268,4 +1285,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e7a5d0851d7f2cfb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06500bcc9a341e68 input=a9049054013a1b77]*/

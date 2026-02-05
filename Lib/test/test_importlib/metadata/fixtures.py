@@ -1,11 +1,11 @@
-import sys
-import copy
-import json
-import shutil
-import pathlib
-import textwrap
-import functools
 import contextlib
+import copy
+import functools
+import json
+import pathlib
+import shutil
+import sys
+import textwrap
 
 from test.support import import_helper
 from test.support import os_helper
@@ -14,14 +14,10 @@ from test.support import requires_zlib
 from . import _path
 from ._path import FilesSpec
 
-
-try:
-    from importlib import resources  # type: ignore
-
-    getattr(resources, 'files')
-    getattr(resources, 'as_file')
-except (ImportError, AttributeError):
-    import importlib_resources as resources  # type: ignore
+if sys.version_info >= (3, 9):
+    from importlib import resources
+else:
+    import importlib_resources as resources
 
 
 @contextlib.contextmanager
@@ -378,6 +374,8 @@ class ZipFixtures:
         # Add self.zip_name to the front of sys.path.
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
+        # workaround for #138313
+        self.addCleanup(lambda: None)
 
 
 def parameterize(*args_set):

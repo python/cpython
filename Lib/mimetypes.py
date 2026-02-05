@@ -477,6 +477,7 @@ def _default_mime_types():
     types_map = _types_map_default = {
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
+        '.dcm'    : 'application/dicom',
         '.epub'   : 'application/epub+zip',
         '.gz'     : 'application/gzip',
         '.json'   : 'application/json',
@@ -486,23 +487,28 @@ def _default_mime_types():
         '.wiz'    : 'application/msword',
         '.nq'     : 'application/n-quads',
         '.nt'     : 'application/n-triples',
+        '.cjs'    : 'application/node',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
-        '.dll'    : 'application/octet-stream',
-        '.exe'    : 'application/octet-stream',
         '.o'      : 'application/octet-stream',
         '.obj'    : 'application/octet-stream',
         '.so'     : 'application/octet-stream',
         '.oda'    : 'application/oda',
         '.ogx'    : 'application/ogg',
         '.pdf'    : 'application/pdf',
+        '.ai'     : 'application/pdf',
         '.p7c'    : 'application/pkcs7-mime',
         '.ps'     : 'application/postscript',
-        '.ai'     : 'application/postscript',
         '.eps'    : 'application/postscript',
+        '.rtf'    : 'application/rtf',
+        '.texi'   : 'application/texinfo',
+        '.texinfo': 'application/texinfo',
+        '.toml'   : 'application/toml',
         '.trig'   : 'application/trig',
         '.m3u'    : 'application/vnd.apple.mpegurl',
         '.m3u8'   : 'application/vnd.apple.mpegurl',
+        '.dll'    : 'application/vnd.microsoft.portable-executable',
+        '.exe'    : 'application/vnd.microsoft.portable-executable',
         '.xls'    : 'application/vnd.ms-excel',
         '.xlb'    : 'application/vnd.ms-excel',
         '.eot'    : 'application/vnd.ms-fontobject',
@@ -548,8 +554,6 @@ def _default_mime_types():
         '.tar'    : 'application/x-tar',
         '.tcl'    : 'application/x-tcl',
         '.tex'    : 'application/x-tex',
-        '.texi'   : 'application/x-texinfo',
-        '.texinfo': 'application/x-texinfo',
         '.roff'   : 'application/x-troff',
         '.t'      : 'application/x-troff',
         '.tr'     : 'application/x-troff',
@@ -587,9 +591,9 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/vnd.wave',
+        '.weba'   : 'audio/webm',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
-        '.weba'   : 'audio/webm',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
@@ -605,6 +609,7 @@ def _default_mime_types():
         '.jpeg'   : 'image/jpeg',
         '.jpm'    : 'image/jpm',
         '.jpx'    : 'image/jpx',
+        '.jxl'    : 'image/jxl',
         '.heic'   : 'image/heic',
         '.heif'   : 'image/heif',
         '.png'    : 'image/png',
@@ -647,7 +652,6 @@ def _default_mime_types():
         '.pl'     : 'text/plain',
         '.srt'    : 'text/plain',
         '.rtx'    : 'text/richtext',
-        '.rtf'    : 'text/rtf',
         '.tsv'    : 'text/tab-separated-values',
         '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',
@@ -680,11 +684,9 @@ def _default_mime_types():
 
     # Please sort these too
     common_types = _common_types_default = {
-        '.rtf' : 'application/rtf',
         '.apk' : 'application/vnd.android.package-archive',
         '.midi': 'audio/midi',
         '.mid' : 'audio/midi',
-        '.jpg' : 'image/jpg',
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
@@ -718,24 +720,30 @@ def _parse_args(args):
 
 def _main(args=None):
     """Run the mimetypes command-line interface and return a text to print."""
-    import sys
-
     args, help_text = _parse_args(args)
 
+    results = []
     if args.extension:
         for gtype in args.type:
             guess = guess_extension(gtype, not args.lenient)
             if guess:
-                return str(guess)
-            sys.exit(f"error: unknown type {gtype}")
+                results.append(str(guess))
+            else:
+                results.append(f"error: unknown type {gtype}")
+        return results
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
-                return f"type: {guess} encoding: {encoding}"
-            sys.exit(f"error: media type unknown for {gtype}")
-    return help_text
+                results.append(f"type: {guess} encoding: {encoding}")
+            else:
+                results.append(f"error: media type unknown for {gtype}")
+        return results
 
 
 if __name__ == '__main__':
-    print(_main())
+    import sys
+
+    results = _main()
+    print("\n".join(results))
+    sys.exit(any(result.startswith("error: ") for result in results))

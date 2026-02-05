@@ -174,7 +174,7 @@ Formally:
 .. grammar-snippet::
    :group: python-grammar
 
-   strings: ( `STRING` | fstring)+ | tstring+
+   strings: ( `STRING` | `fstring`)+ | `tstring`+
 
 This feature is defined at the syntactical level, so it only works with literals.
 To concatenate string expressions at run time, the '+' operator may be used::
@@ -266,17 +266,19 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist:: python-grammar
-   comprehension: `assignment_expression` `comp_for`
+   comprehension: `flexible_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
-:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
-In this case, the elements of the new container are those that would be produced
-by considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
-nesting from left to right, and evaluating the expression to produce an element
-each time the innermost block is reached.
+:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if`
+clauses.  In this case, the elements of the new container are those that would
+be produced by considering each of the :keyword:`!for` or :keyword:`!if`
+clauses a block, nesting from left to right, and evaluating the expression to
+produce an element each time the innermost block is reached.  If the expression
+is starred, the result will instead be unpacked to produce zero or more
+elements.
 
 However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
 the comprehension is executed in a separate implicitly nested scope. This ensures
@@ -320,6 +322,9 @@ See also :pep:`530`.
    Asynchronous comprehensions are now allowed inside comprehensions in
    asynchronous functions. Outer comprehensions implicitly become
    asynchronous.
+
+.. versionchanged:: next
+   Unpacking with the ``*`` operator is now allowed in the expression.
 
 
 .. _lists:
@@ -396,8 +401,8 @@ enclosed in curly braces:
 .. productionlist:: python-grammar
    dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
    dict_item_list: `dict_item` ("," `dict_item`)* [","]
+   dict_comprehension: `dict_item` `comp_for`
    dict_item: `expression` ":" `expression` | "**" `or_expr`
-   dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
 
@@ -419,10 +424,21 @@ earlier dict items and earlier dictionary unpackings.
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
 
-A dict comprehension, in contrast to list and set comprehensions, needs two
-expressions separated with a colon followed by the usual "for" and "if" clauses.
-When the comprehension is run, the resulting key and value elements are inserted
-in the new dictionary in the order they are produced.
+A dict comprehension may take one of two forms:
+
+- The first form  uses two expressions separated with a colon followed by the
+  usual "for" and "if" clauses.  When the comprehension is run, the resulting
+  key and value elements are inserted in the new dictionary in the order they
+  are produced.
+
+- The second form uses a single expression prefixed by the ``**`` dictionary
+  unpacking operator followed by the usual "for" and "if" clauses.  When the
+  comprehension is evaluated, the expression is evaluated and then unpacked,
+  inserting zero or more key/value pairs into the new dictionary.
+
+Both forms of dictionary comprehension retain the property that if the same key
+is specified multiple times, the associated value in the resulting dictionary
+will be the last one specified.
 
 .. index:: pair: immutable; object
            hashable
@@ -439,6 +455,8 @@ prevails.
    the key.  Starting with 3.8, the key is evaluated before the value, as
    proposed by :pep:`572`.
 
+.. versionchanged:: next
+   Unpacking with the ``**`` operator is now allowed in dictionary comprehensions.
 
 .. _genexpr:
 
@@ -453,7 +471,7 @@ Generator expressions
 A generator expression is a compact generator notation in parentheses:
 
 .. productionlist:: python-grammar
-   generator_expression: "(" `expression` `comp_for` ")"
+   generator_expression: "(" `flexible_expression` `comp_for` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
 for comprehensions, except that it is enclosed in parentheses instead of
@@ -893,7 +911,7 @@ Primaries represent the most tightly bound operations of the language. Their
 syntax is:
 
 .. productionlist:: python-grammar
-   primary: `atom` | `attributeref` | `subscription` | `slicing` | `call`
+   primary: `atom` | `attributeref` | `subscription` | `call`
 
 
 .. _attribute-references:
@@ -932,8 +950,8 @@ method, that method is called as a fallback.
 
 .. _subscriptions:
 
-Subscriptions
--------------
+Subscriptions and slicings
+--------------------------
 
 .. index::
    single: subscription
@@ -948,67 +966,74 @@ Subscriptions
    pair: object; dictionary
    pair: sequence; item
 
-The subscription of an instance of a :ref:`container class <sequence-types>`
-will generally select an element from the container. The subscription of a
-:term:`generic class <generic type>` will generally return a
-:ref:`GenericAlias <types-genericalias>` object.
+The :dfn:`subscription` syntax is usually used for selecting an element from a
+:ref:`container <sequence-types>` -- for example, to get a value from
+a :class:`dict`::
 
-.. productionlist:: python-grammar
-   subscription: `primary` "[" `flexible_expression_list` "]"
+   >>> digits_by_name = {'one': 1, 'two': 2}
+   >>> digits_by_name['two']  # Subscripting a dictionary using the key 'two'
+   2
 
-When an object is subscripted, the interpreter will evaluate the primary and
-the expression list.
+In the subscription syntax, the object being subscribed -- a
+:ref:`primary <primaries>` -- is followed by a :dfn:`subscript` in
+square brackets.
+In the simplest case, the subscript is a single expression.
 
-The primary must evaluate to an object that supports subscription. An object
-may support subscription through defining one or both of
-:meth:`~object.__getitem__` and :meth:`~object.__class_getitem__`. When the
-primary is subscripted, the evaluated result of the expression list will be
-passed to one of these methods. For more details on when ``__class_getitem__``
-is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
+Depending on the type of the object being subscribed, the subscript is
+sometimes called a :term:`key` (for mappings), :term:`index` (for sequences),
+or *type argument* (for :term:`generic types <generic type>`).
+Syntactically, these are all equivalent::
 
-If the expression list contains at least one comma, or if any of the expressions
-are starred, the expression list will evaluate to a :class:`tuple` containing
-the items of the expression list. Otherwise, the expression list will evaluate
-to the value of the list's sole member.
+   >>> colors = ['red', 'blue', 'green', 'black']
+   >>> colors[3]  # Subscripting a list using the index 3
+   'black'
 
-.. versionchanged:: 3.11
-   Expressions in an expression list may be starred. See :pep:`646`.
+   >>> list[str]  # Parameterizing the list type using the type argument str
+   list[str]
 
-For built-in objects, there are two types of objects that support subscription
-via :meth:`~object.__getitem__`:
+At runtime, the interpreter will evaluate the primary and
+the subscript, and call the primary's :meth:`~object.__getitem__` or
+:meth:`~object.__class_getitem__` :term:`special method` with the subscript
+as argument.
+For more details on which of these methods is called, see
+:ref:`classgetitem-versus-getitem`.
 
-1. Mappings. If the primary is a :term:`mapping`, the expression list must
-   evaluate to an object whose value is one of the keys of the mapping, and the
-   subscription selects the value in the mapping that corresponds to that key.
-   An example of a builtin mapping class is the :class:`dict` class.
-2. Sequences. If the primary is a :term:`sequence`, the expression list must
-   evaluate to an :class:`int` or a :class:`slice` (as discussed in the
-   following section). Examples of builtin sequence classes include the
-   :class:`str`, :class:`list` and :class:`tuple` classes.
+To show how subscription works, we can define a custom object that
+implements :meth:`~object.__getitem__` and prints out the value of
+the subscript::
 
-The formal syntax makes no special provision for negative indices in
-:term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
-method that interprets negative indices by adding the length of the sequence
-to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
-resulting value must be a nonnegative integer less than the number of items in
-the sequence, and the subscription selects the item whose index is that value
-(counting from zero). Since the support for negative indices and slicing
-occurs in the object's :meth:`~object.__getitem__` method, subclasses overriding
-this method will need to explicitly add that support.
+   >>> class SubscriptionDemo:
+   ...     def __getitem__(self, key):
+   ...         print(f'subscripted with: {key!r}')
+   ...
+   >>> demo = SubscriptionDemo()
+   >>> demo[1]
+   subscripted with: 1
+   >>> demo['a' * 3]
+   subscripted with: 'aaa'
 
-.. index::
-   single: character
-   pair: string; item
+See :meth:`~object.__getitem__` documentation for how built-in types handle
+subscription.
 
-A :class:`string <str>` is a special kind of sequence whose items are
-*characters*. A character is not a separate data type but a
-string of exactly one character.
+Subscriptions may also be used as targets in :ref:`assignment <assignment>` or
+:ref:`deletion <del>` statements.
+In these cases, the interpreter will call the subscripted object's
+:meth:`~object.__setitem__` or :meth:`~object.__delitem__`
+:term:`special method`, respectively, instead of :meth:`~object.__getitem__`.
 
+.. code-block::
 
-.. _slicings:
+   >>> colors = ['red', 'blue', 'green', 'black']
+   >>> colors[3] = 'white'  # Setting item at index
+   >>> colors
+   ['red', 'blue', 'green', 'white']
+   >>> del colors[3]  # Deleting item at index 3
+   >>> colors
+   ['red', 'blue', 'green']
 
-Slicings
---------
+All advanced forms of *subscript* documented in the following sections
+are also usable for assignment and deletion.
+
 
 .. index::
    single: slicing
@@ -1022,43 +1047,111 @@ Slicings
    pair: object; tuple
    pair: object; list
 
-A slicing selects a range of items in a sequence object (e.g., a string, tuple
-or list).  Slicings may be used as expressions or as targets in assignment or
-:keyword:`del` statements.  The syntax for a slicing:
+.. _slicings:
 
-.. productionlist:: python-grammar
-   slicing: `primary` "[" `slice_list` "]"
-   slice_list: `slice_item` ("," `slice_item`)* [","]
-   slice_item: `expression` | `proper_slice`
-   proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
-   lower_bound: `expression`
-   upper_bound: `expression`
-   stride: `expression`
+Slicings
+^^^^^^^^
 
-There is ambiguity in the formal syntax here: anything that looks like an
-expression list also looks like a slice list, so any subscription can be
-interpreted as a slicing.  Rather than further complicating the syntax, this is
-disambiguated by defining that in this case the interpretation as a subscription
-takes priority over the interpretation as a slicing (this is the case if the
-slice list contains no proper slice).
+A more advanced form of subscription, :dfn:`slicing`, is commonly used
+to extract a portion of a :ref:`sequence <datamodel-sequences>`.
+In this form, the subscript is a :term:`slice`: up to three
+expressions separated by colons.
+Any of the expressions may be omitted, but a slice must contain at least one
+colon::
 
-.. index::
-   single: start (slice object attribute)
-   single: stop (slice object attribute)
-   single: step (slice object attribute)
+   >>> number_names = ['zero', 'one', 'two', 'three', 'four', 'five']
+   >>> number_names[1:3]
+   ['one', 'two']
+   >>> number_names[1:]
+   ['one', 'two', 'three', 'four', 'five']
+   >>> number_names[:3]
+   ['zero', 'one', 'two']
+   >>> number_names[:]
+   ['zero', 'one', 'two', 'three', 'four', 'five']
+   >>> number_names[::2]
+   ['zero', 'two', 'four']
+   >>> number_names[:-3]
+   ['zero', 'one', 'two']
+   >>> del number_names[4:]
+   >>> number_names
+   ['zero', 'one', 'two', 'three']
 
-The semantics for a slicing are as follows.  The primary is indexed (using the
-same :meth:`~object.__getitem__` method as
-normal subscription) with a key that is constructed from the slice list, as
-follows.  If the slice list contains at least one comma, the key is a tuple
-containing the conversion of the slice items; otherwise, the conversion of the
-lone slice item is the key.  The conversion of a slice item that is an
-expression is that expression.  The conversion of a proper slice is a slice
-object (see section :ref:`types`) whose :attr:`~slice.start`,
-:attr:`~slice.stop` and :attr:`~slice.step` attributes are the values of the
-expressions given as lower bound, upper bound and stride, respectively,
-substituting ``None`` for missing expressions.
+When a slice is evaluated, the interpreter constructs a :class:`slice` object
+whose :attr:`~slice.start`, :attr:`~slice.stop` and
+:attr:`~slice.step` attributes, respectively, are the results of the
+expressions between the colons.
+Any missing expression evaluates to :const:`None`.
+This :class:`!slice` object is then passed to the :meth:`~object.__getitem__`
+or :meth:`~object.__class_getitem__` :term:`special method`, as above. ::
 
+   # continuing with the SubscriptionDemo instance defined above:
+   >>> demo[2:3]
+   subscripted with: slice(2, 3, None)
+   >>> demo[::'spam']
+   subscripted with: slice(None, None, 'spam')
+
+
+Comma-separated subscripts
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The subscript can also be given as two or more comma-separated expressions
+or slices::
+
+   # continuing with the SubscriptionDemo instance defined above:
+   >>> demo[1, 2, 3]
+   subscripted with: (1, 2, 3)
+   >>> demo[1:2, 3]
+   subscripted with: (slice(1, 2, None), 3)
+
+This form is commonly used with numerical libraries for slicing
+multi-dimensional data.
+In this case, the interpreter constructs a :class:`tuple` of the results of the
+expressions or slices, and passes this tuple to the :meth:`~object.__getitem__`
+or :meth:`~object.__class_getitem__` :term:`special method`, as above.
+
+The subscript may also be given as a single expression or slice followed
+by a comma, to specify a one-element tuple::
+
+   >>> demo['spam',]
+   subscripted with: ('spam',)
+
+
+"Starred" subscriptions
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.11
+   Expressions in *tuple_slices* may be starred. See :pep:`646`.
+
+The subscript can also contain a starred expression.
+In this case, the interpreter unpacks the result into a tuple, and passes
+this tuple to :meth:`~object.__getitem__` or :meth:`~object.__class_getitem__`::
+
+   # continuing with the SubscriptionDemo instance defined above:
+   >>> demo[*range(10)]
+   subscripted with: (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+Starred expressions may be combined with comma-separated expressions
+and slices::
+
+   >>> demo['a', 'b', *range(3), 'c']
+   subscripted with: ('a', 'b', 0, 1, 2, 'c')
+
+
+Formal subscription grammar
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   subscription:     `primary` '[' `subscript` ']'
+   subscript:        `single_subscript` | `tuple_subscript`
+   single_subscript: `proper_slice` | `assignment_expression`
+   proper_slice:     [`expression`] ":" [`expression`] [ ":" [`expression`] ]
+   tuple_subscript:  ','.(`single_subscript` | `starred_expression`)+ [',']
+
+Recall that the ``|`` operator :ref:`denotes ordered choice <notation>`.
+Specifically, in :token:`!subscript`, if both alternatives would match, the
+first (:token:`!single_subscript`) has priority.
 
 .. index::
    pair: object; callable
@@ -1938,8 +2031,9 @@ Conditional expressions
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
 
-Conditional expressions (sometimes called a "ternary operator") have the lowest
-priority of all Python operations.
+A conditional expression (sometimes called a "ternary operator") is an
+alternative to the if-else statement. As it is an expression, it returns a value
+and can appear as a sub-expression.
 
 The expression ``x if C else y`` first evaluates the condition, *C* rather than *x*.
 If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
@@ -2075,7 +2169,7 @@ precedence and have a left-to-right chaining feature as described in the
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |
 +-----------------------------------------------+-------------------------------------+
-| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
+| ``x[index]``, ``x[index:index]``              | Subscription (including slicing),   |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`await x <await>`                    | Await expression                    |

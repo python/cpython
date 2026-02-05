@@ -199,8 +199,10 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     cfg_instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
-    i->i_target = NULL;
     i->i_loc = loc;
+    // memory is already zero initialized
+    assert(i->i_target == NULL);
+    assert(i->i_except == NULL);
 
     return SUCCESS;
 }
@@ -848,7 +850,7 @@ calculate_stackdepth(cfg_builder *g)
             int new_depth = depth + effects.net;
             if (new_depth < 0) {
                 PyErr_Format(PyExc_ValueError,
-                             "Invalid CFG, stack underflow");
+                             "Invalid CFG, stack underflow at line %d", instr->i_loc.lineno);
                 goto error;
             }
             maxdepth = Py_MAX(maxdepth, depth);
@@ -968,6 +970,9 @@ label_exception_targets(basicblock *entryblock) {
                     }
                     last_yield_except_depth = -1;
                 }
+            }
+            else if (instr->i_opcode == RETURN_GENERATOR) {
+                instr->i_except = NULL;
             }
             else {
                 instr->i_except = handler;
@@ -1104,6 +1109,7 @@ basicblock_remove_redundant_nops(basicblock *bb) {
     assert(dest <= bb->b_iused);
     int num_removed = bb->b_iused - dest;
     bb->b_iused = dest;
+    memset(&bb->b_instr[dest], 0, sizeof(cfg_instr) * num_removed);
     return num_removed;
 }
 
@@ -2888,7 +2894,7 @@ optimize_load_fast(cfg_builder *g)
                     int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
                     int net_pushed = num_pushed - num_popped;
                     assert(net_pushed >= 0);
-                    for (int i = 0; i < net_pushed; i++) {
+                    for (int j = 0; j < net_pushed; j++) {
                         PUSH_REF(i, NOT_LOCAL);
                     }
                     break;
@@ -2990,11 +2996,8 @@ optimize_load_fast(cfg_builder *g)
         }
 
         // Push fallthrough block
-        cfg_instr *term = basicblock_last_instr(block);
-        if (term != NULL && block->b_next != NULL &&
-            !(IS_UNCONDITIONAL_JUMP_OPCODE(term->i_opcode) ||
-              IS_SCOPE_EXIT_OPCODE(term->i_opcode))) {
-            assert(BB_HAS_FALLTHROUGH(block));
+        if (BB_HAS_FALLTHROUGH(block)) {
+            assert(block->b_next != NULL);
             load_fast_push_block(&sp, block->b_next, refs.size);
         }
 
@@ -3472,11 +3475,13 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 instr->i_opcode = instr->i_opcode == JUMP_IF_FALSE ?
                                           POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE;
                 location loc = instr->i_loc;
+                basicblock *except = instr->i_except;
                 cfg_instr copy = {
                             .i_opcode = COPY,
                             .i_oparg = 1,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
                 cfg_instr to_bool = {
@@ -3484,6 +3489,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                             .i_oparg = 0,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
             }
@@ -3588,8 +3594,19 @@ duplicate_exits_without_lineno(cfg_builder *g)
  * Also reduces the size of the line number table,
  * but has no impact on the generated line number events.
  */
+
+static inline void
+maybe_propagate_location(basicblock *b, int i, location loc)
+{
+    assert(b->b_iused > i);
+    if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
+         b->b_instr[i].i_loc = loc;
+    }
+}
+
 static void
-propagate_line_numbers(basicblock *entryblock) {
+propagate_line_numbers(basicblock *entryblock)
+{
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
@@ -3598,26 +3615,21 @@ propagate_line_numbers(basicblock *entryblock) {
 
         location prev_location = NO_LOCATION;
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
-                b->b_instr[i].i_loc = prev_location;
-            }
-            else {
-                prev_location = b->b_instr[i].i_loc;
-            }
+            maybe_propagate_location(b, i, prev_location);
+            prev_location = b->b_instr[i].i_loc;
         }
         if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
             if (b->b_next->b_iused > 0) {
-                if (b->b_next->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    b->b_next->b_instr[0].i_loc = prev_location;
-                }
+                maybe_propagate_location(b->b_next, 0, prev_location);
             }
         }
         if (is_jump(last)) {
             basicblock *target = last->i_target;
+            while (target->b_iused == 0 && target->b_predecessors == 1) {
+                target = target->b_next;
+            }
             if (target->b_predecessors == 1) {
-                if (target->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    target->b_instr[0].i_loc = prev_location;
-                }
+                maybe_propagate_location(target, 0, prev_location);
             }
         }
     }
@@ -3709,33 +3721,9 @@ error:
 
 static int
 insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
-                           int *fixed, int nfreevars, int code_flags)
+                           int *fixed, int nfreevars)
 {
     assert(umd->u_firstlineno > 0);
-
-    /* Add the generator prefix instructions. */
-    if (IS_GENERATOR(code_flags)) {
-        /* Note that RETURN_GENERATOR + POP_TOP have a net stack effect
-         * of 0. This is because RETURN_GENERATOR pushes an element
-         * with _PyFrame_StackPush before switching stacks.
-         */
-
-        location loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1);
-        cfg_instr make_gen = {
-            .i_opcode = RETURN_GENERATOR,
-            .i_oparg = 0,
-            .i_loc = loc,
-            .i_target = NULL,
-        };
-        RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
-        cfg_instr pop_top = {
-            .i_opcode = POP_TOP,
-            .i_oparg = 0,
-            .i_loc = loc,
-            .i_target = NULL,
-        };
-        RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
-    }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
     const int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
@@ -3763,6 +3751,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
                 .i_oparg = oldindex,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
+                .i_except = NULL,
             };
             if (basicblock_insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
                 PyMem_RawFree(sorted);
@@ -3779,6 +3768,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = nfreevars,
             .i_loc = NO_LOCATION,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &copy_frees));
     }
@@ -3832,7 +3822,7 @@ fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *
 }
 
 static int
-prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_flags)
+prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g)
 {
     assert(PyDict_GET_SIZE(umd->u_varnames) < INT_MAX);
     assert(PyDict_GET_SIZE(umd->u_cellvars) < INT_MAX);
@@ -3849,7 +3839,7 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
     }
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars)) {
         PyMem_Free(cellfixedoffsets);
         return ERROR;
     }
@@ -3970,7 +3960,7 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyInstructionSequence *seq)
 
 int
 _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
-                                     _PyCompile_CodeUnitMetadata *umd, int code_flags,
+                                     _PyCompile_CodeUnitMetadata *umd,
                                      int *stackdepth, int *nlocalsplus,
                                      _PyInstructionSequence *seq)
 {
@@ -3981,16 +3971,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
         return ERROR;
     }
 
-    /* prepare_localsplus adds instructions for generators that push
-     * and pop an item on the stack. This assertion makes sure there
-     * is space on the stack for that.
-     * It should always be true, because a generator must have at
-     * least one expression or call to INTRINSIC_STOPITERATION_ERROR,
-     * which requires stackspace.
-     */
-    assert(!(IS_GENERATOR(code_flags) && *stackdepth == 0));
-
-    *nlocalsplus = prepare_localsplus(umd, g, code_flags);
+    *nlocalsplus = prepare_localsplus(umd, g);
     if (*nlocalsplus < 0) {
         return ERROR;
     }

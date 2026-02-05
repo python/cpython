@@ -1,2 +1,0 @@
-Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of a
-string.

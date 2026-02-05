@@ -90,6 +90,13 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
+.. exception:: SpecialFileError
+
+   This exception is raised when :func:`copyfile` or :func:`copytree` attempt
+   to copy a named pipe.
+
+   .. versionadded:: 2.7
+
 .. exception:: SameFileError
 
    This exception is raised if source and destination in :func:`copyfile`
@@ -508,7 +515,7 @@ Directory and files operations
 
 .. exception:: Error
 
-   This exception collects exceptions that are raised during a multi-file
+   Subclass of :exc:`OSError` collecting exceptions raised during a multi-file
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
@@ -533,7 +540,9 @@ On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used.
+:func:`shutil.copyfileobj` is used, which is still reads and writes in a loop.
+:func:`shutil.copy2` uses the native ``CopyFile2`` call on Windows, which is the most
+efficient method, supports copy-on-write, and preserves metadata.
 
 If the fast-copy operation fails and no data was written in the destination
 file then shutil will silently fallback on using less efficient
@@ -860,7 +869,7 @@ In the final archive, :file:`please_add.txt` should be included, but
     ...     root_dir='tmp/root',
     ...     base_dir='structure/content',
     ... )
-    '/Users/tarek/my_archive.tar'
+    '/Users/tarek/myarchive.tar'
 
 Listing the files in the resulting archive gives us:
 

@@ -6,7 +6,7 @@ Quick Start Guide
 1a. Optionally install Python 3.10 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
     NuGet.
-2.  Run "build.bat" to build Python in 32-bit Release configuration.
+2.  Run "build.bat" to build Python in 64-bit Release configuration.
 3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
@@ -237,7 +237,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.49.1, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.50.4, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 
@@ -358,6 +358,11 @@ Supported flags are:
 
 * WITH_COMPUTED_GOTOS: build the interpreter using "computed gotos".
   Currently only supported by clang-cl.
+
+* UsePymallocHugepages: enable huge page support for pymalloc arenas.
+  When enabled, the arena size on 64-bit platforms is increased to 2 MiB
+  and arena allocation uses MEM_LARGE_PAGES with automatic fallback to
+  regular pages. Can also be enabled via `--pymalloc-hugepages` flag.
 
 
 Static library

@@ -1,6 +1,0 @@
-In the free-threaded build, avoid data races caused by updating type slots
-or type flags after the type was initially created.  For those (typically
-rare) cases, use the stop-the-world mechanism.  Remove the use of atomics
-when reading or writing type flags.  The use of atomics is not sufficient to
-avoid races (since flags are sometimes read without a lock and without
-atomics) and are no longer required.

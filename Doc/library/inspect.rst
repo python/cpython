@@ -253,11 +253,20 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | gi_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | gi_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | gi_code           | code                      |
 +-----------------+-------------------+---------------------------+
 |                 | gi_yieldfrom      | object being iterated by  |
 |                 |                   | ``yield from``, or        |
 |                 |                   | ``None``                  |
++-----------------+-------------------+---------------------------+
+|                 | gi_state          | state of the generator,   |
+|                 |                   | one of ``GEN_CREATED``,   |
+|                 |                   | ``GEN_RUNNING``,          |
+|                 |                   | ``GEN_SUSPENDED``, or     |
+|                 |                   | ``GEN_CLOSED``            |
 +-----------------+-------------------+---------------------------+
 | async generator | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -270,7 +279,17 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | ag_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | ag_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | ag_code           | code                      |
++-----------------+-------------------+---------------------------+
+|                 | ag_state          | state of the async        |
+|                 |                   | generator, one of         |
+|                 |                   | ``AGEN_CREATED``,         |
+|                 |                   | ``AGEN_RUNNING``,         |
+|                 |                   | ``AGEN_SUSPENDED``, or    |
+|                 |                   | ``AGEN_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -283,11 +302,20 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | cr_running        | is the coroutine running? |
 +-----------------+-------------------+---------------------------+
+|                 | cr_suspended      | is the coroutine          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | cr_code           | code                      |
 +-----------------+-------------------+---------------------------+
 |                 | cr_origin         | where coroutine was       |
 |                 |                   | created, or ``None``. See |
 |                 |                   | |coroutine-origin-link|   |
++-----------------+-------------------+---------------------------+
+|                 | cr_state          | state of the coroutine,   |
+|                 |                   | one of ``CORO_CREATED``,  |
+|                 |                   | ``CORO_RUNNING``,         |
+|                 |                   | ``CORO_SUSPENDED``, or    |
+|                 |                   | ``CORO_CLOSED``           |
 +-----------------+-------------------+---------------------------+
 | builtin         | __doc__           | documentation string      |
 +-----------------+-------------------+---------------------------+
@@ -316,9 +344,26 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``__builtins__`` attribute to functions.
 
+.. versionchanged:: 3.11
+
+   Add ``gi_suspended`` attribute to generators.
+
+.. versionchanged:: 3.11
+
+   Add ``cr_suspended`` attribute to coroutines.
+
+.. versionchanged:: 3.12
+
+   Add ``ag_suspended`` attribute to async generators.
+
 .. versionchanged:: 3.14
 
    Add ``f_generator`` attribute to frames.
+
+.. versionchanged:: next
+
+   Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
+   coroutines, and ``ag_state`` attribute to async generators.
 
 .. function:: getmembers(object[, predicate])
 
@@ -503,7 +548,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
-      if the wrapped function is a :term:`coroutine function`.
+      if the wrapped function is a :term:`asynchronous generator` function.
 
 .. function:: isasyncgen(object)
 
@@ -616,16 +661,28 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 Retrieving source code
 ----------------------
 
-.. function:: getdoc(object)
+.. function:: getdoc(object, *, inherit_class_doc=True, fallback_to_class_doc=True)
 
    Get the documentation string for an object, cleaned up with :func:`cleandoc`.
-   If the documentation string for an object is not provided and the object is
-   a class, a method, a property or a descriptor, retrieve the documentation
-   string from the inheritance hierarchy.
+   If the documentation string for an object is not provided:
+
+   * if the object is a class and *inherit_class_doc* is true (by default),
+     retrieve the documentation string from the inheritance hierarchy;
+   * if the object is a method, a property or a descriptor, retrieve
+     the documentation string from the inheritance hierarchy;
+   * otherwise, if *fallback_to_class_doc* is true (by default), retrieve
+     the documentation string from the class of the object.
+
    Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
+
+   .. versionchanged:: 3.15
+      Added parameters *inherit_class_doc* and *fallback_to_class_doc*.
+
+      Documentation strings on :class:`~functools.cached_property`
+      objects are now inherited if not overridden.
 
 
 .. function:: getcomments(object)
@@ -1179,7 +1236,7 @@ Classes and functions
       :func:`signature` in Python 3.5, but that decision has been reversed
       in order to restore a clearly supported standard interface for
       single-source Python 2/3 code migrating away from the legacy
-      :func:`getargspec` API.
+      :func:`!getargspec` API.
 
    .. versionchanged:: 3.7
       Python only explicitly guaranteed that it preserved the declaration
@@ -1288,6 +1345,11 @@ Classes and functions
 
    This is an alias for :func:`annotationlib.get_annotations`; see the documentation
    of that function for more information.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. versionadded:: 3.10
 
@@ -1768,7 +1830,7 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`inspect` module also provides a basic introspection capability

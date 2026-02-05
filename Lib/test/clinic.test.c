@@ -1612,12 +1612,17 @@ test_Py_ssize_t_converter
     a: Py_ssize_t = 12
     b: Py_ssize_t(accept={int}) = 34
     c: Py_ssize_t(accept={int, NoneType}) = 56
+    d: Py_ssize_t(accept={int}, allow_negative=False) = 78
+    e: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = 90
+    f: Py_ssize_t(accept={int}, allow_negative=True) = -12
+    g: Py_ssize_t(accept={int, NoneType}, allow_negative=True) = -34
     /
 
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
-"test_Py_ssize_t_converter($module, a=12, b=34, c=56, /)\n"
+"test_Py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-12,\n"
+"                          g=-34, /)\n"
 "--\n"
 "\n");
 
@@ -1626,7 +1631,8 @@ PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
 
 static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                               Py_ssize_t c);
+                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                               Py_ssize_t f, Py_ssize_t g);
 
 static PyObject *
 test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1635,8 +1641,12 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     Py_ssize_t a = 12;
     Py_ssize_t b = 34;
     Py_ssize_t c = 56;
+    Py_ssize_t d = 78;
+    Py_ssize_t e = 90;
+    Py_ssize_t f = -12;
+    Py_ssize_t g = -34;
 
-    if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 3)) {
+    if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -1675,8 +1685,55 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (!_Py_convert_optional_to_ssize_t(args[2], &c)) {
         goto exit;
     }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        d = ival;
+        if (d < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "d cannot be negative");
+            goto exit;
+        }
+    }
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[4], &e)) {
+        goto exit;
+    }
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[5]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        f = ival;
+    }
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[6], &g)) {
+        goto exit;
+    }
 skip_optional:
-    return_value = test_Py_ssize_t_converter_impl(module, a, b, c);
+    return_value = test_Py_ssize_t_converter_impl(module, a, b, c, d, e, f, g);
 
 exit:
     return return_value;
@@ -1684,8 +1741,9 @@ exit:
 
 static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                               Py_ssize_t c)
-/*[clinic end generated code: output=48214bc3d01f4dd7 input=3855f184bb3f299d]*/
+                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                               Py_ssize_t f, Py_ssize_t g)
+/*[clinic end generated code: output=4ae0a56a1447fba9 input=a25bac8ecf2890aa]*/
 
 
 /*[clinic input]
@@ -4080,13 +4138,14 @@ test_preprocessor_guarded_if_with_continuation_impl(PyObject *module)
 #if CONDITION_E || CONDITION_F
 #warning "different type of CPP directive"
 /*[clinic input]
+@permit_long_summary
 test_preprocessor_guarded_if_e_or_f
 Makes sure cpp.Monitor handles other directives than preprocessor conditionals.
 [clinic start generated code]*/
 
 static PyObject *
 test_preprocessor_guarded_if_e_or_f_impl(PyObject *module)
-/*[clinic end generated code: output=e49d24ff64ad88bc input=57b9c37f938bc4f1]*/
+/*[clinic end generated code: output=e49d24ff64ad88bc input=3ca9ab4e883300ed]*/
 #endif
 
 /*[clinic input]
@@ -4282,7 +4341,7 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     a = args[0];
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4297,7 +4356,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=0c11c475e240869e input=2c49a482f68545c0]*/
+/*[clinic end generated code: output=83cbe9554d04add2 input=2c49a482f68545c0]*/
 
 /*[clinic input]
 test_vararg
@@ -4362,7 +4421,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     }
     a = fastargs[0];
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4378,7 +4437,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=17ba625cdd0369c1 input=7448995636d9186a]*/
+/*[clinic end generated code: output=d773f7b54e61f73a input=7448995636d9186a]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -4455,7 +4514,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4472,7 +4531,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=3f2b06ab08d5d0be input=3a0f9f557ce1f712]*/
+/*[clinic end generated code: output=d25e56802c197344 input=3a0f9f557ce1f712]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4553,7 +4612,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     }
     c = fastargs[1];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4569,7 +4628,7 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=f46666f0b1bf86b9 input=6983e66817f82924]*/
+/*[clinic end generated code: output=7366943a7df42e05 input=6983e66817f82924]*/
 
 /*[clinic input]
 test_paramname_module
@@ -5084,14 +5143,18 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 Test.__init__
     *args: tuple
 
-Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
+Varargs init method.
+
+For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(Test___init____doc__,
 "Test(*args)\n"
 "--\n"
 "\n"
-"Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.");
+"Varargs init method.\n"
+"\n"
+"For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static int
 Test___init___impl(TestObj *self, PyObject *args);
@@ -5120,21 +5183,25 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=f172425cec373cd6 input=4b8388c4e6baab6f]*/
+/*[clinic end generated code: output=0e5836c40dbc2397 input=a615a4485c0fc3e2]*/
 
 /*[clinic input]
 @classmethod
 Test.__new__
     *args: tuple
 
-Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
+Varargs new method.
+
+For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(Test__doc__,
 "Test(*args)\n"
 "--\n"
 "\n"
-"Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.");
+"Varargs new method.\n"
+"\n"
+"For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args);
@@ -5162,7 +5229,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=ee1e8892a67abd4a input=a8259521129cad20]*/
+/*[clinic end generated code: output=e6fba0c8951882fd input=8ce30adb836aeacb]*/
 
 
 /*[clinic input]

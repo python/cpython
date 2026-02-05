@@ -700,7 +700,7 @@ class NonCallableMock(Base):
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
-                    f"for the mock if {name!r} is meant to be an attribute.")
+                    f"for the mock if {name!r} is meant to be an attribute")
 
         with NonCallableMock._lock:
             result = self._mock_children.get(name)
@@ -1180,7 +1180,6 @@ class CallableMixin(Base):
 
     def _increment_mock_call(self, /, *args, **kwargs):
         self.called = True
-        self.call_count += 1
 
         # handle call_args
         # needs to be set here so assertions on call arguments pass before
@@ -1188,6 +1187,7 @@ class CallableMixin(Base):
         _call = _Call((args, kwargs), two=True)
         self.call_args = _call
         self.call_args_list.append(_call)
+        self.call_count = len(self.call_args_list)
 
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None

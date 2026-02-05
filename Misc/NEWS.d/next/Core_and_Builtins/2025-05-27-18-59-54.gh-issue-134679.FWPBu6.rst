@@ -1,2 +1,0 @@
-Fix crash in the :term:`free threading` build's QSBR code that could occur
-when changing an object's ``__dict__`` attribute.

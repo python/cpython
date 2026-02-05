@@ -1,24 +1,30 @@
-import sys
 from pathlib import Path
+
+CPYTHON_ROOT = Path(
+    __file__,  # cpython/Doc/tools/check-epub.py
+    '..',  # cpython/Doc/tools
+    '..',  # cpython/Doc
+    '..',  # cpython
+).resolve()
+EPUBCHECK_PATH = CPYTHON_ROOT / 'Doc' / 'epubcheck.txt'
 
 
 def main() -> int:
-    wrong_directory_msg = "Must run this script from the repo root"
-    if not Path("Doc").exists() or not Path("Doc").is_dir():
-        raise RuntimeError(wrong_directory_msg)
-
-    with Path("Doc/epubcheck.txt").open(encoding="UTF-8") as f:
-        messages = [message.split(" - ") for message in f.read().splitlines()]
-
-    fatal_errors = [message for message in messages if message[0] == "FATAL"]
+    lines = EPUBCHECK_PATH.read_text(encoding='utf-8').splitlines()
+    fatal_errors = [line for line in lines if line.startswith('FATAL')]
 
     if fatal_errors:
-        print("\nError: must not contain fatal errors:\n")
-        for error in fatal_errors:
-            print(" - ".join(error))
+        err_count = len(fatal_errors)
+        s = 's' * (err_count != 1)
+        print()
+        print(f'Error: epubcheck reported {err_count} fatal error{s}:')
+        print()
+        print('\n'.join(fatal_errors))
+        return 1
 
-    return len(fatal_errors)
+    print('Success: no fatal errors found.')
+    return 0
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__ == '__main__':
+    raise SystemExit(main())

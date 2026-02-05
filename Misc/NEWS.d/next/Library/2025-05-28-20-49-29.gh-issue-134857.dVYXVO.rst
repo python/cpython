@@ -1,3 +1,0 @@
-Improve error report for :mod:`doctest`\ s run with :mod:`unittest`. Remove
-:mod:`!doctest` module frames from tracebacks and redundant newline
-character from a failure message.

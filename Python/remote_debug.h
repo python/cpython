@@ -33,6 +33,9 @@ extern "C" {
 #ifdef __linux__
 #    include <elf.h>
 #    include <sys/uio.h>
+#    include <sys/ptrace.h>
+#    include <sys/wait.h>
+#    include <dirent.h>
 #    if INTPTR_MAX == INT64_MAX
 #        define Elf_Ehdr Elf64_Ehdr
 #        define Elf_Shdr Elf64_Shdr
@@ -43,6 +46,17 @@ extern "C" {
 #        define Elf_Phdr Elf32_Phdr
 #    endif
 #    include <sys/mman.h>
+
+// PTRACE options - define if not available
+#    ifndef PTRACE_SEIZE
+#        define PTRACE_SEIZE 0x4206
+#    endif
+#    ifndef PTRACE_INTERRUPT
+#        define PTRACE_INTERRUPT 0x4207
+#    endif
+#    ifndef PTRACE_EVENT_STOP
+#        define PTRACE_EVENT_STOP 128
+#    endif
 #endif
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
@@ -50,9 +64,12 @@ extern "C" {
 #  include <mach-o/fat.h>
 #  include <mach-o/loader.h>
 #  include <mach-o/nlist.h>
+#  include <mach/error.h>
 #  include <mach/mach.h>
 #  include <mach/mach_vm.h>
 #  include <mach/machine.h>
+#  include <mach/task_info.h>
+#  include <mach/thread_act.h>
 #  include <sys/mman.h>
 #  include <sys/proc.h>
 #  include <sys/sysctl.h>
@@ -137,7 +154,9 @@ static void
 _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
 {
     for (int i = 0; i < MAX_PAGES; i++) {
-        PyMem_RawFree(handle->pages[i].data);
+        if (handle->pages[i].data) {
+            PyMem_RawFree(handle->pages[i].data);
+        }
         handle->pages[i].data = NULL;
         handle->pages[i].valid = 0;
     }
@@ -156,7 +175,7 @@ static mach_port_t pid_to_task(pid_t pid);
 #endif
 
 // Initialize the process handle
-static int
+UNUSED static int
 _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = pid;
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
@@ -167,7 +186,7 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     }
 #elif defined(MS_WINDOWS)
     handle->hProcess = OpenProcess(
-        PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION,
+        PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION | PROCESS_SUSPEND_RESUME,
         FALSE, pid);
     if (handle->hProcess == NULL) {
         PyErr_SetFromWindowsErr(0);
@@ -186,7 +205,7 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
 }
 
 // Clean up the process handle
-static void
+UNUSED static void
 _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
 #ifdef MS_WINDOWS
     if (handle->hProcess != NULL) {
@@ -720,6 +739,11 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         const char *path = line + path_pos;
+        if (path[0] == '[' && path[strlen(path)-1] == ']') {
+            // Skip [heap], [stack], [anon:cpython:pymalloc], etc.
+            continue;
+        }
+
         const char *filename = strrchr(path, '/');
         if (filename) {
             filename++;  // Move past the '/'
@@ -873,7 +897,7 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
 #endif // MS_WINDOWS
 
 // Get the PyRuntime section address for any platform
-static uintptr_t
+UNUSED static uintptr_t
 _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
 {
     uintptr_t address;
@@ -889,7 +913,7 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
             handle->pid);
         _PyErr_ChainExceptions1(exc);
     }
-#elif defined(__linux__)
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
     // On Linux, search for 'python' in executable or DLL
     address = search_linux_map_for_section(handle, "PyRuntime", "python");
     if (address == 0) {
@@ -1053,24 +1077,153 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
         (mach_vm_size_t*)&result);
 
     if (kr != KERN_SUCCESS) {
-        switch (kr) {
+        switch (err_get_code(kr)) {
         case KERN_PROTECTION_FAILURE:
             PyErr_Format(PyExc_PermissionError,
                 "Memory protection failure reading from PID %d at address "
                 "0x%lx (size %zu): insufficient permissions",
                 handle->pid, remote_address, len);
             break;
-        case KERN_INVALID_ARGUMENT:
-            PyErr_Format(PyExc_ValueError,
-                "Invalid argument to mach_vm_read_overwrite for PID %d at "
-                "address 0x%lx (size %zu)",
-                handle->pid, remote_address, len);
+        case KERN_INVALID_ARGUMENT: {
+            // Perform a task_info check to see if the invalid argument is due
+            // to the process being terminated
+            task_basic_info_data_t task_basic_info;
+            mach_msg_type_number_t task_info_count = TASK_BASIC_INFO_COUNT;
+            kern_return_t task_valid_check = task_info(handle->task, TASK_BASIC_INFO,
+                                                        (task_info_t)&task_basic_info,
+                                                        &task_info_count);
+            if (task_valid_check == KERN_INVALID_ARGUMENT) {
+                PyErr_Format(PyExc_ProcessLookupError,
+                    "Process %d is no longer accessible (process terminated)",
+                    handle->pid);
+            } else {
+                PyErr_Format(PyExc_ValueError,
+                    "Invalid argument to mach_vm_read_overwrite for PID %d at "
+                    "address 0x%lx (size %zu) - check memory permissions",
+                    handle->pid, remote_address, len);
+            }
+            break;
+        }
+        case KERN_NO_SPACE:
+        case KERN_MEMORY_ERROR:
+            PyErr_Format(PyExc_ProcessLookupError,
+                "Process %d memory space no longer available (process terminated)",
+                handle->pid);
             break;
         default:
             PyErr_Format(PyExc_RuntimeError,
                 "mach_vm_read_overwrite failed for PID %d at address 0x%lx "
                 "(size %zu): kern_return_t %d",
                 handle->pid, remote_address, len, kr);
+        }
+        return -1;
+    }
+    return 0;
+#else
+    Py_UNREACHABLE();
+#endif
+}
+
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+// Fallback write using /proc/pid/mem
+static int
+_Py_RemoteDebug_WriteRemoteMemoryFallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
+{
+    if (handle->memfd == -1) {
+        if (open_proc_mem_fd(handle) < 0) {
+            return -1;
+        }
+    }
+
+    struct iovec local[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t written = 0;
+
+    do {
+        local[0].iov_base = (char*)src + result;
+        local[0].iov_len = len - result;
+        off_t offset = remote_address + result;
+
+        written = pwritev(handle->memfd, local, 1, offset);
+        if (written < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+
+        result += written;
+    } while ((size_t)written != local[0].iov_len);
+    return 0;
+}
+#endif // __linux__
+
+// Platform-independent memory write function
+UNUSED static int
+_Py_RemoteDebug_WriteRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
+{
+#ifdef MS_WINDOWS
+    SIZE_T written = 0;
+    SIZE_T result = 0;
+    do {
+        if (!WriteProcessMemory(handle->hProcess, (LPVOID)(remote_address + result), (const char*)src + result, len - result, &written)) {
+            PyErr_SetFromWindowsErr(0);
+            DWORD error = GetLastError();
+            _set_debug_exception_cause(PyExc_OSError,
+                "WriteProcessMemory failed for PID %d at address 0x%lx "
+                "(size %zu, partial write %zu bytes): Windows error %lu",
+                handle->pid, remote_address + result, len - result, result, error);
+            return -1;
+        }
+        result += written;
+    } while (result < len);
+    return 0;
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd != -1) {
+        return _Py_RemoteDebug_WriteRemoteMemoryFallback(handle, remote_address, len, src);
+    }
+    struct iovec local[1];
+    struct iovec remote[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t written = 0;
+
+    do {
+        local[0].iov_base = (void*)((char*)src + result);
+        local[0].iov_len = len - result;
+        remote[0].iov_base = (void*)((char*)remote_address + result);
+        remote[0].iov_len = len - result;
+
+        written = process_vm_writev(handle->pid, local, 1, remote, 1, 0);
+        if (written < 0) {
+            if (errno == ENOSYS) {
+                return _Py_RemoteDebug_WriteRemoteMemoryFallback(handle, remote_address, len, src);
+            }
+            PyErr_SetFromErrno(PyExc_OSError);
+            _set_debug_exception_cause(PyExc_OSError,
+                "process_vm_writev failed for PID %d at address 0x%lx "
+                "(size %zu, partial write %zd bytes): %s",
+                handle->pid, remote_address + result, len - result, result, strerror(errno));
+            return -1;
+        }
+
+        result += written;
+    } while ((size_t)written != local[0].iov_len);
+    return 0;
+#elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    kern_return_t kr = mach_vm_write(
+        handle->task,
+        (mach_vm_address_t)remote_address,
+        (vm_offset_t)src,
+        (mach_msg_type_number_t)len);
+
+    if (kr != KERN_SUCCESS) {
+        switch (kr) {
+        case KERN_PROTECTION_FAILURE:
+            PyErr_SetString(PyExc_PermissionError, "Not enough permissions to write memory");
+            break;
+        case KERN_INVALID_ARGUMENT:
+            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
+            break;
+        default:
+            PyErr_Format(PyExc_RuntimeError, "Unknown error writing memory: %d", (int)kr);
         }
         return -1;
     }
@@ -1136,7 +1289,7 @@ fallback:
     return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
 }
 
-static int
+UNUSED static int
 _Py_RemoteDebug_ReadDebugOffsets(
     proc_handle_t *handle,
     uintptr_t *runtime_start_address,

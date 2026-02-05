@@ -113,7 +113,7 @@ The :mod:`csv` module defines the following functions:
           spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
 
-.. function:: register_dialect(name[, dialect[, **fmtparams]])
+.. function:: register_dialect(name, /, dialect='excel', **fmtparams)
 
    Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
@@ -139,7 +139,8 @@ The :mod:`csv` module defines the following functions:
    Return the names of all registered dialects.
 
 
-.. function:: field_size_limit([new_limit])
+.. function:: field_size_limit()
+              field_size_limit(new_limit)
 
    Returns the current maximum field size allowed by the parser. If *new_limit* is
    given, this becomes the new limit.
@@ -294,8 +295,8 @@ The :mod:`csv` module defines the following classes:
       - the second through n-th rows contain strings where at least one value's
         length differs from that of the putative header of that column.
 
-      Twenty rows after the first row are sampled; if more than half of columns +
-      rows meet the criteria, :const:`True` is returned.
+      Twenty-one rows after the header are sampled; if more than half of the
+      columns + rows meet the criteria, :const:`True` is returned.
 
    .. note::
 
@@ -467,7 +468,8 @@ Dialects support the following attributes:
 .. attribute:: Dialect.skipinitialspace
 
    When :const:`True`, spaces immediately following the *delimiter* are ignored.
-   The default is :const:`False`.
+   The default is :const:`False`.  When combining ``delimiter=' '`` with
+   ``skipinitialspace=True``, unquoted empty fields are not allowed.
 
 
 .. attribute:: Dialect.strict
@@ -526,7 +528,7 @@ out surrounded by parens. This may cause some problems for other programs which
 read CSV files (assuming they support complex numbers at all).
 
 
-.. method:: csvwriter.writerow(row)
+.. method:: csvwriter.writerow(row, /)
 
    Write the *row* parameter to the writer's file object, formatted according
    to the current :class:`Dialect`. Return the return value of the call to the
@@ -535,7 +537,7 @@ read CSV files (assuming they support complex numbers at all).
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
 
-.. method:: csvwriter.writerows(rows)
+.. method:: csvwriter.writerows(rows, /)
 
    Write all elements in *rows* (an iterable of *row* objects as described
    above) to the writer's file object, formatted according to the current
@@ -636,7 +638,7 @@ done::
 .. rubric:: Footnotes
 
 .. [1] If ``newline=''`` is not specified, newlines embedded inside quoted fields
-   will not be interpreted correctly, and on platforms that use ``\r\n`` linendings
+   will not be interpreted correctly, and on platforms that use ``\r\n`` line endings
    on write an extra ``\r`` will be added.  It should always be safe to specify
    ``newline=''``, since the csv module does its own
    (:term:`universal <universal newlines>`) newline handling.

@@ -16,12 +16,22 @@ provides tools to create, read, write, append, and list a ZIP file.  Any
 advanced use of this module will require an understanding of the format, as
 defined in `PKZIP Application Note`_.
 
-This module does not currently handle multi-disk ZIP files.
+This module does not handle multipart ZIP files.
 It can handle ZIP files that use the ZIP64 extensions
 (that is ZIP files that are more than 4 GiB in size).  It supports
-decryption of encrypted files in ZIP archives, but it currently cannot
+decryption of encrypted files in ZIP archives, but it cannot
 create an encrypted file.  Decryption is extremely slow as it is
 implemented in native Python rather than C.
+
+..
+   The following paragraph should be similar to ../includes/optional-module.rst
+
+Handling compressed archives requires :term:`optional modules <optional module>`
+such as :mod:`zlib`, :mod:`bz2`, :mod:`lzma`, and :mod:`compression.zstd`.
+If any of them are missing from your copy of CPython,
+look for documentation from your distributor (that is,
+whoever provided Python to you).
+If you are the distributor, see :ref:`optional-module-requirements`.
 
 The module defines the following items:
 
@@ -165,7 +175,7 @@ The module defines the following items:
 
 .. _zipfile-objects:
 
-ZipFile Objects
+ZipFile objects
 ---------------
 
 
@@ -238,7 +248,7 @@ ZipFile Objects
    .. note::
 
       *metadata_encoding* is an instance-wide setting for the ZipFile.
-      It is not currently possible to set this on a per-member basis.
+      It is not possible to set this on a per-member basis.
 
       This attribute is a workaround for legacy implementations which produce
       archives with names in the current locale encoding or code page (mostly
@@ -561,7 +571,7 @@ The following data attributes are also available:
 
 .. _path-objects:
 
-Path Objects
+Path objects
 ------------
 
 .. class:: Path(root, at='')
@@ -697,7 +707,7 @@ changes.
 
 .. _pyzipfile-objects:
 
-PyZipFile Objects
+PyZipFile objects
 -----------------
 
 The :class:`PyZipFile` constructor takes the same parameters as the
@@ -774,7 +784,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 
 .. _zipinfo-objects:
 
-ZipInfo Objects
+ZipInfo objects
 ---------------
 
 Instances of the :class:`ZipInfo` class are returned by the :meth:`.getinfo` and
@@ -830,7 +840,10 @@ Instances have the following methods and attributes:
 .. attribute:: ZipInfo.date_time
 
    The time and date of the last modification to the archive member.  This is a
-   tuple of six values:
+   tuple of six values representing the "last [modified] file time" and "last [modified] file date"
+   fields from the ZIP file's central directory.
+
+   The tuple contains:
 
    +-------+--------------------------+
    | Index | Value                    |
@@ -850,7 +863,15 @@ Instances have the following methods and attributes:
 
    .. note::
 
-      The ZIP file format does not support timestamps before 1980.
+      The ZIP format supports multiple timestamp fields in different locations
+      (central directory, extra fields for NTFS/UNIX systems, etc.). This attribute
+      specifically returns the timestamp from the central directory. The central
+      directory timestamp format in ZIP files does not support timestamps before
+      1980. While some extra field formats (such as UNIX timestamps) can represent
+      earlier dates, this attribute only returns the central directory timestamp.
+
+      The central directory timestamp is interpreted as representing local
+      time, rather than UTC time, to match the behavior of other zip tools.
 
 
 .. attribute:: ZipInfo.compress_type
@@ -933,7 +954,7 @@ Instances have the following methods and attributes:
 .. _zipfile-commandline:
 .. program:: zipfile
 
-Command-Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`zipfile` module provides a simple command-line interface to interact
@@ -1008,7 +1029,7 @@ From file itself
 Decompression may fail due to incorrect password / CRC checksum / ZIP format or
 unsupported compression method / decryption.
 
-File System limitations
+File system limitations
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Exceeding limitations on different file systems can cause decompression failed.

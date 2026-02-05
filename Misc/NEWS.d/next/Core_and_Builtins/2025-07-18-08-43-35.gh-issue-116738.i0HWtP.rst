@@ -1,2 +1,0 @@
-Make functions in :mod:`syslog` thread-safe on the :term:`free threaded
-<free threading>` build.

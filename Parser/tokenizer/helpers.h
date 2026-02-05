@@ -26,7 +26,7 @@ int _PyTokenizer_check_bom(int get_char(struct tok_state *),
           struct tok_state *tok);
 int _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
                   int set_readline(struct tok_state *, const char *));
-int _PyTokenizer_ensure_utf8(char *line, struct tok_state *tok);
+int _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno);
 
 #ifdef Py_DEBUG
 void _PyTokenizer_print_escape(FILE *f, const char *s, Py_ssize_t size);
