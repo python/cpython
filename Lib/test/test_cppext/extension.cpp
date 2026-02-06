@@ -7,7 +7,7 @@
 #undef NDEBUG
 
 #ifdef TEST_INTERNAL_C_API
-#  define Py_BUILD_CORE 1
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
@@ -17,7 +17,9 @@
 #  include "internal/pycore_frame.h"
    // mimalloc emits many compiler warnings when Python is built in debug
    // mode (when MI_DEBUG is not zero)
-#  ifndef Py_DEBUG
+   // mimalloc emits compiler warnings when Python is built on Windows
+   // in free-threaded mode.
+#  if !defined(Py_DEBUG) && !(defined(MS_WINDOWS) && defined(Py_GIL_DISABLED))
 #    include "internal/pycore_backoff.h"
 #  endif
 #endif
