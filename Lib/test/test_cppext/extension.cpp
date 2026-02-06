@@ -21,6 +21,7 @@
    // in free-threaded mode.
 #  if !defined(Py_DEBUG) && !(defined(MS_WINDOWS) && defined(Py_GIL_DISABLED))
 #    include "internal/pycore_backoff.h"
+#    include "internal/pycore_cell.h"
 #  endif
 #endif
 
