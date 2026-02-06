@@ -45,6 +45,8 @@ _PyCriticalSection_BeginSlow(PyThreadState *tstate, PyCriticalSection *c, PyMute
     }
     // If the world is stopped, we don't need to acquire the lock because
     // there are no other threads that could be accessing the object.
+    // Without this check, acquiring a critical section while the world is
+    // stopped could lead to a deadlock.
     if (tstate->interp->stoptheworld.world_stopped) {
         c->_cs_mutex = NULL;
         c->_cs_prev = 0;

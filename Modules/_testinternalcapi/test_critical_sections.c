@@ -405,9 +405,9 @@ thread_stw(void *arg)
     }
 
     // All threads: acquire critical section and hold it long enough to
-    // trigger TIME_TO_BE_FAIR_NS, which causes direct handoff on unlock.
+    // trigger TIME_TO_BE_FAIR_NS (1 ms), which causes direct handoff on unlock.
     Py_BEGIN_CRITICAL_SECTION(test_data->obj);
-    pysleep(10);
+    pysleep(10);  // 10 ms = 10 x TIME_TO_BE_FAIR_NS
     Py_END_CRITICAL_SECTION();
 
     PyGILState_Release(gil);
