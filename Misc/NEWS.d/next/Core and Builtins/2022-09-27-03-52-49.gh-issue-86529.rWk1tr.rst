@@ -1,0 +1,1 @@
+enhance _check_running() ValuError error message

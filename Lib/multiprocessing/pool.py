@@ -350,7 +350,7 @@ class Pool(object):
 
     def _check_running(self):
         if self._state != RUN:
-            raise ValueError("Pool not running")
+            raise ValueError(f"Pool not running, state is {self._state}")
 
     def apply(self, func, args=(), kwds={}):
         '''
