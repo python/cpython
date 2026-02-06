@@ -369,3 +369,35 @@ class dc364:
 # line 369
 dc370 = dataclasses.make_dataclass('dc370', (('x', int), ('y', int)))
 dc371 = dataclasses.make_dataclass('dc370', (('x', int), ('y', int)), module=__name__)
+
+import inspect
+import itertools
+
+# line 376
+ge377 = (
+    inspect.currentframe()
+    for i in itertools.count()
+)
+
+# line 382
+def func383():
+    # line 384
+    ge385 = (
+        inspect.currentframe()
+        for i in itertools.count()
+    )
+    return ge385
+
+# line 391
+@decorator
+# comment
+def func394():
+    return 395
+
+# line 397
+@decorator
+
+def func400():
+    return 401
+
+pass # end of file

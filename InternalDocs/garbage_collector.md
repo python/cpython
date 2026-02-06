@@ -286,7 +286,7 @@ object, the GC does not process it twice.
 
 Notice that an object that was marked as "tentatively unreachable" and was later
 moved back to the reachable list will be visited again by the garbage collector
-as now all the references that that object has need to be processed as well. This
+as now all the references that the object has need to be processed as well. This
 process is really a breadth first search over the object graph. Once all the objects
 are scanned, the GC knows that all container objects in the tentatively unreachable
 list are really unreachable and can thus be garbage collected.
@@ -329,15 +329,16 @@ Once the GC knows the list of unreachable objects, a very delicate process start
 with the objective of completely destroying these objects. Roughly, the process
 follows these steps in order:
 
-1. Handle and clear weak references (if any). Weak references to unreachable objects
-   are set to `None`. If the weak reference has an associated callback, the callback
-   is enqueued to be called once the clearing of weak references is finished.  We only
-   invoke callbacks for weak references that are themselves reachable. If both the weak
-   reference and the pointed-to object are unreachable we do not execute the callback.
-   This is partly for historical reasons: the callback could resurrect an unreachable
-   object and support for weak references predates support for object resurrection.
-   Ignoring the weak reference's callback is fine because both the object and the weakref
-   are going away, so it's legitimate to say the weak reference is going away first.
+1. Handle weak references with callbacks (if any).  If the weak reference has
+   an associated callback, the callback is enqueued to be called after the weak
+   reference is cleared.  We only invoke callbacks for weak references that
+   are themselves reachable. If both the weak reference and the pointed-to
+   object are unreachable we do not execute the callback.  This is partly for
+   historical reasons: the callback could resurrect an unreachable object
+   and support for weak references predates support for object resurrection.
+   Ignoring the weak reference's callback is fine because both the object and
+   the weakref are going away, so it's legitimate to say the weak reference is
+   going away first.
 2. If an object has legacy finalizers (`tp_del` slot) move it to the
    `gc.garbage` list.
 3. Call the finalizers (`tp_finalize` slot) and mark the objects as already
@@ -346,7 +347,12 @@ follows these steps in order:
 4. Deal with resurrected objects. If some objects have been resurrected, the GC
    finds the new subset of objects that are still unreachable by running the cycle
    detection algorithm again and continues with them.
-5. Call the `tp_clear` slot of every object so all internal links are broken and
+5. Clear any weak references that still refer to unreachable objects.  The
+   `wr_object` attribute for these weakrefs are set to `None`.  Note that some
+   of these weak references maybe have been newly created during the running of
+   finalizers in step 3.  Also, clear any weak references that are part of the
+   unreachable set.
+6. Call the `tp_clear` slot of every object so all internal links are broken and
    the reference counts fall to 0, triggering the destruction of all unreachable
    objects.
 
@@ -417,7 +423,7 @@ superset of any unreachable cycle including that object, we are guaranteed that 
 transitive closure cannot contain any partial cycles.
 We can exclude scanned objects, as they must have been reachable when scanned.
 If a scanned object becomes part of an unreachable cycle after being scanned, it will
-not be collected this at this time, but it will be collected in the next full scavenge.
+not be collected at this time, but it will be collected in the next full scavenge.
 
 > [!NOTE]
 > The GC implementation for the free-threaded build does not use incremental collection.
@@ -477,17 +483,24 @@ specifically in a generation by calling `gc.collect(generation=NUM)`.
 ```
 
 
-Optimization: visiting reachable objects
-========================================
+Optimization: excluding reachable objects
+=========================================
 
-An object cannot be garbage if it can be reached.
+An object cannot be garbage if it can be reached. To avoid having to identify
+reference cycles across the whole heap, we can reduce the amount of work done
+considerably by first identifying objects reachable from objects known to be
+alive.  These objects are excluded from the normal cyclic detection process.
 
-To avoid having to identify reference cycles across the whole heap, we can
-reduce the amount of work done considerably by first moving most reachable objects
-to the `visited` space. Empirically, most reachable objects can be reached from a
-small set of global objects and local variables.
-This step does much less work per object, so reduces the time spent
-performing garbage collection by at least half.
+The default and free-threaded build both implement this optimization but in
+slightly different ways.
+
+Finding reachable objects for the default build GC
+--------------------------------------------------
+
+This works by first moving most reachable objects to the `visited` space.
+Empirically, most reachable objects can be reached from a small set of global
+objects and local variables. This step does much less work per object, so
+reduces the time spent performing garbage collection by at least half.
 
 > [!NOTE]
 > Objects that are not determined to be reachable by this pass are not necessarily
@@ -514,6 +527,171 @@ to check for any new stack frames that have been created since the last
 increment. All objects directly referred to from those stack frames are
 added to the working set.
 Then the above algorithm is repeated, starting from step 2.
+
+
+Finding reachable objects for the free-threaded GC
+--------------------------------------------------
+
+Within the `gc_free_threading.c` implementation, this is known as the "mark
+alive" pass or phase.  It is similar in concept to what is done for the default
+build GC.  Rather than moving objects between double-linked lists, the
+free-threaded GC uses a flag in `ob_gc_bits` to track if an object is
+found to be definitely alive (not garbage).
+
+To find objects reachable from known alive objects, known as the "roots", the
+`gc_mark_alive_from_roots()` function is used.  Root objects include
+`interp->sysdict` (the `sys` module dictionary), `interp->builtins`, and
+`interp->types`.  Also included are all objects referred to by active Python
+frames.  These objects and the transitive closure of objects reachable from
+them have `_PyGC_BITS_ALIVE` set.  Any object with that bit set is excluded
+from the rest of the cyclic garbage detection process, since we know it cannot
+be unreachable.
+
+> [!NOTE]
+> If the `gc.freeze()` function has been used, this phase of the collector is
+> skipped. That is done for two reasons.  First, it is unlikely to be a
+> performance win if most of the objects have been marked as frozen.  As such,
+> they would be excluded for the cyclic garbage detection, without this extra
+> work anyhow.  Second, one of the purposes of using `gc.freeze()` is to avoid
+> dirtying the memory pages holding frozen objects.  If this phase was executed,
+> the toggling of the `ob_gc_bits` flags would dirty pages and defeat that.
+
+Software prefetch hinting
+-------------------------
+
+To speed up the "mark alive" phase of the free-threaded GC, an additional
+optimization, known as software prefetching, is used.  The GC will execute
+explicit prefetch CPU instructions in order to reduce the latency due to
+loading data from main memory.  This added complexity can pay off since main
+memory is so much slower compared to accessing data in the CPU cache.  This
+is enabled only if the number of long-lived objects exceeds a threshold.  If
+the set of objects being garbage collected is small, the accessed memory is
+likely to fit entirely in the CPU cache and software prefetch is not helpful.
+
+The details of this optimization are intricate, with the source code being the
+best reference.  However, the rest of this section gives a high level
+description of how it works and explains some design decisions.
+
+Software prefetching is only used during the "mark alive" phase of the GC.
+Specifically, when we are performing the transitive closure of the "alive"
+status of objects (i.e. objects reachable from known alive objects, known as
+roots).  For each object we find, we need to traverse all objects directly
+reachable from that object.  If that set of referred objects is in scattered
+locations of memory, the hardware prefetch is unlikely to predict the next
+accessed memory location.
+
+Making software prefetch work well hinges on a key principle: allow enough time
+between issuing the prefetch instruction for a memory location and actually
+accessing that location's data.  We can call that time difference the prefetch
+window.  If the window is too large, we fill up the CPU caches with data that's
+not needed yet.  Worse, the data might be discarded from the cache before we
+actually use it.  If the window is too small then the memory system does not
+have enough time to finish loading the memory and the CPU will have to wait.
+The window is indirectly tuned by the prefetch buffer parameters.  The buffer
+will be explained next.
+
+The prefetch buffer is a FIFO queue of fixed size.  When we enqueue an object
+reference into the buffer, we also issue a software prefetch instruction for
+that memory location.   When we dequeue an object reference from the buffer, we
+assume or hope that enough time has elapsed so that the memory has been loaded
+into the cache.  This is the mechanism that provides the window.
+
+When performing the transitive closure of "alive" status, the set of objects
+yet to visit are stored in one of two places.  First, they can be stored in the
+prefech buffer. Second, there is a LIFO stack, of unlimited size.  When object
+references are found using `tp_traverse`, they are enqueued in the buffer if
+it is not full, otherwise they are pushed to the stack.
+
+We must take special care not to access the memory referred to by an object
+pointer until we take that reference out of the prefetch buffer.  That means we
+cannot check if an object is a "container" (if the `PyObject_IS_GC()` test is
+true) or if the object already has the "alive" flag set.  Both of those tests
+would require that the object memory is accessed.  There are some additional
+elaborations that try to keep the buffer filled to the optimal size but to keep
+things simple we will omit those details here.  Not discussed in details are
+"spans", which help reduce the amount of stack used and make it easier to
+control the size of the buffer.
+
+As mentioned, the prefetch window is the time delay between the issue of the
+prefetch instruction, on buffer enqueue, and the memory access, after buffer
+dequeue.  It is tuned by adjusting some buffer parameters.  If processing time
+were equal for every object then the buffer length would be proportional to the
+window.  Since processing each object can actually take a variable amount of
+time, the relation between the buffer length and the prefetch window is only
+approximate. However, this proportional relationship is assumed to hold true
+and we avoid the overhead of actually measuring object processing times.
+
+The relevant parameters are the maximum buffer size and the low and high
+thresholds for filling. The buffer parameters are set as follows: maximum
+length is 256, low threshold is 8, high threshold is 16.  These parameters are
+used as follows.  If the buffer has reached the maximum size, new object
+pointers found while following references are pushed to the stack, rather than
+put in the buffer.  When dequeuing objects from the buffer, we will "prime" the
+buffer if the current length drops below the low threshold.  Priming means
+popping objects from the stack and enqueuing them into the buffer.  While
+priming, we will fill it only until the high threshold is reached.
+
+To measure the effectiveness of the buffer, some benchmark programs were run
+with a trace log of memory location prefetch and access instructions.  The
+prefetch window for each object processed was computed from the trace log.
+Each enqueue and dequeue operation were treated as taking one unit of time.
+Time to actually process the object was assumed to be zero.  A histogram of the
+windows is shown below.  These traces suggest the buffer length is mostly being
+kept between the low and high thresholds, which is what we want.  Variations of
+the buffer parameters were benchmarked and the best performing parameters were
+chosen.  Obviously it is unlikely these parameters will be optimal for all
+hardware and programs.
+
+```
+Prefetch window stats
+mean 52.1
+median 14.0
+max 256
+   25.60 |65,304  | ******************************
+   51.20 |5,590   | **
+   76.80 |3,562   | *
+  102.40 |2,683   | *
+  128.00 |2,278   | *
+  153.60 |2,285   | *
+  179.20 |2,377   | *
+  204.80 |2,238   | *
+  230.40 |2,753   | *
+  256.00 |5,930   | **
+-------- |------- | -------
+      N= |95,000
+```
+
+Using software prefetch instructions is only a win if the set of objects being
+examined by the GC does not fit into CPU caches.  Otherwise, using the buffer
+and prefetch instructions is just overhead.  Using the long lived object count
+seems a good estimate of if things will fit in the cache.  On 64-bit platforms,
+the minimum object size is 32 bytes.  A 4MB L2 cache would hold about 130,000
+objects.
+
+The current threshold for enabling prefetch is that the number of long-lived
+objects must exceed 200,000.  Based on benchmarking, this seems in the range
+where prefetch becomes a net gain.  Obviously it depends on hardware details
+and also the "shape" of the object graph.  For example, your object graph may
+be constructed by linearly allocating objects in memory.  Then, traversing the
+object graph might naturally result in mostly ordered memory access.  In that
+case, the hardware prefetch is likely to do a nearly perfect job without any
+software prefetch hints.
+
+This optimization, as of March 2025, was tuned on the following hardware
+platforms:
+
+- Apple M3 Pro, 32 GB RAM, 192+128 KB L1, 16 MB L2, compiled with Clang 19
+- AMD Ryzen 5 7600X, 64 GB RAM, 384 KB L1, 6 GB L2, 32 MB L3, compiled with GCC 12.2.0
+
+Benchmarking the effectiveness of this optimization is particularly difficult.
+It depends both on hardware details, like CPU cache sizes and memory latencies,
+and the specifics of the program's memory access patterns, where objects are
+located in memory and in what order they are accessed during the mark alive
+phase.  When the program's memory access patterns are favourable, working set
+of data larger than the CPU cache, objects allocated in such a way that access
+order is not linear, then the speedup from using software prefetching is in the
+range of 20% to 40% faster for the entire full GC collection.
+
 
 Optimization: reusing fields to save memory
 ===========================================

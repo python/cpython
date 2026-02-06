@@ -1,4 +1,0 @@
-Fix bug in :func:`traceback.walk_stack` called with None where it was skipping
-more frames than in prior versions. This bug fix also changes walk_stack to
-walk the stack in the frame where it was called rather than where it first gets
-used.

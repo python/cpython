@@ -1,2 +1,0 @@
-Fix bug where :func:`ast.parse` did not error on AST input which is not of the
-correct type, when called with optimize=False.

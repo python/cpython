@@ -1,1 +1,0 @@
-Fix :func:`unicodedata.normalize` to always return a built-in :class:`str` object when given an input of a :class:`str` subclass, regardless of whether the string is already normalized.

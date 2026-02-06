@@ -80,7 +80,7 @@ of lists by assigning a slice of the entire list, for example,
 
 Classes can use the same interfaces to control copying that they use to control
 pickling.  See the description of module :mod:`pickle` for information on these
-methods.  In fact, the :mod:`copy` module uses the registered
+methods.  In fact, the :mod:`!copy` module uses the registered
 pickle functions from the :mod:`copyreg` module.
 
 .. index::
@@ -121,6 +121,8 @@ and only supports named tuples created by :func:`~collections.namedtuple`,
 
    This method should create a new object of the same type,
    replacing fields with values from *changes*.
+
+   .. versionadded:: 3.13
 
 
 .. seealso::

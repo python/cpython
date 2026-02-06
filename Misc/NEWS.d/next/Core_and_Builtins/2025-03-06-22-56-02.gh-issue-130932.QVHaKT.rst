@@ -1,1 +1,0 @@
-Fix incorrect exception handling in ``_PyModule_IsPossiblyShadowing``

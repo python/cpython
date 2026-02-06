@@ -308,9 +308,11 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(warn_on_full_buffer), },
     };
     #undef NUM_KEYWORDS
@@ -598,7 +600,7 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "\n"
 "Like sigwaitinfo(), but with a timeout.\n"
 "\n"
-"The timeout is specified in seconds, with floating-point numbers allowed.");
+"The timeout is specified in seconds, rounded up to nanoseconds.");
 
 #define SIGNAL_SIGTIMEDWAIT_METHODDEF    \
     {"sigtimedwait", _PyCFunction_CAST(signal_sigtimedwait), METH_FASTCALL, signal_sigtimedwait__doc__},
@@ -654,11 +656,26 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("pthread_kill", nargs, 2, 2)) {
         goto exit;
     }
-    if (!PyLong_Check(args[0])) {
+    if (!PyIndex_Check(args[0])) {
         _PyArg_BadArgument("pthread_kill", "argument 1", "int", args[0]);
         goto exit;
     }
-    thread_id = PyLong_AsUnsignedLongMask(args[0]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[0], &thread_id, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     signalnum = PyLong_AsInt(args[1]);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
@@ -777,4 +794,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=356e1acc44a4f377 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=42e20d118435d7fa input=a9049054013a1b77]*/

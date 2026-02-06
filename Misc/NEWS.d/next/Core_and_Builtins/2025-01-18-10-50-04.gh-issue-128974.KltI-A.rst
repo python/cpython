@@ -1,3 +1,0 @@
-Fix a crash in :meth:`UnicodeError.__str__ <object.__str__>` when custom
-attributes implement :meth:`~object.__str__` with side-effects.
-Patch by Bénédikt Tran.

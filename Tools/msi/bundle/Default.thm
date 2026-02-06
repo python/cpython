@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Theme xmlns="http://wixtoolset.org/schemas/thmutil/2010">
-    <Window Width="670" Height="412" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
+    <Window Width="670" Height="422" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
     <Font Id="0" Height="-14" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
     <Font Id="1" Height="-26" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
     <Font Id="2" Height="-24" Weight="500" Foreground="808080" Background="ffffff">Segoe UI</Font>
     <Font Id="3" Height="-14" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
     <Font Id="4" Height="-14" Weight="500" Foreground="ff0000" Background="ffffff" Underline="yes">Segoe UI</Font>
     <Font Id="5" Height="-14" Weight="500" Foreground="808080" Background="ffffff">Segoe UI</Font>
+    <Font Id="6" Height="-14" Weight="700" Foreground="000000" Background="ffffff">Segoe UI</Font>
 
     <Page Name="Help">
         <Text X="185" Y="11" Width="-11" Height="36" FontId="1" DisablePrefix="yes">#(loc.HelpHeader)</Text>
@@ -21,8 +22,10 @@
 
         <Text X="185" Y="50" Width="-11" Height="50" FontId="3" TabStop="yes">#(loc.InstallMessage)</Text>
 
-        <Button Name="InstallButton" X="185" Y="101" Width="-11" Height="109" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallButton)</Button>
-        <Button Name="InstallCustomButton" X="185" Y="221" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallCustomButton)</Button>
+        <Hypertext X="185" Y="100" Width="-11" Height="40" FontId="6" DisablePrefix="yes">#(loc.DeprecationMessage)</Hypertext>
+
+        <Button Name="InstallButton" X="185" Y="141" Width="-11" Height="109" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallButton)</Button>
+        <Button Name="InstallCustomButton" X="185" Y="251" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallCustomButton)</Button>
 
         <Checkbox Name="InstallLauncherAllUsers" X="185" Y="-37" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortInstallLauncherAllUsersLabel)</Checkbox>
         <Checkbox Name="PrependPath" X="185" Y="-13" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortPrependPathLabel)</Checkbox>

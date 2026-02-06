@@ -10,12 +10,12 @@
 
 --------------
 
-The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
-the Tcl/Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
+The :mod:`!tkinter` package ("Tk interface") is the standard Python interface to
+the Tcl/Tk GUI toolkit.  Both Tk and :mod:`!tkinter` are available on most Unix
 platforms, including macOS, as well as on Windows systems.
 
 Running ``python -m tkinter`` from the command line should open a window
-demonstrating a simple Tk interface, letting you know that :mod:`tkinter` is
+demonstrating a simple Tk interface, letting you know that :mod:`!tkinter` is
 properly installed on your system, and also showing what version of Tcl/Tk is
 installed, so you can read the Tcl/Tk documentation specific to that version.
 
@@ -35,6 +35,8 @@ details that are unchanged.
    along with a new API to use them. Both old and new APIs are still available.
    Most documentation you will find online still uses the old API and
    can be woefully outdated.
+
+.. include:: ../includes/optional-module.rst
 
 .. seealso::
 
@@ -106,7 +108,7 @@ Internally, Tk and Ttk use facilities of the underlying operating system,
 i.e., Xlib on Unix/X11, Cocoa on macOS, GDI on Windows.
 
 When your Python application uses a class in Tkinter, e.g., to create a widget,
-the :mod:`tkinter` module first assembles a Tcl/Tk command string. It passes that
+the :mod:`!tkinter` module first assembles a Tcl/Tk command string. It passes that
 Tcl command string to an internal :mod:`_tkinter` binary module, which then
 calls the Tcl interpreter to evaluate it. The Tcl interpreter will then call into the
 Tk and/or Ttk packages, which will in turn make calls to Xlib, Cocoa, or GDI.
@@ -116,7 +118,7 @@ Tkinter Modules
 ---------------
 
 Support for Tkinter is spread across several modules. Most applications will need the
-main :mod:`tkinter` module, as well as the :mod:`tkinter.ttk` module, which provides
+main :mod:`!tkinter` module, as well as the :mod:`tkinter.ttk` module, which provides
 the modern themed widget set and API::
 
 
@@ -175,12 +177,12 @@ the modern themed widget set and API::
    .. attribute:: master
 
       The widget object that contains this widget.  For :class:`Tk`, the
-      *master* is :const:`None` because it is the main window.  The terms
+      :attr:`!master` is :const:`None` because it is the main window.  The terms
       *master* and *parent* are similar and sometimes used interchangeably
       as argument names; however, calling :meth:`winfo_parent` returns a
-      string of the widget name whereas :attr:`master` returns the object.
+      string of the widget name whereas :attr:`!master` returns the object.
       *parent*/*child* reflects the tree-like relationship while
-      *master*/*slave* reflects the container structure.
+      *master* (or *container*)/*content* reflects the container structure.
 
    .. attribute:: children
 
@@ -202,7 +204,7 @@ the modern themed widget set and API::
 
 The modules that provide Tk support include:
 
-:mod:`tkinter`
+:mod:`!tkinter`
    Main Tkinter module.
 
 :mod:`tkinter.colorchooser`
@@ -228,7 +230,7 @@ The modules that provide Tk support include:
 
 :mod:`tkinter.ttk`
    Themed widget set introduced in Tk 8.5, providing modern alternatives
-   for many of the classic widgets in the main :mod:`tkinter` module.
+   for many of the classic widgets in the main :mod:`!tkinter` module.
 
 Additional modules:
 
@@ -237,22 +239,22 @@ Additional modules:
 
 :mod:`_tkinter`
    A binary module that contains the low-level interface to Tcl/Tk.
-   It is automatically imported by the main :mod:`tkinter` module,
+   It is automatically imported by the main :mod:`!tkinter` module,
    and should never be used directly by application programmers.
    It is usually a shared library (or DLL), but might in some cases be
    statically linked with the Python interpreter.
 
 :mod:`idlelib`
    Python's Integrated Development and Learning Environment (IDLE). Based
-   on :mod:`tkinter`.
+   on :mod:`!tkinter`.
 
 :mod:`tkinter.constants`
    Symbolic constants that can be used in place of strings when passing
    various parameters to Tkinter calls. Automatically imported by the
-   main :mod:`tkinter` module.
+   main :mod:`!tkinter` module.
 
 :mod:`tkinter.dnd`
-   (experimental) Drag-and-drop support for :mod:`tkinter`. This will
+   (experimental) Drag-and-drop support for :mod:`!tkinter`. This will
    become deprecated when it is replaced with the Tk DND.
 
 :mod:`turtle`
@@ -392,7 +394,7 @@ by spaces. Without getting into too many details, notice the following:
 * Operations which are implemented as separate *commands* in Tcl (like
   ``grid`` or ``destroy``) are represented as *methods* on Tkinter widget
   objects. As you'll see shortly, at other times Tcl uses what appear to be
-  method calls on widget objects, which more closely mirror what would is
+  method calls on widget objects, which more closely mirror what is
   used in Tkinter.
 
 
@@ -502,7 +504,7 @@ documentation for all of these in the
 Threading model
 ---------------
 
-Python and Tcl/Tk have very different threading models, which :mod:`tkinter`
+Python and Tcl/Tk have very different threading models, which :mod:`!tkinter`
 tries to bridge. If you use threads, you may need to be aware of this.
 
 A Python interpreter may have many threads associated with it. In Tcl, multiple
@@ -510,9 +512,9 @@ threads can be created, but each thread has a separate Tcl interpreter instance
 associated with it. Threads can also create more than one interpreter instance,
 though each interpreter instance can be used only by the one thread that created it.
 
-Each :class:`Tk` object created by :mod:`tkinter` contains a Tcl interpreter.
+Each :class:`Tk` object created by :mod:`!tkinter` contains a Tcl interpreter.
 It also keeps track of which thread created that interpreter. Calls to
-:mod:`tkinter` can be made from any Python thread. Internally, if a call comes
+:mod:`!tkinter` can be made from any Python thread. Internally, if a call comes
 from a thread other than the one that created the :class:`Tk` object, an event
 is posted to the interpreter's event queue, and when executed, the result is
 returned to the calling Python thread.
@@ -527,17 +529,17 @@ toolkits where the GUI runs in a completely separate thread from all application
 code including event handlers.
 
 If the Tcl interpreter is not running the event loop and processing events, any
-:mod:`tkinter` calls made from threads other than the one running the Tcl
+:mod:`!tkinter` calls made from threads other than the one running the Tcl
 interpreter will fail.
 
 A number of special cases exist:
 
 * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
-  :mod:`tkinter` calls the library from the originating Python thread, even
+  :mod:`!tkinter` calls the library from the originating Python thread, even
   if this is different than the thread that created the Tcl interpreter. A global
   lock ensures only one call occurs at a time.
 
-* While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+* While :mod:`!tkinter` allows you to create more than one instance of a :class:`Tk`
   object (with its own interpreter), all interpreters that are part of the same
   thread share a common event queue, which gets ugly fast. In practice, don't create
   more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
@@ -548,7 +550,7 @@ A number of special cases exist:
   or abandon the event loop entirely. If you're doing anything tricky when it comes
   to events or threads, be aware of these possibilities.
 
-* There are a few select :mod:`tkinter` functions that presently work only when
+* There are a few select :mod:`!tkinter` functions that presently work only when
   called from the thread that created the Tcl interpreter.
 
 
@@ -636,15 +638,15 @@ The Packer
 .. index:: single: packing (widgets)
 
 The packer is one of Tk's geometry-management mechanisms.    Geometry managers
-are used to specify the relative positioning of widgets within their container -
-their mutual *master*.  In contrast to the more cumbersome *placer* (which is
+are used to specify the relative positioning of widgets within their container.
+In contrast to the more cumbersome *placer* (which is
 used less commonly, and we do not cover here), the packer takes qualitative
 relationship specification - *above*, *to the left of*, *filling*, etc - and
 works everything out to determine the exact placement coordinates for you.
 
-The size of any *master* widget is determined by the size of the "slave widgets"
-inside.  The packer is used to control where slave widgets appear inside the
-master into which they are packed.  You can pack widgets into frames, and frames
+The size of any container widget is determined by the size of the "content widgets"
+inside.  The packer is used to control where content widgets appear inside the
+container into which they are packed.  You can pack widgets into frames, and frames
 into other frames, in order to achieve the kind of layout you desire.
 Additionally, the arrangement is dynamically adjusted to accommodate incremental
 changes to the configuration, once it is packed.
@@ -671,7 +673,7 @@ For more extensive information on the packer and the options that it can take,
 see the man pages and page 183 of John Ousterhout's book.
 
 anchor
-   Anchor type.  Denotes where the packer is to place each slave in its parcel.
+   Anchor type.  Denotes where the packer is to place each content in its parcel.
 
 expand
    Boolean, ``0`` or ``1``.
@@ -680,10 +682,10 @@ fill
    Legal values: ``'x'``, ``'y'``, ``'both'``, ``'none'``.
 
 ipadx and ipady
-   A distance - designating internal padding on each side of the slave widget.
+   A distance - designating internal padding on each side of the content.
 
 padx and pady
-   A distance - designating external padding on each side of the slave widget.
+   A distance - designating external padding on each side of the content.
 
 side
    Legal values are: ``'left'``, ``'right'``, ``'top'``, ``'bottom'``.
@@ -698,11 +700,11 @@ options are ``variable``, ``textvariable``, ``onvalue``, ``offvalue``, and
 ``value``.  This connection works both ways: if the variable changes for any
 reason, the widget it's connected to will be updated to reflect the new value.
 
-Unfortunately, in the current implementation of :mod:`tkinter` it is not
+Unfortunately, in the current implementation of :mod:`!tkinter` it is not
 possible to hand over an arbitrary Python variable to a widget through a
 ``variable`` or ``textvariable`` option.  The only kinds of variables for which
 this works are variables that are subclassed from a class called Variable,
-defined in :mod:`tkinter`.
+defined in :mod:`!tkinter`.
 
 There are many useful subclasses of Variable already defined:
 :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar`, and
@@ -750,14 +752,14 @@ The Window Manager
 
 In Tk, there is a utility command, ``wm``, for interacting with the window
 manager.  Options to the ``wm`` command allow you to control things like titles,
-placement, icon bitmaps, and the like.  In :mod:`tkinter`, these commands have
+placement, icon bitmaps, and the like.  In :mod:`!tkinter`, these commands have
 been implemented as methods on the :class:`Wm` class.  Toplevel widgets are
 subclassed from the :class:`Wm` class, and so can call the :class:`Wm` methods
 directly.
 
 To get at the toplevel window that contains a given widget, you can often just
-refer to the widget's master.  Of course if the widget has been packed inside of
-a frame, the master won't represent a toplevel window.  To get at the toplevel
+refer to the widget's :attr:`master`.  Of course if the widget has been packed inside of
+a frame, the :attr:`!master` won't represent a toplevel window.  To get at the toplevel
 window that contains an arbitrary widget, you can call the :meth:`_root` method.
 This method begins with an underscore to denote the fact that this function is
 part of the implementation, and not an interface to Tk functionality.
@@ -839,8 +841,7 @@ geometry
    For example: ``fred["geometry"] = "200x100"``.
 
 justify
-   Legal values are the strings: ``"left"``, ``"center"``, ``"right"``, and
-   ``"fill"``.
+   Legal values are the strings: ``"left"``, ``"center"``, and ``"right"``.
 
 region
    This is a string with four space-delimited elements, each of which is a legal
@@ -933,7 +934,7 @@ Entry widget, or to particular menu items in a Menu widget.
 
 Entry widget indexes (index, view index, etc.)
    Entry widgets have options that refer to character positions in the text being
-   displayed.  You can use these :mod:`tkinter` functions to access these special
+   displayed.  You can use these :mod:`!tkinter` functions to access these special
    points in text widgets:
 
 Text widget indexes

@@ -6,7 +6,7 @@
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
-PyAPI_FUNC(PyObject*) _PyObject_CallMethodId(
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_CallMethodId(
     PyObject *obj,
     _Py_Identifier *name,
     const char *format, ...);
@@ -85,15 +85,6 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
    need to be corrected for a negative index. */
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
-
-/* Return the sequence 'o' as a list, unless it's already a tuple or list.
-
-   Use PySequence_Fast_GET_ITEM to access the members of this list, and
-   PySequence_Fast_GET_SIZE to get its length.
-
-   Returns NULL on failure.  If the object does not support iteration, raises a
-   TypeError exception with 'm' as the message text. */
-PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
 /* Return the size of the sequence 'o', assuming that 'o' was returned by
    PySequence_Fast and is not NULL. */

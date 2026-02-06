@@ -7,7 +7,7 @@
 .. sectionauthor:: Brett Cannon <brett@python.org>
 
 .. note::
-   The :mod:`test` package is meant for internal use by Python only. It is
+   The :mod:`!test` package is meant for internal use by Python only. It is
    documented for the benefit of the core developers of Python. Any use of
    this package outside of Python's standard library is discouraged as code
    mentioned here can change or be removed without notice between releases of
@@ -15,12 +15,12 @@
 
 --------------
 
-The :mod:`test` package contains all regression tests for Python as well as the
+The :mod:`!test` package contains all regression tests for Python as well as the
 modules :mod:`test.support` and :mod:`test.regrtest`.
 :mod:`test.support` is used to enhance your tests while
 :mod:`test.regrtest` drives the testing suite.
 
-Each module in the :mod:`test` package whose name starts with ``test_`` is a
+Each module in the :mod:`!test` package whose name starts with ``test_`` is a
 testing suite for a specific module or feature. All new tests should be written
 using the :mod:`unittest` or :mod:`doctest` module.  Some older tests are
 written using a "traditional" testing style that compares output printed to
@@ -38,8 +38,8 @@ written using a "traditional" testing style that compares output printed to
 
 .. _writing-tests:
 
-Writing Unit Tests for the :mod:`test` package
-----------------------------------------------
+Writing Unit Tests for the :mod:`!test` package
+-----------------------------------------------
 
 It is preferred that tests that use the :mod:`unittest` module follow a few
 guidelines. One is to name the test module by starting it with ``test_`` and end
@@ -162,12 +162,12 @@ Running tests using the command-line interface
 .. module:: test.regrtest
    :synopsis: Drives the regression test suite.
 
-The :mod:`test` package can be run as a script to drive Python's regression
+The :mod:`!test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
-:mod:`test` package. It does this by finding all modules in the package whose
+:mod:`!test` package. It does this by finding all modules in the package whose
 name starts with ``test_``, importing them, and executing the function
 :func:`test_main` if present or loading the tests via
 unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
@@ -175,14 +175,14 @@ names of tests to execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
-Running :mod:`test` directly allows what resources are available for
+Running :mod:`!test` directly allows what resources are available for
 tests to use to be set. You do this by using the ``-u`` command-line
 option. Specifying ``all`` as the value for the ``-u`` option enables all
 possible resources: :program:`python -m test -uall`.
 If all but one resource is desired (a more common case), a
 comma-separated list of resources that are not desired may be listed after
 ``all``. The command :program:`python -m test -uall,-audio,-largefile`
-will run :mod:`test` with all resources except the ``audio`` and
+will run :mod:`!test` with all resources except the ``audio`` and
 ``largefile`` resources. For a list of all resources and more command-line
 options, run :program:`python -m test -h`.
 
@@ -246,7 +246,27 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: is_android
 
-   ``True`` if the system is Android.
+   ``True`` if ``sys.platform`` is ``android``.
+
+
+.. data:: is_emscripten
+
+   ``True`` if ``sys.platform`` is ``emscripten``.
+
+
+.. data:: is_wasi
+
+   ``True`` if ``sys.platform`` is ``wasi``.
+
+
+.. data:: is_apple_mobile
+
+   ``True`` if ``sys.platform`` is ``ios``, ``tvos``, or ``watchos``.
+
+
+.. data:: is_apple
+
+   ``True`` if ``sys.platform`` is ``darwin`` or ``is_apple_mobile`` is ``True``.
 
 
 .. data:: unix_shell
@@ -470,6 +490,12 @@ The :mod:`test.support` module defines the following functions:
    Return ``True`` if *resource* is enabled and available. The list of
    available resources is only set when :mod:`test.regrtest` is executing the
    tests.
+
+
+.. function:: get_resource_value(resource)
+
+   Return the value specified for *resource* (as :samp:`-u {resource}={value}`).
+   Return ``None`` if *resource* is disabled or no value is specified.
 
 
 .. function:: python_is_optimized()
@@ -829,6 +855,15 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: bigaddrspacetest
 
    Decorator for tests that fill the address space.
+
+
+.. function:: linked_to_musl()
+
+   Return ``False`` if there is no evidence the interpreter was compiled with
+   ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
+   version is unknown, or the actual version if it is known.  Intended for use
+   in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
+   compiled with ``musl``; otherwise ``platform.libc_ver`` is checked.
 
 
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)
@@ -1355,6 +1390,13 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    .. versionadded:: 3.8
 
 
+.. function:: run_concurrently(worker_func, nthreads, args=(), kwargs={})
+
+    Run the worker function concurrently in multiple threads.
+    Re-raises an exception if any thread raises one, after all threads have
+    finished.
+
+
 :mod:`test.support.os_helper` --- Utilities for os tests
 ========================================================================
 
@@ -1435,9 +1477,12 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    ``value``.
 
 
-.. method:: EnvironmentVarGuard.unset(envvar)
+.. method:: EnvironmentVarGuard.unset(envvar, *others)
 
-   Temporarily unset the environment variable ``envvar``.
+   Temporarily unset one or more environment variables.
+
+   .. versionchanged:: 3.14
+      More than one environment variable can be unset.
 
 
 .. function:: can_symlink()

@@ -1,13 +1,18 @@
-
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"                // _Py_INCREF_DICT()
-#include "pycore_long.h"                // _PyLong_GetOne()
-#include "pycore_modsupport.h"          // _PyArg_NoKeywords()
-#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"            // _PyErr_Occurred()
-
+#include "pycore_code.h"          // _PyCode_VerifyStateless()
+#include "pycore_dict.h"          // _Py_INCREF_DICT()
+#include "pycore_function.h"      // _PyFunction_Vectorcall
+#include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
+#include "pycore_optimizer.h"     // _PyJit_Tracer_InvalidateDependency
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -58,6 +63,7 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_CODE:
         case PyFunction_EVENT_MODIFY_DEFAULTS:
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+        case PyFunction_EVENT_MODIFY_QUALNAME:
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
         default:
@@ -556,8 +562,9 @@ func_get_annotation_dict(PyFunctionObject *op)
             return NULL;
         }
         if (!PyDict_Check(ann_dict)) {
-            PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                         Py_TYPE(ann_dict)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "__annotate__() must return a dict, not %T",
+                         ann_dict);
             Py_DECREF(ann_dict);
             return NULL;
         }
@@ -742,6 +749,7 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
     Py_XSETREF(op->func_qualname, Py_NewRef(value));
     return 0;
 }
@@ -1144,10 +1152,12 @@ func_dealloc(PyObject *self)
     if (_PyObject_ResurrectEnd(self)) {
         return;
     }
+#if _Py_TIER2
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), self, 1);
+    _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), self);
+#endif
     _PyObject_GC_UNTRACK(op);
-    if (op->func_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) op);
-    }
+    FT_CLEAR_WEAKREFS(self, op->func_weakreflist);
     (void)func_clear((PyObject*)op);
     // These aren't cleared by func_clear().
     _Py_DECREF_CODE((PyCodeObject *)op->func_code);
@@ -1237,6 +1247,64 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_alloc */
     func_new,                                   /* tp_new */
 };
+
+
+int
+_PyFunction_VerifyStateless(PyThreadState *tstate, PyObject *func)
+{
+    assert(!PyErr_Occurred());
+    assert(PyFunction_Check(func));
+
+    // Check the globals.
+    PyObject *globalsns = PyFunction_GET_GLOBALS(func);
+    if (globalsns != NULL && !PyDict_Check(globalsns)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "unsupported globals %R", globalsns);
+        return -1;
+    }
+    // Check the builtins.
+    PyObject *builtinsns = _PyFunction_GET_BUILTINS(func);
+    if (builtinsns != NULL && !PyDict_Check(builtinsns)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "unsupported builtins %R", builtinsns);
+        return -1;
+    }
+    // Disallow __defaults__.
+    PyObject *defaults = PyFunction_GET_DEFAULTS(func);
+    if (defaults != NULL) {
+        assert(PyTuple_Check(defaults));  // per PyFunction_New()
+        if (PyTuple_GET_SIZE(defaults) > 0) {
+            _PyErr_SetString(tstate, PyExc_ValueError,
+                             "defaults not supported");
+            return -1;
+        }
+    }
+    // Disallow __kwdefaults__.
+    PyObject *kwdefaults = PyFunction_GET_KW_DEFAULTS(func);
+    if (kwdefaults != NULL) {
+        assert(PyDict_Check(kwdefaults));  // per PyFunction_New()
+        if (PyDict_Size(kwdefaults) > 0) {
+            _PyErr_SetString(tstate, PyExc_ValueError,
+                             "keyword defaults not supported");
+            return -1;
+        }
+    }
+    // Disallow __closure__.
+    PyObject *closure = PyFunction_GET_CLOSURE(func);
+    if (closure != NULL) {
+        assert(PyTuple_Check(closure));  // per PyFunction_New()
+        if (PyTuple_GET_SIZE(closure) > 0) {
+            _PyErr_SetString(tstate, PyExc_ValueError, "closures not supported");
+            return -1;
+        }
+    }
+    // Check the code.
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    if (_PyCode_VerifyStateless(tstate, co, NULL, globalsns, builtinsns) < 0) {
+        return -1;
+    }
+    return 0;
+}
 
 
 static int
@@ -1399,33 +1467,59 @@ static PyObject *
 cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     classmethod *cm = (classmethod *)self;
-
-    if (cm->cm_callable == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "uninitialized classmethod object");
-        return NULL;
-    }
     if (type == NULL)
         type = (PyObject *)(Py_TYPE(obj));
     return PyMethod_New(cm->cm_callable, type);
 }
 
 static int
+cm_set_callable(classmethod *cm, PyObject *callable)
+{
+    assert(callable != NULL);
+    if (cm->cm_callable == callable) {
+        // cm_init() sets the same callable than cm_new()
+        return 0;
+    }
+
+    Py_XSETREF(cm->cm_callable, Py_NewRef(callable));
+    return functools_wraps((PyObject *)cm, cm->cm_callable);
+}
+
+static PyObject *
+cm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    if (!_PyArg_NoKeywords("classmethod", kwds)) {
+        return NULL;
+    }
+    PyObject *callable;  // borrowed ref
+    if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable)) {
+        return NULL;
+    }
+
+    classmethod *cm = (classmethod *)PyType_GenericAlloc(type, 0);
+    if (cm == NULL) {
+        return NULL;
+    }
+    if (cm_set_callable(cm, callable) < 0) {
+        Py_DECREF(cm);
+        return NULL;
+    }
+    return (PyObject *)cm;
+}
+
+static int
 cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    classmethod *cm = (classmethod *)self;
-    PyObject *callable;
-
-    if (!_PyArg_NoKeywords("classmethod", kwds))
-        return -1;
-    if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable))
-        return -1;
-    Py_XSETREF(cm->cm_callable, Py_NewRef(callable));
-
-    if (functools_wraps((PyObject *)cm, cm->cm_callable) < 0) {
+    if (!_PyArg_NoKeywords("classmethod", kwds)) {
         return -1;
     }
-    return 0;
+    PyObject *callable;  // borrowed ref
+    if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable)) {
+        return -1;
+    }
+
+    classmethod *cm = (classmethod *)self;
+    return cm_set_callable(cm, callable);
 }
 
 static PyMemberDef cm_memberlist[] = {
@@ -1480,6 +1574,11 @@ static PyGetSetDef cm_getsetlist[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
     {"__annotations__", cm_get___annotations__, cm_set___annotations__, NULL, NULL},
     {"__annotate__", cm_get___annotate__, cm_set___annotate__, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
+static PyMethodDef cm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -1541,7 +1640,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    cm_methodlist,                              /* tp_methods */
     cm_memberlist,                              /* tp_members */
     cm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -1551,7 +1650,7 @@ PyTypeObject PyClassMethod_Type = {
     offsetof(classmethod, cm_dict),             /* tp_dictoffset */
     cm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    PyType_GenericNew,                          /* tp_new */
+    cm_new,                                     /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 
@@ -1560,8 +1659,12 @@ PyClassMethod_New(PyObject *callable)
 {
     classmethod *cm = (classmethod *)
         PyType_GenericAlloc(&PyClassMethod_Type, 0);
-    if (cm != NULL) {
-        cm->cm_callable = Py_NewRef(callable);
+    if (cm == NULL) {
+        return NULL;
+    }
+    if (cm_set_callable(cm, callable) < 0) {
+        Py_DECREF(cm);
+        return NULL;
     }
     return (PyObject *)cm;
 }
@@ -1627,31 +1730,58 @@ static PyObject *
 sm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     staticmethod *sm = (staticmethod *)self;
+    return Py_NewRef(sm->sm_callable);
+}
 
-    if (sm->sm_callable == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "uninitialized staticmethod object");
+static int
+sm_set_callable(staticmethod *sm, PyObject *callable)
+{
+    assert(callable != NULL);
+    if (sm->sm_callable == callable) {
+        // sm_init() sets the same callable than sm_new()
+        return 0;
+    }
+
+    Py_XSETREF(sm->sm_callable, Py_NewRef(callable));
+    return functools_wraps((PyObject *)sm, sm->sm_callable);
+}
+
+static PyObject *
+sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    if (!_PyArg_NoKeywords("staticmethod", kwds)) {
         return NULL;
     }
-    return Py_NewRef(sm->sm_callable);
+    PyObject *callable;  // borrowed ref
+    if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable)) {
+        return NULL;
+    }
+
+    staticmethod *sm = (staticmethod *)PyType_GenericAlloc(type, 0);
+    if (sm == NULL) {
+        return NULL;
+    }
+    _PyObject_SetDeferredRefcount((PyObject *)sm);
+    if (sm_set_callable(sm, callable) < 0) {
+        Py_DECREF(sm);
+        return NULL;
+    }
+    return (PyObject *)sm;
 }
 
 static int
 sm_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    staticmethod *sm = (staticmethod *)self;
-    PyObject *callable;
-
-    if (!_PyArg_NoKeywords("staticmethod", kwds))
-        return -1;
-    if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable))
-        return -1;
-    Py_XSETREF(sm->sm_callable, Py_NewRef(callable));
-
-    if (functools_wraps((PyObject *)sm, sm->sm_callable) < 0) {
+    if (!_PyArg_NoKeywords("staticmethod", kwds)) {
         return -1;
     }
-    return 0;
+    PyObject *callable;  // borrowed ref
+    if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable)) {
+        return -1;
+    }
+
+    staticmethod *sm = (staticmethod *)self;
+    return sm_set_callable(sm, callable);
 }
 
 static PyObject*
@@ -1715,6 +1845,11 @@ static PyGetSetDef sm_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef sm_methodlist[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 sm_repr(PyObject *self)
 {
@@ -1771,7 +1906,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    sm_methodlist,                              /* tp_methods */
     sm_memberlist,                              /* tp_members */
     sm_getsetlist,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -1781,7 +1916,7 @@ PyTypeObject PyStaticMethod_Type = {
     offsetof(staticmethod, sm_dict),            /* tp_dictoffset */
     sm_init,                                    /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    PyType_GenericNew,                          /* tp_new */
+    sm_new,                                     /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 
@@ -1790,8 +1925,20 @@ PyStaticMethod_New(PyObject *callable)
 {
     staticmethod *sm = (staticmethod *)
         PyType_GenericAlloc(&PyStaticMethod_Type, 0);
-    if (sm != NULL) {
-        sm->sm_callable = Py_NewRef(callable);
+    if (sm == NULL) {
+        return NULL;
+    }
+    _PyObject_SetDeferredRefcount((PyObject *)sm);
+    if (sm_set_callable(sm, callable) < 0) {
+        Py_DECREF(sm);
+        return NULL;
     }
     return (PyObject *)sm;
+}
+
+PyObject *
+_PyStaticMethod_GetFunc(PyObject *self)
+{
+    staticmethod *sm = _PyStaticMethod_CAST(self);
+    return sm->sm_callable;
 }

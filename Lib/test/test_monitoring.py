@@ -3,6 +3,7 @@
 import collections
 import dis
 import functools
+import inspect
 import math
 import operator
 import sys
@@ -11,10 +12,10 @@ import types
 import unittest
 
 import test.support
-from test.support import requires_specialization_ft, script_helper
+from test.support import import_helper, requires_specialization, script_helper
 
-_testcapi = test.support.import_helper.import_module("_testcapi")
-_testinternalcapi = test.support.import_helper.import_module("_testinternalcapi")
+_testcapi = import_helper.import_module("_testcapi")
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 PAIR = (0,1)
 
@@ -1046,7 +1047,7 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_no_unwind_for_shim_frame(self):
         class ValueErrorRaiser:
             def __init__(self):
@@ -1076,6 +1077,25 @@ class ExceptionMonitoringTest(CheckEvents):
             ('return', 'f', None),
         ]
 
+        self.assertEqual(events, expected)
+
+    # gh-140373
+    def test_gen_unwind(self):
+        def gen():
+            yield 1
+
+        def f():
+            g = gen()
+            next(g)
+            g.close()
+
+        recorders = (
+            UnwindRecorder,
+        )
+        events = self.get_events(f, TEST_TOOL, recorders)
+        expected = [
+            ("unwind", GeneratorExit, "gen"),
+        ]
         self.assertEqual(events, expected)
 
 class LineRecorder:
@@ -1681,6 +1701,56 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch left', 'func', 12, 12)])
 
 
+    def test_match(self):
+
+        def func(v=1):
+            x = 0
+            for v in range(4):
+                match v:
+                    case 1:
+                        x += 1
+                    case 2:
+                        x += 2
+                    case _:
+                        x += 3
+            return x
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch right', 'func', 6, 8),
+            ('branch left', 'func', 2, 2),
+            ('branch left', 'func', 4, 5),
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch left', 'func', 6, 7),
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch right', 'func', 6, 8),
+            ('branch right', 'func', 2, 10)])
+
+    def test_callback_set_frame_lineno(self):
+        def func(s: str) -> int:
+            if s.startswith("t"):
+                return 1
+            else:
+                return 0
+
+        def callback(code, from_, to):
+            # try set frame.f_lineno
+            frame = inspect.currentframe()
+            while frame and frame.f_code is not code:
+                frame = frame.f_back
+
+            self.assertIsNotNone(frame)
+            frame.f_lineno = frame.f_lineno + 1 # run next instruction
+
+        sys.monitoring.set_local_events(TEST_TOOL, func.__code__, E.BRANCH_LEFT)
+        sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, callback)
+
+        self.assertEqual(func("true"), 1)
+
+
 class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
 
     def check_branches(self, run_func, test_func=None, tool=TEST_TOOL, recorders=BRANCH_OFFSET_RECORDERS):
@@ -1704,7 +1774,6 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
             for (src, left, right) in test_func.__code__.co_branches():
                 lefts.add((src, left))
                 rights.add((src, right))
-            print(event_list)
             for event in event_list:
                 way, _, src, dest = event
                 if "left" in way:
@@ -2128,6 +2197,21 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         callback(None, 0)  # call the *same* handler while it is registered
         sys.monitoring.restart_events()
         sys.monitoring.set_events(0, 0)
+
+    def test_134879(self):
+        # gh-134789
+        # Specialized FOR_ITER not incrementing index
+        def foo():
+            t = 0
+            for i in [1,2,3,4]:
+                t += i
+            self.assertEqual(t, 10)
+
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_local_events(0, foo.__code__, E.BRANCH_LEFT | E.BRANCH_RIGHT)
+        foo()
+        sys.monitoring.set_local_events(0, foo.__code__, 0)
 
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):

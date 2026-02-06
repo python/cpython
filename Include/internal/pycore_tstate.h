@@ -10,8 +10,18 @@ extern "C" {
 
 #include "pycore_brc.h"             // struct _brc_thread_state
 #include "pycore_freelist_state.h"  // struct _Py_freelists
+#include "pycore_interpframe_structs.h"  // _PyInterpreterFrame
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
+#include "pycore_uop.h"             // struct _PyUOpInstruction
+#include "pycore_structs.h"
+
+#ifdef Py_GIL_DISABLED
+struct _gc_thread_state {
+    /* Thread-local allocation count. */
+    Py_ssize_t alloc_count;
+};
+#endif
 
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -20,6 +30,10 @@ extern "C" {
 typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
+
+    // Embedded base frame - sentinel at the bottom of the frame stack.
+    // Used by profiling/sampling to detect incomplete stack traces.
+    _PyInterpreterFrame base_frame;
 
     // The reference count field is used to synchronize deallocation of the
     // thread state during runtime finalization.
@@ -30,8 +44,19 @@ typedef struct _PyThreadStateImpl {
     uintptr_t c_stack_soft_limit;
     uintptr_t c_stack_hard_limit;
 
+    // PyUnstable_ThreadState_ResetStackProtection() values
+    uintptr_t c_stack_init_base;
+    uintptr_t c_stack_init_top;
+
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
+
+    // Distinguishes between yield and return from PyEval_EvalFrame().
+    // See gen_send_ex2() in Objects/genobject.c
+    enum {
+        GENERATOR_RETURN = 0,
+        GENERATOR_YIELD = 1,
+    } generator_return_kind;
 
     /* Head of circular linked-list of all tasks which are instances of `asyncio.Task`
        or subclasses of it used in `asyncio.all_tasks`.
@@ -40,8 +65,9 @@ typedef struct _PyThreadStateImpl {
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue
 
-
 #ifdef Py_GIL_DISABLED
+    // Stack references for the current thread that exist on the C stack
+    struct _PyCStackRef *c_stack_refs;
     struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelists freelists;
@@ -62,12 +88,20 @@ typedef struct _PyThreadStateImpl {
 
     // When >1, code objects do not immortalize their non-string constants.
     int suppress_co_const_immortalization;
+
+#ifdef Py_STATS
+     // per-thread stats, will be merged into interp->pystats_struct
+     PyStats *pystats_struct; // allocated by _PyStats_ThreadInit()
 #endif
+
+#endif // Py_GIL_DISABLED
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
-
+#if _Py_TIER2
+    struct _PyJitTracerState *jit_tracer_state;
+#endif
 } _PyThreadStateImpl;
 
 #ifdef __cplusplus

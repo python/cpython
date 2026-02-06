@@ -12,9 +12,8 @@ and adds some new things as well.
 More on Lists
 =============
 
-The list data type has some more methods.  Here are all of the methods of list
-objects:
-
+The :ref:`list <typesseq-list>` data type has some more methods. Here are all
+of the methods of list objects:
 
 .. method:: list.append(x)
    :noindex:
@@ -62,7 +61,7 @@ objects:
 .. method:: list.index(x[, start[, end]])
    :noindex:
 
-   Return zero-based index in the list of the first item whose value is equal to *x*.
+   Return zero-based index of the first occurrence of *x* in the list.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice
@@ -142,8 +141,8 @@ Using Lists as Stacks
 
 The list methods make it very easy to use a list as a stack, where the last
 element added is the first element retrieved ("last-in, first-out").  To add an
-item to the top of the stack, use :meth:`!append`.  To retrieve an item from the
-top of the stack, use :meth:`!pop` without an explicit index.  For example::
+item to the top of the stack, use :meth:`~list.append`.  To retrieve an item from the
+top of the stack, use :meth:`~list.pop` without an explicit index.  For example::
 
    >>> stack = [3, 4, 5]
    >>> stack.append(6)
@@ -334,13 +333,54 @@ The :func:`zip` function would do a great job for this use case::
 
 See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
+Unpacking in Lists and List Comprehensions
+------------------------------------------
+
+The section on :ref:`tut-unpacking-arguments` describes the use of ``*`` to
+"unpack" the elements of an iterable object, providing each one seperately as
+an argument to a function.  Unpacking can also be used in other contexts, for
+example, when creating lists.  When specifying elements of a list, prefixing an
+expression by a ``*`` will unpack the result of that expression, adding each of
+its elements to the list we're creating::
+
+   >>> x = [1, 2, 3]
+   >>> [0, *x, 4, 5, 6]
+   [0, 1, 2, 3, 4, 5, 6]
+
+This only works if the expression following the ``*`` evaluates to an iterable
+object; trying to unpack a non-iterable object will raise an exception::
+
+   >>> x = 1
+   >>> [0, *x, 2, 3, 4]
+   Traceback (most recent call last):
+     File "<python-input-1>", line 1, in <module>
+       [0, *x, 2, 3, 4]
+   TypeError: Value after * must be an iterable, not int
+
+Unpacking can also be used in list comprehensions, as a way to build a new list
+representing the concatenation of an arbitrary number of iterables::
+
+   >>> x = [[1, 2, 3], [4, 5, 6], [], [7], [8, 9]]
+   >>> [*element for element in x]
+   [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+Note that the effect is that each element from ``x`` is unpacked.  This works
+for arbitrary iterable objects, not just lists::
+
+   >>> x = [[1, 2, 3], 'cat', {'spam': 'eggs'}]
+   >>> [*element for element in x]
+   [1, 2, 3, 'c', 'a', 't', 'spam']
+
+But if the objects in ``x`` are not iterable, this expression would again raise
+an exception.
+
 .. _tut-del:
 
 The :keyword:`!del` statement
 =============================
 
 There is a way to remove an item from a list given its index instead of its
-value: the :keyword:`del` statement.  This differs from the :meth:`!pop` method
+value: the :keyword:`del` statement.  This differs from the :meth:`~list.pop` method
 which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
@@ -395,7 +435,10 @@ A tuple consists of a number of values separated by commas, for instance::
    >>> v = ([1, 2, 3], [3, 2, 1])
    >>> v
    ([1, 2, 3], [3, 2, 1])
-
+   >>> # they support unpacking just like lists:
+   >>> x = [1, 2, 3]
+   >>> 0, *x, 4
+   (0, 1, 2, 3, 4)
 
 As you see, on output tuples are always enclosed in parentheses, so that nested
 tuples are interpreted correctly; they may be input with or without surrounding
@@ -445,10 +488,11 @@ packing and sequence unpacking.
 Sets
 ====
 
-Python also includes a data type for *sets*.  A set is an unordered collection
-with no duplicate elements.  Basic uses include membership testing and
-eliminating duplicate entries.  Set objects also support mathematical operations
-like union, intersection, difference, and symmetric difference.
+Python also includes a data type for :ref:`sets <types-set>`.  A set is
+an unordered collection with no duplicate elements.  Basic uses include
+membership testing and eliminating duplicate entries.  Set objects also
+support mathematical operations like union, intersection, difference, and
+symmetric difference.
 
 Curly braces or the :func:`set` function can be used to create sets.  Note: to
 create an empty set you have to use ``set()``, not ``{}``; the latter creates an
@@ -480,11 +524,15 @@ Here is a brief demonstration::
    {'r', 'd', 'b', 'm', 'z', 'l'}
 
 Similarly to :ref:`list comprehensions <tut-listcomps>`, set comprehensions
-are also supported::
+are also supported, including comprehensions with unpacking::
 
    >>> a = {x for x in 'abracadabra' if x not in 'abc'}
    >>> a
    {'r', 'd'}
+
+   >>> fruits = [{'apple', 'avocado', 'apricot'}, {'banana', 'blueberry'}]
+   >>> {*fruit for fruit in fruits}
+   {'blueberry', 'banana', 'avocado', 'apple', 'apricot'}
 
 
 .. _tut-dictionaries:
@@ -500,8 +548,8 @@ any immutable type; strings and numbers can always be keys.  Tuples can be used
 as keys if they contain only strings, numbers, or tuples; if a tuple contains
 any mutable object either directly or indirectly, it cannot be used as a key.
 You can't use lists as keys, since lists can be modified in place using index
-assignments, slice assignments, or methods like :meth:`!append` and
-:meth:`!extend`.
+assignments, slice assignments, or methods like :meth:`~list.append` and
+:meth:`~list.extend`.
 
 It is best to think of a dictionary as a set of *key: value* pairs,
 with the requirement that the keys are unique (within one dictionary). A pair of
@@ -512,8 +560,12 @@ dictionary; this is also the way dictionaries are written on output.
 The main operations on a dictionary are storing a value with some key and
 extracting the value given the key.  It is also possible to delete a key:value
 pair with ``del``. If you store using a key that is already in use, the old
-value associated with that key is forgotten.  It is an error to extract a value
-using a non-existent key.
+value associated with that key is forgotten.
+
+Extracting a value for a non-existent key by subscripting (``d[key]``) raises a
+:exc:`KeyError`. To avoid getting this error when trying to access a possibly
+non-existent key, use the :meth:`~dict.get` method instead, which returns
+``None`` (or a specified default value) if the key is not in the dictionary.
 
 Performing ``list(d)`` on a dictionary returns a list of all the keys
 used in the dictionary, in insertion order (if you want it sorted, just use
@@ -528,6 +580,12 @@ Here is a small example using a dictionary::
    {'jack': 4098, 'sape': 4139, 'guido': 4127}
    >>> tel['jack']
    4098
+   >>> tel['irv']
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   KeyError: 'irv'
+   >>> print(tel.get('irv'))
+   None
    >>> del tel['sape']
    >>> tel['irv'] = 4127
    >>> tel
@@ -552,6 +610,18 @@ arbitrary key and value expressions::
 
    >>> {x: x**2 for x in (2, 4, 6)}
    {2: 4, 4: 16, 6: 36}
+
+And dictionary unpacking (via ``**``) can be used to merge multiple
+dictionaries::
+
+   >>> odds = {i: i**2 for i in (1, 3, 5)}
+   >>> evens = {i: i**2 for i in (2, 4, 6)}
+   >>> {**odds, **evens}
+   {1: 1, 3: 9, 5: 25, 2: 4, 4: 16, 6: 36}
+
+   >>> all_values = [odds, evens, {0: 0}]
+   >>> {**i for i in all_values}
+   {1: 1, 3: 9, 5: 25, 2: 4, 4: 16, 6: 36, 0: 0}
 
 When the keys are simple strings, it is sometimes easier to specify pairs using
 keyword arguments::
