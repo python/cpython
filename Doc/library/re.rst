@@ -1064,34 +1064,19 @@ Functions
 
    Return the string obtained by replacing the leftmost non-overlapping occurrences
    of *pattern* in *string* by the replacement *repl*.  If the pattern isn't found,
-   *string* is returned unchanged.  *repl* can be a string or a function; if it is
-   a string, any backslash escapes in it are processed.  That is, ``\n`` is
-   converted to a single newline character, ``\r`` is converted to a carriage return, and
-   so forth.  Unknown escapes of ASCII letters are reserved for future use and
-   treated as errors.  Other unknown escapes such as ``\&`` are left alone.
-   Backreferences, such
-   as ``\6``, are replaced with the substring matched by group 6 in the pattern.
-   For example::
-
-      >>> re.sub(r'def\s+([a-zA-Z_][a-zA-Z_0-9]*)\s*\(\s*\):',
-      ...        r'static PyObject*\npy_\1(void)\n{',
-      ...        'def myfunc():')
-      'static PyObject*\npy_myfunc(void)\n{'
-
-   If *repl* is a function, it is called for every non-overlapping occurrence of
-   *pattern*.  The function takes a single :class:`~re.Match` argument, and returns
-   the replacement string.  For example::
-
-      >>> def dashrepl(matchobj):
-      ...     if matchobj.group(0) == '-': return ' '
-      ...     else: return '-'
-      ...
-      >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
-      'pro--gram files'
-      >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
-      'Baked Beans & Spam'
-
+   *string* is returned unchanged.
    The pattern may be a string or a :class:`~re.Pattern`.
+   A string pattern's behaviour may be modified by specifying a *flags* value,
+   which can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
+      >>> re.sub(r'(and)', r'*\1*', 'Contraband Andalusian Beans AND Spam',
+      ...        flags=re.IGNORECASE)
+      'Contrab*and* *And*alusian Beans *AND* Spam'
+
+      >>> pattern = re.compile(r'(and)', flags=re.IGNORECASE)
+      >>> re.sub(pattern, r'*\1*', 'Contraband Andalusian Beans AND Spam')
+      'Contrab*and* *And*alusian Beans *AND* Spam'
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
@@ -1102,21 +1087,51 @@ Functions
    As a result, ``sub('x*', '-', 'abxd')`` returns ``'-a-b--d-'``
    instead of ``'-a-b-d-'``.
 
-   .. index:: single: \g; in regular expressions
+   *repl* can be a string template or a function:
 
-   In string-type *repl* arguments, in addition to the character escapes and
-   backreferences described above,
-   ``\g<name>`` will use the substring matched by the group named ``name``, as
-   defined by the ``(?P<name>...)`` syntax. ``\g<number>`` uses the corresponding
-   group number; ``\g<2>`` is therefore equivalent to ``\2``, but isn't ambiguous
-   in a replacement such as ``\g<2>0``.  ``\20`` would be interpreted as a
-   reference to group 20, not a reference to group 2 followed by the literal
-   character ``'0'``.  The backreference ``\g<0>`` substitutes in the entire
-   substring matched by the RE.
+   * If it is callable, it is called for every non-overlapping occurrence of
+     *pattern*.  The function takes a single :class:`~re.Match` argument, and
+     returns the replacement string.  For example::
 
-   The expression's behaviour can be modified by specifying a *flags* value.
-   Values can be any of the `flags`_ variables, combined using bitwise OR
-   (the ``|`` operator).
+        >>> def dashrepl(matchobj):
+        ...     if matchobj.group(0) == '-': return ' '
+        ...     else: return '-'
+        ...
+        >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
+        'pro--gram files'
+
+   * If *repl* is a string, it's processed as a template based on backslash escapes:
+
+     .. index:: single: \g; in regular expressions
+
+     - ``\1`` .. ``\99`` are replaced by the substring matched by corresponding
+       ``(...)`` groups in the pattern.
+     - However other ``\numbers`` get interpretted as *octal* character literals.
+     - ``\g<name>`` are replaced by the substring matched by named ``(?P<name>...)``
+       groups.
+     - ``\g<number>`` is another way to refer to numbered groups.
+       ``\g<2>0`` inserts group 2 followed by the literal character ``'0'``,
+       whereas ``\20`` can only express a reference to group 20.  ``\g<100>`` etc.
+       can refer to groups higher than 99, and the backreference ``\g<0>``
+       substitutes in the entire substring matched by the RE.
+     - ``\\`` is converted to a single backslash.
+     - Basic escapes ``\n\r\t\v\f\a\b`` work like in Python string literals.
+       That is, ``\n`` is converted to a single newline character, and so forth.
+     - Unknown escapes of ASCII letters are reserved for future use and
+       treated as errors.  This includes ``\x..``, ``\u...``, ``\U...`` and
+       ``\N{...}`` which are not presently supported.
+     - Other unknown escapes such as ``\&`` are left alone.
+
+     For example::
+
+        >>> re.sub(r'def\s+([a-zA-Z_][a-zA-Z_0-9]*)\s*\(\s*\):',
+        ...        r'static PyObject*\npy_\1(void)\n{',
+        ...        'def myfunc():')
+        'static PyObject*\npy_myfunc(void)\n{'
+
+     (Note the use of raw string notation for *repl* as well.  Otherwise you'd have
+     to write ``'\\1'`` for Python to parse it into ``\1`` to be replaced by
+     ``myfunc`` at substitution time...)
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
