@@ -1441,7 +1441,9 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
-.. admonition:: Thread safety
+.. _thread-safety-list:
+
+.. rubric:: Thread safety for list objects
 
    Reading a single element from a :class:`list` is
    :term:`atomic <atomic operation>`:
@@ -1462,11 +1464,11 @@ application).
       lst.index(item)
       lst.count(item)
 
-   All of the above methods/operations are also lock-free. They do not block
-   concurrent modifications. Other operations that hold a lock will not block
-   these from observing intermediate states.
+   All of the above methods/operations are also :term:`lock-free`. They do not
+   block concurrent modifications. Other operations that hold a lock will not
+   block these from observing intermediate states.
 
-   All other operations from here on block using the per-object lock.
+   All other operations from here on block using the :term:`per-object lock`.
 
    Writing a single item via ``lst[i] = x`` is safe to call from multiple
    threads and will not corrupt the list.
@@ -1497,7 +1499,7 @@ application).
    Other threads cannot observe intermediate states during sorting, but the
    list appears empty for the duration of the sort.
 
-   The following operations may allow lock-free operations to observe
+   The following operations may allow :term:`lock-free` operations to observe
    intermediate states since they modify multiple elements in place:
 
    .. code-block::
