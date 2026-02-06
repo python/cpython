@@ -745,17 +745,20 @@ class BaseXYTestCase(unittest.TestCase):
            b'<~\nGB\n\\6\n`E\n-Z\nP=\nDf\n.1\nGE\nb>\n~>')
         eq(base64.a85encode(b, wrapcol=sys.maxsize), b'GB\\6`E-ZP=Df.1GEb>')
         if check_impl_detail():
-            eq(base64.a85encode(b, wrapcol=2**1000), b'GB\\6`E-ZP=Df.1GEb>')
-            eq(base64.a85encode(b, wrapcol=-7),
-               b'G\nB\n\\\n6\n`\nE\n-\nZ\nP\n=\nD\nf\n.\n1\nG\nE\nb\n>')
-            eq(base64.a85encode(b, wrapcol=-7, adobe=True),
-               b'<~\nGB\n\\6\n`E\n-Z\nP=\nDf\n.1\nGE\nb>\n~>')
+            eq(base64.a85encode(b, wrapcol=sys.maxsize*2),
+                                b'GB\\6`E-ZP=Df.1GEb>')
+            with self.assertRaises(OverflowError):
+                base64.a85encode(b, wrapcol=2**1000)
+        with self.assertRaises(ValueError):
+            base64.a85encode(b, wrapcol=-7)
+        with self.assertRaises(ValueError):
+            base64.a85encode(b, wrapcol=-7, adobe=True)
         with self.assertRaises(TypeError):
             base64.a85encode(b, wrapcol=7.0)
         with self.assertRaises(TypeError):
             base64.a85encode(b, wrapcol='7')
-        if check_impl_detail():
-            eq(base64.a85encode(b, wrapcol=None), b'GB\\6`E-ZP=Df.1GEb>')
+        with self.assertRaises(TypeError):
+            base64.a85encode(b, wrapcol=None)
         eq(base64.a85encode(b'', wrapcol=0), b'')
         eq(base64.a85encode(b'', wrapcol=7), b'')
         eq(base64.a85encode(b'', wrapcol=1, adobe=True), b'<~\n~>')
@@ -961,6 +964,12 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.a85decode(b'G^+H5'), b"xxx\x00")
         eq(base64.a85decode(b'G^+IX'), b"xxxx")
         eq(base64.a85decode(b'G^+IXGQ7^D'), b"xxxxx\x00\x00\x00")
+
+        eq(base64.a85encode(b"\x00", pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*2, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*3, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*4, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*5, pad=True), b'zz')
 
     def test_b85_padding(self):
         eq = self.assertEqual
