@@ -204,6 +204,35 @@ class RaceTestBase:
         t1.start(); t2.start()
         t1.join(); t2.join()
 
+    def test_iternext_concurrent_exhaust_race(self):
+        NUM_LOOPS = 20_000
+        barrier = Barrier(3)
+        box = {"it": None}
+
+        def advancer():
+            for _ in range(NUM_LOOPS):
+                barrier.wait()
+                it = box["it"]
+                while True:
+                    try:
+                        next(it)
+                    except StopIteration:
+                        break
+                barrier.wait()
+
+        def producer():
+            for _ in range(NUM_LOOPS):
+                s = set(range(64))
+                box["it"] = iter(s)
+                barrier.wait()
+                barrier.wait()
+
+        t1 = Thread(target=advancer)
+        t2 = Thread(target=advancer)
+        t3 = Thread(target=producer)
+        t1.start(); t2.start(); t3.start()
+        t1.join(); t2.join(); t3.join()
+
 
 @threading_helper.requires_working_threading()
 class SmallSetTest(RaceTestBase, unittest.TestCase):
