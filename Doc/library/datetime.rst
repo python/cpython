@@ -2537,7 +2537,7 @@ requires, and these work on all supported platforms.
 |  ``%D``   | Equivalent to ``%m/%d/%y``.    | 11/10/2025             | \(9), |
 |           |                                |                        | \(0)  |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%e``   | The day of the month as a      | ``␣1``, ..., ``31``    |       |
+|  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
 |           | space-padded decimal number.   |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            | \(0)  |
