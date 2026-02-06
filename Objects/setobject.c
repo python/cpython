@@ -1057,16 +1057,16 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
 #ifdef Py_GIL_DISABLED
-    PyObject *so_obj = FT_ATOMIC_LOAD_PTR_ACQUIRE(si->si_set);
-    if (so_obj != NULL) {
-        /* Turn borrowed si->si_set into a strong ref safely. */
-        if (_Py_TryIncrefCompare((PyObject **)&si->si_set, so_obj)) {
-            PySetObject *so = (PySetObject *)so_obj;
-            if (si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used)) {
-                len = si->len;
-            }
-            Py_DECREF(so_obj);
+    PySetObject *so = si->si_set;
+    if (so != NULL) {
+        Py_BEGIN_CRITICAL_SECTION(so);
+        Py_ssize_t pos = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_pos);
+        if (pos >= 0 &&
+            si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used))
+        {
+            len = si->len;
         }
+        Py_END_CRITICAL_SECTION();
     }
 #else
     if (si->si_set != NULL && si->si_used == si->si_set->used) {
@@ -1126,7 +1126,16 @@ static PyObject *setiter_iternext(PyObject *self)
     }
 
     Py_BEGIN_CRITICAL_SECTION(so);
+#ifdef Py_GIL_DISABLED
+    /* si_pos may be read outside the lock; keep it atomic in FT builds */
+    i = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_pos);
+    if (i < 0) {
+        /* iterator already exhausted */
+        goto done;
+    }
+#else
     i = si->si_pos;
+#endif
     assert(i>=0);
     entry = so->table;
     mask = so->mask;
@@ -1135,19 +1144,30 @@ static PyObject *setiter_iternext(PyObject *self)
     }
     if (i <= mask) {
         key = Py_NewRef(entry[i].key);
-    }
-    Py_END_CRITICAL_SECTION();
-    si->si_pos = i+1;
-    if (key == NULL) {
 #ifdef Py_GIL_DISABLED
-        FT_ATOMIC_STORE_PTR_RELEASE(si->si_set, NULL);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, i + 1);
+#else
+        si->si_pos = i + 1;
+#endif
+        si->len--;
+    }
+    else {
+#ifdef Py_GIL_DISABLED
+        /* free-threaded: keep si_set; just mark exhausted */
+        FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, -1);
+        si->len = 0;
 #else
         si->si_set = NULL;
 #endif
+    }
+done:
+    Py_END_CRITICAL_SECTION();
+    if (key == NULL) {
+#ifndef Py_GIL_DISABLED
         Py_DECREF(so);
+#endif
         return NULL;
     }
-    si->len--;
     return key;
 }
 
