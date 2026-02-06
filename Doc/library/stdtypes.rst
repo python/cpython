@@ -5558,7 +5558,7 @@ can be used interchangeably to index the same dictionary entry.
    considerations as above apply.
 
    The following operations return new objects and hold the per-object lock
-   for the duration:
+   for the duration of the operation:
 
    .. code-block::
       :class: good
@@ -5605,9 +5605,9 @@ can be used interchangeably to index the same dictionary entry.
    .. code-block::
       :class: maybe
 
-      d.update(iterable)        # iterable is not a dict
-      d |= iterable             # iterable is not a dict
-      dict.fromkeys(iterable)   # iterable is not a dict/set/frozenset
+      d.update(iterable)        # iterable is not a dict: only d locked
+      d |= iterable             # iterable is not a dict: only d locked
+      dict.fromkeys(iterable)   # iterable is not a dict/set/frozenset: only result locked
 
    Operations that involve multiple accesses, as well as iteration, are never
    atomic:
