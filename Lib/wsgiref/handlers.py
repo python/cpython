@@ -265,7 +265,7 @@ class BaseHandler:
         if type(value) is str:
             regex = (_name_disallowed_re if name else _value_disallowed_re)
             if regex.search(value):
-                raise ValueError("Control characters not allowed in headers, values and statuses")
+                raise ValueError("Control characters not allowed in header names, values and statuses")
             return value
         raise AssertionError(
             "{0} must be of type str (got {1})".format(title, repr(value))
