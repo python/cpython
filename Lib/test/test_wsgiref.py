@@ -854,7 +854,7 @@ class HandlerTests(TestCase):
             with self.subTest(c0):
                 base = BaseHandler()
                 headers = [('x','y')]
-                self.assertRaises(ValueError, base.start_response, {c0}, headers)
+                self.assertRaises(ValueError, base.start_response, f"{c0}", headers)
 
 
 class TestModule(unittest.TestCase):
