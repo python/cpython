@@ -13,7 +13,7 @@
 
 --------------
 
-The :mod:`doctest` module searches for pieces of text that look like interactive
+The :mod:`!doctest` module searches for pieces of text that look like interactive
 Python sessions, and then executes those sessions to verify that they work
 exactly as shown.  There are several common ways to use doctest:
 
@@ -85,7 +85,7 @@ Here's a complete but small example module::
        import doctest
        doctest.testmod()
 
-If you run :file:`example.py` directly from the command line, :mod:`doctest`
+If you run :file:`example.py` directly from the command line, :mod:`!doctest`
 works its magic:
 
 .. code-block:: shell-session
@@ -94,7 +94,7 @@ works its magic:
    $
 
 There's no output!  That's normal, and it means all the examples worked.  Pass
-``-v`` to the script, and :mod:`doctest` prints a detailed log of what
+``-v`` to the script, and :mod:`!doctest` prints a detailed log of what
 it's trying, and prints a summary at the end:
 
 .. code-block:: shell-session
@@ -130,7 +130,7 @@ And so on, eventually ending with:
    Test passed.
    $
 
-That's all you need to know to start making productive use of :mod:`doctest`!
+That's all you need to know to start making productive use of :mod:`!doctest`!
 Jump in.  The following sections provide full details.  Note that there are many
 examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
@@ -252,7 +252,7 @@ For more information on :func:`testfile`, see section :ref:`doctest-basic-api`.
 Command-line Usage
 ------------------
 
-The :mod:`doctest` module can be invoked as a script from the command line:
+The :mod:`!doctest` module can be invoked as a script from the command line:
 
 .. code-block:: bash
 
@@ -450,7 +450,7 @@ The fine print:
 What's the Execution Context?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, each time :mod:`doctest` finds a docstring to test, it uses a
+By default, each time :mod:`!doctest` finds a docstring to test, it uses a
 *shallow copy* of :mod:`!M`'s globals, so that running tests doesn't change the
 module's real globals, and so that one test in :mod:`!M` can't leave behind
 crumbs that accidentally allow another test to work.  This means examples can
@@ -730,7 +730,7 @@ The second group of options controls how test failures are reported:
 
 
 There is also a way to register new option flag names, though this isn't
-useful unless you intend to extend :mod:`doctest` internals via subclassing:
+useful unless you intend to extend :mod:`!doctest` internals via subclassing:
 
 
 .. function:: register_optionflag(name)
@@ -833,7 +833,7 @@ disabling an option via ``-`` in a directive can be useful.
 Warnings
 ^^^^^^^^
 
-:mod:`doctest` is serious about requiring exact matches in expected output.  If
+:mod:`!doctest` is serious about requiring exact matches in expected output.  If
 even a single character doesn't match, the test fails.  This will probably
 surprise you a few times, as you learn exactly what Python does and doesn't
 guarantee about output.  For example, when printing a set, Python doesn't
@@ -1035,7 +1035,7 @@ Unittest API
 ------------
 
 As your collection of doctest'ed modules grows, you'll want a way to run all
-their doctests systematically.  :mod:`doctest` provides two functions that can
+their doctests systematically.  :mod:`!doctest` provides two functions that can
 be used to create :mod:`unittest` test suites from modules and text files
 containing doctests.  To integrate with :mod:`unittest` test discovery, include
 a :ref:`load_tests <load_tests-protocol>` function in your test module::
@@ -1179,7 +1179,7 @@ of :class:`!DocTestCase`.
 
 So both ways of creating a :class:`unittest.TestSuite` run instances of
 :class:`!DocTestCase`.  This is important for a subtle reason: when you run
-:mod:`doctest` functions yourself, you can control the :mod:`!doctest` options in
+:mod:`!doctest` functions yourself, you can control the :mod:`!doctest` options in
 use directly, by passing option flags to :mod:`!doctest` functions.  However, if
 you're writing a :mod:`unittest` framework, :mod:`!unittest` ultimately controls
 when and how tests get run.  The framework author typically wants to control
@@ -1187,13 +1187,13 @@ when and how tests get run.  The framework author typically wants to control
 options), but there's no way to pass options through :mod:`!unittest` to
 :mod:`!doctest` test runners.
 
-For this reason, :mod:`doctest` also supports a notion of :mod:`!doctest`
+For this reason, :mod:`!doctest` also supports a notion of :mod:`!doctest`
 reporting flags specific to :mod:`unittest` support, via this function:
 
 
 .. function:: set_unittest_reportflags(flags)
 
-   Set the :mod:`doctest` reporting flags to use.
+   Set the :mod:`!doctest` reporting flags to use.
 
    Argument *flags* takes the :ref:`bitwise OR <bitwise>` of option flags.  See
    section :ref:`doctest-options`.  Only "reporting flags" can be used.
@@ -1923,7 +1923,7 @@ There are two exceptions that may be raised by :class:`DebugRunner` instances:
 Soapbox
 -------
 
-As mentioned in the introduction, :mod:`doctest` has grown to have three primary
+As mentioned in the introduction, :mod:`!doctest` has grown to have three primary
 uses:
 
 #. Checking examples in docstrings.
@@ -1941,7 +1941,7 @@ this that needs to be learned---it may not be natural at first.  Examples should
 add genuine value to the documentation.  A good example can often be worth many
 words. If done with care, the examples will be invaluable for your users, and
 will pay back the time it takes to collect them many times over as the years go
-by and things change.  I'm still amazed at how often one of my :mod:`doctest`
+by and things change.  I'm still amazed at how often one of my :mod:`!doctest`
 examples stops working after a "harmless" change.
 
 Doctest also makes an excellent tool for regression testing, especially if you

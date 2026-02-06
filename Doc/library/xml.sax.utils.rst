@@ -11,7 +11,7 @@
 
 --------------
 
-The module :mod:`xml.sax.saxutils` contains a number of classes and functions
+The module :mod:`!xml.sax.saxutils` contains a number of classes and functions
 that are commonly useful when creating SAX applications, either in direct use,
 or as base classes.
 

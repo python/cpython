@@ -15,7 +15,7 @@
 
 --------------
 
-The :mod:`shutil` module offers a number of high-level operations on files and
+The :mod:`!shutil` module offers a number of high-level operations on files and
 collections of files.  In particular, functions are provided  which support file
 copying and removal. For operations on individual files, see also the
 :mod:`os` module.
@@ -676,7 +676,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Return a list of supported formats for archiving.
    Each element of the returned sequence is a tuple ``(name, description)``.
 
-   By default :mod:`shutil` provides these formats:
+   By default :mod:`!shutil` provides these formats:
 
    - *zip*: ZIP file (if the :mod:`zlib` module is available).
    - *tar*: Uncompressed tar file. Uses POSIX.1-2001 pax format for new archives.
@@ -793,7 +793,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Each element of the returned sequence is a tuple
    ``(name, extensions, description)``.
 
-   By default :mod:`shutil` provides these formats:
+   By default :mod:`!shutil` provides these formats:
 
    - *zip*: ZIP file (unpacking compressed files works only if the corresponding
      module is available).

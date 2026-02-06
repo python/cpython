@@ -125,10 +125,10 @@ Here is the API for the :class:`BytesFeedParser`:
 Parser API
 ^^^^^^^^^^
 
-The :class:`BytesParser` class, imported from the :mod:`email.parser` module,
+The :class:`BytesParser` class, imported from the :mod:`!email.parser` module,
 provides an API that can be used to parse a message when the complete contents
 of the message are available in a :term:`bytes-like object` or file.  The
-:mod:`email.parser` module also provides :class:`Parser` for parsing strings,
+:mod:`!email.parser` module also provides :class:`Parser` for parsing strings,
 and header-only parsers, :class:`BytesHeaderParser` and
 :class:`HeaderParser`, which can be used if you're only interested in the
 headers of the message.  :class:`BytesHeaderParser` and :class:`HeaderParser`

@@ -14,7 +14,7 @@
 .. versionadded:: 3.6 [1]_
 
 The central class in the :mod:`email` package is the :class:`EmailMessage`
-class, imported from the :mod:`email.message` module.  It is the base class for
+class, imported from the :mod:`!email.message` module.  It is the base class for
 the :mod:`email` object model.  :class:`EmailMessage` provides the core
 functionality for setting and querying header fields, for accessing message
 bodies, and for creating or modifying structured messages.

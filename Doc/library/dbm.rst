@@ -8,7 +8,7 @@
 
 --------------
 
-:mod:`dbm` is a generic interface to variants of the DBM database:
+:mod:`!dbm` is a generic interface to variants of the DBM database:
 
 * :mod:`dbm.sqlite3`
 * :mod:`dbm.gnu`
@@ -107,7 +107,7 @@ will automatically close them when done.
 
 .. versionchanged:: 3.2
    :meth:`!get` and :meth:`!setdefault` methods are now available for all
-   :mod:`dbm` backends.
+   :mod:`!dbm` backends.
 
 .. versionchanged:: 3.4
    Added native support for the context management protocol to the objects
@@ -118,7 +118,7 @@ will automatically close them when done.
    instead of :exc:`KeyError`.
 
 .. versionchanged:: 3.13
-   :meth:`!clear` methods are now available for all :mod:`dbm` backends.
+   :meth:`!clear` methods are now available for all :mod:`!dbm` backends.
 
 
 The following example records some hostnames and a corresponding title,  and
@@ -171,7 +171,7 @@ The individual submodules are described in the following sections.
 --------------
 
 This module uses the standard library :mod:`sqlite3` module to provide an
-SQLite backend for the :mod:`dbm` module.
+SQLite backend for the :mod:`!dbm` module.
 The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
 or any other SQLite browser, including the SQLite CLI.
 
@@ -215,7 +215,7 @@ or any other SQLite browser, including the SQLite CLI.
 
       .. note::
          While reorganizing, as much as two times the size of the original database is required
-         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+         in free disk space. However, be aware that this factor changes for each :mod:`!dbm` submodule.
 
       .. versionadded:: 3.15
 
@@ -335,7 +335,7 @@ functionality like crash tolerance.
 
       .. note::
          While reorganizing, as much as one time the size of the original database is required
-         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+         in free disk space. However, be aware that this factor changes for each :mod:`!dbm` submodule.
 
    .. method:: gdbm.sync()
 
@@ -438,7 +438,7 @@ This module can be used with the "classic" NDBM interface or the
 .. note::
 
    The :mod:`dbm.dumb` module is intended as a last resort fallback for the
-   :mod:`dbm` module when a more robust module is not available. The :mod:`dbm.dumb`
+   :mod:`!dbm` module when a more robust module is not available. The :mod:`dbm.dumb`
    module is not written for speed and is not nearly as heavily used as the other
    database modules.
 
@@ -446,7 +446,7 @@ This module can be used with the "classic" NDBM interface or the
 
 The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
-Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
+Unlike other :mod:`!dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
 
 The :mod:`!dbm.dumb` module defines the following:
@@ -517,7 +517,7 @@ The :mod:`!dbm.dumb` module defines the following:
 
       .. note::
          While reorganizing, no additional free disk space is required. However, be aware
-         that this factor changes for each :mod:`dbm` submodule.
+         that this factor changes for each :mod:`!dbm` submodule.
 
       .. versionadded:: 3.15
 

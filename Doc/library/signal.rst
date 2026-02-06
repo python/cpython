@@ -108,7 +108,7 @@ The signal module defines three enums:
    .. versionadded:: 3.5
 
 
-The variables defined in the :mod:`signal` module are:
+The variables defined in the :mod:`!signal` module are:
 
 
 .. data:: SIG_DFL
@@ -350,7 +350,7 @@ The variables defined in the :mod:`signal` module are:
    .. versionadded:: 3.3
 
 
-The :mod:`signal` module defines one exception:
+The :mod:`!signal` module defines one exception:
 
 .. exception:: ItimerError
 
@@ -364,7 +364,7 @@ The :mod:`signal` module defines one exception:
       alias of :exc:`OSError`.
 
 
-The :mod:`signal` module defines the following functions:
+The :mod:`!signal` module defines the following functions:
 
 
 .. function:: alarm(time)

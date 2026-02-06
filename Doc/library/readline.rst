@@ -9,7 +9,7 @@
 
 --------------
 
-The :mod:`readline` module defines a number of functions to facilitate
+The :mod:`!readline` module defines a number of functions to facilitate
 completion and reading/writing of history files from the Python interpreter.
 This module can be used directly, or via the :mod:`rlcompleter` module, which
 supports completion of Python identifiers at the interactive prompt.  Settings
@@ -32,7 +32,7 @@ Readline library in general.
 
   The underlying Readline library API may be implemented by
   the ``editline`` (``libedit``) library instead of GNU readline.
-  On macOS the :mod:`readline` module detects which library is being used
+  On macOS the :mod:`!readline` module detects which library is being used
   at run time.
 
   The configuration file for ``editline`` is different from that
@@ -264,7 +264,7 @@ The following functions relate to implementing a custom word completion
 function.  This is typically operated by the Tab key, and can suggest and
 automatically complete a word being typed.  By default, Readline is set up
 to be used by :mod:`rlcompleter` to complete Python identifiers for
-the interactive interpreter.  If the :mod:`readline` module is to be used
+the interactive interpreter.  If the :mod:`!readline` module is to be used
 with a custom completer, a different set of word delimiters should be set.
 
 
@@ -333,7 +333,7 @@ with a custom completer, a different set of word delimiters should be set.
 Example
 -------
 
-The following example demonstrates how to use the :mod:`readline` module's
+The following example demonstrates how to use the :mod:`!readline` module's
 history reading and writing functions to automatically load and save a history
 file named :file:`.python_history` from the user's home directory.  The code
 below would normally be executed automatically during interactive sessions

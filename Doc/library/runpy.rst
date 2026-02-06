@@ -10,7 +10,7 @@
 
 --------------
 
-The :mod:`runpy` module is used to locate and run Python modules without
+The :mod:`!runpy` module is used to locate and run Python modules without
 importing them first. Its main use is to implement the :option:`-m` command
 line switch that allows scripts to be located using the Python module
 namespace rather than the filesystem.
@@ -20,11 +20,11 @@ current process, and any side effects (such as cached imports of other
 modules) will remain in place after the functions have returned.
 
 Furthermore, any functions and classes defined by the executed code are not
-guaranteed to work correctly after a :mod:`runpy` function has returned.
+guaranteed to work correctly after a :mod:`!runpy` function has returned.
 If that limitation is not acceptable for a given use case, :mod:`importlib`
 is likely to be a more suitable choice than this module.
 
-The :mod:`runpy` module provides two functions:
+The :mod:`!runpy` module provides two functions:
 
 
 .. function:: run_module(mod_name, init_globals=None, run_name=None, alter_sys=False)

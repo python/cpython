@@ -12,7 +12,7 @@
 .. note:: This is experimental and due to be deprecated when it is replaced
    with the Tk DND.
 
-The :mod:`tkinter.dnd` module provides drag-and-drop support for objects within
+The :mod:`!tkinter.dnd` module provides drag-and-drop support for objects within
 a single application, within the same window or between windows. To enable an
 object to be dragged, you must create an event binding for it that starts the
 drag-and-drop process. Typically, you bind a ButtonPress event to a callback

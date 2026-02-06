@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`gettext` module provides internationalization (I18N) and localization
+The :mod:`!gettext` module provides internationalization (I18N) and localization
 (L10N) services for your Python modules and applications. It supports both the
 GNU :program:`gettext` message catalog API and a higher level, class-based API that may
 be more appropriate for Python files.  The interface described below allows you
@@ -25,7 +25,7 @@ Some hints on localizing your Python modules and applications are also given.
 GNU :program:`gettext` API
 --------------------------
 
-The :mod:`gettext` module defines the following API, which is very similar to
+The :mod:`!gettext` module defines the following API, which is very similar to
 the GNU :program:`gettext` API.  If you use this API you will affect the
 translation of your entire application globally.  Often this is what you want if
 your application is monolingual, with the choice of language dependent on the
@@ -37,7 +37,7 @@ class-based API instead.
 .. function:: bindtextdomain(domain, localedir=None)
 
    Bind the *domain* to the locale directory *localedir*.  More concretely,
-   :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
+   :mod:`!gettext` will look for binary :file:`.mo` files for the given domain using
    the path (on Unix): :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`, where
    *language* is searched for in the environment variables :envvar:`LANGUAGE`,
    :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and :envvar:`LANG` respectively.
@@ -114,7 +114,7 @@ Here's an example of typical usage for this API::
 Class-based API
 ---------------
 
-The class-based API of the :mod:`gettext` module gives you more flexibility and
+The class-based API of the :mod:`!gettext` module gives you more flexibility and
 greater convenience than the GNU :program:`gettext` API.  It is the recommended
 way of localizing your Python applications and modules.  :mod:`!gettext` defines
 a :class:`GNUTranslations` class which implements the parsing of GNU :file:`.mo` format
@@ -393,7 +393,7 @@ The Catalog constructor
 
 .. index:: single: GNOME
 
-GNOME uses a version of the :mod:`gettext` module by James Henstridge, but this
+GNOME uses a version of the :mod:`!gettext` module by James Henstridge, but this
 version has a slightly different API.  Its documented usage was::
 
    import gettext
@@ -425,7 +425,7 @@ take the following steps:
 
 #. create language-specific translations of the message catalogs
 
-#. use the :mod:`gettext` module so that message strings are properly translated
+#. use the :mod:`!gettext` module so that message strings are properly translated
 
 In order to prepare your code for I18N, you need to look at all the strings in
 your files.  Any string that needs to be translated should be marked by wrapping
@@ -473,10 +473,10 @@ supported natural language.  They send back the completed
 language-specific versions as a :file:`<language-name>.po` file that's
 compiled into a machine-readable :file:`.mo` binary catalog file using
 the :program:`msgfmt` program.  The :file:`.mo` files are used by the
-:mod:`gettext` module for the actual translation processing at
+:mod:`!gettext` module for the actual translation processing at
 run-time.
 
-How you use the :mod:`gettext` module in your code depends on whether you are
+How you use the :mod:`!gettext` module in your code depends on whether you are
 internationalizing a single module or your entire application. The next two
 sections will discuss each case.
 

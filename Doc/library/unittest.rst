@@ -16,13 +16,13 @@
 (If you are already familiar with the basic concepts of testing, you might want
 to skip to :ref:`the list of assert methods <assert-methods>`.)
 
-The :mod:`unittest` unit testing framework was originally inspired by JUnit
+The :mod:`!unittest` unit testing framework was originally inspired by JUnit
 and has a similar flavor as major unit testing frameworks in other
 languages.  It supports test automation, sharing of setup and shutdown code
 for tests, aggregation of tests into collections, and independence of the
 tests from the reporting framework.
 
-To achieve this, :mod:`unittest` supports some important concepts in an
+To achieve this, :mod:`!unittest` supports some important concepts in an
 object-oriented way:
 
 test fixture
@@ -33,7 +33,7 @@ test fixture
 
 test case
    A :dfn:`test case` is the individual unit of testing.  It checks for a specific
-   response to a particular set of inputs.  :mod:`unittest` provides a base class,
+   response to a particular set of inputs.  :mod:`!unittest` provides a base class,
    :class:`TestCase`, which may be used to create new test cases.
 
 test suite
@@ -53,7 +53,7 @@ test runner
 
    `Simple Smalltalk Testing: With Patterns <https://web.archive.org/web/20150315073817/http://www.xprogramming.com/testfram.htm>`_
       Kent Beck's original paper on testing frameworks using the pattern shared
-      by :mod:`unittest`.
+      by :mod:`!unittest`.
 
    `pytest <https://docs.pytest.org/>`_
       Third-party unittest framework with a lighter-weight syntax for writing
@@ -81,7 +81,7 @@ test runner
 Basic example
 -------------
 
-The :mod:`unittest` module provides a rich set of tools for constructing and
+The :mod:`!unittest` module provides a rich set of tools for constructing and
 running tests.  This section demonstrates that a small subset of the tools
 suffice to meet the needs of most users.
 
@@ -147,7 +147,7 @@ to enable a higher level of verbosity, and produce the following output::
 
    OK
 
-The above examples show the most commonly used :mod:`unittest` features which
+The above examples show the most commonly used :mod:`!unittest` features which
 are sufficient to meet many everyday testing needs.  The remainder of the
 documentation explores the full feature set from first principles.
 
@@ -365,7 +365,7 @@ Organizing test code
 --------------------
 
 The basic building blocks of unit testing are :dfn:`test cases` --- single
-scenarios that must be set up and checked for correctness.  In :mod:`unittest`,
+scenarios that must be set up and checked for correctness.  In :mod:`!unittest`,
 test cases are represented by :class:`unittest.TestCase` instances.
 To make your own test cases you must write subclasses of
 :class:`TestCase` or use :class:`FunctionTestCase`.
@@ -387,7 +387,7 @@ testing code::
 
 Note that in order to test something, we use one of the :ref:`assert\* methods <assert-methods>`
 provided by the :class:`TestCase` base class.  If the test fails, an
-exception will be raised with an explanatory message, and :mod:`unittest`
+exception will be raised with an explanatory message, and :mod:`!unittest`
 will identify the test case as a :dfn:`failure`.  Any other exceptions will be
 treated as :dfn:`errors`.
 
@@ -442,8 +442,8 @@ test fixture used to execute each individual test method.  Thus
 will be called once per test.
 
 It is recommended that you use TestCase implementations to group tests together
-according to the features they test.  :mod:`unittest` provides a mechanism for
-this: the :dfn:`test suite`, represented by :mod:`unittest`'s
+according to the features they test.  :mod:`!unittest` provides a mechanism for
+this: the :dfn:`test suite`, represented by :mod:`!unittest`'s
 :class:`TestSuite` class.  In most cases, calling :func:`unittest.main` will do
 the right thing and collect all the module's test cases for you and execute
 them.
@@ -489,10 +489,10 @@ Re-using old test code
 ----------------------
 
 Some users will find that they have existing test code that they would like to
-run from :mod:`unittest`, without converting every old test function to a
+run from :mod:`!unittest`, without converting every old test function to a
 :class:`TestCase` subclass.
 
-For this reason, :mod:`unittest` provides a :class:`FunctionTestCase` class.
+For this reason, :mod:`!unittest` provides a :class:`FunctionTestCase` class.
 This subclass of :class:`TestCase` can be used to wrap an existing test
 function.  Set-up and tear-down functions can also be provided.
 
@@ -513,7 +513,7 @@ set-up and tear-down methods::
 .. note::
 
    Even though :class:`FunctionTestCase` can be used to quickly convert an
-   existing test base over to a :mod:`unittest`\ -based system, this approach is
+   existing test base over to a :mod:`!unittest`\ -based system, this approach is
    not recommended.  Taking the time to set up proper :class:`TestCase`
    subclasses will make future test refactorings infinitely easier.
 
@@ -709,7 +709,7 @@ wouldn't be displayed::
 Classes and functions
 ---------------------
 
-This section describes in depth the API of :mod:`unittest`.
+This section describes in depth the API of :mod:`!unittest`.
 
 
 .. _testcase-objects:
@@ -720,7 +720,7 @@ Test cases
 .. class:: TestCase(methodName='runTest')
 
    Instances of the :class:`TestCase` class represent the logical test units
-   in the :mod:`unittest` universe.  This class is intended to be used as a base
+   in the :mod:`!unittest` universe.  This class is intended to be used as a base
    class, with specific tests being implemented by concrete subclasses.  This class
    implements the interface needed by the test runner to allow it to drive the
    tests, and methods that the test code can use to check for and report various
@@ -1734,7 +1734,7 @@ Test cases
    allows the test runner to drive the test, but does not provide the methods
    which test code can use to check and report errors.  This is used to create
    test cases using legacy test code, allowing it to be integrated into a
-   :mod:`unittest`-based test framework.
+   :mod:`!unittest`-based test framework.
 
 
 .. _testsuite-objects:
@@ -1829,7 +1829,7 @@ Loading and running tests
 
    The :class:`TestLoader` class is used to create test suites from classes and
    modules.  Normally, there is no need to create an instance of this class; the
-   :mod:`unittest` module provides an instance that can be shared as
+   :mod:`!unittest` module provides an instance that can be shared as
    :data:`unittest.defaultTestLoader`.  Using a subclass or instance, however,
    allows customization of some configurable properties.
 
@@ -2055,7 +2055,7 @@ Loading and running tests
    properly recorded; test authors do not need to worry about recording the
    outcome of tests.
 
-   Testing frameworks built on top of :mod:`unittest` may want access to the
+   Testing frameworks built on top of :mod:`!unittest` may want access to the
    :class:`TestResult` object generated by running a set of tests for reporting
    purposes; a :class:`TestResult` instance is returned by the
    :meth:`!TestRunner.run` method for this purpose.

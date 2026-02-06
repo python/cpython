@@ -20,7 +20,7 @@ can be disabled by calling ``gc.disable()``.  To debug a leaking program call
 ``gc.DEBUG_SAVEALL``, causing garbage-collected objects to be saved in
 gc.garbage for inspection.
 
-The :mod:`gc` module provides the following functions:
+The :mod:`!gc` module provides the following functions:
 
 
 .. function:: enable()

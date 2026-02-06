@@ -9,7 +9,7 @@
 
 --------------
 
-The :mod:`tkinter.font` module provides the :class:`Font` class for creating
+The :mod:`!tkinter.font` module provides the :class:`Font` class for creating
 and using named fonts.
 
 The different font weights and slants are:

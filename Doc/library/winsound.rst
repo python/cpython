@@ -12,7 +12,7 @@
 
 --------------
 
-The :mod:`winsound` module provides access to the basic sound-playing machinery
+The :mod:`!winsound` module provides access to the basic sound-playing machinery
 provided by Windows platforms.  It includes functions and several constants.
 
 .. availability:: Windows.
