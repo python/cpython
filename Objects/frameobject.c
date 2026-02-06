@@ -1049,11 +1049,11 @@ static PyObject *
 frame_lasti_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=03275b4f0327d1a2 input=0225ed49cb1fbeeb]*/
 {
-    int lasti = _PyInterpreterFrame_LASTI(self->f_frame);
+    int lasti = PyUnstable_InterpreterFrame_GetLasti(self->f_frame);
     if (lasti < 0) {
         return PyLong_FromLong(-1);
     }
-    return PyLong_FromLong(lasti * sizeof(_Py_CODEUNIT));
+    return PyLong_FromLong(lasti);
 }
 
 /*[clinic input]
@@ -2053,11 +2053,15 @@ static PyObject *
 frame_repr(PyObject *op)
 {
     PyFrameObject *f = PyFrameObject_CAST(op);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(f);
     int lineno = PyFrame_GetLineNumber(f);
     PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
-    return PyUnicode_FromFormat(
+    result = PyUnicode_FromFormat(
         "<frame at %p, file %R, line %d, code %S>",
         f, code->co_filename, lineno, code->co_name);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef frame_methods[] = {
