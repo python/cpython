@@ -1007,6 +1007,34 @@ cleanup:
     return res;
 }
 
+_PyStackRef
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null)
+{
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
+    if (is_meth) {
+        /* We can bypass temporary bound method object.
+           meth is unbound method and obj is self.
+           meth | self | arg1 | ... | argN
+         */
+        assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
+        self_or_null[0] = owner;  // Transfer ownership
+        return _PyThreadState_PopCStackRefSteal(tstate, &method);
+    }
+    /* meth is not an unbound method (but a regular attr, or
+       something was returned by a descriptor protocol).  Set
+       the second element of the stack to NULL, to signal
+       CALL that it's not a method call.
+       meth | NULL | arg1 | ... | argN
+    */
+    PyStackRef_CLOSE(owner);
+    self_or_null[0] = PyStackRef_NULL;
+    return _PyThreadState_PopCStackRefSteal(tstate, &method);
+}
+
 #ifdef Py_DEBUG
 void
 _Py_assert_within_stack_bounds(
