@@ -56,7 +56,7 @@ jobs:
             runner: windows-2025-vs2026
           - target: free-threading-msvc
             architecture: x64
-            runner: windows-2025-vs2026            
+            runner: windows-2025-vs2026
 #          - target: aarch64-pc-windows-msvc/msvc
 #            architecture: ARM64
 #            runner: windows-2022
