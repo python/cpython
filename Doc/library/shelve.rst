@@ -134,10 +134,16 @@ Restrictions
   the database to refuse updates.
 
 * The :mod:`shelve` module does not support *concurrent* read/write access to
-  shelved objects.  (Multiple simultaneous read accesses are safe.)  When a
+  shelved objects, whether from different programs or different threads within
+  the same program.  (Multiple simultaneous read accesses are safe.)  When a
   program has a shelf open for writing, no other program should have it open for
-  reading or writing.  Unix file locking can be used to solve this, but this
-  differs across Unix versions and requires knowledge about the database
+  reading or writing.  Additionally, within a single program, concurrent access
+  from multiple threads is not supported and may lead to data corruption,
+  unexpected behavior, or crashes.  This affects all writing operations including
+  assignment, deletion, :meth:`~Shelf.sync`, and :meth:`~Shelf.reorganize`.
+  Even with :attr:`writeback` set to :const:`True`, thread-safety is not
+  guaranteed.  Unix file locking can be used to solve cross-program concurrency,
+  but this differs across Unix versions and requires knowledge about the database
   implementation used.
 
 * On macOS :mod:`dbm.ndbm` can silently corrupt the database file on updates,
