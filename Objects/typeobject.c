@@ -10939,13 +10939,18 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *func, *result;
 
-    func = PyObject_GetAttr((PyObject *)type, &_Py_ID(__new__));
-    if (func == NULL) {
+    _PyCStackRef c_stackref;
+    _PyThreadState_PushCStackRef(tstate, &c_stackref);
+    _PyObject_GetMethodStackRef(tstate, (PyObject *)type, &_Py_ID(__new__), &c_stackref.ref);
+
+    if (PyStackRef_IsNull(c_stackref.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &c_stackref);
         return NULL;
     }
-
+    func = PyStackRef_AsPyObjectBorrow(c_stackref.ref);
+    assert(func != NULL);
     result = _PyObject_Call_Prepend(tstate, func, (PyObject *)type, args, kwds);
-    Py_DECREF(func);
+    _PyThreadState_PopCStackRef(tstate, &c_stackref);
     return result;
 }
 
