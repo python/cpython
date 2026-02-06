@@ -66,6 +66,7 @@ which relays any information about the UUID's safety, using this enumeration:
       UUID(int=0x12345678123456781234567812345678)
 
    Exactly one of *hex*, *bytes*, *bytes_le*, *fields*, or *int* must be given.
+   If any of these arguments are malformed, a :exc:`ValueError` is raised.
    The *version* argument is optional; if given, the resulting UUID will have its
    variant and version number set according to :rfc:`9562`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
