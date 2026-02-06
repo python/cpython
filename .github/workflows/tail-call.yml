@@ -38,6 +38,7 @@ jobs:
 # Un-comment as we add support for more platforms for tail-calling interpreters.
 #          - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
+          - free-threading-msvc
 #          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
@@ -88,7 +89,7 @@ jobs:
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Windows MSVC with free-threading (release)
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+        if: matrix.target == 'free-threading'
         shell: pwsh
         run: |
           $env:PlatformToolset = "v145"
