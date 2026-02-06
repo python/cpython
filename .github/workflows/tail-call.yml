@@ -89,7 +89,7 @@ jobs:
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Windows MSVC with free-threading (release)
-        if: matrix.target == 'free-threading'
+        if: matrix.target == 'free-threading-msvc'
         shell: pwsh
         run: |
           $env:PlatformToolset = "v145"
