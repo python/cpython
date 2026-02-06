@@ -75,7 +75,6 @@ jobs:
             architecture: x86_64
             runner: ubuntu-24.04
             configure_flags: --disable-gil
-            free_threading: true
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
             runner: ubuntu-24.04-arm
