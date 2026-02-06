@@ -5517,12 +5517,12 @@ can be used interchangeably to index the same dictionary entry.
 .. admonition:: Thread safety
 
    Creating a dictionary with the :class:`dict` constructor is atomic when the
-   argument to it is a :class:`dict` or a :class:`tuple`.  When using the
+   argument to it is a :class:`dict` or a :class:`tuple`. When using the
    :meth:`dict.fromkeys` method, dictionary creation is atomic when the
    argument is a :class:`dict`, :class:`tuple`, :class:`set` or
    :class:`frozenset`.
 
-   The following operations and function are lock-free and
+   The following operations and functions are lock-free and
    :term:`atomic <atomic operation>`.
 
    .. code-block::
@@ -5534,8 +5534,8 @@ can be used interchangeably to index the same dictionary entry.
       len(d)       # dict.__len__
 
    These operations may compare keys using :meth:`~object.__eq__`, which can
-   execute arbitrary Python code.  During such comparisons, the dictionary may
-   be modified by another thread.  For built-in types like :class:`str`,
+   execute arbitrary Python code. During such comparisons, the dictionary may
+   be modified by another thread. For built-in types like :class:`str`,
    :class:`int`, and :class:`float`, that implement :meth:`~object.__eq__` in C,
    the underlying lock is not released during comparisons and this is not a
    concern.
@@ -5569,13 +5569,13 @@ can be used interchangeably to index the same dictionary entry.
       d.values()    # returns a new dict_values view object
       d.items()     # returns a new dict_items view object
 
-   The :meth:`~dict.clear` method holds the lock for its duration.  Other
+   The :meth:`~dict.clear` method holds the lock for its duration. Other
    threads cannot observe elements being removed.
 
-   The following operations lock both dictionaries.  For :meth:`~dict.update`
+   The following operations lock both dictionaries. For :meth:`~dict.update`
    and ``|=``, this applies only when the other operand is a :class:`dict`
    that uses the standard dict iterator (but not subclasses that override
-   iteration).  For equality comparison, this applies to :class:`dict` and
+   iteration). For equality comparison, this applies to :class:`dict` and
    its subclasses:
 
    .. code-block::
@@ -5600,7 +5600,7 @@ can be used interchangeably to index the same dictionary entry.
       dict.fromkeys(a_frozenset) # locks both
 
    When updating from a non-dict iterable, only the target dictionary is
-   locked.  The iterable may be concurrently modified by another thread:
+   locked. The iterable may be concurrently modified by another thread:
 
    .. code-block::
       :class: maybe
@@ -5652,7 +5652,7 @@ can be used interchangeably to index the same dictionary entry.
           process(key)
 
    Consider external synchronization when sharing :class:`dict` instances
-   across threads.  See :ref:`freethreading-python-howto` for more information.
+   across threads. See :ref:`freethreading-python-howto` for more information.
 
 
 .. _dict-views:
