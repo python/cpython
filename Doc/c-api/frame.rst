@@ -274,7 +274,7 @@ Unless using :pep:`523`, you will not need this.
 
    .. code-block:: c
 
-      int kind = PyUnstable_Frame_GetExecutableKind(frame)
+      int kind = PyUnstable_Frame_GetExecutableKind(frame);
 
       if (kind == PyUnstable_EXECUTABLE_KIND_SKIP) {
           continue;

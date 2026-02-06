@@ -157,3 +157,23 @@ const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS
     [PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
     [PyUnstable_EXECUTABLE_KINDS] = NULL,
 };
+
+PyAPI_FUNC(int)
+PyUnstable_Frame_GetExecutableKind(PyFrameObject *frame)
+{
+    _PyInterpreterFrame *f = frame->f_frame;
+
+    PyObject *exec = PyStackRef_AsPyObjectBorrow(f->f_executable);
+
+    if (PyCode_Check(exec)) {
+        return PyUnstable_EXECUTABLE_KIND_PY_FUNCTION;
+    }
+    if (PyMethod_Check(exec)) {
+        return PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION;
+    }
+    if (Py_IS_TYPE(exec, &PyMethodDescr_Type)) {
+        return PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR;
+    }
+
+    return PyUnstable_EXECUTABLE_KIND_SKIP;
+}
