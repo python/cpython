@@ -2790,6 +2790,14 @@ PyUnstable_EnableTryIncRef(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_SetImmortal(PyObject *op)
+{
+    assert(op != NULL);
+    _Py_SetImmortal(op);
+    return 1;
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {

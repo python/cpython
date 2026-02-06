@@ -801,3 +801,19 @@ Object Protocol
    cannot fail.
 
    .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_SetImmortal(PyObject *obj)
+
+   Marks the object op immortal. The argument should be uniquely referenced by
+   the calling thread.
+
+   This is a one-way process: objects can only be made immortal, they cannot be
+   made mortal once again. Immortal objects do not participate in reference counting
+   and will never be garbage collected.
+
+   This function is intended to be used soon after op is created, by the code that
+   creates it, such as in the object's tp_new slot.
+   Returns 1 if the object was made immortal and returns 0 if it was not.
+   This function cannot fail.
+
+   .. versionadded:: next
