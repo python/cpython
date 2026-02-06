@@ -7133,17 +7133,8 @@
             _PyStackRef val1;
             _PyStackRef val0;
             _PyStackRef _stack_item_0 = _tos_cache0;
-            oparg = CURRENT_OPARG();
             seq = _stack_item_0;
-            assert(oparg == 2);
             PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
-            assert(PyTuple_CheckExact(seq_o));
-            if (PyTuple_GET_SIZE(seq_o) != 2) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = stack_pointer[0];
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
             val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
@@ -7173,17 +7164,8 @@
             _PyStackRef val1;
             _PyStackRef val0;
             _PyStackRef _stack_item_0 = _tos_cache0;
-            oparg = CURRENT_OPARG();
             seq = _stack_item_0;
-            assert(oparg == 3);
             PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
-            assert(PyTuple_CheckExact(seq_o));
-            if (PyTuple_GET_SIZE(seq_o) != 3) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = stack_pointer[0];
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
             val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));

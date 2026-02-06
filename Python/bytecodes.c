@@ -1660,10 +1660,7 @@ dummy_func(
         }
 
         op(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, (seq -- val1, val0)) {
-            assert(oparg == 2);
             PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
-            assert(PyTuple_CheckExact(seq_o));
-            DEOPT_IF(PyTuple_GET_SIZE(seq_o) != 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
             val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
@@ -1672,10 +1669,7 @@ dummy_func(
         }
 
         op(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, (seq -- val2, val1, val0)) {
-            assert(oparg == 3);
             PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
-            assert(PyTuple_CheckExact(seq_o));
-            DEOPT_IF(PyTuple_GET_SIZE(seq_o) != 3);
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
             val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));

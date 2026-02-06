@@ -1415,7 +1415,7 @@
             JitOptRef val1;
             JitOptRef val0;
             seq = stack_pointer[-1];
-            if (PyJitRef_IsUnique(seq)) {
+            if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 2) {
                 ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, oparg, 0);
             }
             val0 = sym_tuple_getitem(ctx, seq, 0);
