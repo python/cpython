@@ -120,7 +120,7 @@ jobs:
           export SDKROOT="$(xcrun --show-sdk-path)"
           export PATH="/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
           export PATH="/opt/homebrew/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
-          CC=clang-20 ./configure --with-tail-call-interp
+          CC=clang-${{ matrix.llvm }} ./configure --with-tail-call-interp
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -129,7 +129,7 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-20 ./configure --with-tail-call-interp --with-pydebug
+          CC=clang-${{ matrix.llvm }} ./configure --with-tail-call-interp --with-pydebug
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -138,6 +138,6 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-20 ./configure --with-tail-call-interp --disable-gil
+          CC=clang-${{ matrix.llvm }} ./configure --with-tail-call-interp --disable-gil
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
