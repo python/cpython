@@ -54,7 +54,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     _PyFrame_Copy(frame, new_frame);
     // _PyFrame_Copy takes the reference to the executable,
     // so we need to restore it.
-    frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
+    new_frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
     f->f_frame = new_frame;
     new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(new_frame)) {
@@ -135,14 +135,14 @@ PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
     return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
 {
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-// NOTE: We allow racy accesses to the instruction pointer from other threads
-// for sys._current_frames() and similar APIs.
 int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
