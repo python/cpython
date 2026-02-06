@@ -38,13 +38,13 @@ jobs:
 # Un-comment as we add support for more platforms for tail-calling interpreters.
 #          - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
-          - free-threading-msvc
+          - x86_64-pc-windows-msvc/msvc-free-threading
 #          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
+          - x86_64-unknown-linux-gnu/gcc-free-threading
           - aarch64-unknown-linux-gnu/gcc
-          - free-threading
         llvm:
           - 20
         include:
@@ -54,9 +54,10 @@ jobs:
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
             runner: windows-2025-vs2026
-          - target: free-threading-msvc
+          - target: x86_64-pc-windows-msvc/msvc-free-threading
             architecture: x64
             runner: windows-2025-vs2026
+            free_threading: true
 #          - target: aarch64-pc-windows-msvc/msvc
 #            architecture: ARM64
 #            runner: windows-2022
@@ -69,12 +70,13 @@ jobs:
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
             runner: ubuntu-24.04
+          - target: x86_64-unknown-linux-gnu/gcc-free-threading
+            architecture: x86_64
+            runner: ubuntu-24.04
+            free_threading: true
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
             runner: ubuntu-24.04-arm
-          - target: free-threading
-            architecture: x86_64
-            runner: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
@@ -84,7 +86,7 @@ jobs:
           python-version: '3.11'
 
       - name: Native Windows MSVC (release)
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64' && matrix.target != 'free-threading-msvc'
+        if: runner.os == 'Windows' && matrix.architecture != 'ARM64' && !matrix.free_threading
         shell: pwsh
         run: |
           $env:PlatformToolset = "v145"
@@ -93,7 +95,7 @@ jobs:
 
         # No tests:
       - name: Native Windows MSVC with free-threading (release)
-        if: matrix.target == 'free-threading-msvc'
+        if: runner.os == 'Windows' && matrix.free_threading
         shell: pwsh
         run: |
           $env:PlatformToolset = "v145"
@@ -123,7 +125,7 @@ jobs:
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Linux (debug)
-        if: runner.os == 'Linux' && matrix.target != 'free-threading'
+        if: runner.os == 'Linux' && !matrix.free_threading
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
@@ -132,7 +134,7 @@ jobs:
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Linux with free-threading (release)
-        if: matrix.target == 'free-threading'
+        if: runner.os == 'Linux' && matrix.free_threading
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
