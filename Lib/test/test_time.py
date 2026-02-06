@@ -358,11 +358,11 @@ class TimeTestCase(unittest.TestCase):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
         tt = time.gmtime(self.t)
-        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
+        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'e', 'H', 'I',
                           'j', 'm', 'M', 'p', 'S',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
-            if directive == 'd':
+            if directive in ('d', 'e'):
                 format += ',%Y'  # Avoid GH-70647.
             strf_output = time.strftime(format, tt)
             try:
@@ -391,6 +391,9 @@ class TimeTestCase(unittest.TestCase):
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
             time.strptime('02-07 18:28', '%m-%d %H:%M')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            time.strptime('02- 7 18:28', '%m-%e %H:%M')
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
