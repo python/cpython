@@ -923,9 +923,9 @@ winreg.CreateKeyEx -> HKEY
     *
     options: int = 0
         Can be one of the REG_OPTION_* constants.
-    create_only: bool = False
-        When set to True, raise FileExistsError if the key is already exists.
-        Default is False.
+    exist_ok: bool = True
+        When set to False, raise FileExistsError if the key already exists.
+        Default is True.
 
 Creates or opens the specified key.
 
@@ -941,8 +941,8 @@ If the function fails, an OSError exception is raised.
 static HKEY
 winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                         int reserved, REGSAM access, int options,
-                        int create_only)
-/*[clinic end generated code: output=10c0a5f7beea07e3 input=434f3dbac49bf638]*/
+                        int exist_ok)
+/*[clinic end generated code: output=e4f53b9dfdf9b0a8 input=98c63d6efec6fa3c]*/
 {
     HKEY retKey;
     long rc;
@@ -961,7 +961,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
         return NULL;
     }
-    if (create_only) {
+    if (!exist_ok) {
         if (disposition == REG_OPENED_EXISTING_KEY) {
             PyErr_SetFromWindowsErrWithFunction(ERROR_ALREADY_EXISTS, "CreateKeyEx");
             if (retKey != key) {

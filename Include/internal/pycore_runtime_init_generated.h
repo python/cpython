@@ -1667,7 +1667,6 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(covariant), \
-    INIT_ID(create_only), \
     INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
@@ -1725,6 +1724,7 @@ extern "C" {
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
+    INIT_ID(exist_ok), \
     INIT_ID(existing_file_name), \
     INIT_ID(exit), \
     INIT_ID(exp), \

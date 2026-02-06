@@ -289,7 +289,7 @@ class LocalWinregTests(BaseWinregTests):
     def test_create_only(self):
         CreateKeyEx(HKEY_CURRENT_USER, test_key_name)
         with self.assertRaises(FileExistsError):
-            CreateKeyEx(HKEY_CURRENT_USER, test_key_name, create_only=True)
+            CreateKeyEx(HKEY_CURRENT_USER, test_key_name, exist_ok=False)
         DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
     def test_named_arguments(self):

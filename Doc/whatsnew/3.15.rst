@@ -943,7 +943,7 @@ warnings
 winreg
 ------
 
-* Add *options* and *create_only* parameters to :func:`winreg.CreateKeyEx`.
+* Add *options* and *exist_ok* parameters to :func:`winreg.CreateKeyEx`.
   (Contributed by AN Long in :gh:`129903`.)
 
 * Add *options* parameter to :func:`winreg.OpenKeyEx`.

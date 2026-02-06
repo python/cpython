@@ -89,7 +89,7 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
 
-.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE, *, options=0, create_only=False)
+.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE, *, options=0, exist_ok=True)
 
    Creates or opens the specified key, returning a
    :ref:`handle object <handle-object>`.
@@ -108,9 +108,9 @@ This module offers the following functions:
    *options* is an interger and can be zero or one of the predefined
    :ref:`REG_OPTION_* constants <hkey-constants>`.
 
-   *create_only* is a boolean.
-   When set to True, a :exc:`FileExistsError` will be raised
-   if the key is already exists.  Default is ``False``.
+   *exist_ok* is a boolean.
+   When set to False, a :exc:`FileExistsError` will be raised
+   if the key already exists.  Default is ``True``.
 
    If *key* is one of the predefined keys, *sub_key* may be ``None``. In that
    case, the handle returned is the same key handle passed in to the function.
@@ -130,7 +130,7 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
    .. versionchanged:: 3.15
-      Added *options* and *create_only* parameters.
+      Added *options* and *exist_ok* parameters.
 
 
 .. function:: DeleteKey(key, sub_key)
