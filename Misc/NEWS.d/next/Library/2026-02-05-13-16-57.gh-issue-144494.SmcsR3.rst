@@ -1,0 +1,2 @@
+Fix performance regression in :func:`asyncio.all_tasks` on
+:term:`free-threaded builds <free-threaded build>`. Patch by Kumar Aditya.
