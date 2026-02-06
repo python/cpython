@@ -1157,6 +1157,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
         goto error;
     }
 
+    Py_XDECREF(key);
     if (args_owned) {
         Py_DECREF(args);
     }

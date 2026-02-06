@@ -130,7 +130,7 @@ purposes.
                                      cafile=None, capath=None, cadata=None)
 
    Return a new :class:`SSLContext` object with default settings for
-   the given *purpose*.  The settings are chosen by the :mod:`ssl` module,
+   the given *purpose*.  The settings are chosen by the :mod:`!ssl` module,
    and usually represent a higher security level than when calling the
    :class:`SSLContext` constructor directly.
 
@@ -1510,7 +1510,7 @@ to speed up repeated connections from the same clients.
       TLS 1.3.
 
    .. seealso::
-      :func:`create_default_context` lets the :mod:`ssl` module choose
+      :func:`create_default_context` lets the :mod:`!ssl` module choose
       security settings for a given purpose.
 
    .. versionchanged:: 3.6
