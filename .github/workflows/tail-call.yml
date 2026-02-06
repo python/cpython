@@ -38,6 +38,7 @@ jobs:
 # Un-comment as we add support for more platforms for tail-calling interpreters.
 #          - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
+          - free-threading-msvc
 #          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
@@ -51,6 +52,9 @@ jobs:
 #            architecture: Win32
 #            runner: windows-2022
           - target: x86_64-pc-windows-msvc/msvc
+            architecture: x64
+            runner: windows-2025-vs2026
+          - target: free-threading-msvc
             architecture: x64
             runner: windows-2025-vs2026
 #          - target: aarch64-pc-windows-msvc/msvc
@@ -80,12 +84,20 @@ jobs:
           python-version: '3.11'
 
       - name: Native Windows MSVC (release)
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+        if: runner.os == 'Windows' && matrix.architecture != 'ARM64' && matrix.target != 'free-threading-msvc'
         shell: pwsh
         run: |
           $env:PlatformToolset = "v145"
           ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+        # No tests:
+      - name: Native Windows MSVC with free-threading (release)
+        if: matrix.target == 'free-threading-msvc'
+        shell: pwsh
+        run: |
+          $env:PlatformToolset = "v145"
+          ./PCbuild/build.bat --tail-call-interp --disable-gil -c Release -p ${{ matrix.architecture }}
 
       # No tests (yet):
       - name: Emulated Windows Clang (release)
