@@ -109,38 +109,41 @@ The :mod:`binascii` module defines the following functions:
    accepted as a short form of the group ``!!!!!``, which encodes four
    consecutive null bytes.
 
-   If *foldspaces* is true, the special character ``y`` is also accepted as a
-   short form of the group ``+<VdL``, which encodes four consecutive spaces.
-   Note that neither short form is permitted if it occurs in the middle of
-   another group.
+   *foldspaces* is a flag that specifies whether the 'y' short sequence
+   should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
+   This feature is not supported by the "standard" Ascii85 encoding.
 
-   If *ignorechars* is true, the input begins with ``<~`` and ends with ``~>``, as in
-   the Adobe Ascii85 format.
+   *adobe* controls whether the input sequence is in Adobe Ascii85 format
+   (i.e. is framed with <~ and ~>).
 
-   *ignorechars* is an optional bytes-like object that specifies characters to
-   ignore in the input.
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+   This should only contain whitespace characters.
 
    Invalid Ascii85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: next
 
 
-.. function:: b2a_ascii85(data, /, *, foldspaces=False, adobe=False, wrapcol=0, pad=False)
+.. function:: b2a_ascii85(data, /, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
 
    Convert binary data to a formatted sequence of ASCII characters in Ascii85
    coding. The return value is the converted data.
 
-   If *foldspaces* is true, four consecutive spaces are encoded as the
-   special character ``y`` instead of the sequence ``+<VdL``.
+   *foldspaces* is an optional flag that uses the special short sequence 'y'
+   instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
+   feature is not supported by the "standard" Ascii85 encoding.
 
-   If *adobe* is true, the output begins with ``<~`` and ends with ``~>``, as
-   in the Adobe Ascii85 format.
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
 
-   If *wrapcol* is provided and greater than 0, the output is split into lines
-   of no more than the specified width separated by the ASCII newline
-   character.
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+   Note that the ``btoa`` implementation always pads.
 
-   If *pad* is true, the input is padded to a multiple of 4 before encoding.
+   *adobe* controls whether the encoded byte sequence is framed with ``<~``
+   and ``~>``, which is used by the Adobe implementation.
 
    .. versionadded:: next
 
@@ -150,11 +153,12 @@ The :mod:`binascii` module defines the following functions:
    Convert Base85 data back to binary and return the binary data.
    More than one line may be passed at a time.
 
-   Invalid Base85 data will raise :exc:`binascii.Error`.
    Valid Base85 data contains characters from the Base85 alphabet in groups
    of five (except for the final group, which may have from two to five
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive.
+
+   Invalid Base85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: next
 
@@ -164,7 +168,8 @@ The :mod:`binascii` module defines the following functions:
    Convert binary data to a line of ASCII characters in Base85 coding.
    The return value is the converted line.
 
-   If *pad* is true, the input is padded to a multiple of 4 before encoding.
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
 
    .. versionadded:: next
 
@@ -174,13 +179,14 @@ The :mod:`binascii` module defines the following functions:
    Convert Z85 data back to binary and return the binary data.
    More than one line may be passed at a time.
 
-   Invalid Z85 data will raise :exc:`binascii.Error`.
    Valid Z85 data contains characters from the Z85 alphabet in groups
    of five (except for the final group, which may have from two to five
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive.
 
    See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   Invalid Z85 data will raise :exc:`binascii.Error`.
 
    .. versionadded:: next
 
@@ -190,7 +196,8 @@ The :mod:`binascii` module defines the following functions:
    Convert binary data to a line of ASCII characters in Z85 coding.
    The return value is the converted line.
 
-   If *pad* is true, the input is padded to a multiple of 4 before encoding.
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
 
    See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
 

@@ -1014,20 +1014,20 @@ binascii.b2a_ascii85
     *
     foldspaces: bool = False
         Emit 'y' as a short form encoding four spaces.
-    adobe: bool = False
-        Wrap result in '<~' and '~>' as in Adobe Ascii85.
     wrapcol: size_t = 0
         Split result into lines of provided width.
     pad: bool = False
         Pad input to a multiple of 4 before encoding.
+    adobe: bool = False
+        Wrap result in '<~' and '~>' as in Adobe Ascii85.
 
 Ascii85-encode data.
 [clinic start generated code]*/
 
 static PyObject *
 binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
-                          int adobe, size_t wrapcol, int pad)
-/*[clinic end generated code: output=b0fb8c917ea1b563 input=1b64734fc9d29e9b]*/
+                          size_t wrapcol, int pad, int adobe)
+/*[clinic end generated code: output=5ce8fdee843073f4 input=791da754508c7d17]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
