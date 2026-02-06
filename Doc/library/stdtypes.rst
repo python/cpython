@@ -5533,13 +5533,6 @@ can be used interchangeably to index the same dictionary entry.
       key in d     # dict.__contains__
       len(d)       # dict.__len__
 
-   These operations may compare keys using :meth:`~object.__eq__`, which can
-   execute arbitrary Python code. During such comparisons, the dictionary may
-   be modified by another thread. For built-in types like :class:`str`,
-   :class:`int`, and :class:`float`, that implement :meth:`~object.__eq__` in C,
-   the underlying lock is not released during comparisons and this is not a
-   concern.
-
    All other operations from here on hold the per-object lock.
 
    Writing or removing a single item is safe to call from multiple threads
@@ -5554,8 +5547,12 @@ can be used interchangeably to index the same dictionary entry.
       d.popitem()           # remove and return last item
       d.setdefault(key, v)  # insert if missing
 
-   These operations also compare keys, so the same :meth:`~object.__eq__`
-   considerations as above apply.
+   These operations may compare keys using :meth:`~object.__eq__`, which can
+   execute arbitrary Python code. During such comparisons, the dictionary may
+   be modified by another thread. For built-in types like :class:`str`,
+   :class:`int`, and :class:`float`, that implement :meth:`~object.__eq__` in C,
+   the underlying lock is not released during comparisons and this is not a
+   concern.
 
    The following operations return new objects and hold the per-object lock
    for the duration of the operation:
@@ -5585,7 +5582,7 @@ can be used interchangeably to index the same dictionary entry.
       d |= other_dict       # both locked when other_dict is a dict
       d == other_dict       # both locked for dict and subclasses
 
-   The equality comparison also compares values using :meth:`~object.__eq__`,
+   All comparison operations also compare values using :meth:`~object.__eq__`,
    so for non-built-in types the lock may be released during comparison.
 
    :meth:`~dict.fromkeys` locks both the new dictionary and the iterable
