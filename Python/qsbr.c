@@ -93,7 +93,7 @@ grow_thread_array(struct _qsbr_shared *shared)
     if (raw == NULL) {
         return -1;
     }
-    struct _qsbr_pad *array = (struct _qsbr_pad *)(((uintptr_t)raw + 63) & ~(uintptr_t)63);
+    struct _qsbr_pad *array = _Py_ALIGN_UP(raw, 64);
 
     void *old_raw = shared->array_raw;
     if (shared->array != NULL) {
