@@ -1513,6 +1513,19 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertTrue(f._rolled)
         self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
+    def test_truncate_return_size(self):
+        "SpooledTemporaryFile truncate should return new position"
+        f = tempfile.SpooledTemporaryFile(max_size=10)
+        f.write(b'abcdef')
+        self.assertEqual(f.truncate(3), 3)
+
+    def test_seek_return_position(self):
+        "SpooledTemporaryFile seek should return file position"
+        f = tempfile.SpooledTemporaryFile(max_size=10)
+        f.write(b'abcdef')
+        self.assertEqual(f.seek(3), 3)
+        self.assertEqual(f.seek(0, 2), 6)
+
     def test_class_getitem(self):
         self.assertIsInstance(tempfile.SpooledTemporaryFile[bytes],
                       types.GenericAlias)
