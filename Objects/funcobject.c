@@ -7,6 +7,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
@@ -1760,6 +1761,7 @@ sm_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (sm == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)sm);
     if (sm_set_callable(sm, callable) < 0) {
         Py_DECREF(sm);
         return NULL;
@@ -1926,9 +1928,17 @@ PyStaticMethod_New(PyObject *callable)
     if (sm == NULL) {
         return NULL;
     }
+    _PyObject_SetDeferredRefcount((PyObject *)sm);
     if (sm_set_callable(sm, callable) < 0) {
         Py_DECREF(sm);
         return NULL;
     }
     return (PyObject *)sm;
+}
+
+PyObject *
+_PyStaticMethod_GetFunc(PyObject *self)
+{
+    staticmethod *sm = _PyStaticMethod_CAST(self);
+    return sm->sm_callable;
 }
