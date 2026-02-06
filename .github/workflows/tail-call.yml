@@ -54,10 +54,13 @@ jobs:
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
             runner: windows-2025-vs2026
+            build_flags: ""
+            run_tests: true
           - target: x86_64-pc-windows-msvc/msvc-free-threading
             architecture: x64
             runner: windows-2025-vs2026
-            free_threading: true
+            build_flags: --disable-gil
+            run_tests: false
 #          - target: aarch64-pc-windows-msvc/msvc
 #            architecture: ARM64
 #            runner: windows-2022
@@ -88,20 +91,14 @@ jobs:
           python-version: '3.11'
 
       - name: Native Windows MSVC (release)
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64' && !matrix.free_threading
+        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: pwsh
         run: |
           $env:PlatformToolset = "v145"
-          ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-        # No tests:
-      - name: Native Windows MSVC with free-threading (release)
-        if: runner.os == 'Windows' && matrix.free_threading
-        shell: pwsh
-        run: |
-          $env:PlatformToolset = "v145"
-          ./PCbuild/build.bat --tail-call-interp --disable-gil -c Release -p ${{ matrix.architecture }}
+          ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
+          if ("${{ matrix.run_tests }}" -eq "true") {
+            ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          }
 
       # No tests (yet):
       - name: Emulated Windows Clang (release)
