@@ -145,14 +145,12 @@ The :mod:`binascii` module defines the following functions:
    .. versionadded:: next
 
 
-.. function:: a2b_base85(string, /, *, strict_mode=False)
+.. function:: a2b_base85(string, /)
 
    Convert Base85 data back to binary and return the binary data.
    More than one line may be passed at a time.
 
-   If *strict_mode* is true, only valid Base85 data will be converted.
    Invalid Base85 data will raise :exc:`binascii.Error`.
-
    Valid Base85 data contains characters from the Base85 alphabet in groups
    of five (except for the final group, which may have from two to five
    characters). Each group encodes 32 bits of binary data in the range from
@@ -161,26 +159,22 @@ The :mod:`binascii` module defines the following functions:
    .. versionadded:: next
 
 
-.. function:: b2a_base85(data, /, *, pad=False, newline=True)
+.. function:: b2a_base85(data, /, *, pad=False)
 
    Convert binary data to a line of ASCII characters in Base85 coding.
    The return value is the converted line.
 
    If *pad* is true, the input is padded to a multiple of 4 before encoding.
 
-   If *newline* is true, a newline char is appended to the result.
-
    .. versionadded:: next
 
 
-.. function:: a2b_z85(string, /, *, strict_mode=False)
+.. function:: a2b_z85(string, /)
 
    Convert Z85 data back to binary and return the binary data.
    More than one line may be passed at a time.
 
-   If *strict_mode* is true, only valid Z85 data will be converted.
    Invalid Z85 data will raise :exc:`binascii.Error`.
-
    Valid Z85 data contains characters from the Z85 alphabet in groups
    of five (except for the final group, which may have from two to five
    characters). Each group encodes 32 bits of binary data in the range from
@@ -191,14 +185,12 @@ The :mod:`binascii` module defines the following functions:
    .. versionadded:: next
 
 
-.. function:: b2a_z85(data, /, *, pad=False, newline=True)
+.. function:: b2a_z85(data, /, *, pad=False)
 
    Convert binary data to a line of ASCII characters in Z85 coding.
    The return value is the converted line.
 
    If *pad* is true, the input is padded to a multiple of 4 before encoding.
-
-   If *newline* is true, a newline char is appended to the result.
 
    See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
 

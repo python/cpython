@@ -536,48 +536,29 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(res, self.rawdata)
 
         # Test decoding inputs with length 1 mod 5
-        self.assertEqual(binascii.a2b_base85(self.type2test(b"a")), b"")
-        self.assertEqual(binascii.a2b_base85(self.type2test(b" b ")), b"")
-        self.assertEqual(binascii.a2b_base85(self.type2test(b"b/Y\"*,j'Nc")), b"test")
-
-    def test_base85_invalid(self):
-        # Test base85 with invalid characters interleaved
-        lines, i = [], 0
-        for k in range(1, len(self.rawdata) + 1):
-            b = self.type2test(self.rawdata[i:i + k])
-            a = binascii.b2a_base85(b)
-            lines.append(a)
-            i += k
-            if i >= len(self.rawdata):
-                break
-
-        fillers = bytearray()
-        valid = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
-                b"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
-        for i in range(256):
-            if i not in valid:
-                fillers.append(i)
-        def addnoise(line):
-            res = bytearray()
-            for i in range(len(line)):
-                res.append(line[i])
-                for j in range(i, len(fillers), len(line)):
-                    res.append(fillers[j])
-            return res
-        res = bytearray()
-        for line in map(addnoise, lines):
-            a = self.type2test(line)
-            b = binascii.a2b_base85(a)
-            res += b
-        self.assertEqual(res, self.rawdata)
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'a')), b'')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'a')), b'')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'ab')), b'q')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abc')), b'qa')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcd')), b'qa\x9e')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcde')), b'qa\x9e\xb6')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcdef')), b'qa\x9e\xb6')
 
     def test_base85_errors(self):
         def _assertRegexTemplate(assert_regex, data, **kwargs):
             with self.assertRaisesRegex(binascii.Error, assert_regex):
                 binascii.a2b_base85(self.type2test(data), **kwargs)
 
+        def assertNonBase85Data(data):
+            _assertRegexTemplate(r"(?i)bad base85 character", data)
+
         def assertOverflow(data):
             _assertRegexTemplate(r"(?i)base85 overflow", data)
+
+        assertNonBase85Data(b"\xda")
+        assertNonBase85Data(b"00\0\0")
+        assertNonBase85Data(b"Z )*")
+        assertNonBase85Data(b"bY*jNb0Hyq\n")
 
         # Test base85 with out-of-range encoded value
         assertOverflow(b"}")
@@ -599,29 +580,6 @@ class BinASCIITest(unittest.TestCase):
             b_pad_expected = b + b"\0" * padding
             self.assertEqual(b_pad, b_pad_expected)
 
-    def test_base85_strict_mode(self):
-        # Test base85 with strict mode on
-        def assertNonBase85Data(data, expected):
-            data = self.type2test(data)
-            with self.assertRaisesRegex(binascii.Error, r"(?i)bad base85 character"):
-                binascii.a2b_base85(data, strict_mode=True)
-            default_res = binascii.a2b_base85(data)
-            non_strict_res = binascii.a2b_base85(data, strict_mode=False)
-            self.assertEqual(default_res, non_strict_res)
-            self.assertEqual(non_strict_res, expected)
-
-        assertNonBase85Data(b"\xda", b"")
-        assertNonBase85Data(b"00\0\0", b"\0")
-        assertNonBase85Data(b"Z )*", b"ok")
-        assertNonBase85Data(b"bY*jNb0Hyq\n", b"tests!!~")
-
-    def test_base85_newline(self):
-        # Test base85 newline parameter
-        b = self.type2test(b"t3s\t ")
-        self.assertEqual(binascii.b2a_base85(b), b"bTe}aAO\n")
-        self.assertEqual(binascii.b2a_base85(b, newline=True), b"bTe}aAO\n")
-        self.assertEqual(binascii.b2a_base85(b, newline=False), b"bTe}aAO")
-
     def test_z85_valid(self):
         # Test Z85 with valid data
         lines, i = [], 0
@@ -640,48 +598,29 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(res, self.rawdata)
 
         # Test decoding inputs with length 1 mod 5
-        self.assertEqual(binascii.a2b_z85(self.type2test(b"a")), b"")
-        self.assertEqual(binascii.a2b_z85(self.type2test(b" b ")), b"")
-        self.assertEqual(binascii.a2b_z85(self.type2test(b"B y,/;J_n\\c")), b"test")
-
-    def test_z85_invalid(self):
-        # Test Z85 with invalid characters interleaved
-        lines, i = [], 0
-        for k in range(1, len(self.rawdata) + 1):
-            b = self.type2test(self.rawdata[i:i + k])
-            a = binascii.b2a_z85(b)
-            lines.append(a)
-            i += k
-            if i >= len(self.rawdata):
-                break
-
-        fillers = bytearray()
-        valid = b"0123456789abcdefghijklmnopqrstuvwxyz" \
-                b"ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
-        for i in range(256):
-            if i not in valid:
-                fillers.append(i)
-        def addnoise(line):
-            res = bytearray()
-            for i in range(len(line)):
-                res.append(line[i])
-                for j in range(i, len(fillers), len(line)):
-                    res.append(fillers[j])
-            return res
-        res = bytearray()
-        for line in map(addnoise, lines):
-            a = self.type2test(line)
-            b = binascii.a2b_z85(a)
-            res += b
-        self.assertEqual(res, self.rawdata)
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'')), b'')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'a')), b'')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'ab')), b'\x1f')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abc')), b'\x1f\x85')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcd')), b'\x1f\x85\x9a')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcde')), b'\x1f\x85\x9a$')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdef')), b'\x1f\x85\x9a$')
 
     def test_z85_errors(self):
         def _assertRegexTemplate(assert_regex, data, **kwargs):
             with self.assertRaisesRegex(binascii.Error, assert_regex):
                 binascii.a2b_z85(self.type2test(data), **kwargs)
 
+        def assertNonZ85Data(data):
+            _assertRegexTemplate(r"(?i)bad z85 character", data)
+
         def assertOverflow(data):
             _assertRegexTemplate(r"(?i)z85 overflow", data)
+
+        assertNonZ85Data(b"\xda")
+        assertNonZ85Data(b"00\0\0")
+        assertNonZ85Data(b"z !/")
+        assertNonZ85Data(b"By/JnB0hYQ\n")
 
         # Test Z85 with out-of-range encoded value
         assertOverflow(b"%")
@@ -702,29 +641,6 @@ class BinASCIITest(unittest.TestCase):
             b_pad = binascii.a2b_z85(self.type2test(a_pad))
             b_pad_expected = b + b"\0" * padding
             self.assertEqual(b_pad, b_pad_expected)
-
-    def test_z85_strict_mode(self):
-        # Test Z85 with strict mode on
-        def assertNonZ85Data(data, expected):
-            data = self.type2test(data)
-            with self.assertRaisesRegex(binascii.Error, r"(?i)bad z85 character"):
-                binascii.a2b_z85(data, strict_mode=True)
-            default_res = binascii.a2b_z85(data)
-            non_strict_res = binascii.a2b_z85(data, strict_mode=False)
-            self.assertEqual(default_res, non_strict_res)
-            self.assertEqual(non_strict_res, expected)
-
-        assertNonZ85Data(b"\xda", b"")
-        assertNonZ85Data(b"00\0\0", b"\0")
-        assertNonZ85Data(b"z !/", b"ok")
-        assertNonZ85Data(b"By/JnB0hYQ\n", b"tests!!~")
-
-    def test_z85_newline(self):
-        # Test Z85 newline parameter
-        b = self.type2test(b"t3s\t ")
-        self.assertEqual(binascii.b2a_z85(b), b"BtE$Aao\n")
-        self.assertEqual(binascii.b2a_z85(b, newline=True), b"BtE$Aao\n")
-        self.assertEqual(binascii.b2a_z85(b, newline=False), b"BtE$Aao")
 
     def test_uu(self):
         MAX_UU = 45

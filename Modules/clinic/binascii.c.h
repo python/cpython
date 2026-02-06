@@ -519,23 +519,53 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base85__doc__,
-"a2b_base85($module, data, /, *, strict_mode=False)\n"
+"a2b_base85($module, data, /)\n"
 "--\n"
 "\n"
-"Decode a line of Base85 data.\n"
-"\n"
-"  strict_mode\n"
-"    When set to True, bytes that are not in the Base85 alphabet\n"
-"    are not allowed.");
+"Decode a line of Base85 data.");
 
 #define BINASCII_A2B_BASE85_METHODDEF    \
-    {"a2b_base85", _PyCFunction_CAST(binascii_a2b_base85), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base85__doc__},
+    {"a2b_base85", (PyCFunction)binascii_a2b_base85, METH_O, binascii_a2b_base85__doc__},
 
 static PyObject *
-binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode);
+binascii_a2b_base85_impl(PyObject *module, Py_buffer *data);
 
 static PyObject *
-binascii_a2b_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+binascii_a2b_base85(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (!ascii_buffer_converter(arg, &data)) {
+        goto exit;
+    }
+    return_value = binascii_a2b_base85_impl(module, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(binascii_b2a_base85__doc__,
+"b2a_base85($module, data, /, *, pad=False)\n"
+"--\n"
+"\n"
+"Base85-code line of data.\n"
+"\n"
+"  pad\n"
+"    Pad input to a multiple of 4 before encoding.");
+
+#define BINASCII_B2A_BASE85_METHODDEF    \
+    {"b2a_base85", _PyCFunction_CAST(binascii_b2a_base85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base85__doc__},
+
+static PyObject *
+binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad);
+
+static PyObject *
+binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -549,7 +579,7 @@ binascii_a2b_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(strict_mode), },
+        .ob_item = { &_Py_ID(pad), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -558,98 +588,17 @@ binascii_a2b_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "strict_mode", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "a2b_base85",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
-    int strict_mode = 0;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!ascii_buffer_converter(args[0], &data)) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    strict_mode = PyObject_IsTrue(args[1]);
-    if (strict_mode < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    return_value = binascii_a2b_base85_impl(module, &data, strict_mode);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj)
-       PyBuffer_Release(&data);
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_b2a_base85__doc__,
-"b2a_base85($module, data, /, *, pad=False, newline=True)\n"
-"--\n"
-"\n"
-"Base85-code line of data.\n"
-"\n"
-"  pad\n"
-"    Pad input to a multiple of 4 before encoding.\n"
-"  newline\n"
-"    Append a newline to the result.");
-
-#define BINASCII_B2A_BASE85_METHODDEF    \
-    {"b2a_base85", _PyCFunction_CAST(binascii_b2a_base85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base85__doc__},
-
-static PyObject *
-binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
-                         int newline);
-
-static PyObject *
-binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(pad), &_Py_ID(newline), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "pad", "newline", NULL};
+    static const char * const _keywords[] = {"", "pad", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "b2a_base85",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int pad = 0;
-    int newline = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -662,21 +611,12 @@ binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
-        pad = PyObject_IsTrue(args[1]);
-        if (pad < 0) {
-            goto exit;
-        }
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    newline = PyObject_IsTrue(args[2]);
-    if (newline < 0) {
+    pad = PyObject_IsTrue(args[1]);
+    if (pad < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_b2a_base85_impl(module, &data, pad, newline);
+    return_value = binascii_b2a_base85_impl(module, &data, pad);
 
 exit:
     /* Cleanup for data */
@@ -688,23 +628,53 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_z85__doc__,
-"a2b_z85($module, data, /, *, strict_mode=False)\n"
+"a2b_z85($module, data, /)\n"
 "--\n"
 "\n"
-"Decode a line of Z85 data.\n"
-"\n"
-"  strict_mode\n"
-"    When set to True, bytes that are not in the Z85 alphabet\n"
-"    are not allowed.");
+"Decode a line of Z85 data.");
 
 #define BINASCII_A2B_Z85_METHODDEF    \
-    {"a2b_z85", _PyCFunction_CAST(binascii_a2b_z85), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_z85__doc__},
+    {"a2b_z85", (PyCFunction)binascii_a2b_z85, METH_O, binascii_a2b_z85__doc__},
 
 static PyObject *
-binascii_a2b_z85_impl(PyObject *module, Py_buffer *data, int strict_mode);
+binascii_a2b_z85_impl(PyObject *module, Py_buffer *data);
 
 static PyObject *
-binascii_a2b_z85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+binascii_a2b_z85(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (!ascii_buffer_converter(arg, &data)) {
+        goto exit;
+    }
+    return_value = binascii_a2b_z85_impl(module, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(binascii_b2a_z85__doc__,
+"b2a_z85($module, data, /, *, pad=False)\n"
+"--\n"
+"\n"
+"Z85-code line of data.\n"
+"\n"
+"  pad\n"
+"    Pad input to a multiple of 4 before encoding.");
+
+#define BINASCII_B2A_Z85_METHODDEF    \
+    {"b2a_z85", _PyCFunction_CAST(binascii_b2a_z85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_z85__doc__},
+
+static PyObject *
+binascii_b2a_z85_impl(PyObject *module, Py_buffer *data, int pad);
+
+static PyObject *
+binascii_b2a_z85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -718,7 +688,7 @@ binascii_a2b_z85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(strict_mode), },
+        .ob_item = { &_Py_ID(pad), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -727,98 +697,17 @@ binascii_a2b_z85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "strict_mode", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "a2b_z85",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    Py_buffer data = {NULL, NULL};
-    int strict_mode = 0;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!ascii_buffer_converter(args[0], &data)) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    strict_mode = PyObject_IsTrue(args[1]);
-    if (strict_mode < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    return_value = binascii_a2b_z85_impl(module, &data, strict_mode);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj)
-       PyBuffer_Release(&data);
-
-    return return_value;
-}
-
-PyDoc_STRVAR(binascii_b2a_z85__doc__,
-"b2a_z85($module, data, /, *, pad=False, newline=True)\n"
-"--\n"
-"\n"
-"Z85-code line of data.\n"
-"\n"
-"  pad\n"
-"    Pad input to a multiple of 4 before encoding.\n"
-"  newline\n"
-"    Append a newline to the result.");
-
-#define BINASCII_B2A_Z85_METHODDEF    \
-    {"b2a_z85", _PyCFunction_CAST(binascii_b2a_z85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_z85__doc__},
-
-static PyObject *
-binascii_b2a_z85_impl(PyObject *module, Py_buffer *data, int pad,
-                      int newline);
-
-static PyObject *
-binascii_b2a_z85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(pad), &_Py_ID(newline), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "pad", "newline", NULL};
+    static const char * const _keywords[] = {"", "pad", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "b2a_z85",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int pad = 0;
-    int newline = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -831,21 +720,12 @@ binascii_b2a_z85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (args[1]) {
-        pad = PyObject_IsTrue(args[1]);
-        if (pad < 0) {
-            goto exit;
-        }
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    newline = PyObject_IsTrue(args[2]);
-    if (newline < 0) {
+    pad = PyObject_IsTrue(args[1]);
+    if (pad < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_b2a_z85_impl(module, &data, pad, newline);
+    return_value = binascii_b2a_z85_impl(module, &data, pad);
 
 exit:
     /* Cleanup for data */
@@ -1401,4 +1281,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=4bc2874d7ad7f3bb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c127959bc41f4c07 input=a9049054013a1b77]*/
