@@ -309,7 +309,7 @@ PyDoc_STRVAR(binascii_a2b_ascii85__doc__,
 "  adobe\n"
 "    Expect data to be wrapped in \'<~\' and \'~>\' as in Adobe Ascii85.\n"
 "  ignorechars\n"
-"    An optional bytes-like object with input characters to be ignored.");
+"    A byte string containing characters to ignore from the input.");
 
 #define BINASCII_A2B_ASCII85_METHODDEF    \
     {"a2b_ascii85", _PyCFunction_CAST(binascii_a2b_ascii85), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_ascii85__doc__},
@@ -1281,4 +1281,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=c127959bc41f4c07 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1435eb5ecd1d87d3 input=a9049054013a1b77]*/

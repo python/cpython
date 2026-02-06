@@ -862,7 +862,7 @@ binascii.a2b_ascii85
     adobe: bool = False
         Expect data to be wrapped in '<~' and '~>' as in Adobe Ascii85.
     ignorechars: Py_buffer(c_default="NULL", py_default="b''") = None
-        An optional bytes-like object with input characters to be ignored.
+        A byte string containing characters to ignore from the input.
 
 Decode Ascii85 data.
 [clinic start generated code]*/
@@ -870,7 +870,7 @@ Decode Ascii85 data.
 static PyObject *
 binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                           int adobe, Py_buffer *ignorechars)
-/*[clinic end generated code: output=599aa3e41095a651 input=a72510e79c6d2df0]*/
+/*[clinic end generated code: output=599aa3e41095a651 input=20796c9b23cec213]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -901,6 +901,11 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
         }
     }
 
+    ignorecache_t ignorecache;
+    if (ignorechars != NULL) {
+        memset(ignorecache, 0, sizeof(ignorecache));
+    }
+
     /* Allocate output buffer. */
     size_t bin_len = ascii_len;
     unsigned char this_ch = 0;
@@ -929,17 +934,6 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
     if (bin_data == NULL) {
         return NULL;
-    }
-
-    /* Build ignore map. */
-    unsigned char ignore_map[256] = {0};
-    if (ignorechars->obj != NULL) {
-        const unsigned char *ignore_data = ignorechars->buf;
-        Py_ssize_t ignore_len = ignorechars->len;
-        for (Py_ssize_t i = 0; i < ignore_len; i++) {
-            this_ch = ignore_data[i];
-            ignore_map[this_ch] = -1;
-        }
     }
 
     uint32_t leftchar = 0;
@@ -981,7 +975,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
             leftchar = this_ch == 'y' ? BASE85_A85_Y : BASE85_A85_Z;
             group_pos = 5;
         }
-        else if (!ignore_map[this_ch]) {
+        else if (!ignorechar(this_ch, ignorechars, ignorecache)) {
             state = get_binascii_state(module);
             if (state != NULL) {
                 PyErr_Format(state->Error,
