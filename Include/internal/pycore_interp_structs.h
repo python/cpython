@@ -411,6 +411,7 @@ typedef struct _PyOptimizationConfig {
 
     // Optimization flags
     bool specialization_enabled;
+    bool uops_optimize_enabled;
 } _PyOptimizationConfig;
 
 struct

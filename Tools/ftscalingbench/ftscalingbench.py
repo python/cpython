@@ -21,14 +21,17 @@
 # > echo "0" | sudo tee /sys/devices/system/cpu/cpufreq/boost
 #
 
+import copy
 import math
 import os
 import queue
 import sys
 import threading
 import time
+from collections import namedtuple
 from dataclasses import dataclass
 from operator import methodcaller
+from typing import NamedTuple
 
 # The iterations in individual benchmarks are scaled by this factor.
 WORK_SCALE = 100
@@ -213,6 +216,32 @@ class MyDataClass:
 def instantiate_dataclass():
     for _ in range(1000 * WORK_SCALE):
         obj = MyDataClass(x=1, y=2, z=3)
+
+MyNamedTuple = namedtuple("MyNamedTuple", ["x", "y", "z"])
+
+@register_benchmark
+def instantiate_namedtuple():
+    for _ in range(1000 * WORK_SCALE):
+        obj = MyNamedTuple(x=1, y=2, z=3)
+
+
+class MyTypingNamedTuple(NamedTuple):
+    x: int
+    y: int
+    z: int
+
+@register_benchmark
+def instantiate_typing_namedtuple():
+    for _ in range(1000 * WORK_SCALE):
+        obj = MyTypingNamedTuple(x=1, y=2, z=3)
+
+
+@register_benchmark
+def deepcopy():
+    x = {'list': [1, 2], 'tuple': (1, None)}
+    for i in range(40 * WORK_SCALE):
+        copy.deepcopy(x)
+
 
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()

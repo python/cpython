@@ -31,15 +31,6 @@ Py_TPFLAGS_IS_ABSTRACT
 PyExpat_CAPI_MAGIC
 PyExpat_CAPSULE_NAME
 # pyport.h
-Py_ALIGNED
-Py_ARITHMETIC_RIGHT_SHIFT
-Py_CAN_START_THREADS
-Py_FORCE_EXPANSION
-Py_GCC_ATTRIBUTE
-Py_LL
-Py_SAFE_DOWNCAST
-Py_ULL
-Py_VA_COPY
 PYLONG_BITS_IN_DIGIT
 PY_DWORD_MAX
 PY_FORMAT_SIZE_T
@@ -66,7 +57,6 @@ PyCF_MASK
 PyCF_MASK_OBSOLETE
 PyCF_SOURCE_IS_UTF8
 # cpython/descrobject.h
-PyDescr_COMMON
 PyDescr_NAME
 PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
@@ -76,8 +66,6 @@ Py_UniversalNewlineFgets
 PyUnstable_CopyPerfMapFile
 PyUnstable_PerfTrampoline_CompileCode
 PyUnstable_PerfTrampoline_SetPersistAfterFork
-# cpython/pyerrors.h
-PyException_HEAD
 # cpython/pyframe.h
 PyUnstable_EXECUTABLE_KINDS
 PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION

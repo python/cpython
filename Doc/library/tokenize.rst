@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`tokenize` module provides a lexical scanner for Python source code,
+The :mod:`!tokenize` module provides a lexical scanner for Python source code,
 implemented in Python.  The scanner in this module returns comments as tokens
 as well, making it useful for implementing "pretty-printers", including
 colorizers for on-screen displays.
@@ -78,7 +78,7 @@ The primary entry point is a :term:`generator`:
    :func:`.tokenize`. It does not yield an :data:`~token.ENCODING` token.
 
 All constants from the :mod:`token` module are also exported from
-:mod:`tokenize`.
+:mod:`!tokenize`.
 
 Another function is provided to reverse the tokenization process. This is
 useful for creating tools that tokenize a script, modify the token stream, and
@@ -154,7 +154,7 @@ Command-Line Usage
 
 .. versionadded:: 3.3
 
-The :mod:`tokenize` module can be executed as a script from the command line.
+The :mod:`!tokenize` module can be executed as a script from the command line.
 It is as simple as:
 
 .. code-block:: sh

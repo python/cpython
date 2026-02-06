@@ -2163,6 +2163,8 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
+      >>> 'spam, spam, spam'.index('spam')
+      0
       >>> 'spam, spam, spam'.index('eggs')
       Traceback (most recent call last):
         File "<python-input-0>", line 1, in <module>
@@ -2546,6 +2548,20 @@ expression support in the :mod:`re` module).
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rindex('spam')
+      12
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin-0>", line 1, in <module>
+          'spam, spam, spam'.rindex('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`index` and :meth:`find`.
 
 
 .. method:: str.rjust(width, fillchar=' ', /)
@@ -2561,6 +2577,19 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    two empty strings, followed by the string itself.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.rpartition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".rpartition(' ')
+      ("Monty Python's Flying", ' ', 'Circus')
+      >>> 'Monty Python'.rpartition('-')
+      ('', '', 'Monty Python')
+
+   See also :meth:`partition`.
 
 
 .. method:: str.rsplit(sep=None, maxsplit=-1)
@@ -2719,6 +2748,19 @@ expression support in the :mod:`re` module).
    *prefix* can also be a tuple of prefixes to look for.  With optional *start*,
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'a'))
+      True
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith` and :meth:`removeprefix`.
 
 
 .. method:: str.strip(chars=None, /)

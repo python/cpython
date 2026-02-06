@@ -1443,6 +1443,13 @@ class CopyTests(unittest.TestCase):
         self.assertIs(node.ctx, context)
         self.assertRaises(AttributeError, getattr, node, 'unknown')
 
+    def test_replace_non_str_kwarg(self):
+        node = ast.Name(id="x")
+        errmsg = "got an unexpected keyword argument <object object"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            node.__replace__(**{object(): "y"})
+
+
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
@@ -3303,6 +3310,27 @@ class ASTConstructorTests(unittest.TestCase):
         obj = _AllFieldTypes()
         self.assertIs(obj.a, None)
         self.assertEqual(obj.b, [])
+
+    def test_non_str_kwarg(self):
+        warn_msg = "got an unexpected keyword argument <object object"
+        with (
+            self.assertRaises(TypeError),
+            self.assertWarnsRegex(DeprecationWarning, warn_msg),
+        ):
+            ast.Name(**{object(): 'y'})
+
+        class FakeStr:
+            def __init__(self, value):
+                self.value = value
+
+            def __hash__(self):
+                return hash(self.value)
+
+            def __eq__(self, other):
+                return isinstance(other, str) and self.value == other
+
+        with self.assertRaisesRegex(TypeError, "got multiple values for argument"):
+            ast.Name("x", **{FakeStr('id'): 'y'})
 
 
 @support.cpython_only
