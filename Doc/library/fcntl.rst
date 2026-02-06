@@ -53,7 +53,7 @@ descriptor.
    the latter setting ``FD_CLOEXEC`` flag in addition.
 
 .. versionchanged:: 3.12
-   On Linux >= 4.5, the :mod:`fcntl` module exposes the ``FICLONE`` and
+   On Linux >= 4.5, the :mod:`!fcntl` module exposes the ``FICLONE`` and
    ``FICLONERANGE`` constants, which allow to share some data of one file with
    another file by reflinking on some filesystems (e.g., btrfs, OCFS2, and
    XFS). This behavior is commonly referred to as "copy-on-write".
@@ -91,7 +91,7 @@ The module defines the following functions:
    Perform the operation *cmd* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well).  The values used
    for *cmd* are operating system dependent, and are available as constants
-   in the :mod:`fcntl` module, using the same names as used in the relevant C
+   in the :mod:`!fcntl` module, using the same names as used in the relevant C
    header files. The argument *arg* can either be an integer value, a
    :term:`bytes-like object`, or a string.
    The type and size of *arg* must match the type and size of

@@ -14,7 +14,7 @@
 
 --------------
 
-The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
+The :mod:`!dis` module supports the analysis of CPython :term:`bytecode` by
 disassembling it. The CPython bytecode which this module takes as an input is
 defined in the file :file:`Include/opcode.h` and used by the compiler and the
 interpreter.
@@ -38,7 +38,7 @@ interpreter.
       Some instructions are accompanied by one or more inline cache entries,
       which take the form of :opcode:`CACHE` instructions. These instructions
       are hidden by default, but can be shown by passing ``show_caches=True`` to
-      any :mod:`dis` utility. Furthermore, the interpreter now adapts the
+      any :mod:`!dis` utility. Furthermore, the interpreter now adapts the
       bytecode to specialize it for different runtime conditions. The
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
@@ -87,7 +87,7 @@ the following command can be used to display the disassembly of
 Command-line interface
 ----------------------
 
-The :mod:`dis` module can be invoked as a script from the command line:
+The :mod:`!dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
@@ -223,7 +223,7 @@ Example:
 Analysis functions
 ------------------
 
-The :mod:`dis` module also defines the following analysis functions that convert
+The :mod:`!dis` module also defines the following analysis functions that convert
 the input directly to the desired output. They can be useful if only a single
 operation is being performed, so the intermediate analysis object isn't useful:
 
@@ -1827,7 +1827,7 @@ iterations of the loop.
       ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
 
    .. versionchanged:: 3.12
-      Pseudo instructions were added to the :mod:`dis` module, and for them
+      Pseudo instructions were added to the :mod:`!dis` module, and for them
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
