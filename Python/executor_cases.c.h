@@ -7236,12 +7236,7 @@
             PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
             assert(PyTuple_CheckExact(seq_o));
             assert(PyTuple_GET_SIZE(seq_o) == oparg);
-            if (!_PyObject_IsUniquelyReferenced(seq_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = stack_pointer[0];
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(_PyObject_IsUniquelyReferenced(seq_o));
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq_o);
             for (int i = oparg; --i >= 0; ) {
