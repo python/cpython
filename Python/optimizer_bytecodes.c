@@ -1,4 +1,4 @@
-#include "Python.h"
+ #include "Python.h"
 #include "pycore_optimizer.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
@@ -1417,8 +1417,8 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_TOS_SLICE, (tos -- tos)){
-        if (sym_matches_type(tos, &PySlice_Type)){
+    op(_GUARD_TOS_SLICE, (tos -- tos)) {
+        if (sym_matches_type(tos, &PySlice_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
         sym_set_type(tos, &PySlice_Type);
