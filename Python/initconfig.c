@@ -4250,6 +4250,11 @@ int
 PyInitConfig_SetInitCallback(PyInitConfig *config,
                              PyStatus (*callback)(void *arg), void *arg)
 {
+    if (config->config.init_callback != NULL) {
+        initconfig_set_error(config, "cannot set two init callbacks");
+        return -1;
+    }
+
     config->config.init_callback = callback;
     config->config.init_callback_arg = arg;
     return 0;

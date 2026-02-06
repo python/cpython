@@ -2233,13 +2233,6 @@ static int test_init_callback(void)
         goto error;
     }
 
-    const char *ignored_msg = "ignored_msg";
-    if (PyInitConfig_SetInitCallback(config, init_callback, (void*)ignored_msg) < 0) {
-        goto error;
-    }
-
-    // PyInitConfig_SetInitCallback() can be called more than once, but the
-    // previous callback and callback argument are overridden.
     const char *msg = "Hello Callback!";
     if (PyInitConfig_SetInitCallback(config, init_callback, (void*)msg) < 0) {
         goto error;

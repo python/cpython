@@ -243,8 +243,8 @@ Initialization Callback
 
 .. c:function:: int PyInitConfig_SetInitCallback(PyInitConfig *config, PyStatus (*callback)(void *arg), void *arg)
 
-   Set an initialization callback. It allows executing code as soon as the
-   Python interpreter is initialized, before the first import. For example, it
+   Set an initialization callback. It allows executing code during the
+   Python interpreter, before the first import. For example, it
    can be used to add a meta path importer into :data:`sys.meta_path`.
 
    When the callback is called, Python is only partially initialized. What's
@@ -268,7 +268,7 @@ Initialization Callback
    * etc.
 
    A single callback can be registered. If this function is called more than
-   once, the previous callback is overridden.
+   once, it fails with an error.
 
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
