@@ -26,6 +26,8 @@ class BinASCIITest(unittest.TestCase):
     rawdata = b"The quick brown fox jumps over the lazy dog.\r\n"
     # Be slow so we don't depend on other modules
     rawdata += bytes(range(256))
+    rawdata += b'\0'*32
+    rawdata += b' '*32
     rawdata += b"\r\nHello world.\n"
 
     def setUp(self):
@@ -535,14 +537,19 @@ class BinASCIITest(unittest.TestCase):
             res += b
         self.assertEqual(res, self.rawdata)
 
-        # Test decoding inputs with length 1 mod 5
+        # Test decoding inputs with different length
         self.assertEqual(binascii.a2b_base85(self.type2test(b'a')), b'')
         self.assertEqual(binascii.a2b_base85(self.type2test(b'a')), b'')
         self.assertEqual(binascii.a2b_base85(self.type2test(b'ab')), b'q')
         self.assertEqual(binascii.a2b_base85(self.type2test(b'abc')), b'qa')
-        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcd')), b'qa\x9e')
-        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcde')), b'qa\x9e\xb6')
-        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcdef')), b'qa\x9e\xb6')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcd')),
+                         b'qa\x9e')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcde')),
+                         b'qa\x9e\xb6')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcdef')),
+                         b'qa\x9e\xb6')
+        self.assertEqual(binascii.a2b_base85(self.type2test(b'abcdefg')),
+                         b'qa\x9e\xb6\x81')
 
     def test_base85_errors(self):
         def _assertRegexTemplate(assert_regex, data, **kwargs):
@@ -597,14 +604,20 @@ class BinASCIITest(unittest.TestCase):
             res += b
         self.assertEqual(res, self.rawdata)
 
-        # Test decoding inputs with length 1 mod 5
+        # Test decoding inputs with different length
         self.assertEqual(binascii.a2b_z85(self.type2test(b'')), b'')
         self.assertEqual(binascii.a2b_z85(self.type2test(b'a')), b'')
         self.assertEqual(binascii.a2b_z85(self.type2test(b'ab')), b'\x1f')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abc')), b'\x1f\x85')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcd')), b'\x1f\x85\x9a')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcde')), b'\x1f\x85\x9a$')
-        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdef')), b'\x1f\x85\x9a$')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abc')),
+                         b'\x1f\x85')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcd')),
+                         b'\x1f\x85\x9a')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcde')),
+                         b'\x1f\x85\x9a$')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdef')),
+                         b'\x1f\x85\x9a$')
+        self.assertEqual(binascii.a2b_z85(self.type2test(b'abcdefg')),
+                         b'\x1f\x85\x9a$/')
 
     def test_z85_errors(self):
         def _assertRegexTemplate(assert_regex, data, **kwargs):
