@@ -207,10 +207,9 @@ test_py_set_immortal(PyObject *self, PyObject *unused)
     // the object is allocated on C stack as otherwise,
     // it would trip the refleak checker when the object
     // is made immortal and leak memory
-    PyObject object = {
-        .ob_refcnt = 1,
-        .ob_type = &PyBaseObject_Type,
-    };
+    PyObject object = {0};
+    Py_SET_REFCNT(&object, 1);
+    Py_SET_TYPE(&object, &PyBaseObject_Type);
     assert(!PyUnstable_IsImmortal(&object));
     PyUnstable_SetImmortal(&object);
     assert(PyUnstable_IsImmortal(&object));
