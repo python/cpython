@@ -3328,13 +3328,13 @@ Functions and decorators
 Introspection helpers
 ---------------------
 
-.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False, *, format=Format.VALUE)
 
    Return a dictionary containing type hints for a function, method, module
    or class object.
 
-   This is often the same as ``obj.__annotations__``, but this function makes
-   the following changes to the annotations dictionary:
+   This is often the same as :func:`annotationlib.get_annotations`, but this
+   function makes the following changes to the annotations dictionary:
 
    * Forward references encoded as string literals or :class:`ForwardRef`
      objects are handled by evaluating them in *globalns*, *localns*, and
@@ -3348,16 +3348,14 @@ Introspection helpers
      annotations from ``C``'s base classes with those on ``C`` directly. This
      is done by traversing :attr:`C.__mro__ <type.__mro__>` and iteratively
      combining
-     ``__annotations__`` dictionaries. Annotations on classes appearing
-     earlier in the :term:`method resolution order` always take precedence over
-     annotations on classes appearing later in the method resolution order.
+     :term:`annotations <variable annotation>` of each base class. Annotations
+     on classes appearing earlier in the :term:`method resolution order` always
+     take precedence over annotations on classes appearing later in the method
+     resolution order.
    * The function recursively replaces all occurrences of
      ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
-
-   See also :func:`annotationlib.get_annotations`, a lower-level function that
-   returns annotations more directly.
 
    .. caution::
 
@@ -3366,11 +3364,12 @@ Introspection helpers
 
    .. note::
 
-      If any forward references in the annotations of *obj* are not resolvable
-      or are not valid Python code, this function will raise an exception
-      such as :exc:`NameError`. For example, this can happen with imported
-      :ref:`type aliases <type-aliases>` that include forward references,
-      or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      If :attr:`Format.VALUE <annotationlib.Format.VALUE>` is used and any
+      forward references in the annotations of *obj* are not resolvable, a
+      :exc:`NameError` exception is raised. For example, this can happen
+      with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
+      More generally, any kind of exception can be raised if an annotation
+      contains invalid Python code.
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
@@ -3380,6 +3379,10 @@ Introspection helpers
       Previously, ``Optional[t]`` was added for function and method annotations
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
+
+   .. versionchanged:: 3.14
+      Added the ``format`` parameter. See the documentation on
+      :func:`annotationlib.get_annotations` for more information.
 
 .. function:: get_origin(tp)
 
