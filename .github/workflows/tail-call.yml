@@ -35,11 +35,8 @@ jobs:
       fail-fast: false
       matrix:
         target:
-# Un-comment as we add support for more platforms for tail-calling interpreters.
-#          - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc-free-threading
-#          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
@@ -48,9 +45,6 @@ jobs:
         llvm:
           - 20
         include:
-#          - target: i686-pc-windows-msvc/msvc
-#            architecture: Win32
-#            runner: windows-2022
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
             runner: windows-2025-vs2026
@@ -61,9 +55,6 @@ jobs:
             runner: windows-2025-vs2026
             build_flags: --disable-gil
             run_tests: false
-#          - target: aarch64-pc-windows-msvc/msvc
-#            architecture: ARM64
-#            runner: windows-2022
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-15-intel
@@ -99,17 +90,6 @@ jobs:
           if ("${{ matrix.run_tests }}" -eq "true") {
             ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
           }
-
-      # No tests (yet):
-      - name: Emulated Windows Clang (release)
-        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        shell: pwsh
-        run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          $env:PlatformToolset = "clangcl"
-          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
-          $env:LLVMInstallDir = "C:\Program Files\LLVM"
-          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
       - name: Native macOS (release)
         if: runner.os == 'macOS'
