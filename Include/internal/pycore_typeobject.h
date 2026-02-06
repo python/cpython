@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_interp_structs.h" // managed_static_type_state
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_structs.h"       // _PyStackRef
 
 
 /* state */
@@ -112,6 +113,8 @@ _PyType_IsReady(PyTypeObject *type)
 extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
                                         int *suppress_missing_attribute);
 extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
+extern _PyStackRef _Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
+                                              int *suppress_missing_attribute);
 
 extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
 
