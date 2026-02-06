@@ -17,11 +17,11 @@
 
 -------------
 
-The :mod:`secrets` module is used for generating cryptographically strong
+The :mod:`!secrets` module is used for generating cryptographically strong
 random numbers suitable for managing data such as passwords, account
 authentication, security tokens, and related secrets.
 
-In particular, :mod:`secrets` should be used in preference to the
+In particular, :mod:`!secrets` should be used in preference to the
 default pseudo-random number generator in the :mod:`random` module, which
 is designed for modelling and simulation, not security or cryptography.
 
@@ -33,7 +33,7 @@ is designed for modelling and simulation, not security or cryptography.
 Random numbers
 --------------
 
-The :mod:`secrets` module provides access to the most secure source of
+The :mod:`!secrets` module provides access to the most secure source of
 randomness that your operating system provides.
 
 .. class:: SystemRandom
@@ -58,7 +58,7 @@ randomness that your operating system provides.
 Generating tokens
 -----------------
 
-The :mod:`secrets` module provides functions for generating secure
+The :mod:`!secrets` module provides functions for generating secure
 tokens, suitable for applications such as password resets,
 hard-to-guess URLs, and similar.
 
@@ -107,7 +107,7 @@ tokens need to have sufficient randomness.  Unfortunately, what is
 considered sufficient will necessarily increase as computers get more
 powerful and able to make more guesses in a shorter period.  As of 2015,
 it is believed that 32 bytes (256 bits) of randomness is sufficient for
-the typical use-case expected for the :mod:`secrets` module.
+the typical use-case expected for the :mod:`!secrets` module.
 
 For those who want to manage their own token length, you can explicitly
 specify how much randomness is used for tokens by giving an :class:`int`
@@ -139,7 +139,7 @@ Other functions
 Recipes and best practices
 --------------------------
 
-This section shows recipes and best practices for using :mod:`secrets`
+This section shows recipes and best practices for using :mod:`!secrets`
 to manage a basic level of security.
 
 Generate an eight-character alphanumeric password:

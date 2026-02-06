@@ -491,6 +491,14 @@ base64
 binascii
 --------
 
+* Added functions for Ascii85, Base85, and Z85 encoding:
+
+  - :func:`~binascii.b2a_ascii85` and :func:`~binascii.a2b_ascii85`
+  - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
+  - :func:`~binascii.b2a_z85` and :func:`~binascii.a2b_z85`
+
+  (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
+
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
@@ -702,6 +710,13 @@ os.path
   If used, errors other than :exc:`FileNotFoundError` will be re-raised;
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+
+pickle
+------
+
+* Add support for pickling private methods and nested classes.
+  (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
 resource
@@ -968,10 +983,10 @@ unittest
 urllib.parse
 ------------
 
-* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlparse`,
-  :func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag` functions.
-  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunparse` and
-  :func:`~urllib.parse.urlunsplit` functions.
+* Add the *missing_as_none* parameter to :func:`~urllib.parse.urlsplit`,
+  :func:`~urllib.parse.urlparse` and :func:`~urllib.parse.urldefrag` functions.
+  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunsplit` and
+  :func:`~urllib.parse.urlunparse` functions.
   This allows to distinguish between empty and not defined URI components
   and preserve empty components.
   (Contributed by Serhiy Storchaka in :gh:`67041`.)
@@ -1051,6 +1066,11 @@ base64 & binascii
 * CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
   faster thanks to simple CPU pipelining optimizations.
   (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
+
+* Implementation for Ascii85, Base85, and Z85 encoding has been rewritten in C.
+  Encoding and decoding is now two orders of magnitude faster and consumes
+  two orders of magnitude less memory.
+  (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
 csv
 ---
