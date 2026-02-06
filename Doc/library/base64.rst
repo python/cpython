@@ -73,6 +73,7 @@ POST request.
 
 
 .. function:: b64decode(s, altchars=None, validate=False)
+              b64decode(s, altchars=None, validate=True, *, ignorechars)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -84,15 +85,28 @@ POST request.
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *validate* is false (the default), characters that are neither
-   in the normal base-64 alphabet nor the alternative alphabet are
+   If *ignorechars* is specified, it should be a :term:`bytes-like object`
+   containing characters to ignore from the input when *validate* is true.
+   If *ignorechars* contains the pad character ``'='``,  the pad characters
+   presented before the end of the encoded data and the excess pad characters
+   will be ignored.
+   The default value of *validate* is ``True`` if *ignorechars* is specified,
+   ``False`` otherwise.
+
+   If *validate* is false, characters that are neither
+   in the normal base-64 alphabet nor (if *ignorechars* is not specified)
+   the alternative alphabet are
    discarded prior to the padding check, but the ``+`` and ``/`` characters
    keep their meaning if they are not in *altchars* (they will be discarded
    in future Python versions).
+
    If *validate* is true, these non-alphabet characters in the input
    result in a :exc:`binascii.Error`.
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
+
+   .. versionchanged:: next
+      Added the *ignorechars* parameter.
 
    .. deprecated:: next
       Accepting the ``+`` and ``/`` characters with an alternative alphabet
@@ -233,8 +247,9 @@ Refer to the documentation of the individual functions for more information.
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   *pad* controls whether the input is padded to a multiple of 4
-   before encoding. Note that the ``btoa`` implementation always pads.
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+   Note that the ``btoa`` implementation always pads.
 
    *adobe* controls whether the encoded byte sequence is framed with ``<~``
    and ``~>``, which is used by the Adobe implementation.
@@ -254,9 +269,9 @@ Refer to the documentation of the individual functions for more information.
    *adobe* controls whether the input sequence is in Adobe Ascii85 format
    (i.e. is framed with <~ and ~>).
 
-   *ignorechars* should be a :term:`bytes-like object` or ASCII string
-   containing characters to ignore
-   from the input. This should only contain whitespace characters, and by
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+   This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
    .. versionadded:: 3.4

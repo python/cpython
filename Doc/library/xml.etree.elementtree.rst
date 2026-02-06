@@ -10,7 +10,7 @@
 
 --------------
 
-The :mod:`xml.etree.ElementTree` module implements a simple and efficient API
+The :mod:`!xml.etree.ElementTree` module implements a simple and efficient API
 for parsing and creating XML data.
 
 .. versionchanged:: 3.3
@@ -28,7 +28,7 @@ for parsing and creating XML data.
 Tutorial
 --------
 
-This is a short tutorial for using :mod:`xml.etree.ElementTree` (``ET`` in
+This is a short tutorial for using :mod:`!xml.etree.ElementTree` (``ET`` in
 short).  The goal is to demonstrate some of the building blocks and basic
 concepts of the module.
 
@@ -795,7 +795,7 @@ Here's an example that demonstrates use of the XInclude module. To include an XM
 
 By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
 
-To process this file, load it as usual, and pass the root element to the :mod:`xml.etree.ElementTree` module:
+To process this file, load it as usual, and pass the root element to the :mod:`!xml.etree.ElementTree` module:
 
 .. code-block:: python
 

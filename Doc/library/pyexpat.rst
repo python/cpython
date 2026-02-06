@@ -24,7 +24,7 @@
 
 .. index:: single: Expat
 
-The :mod:`xml.parsers.expat` module is a Python interface to the Expat
+The :mod:`!xml.parsers.expat` module is a Python interface to the Expat
 non-validating XML parser. The module provides a single extension type,
 :class:`xmlparser`, that represents the current state of an XML parser.  After
 an :class:`xmlparser` object has been created, various attributes of the object
@@ -55,7 +55,7 @@ This module provides one exception and one type object:
 
    The type of the return values from the :func:`ParserCreate` function.
 
-The :mod:`xml.parsers.expat` module contains two functions:
+The :mod:`!xml.parsers.expat` module contains two functions:
 
 
 .. function:: ErrorString(errno)
@@ -980,7 +980,7 @@ The ``errors`` module has the following attributes:
 
    An operation was requested that requires DTD support to be compiled in, but
    Expat was configured without DTD support.  This should never be reported by a
-   standard build of the :mod:`xml.parsers.expat` module.
+   standard build of the :mod:`!xml.parsers.expat` module.
 
 
 .. data:: XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING
