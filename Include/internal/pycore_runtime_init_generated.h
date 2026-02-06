@@ -1572,6 +1572,7 @@ extern "C" {
     INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
+    INIT_ID(adobe), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(alias), \
@@ -1767,7 +1768,7 @@ extern "C" {
     INIT_ID(flags), \
     INIT_ID(flush), \
     INIT_ID(fold), \
-    INIT_ID(fold_spaces), \
+    INIT_ID(foldspaces), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
@@ -2154,9 +2155,7 @@ extern "C" {
     INIT_ID(weeks), \
     INIT_ID(which), \
     INIT_ID(who), \
-    INIT_ID(width), \
     INIT_ID(withdata), \
-    INIT_ID(wrap), \
     INIT_ID(wrapcol), \
     INIT_ID(writable), \
     INIT_ID(write), \

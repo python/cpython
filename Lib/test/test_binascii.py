@@ -320,16 +320,16 @@ class BinASCIITest(unittest.TestCase):
 
         # Test core parameter combinations
         params = (False, False), (False, True), (True, False), (True, True)
-        for fold_spaces, wrap in params:
+        for foldspaces, adobe in params:
             lines = []
             for rawline in rawlines:
                 b = self.type2test(rawline)
-                a = binascii.b2a_ascii85(b, fold_spaces=fold_spaces, wrap=wrap)
+                a = binascii.b2a_ascii85(b, foldspaces=foldspaces, adobe=adobe)
                 lines.append(a)
             res = bytearray()
             for line in lines:
                 a = self.type2test(line)
-                b = binascii.a2b_ascii85(a, fold_spaces=fold_spaces, wrap=wrap)
+                b = binascii.a2b_ascii85(a, foldspaces=foldspaces, adobe=adobe)
                 res += b
             self.assertEqual(res, rawdata)
 
@@ -344,8 +344,8 @@ class BinASCIITest(unittest.TestCase):
             (b"<~FCfN8yg~>", True, True, b"", b"test    "),
             (b"FE;\x03#8zFCf\x02N8yh~>", True, True, b"\x02\x03", b"tset\x00\x00\x00\x00test    "),
         ]
-        for a, fold_spaces, wrap, ignore, b in params:
-            kwargs = {"fold_spaces": fold_spaces, "wrap": wrap, "ignore": ignore}
+        for a, foldspaces, adobe, ignorechars, b in params:
+            kwargs = {"foldspaces": foldspaces, "adobe": adobe, "ignorechars": ignorechars}
             self.assertEqual(binascii.a2b_ascii85(self.type2test(a), **kwargs), b)
 
     def test_ascii85_invalid(self):
@@ -375,13 +375,13 @@ class BinASCIITest(unittest.TestCase):
         res = bytearray()
         for line in map(addnoise, lines):
             a = self.type2test(line)
-            b = binascii.a2b_ascii85(a, ignore=fillers)
+            b = binascii.a2b_ascii85(a, ignorechars=fillers)
             res += b
         self.assertEqual(res, self.rawdata)
 
         # Test Ascii85 with only invalid characters
         fillers = self.type2test(fillers)
-        b = binascii.a2b_ascii85(fillers, ignore=fillers)
+        b = binascii.a2b_ascii85(fillers, ignorechars=fillers)
         self.assertEqual(b, b"")
 
     def test_ascii85_errors(self):
@@ -390,13 +390,13 @@ class BinASCIITest(unittest.TestCase):
                 binascii.a2b_ascii85(self.type2test(data), **kwargs)
 
         def assertMissingDelimiter(data):
-            _assertRegexTemplate(r"(?i)end with b'~>'", data, wrap=True)
+            _assertRegexTemplate(r"(?i)end with b'~>'", data, adobe=True)
 
         def assertOverflow(data):
             _assertRegexTemplate(r"(?i)Ascii85 overflow", data)
 
         def assertInvalidSpecial(data):
-            _assertRegexTemplate(r"(?i)'[yz]'.+5-tuple", data, fold_spaces=True)
+            _assertRegexTemplate(r"(?i)'[yz]'.+5-tuple", data, foldspaces=True)
 
         def assertInvalidChar(data, **kwargs):
             _assertRegexTemplate(r"(?i)Non-Ascii85 digit", data, **kwargs)
@@ -429,21 +429,21 @@ class BinASCIITest(unittest.TestCase):
 
         # Test Ascii85 with non-ignored invalid characters
         assertInvalidChar(b"j\n")
-        assertInvalidChar(b" ", ignore=b"")
-        assertInvalidChar(b" valid\x02until\x03", ignore=b"\x00\x01\x02\x04")
-        assertInvalidChar(b"\tFCb", ignore=b"\n")
-        assertInvalidChar(b"xxxB\nP\thU'D v/F+", ignore=b" \n\tv")
+        assertInvalidChar(b" ", ignorechars=b"")
+        assertInvalidChar(b" valid\x02until\x03", ignorechars=b"\x00\x01\x02\x04")
+        assertInvalidChar(b"\tFCb", ignorechars=b"\n")
+        assertInvalidChar(b"xxxB\nP\thU'D v/F+", ignorechars=b" \n\tv")
 
-    def test_ascii85_width(self):
-        # Test Ascii85 splitting lines by width
-        def assertEncode(a_expected, data, n, wrap=False):
+    def test_ascii85_wrapcol(self):
+        # Test Ascii85 splitting lines
+        def assertEncode(a_expected, data, n, adobe=False):
             b = self.type2test(data)
-            a = binascii.b2a_ascii85(b, wrap=wrap, width=n)
+            a = binascii.b2a_ascii85(b, adobe=adobe, wrapcol=n)
             self.assertEqual(a, a_expected)
 
-        def assertDecode(data, b_expected, wrap=False):
+        def assertDecode(data, b_expected, adobe=False):
             a = self.type2test(data)
-            b = binascii.a2b_ascii85(a, wrap=wrap, ignore=b"\n")
+            b = binascii.a2b_ascii85(a, adobe=adobe, ignorechars=b"\n")
             self.assertEqual(b, b_expected)
 
         tests = [
@@ -466,9 +466,9 @@ class BinASCIITest(unittest.TestCase):
         ]
         for b, n, a, a_wrap in tests:
             assertEncode(a, b, n)
-            assertEncode(a_wrap, b, n, wrap=True)
+            assertEncode(a_wrap, b, n, adobe=True)
             assertDecode(a, b)
-            assertDecode(a_wrap, b, wrap=True)
+            assertDecode(a_wrap, b, adobe=True)
 
     def test_ascii85_pad(self):
         # Test Ascii85 with encode padding
@@ -494,29 +494,29 @@ class BinASCIITest(unittest.TestCase):
         assertShortPad(b"\0" * 4, b"z", pad=True)
         assertShortPad(b"\0" * 5, b"zz", pad=True)
         assertShortPad(b"\0" * 6, b"z!!!")
-        assertShortPad(b" " * 7, b"y+<Vd,", fold_spaces=True, pad=True)
+        assertShortPad(b" " * 7, b"y+<Vd,", foldspaces=True, pad=True)
         assertShortPad(b"\0" * 8, b"<~zz~>",
-                       fold_spaces=True, wrap=True, pad=True)
+                       foldspaces=True, adobe=True, pad=True)
         assertShortPad(b"\0\0\0\0abcd    \0\0", b"<~z@:E_Wy\nz~>",
-                       fold_spaces=True, wrap=True, width=9, pad=True)
+                       foldspaces=True, adobe=True, wrapcol=9, pad=True)
 
-    def test_ascii85_ignore(self):
+    def test_ascii85_ignorechars(self):
         # Test Ascii85 with ignored characters
-        def assertIgnore(data, expected, ignore=b"", **kwargs):
+        def assertIgnore(data, expected, ignorechars=b"", **kwargs):
             data = self.type2test(data)
-            ignore = self.type2test(ignore)
+            ignore = self.type2test(ignorechars)
             with self.assertRaisesRegex(binascii.Error, r"(?i)Non-Ascii85 digit"):
                 binascii.a2b_ascii85(data, **kwargs)
-            res = binascii.a2b_ascii85(data, ignore=ignore, **kwargs)
+            res = binascii.a2b_ascii85(data, ignorechars=ignorechars, **kwargs)
             self.assertEqual(res, expected)
 
-        assertIgnore(b"\n", b"", ignore=b"\n")
-        assertIgnore(b"<~ ~>", b"", ignore=b" ", wrap=True)
-        assertIgnore(b"z|z", b"\0" * 8, ignore=b"|||")    # repeats don't matter
-        assertIgnore(b"zz!!|", b"\0" * 9, ignore=b"|!z")  # ignore only if invalid
-        assertIgnore(b"<~B P~@~>", b"hi", ignore=b" <~>", wrap=True)
-        assertIgnore(b"zy}", b"\0\0\0\0", ignore=b"zy}")
-        assertIgnore(b"zy}", b"\0\0\0\0    ", ignore=b"zy}", fold_spaces=True)
+        assertIgnore(b"\n", b"", ignorechars=b"\n")
+        assertIgnore(b"<~ ~>", b"", ignorechars=b" ", adobe=True)
+        assertIgnore(b"z|z", b"\0" * 8, ignorechars=b"|||")    # repeats don't matter
+        assertIgnore(b"zz!!|", b"\0" * 9, ignorechars=b"|!z")  # ignore only if invalid
+        assertIgnore(b"<~B P~@~>", b"hi", ignorechars=b" <~>", adobe=True)
+        assertIgnore(b"zy}", b"\0\0\0\0", ignorechars=b"zy}")
+        assertIgnore(b"zy}", b"\0\0\0\0    ", ignorechars=b"zy}", foldspaces=True)
 
     def test_base85_valid(self):
         # Test base85 with valid data

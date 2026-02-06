@@ -98,7 +98,7 @@ The :mod:`binascii` module defines the following functions:
       Added the *wrapcol* parameter.
 
 
-.. function:: a2b_ascii85(string, /, *, fold_spaces=False, wrap=False, ignore=b"")
+.. function:: a2b_ascii85(string, /, *, foldspaces=False, adobe=False, ignorechars=b"")
 
    Convert Ascii85 data back to binary and return the binary data.
 
@@ -109,15 +109,15 @@ The :mod:`binascii` module defines the following functions:
    accepted as a short form of the group ``!!!!!``, which encodes four
    consecutive null bytes.
 
-   If *fold_spaces* is true, the special character ``y`` is also accepted as a
+   If *foldspaces* is true, the special character ``y`` is also accepted as a
    short form of the group ``+<VdL``, which encodes four consecutive spaces.
    Note that neither short form is permitted if it occurs in the middle of
    another group.
 
-   If *wrap* is true, the input begins with ``<~`` and ends with ``~>``, as in
+   If *ignorechars* is true, the input begins with ``<~`` and ends with ``~>``, as in
    the Adobe Ascii85 format.
 
-   *ignore* is an optional bytes-like object that specifies characters to
+   *ignorechars* is an optional bytes-like object that specifies characters to
    ignore in the input.
 
    Invalid Ascii85 data will raise :exc:`binascii.Error`.
@@ -125,18 +125,18 @@ The :mod:`binascii` module defines the following functions:
    .. versionadded:: next
 
 
-.. function:: b2a_ascii85(data, /, *, fold_spaces=False, wrap=False, width=0, pad=False)
+.. function:: b2a_ascii85(data, /, *, foldspaces=False, adobe=False, wrapcol=0, pad=False)
 
    Convert binary data to a formatted sequence of ASCII characters in Ascii85
    coding. The return value is the converted data.
 
-   If *fold_spaces* is true, four consecutive spaces are encoded as the
+   If *foldspaces* is true, four consecutive spaces are encoded as the
    special character ``y`` instead of the sequence ``+<VdL``.
 
-   If *wrap* is true, the output begins with ``<~`` and ends with ``~>``, as
+   If *adobe* is true, the output begins with ``<~`` and ends with ``~>``, as
    in the Adobe Ascii85 format.
 
-   If *width* is provided and greater than 0, the output is split into lines
+   If *wrapcol* is provided and greater than 0, the output is split into lines
    of no more than the specified width separated by the ASCII newline
    character.
 

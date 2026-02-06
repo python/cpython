@@ -354,8 +354,8 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     adobe controls whether the encoded byte sequence is framed with <~ and ~>,
     which is used by the Adobe implementation.
     """
-    return binascii.b2a_ascii85(b, fold_spaces=foldspaces,
-                                wrap=adobe, width=wrapcol, pad=pad)
+    return binascii.b2a_ascii85(b, foldspaces=foldspaces,
+                                adobe=adobe, wrapcol=wrapcol, pad=pad)
 
 def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     """Decode the Ascii85 encoded bytes-like object or ASCII string b.
@@ -373,8 +373,8 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
 
     The result is returned as a bytes object.
     """
-    return binascii.a2b_ascii85(b, fold_spaces=foldspaces,
-                                wrap=adobe, ignore=ignorechars)
+    return binascii.a2b_ascii85(b, foldspaces=foldspaces,
+                                adobe=adobe, ignorechars=ignorechars)
 
 def b85encode(b, pad=False):
     """Encode bytes-like object b in base85 format and return a bytes object.

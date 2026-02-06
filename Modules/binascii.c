@@ -857,20 +857,20 @@ binascii.a2b_ascii85
     data: ascii_buffer
     /
     *
-    fold_spaces: bool = False
+    foldspaces: bool = False
         Allow 'y' as a short form encoding four spaces.
-    wrap: bool = False
+    adobe: bool = False
         Expect data to be wrapped in '<~' and '~>' as in Adobe Ascii85.
-    ignore: Py_buffer(c_default="NULL", py_default="b''") = None
+    ignorechars: Py_buffer(c_default="NULL", py_default="b''") = None
         An optional bytes-like object with input characters to be ignored.
 
 Decode Ascii85 data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
-                          int wrap, Py_buffer *ignore)
-/*[clinic end generated code: output=6ab30f2a26d301a1 input=11c60c016d4f334b]*/
+binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
+                          int adobe, Py_buffer *ignorechars)
+/*[clinic end generated code: output=599aa3e41095a651 input=a72510e79c6d2df0]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -879,7 +879,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     assert(ascii_len >= 0);
 
     /* Consume Ascii85 prefix and suffix if present. */
-    if (wrap) {
+    if (adobe) {
         if (ascii_len < 2
             || ascii_data[ascii_len - 2] != BASE85_A85_AFFIX
             || ascii_data[ascii_len - 1] != BASE85_A85_SUFFIX)
@@ -933,9 +933,9 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
 
     /* Build ignore map. */
     unsigned char ignore_map[256] = {0};
-    if (ignore->obj != NULL) {
-        const unsigned char *ignore_data = ignore->buf;
-        Py_ssize_t ignore_len = ignore->len;
+    if (ignorechars->obj != NULL) {
+        const unsigned char *ignore_data = ignorechars->buf;
+        Py_ssize_t ignore_len = ignorechars->len;
         for (Py_ssize_t i = 0; i < ignore_len; i++) {
             this_ch = ignore_data[i];
             ignore_map[this_ch] = -1;
@@ -969,7 +969,7 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
             leftchar = leftchar * 85 + this_digit;
             group_pos++;
         }
-        else if ((this_ch == 'y' && fold_spaces) || this_ch == 'z') {
+        else if ((this_ch == 'y' && foldspaces) || this_ch == 'z') {
             if (group_pos != 0) {
                 state = get_binascii_state(module);
                 if (state != NULL) {
@@ -1018,11 +1018,11 @@ binascii.b2a_ascii85
     data: Py_buffer
     /
     *
-    fold_spaces: bool = False
+    foldspaces: bool = False
         Emit 'y' as a short form encoding four spaces.
-    wrap: bool = False
+    adobe: bool = False
         Wrap result in '<~' and '~>' as in Adobe Ascii85.
-    width: size_t = 0
+    wrapcol: size_t = 0
         Split result into lines of provided width.
     pad: bool = False
         Pad input to a multiple of 4 before encoding.
@@ -1031,29 +1031,29 @@ Ascii85-encode data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
-                          int wrap, size_t width, int pad)
-/*[clinic end generated code: output=ed9758c1273a1bc3 input=7b0644a4b6a586bd]*/
+binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
+                          int adobe, size_t wrapcol, int pad)
+/*[clinic end generated code: output=b0fb8c917ea1b563 input=1b64734fc9d29e9b]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
 
     assert(bin_len >= 0);
 
-    if (wrap && width == 1) {
-        width = 2;
+    if (adobe && wrapcol == 1) {
+        wrapcol = 2;
     }
 
     /* Allocate output buffer. */
     size_t out_len = ((size_t)bin_len + 3) / 4 * 5;
-    if (wrap) {
+    if (adobe) {
         out_len += 4;
     }
     if (!pad && (bin_len % 4)) {
         out_len -= 4 - (bin_len % 4);
     }
-    if (width && out_len) {
-        out_len += (out_len - 1) / width;
+    if (wrapcol && out_len) {
+        out_len += (out_len - 1) / wrapcol;
     }
     if (out_len > PY_SSIZE_T_MAX) {
         binascii_state *state = get_binascii_state(module);
@@ -1070,7 +1070,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     }
     unsigned char *ascii_data = PyBytesWriter_GetData(writer);
 
-    if (wrap) {
+    if (adobe) {
         *ascii_data++ = BASE85_A85_PREFIX;
         *ascii_data++ = BASE85_A85_AFFIX;
     }
@@ -1082,7 +1082,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
         if (leftchar == BASE85_A85_Z) {
             *ascii_data++ = 'z';
         }
-        else if (fold_spaces && leftchar == BASE85_A85_Y) {
+        else if (foldspaces && leftchar == BASE85_A85_Y) {
             *ascii_data++ = 'y';
         }
         else {
@@ -1124,15 +1124,15 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
         }
     }
 
-    if (wrap) {
+    if (adobe) {
         *ascii_data++ = BASE85_A85_AFFIX;
         *ascii_data++ = BASE85_A85_SUFFIX;
     }
 
-    if (width && out_len) {
+    if (wrapcol && out_len) {
         unsigned char *start = PyBytesWriter_GetData(writer);
-        ascii_data = start + wraplines(start, ascii_data - start, width);
-        if (wrap && ascii_data[-2] == '\n') {
+        ascii_data = start + wraplines(start, ascii_data - start, wrapcol);
+        if (adobe && ascii_data[-2] == '\n') {
             assert(ascii_data[-1] == BASE85_A85_SUFFIX);
             assert(ascii_data[-3] == BASE85_A85_AFFIX);
             ascii_data[-3] = '\n';

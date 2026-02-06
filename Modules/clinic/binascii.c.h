@@ -298,25 +298,25 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_ascii85__doc__,
-"a2b_ascii85($module, data, /, *, fold_spaces=False, wrap=False,\n"
-"            ignore=b\'\')\n"
+"a2b_ascii85($module, data, /, *, foldspaces=False, adobe=False,\n"
+"            ignorechars=b\'\')\n"
 "--\n"
 "\n"
 "Decode Ascii85 data.\n"
 "\n"
-"  fold_spaces\n"
+"  foldspaces\n"
 "    Allow \'y\' as a short form encoding four spaces.\n"
-"  wrap\n"
+"  adobe\n"
 "    Expect data to be wrapped in \'<~\' and \'~>\' as in Adobe Ascii85.\n"
-"  ignore\n"
+"  ignorechars\n"
 "    An optional bytes-like object with input characters to be ignored.");
 
 #define BINASCII_A2B_ASCII85_METHODDEF    \
     {"a2b_ascii85", _PyCFunction_CAST(binascii_a2b_ascii85), METH_FASTCALL|METH_KEYWORDS, binascii_a2b_ascii85__doc__},
 
 static PyObject *
-binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
-                          int wrap, Py_buffer *ignore);
+binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
+                          int adobe, Py_buffer *ignorechars);
 
 static PyObject *
 binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -333,7 +333,7 @@ binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(fold_spaces), &_Py_ID(wrap), &_Py_ID(ignore), },
+        .ob_item = { &_Py_ID(foldspaces), &_Py_ID(adobe), &_Py_ID(ignorechars), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -342,7 +342,7 @@ binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "fold_spaces", "wrap", "ignore", NULL};
+    static const char * const _keywords[] = {"", "foldspaces", "adobe", "ignorechars", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "a2b_ascii85",
@@ -352,9 +352,9 @@ binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
-    int fold_spaces = 0;
-    int wrap = 0;
-    Py_buffer ignore = {NULL, NULL};
+    int foldspaces = 0;
+    int adobe = 0;
+    Py_buffer ignorechars = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -368,8 +368,8 @@ binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_kwonly;
     }
     if (args[1]) {
-        fold_spaces = PyObject_IsTrue(args[1]);
-        if (fold_spaces < 0) {
+        foldspaces = PyObject_IsTrue(args[1]);
+        if (foldspaces < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -377,44 +377,44 @@ binascii_a2b_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         }
     }
     if (args[2]) {
-        wrap = PyObject_IsTrue(args[2]);
-        if (wrap < 0) {
+        adobe = PyObject_IsTrue(args[2]);
+        if (adobe < 0) {
             goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    if (PyObject_GetBuffer(args[3], &ignore, PyBUF_SIMPLE) != 0) {
+    if (PyObject_GetBuffer(args[3], &ignorechars, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_a2b_ascii85_impl(module, &data, fold_spaces, wrap, &ignore);
+    return_value = binascii_a2b_ascii85_impl(module, &data, foldspaces, adobe, &ignorechars);
 
 exit:
     /* Cleanup for data */
     if (data.obj)
        PyBuffer_Release(&data);
-    /* Cleanup for ignore */
-    if (ignore.obj) {
-       PyBuffer_Release(&ignore);
+    /* Cleanup for ignorechars */
+    if (ignorechars.obj) {
+       PyBuffer_Release(&ignorechars);
     }
 
     return return_value;
 }
 
 PyDoc_STRVAR(binascii_b2a_ascii85__doc__,
-"b2a_ascii85($module, data, /, *, fold_spaces=False, wrap=False,\n"
-"            width=0, pad=False)\n"
+"b2a_ascii85($module, data, /, *, foldspaces=False, adobe=False,\n"
+"            wrapcol=0, pad=False)\n"
 "--\n"
 "\n"
 "Ascii85-encode data.\n"
 "\n"
-"  fold_spaces\n"
+"  foldspaces\n"
 "    Emit \'y\' as a short form encoding four spaces.\n"
-"  wrap\n"
+"  adobe\n"
 "    Wrap result in \'<~\' and \'~>\' as in Adobe Ascii85.\n"
-"  width\n"
+"  wrapcol\n"
 "    Split result into lines of provided width.\n"
 "  pad\n"
 "    Pad input to a multiple of 4 before encoding.");
@@ -423,8 +423,8 @@ PyDoc_STRVAR(binascii_b2a_ascii85__doc__,
     {"b2a_ascii85", _PyCFunction_CAST(binascii_b2a_ascii85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_ascii85__doc__},
 
 static PyObject *
-binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
-                          int wrap, size_t width, int pad);
+binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
+                          int adobe, size_t wrapcol, int pad);
 
 static PyObject *
 binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -441,7 +441,7 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(fold_spaces), &_Py_ID(wrap), &_Py_ID(width), &_Py_ID(pad), },
+        .ob_item = { &_Py_ID(foldspaces), &_Py_ID(adobe), &_Py_ID(wrapcol), &_Py_ID(pad), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -450,7 +450,7 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "fold_spaces", "wrap", "width", "pad", NULL};
+    static const char * const _keywords[] = {"", "foldspaces", "adobe", "wrapcol", "pad", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "b2a_ascii85",
@@ -460,9 +460,9 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
-    int fold_spaces = 0;
-    int wrap = 0;
-    size_t width = 0;
+    int foldspaces = 0;
+    int adobe = 0;
+    size_t wrapcol = 0;
     int pad = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -477,8 +477,8 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_kwonly;
     }
     if (args[1]) {
-        fold_spaces = PyObject_IsTrue(args[1]);
-        if (fold_spaces < 0) {
+        foldspaces = PyObject_IsTrue(args[1]);
+        if (foldspaces < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -486,8 +486,8 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         }
     }
     if (args[2]) {
-        wrap = PyObject_IsTrue(args[2]);
-        if (wrap < 0) {
+        adobe = PyObject_IsTrue(args[2]);
+        if (adobe < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -495,7 +495,7 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         }
     }
     if (args[3]) {
-        if (!_PyLong_Size_t_Converter(args[3], &width)) {
+        if (!_PyLong_Size_t_Converter(args[3], &wrapcol)) {
             goto exit;
         }
         if (!--noptargs) {
@@ -507,7 +507,7 @@ binascii_b2a_ascii85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = binascii_b2a_ascii85_impl(module, &data, fold_spaces, wrap, width, pad);
+    return_value = binascii_b2a_ascii85_impl(module, &data, foldspaces, adobe, wrapcol, pad);
 
 exit:
     /* Cleanup for data */
@@ -1401,4 +1401,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e50e6b061608b350 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4bc2874d7ad7f3bb input=a9049054013a1b77]*/
