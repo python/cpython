@@ -854,11 +854,7 @@ class HandlerTests(TestCase):
             with self.subTest(c0):
                 base = BaseHandler()
                 headers = [('x','y')]
-                # HTAB (\x09) is allowed in values, but not in names.
-                if c0 == "\t":
-                    self.assertRaises(AssertionError, base.start_response, f"key{c0}", headers)
-                else:
-                    self.assertRaises(ValueError, base.start_response, f"key{c0}", headers)
+                self.assertRaises(ValueError, base.start_response, f"key{c0}", headers)
 
 
 class TestModule(unittest.TestCase):
