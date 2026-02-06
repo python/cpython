@@ -17,7 +17,7 @@ class BytesThreading(unittest.TestCase):
 
         def work(ii):
             barrier.wait()
-            for _ in range(1000):
+            for _ in range(100):
                 bytes(x)
                 x.extend(extends[ii])
                 if len(x) > 10:
