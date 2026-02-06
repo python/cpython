@@ -1464,9 +1464,10 @@ application).
       lst.index(item)
       lst.count(item)
 
-   All of the above methods/operations are also :term:`lock-free`. They do not
-   block concurrent modifications. Other operations that hold a lock will not
-   block these from observing intermediate states.
+   All of the above operations avoid acquiring :term:`per-object locks
+   <per-object lock>`. They do not block concurrent modifications. Other
+   operations that hold a lock will not block these from observing intermediate
+   states.
 
    All other operations from here on block using the :term:`per-object lock`.
 
