@@ -17,7 +17,7 @@ from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from graphlib import TopologicalSorter
 from logging import LoggerAdapter, StreamHandler
-from mailbox import Mailbox, _PartialFile
+from mailbox import Mailbox
 try:
     import ctypes
 except ImportError:
@@ -102,6 +102,7 @@ _UNPACKED_TUPLES = [
 class BaseTest(unittest.TestCase):
     """Test basics."""
     generic_types = [type, tuple, list, dict, set, frozenset, enumerate, memoryview,
+                     slice,
                      defaultdict, deque,
                      SequenceMatcher,
                      dircmp,
@@ -117,7 +118,7 @@ class BaseTest(unittest.TestCase):
                      Iterable, Iterator,
                      Reversible,
                      Container, Collection,
-                     Mailbox, _PartialFile,
+                     Mailbox,
                      ContextVar, Token,
                      Field,
                      Set, MutableSet,
@@ -243,6 +244,56 @@ class BaseTest(unittest.TestCase):
         self.assertEndsWith(repr(MyGeneric[int]), 'MyGeneric[int]')
         self.assertEndsWith(repr(MyGeneric[[]]), 'MyGeneric[[]]')
         self.assertEndsWith(repr(MyGeneric[[int, str]]), 'MyGeneric[[int, str]]')
+
+    def test_evil_repr1(self):
+        # gh-143635
+        class Zap:
+            def __init__(self, container):
+                self.container = container
+            def __getattr__(self, name):
+                if name == "__origin__":
+                    self.container.clear()
+                    return None
+                if name == "__args__":
+                    return ()
+                raise AttributeError
+
+        params = []
+        params.append(Zap(params))
+        alias = GenericAlias(list, (params,))
+        repr_str = repr(alias)
+        self.assertTrue(repr_str.startswith("list[["), repr_str)
+
+    def test_evil_repr2(self):
+        class Zap:
+            def __init__(self, container):
+                self.container = container
+            def __getattr__(self, name):
+                if name == "__qualname__":
+                    self.container.clear()
+                    return "abcd"
+                if name == "__module__":
+                    return None
+                raise AttributeError
+
+        params = []
+        params.append(Zap(params))
+        alias = GenericAlias(list, (params,))
+        repr_str = repr(alias)
+        self.assertTrue(repr_str.startswith("list[["), repr_str)
+
+    def test_evil_repr3(self):
+        # gh-143823
+        lst = []
+        class X:
+            def __repr__(self):
+                lst.clear()
+                return "x"
+
+        lst += [X(), 1]
+        ga = GenericAlias(int, lst)
+        with self.assertRaises(IndexError):
+            repr(ga)
 
     def test_exposed_type(self):
         import types

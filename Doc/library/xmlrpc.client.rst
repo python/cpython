@@ -23,13 +23,13 @@ between conformable Python objects and XML on the wire.
 
 .. warning::
 
-   The :mod:`xmlrpc.client` module is not secure against maliciously
+   The :mod:`!xmlrpc.client` module is not secure against maliciously
    constructed data.  If you need to parse untrusted or unauthenticated data,
    see :ref:`xml-security`.
 
 .. versionchanged:: 3.5
 
-   For HTTPS URIs, :mod:`xmlrpc.client` now performs all the necessary
+   For HTTPS URIs, :mod:`!xmlrpc.client` now performs all the necessary
    certificate and hostname checks by default.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -179,9 +179,9 @@ ServerProxy Objects
 A :class:`ServerProxy` instance has a method corresponding to each remote
 procedure call accepted by the XML-RPC server.  Calling the method performs an
 RPC, dispatched by both name and argument signature (e.g. the same method name
-can be overloaded with multiple argument signatures).  The RPC finishes by
-returning a value, which may be either returned data in a conformant type or a
-:class:`Fault` or :class:`ProtocolError` object indicating an error.
+can be overloaded with multiple argument signatures).  The RPC finishes either
+by returning data in a conformant type or by raising a :class:`Fault` or
+:class:`ProtocolError` exception indicating an error.
 
 Servers that support the XML introspection API support some common methods
 grouped under the reserved :attr:`~ServerProxy.system` attribute:
@@ -472,7 +472,7 @@ remote server into a single request [#]_.
 
    Create an object used to boxcar method calls. *server* is the eventual target of
    the call. Calls can be made to the result object, but they will immediately
-   return ``None``, and only store the call name and parameters in the
+   return ``None``, and only store the call name and arguments in the
    :class:`MultiCall` object. Calling the object itself causes all stored calls to
    be transmitted as a single ``system.multicall`` request. The result of this call
    is a :term:`generator`; iterating over this generator yields the individual

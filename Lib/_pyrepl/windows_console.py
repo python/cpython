@@ -43,13 +43,10 @@ from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import get_last_error, GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, WinDLL, windll, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
-
-    def GetLastError() -> int:
-        return 42
 
     def get_last_error() -> int:
         return 42
@@ -149,16 +146,18 @@ class WindowsConsole(Console):
 
         # Save original console modes so we can recover on cleanup.
         original_input_mode = DWORD()
-        GetConsoleMode(InHandle, original_input_mode)
+        if not GetConsoleMode(InHandle, original_input_mode):
+            raise WinError(get_last_error())
         trace(f'saved original input mode 0x{original_input_mode.value:x}')
         self.__original_input_mode = original_input_mode.value
 
-        SetConsoleMode(
+        if not SetConsoleMode(
             OutHandle,
             ENABLE_WRAP_AT_EOL_OUTPUT
             | ENABLE_PROCESSED_OUTPUT
             | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-        )
+        ):
+            raise WinError(get_last_error())
 
         self.screen: list[str] = []
         self.width = 80
@@ -183,8 +182,9 @@ class WindowsConsole(Console):
 
         while len(self.screen) < min(len(screen), self.height):
             self._hide_cursor()
-            self._move_relative(0, len(self.screen) - 1)
-            self.__write("\n")
+            if self.screen:
+                self._move_relative(0, len(self.screen) - 1)
+                self.__write("\n")
             self.posxy = 0, len(self.screen)
             self.screen.append("")
 
@@ -249,21 +249,9 @@ class WindowsConsole(Console):
     def __write_changed_line(
         self, y: int, oldline: str, newline: str, px_coord: int
     ) -> None:
-        # this is frustrating; there's no reason to test (say)
-        # self.dch1 inside the loop -- but alternative ways of
-        # structuring this function are equally painful (I'm trying to
-        # avoid writing code generators these days...)
         minlen = min(wlen(oldline), wlen(newline))
         x_pos = 0
         x_coord = 0
-
-        px_pos = 0
-        j = 0
-        for c in oldline:
-            if j >= px_coord:
-                break
-            j += wlen(c)
-            px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
@@ -312,7 +300,7 @@ class WindowsConsole(Console):
         if not ScrollConsoleScreenBuffer(
             OutHandle, scroll_rect, None, destination_origin, fill_info
         ):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
     def _hide_cursor(self):
         self.__write("\x1b[?25l")
@@ -346,7 +334,7 @@ class WindowsConsole(Console):
     def screen_xy(self) -> tuple[int, int]:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
         return info.dwCursorPosition.X, info.dwCursorPosition.Y
 
     def _erase_to_end(self) -> None:
@@ -358,18 +346,19 @@ class WindowsConsole(Console):
         self.height, self.width = self.getheightwidth()
 
         self.posxy = 0, 0
-        self.__gone_tall = 0
         self.__offset = 0
 
         if self.__vt_support:
-            SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT)
+            if not SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT):
+                raise WinError(get_last_error())
             self._enable_bracketed_paste()
 
     def restore(self) -> None:
         if self.__vt_support:
             # Recover to original mode before running REPL
             self._disable_bracketed_paste()
-            SetConsoleMode(InHandle, self.__original_input_mode)
+            if not SetConsoleMode(InHandle, self.__original_input_mode):
+                raise WinError(get_last_error())
 
     def _move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current posxy"""
@@ -406,7 +395,7 @@ class WindowsConsole(Console):
         and width of the terminal window in characters."""
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
         return (
             info.srWindow.Bottom - info.srWindow.Top + 1,
             info.srWindow.Right - info.srWindow.Left + 1,
@@ -415,7 +404,7 @@ class WindowsConsole(Console):
     def _getscrollbacksize(self) -> int:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
@@ -423,7 +412,7 @@ class WindowsConsole(Console):
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
         return rec
 
@@ -433,7 +422,7 @@ class WindowsConsole(Console):
         rec = (n * INPUT_RECORD)()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, n, read):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
         return rec, read.value
 
@@ -514,7 +503,7 @@ class WindowsConsole(Console):
         """Wipe the screen"""
         self.__write(CLEAR)
         self.posxy = 0, 0
-        self.screen = [""]
+        self.screen = []
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
@@ -535,7 +524,7 @@ class WindowsConsole(Console):
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
         if not FlushConsoleInputBuffer(InHandle):
-            raise WinError(GetLastError())
+            raise WinError(get_last_error())
 
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
@@ -566,7 +555,7 @@ class WindowsConsole(Console):
                 e.data += ch
         return e
 
-    def wait(self, timeout: float | None) -> bool:
+    def wait_for_event(self, timeout: float | None) -> bool:
         """Wait for an event."""
         if timeout is None:
             timeout = INFINITE
@@ -578,6 +567,15 @@ class WindowsConsole(Console):
         elif ret == WAIT_TIMEOUT:
             return False
         return True
+
+    def wait(self, timeout: float | None) -> bool:
+        """
+        Wait for events on the console.
+        """
+        return (
+            not self.event_queue.empty()
+            or self.wait_for_event(timeout)
+        )
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")

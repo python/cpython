@@ -8,6 +8,16 @@ execute Python code remotely.
 
 Most platforms require elevated privileges to attach to another Python process.
 
+Disabling remote debugging
+--------------------------
+
+To disable remote debugging support, use any of the following:
+
+* Set the :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable to ``1`` before
+  starting the interpreter.
+* Use the :option:`-X disable_remote_debug` command-line option.
+* Compile Python with the :option:`--without-remote-debug` build flag.
+
 .. _permission-requirements:
 
 Permission requirements
@@ -614,4 +624,3 @@ To inject and execute a Python script in a remote process:
 6. Set ``_PY_EVAL_PLEASE_STOP_BIT`` in the ``eval_breaker`` field.
 7. Resume the process (if suspended). The script will execute at the next safe
    evaluation point.
-

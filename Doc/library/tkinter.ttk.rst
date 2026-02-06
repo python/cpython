@@ -12,12 +12,12 @@
 
 --------------
 
-The :mod:`tkinter.ttk` module provides access to the Tk themed widget set,
+The :mod:`!tkinter.ttk` module provides access to the Tk themed widget set,
 introduced in Tk 8.5. It provides additional benefits including anti-aliased font
 rendering under X11 and window transparency (requiring a composition
 window manager on X11).
 
-The basic idea for :mod:`tkinter.ttk` is to separate, to the extent possible,
+The basic idea for :mod:`!tkinter.ttk` is to separate, to the extent possible,
 the code implementing a widget's behavior from the code implementing its
 appearance.
 
@@ -40,7 +40,7 @@ To override the basic Tk widgets, the import should follow the Tk import::
    from tkinter import *
    from tkinter.ttk import *
 
-That code causes several :mod:`tkinter.ttk` widgets (:class:`Button`,
+That code causes several :mod:`!tkinter.ttk` widgets (:class:`Button`,
 :class:`Checkbutton`, :class:`Entry`, :class:`Frame`, :class:`Label`,
 :class:`LabelFrame`, :class:`Menubutton`, :class:`PanedWindow`,
 :class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`) to

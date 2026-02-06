@@ -17,6 +17,46 @@ extern "C" {
 
 
 extern int _PyUnicode_IsModifiable(PyObject *unicode);
+extern void _PyUnicodeWriter_InitWithBuffer(
+    _PyUnicodeWriter *writer,
+    PyObject *buffer);
+extern PyObject* _PyUnicode_Result(PyObject *unicode);
+extern int _PyUnicode_DecodeUTF8Writer(
+    _PyUnicodeWriter *writer,
+    const char *s,
+    Py_ssize_t size,
+    _Py_error_handler error_handler,
+    const char *errors,
+    Py_ssize_t *consumed);
+extern PyObject* _PyUnicode_ResizeCompact(
+    PyObject *unicode,
+    Py_ssize_t length);
+extern PyObject* _PyUnicode_GetEmpty(void);
+
+
+/* Generic helper macro to convert characters of different types.
+   from_type and to_type have to be valid type names, begin and end
+   are pointers to the source characters which should be of type
+   "from_type *".  to is a pointer of type "to_type *" and points to the
+   buffer where the result characters are written to. */
+#define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
+    do {                                                \
+        to_type *_to = (to_type *)(to);                 \
+        const from_type *_iter = (const from_type *)(begin);\
+        const from_type *_end = (const from_type *)(end);\
+        Py_ssize_t n = (_end) - (_iter);                \
+        const from_type *_unrolled_end =                \
+            _iter + _Py_SIZE_ROUND_DOWN(n, 4);          \
+        while (_iter < (_unrolled_end)) {               \
+            _to[0] = (to_type) _iter[0];                \
+            _to[1] = (to_type) _iter[1];                \
+            _to[2] = (to_type) _iter[2];                \
+            _to[3] = (to_type) _iter[3];                \
+            _iter += 4; _to += 4;                       \
+        }                                               \
+        while (_iter < (_end))                          \
+            *_to++ = (to_type) *_iter++;                \
+    } while (0)
 
 
 static inline void
@@ -73,18 +113,6 @@ _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
     writer->pos++;
     return 0;
 }
-
-
-/* --- Characters Type APIs ----------------------------------------------- */
-
-extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
-extern int _PyUnicode_IsXidContinue(Py_UCS4 ch);
-extern int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch);
-extern int _PyUnicode_IsCased(Py_UCS4 ch);
 
 /* --- Unicode API -------------------------------------------------------- */
 
@@ -277,14 +305,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     PyObject *separator,
     PyObject *const *items,
     Py_ssize_t seqlen
-    );
-
-/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
-   0 otherwise.  The right argument must be ASCII identifier.
-   Any error occurs inside will be cleared before return. */
-extern int _PyUnicode_EqualToASCIIId(
-    PyObject *left,             /* Left string */
-    _Py_Identifier *right       /* Right identifier */
     );
 
 // Test whether a unicode is equal to ASCII string.  Return 1 if true,

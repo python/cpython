@@ -3,7 +3,7 @@ import dis
 import unittest
 import warnings
 from test import support
-from test.support import import_helper, requires_specialization, requires_specialization_ft
+from test.support import import_helper, requires_specialization
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -219,7 +219,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
 
         self._check_specialization(store_bar_2, B(), "STORE_ATTR", should_specialize=False)
 
-    @requires_specialization_ft
+    @requires_specialization
     def test_class_call_specialization_user_type(self):
         class F:
             def __init__(self):

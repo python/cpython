@@ -1,2 +1,0 @@
-Fix memory leak in :class:`array.array` when creating arrays from an empty
-:class:`str` and the ``u`` type code.
