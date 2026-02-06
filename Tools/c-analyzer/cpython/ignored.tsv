@@ -332,6 +332,9 @@ Objects/complexobject.c	-	c_1	-
 Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
 Objects/genobject.c	-	NON_INIT_CORO_MSG	-
+Objects/genobject.c	gen_getstate	state_strings	-
+Objects/genobject.c	cr_getstate	state_strings	-
+Objects/genobject.c	ag_getstate	state_strings	-
 Objects/longobject.c	-	_PyLong_DigitValue	-
 Objects/longobject.c	-	PyLong_LAYOUT	-
 Objects/object.c	-	_Py_SwappedOp	-

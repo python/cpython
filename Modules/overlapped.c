@@ -559,7 +559,7 @@ _overlapped_BindLocal_impl(PyObject *module, HANDLE Socket, int Family)
         ret = bind((SOCKET)Socket, (SOCKADDR*)&addr, sizeof(addr))
                 != SOCKET_ERROR;
     } else {
-        PyErr_SetString(PyExc_ValueError, "expected tuple of length 2 or 4");
+        PyErr_SetString(PyExc_ValueError, "Only AF_INET and AF_INET6 families are supported");
         return NULL;
     }
 
