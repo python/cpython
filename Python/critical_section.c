@@ -1,7 +1,8 @@
 #include "Python.h"
 
-#include "pycore_lock.h"
 #include "pycore_critical_section.h"
+#include "pycore_interp.h"
+#include "pycore_lock.h"
 
 #ifdef Py_GIL_DISABLED
 static_assert(_Alignof(PyCriticalSection) >= 4,
@@ -43,6 +44,15 @@ _PyCriticalSection_BeginSlow(PyCriticalSection *c, PyMutex *m)
             }
         }
     }
+    // If the world is stopped, we don't need to acquire the lock because
+    // there are no other threads that could be accessing the object.
+    // Without this check, acquiring a critical section while the world is
+    // stopped could lead to a deadlock.
+    if (tstate->interp->stoptheworld.world_stopped) {
+        c->_cs_mutex = NULL;
+        c->_cs_prev = 0;
+        return;
+    }
     c->_cs_mutex = NULL;
     c->_cs_prev = (uintptr_t)tstate->critical_section;
     tstate->critical_section = (uintptr_t)c;
@@ -58,6 +68,12 @@ _PyCriticalSection2_BeginSlow(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
 {
 #ifdef Py_GIL_DISABLED
     PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->interp->stoptheworld.world_stopped) {
+        c->_cs_base._cs_mutex = NULL;
+        c->_cs_mutex2 = NULL;
+        c->_cs_base._cs_prev = 0;
+        return;
+    }
     c->_cs_base._cs_mutex = NULL;
     c->_cs_mutex2 = NULL;
     c->_cs_base._cs_prev = tstate->critical_section;
