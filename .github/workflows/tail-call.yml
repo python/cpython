@@ -87,6 +87,14 @@ jobs:
           ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
+      - name: Native Windows MSVC with free-threading (release)
+        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+        shell: pwsh
+        run: |
+          $env:PlatformToolset = "v145"
+          ./PCbuild/build.bat --tail-call-interp --disable-gil -c Release -p ${{ matrix.architecture }}
+          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
       # No tests (yet):
       - name: Emulated Windows Clang (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
