@@ -317,16 +317,23 @@ def configure_wasi_python(context, working_dir):
 
     wasi_build_dir = working_dir.relative_to(CHECKOUT)
 
-    python_build_dir = BUILD_DIR / "build"
-    lib_dirs = list(python_build_dir.glob("lib.*"))
-    assert len(lib_dirs) == 1, (
-        f"Expected a single lib.* directory in {python_build_dir}"
-    )
-    lib_dir = os.fsdecode(lib_dirs[0])
-    python_version = lib_dir.rpartition("-")[-1]
-    sysconfig_data_dir = (
-        f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
-    )
+    pybuilddir = working_dir / "pybuilddir.txt"
+    if pybuilddir.is_file():
+        with pybuilddir.open("r", encoding="utf-8") as f:
+            sysconfig_data_dir = f"{wasi_build_dir}/{f.read().strip()}"
+    else:
+        # Fallback if the build hasn't generated the file yet.
+        python_build_dir = BUILD_DIR / "build"
+        lib_dirs = list(python_build_dir.glob("lib.*"))
+        assert len(lib_dirs) == 1, (
+            f"Expected a single lib.* directory in {python_build_dir}"
+        )
+        lib_dir = os.fsdecode(lib_dirs[0])
+        python_version = lib_dir.rpartition("-")[-1]
+
+        sysconfig_data_dir = (
+            f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
+        )
 
     # Use PYTHONPATH to include sysconfig data which must be anchored to the
     # WASI guest's `/` directory.
