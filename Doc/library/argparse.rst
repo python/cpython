@@ -13,7 +13,7 @@
 
 .. note::
 
-   While :mod:`argparse` is the default recommended standard library module
+   While :mod:`!argparse` is the default recommended standard library module
    for implementing basic command line applications, authors with more
    exacting requirements for exactly how their command line applications
    behave may find it doesn't provide the necessary level of control.

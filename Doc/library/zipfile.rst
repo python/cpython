@@ -82,7 +82,7 @@ The module defines the following items:
 
    Class used to represent information about a member of an archive. Instances
    of this class are returned by the :meth:`.getinfo` and :meth:`.infolist`
-   methods of :class:`ZipFile` objects.  Most users of the :mod:`zipfile` module
+   methods of :class:`ZipFile` objects.  Most users of the :mod:`!zipfile` module
    will not need to create these, but only use those created by this
    module. *filename* should be the full name of the archive member, and
    *date_time* should be a tuple containing six fields which describe the time
@@ -209,7 +209,7 @@ ZipFile objects
 
    If *allowZip64* is ``True`` (the default) zipfile will create ZIP files that
    use the ZIP64 extensions when the zipfile is larger than 4 GiB. If it is
-   ``false`` :mod:`zipfile` will raise an exception when the ZIP file would
+   ``false`` :mod:`!zipfile` will raise an exception when the ZIP file would
    require ZIP64 extensions.
 
    The *compresslevel* parameter controls the compression level to use when
@@ -957,7 +957,7 @@ Instances have the following methods and attributes:
 Command-line interface
 ----------------------
 
-The :mod:`zipfile` module provides a simple command-line interface to interact
+The :mod:`!zipfile` module provides a simple command-line interface to interact
 with ZIP archives.
 
 If you want to create a new ZIP archive, specify its name after the :option:`-c`

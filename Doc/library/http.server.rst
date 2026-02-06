@@ -19,7 +19,7 @@ This module defines classes for implementing HTTP servers.
 
 .. warning::
 
-    :mod:`http.server` is not recommended for production. It only implements
+    :mod:`!http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -512,7 +512,7 @@ such as using different index file names by overriding the class attribute
 Command-line interface
 ----------------------
 
-:mod:`http.server` can also be invoked directly using the :option:`-m`
+:mod:`!http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  The following example illustrates how to serve
 files relative to the current directory::
 
@@ -572,7 +572,7 @@ The following options are accepted:
 
    .. deprecated-removed:: 3.13 3.15
 
-      :mod:`http.server` command line ``--cgi`` support is being removed
+      :mod:`!http.server` command line ``--cgi`` support is being removed
       because :class:`CGIHTTPRequestHandler` is being removed.
 
 .. warning::

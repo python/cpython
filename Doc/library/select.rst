@@ -18,7 +18,7 @@ it was last read.
 .. note::
 
    The :mod:`selectors` module allows high-level and efficient I/O
-   multiplexing, built upon the :mod:`select` module primitives. Users are
+   multiplexing, built upon the :mod:`!select` module primitives. Users are
    encouraged to use the :mod:`selectors` module instead, unless they want
    precise control over the OS-level primitives used.
 

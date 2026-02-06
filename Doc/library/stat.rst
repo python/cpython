@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`stat` module defines constants and functions for interpreting the
+The :mod:`!stat` module defines constants and functions for interpreting the
 results of :func:`os.stat`, :func:`os.fstat` and :func:`os.lstat` (if they
 exist).  For complete details about the :c:func:`stat`, :c:func:`!fstat` and
 :c:func:`!lstat` calls, consult the documentation for your system.
@@ -19,7 +19,7 @@ exist).  For complete details about the :c:func:`stat`, :c:func:`!fstat` and
 .. versionchanged:: 3.4
    The stat module is backed by a C implementation.
 
-The :mod:`stat` module defines the following functions to test for specific file
+The :mod:`!stat` module defines the following functions to test for specific file
 types:
 
 
