@@ -1,0 +1,2 @@
+Fix the :exc:`ValueError` message when calling :meth:`~io.TextIOWrapper.seek`
+on a closed :class:`!_pyio.TextIOWrapper`.
