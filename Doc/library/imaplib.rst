@@ -29,7 +29,7 @@ note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
 
-Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
+Three classes are provided by the :mod:`!imaplib` module, :class:`IMAP4` is the
 base class:
 
 
