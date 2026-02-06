@@ -86,6 +86,15 @@ dummy_func(void) {
 
 // BEGIN BYTECODES //
 
+    op(_MAKE_HEAP_SAFE, (value -- value)) {
+        // If the value is not borrowed, or is immortal, it's heap-safe.
+        if (!PyJitRef_IsBorrowed(value) ||
+            sym_is_immortal(PyJitRef_Unwrap(value))) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        value = PyJitRef_StripReferenceInfo(value);
+    }
+
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
@@ -933,8 +942,7 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
-        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -944,18 +952,6 @@ dummy_func(void) {
         if (returning_code == NULL) {
             ctx->done = true;
             break;
-        }
-
-        // Check if we can use the optimized RETURN_VALUE_HEAP_SAFE.
-        // This is possible when:
-        // The return value is not borrowed or is immortal
-        // AND the function is not a generator/coroutine/async generator.
-        bool is_heap_safe = !PyJitRef_IsBorrowed(retval) ||
-                           sym_is_immortal(PyJitRef_Unwrap(retval));
-        bool is_generator = returning_code->co_flags &
-            (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
-        if (is_heap_safe && !is_generator) {
-            ADD_OP(_RETURN_VALUE_HEAP_SAFE, 0, 0);
         }
 
         int returning_stacklevel = this_instr->operand1;
@@ -995,8 +991,7 @@ dummy_func(void) {
     }
 
     op(_YIELD_VALUE, (retval -- value)) {
-        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
-        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+        JitOptRef temp = retval;
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;

@@ -1239,11 +1239,23 @@
             break;
         }
 
+        case _MAKE_HEAP_SAFE: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (!PyJitRef_IsBorrowed(value) ||
+                sym_is_immortal(PyJitRef_Unwrap(value))) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            value = PyJitRef_StripReferenceInfo(value);
+            stack_pointer[-1] = value;
+            break;
+        }
+
         case _RETURN_VALUE: {
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+            JitOptRef temp = retval;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -1254,13 +1266,6 @@
             if (returning_code == NULL) {
                 ctx->done = true;
                 break;
-            }
-            bool is_heap_safe = !PyJitRef_IsBorrowed(retval) ||
-            sym_is_immortal(PyJitRef_Unwrap(retval));
-            bool is_generator = returning_code->co_flags &
-            (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
-            if (is_heap_safe && !is_generator) {
-                ADD_OP(_RETURN_VALUE_HEAP_SAFE, 0, 0);
             }
             int returning_stacklevel = this_instr->operand1;
             if (ctx->curr_frame_depth >= 2) {
@@ -1329,7 +1334,7 @@
             JitOptRef retval;
             JitOptRef value;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+            JitOptRef temp = retval;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -4162,13 +4167,6 @@
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
-            break;
-        }
-
-        case _RETURN_VALUE_HEAP_SAFE: {
-            JitOptRef res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 

@@ -999,7 +999,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
-        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 2)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         # Each call gets its own _CHECK_STACK_SPACE_OPERAND
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 2)
@@ -1029,7 +1029,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
-        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 2)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 2)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
@@ -1062,7 +1062,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
-        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 4)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 4)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
@@ -1098,7 +1098,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
-        self.assertEqual(uop_names.count("_RETURN_VALUE_HEAP_SAFE"), 4)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 4)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND",
@@ -1289,6 +1289,49 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD - 1)
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
+
+    def test_make_heap_safe_optimized(self):
+        def returns_owned(x):
+            return x + 1
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_owned(a)
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
+        def returns_immortal():
+            return None
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_immortal()
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
+    def test_make_heap_safe_yield_correctness(self):
+        def gen(n):
+            for i in range(n):
+                yield i + i
+        def testfunc(n):
+            for x in gen(n):
+                pass
+        testfunc(TIER2_THRESHOLD * 2)
+        gen_ex = get_first_executor(gen)
+        self.assertIsNotNone(gen_ex)
+        uops = get_opnames(gen_ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_YIELD_VALUE", uops)
 
     def test_for_iter(self):
         def testfunc(n):
