@@ -25,6 +25,8 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 @support.requires_subprocess()
 @support.requires_resource('cpu')
 class BaseTests:
+    TEST_INTERNAL_C_API = False
+
     def test_build(self):
         self.check_build('_testcppext')
 
@@ -63,6 +65,7 @@ class BaseTests:
             if limited:
                 env['CPYTHON_TEST_LIMITED'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
+            env['TEST_INTERNAL_C_API'] = str(int(self.TEST_INTERNAL_C_API))
             if support.verbose:
                 print('Run:', ' '.join(map(shlex.quote, cmd)))
                 subprocess.run(cmd, check=True, env=env)
