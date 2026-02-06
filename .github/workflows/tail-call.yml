@@ -82,7 +82,7 @@ jobs:
           python-version: '3.11'
 
       - name: Native Windows MSVC (release)
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $env:PlatformToolset = "v145"
