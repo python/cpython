@@ -1,19 +1,14 @@
 name: Tail calling interpreter
 on:
   pull_request:
-    paths:
+    paths: &paths
       - '.github/workflows/tail-call.yml'
       - 'Python/bytecodes.c'
       - 'Python/ceval.c'
       - 'Python/ceval_macros.h'
       - 'Python/generated_cases.c.h'
   push:
-    paths:
-      - '.github/workflows/tail-call.yml'
-      - 'Python/bytecodes.c'
-      - 'Python/ceval.c'
-      - 'Python/ceval_macros.h'
-      - 'Python/generated_cases.c.h'
+    paths: *paths
   workflow_dispatch:
 
 permissions:
@@ -25,6 +20,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
+  LLVM_VERSION: 21
 
 jobs:
   tail-call:
@@ -34,16 +30,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - x86_64-pc-windows-msvc/msvc
-          - x86_64-pc-windows-msvc/msvc-free-threading
-          - x86_64-apple-darwin/clang
-          - aarch64-apple-darwin/clang
-          - x86_64-unknown-linux-gnu/gcc
-          - x86_64-unknown-linux-gnu/gcc-free-threading
-          - aarch64-unknown-linux-gnu/gcc
-        llvm:
-          - 20
         include:
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
@@ -95,19 +81,19 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install llvm@${{ matrix.llvm }}
+          brew install llvm@${{ env.LLVM_VERSION }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
-          export PATH="/opt/homebrew/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
-          CC=clang-${{ matrix.llvm }} ./configure --with-tail-call-interp
+          export PATH="/usr/local/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          export PATH="/opt/homebrew/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Linux
         if: runner.os == 'Linux'
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-${{ matrix.llvm }} ./configure --with-tail-call-interp ${{ matrix.configure_flags }}
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
+          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp ${{ matrix.configure_flags }}
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
