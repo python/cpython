@@ -4264,7 +4264,7 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
             attr_µ = None  # attr_\xb5
 
         suggestion = self.get_suggestion(B(), 'attr_\xb5')
-        self.assertIn("'attr_\u03bc'", suggestion)
+        self.assertIn("'.attr_\u03bc'", suggestion)
         self.assertIn(r"'attr_\u03bc'", suggestion)
         self.assertNotIn("attr_a", suggestion)
 
