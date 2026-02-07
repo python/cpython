@@ -2318,7 +2318,7 @@ class _LCSUBAutomaton:
             eposs: list[int],       # index of last match position
         ]
 
-    Next logic:
+    Next logic (Memory optimization as > 50% of state have only 1 transition):
         next2 == -1 -> empty
         next2 == -3 -> next1: dict
         next2 >= 0  -> next2 - index, next1 - key
@@ -2374,7 +2374,7 @@ class _LCSUBAutomaton:
 
     def findall(self, seq1, start1=0, stop1=None, start2=0, stop2=None, *,
                 mink=1, maxk=None, maximal=False):
-        """
+        """Find all common substrings from single O(n) scan
         Args:
             mink : int
                 filter out shorter length matches
@@ -2528,12 +2528,13 @@ class _LCSUBAutomaton:
         return lengths, links, next1s, next2s, eposs
 
     def _build(self, start2, stop2):
+        """Automaton builder"""
         seq2 = self.seq2
         junk = self.junk
         # Make Nodes
         size = (stop2 - start2)
-        n_nodes = 4 * size // 3 + 1
-        inc = size // 10 + 1
+        n_nodes = 4 * size // 3 + 1 # Maximum 25% overallocation
+        inc = size // 10 + 1        # Then, 10% increments
         nodes = self._make_nodes(n_nodes)
         lengths, links, next1s, next2s, eposs = nodes
         nstates = 1
@@ -2645,12 +2646,18 @@ class _LCSUBAutomaton:
         return nodes
 
     def _finditer(self, seq1, start1, stop1, best=False):
-        """
+        """Core scanning routine
         Args:
             best : bool
                 False - return all matches, including non-maximal
                 True  - return all matches of maximum length
                         all these will naturally be maximal
+        Returns:
+            generator of tuples (e1, e2, k), where
+                e1, e2 are ending positions in seq1 and seq2 respectively
+                k is length of a match
+                Thus, starting position is: e1 + 1 - k
+                And stop for a slice is:    e1 + 1
         """
         if best not in (0, 1):
             raise ValueError(f'{best=} not in (0, 1)')
@@ -2731,7 +2738,9 @@ RESULTBLOCKS = _Sentinel('RESULTBLOCKS')    # List of blocks that terminate recu
 
 
 def _calc_skew(i, j, k, alo, ahi, blo, bhi):
-    # NOTE: -1 <= skew <= 1
+    """Difference in normalized positions
+        Returns skew : float, where -1 < skew < 1
+    """
     k_div_2 = k // 2
     apos = (i + k_div_2 - alo) / (ahi - alo)
     bpos = (j + k_div_2 - blo) / (bhi - blo)
@@ -2836,6 +2845,9 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
             RESULTBLOCKS - List of blocks that terminate recursion
                            e.g. (RESULTBLOCKS, [(0, 0, 10), (10, 10, 10)])
 
+        If data contains no blocks or only blocks of 0 length,
+            the algorithm does not recurse further.
+
         Note, one can get `a`, `b`, `automaton`, etc from self
         """
         pass
@@ -2908,10 +2920,11 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                     i0 = i + k
                     j0 = j + k
 
+                if not validated:
+                    continue
+
                 # 2.1.3. Apply action
                 if mtype is REPLACEBLOCK:
-                    if not validated:
-                        continue
                     i, j, k = init_block = validated[0]
 
                 elif mtype is ANCHORBLOCKS:
@@ -2968,6 +2981,10 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                     for triple in triples:
                         triple[0] = job_results[triple[0]]
                         triple[2] = job_results[triple[2]]
+                        # k**1.3 is empirically tuned
+                        # prefers one long match to many small ones
+                        # but not too aggressively, so to be able to jump
+                        # out of skewed positions
                         total = sum(t[2]**1.3 for t in triple)
                         skew = _calc_skew(*triple[1], *bounds)
                         triple.append((total, -abs(skew)))
@@ -2988,6 +3005,9 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                         q_tail.append((_RANGE, (i0, ii, j0, jj)))
                     q_tail.append((_BLOCK, block))
                     i0, j0 = ii + kk, jj + kk
+            if not q_tail:
+                # No blocks identified. Do not recurse further.
+                continue
             q_tail.append((_RANGE, (i0, ahi, j0, bhi)))
 
             # 3.2. Yield what is possible straight away
