@@ -31,7 +31,8 @@ Functions
 ---------
 
 .. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=False, underscore_numbers=False)
+                     color=True, compact=False, sort_dicts=False, \
+                     underscore_numbers=False)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
@@ -63,6 +64,12 @@ Functions
       on the depth of the objects being formatted.
    :type depth: int | None
 
+   :param bool color:
+      If ``True`` (the default), output will be syntax highlighted using ANSI
+      escape sequences, if the *stream* and :ref:`environment variables
+      <using-on-controlling-color>` permit.
+      If ``False``, colored output is always disabled.
+
    :param bool compact:
       Control the way long :term:`sequences <sequence>` are formatted.
       If ``False`` (the default),
@@ -93,13 +100,20 @@ Functions
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: next
+      Added the *color* parameter.
+
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True, underscore_numbers=False)
+                     color=True, compact=False, sort_dicts=True, \
+                     underscore_numbers=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
    which would automatically sort the dictionaries' keys,
    you might want to use :func:`~pprint.pp` instead where it is ``False`` by default.
+
+   .. versionchanged:: next
+      Added the *color* parameter.
 
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
@@ -144,13 +158,14 @@ Functions
 
 .. _prettyprinter-objects:
 
-PrettyPrinter Objects
+PrettyPrinter objects
 ---------------------
 
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True, underscore_numbers=False)
+                         color=True, compact=False, sort_dicts=True, \
+                         underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.
 
@@ -192,6 +207,9 @@ PrettyPrinter Objects
 
    .. versionchanged:: 3.11
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
+
+   .. versionchanged:: next
+      Added the *color* parameter.
 
 
 :class:`PrettyPrinter` instances have the following methods:

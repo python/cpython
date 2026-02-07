@@ -864,6 +864,16 @@ pickle
   (Contributed by Zackery Spytz and Serhiy Storchaka in :gh:`77188`.)
 
 
+pprint
+------
+
+* Add *color* parameter to :func:`~pprint.pp` and :func:`~pprint.pprint`.
+  If ``True`` (the default), output is highlighted in color, when the stream
+  and :ref:`environment variables <using-on-controlling-color>` permit.
+  If ``False``, colored output is always disabled.
+  (Contributed by Hugo van Kemenade in :gh:`123456`.)
+
+
 re
 --
 
