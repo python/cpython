@@ -1128,7 +1128,8 @@ class TracebackException:
                     + "add the site-packages directory to sys.path "
                     + "or to enable your virtual environment?")
         elif exc_type and issubclass(exc_type, AttributeError) and \
-                (wrong_name := getattr(exc_value, "name", None)) is not None:
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 if suggestion.isascii():
@@ -1136,7 +1137,8 @@ class TracebackException:
                 else:
                     self._str += f". Did you mean: '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}'?"
         elif exc_type and issubclass(exc_type, NameError) and \
-                (wrong_name := getattr(exc_value, "name", None)) is not None:
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 if suggestion.isascii():
