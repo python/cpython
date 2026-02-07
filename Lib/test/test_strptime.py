@@ -650,7 +650,6 @@ class StrptimeTests(unittest.TestCase):
                 time.strptime("Mar 1", "%b %d"))
 
     def test_shorthand_year_month_day(self):
-        # Test that token '%F' is equivalent to '%Y-%m-%d'
         formats = dict(short="%F",long="%Y-%m-%d")
         test_date = "2025-10-26"
         shorthand = time.strptime(test_date,formats["short"])
