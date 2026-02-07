@@ -1896,7 +1896,7 @@ Subcommands
       the main parser.
 
 
-.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None,
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, \
                                          deprecated=False, **kwargs)
 
    Create and return a new :class:`ArgumentParser` object for the
