@@ -2432,8 +2432,7 @@ _ssl__SSLSocket_owner_set_impl(PySSLSocket *self, PyObject *value)
 static int
 PySSL_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PySSLSocket *self = PySSLSocket_CAST(op);
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(op));
     return 0;
 }
 
