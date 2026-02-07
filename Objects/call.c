@@ -708,7 +708,10 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
         return null_error(tstate);
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *callable = _PyObject_GetAttrId(obj, name);
+_Py_COMP_DIAG_POP
     if (callable == NULL) {
         return NULL;
     }
@@ -726,6 +729,7 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
 PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
                                       const char *format, ...)
 {
+    assert(callable != NULL);
     va_list va;
     va_start(va, format);
     PyObject *retval = callmethod(tstate, callable, format, va);
@@ -892,39 +896,6 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 
 
 PyObject *
-_PyObject_CallMethodIdObjArgs(PyObject *obj, _Py_Identifier *name, ...)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (obj == NULL || name == NULL) {
-        return null_error(tstate);
-    }
-
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname) {
-        return NULL;
-    }
-    _PyCStackRef method;
-    _PyThreadState_PushCStackRef(tstate, &method);
-    int is_method = _PyObject_GetMethodStackRef(tstate, obj, oname, &method.ref);
-    if (PyStackRef_IsNull(method.ref)) {
-        _PyThreadState_PopCStackRef(tstate, &method);
-        return NULL;
-    }
-    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
-
-    obj = is_method ? obj : NULL;
-
-    va_list vargs;
-    va_start(vargs, name);
-    PyObject *result = object_vacall(tstate, obj, callable, vargs);
-    va_end(vargs);
-
-    _PyThreadState_PopCStackRef(tstate, &method);
-    return result;
-}
-
-
-PyObject *
 PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -964,6 +935,10 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
 
    The newly allocated argument vector supports PY_VECTORCALL_ARGUMENTS_OFFSET.
 
+   The positional arguments are borrowed references from the input array
+   (which must be kept alive by the caller). The keyword argument values
+   are new references.
+
    When done, you must call _PyStack_UnpackDict_Free(stack, nargs, kwnames) */
 PyObject *const *
 _PyStack_UnpackDict(PyThreadState *tstate,
@@ -999,9 +974,9 @@ _PyStack_UnpackDict(PyThreadState *tstate,
 
     stack++;  /* For PY_VECTORCALL_ARGUMENTS_OFFSET */
 
-    /* Copy positional arguments */
+    /* Copy positional arguments (borrowed references) */
     for (Py_ssize_t i = 0; i < nargs; i++) {
-        stack[i] = Py_NewRef(args[i]);
+        stack[i] = args[i];
     }
 
     PyObject **kwstack = stack + nargs;
@@ -1038,9 +1013,10 @@ void
 _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
                          PyObject *kwnames)
 {
-    Py_ssize_t n = PyTuple_GET_SIZE(kwnames) + nargs;
-    for (Py_ssize_t i = 0; i < n; i++) {
-        Py_DECREF(stack[i]);
+    /* Only decref kwargs values, positional args are borrowed */
+    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwnames);
+    for (Py_ssize_t i = 0; i < nkwargs; i++) {
+        Py_DECREF(stack[nargs + i]);
     }
     _PyStack_UnpackDict_FreeNoDecRef(stack, kwnames);
 }

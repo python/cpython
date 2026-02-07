@@ -317,7 +317,7 @@ and writing to platform dependent files:
 Codec Base Classes
 ------------------
 
-The :mod:`codecs` module defines a set of base classes which define the
+The :mod:`!codecs` module defines a set of base classes which define the
 interfaces for working with codec objects, and can also be used as the basis
 for custom codec implementations.
 
@@ -1088,7 +1088,7 @@ alias for the ``'utf_8'`` codec.
    refer to the source :source:`aliases.py <Lib/encodings/aliases.py>` file.
 
 On Windows, ``cpXXX`` codecs are available for all code pages.
-But only codecs listed in the following table are guarantead to exist on
+But only codecs listed in the following table are guaranteed to exist on
 other platforms.
 
 .. impl-detail::

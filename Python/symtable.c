@@ -3137,7 +3137,7 @@ symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_Source
 
 struct symtable *
 _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
-                              int start, PyCompilerFlags *flags)
+                              int start, PyCompilerFlags *flags, PyObject *module)
 {
     struct symtable *st;
     mod_ty mod;
@@ -3147,7 +3147,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;
@@ -3181,6 +3181,27 @@ _Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name)
         }
     }
     return _Py_Mangle(privateobj, name);
+}
+
+int
+_Py_IsPrivateName(PyObject *ident)
+{
+    if (!PyUnicode_Check(ident)) {
+        return 0;
+    }
+    Py_ssize_t nlen = PyUnicode_GET_LENGTH(ident);
+    if (nlen < 3 ||
+        PyUnicode_READ_CHAR(ident, 0) != '_' ||
+        PyUnicode_READ_CHAR(ident, 1) != '_')
+    {
+        return 0;
+    }
+    if (PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
+        PyUnicode_READ_CHAR(ident, nlen-2) == '_')
+    {
+        return 0; /* Don't mangle __whatever__ */
+    }
+    return 1;
 }
 
 PyObject *

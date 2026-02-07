@@ -29,12 +29,12 @@ Actual concurrency is available separately through
 .. seealso::
 
    :class:`~concurrent.futures.InterpreterPoolExecutor`
-      combines threads with interpreters in a familiar interface.
+      Combines threads with interpreters in a familiar interface.
 
-    .. XXX Add references to the upcoming HOWTO docs in the seealso block.
+   .. XXX Add references to the upcoming HOWTO docs in the seealso block.
 
    :ref:`isolating-extensions-howto`
-       how to update an extension module to support multiple interpreters
+      How to update an extension module to support multiple interpreters.
 
    :pep:`554`
 

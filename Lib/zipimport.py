@@ -742,9 +742,9 @@ def _normalize_line_endings(source):
 
 # Given a string buffer containing Python source code, compile it
 # and return a code object.
-def _compile_source(pathname, source):
+def _compile_source(pathname, source, module):
     source = _normalize_line_endings(source)
-    return compile(source, pathname, 'exec', dont_inherit=True)
+    return compile(source, pathname, 'exec', dont_inherit=True, module=module)
 
 # Convert the date/time values found in the Zip archive to a value
 # that's compatible with the time stamp stored in .pyc files.
@@ -815,7 +815,7 @@ def _get_module_code(self, fullname):
                 except ImportError as exc:
                     import_error = exc
             else:
-                code = _compile_source(modpath, data)
+                code = _compile_source(modpath, data, fullname)
             if code is None:
                 # bad magic number or non-matching mtime
                 # in byte code, try next

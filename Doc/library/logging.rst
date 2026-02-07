@@ -1011,6 +1011,11 @@ the options available to you.
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
 |                | format this yourself.   | if no exception has occurred, ``None``.       |
 +----------------+-------------------------+-----------------------------------------------+
+| exc_text       | You shouldn't need to   | Exception information formatted as a string.  |
+|                | format this yourself.   | This is set when :meth:`Formatter.format` is  |
+|                |                         | invoked, or ``None`` if no exception has      |
+|                |                         | occurred.                                     |
++----------------+-------------------------+-----------------------------------------------+
 | filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
 +----------------+-------------------------+-----------------------------------------------+
 | funcName       | ``%(funcName)s``        | Name of function containing the logging call. |
@@ -1082,12 +1087,13 @@ LoggerAdapter Objects
 information into logging calls. For a usage example, see the section on
 :ref:`adding contextual information to your logging output <context-info>`.
 
-.. class:: LoggerAdapter(logger, extra, merge_extra=False)
+.. class:: LoggerAdapter(logger, extra=None, merge_extra=False)
 
    Returns an instance of :class:`LoggerAdapter` initialized with an
-   underlying :class:`Logger` instance, a dict-like object (*extra*), and a
-   boolean (*merge_extra*) indicating whether or not the *extra* argument of
-   individual log calls should be merged with the :class:`LoggerAdapter` extra.
+   underlying :class:`Logger` instance, an optional dict-like object (*extra*),
+   and an optional boolean (*merge_extra*) indicating whether or not
+   the *extra* argument of individual log calls should be merged with
+   the :class:`LoggerAdapter` extra.
    The default behavior is to ignore the *extra* argument of individual log
    calls and only use the one of the :class:`LoggerAdapter` instance
 
@@ -1127,9 +1133,13 @@ information into logging calls. For a usage example, see the section on
       Attribute :attr:`!manager` and method :meth:`!_log` were added, which
       delegate to the underlying logger and allow adapters to be nested.
 
+   .. versionchanged:: 3.10
+
+      The *extra* argument is now optional.
+
    .. versionchanged:: 3.13
 
-      The *merge_extra* argument was added.
+      The *merge_extra* parameter was added.
 
 
 Thread Safety
@@ -1541,7 +1551,7 @@ Module-Level Attributes
 Integration with the warnings module
 ------------------------------------
 
-The :func:`captureWarnings` function can be used to integrate :mod:`logging`
+The :func:`captureWarnings` function can be used to integrate :mod:`!logging`
 with the :mod:`warnings` module.
 
 .. function:: captureWarnings(capture)
@@ -1572,7 +1582,7 @@ with the :mod:`warnings` module.
       library.
 
    `Original Python logging package <https://old.red-dove.com/python_logging.html>`_
-      This is the original source for the :mod:`logging` package.  The version of the
+      This is the original source for the :mod:`!logging` package.  The version of the
       package available from this site is suitable for use with Python 1.5.2, 2.1.x
-      and 2.2.x, which do not include the :mod:`logging` package in the standard
+      and 2.2.x, which do not include the :mod:`!logging` package in the standard
       library.

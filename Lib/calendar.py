@@ -574,9 +574,9 @@ class HTMLCalendar(Calendar):
         a('</table>')
         return ''.join(v)
 
-    def formatyearpage(self, theyear, width=3, css='calendar.css', encoding=None):
+    def _format_html_page(self, theyear, content, css, encoding):
         """
-        Return a formatted year as a complete HTML page.
+        Return a complete HTML page with the given content.
         """
         if encoding is None:
             encoding = 'utf-8'
@@ -597,10 +597,24 @@ class HTMLCalendar(Calendar):
             a(f'<link rel="stylesheet" href="{css}">\n')
         a('</head>\n')
         a('<body>\n')
-        a(self.formatyear(theyear, width))
+        a(content)
         a('</body>\n')
         a('</html>\n')
         return ''.join(v).encode(encoding, "xmlcharrefreplace")
+
+    def formatyearpage(self, theyear, width=3, css='calendar.css', encoding=None):
+        """
+        Return a formatted year as a complete HTML page.
+        """
+        content = self.formatyear(theyear, width)
+        return self._format_html_page(theyear, content, css, encoding)
+
+    def formatmonthpage(self, theyear, themonth, width=3, css='calendar.css', encoding=None):
+        """
+        Return a formatted month as a complete HTML page.
+        """
+        content = self.formatmonth(theyear, themonth, width)
+        return self._format_html_page(theyear, content, css, encoding)
 
 
 class different_locale:
@@ -886,7 +900,7 @@ def main(args=None):
     parser.add_argument(
         "month",
         nargs='?', type=int,
-        help="month number (1-12, text only)"
+        help="month number (1-12)"
     )
 
     options = parser.parse_args(args)
@@ -899,9 +913,6 @@ def main(args=None):
     today = datetime.date.today()
 
     if options.type == "html":
-        if options.month:
-            parser.error("incorrect number of arguments")
-            sys.exit(1)
         if options.locale:
             cal = LocaleHTMLCalendar(locale=locale)
         else:
@@ -912,10 +923,14 @@ def main(args=None):
             encoding = 'utf-8'
         optdict = dict(encoding=encoding, css=options.css)
         write = sys.stdout.buffer.write
+
         if options.year is None:
             write(cal.formatyearpage(today.year, **optdict))
         else:
-            write(cal.formatyearpage(options.year, **optdict))
+            if options.month:
+                write(cal.formatmonthpage(options.year, options.month, **optdict))
+            else:
+                write(cal.formatyearpage(options.year, **optdict))
     else:
         if options.locale:
             cal = _CLIDemoLocaleCalendar(highlight_day=today, locale=locale)

@@ -246,7 +246,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
 
-    def test_all_any_tuple_optimization(self):
+    def test_all_any_tuple_list_set_optimization(self):
         def f_all():
             return all(x-2 for x in [1,2,3])
 
@@ -256,7 +256,13 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         def f_tuple():
             return tuple(2*x for x in [1,2,3])
 
-        funcs = [f_all, f_any, f_tuple]
+        def f_list():
+            return list(2*x for x in [1,2,3])
+
+        def f_set():
+            return set(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple, f_list, f_set]
 
         for f in funcs:
             # check that generator code object is not duplicated
@@ -266,33 +272,35 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # check the overriding the builtins works
 
-        global all, any, tuple
-        saved = all, any, tuple
+        global all, any, tuple, list, set
+        saved = all, any, tuple, list, set
         try:
             all = lambda x : "all"
             any = lambda x : "any"
             tuple = lambda x : "tuple"
+            list = lambda x : "list"
+            set = lambda x : "set"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple = saved
+            all, any, tuple, list, set = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
-
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
         # Now repeat, overriding the builtins module as well
-        saved = all, any, tuple
+        saved = all, any, tuple, list, set
         try:
             builtins.all = all = lambda x : "all"
             builtins.any = any = lambda x : "any"
             builtins.tuple = tuple = lambda x : "tuple"
+            builtins.list = list = lambda x : "list"
+            builtins.set = set = lambda x : "set"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple = saved
-            builtins.all, builtins.any, builtins.tuple = saved
+            all, any, tuple, list, set = saved
+            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
-
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set'])
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -1087,6 +1095,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+
+    def test_exec_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<string>\z')
+            exec(source, {})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package.module\z')
+            warnings.filterwarnings('error', module=r'<string>')
+            exec(source, {'__name__': 'package.module', '__file__': filename})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
 
 
     def test_filter(self):

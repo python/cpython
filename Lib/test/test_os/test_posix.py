@@ -668,6 +668,18 @@ class PosixTester(unittest.TestCase):
         finally:
             fp.close()
 
+    @unittest.skipUnless(hasattr(posix, 'stat'),
+                         'test needs posix.stat()')
+    @unittest.skipUnless(os.stat in os.supports_follow_symlinks,
+                         'test needs follow_symlinks support in os.stat()')
+    def test_stat_fd_zero_follow_symlinks(self):
+        with self.assertRaisesRegex(ValueError,
+                'cannot use fd and follow_symlinks together'):
+            posix.stat(0, follow_symlinks=False)
+        with self.assertRaisesRegex(ValueError,
+                'cannot use fd and follow_symlinks together'):
+            posix.stat(1, follow_symlinks=False)
+
     def check_statlike_path(self, func):
         self.assertTrue(func(os_helper.TESTFN))
         self.assertTrue(func(os.fsencode(os_helper.TESTFN)))
@@ -1426,6 +1438,14 @@ class PosixTester(unittest.TestCase):
         newparam = copy.replace(param, sched_priority=0)
         self.assertNotEqual(newparam, param)
         self.assertEqual(newparam.sched_priority, 0)
+
+    @requires_sched
+    def test_bug_140634(self):
+        sched_priority = float('inf')  # any new reference
+        param = posix.sched_param(sched_priority)
+        param.__reduce__()
+        del sched_priority, param  # should not crash
+        support.gc_collect()  # just to be sure
 
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):

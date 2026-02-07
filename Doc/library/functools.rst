@@ -20,11 +20,11 @@
 
 --------------
 
-The :mod:`functools` module is for higher-order functions: functions that act on
+The :mod:`!functools` module is for higher-order functions: functions that act on
 or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
-The :mod:`functools` module defines the following functions:
+The :mod:`!functools` module defines the following functions:
 
 .. decorator:: cache(user_function)
 
@@ -42,11 +42,11 @@ The :mod:`functools` module defines the following functions:
         def factorial(n):
             return n * factorial(n-1) if n else 1
 
-        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        >>> factorial(10)   # no previously cached result, makes 11 recursive calls
         3628800
-        >>> factorial(5)       # just looks up cached value result
+        >>> factorial(5)    # no new calls, just returns the cached result
         120
-        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        >>> factorial(12)   # two new recursive calls, factorial(10) is cached
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
@@ -56,6 +56,10 @@ The :mod:`functools` module defines the following functions:
    It is possible for the wrapped function to be called more than once if
    another thread makes an additional call before the initial call has been
    completed and cached.
+
+   Call-once behavior is not guaranteed because locks are not held during the
+   function call. Potentially another call with the same arguments could
+   occur while the first call is still running.
 
    .. versionadded:: 3.9
 
@@ -176,8 +180,8 @@ The :mod:`functools` module defines the following functions:
    the *maxsize* at its default value of 128::
 
        @lru_cache
-       def count_vowels(sentence):
-           return sum(sentence.count(vowel) for vowel in 'AEIOUaeiou')
+       def count_vowels(word):
+           return sum(word.count(vowel) for vowel in 'AEIOUaeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.
@@ -672,7 +676,7 @@ The :mod:`functools` module defines the following functions:
    dispatch>` :term:`generic function`.
 
    To define a generic method, decorate it with the ``@singledispatchmethod``
-   decorator. When defining a function using ``@singledispatchmethod``, note
+   decorator. When defining a method using ``@singledispatchmethod``, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
 
@@ -715,6 +719,9 @@ The :mod:`functools` module defines the following functions:
    :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.15
+      Added support of non-:term:`descriptor` callables.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)

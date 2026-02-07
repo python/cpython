@@ -13,7 +13,7 @@
 
 .. note::
 
-   While :mod:`argparse` is the default recommended standard library module
+   While :mod:`!argparse` is the default recommended standard library module
    for implementing basic command line applications, authors with more
    exacting requirements for exactly how their command line applications
    behave may find it doesn't provide the necessary level of control.
@@ -638,7 +638,33 @@ by setting ``color`` to ``False``::
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--help'])
 
+Note that when ``color=True``, colored output depends on both environment
+variables and terminal capabilities.  However, if ``color=False``, colored
+output is always disabled, even if environment variables like ``FORCE_COLOR``
+are set.
+
 .. versionadded:: 3.14
+
+To highlight inline code in your description or epilog text, you can use
+backticks::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     epilog='''Examples:
+   ...   `python -m myapp --verbose`
+   ...   `python -m myapp --config settings.json`
+   ... ''')
+
+When colors are enabled, the text inside backticks will be displayed in a
+distinct color to help examples stand out. When colors are disabled, backticks
+are preserved as-is, which is readable in plain text.
+
+.. note::
+
+   Backtick markup only applies to description and epilog text. It does not
+   apply to individual argument ``help`` strings.
+
+.. versionadded:: 3.15
 
 
 The add_argument() method
@@ -727,7 +753,7 @@ upper-cased name. For example::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('--foo-bar')
-   >>> parser.parse_args(['--foo-bar', 'FOO-BAR']
+   >>> parser.parse_args(['--foo-bar', 'FOO-BAR'])
    Namespace(foo_bar='FOO-BAR')
    >>> parser.print_help()
    usage:  [-h] [--foo-bar FOO-BAR]
@@ -762,9 +788,9 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=42)
 
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
-  ``'store_const'`` used for storing the values ``True`` and ``False``
-  respectively.  In addition, they create default values of ``False`` and
-  ``True`` respectively::
+  ``'store_const'`` that respectively store the values ``True`` and ``False``
+  with default values of ``False`` and
+  ``True``::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_true')
@@ -784,8 +810,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo 1 --foo 2'.split())
     Namespace(foo=['0', '1', '2'])
 
-* ``'append_const'`` - This stores a list, and appends the value specified by
-  the const_ keyword argument to the list; note that the const_ keyword
+* ``'append_const'`` - This appends the value specified by
+  the const_ keyword argument to a list; note that the const_ keyword
   argument defaults to ``None``. The ``'append_const'`` action is typically
   useful when multiple arguments need to store constants to the same list. For
   example::
@@ -796,8 +822,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<class 'str'>, <class 'int'>])
 
-* ``'extend'`` - This stores a list and appends each item from the multi-value
-  argument list to it.
+* ``'extend'`` - This appends each item from a multi-value
+  argument to a list.
   The ``'extend'`` action is typically used with the nargs_ keyword argument
   value ``'+'`` or ``'*'``.
   Note that when nargs_ is ``None`` (the default) or ``'?'``, each
@@ -811,7 +837,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
   .. versionadded:: 3.8
 
-* ``'count'`` - This counts the number of times a keyword argument occurs. For
+* ``'count'`` - This counts the number of times an argument occurs. For
   example, this is useful for increasing verbosity levels::
 
     >>> parser = argparse.ArgumentParser()
@@ -1317,8 +1343,12 @@ attribute is determined by the ``dest`` keyword argument of
 
 For optional argument actions, the value of ``dest`` is normally inferred from
 the option strings.  :class:`ArgumentParser` generates the value of ``dest`` by
-taking the first long option string and stripping away the initial ``--``
-string.  If no long option strings were supplied, ``dest`` will be derived from
+taking the first double-dash long option string and stripping away the initial
+``-`` characters.
+If no double-dash long option strings were supplied, ``dest`` will be derived
+from the first single-dash long option string by stripping the initial ``-``
+character.
+If no long option strings were supplied, ``dest`` will be derived from
 the first short option string by stripping the initial ``-`` character.  Any
 internal ``-`` characters will be converted to ``_`` characters to make sure
 the string is a valid attribute name.  The examples below illustrate this
@@ -1326,11 +1356,12 @@ behavior::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('-f', '--foo-bar', '--foo')
+   >>> parser.add_argument('-q', '-quz')
    >>> parser.add_argument('-x', '-y')
-   >>> parser.parse_args('-f 1 -x 2'.split())
-   Namespace(foo_bar='1', x='2')
-   >>> parser.parse_args('--foo 1 -y 2'.split())
-   Namespace(foo_bar='1', x='2')
+   >>> parser.parse_args('-f 1 -q 2 -x 3'.split())
+   Namespace(foo_bar='1', quz='2', x='3')
+   >>> parser.parse_args('--foo 1 -quz 2 -y 3'.split())
+   Namespace(foo_bar='1', quz='2', x='2')
 
 ``dest`` allows a custom attribute name to be provided::
 
@@ -1338,6 +1369,9 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+.. versionchanged:: 3.15
+   Single-dash long option now takes precedence over short options.
 
 
 .. _deprecated:
@@ -1432,7 +1466,17 @@ this API may be passed as the ``action`` parameter to
        >>> parser.parse_args(['--no-foo'])
        Namespace(foo=False)
 
+   Single-dash long options are also supported.
+   For example, negative option ``-nofoo`` is automatically added for
+   positive option ``-foo``.
+   But no additional options are added for short options such as ``-f``.
+
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.15
+      Added support for single-dash options.
+
+      Added support for alternate prefix_chars_.
 
 
 The parse_args() method
@@ -1656,7 +1700,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Sub-commands
+Subcommands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1685,7 +1729,7 @@ Sub-commands
    * *description* - description for the sub-parser group in help output, by
      default ``None``
 
-   * *prog* - usage information that will be displayed with sub-command help,
+   * *prog* - usage information that will be displayed with subcommand help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
@@ -1695,7 +1739,7 @@ Sub-commands
    * action_ - the basic type of action to be taken when this argument is
      encountered at the command line
 
-   * dest_ - name of the attribute under which sub-command name will be
+   * dest_ - name of the attribute under which subcommand name will be
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
@@ -1727,7 +1771,7 @@ Sub-commands
      >>> parser.parse_args(['--foo', 'b', '--baz', 'Z'])
      Namespace(baz='Z', foo=True)
 
-   Note that the object returned by :meth:`parse_args` will only contain
+   Note that the object returned by :meth:`~ArgumentParser.parse_args` will only contain
    attributes for the main parser and the subparser that was selected by the
    command line (and not any other subparsers).  So in the example above, when
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
@@ -1770,7 +1814,7 @@ Sub-commands
        -h, --help     show this help message and exit
        --baz {X,Y,Z}  baz help
 
-   The :meth:`add_subparsers` method also supports ``title`` and ``description``
+   The :meth:`~ArgumentParser.add_subparsers` method also supports ``title`` and ``description``
    keyword arguments.  When either is present, the subparser's commands will
    appear in their own group in the help output.  For example::
 
@@ -1791,34 +1835,8 @@ Sub-commands
 
        {foo,bar}   additional help
 
-   Furthermore, :meth:`~_SubParsersAction.add_parser` supports an additional
-   *aliases* argument,
-   which allows multiple strings to refer to the same subparser. This example,
-   like ``svn``, aliases ``co`` as a shorthand for ``checkout``::
-
-     >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers()
-     >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
-     >>> checkout.add_argument('foo')
-     >>> parser.parse_args(['co', 'bar'])
-     Namespace(foo='bar')
-
-   :meth:`~_SubParsersAction.add_parser` supports also an additional
-   *deprecated* argument, which allows to deprecate the subparser.
-
-      >>> import argparse
-      >>> parser = argparse.ArgumentParser(prog='chicken.py')
-      >>> subparsers = parser.add_subparsers()
-      >>> run = subparsers.add_parser('run')
-      >>> fly = subparsers.add_parser('fly', deprecated=True)
-      >>> parser.parse_args(['fly'])  # doctest: +SKIP
-      chicken.py: warning: command 'fly' is deprecated
-      Namespace()
-
-   .. versionadded:: 3.13
-
    One particularly effective way of handling subcommands is to combine the use
-   of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
+   of the :meth:`~ArgumentParser.add_subparsers` method with calls to :meth:`~ArgumentParser.set_defaults` so
    that each subparser knows which Python function it should execute.  For
    example::
 
@@ -1854,12 +1872,12 @@ Sub-commands
      >>> args.func(args)
      ((XYZYX))
 
-   This way, you can let :meth:`parse_args` do the job of calling the
+   This way, you can let :meth:`~ArgumentParser.parse_args` do the job of calling the
    appropriate function after argument parsing is complete.  Associating
    functions with actions like this is typically the easiest way to handle the
    different actions for each of your subparsers.  However, if it is necessary
    to check the name of the subparser that was invoked, the ``dest`` keyword
-   argument to the :meth:`add_subparsers` call will work::
+   argument to the :meth:`~ArgumentParser.add_subparsers` call will work::
 
      >>> parser = argparse.ArgumentParser()
      >>> subparsers = parser.add_subparsers(dest='subparser_name')
@@ -1876,6 +1894,43 @@ Sub-commands
    .. versionchanged:: 3.14
       Subparser's *prog* is no longer affected by a custom usage message in
       the main parser.
+
+
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None,
+                                         deprecated=False, **kwargs)
+
+   Create and return a new :class:`ArgumentParser` object for the
+   subcommand *name*.
+
+   The *name* argument is the name of the sub-command.
+
+   The *help* argument provides a short description for this sub-command.
+
+   The *aliases* argument allows providing alternative names for this
+   sub-command. For example::
+
+      >>> parser = argparse.ArgumentParser()
+      >>> subparsers = parser.add_subparsers()
+      >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
+      >>> checkout.add_argument('foo')
+      >>> parser.parse_args(['co', 'bar'])
+      Namespace(foo='bar')
+
+   The *deprecated* argument, if ``True``, marks the sub-command as
+   deprecated and will issue a warning when used. For example::
+
+      >>> parser = argparse.ArgumentParser(prog='chicken.py')
+      >>> subparsers = parser.add_subparsers()
+      >>> fly = subparsers.add_parser('fly', deprecated=True)
+      >>> args = parser.parse_args(['fly'])
+      chicken.py: warning: command 'fly' is deprecated
+      Namespace()
+
+   All other keyword arguments are passed directly to the
+   :class:`!ArgumentParser` constructor.
+
+   .. versionadded:: 3.13
+      Added the *deprecated* parameter.
 
 
 FileType objects
@@ -2065,7 +2120,9 @@ Parser defaults
      >>> parser.parse_args(['736'])
      Namespace(bar=42, baz='badger', foo=736)
 
-   Note that parser-level defaults always override argument-level defaults::
+   Note that defaults can be set at both the parser level using :meth:`set_defaults`
+   and at the argument level using :meth:`add_argument`. If both are called for the
+   same argument, the last default set for an argument is used::
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', default='bar')

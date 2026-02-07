@@ -53,7 +53,7 @@ _PyCell_GetStackRef(PyCellObject *cell)
 {
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    value = _Py_atomic_load_ptr(&cell->ob_ref);
+    value = _PyObject_CAST(_Py_atomic_load_ptr(&cell->ob_ref));
     if (value == NULL) {
         return PyStackRef_NULL;
     }
