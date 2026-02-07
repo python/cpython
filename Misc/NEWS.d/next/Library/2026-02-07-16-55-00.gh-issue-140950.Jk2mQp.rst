@@ -1,0 +1,2 @@
+Fix :meth:`shlex.shlex.push_source` so a new source pushed after EOF is read
+correctly instead of being skipped.
