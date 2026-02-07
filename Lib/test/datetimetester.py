@@ -1213,18 +1213,18 @@ class TestDateOnly(unittest.TestCase):
             date.strptime('02-29,2024', '%m-%d,%Y')
 
     def test_strptime_F_format(self):
-        formats = dict(short="%F",long="%Y-%m-%d")
         test_date = "2025-10-26"
-        shorthand = datetime.strptime(test_date,formats["short"])
-        long_hand = datetime.strptime(test_date,formats["long"])
-        self.assertEqual(shorthand,long_hand)
+        self.assertEqual(
+            datetime.strptime(test_date,"%F"),
+            datetime.strptime(test_date,"%Y-%m-%d")
+        )
 
     def test_strptime_T_format(self):
-        formats = dict(short="%T",long="%H:%M:%S")
         test_time = "15:00:00"
-        shorthand = datetime.strptime(test_time,formats["short"])
-        long_hand = datetime.strptime(test_time,formats["long"])
-        self.assertEqual(shorthand,long_hand)
+        self.assertEqual(
+            datetime.strptime(test_time,"%T"),
+            datetime.strptime(test_time,"%H:%M:%S")
+        )
 
 class SubclassDate(date):
     sub_var = 1
