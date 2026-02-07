@@ -773,6 +773,16 @@ class BasicTest(BaseTest):
                 self.assertNotEndsWith(line, b'\r\n', error_message)
 
     @requireVenvCreate
+    def test_activate_fish_script_preserves_status(self):
+        venv_dir = pathlib.Path(self.env_dir)
+        rmtree(venv_dir)
+        script_path = venv_dir / self.bindir / 'activate.fish'
+        venv.create(venv_dir)
+        script = script_path.read_text(encoding='utf-8')
+        self.assertIn('return $old_status', script)
+        self.assertNotIn('echo "exit $old_status" | .', script)
+
+    @requireVenvCreate
     def test_scm_ignore_files_git(self):
         """
         Test that a .gitignore file is created when "git" is specified.
