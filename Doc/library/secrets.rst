@@ -80,7 +80,7 @@ hard-to-guess URLs, and similar.
    Return a random text string, in hexadecimal.  The string has *nbytes*
    random bytes, each byte converted to two hex digits.
 
-   If *nybtes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
+   If *nbytes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
    is used instead.
 
    .. doctest::
