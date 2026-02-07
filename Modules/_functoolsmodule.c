@@ -693,6 +693,7 @@ partial_repr(PyObject *self)
     PyObject *name;
     Py_ssize_t i, n;
     PyObject *key, *value;
+    PyObject* args;
     int status;
 
     status = Py_ReprEnter(self);
@@ -707,13 +708,15 @@ partial_repr(PyObject *self)
         goto done;
     /* Pack positional arguments */
     assert(PyTuple_Check(pto->args));
+    args = Py_NewRef(pto->args);
     n = PyTuple_GET_SIZE(pto->args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
-                                        PyTuple_GET_ITEM(pto->args, i)));
+                                        PyTuple_GET_ITEM(args, i)));
         if (arglist == NULL)
             goto done;
     }
+    Py_DECREF(args);
     /* Pack keyword arguments */
     assert (PyDict_Check(pto->kw));
     for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
