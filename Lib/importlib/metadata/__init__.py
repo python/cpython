@@ -925,7 +925,12 @@ class Prepared:
         """
         PEP 503 normalization plus dashes as underscores.
         """
-        return re.sub(r"[-_.]+", "-", name).lower().replace('-', '_')
+        # Much faster than re.sub, and even faster than str.translate
+        value = name.lower().replace("-", "_").replace(".", "_")
+        # Condense repeats (faster than regex)
+        while "__" in value:
+            value = value.replace("__", "_")
+        return value
 
     @staticmethod
     def legacy_normalize(name):

@@ -20,11 +20,11 @@
 
 --------------
 
-The :mod:`functools` module is for higher-order functions: functions that act on
+The :mod:`!functools` module is for higher-order functions: functions that act on
 or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
-The :mod:`functools` module defines the following functions:
+The :mod:`!functools` module defines the following functions:
 
 .. decorator:: cache(user_function)
 
@@ -180,8 +180,8 @@ The :mod:`functools` module defines the following functions:
    the *maxsize* at its default value of 128::
 
        @lru_cache
-       def count_vowels(sentence):
-           return sum(sentence.count(vowel) for vowel in 'AEIOUaeiou')
+       def count_vowels(word):
+           return sum(word.count(vowel) for vowel in 'AEIOUaeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.

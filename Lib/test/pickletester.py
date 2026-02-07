@@ -4118,6 +4118,109 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, descr=descr):
                     self.assertRaises(TypeError, self.dumps, descr, proto)
 
+    def test_private_methods(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        obj = PrivateMethods(42)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj.get_method(), proto))
+                self.assertEqual(unpickled(), 42)
+                unpickled = self.loads(self.dumps(obj.get_unbound_method(), proto))
+                self.assertEqual(unpickled(obj), 42)
+                unpickled = self.loads(self.dumps(obj.get_classmethod(), proto))
+                self.assertEqual(unpickled(), 43)
+                unpickled = self.loads(self.dumps(obj.get_staticmethod(), proto))
+                self.assertEqual(unpickled(), 44)
+
+    def test_private_nested_classes(self):
+        if self.py_version < (3, 15):
+            self.skipTest('not supported in Python < 3.15')
+        cls1 = PrivateNestedClasses.get_nested()
+        cls2 = cls1.get_nested2()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(cls1, proto))
+                self.assertIs(unpickled, cls1)
+                unpickled = self.loads(self.dumps(cls2, proto))
+                self.assertIs(unpickled, cls2)
+
+    def test_object_with_attrs(self):
+        obj = Object()
+        obj.a = 1
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+
+    def test_object_with_slots(self):
+        obj = WithSlots()
+        obj.a = 1
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsSubclass()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertNotHasAttr(unpickled, 'b')
+
+        obj = WithSlotsAndDict()
+        obj.a = 1
+        obj.c = 2
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.a, obj.a)
+                self.assertEqual(unpickled.c, obj.c)
+                self.assertEqual(unpickled.__dict__, obj.__dict__)
+                self.assertNotHasAttr(unpickled, 'b')
+
+    def test_object_with_private_attrs(self):
+        obj = WithPrivateAttrs(1)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateAttrsSubclass(1, 2)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
+
+    def test_object_with_private_slots(self):
+        obj = WithPrivateSlots(1)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+
+        obj = WithPrivateSlotsSubclass(1, 2)
+        self.assertRaises(TypeError, self.dumps, obj, 0)
+        self.assertRaises(TypeError, self.dumps, obj, 1)
+        for proto in protocols[2:]:
+            with self.subTest(proto=proto):
+                unpickled = self.loads(self.dumps(obj, proto))
+                self.assertEqual(unpickled.get(), obj.get())
+                self.assertEqual(unpickled.get2(), obj.get2())
+
     def test_compat_pickle(self):
         if self.py_version < (3, 4):
             self.skipTest("doesn't work in Python < 3.4'")

@@ -1,59 +1,92 @@
+# NOTE: Please always only modify default/recipe.yaml and then run clone-recipe.sh to
+# propagate the changes to the other variants.
+
 context:
   # Keep up to date
-  version: "3.15"
+  freethreading_tag: ${{ "t" if "freethreading" in variant else "" }}
 
-package:
+recipe:
   name: python
-  version: ${{ version }}
 
 source:
   - path: ../../..
 
-build:
-  files:
-    exclude:
-      - "*.o"
-  script:
-    file: ../build.sh
-
-# derived from https://github.com/conda-forge/python-feedstock/blob/main/recipe/meta.yaml
-requirements:
+outputs:
+- package:
+    name: python_abi
+    version: ${{ version }}
   build:
-    - ${{ compiler('c') }}
-    - ${{ compiler('cxx') }}
-    - make
-    - pkg-config
-    # configure script looks for llvm-ar for lto
-    - if: osx
-      then:
-        - llvm-tools
-    - if: linux
-      then:
-        - ld_impl_${{ target_platform }}
-        - binutils_impl_${{ target_platform }}
-    - clang-19
-    - llvm-tools-19
+    string: "0_${{ abi_tag }}"
+  requirements:
+    run_constraints:
+      - python ${{ version }}.* *_${{ abi_tag }}
 
-  host:
-    - bzip2
-    - sqlite
-    - liblzma-devel
-    - zlib
-    - zstd
-    - openssl
-    - readline
-    - tk
-    # These two are just to get the headers needed for tk.h, but is unused
-    - xorg-libx11
-    - xorg-xorgproto
-    - ncurses
-    - libffi
-    - if: linux
-      then:
-        - ld_impl_${{ target_platform }}
-        - libuuid
-    - libmpdec-devel
-    - expat
+- package:
+    name: python
+    version: ${{ version }}
+  build:
+    string: "0_${{ abi_tag }}"
+    files:
+      exclude:
+        - "*.o"
+    script:
+      file: ../build.sh
+      env:
+        PYTHON_VARIANT: ${{ variant }}
+    python:
+      site_packages_path: "lib/python${{ version }}${{ freethreading_tag }}/site-packages"
+
+  # derived from https://github.com/conda-forge/python-feedstock/blob/main/recipe/meta.yaml
+  requirements:
+    build:
+      - ${{ compiler('c') }}
+      - ${{ compiler('cxx') }}
+      # Note that we are not using stdlib arguments which means the packages
+      # are built for the build settings and are not relocatable to a different
+      # machine that has a older system version. (eg: macOS/glibc version)
+      - make
+      - pkg-config
+      # configure script looks for llvm-ar for lto
+      - if: osx
+        then:
+          - llvm-tools
+
+    host:
+      - bzip2
+      - sqlite
+      - liblzma-devel
+      - zlib
+      - zstd
+      - openssl
+      - readline
+      - tk
+      # These two are just to get the headers needed for tk.h, but is unused
+      - xorg-libx11
+      - xorg-xorgproto
+      - ncurses
+      - libffi
+      - if: linux
+        then:
+          - libuuid
+      - libmpdec-devel
+      - expat
+      - if: linux and "san" in variant
+        then:
+          - libsanitizer
+      - if: osx and "san" in variant
+        then:
+          - libcompiler-rt
+
+    ignore_run_exports:
+      from_package:
+        - xorg-libx11
+        - xorg-xorgproto
+
+    run_exports:
+      noarch:
+        - python
+      weak:
+        - python_abi ${{ version }}.* *_${{ abi_tag }}
 
 about:
   homepage: https://www.python.org/
