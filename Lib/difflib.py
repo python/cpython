@@ -2746,10 +2746,10 @@ RESULTBLOCKS = _Sentinel('RESULTBLOCKS')    # List of blocks that terminate recu
 
 
 def _calc_skew(i, j, k, alo, ahi, blo, bhi):
-    """Difference in normalized positions
+    """Difference in normalized positions of block mid-points
         Returns skew : float, where -1 < skew < 1
     """
-    k_div_2 = k // 2
+    k_div_2 = k / 2
     apos = (i + k_div_2 - alo) / (ahi - alo)
     bpos = (j + k_div_2 - blo) / (bhi - blo)
     return apos - bpos
@@ -2793,7 +2793,21 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                 where -1 <= skew <= 1.
             Recommended value is 2/3, which means that 2/3 of
                 worst possible skew values will be eligible for balancing.
-            Note for the future: balancing procedure scales to k-srings well
+            Note for the future: balancing procedure scales to k-strings well
+
+        Skewed matching block visually:
+
+                   m1 = (6 + 9) / 2 = 7.5
+                   |
+            ------###--
+            --###------
+               |
+               m2 = (2 + 5) / 2 = 3.5
+
+            skew = 7.5 / 11 - 3.5 / 11 = 0.3636
+            do_balancing = abs(skew) > 1 - balancing
+
+            with balancing == 2/3, this would try alternatives with lookahead
 
         Comparison to SequenceMatcher:
             In terms of results, the following 2 are equivalent:
