@@ -1313,7 +1313,7 @@ New deprecations
 * Build:
 
   * Deprecate :pep:`456` support for providing an external definition
-    of the string hashing scheme. Removal is scheduled for Python 3.17.
+    of the string hashing scheme. Removal is scheduled for Python 3.19.
 
     Previously, embedders could define :c:macro:`Py_HASH_ALGORITHM` to be
     ``Py_HASH_EXTERNAL`` to indicate that the hashing scheme was provided
