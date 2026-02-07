@@ -2325,6 +2325,8 @@ class _LCSUBAutomaton:
 
     Examples:
         >>> aut = _LCSUBAutomaton('abc')
+        >>> aut
+        <_LCSUBAutomaton object; seq2_size=3>
         >>> aut.build()
         >>> aut.print_states()
         0 (0, 0, {'a': 1, 'b': 2, 'c': 3}, -3, 0)
@@ -2348,6 +2350,12 @@ class _LCSUBAutomaton:
         self.junk = junk
         self.nodes = None
         self.cache = (0, 0)
+
+    def __repr__(self):
+        kwstring = f'seq2_size={self.size2}'
+        if self.junk:
+            kwstring += f', junk_size={len(self.junk)}'
+        return f'<{type(self).__name__} object; {kwstring}>'
 
     # API -----------------------------
     # ---------------------------------
@@ -2748,10 +2756,34 @@ def _calc_skew(i, j, k, alo, ahi, blo, bhi):
 
 
 class GestaltSequenceMatcher(SequenceMatcherBase):
+    """
+    GestaltSequenceMatcher is a flexible class for comparing pairs
+    of sequences of any type, so long as the sequence elements are hashable.
+
+    It builds upon the same idea as `SequenceMatcher` and with its defaults
+    its results are exactly the same as the ones of `SequenceMatcher` with
+    `autojunk` parameter set to False.
+
+    However, while `SequenceMatcher` is able to obtain same result,
+    it is only practical to use with `autojunk` set to False due to
+    quadratic worst case complexity.
+
+    `GestaltSequenceMatcher`, on the other hand, implements Suffix Automaton,
+    which has guaranteed O(n) complexity, making it possible to use exact
+    calculation on long sequences.
+
+    Furthermore, `GestaltSequenceMatcher` has `balancing` parameter.
+    By default it is turned off, but it can be turned on to desired level to
+    reduce the chance of greedily committing to unbalanced matches.
+    It does so by sometimes selecting shorter matches by lookin 1 step ahead.
+    It produces more concise diffs with more lines matched, while retaining
+    block-oriented nature.
+    """
+
     def __init__(self, isjunk=None, a='', b='', balancing=0):
         """
         Args:
-            balancing : float
+            balancing : float in [0, 1]
                 a ratio that specifies the proportion of `skew` for which
                     balancing action will be attempted.
                 if 0, no balancing actions will occur
@@ -2767,9 +2799,16 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
             In terms of results, the following 2 are equivalent:
                 a) SequenceMatcher(isjunk=None, autojunk=False)
                 b) GestaltSequenceMatcher(isjunk=None, balancing=0)
-            When isjunk is not None, there is a chance of small differences
-                due to the fact that SequenceMatcher expands junk for
-                no match, while GestaltSequenceMatcher does not
+
+        Examples:
+            >>> seq1 = 'aaaa_aaaa_bbbbb'
+            >>> seq2 = 'bbbbb-aaaa-aaaa'
+            >>> m1 = GestaltSequenceMatcher(None, seq1, seq2)
+            >>> m2 = GestaltSequenceMatcher(None, seq1, seq2, balancing=2/3)
+            >>> list(map(tuple, m1.get_matching_blocks()))
+            [(10, 0, 5), (15, 15, 0)]
+            >>> list(map(tuple, m2.get_matching_blocks()))
+            [(0, 6, 4), (5, 11, 4), (15, 15, 0)]
         """
         balancing = float(balancing)
         if not 0 <= balancing <= 1:
@@ -2786,6 +2825,15 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
         self.automaton = _LCSUBAutomaton(b, junk=bjunk)
 
     def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None, *, quick_only=False):
+        """Find longest matching block in a[alo:ahi] and b[blo:bhi].
+            By default it will find the longest match in the entirety of a and b.
+
+            Look up docstring of SequenceMatcher.find_longest_match
+            for more information.
+
+            The only difference is `quick_only` argument, which if set to True
+            might not return a value if not possible with current build
+        """
         a, b, bjunk = self.a, self.b, self.bjunk
         automaton = self.automaton
         func = automaton._try_find if quick_only else automaton.find
@@ -2794,14 +2842,22 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
             # For quick_only=True it might not return anything
             return
 
-        if block[2] and bjunk:
+        if bjunk:
             # Extend match to surrounding junk
+            # [2026-02-07@dgpb]: Note, expanding will happen even when no-match
             block = _expand_block_to_junk(
                 bjunk, block, a, b, alo, ahi, blo, bhi, inverse=False)
 
         return Match._make(block)
 
     def batch_find_longest_match(self, bounds_list):
+        """Performance method for many `find_longest_match` calls
+            It calls `find` in order that aims to minimize builds needed
+            Also, does not evaluate same range twice
+        Args:
+            bounds_list : list[tuple[int, int, int, int]]
+                list of tuples: (alo, ahi, blo, bhi)
+        """
         a, b, bjunk = self.a, self.b, self.bjunk
         bounds_list = list(bounds_list)
         block_list = self.automaton.batchfind(a, bounds_list)
@@ -2981,7 +3037,7 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                     for triple in triples:
                         triple[0] = job_results[triple[0]]
                         triple[2] = job_results[triple[2]]
-                        # k**1.3 is empirically tuned
+                        # NOTE: k**1.3 is empirically tuned
                         # prefers one long match to many small ones
                         # but not too aggressively, so to be able to jump
                         # out of skewed positions
