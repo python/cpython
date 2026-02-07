@@ -4898,6 +4898,7 @@ class _TestSharedMemory(BaseTestCase):
             b'no nulls',
         ])
         self.addCleanup(sl.shm.unlink)
+        self.addCleanup(sl.shm.close)
 
         self.assertEqual(sl[0], b'\x03\x02\x01\x00\x00\x00')
         self.assertEqual(sl[1], '?\x00')
@@ -4906,14 +4907,13 @@ class _TestSharedMemory(BaseTestCase):
         self.assertEqual(sl[4], b'no nulls')
 
         sl2 = shared_memory.ShareableList(name=sl.shm.name)
+        self.addCleanup(sl2.shm.close)
         self.assertEqual(sl2[0], b'\x03\x02\x01\x00\x00\x00')
         self.assertEqual(sl2[1], '?\x00')
         self.assertEqual(sl2[2], b'\x00\x00\x00')
         self.assertEqual(sl2[3], b'')
         self.assertEqual(sl2[4], b'no nulls')
-        sl2.shm.close()
 
-        sl.shm.close()
 
     def test_shared_memory_cleaned_after_process_termination(self):
         cmd = '''if 1:
