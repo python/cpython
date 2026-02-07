@@ -1713,7 +1713,7 @@ first in the context of constructors.
 
 In C++ you'd write:
 
-.. code-block:: c
+.. code-block:: c++
 
     class C {
         C() { cout << "No arguments\n"; }
@@ -2000,7 +2000,7 @@ The two principal tools for caching methods are
 former stores results at the instance level and the latter at the class
 level.
 
-The *cached_property* approach only works with methods that do not take
+The ``cached_property`` approach only works with methods that do not take
 any arguments.  It does not create a reference to the instance.  The
 cached method result will be kept only as long as the instance is alive.
 
@@ -2009,7 +2009,7 @@ method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
 
-The *lru_cache* approach works with methods that have :term:`hashable`
+The ``lru_cache`` approach works with methods that have :term:`hashable`
 arguments.  It creates a reference to the instance unless special
 efforts are made to pass in weak references.
 
@@ -2043,11 +2043,11 @@ This example shows the various techniques::
             # Depends on the station_id, date, and units.
 
 The above example assumes that the *station_id* never changes.  If the
-relevant instance attributes are mutable, the *cached_property* approach
+relevant instance attributes are mutable, the ``cached_property`` approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-To make the *lru_cache* approach work when the *station_id* is mutable,
+To make the ``lru_cache`` approach work when the *station_id* is mutable,
 the class needs to define the :meth:`~object.__eq__` and :meth:`~object.__hash__`
 methods so that the cache can detect relevant attribute updates::
 
@@ -2115,7 +2115,7 @@ the ``compile()`` function in that module interactively::
 
 This will write the ``.pyc`` to a ``__pycache__`` subdirectory in the same
 location as ``foo.py`` (or you can override that with the optional parameter
-``cfile``).
+*cfile*).
 
 You can also automatically compile all files in a directory or directories using
 the :mod:`compileall` module.  You can do it from the shell prompt by running
