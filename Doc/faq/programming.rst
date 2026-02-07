@@ -1143,7 +1143,7 @@ them into a list and call :meth:`str.join` at the end::
        chunks.append(s)
    result = ''.join(chunks)
 
-(another reasonably efficient idiom is to use :class:`io.StringIO`)
+(Another reasonably efficient idiom is to use :class:`io.StringIO`.)
 
 To accumulate many :class:`bytes` objects, the recommended idiom is to extend
 a :class:`bytearray` object using in-place concatenation (the ``+=`` operator)::
@@ -1218,7 +1218,7 @@ list, deleting duplicates as you go::
                last = mylist[i]
 
 If all elements of the list may be used as set keys (that is, they are all
-:term:`hashable`) this is often faster ::
+:term:`hashable`) this is often faster::
 
    mylist = list(set(mylist))
 
@@ -1254,7 +1254,7 @@ difference is that a Python list can contain objects of many different types.
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
 note that `NumPy <https://numpy.org/>`_
-and other third party packages define array-like structures with
+and other third-party packages define array-like structures with
 various characteristics as well.
 
 To get Lisp-style linked lists, you can emulate *cons cells* using tuples::
@@ -1574,7 +1574,7 @@ call it::
 What is delegation?
 -------------------
 
-Delegation is an object oriented technique (also called a design pattern).
+Delegation is an object-oriented technique (also called a design pattern).
 Let's say you have an object ``x`` and want to change the behaviour of just one
 of its methods.  You can create a new class that provides a new implementation
 of the method you're interested in changing and delegates all other methods to
@@ -1710,7 +1710,7 @@ How can I overload constructors (or methods) in Python?
 This answer actually applies to all methods, but the question usually comes up
 first in the context of constructors.
 
-In C++ you'd write
+In C++ you'd write:
 
 .. code-block:: c
 
@@ -1731,7 +1731,7 @@ default arguments.  For example::
 
 This is not entirely equivalent, but close enough in practice.
 
-You could also try a variable-length argument list, for example ::
+You could also try a variable-length argument list, for example::
 
    def __init__(self, *args):
        ...
@@ -2095,7 +2095,7 @@ creation of a .pyc file is automatic if you're importing a module and Python
 has the ability (permissions, free space, and so on) to create a ``__pycache__``
 subdirectory and write the compiled module to that subdirectory.
 
-Running Python on a top level script is not considered an import and no
+Running Python on a top-level script is not considered an import and no
 ``.pyc`` will be created.  For example, if you have a top-level module
 ``foo.py`` that imports another module ``xyz.py``, when you run ``foo`` (by
 typing ``python foo.py`` as a shell command), a ``.pyc`` will be created for
@@ -2219,7 +2219,7 @@ changed module, do this::
    importlib.reload(modname)
 
 Warning: this technique is not 100% fool-proof.  In particular, modules
-containing statements like ::
+containing statements like::
 
    from modname import some_objects
 
