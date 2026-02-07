@@ -1133,7 +1133,7 @@ class TracebackException:
                     # Prepend with a dot for better understanding. See GH-144285.
                     self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
                 else:  # NameError
-                    self._str += f". Did you mean '{suggestion}' instead of '{wrong_name}'?"
+                    self._str += f". Did you mean: '{suggestion}'?"
             if issubclass(exc_type, NameError):
                 wrong_name = getattr(exc_value, "name", None)
                 if wrong_name is not None and wrong_name in sys.stdlib_module_names:
