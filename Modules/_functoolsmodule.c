@@ -707,14 +707,16 @@ partial_repr(PyObject *self)
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */
-    assert(PyTuple_Check(pto->args));
     args = Py_NewRef(pto->args);
-    n = PyTuple_GET_SIZE(pto->args);
+    assert(PyTuple_Check(args));
+    n = PyTuple_GET_SIZE(args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
                                         PyTuple_GET_ITEM(args, i)));
-        if (arglist == NULL)
+        if (arglist == NULL) {
+            Py_DECREF(args);
             goto done;
+        }
     }
     Py_DECREF(args);
     /* Pack keyword arguments */
