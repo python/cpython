@@ -47,7 +47,6 @@ There are a number of commercial Python IDEs that include graphical debuggers.
 They include:
 
 * `Wing IDE <https://wingware.com/>`_
-* `Komodo IDE <https://www.activestate.com/products/komodo-ide/>`_
 * `PyCharm <https://www.jetbrains.com/pycharm/>`_
 
 
