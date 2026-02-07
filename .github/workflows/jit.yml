@@ -124,17 +124,14 @@ jobs:
         include:
           - name: Free-Threaded (Debug)
             configure_flags: --enable-experimental-jit --with-pydebug --disable-gil
-            test_env: ""
             continue_on_error: true
           - name: JIT without optimizations (Debug)
             configure_flags: --enable-experimental-jit --with-pydebug
             test_env: "PYTHON_UOPS_OPTIMIZE=0"
-            continue_on_error: false
           - name: JIT with tail calling interpreter
             configure_flags: --enable-experimental-jit --with-tail-call-interp --with-pydebug
             use_clang: true
-            test_env: ""
-            continue_on_error: false
+            run_tests: false
     steps:
       - uses: actions/checkout@v6
         with:
@@ -152,6 +149,7 @@ jobs:
           ./configure ${{ matrix.configure_flags }}
           make all --jobs 4
       - name: Run tests
+        if: matrix.run_tests != false
         run: |
           ${{ matrix.test_env }} ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
         continue-on-error: ${{ matrix.continue_on_error }}
