@@ -1219,7 +1219,7 @@ class TestDateOnly(unittest.TestCase):
         long_hand = datetime.strptime(test_date,formats["long"])
         self.assertEqual(shorthand,long_hand)
 
-    def test_strptime_C99_shorthand_hour_minute_second(self):
+    def test_strptime_T_format(self):
         formats = dict(short="%T",long="%H:%M:%S")
         test_time = "15:00:00"
         shorthand = datetime.strptime(test_time,formats["short"])
