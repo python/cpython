@@ -4375,7 +4375,7 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
         # Should suggest 'inner.data'
         actual = self.get_suggestion(Outer(), 'data')
-        self.assertIn("Did you mean '.inner.data' instead of '.value'", actual)
+        self.assertIn("Did you mean '.inner.data' instead of '.data'", actual)
 
     def test_getattr_nested_prioritizes_direct_matches(self):
         # Test that direct attribute matches are prioritized over nested ones

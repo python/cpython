@@ -44,7 +44,7 @@ class ExceptionTest(unittest.TestCase):
                                "Or did you forget to import 'abc'?\n"),
             ('int.reel', AttributeError,
                  "type object 'int' has no attribute 'reel'. "
-                 "Did you mean: 'real'?\n"),
+                 "Did you mean '.real' instead of '.reel'?\n"),
             )
 
     @force_not_colorized
