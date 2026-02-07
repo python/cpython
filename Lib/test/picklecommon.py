@@ -26,7 +26,7 @@ __main__.E = E
 E.__module__ = "__main__"
 
 # Simple mutable object.
-class Object:
+class Object(object):
     pass
 
 # Hashable immutable key object containing unheshable mutable data.
@@ -37,6 +37,43 @@ class K:
     def __reduce__(self):
         # Shouldn't support the recursion itself
         return K, (self.value,)
+
+class WithSlots(object):
+    __slots__ = ('a', 'b')
+
+class WithSlotsSubclass(WithSlots):
+    __slots__ = ('c',)
+
+class WithSlotsAndDict(object):
+    __slots__ = ('a', '__dict__')
+
+class WithPrivateAttrs(object):
+    def __init__(self, a):
+        self.__private = a
+    def get(self):
+        return self.__private
+
+class WithPrivateAttrsSubclass(WithPrivateAttrs):
+    def __init__(self, a, b):
+        super().__init__(a)
+        self.__private = b
+    def get2(self):
+        return self.__private
+
+class WithPrivateSlots(object):
+    __slots__ = ('__private',)
+    def __init__(self, a):
+        self.__private = a
+    def get(self):
+        return self.__private
+
+class WithPrivateSlotsSubclass(WithPrivateSlots):
+    __slots__ = ('__private',)
+    def __init__(self, a, b):
+        super().__init__(a)
+        self.__private = b
+    def get2(self):
+        return self.__private
 
 # For test_misc
 class myint(int):
@@ -351,3 +388,48 @@ class PyMethodsTest:
 class Subclass(tuple):
     class Nested(str):
         pass
+
+# For test_private_methods
+class PrivateMethods:
+    def __init__(self, value):
+        self.value = value
+
+    def __private_method(self):
+        return self.value
+
+    def get_method(self):
+        return self.__private_method
+
+    @classmethod
+    def get_unbound_method(cls):
+        return cls.__private_method
+
+    @classmethod
+    def __private_classmethod(cls):
+        return 43
+
+    @classmethod
+    def get_classmethod(cls):
+        return cls.__private_classmethod
+
+    @staticmethod
+    def __private_staticmethod():
+        return 44
+
+    @classmethod
+    def get_staticmethod(cls):
+        return cls.__private_staticmethod
+
+# For test_private_nested_classes
+class PrivateNestedClasses:
+    @classmethod
+    def get_nested(cls):
+        return cls.__Nested
+
+    class __Nested:
+        @classmethod
+        def get_nested2(cls):
+            return cls.__Nested2
+
+        class __Nested2:
+            pass

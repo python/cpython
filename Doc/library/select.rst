@@ -18,7 +18,7 @@ it was last read.
 .. note::
 
    The :mod:`selectors` module allows high-level and efficient I/O
-   multiplexing, built upon the :mod:`select` module primitives. Users are
+   multiplexing, built upon the :mod:`!select` module primitives. Users are
    encouraged to use the :mod:`selectors` module instead, unless they want
    precise control over the OS-level primitives used.
 
@@ -478,6 +478,8 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
 
    .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
+      If ``ppoll()`` function is available, *timeout* has a resolution
+      of ``1`` ns (``1e-6`` ms) instead of ``1`` ms.
 
 
 .. _kqueue-objects:
