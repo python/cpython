@@ -650,11 +650,11 @@ class StrptimeTests(unittest.TestCase):
                 time.strptime("Mar 1", "%b %d"))
 
     def test_shorthand_year_month_day(self):
-        formats = dict(short="%F",long="%Y-%m-%d")
         test_date = "2025-10-26"
-        shorthand = time.strptime(test_date,formats["short"])
-        long_hand = time.strptime(test_date,formats["long"])
-        self.assertEqual(shorthand,long_hand)
+        self.assertEqual(
+            time.strptime(test_date,"%F"),
+            time.strptime(test_date,"%Y-%m-%d")
+        )
 
     def test_shorthand_hour_minute_second(self):
         # Test that token '%T' is equivalent to '%H:%M:%S'
