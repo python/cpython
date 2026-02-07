@@ -42,7 +42,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
 
-   By default, :mod:`shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
+   By default, :mod:`!shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
    for serializing and deserializing. This can be changed by supplying
    *serializer* and *deserializer*, respectively.
 
@@ -81,7 +81,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
 
 .. warning::
 
-   Because the :mod:`shelve` module is backed by :mod:`pickle`, it is insecure
+   Because the :mod:`!shelve` module is backed by :mod:`pickle`, it is insecure
    to load a shelf from an untrusted source.  Like with pickle, loading a shelf
    can execute arbitrary code.
 
@@ -133,7 +133,7 @@ Restrictions
   database should be fairly small, and in rare cases key collisions may cause
   the database to refuse updates.
 
-* The :mod:`shelve` module does not support *concurrent* read/write access to
+* The :mod:`!shelve` module does not support *concurrent* read/write access to
   shelved objects.  (Multiple simultaneous read accesses are safe.)  When a
   program has a shelf open for writing, no other program should have it open for
   reading or writing.  Unix file locking can be used to solve this, but this
@@ -283,5 +283,5 @@ Exceptions
       Generic interface to ``dbm``-style databases.
 
    Module :mod:`pickle`
-      Object serialization used by :mod:`shelve`.
+      Object serialization used by :mod:`!shelve`.
 

@@ -1111,7 +1111,10 @@ class TracebackException:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                self._str += f". Did you mean: '{suggestion}'?"
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '{suggestion}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
@@ -1124,23 +1127,27 @@ class TracebackException:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
                     + "or to enable your virtual environment?")
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
-                getattr(exc_value, "name", None) is not None:
-            wrong_name = getattr(exc_value, "name", None)
+        elif exc_type and issubclass(exc_type, AttributeError) and \
+                (wrong_name := getattr(exc_value, "name", None)) is not None:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
-                if issubclass(exc_type, AttributeError):
-                    # Prepend with a dot for better understanding. See GH-144285.
-                    self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
-                else:  # NameError
+                if suggestion.isascii():
+                    self._str += f". Did you mean: '.{suggestion}' instead of '.{wrong_name}'?"
+                else:
+                    self._str += f". Did you mean: '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}'?"
+        elif exc_type and issubclass(exc_type, NameError) and \
+                (wrong_name := getattr(exc_value, "name", None)) is not None:
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                if suggestion.isascii():
                     self._str += f". Did you mean: '{suggestion}'?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
+                else:
+                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
+            if wrong_name is not None and wrong_name in sys.stdlib_module_names:
+                if suggestion:
+                    self._str += f" Or did you forget to import '{wrong_name}'?"
+                else:
+                    self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1658,6 +1665,13 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
+    not_normalized = False
+    if not wrong_name.isascii():
+        from unicodedata import normalize
+        normalized_name = normalize('NFKC', wrong_name)
+        if normalized_name != wrong_name:
+            not_normalized = True
+            wrong_name = normalized_name
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
@@ -1703,6 +1717,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_builtins)
         )
         d = [x for x in d if isinstance(x, str)]
+        if not_normalized and wrong_name in d:
+            return wrong_name
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
@@ -1715,6 +1731,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if has_wrong_name:
                 return f"self.{wrong_name}"
 
+    if not_normalized and wrong_name in d:
+        return wrong_name
     try:
         import _suggestions
     except ImportError:
