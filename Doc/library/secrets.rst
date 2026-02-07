@@ -94,7 +94,7 @@ hard-to-guess URLs, and similar.
    bytes.  The text is Base64 encoded, so on average each byte results
    in approximately 1.3 characters.
 
-   If *nybtes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
+   If *nbytes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
    is used instead.
 
    .. doctest::
