@@ -92,8 +92,8 @@ grow_thread_array(struct _qsbr_shared *shared)
     size_t alloc_size = (size_t)new_size * sizeof(struct _qsbr_pad) + alignment - 1;
     void *raw = PyMem_RawCalloc(1, alloc_size);
     if (raw == NULL) {
-return -1;
-}
+        return -1;
+    }
     struct _qsbr_pad *array = _Py_ALIGN_UP(raw, alignment);
 
     void *old_raw = shared->array_raw;
