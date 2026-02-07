@@ -8,7 +8,7 @@ Programming FAQ
 
    .. contents::
 
-General Questions
+General questions
 =================
 
 Is there a source code level debugger with breakpoints, single-stepping, etc.?
@@ -109,7 +109,7 @@ Yes.  The coding style required for standard library modules is documented as
 :pep:`8`.
 
 
-Core Language
+Core language
 =============
 
 .. _faq-unboundlocalerror:
@@ -1152,7 +1152,7 @@ a :class:`bytearray` object using in-place concatenation (the ``+=`` operator)::
        result += b
 
 
-Sequences (Tuples/Lists)
+Sequences (tuples/lists)
 ========================
 
 How do I convert between tuples and lists?
