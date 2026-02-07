@@ -863,9 +863,9 @@ Here's one solution that uses the :attr:`~Mock.side_effect`
 functionality. If you provide a ``side_effect`` function for a mock then
 ``side_effect`` will be called with the same args as the mock. This gives us an
 opportunity to copy the arguments and store them for later assertions. In this
-example I'm using *another* mock to store the arguments so that I can use the
+example we're using *another* mock to store the arguments so that we can use the
 mock methods for doing the assertion. Again a helper function sets this up for
-me. ::
+us. ::
 
     >>> from copy import deepcopy
     >>> from unittest.mock import Mock, patch, DEFAULT

@@ -563,7 +563,6 @@ def warn_explicit(message, category, filename, lineno,
     else:
         text = message
         message = category(message)
-    modules = None
     key = (text, category, lineno)
     with _wm._lock:
         if registry is None:

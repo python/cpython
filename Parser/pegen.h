@@ -358,6 +358,7 @@ expr_ty _PyPegen_ensure_real(Parser *p, expr_ty);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 int _PyPegen_check_legacy_stmt(Parser *p, expr_ty t);
+void *_PyPegen_raise_error_for_missing_comma(Parser *p, expr_ty a, expr_ty b);
 ResultTokenWithMetadata *_PyPegen_check_fstring_conversion(Parser *p, Token *, expr_ty t);
 ResultTokenWithMetadata *_PyPegen_setup_full_format_spec(Parser *, Token *, asdl_expr_seq *, int, int,
                                                          int, int, PyArena *);
@@ -378,7 +379,7 @@ mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char
                                     const char *, const char *, PyCompilerFlags *, int *, PyObject **,
                                     PyArena *);
 void *_PyPegen_run_parser(Parser *);
-mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
+mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *, PyObject *);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 
 // Generated function in parse.c - function definition in python.gram

@@ -27,6 +27,8 @@ module_from_slots_name(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
         {Py_mod_name, "currently ignored..."},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
@@ -37,6 +39,8 @@ module_from_slots_doc(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
         {Py_mod_doc, "the docstring"},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
@@ -47,6 +51,8 @@ module_from_slots_size(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
         {Py_mod_state_size, (void*)123},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -72,6 +78,8 @@ module_from_slots_methods(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
         {Py_mod_methods, a_methoddef_array},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
@@ -90,6 +98,8 @@ module_from_slots_gc(PyObject *self, PyObject *spec)
         {Py_mod_state_traverse, noop_traverse},
         {Py_mod_state_clear, noop_clear},
         {Py_mod_state_free, noop_free},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -118,6 +128,8 @@ module_from_slots_token(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
         {Py_mod_token, (void*)&test_token},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -144,6 +156,8 @@ module_from_slots_exec(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
         {Py_mod_exec, simple_exec},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -164,7 +178,7 @@ module_from_slots_exec(PyObject *self, PyObject *spec)
 }
 
 static PyObject *
-create_attr_from_spec(PyObject *spec, PyObject *def)
+create_attr_from_spec(PyObject *spec, PyModuleDef *def)
 {
     assert(!def);
     return PyObject_GetAttrString(spec, "_gimme_this");
@@ -175,6 +189,8 @@ module_from_slots_create(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
         {Py_mod_create, create_attr_from_spec},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
@@ -205,6 +221,8 @@ module_from_slots_repeat_slot(PyObject *self, PyObject *spec)
     PyModuleDef_Slot slots[] = {
         {slot_id, "anything"},
         {slot_id, "anything else"},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
@@ -219,6 +237,8 @@ module_from_slots_null_slot(PyObject *self, PyObject *spec)
     }
     PyModuleDef_Slot slots[] = {
         {slot_id, NULL},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
@@ -233,6 +253,8 @@ module_from_def_slot(PyObject *self, PyObject *spec)
     }
     PyModuleDef_Slot slots[] = {
         {slot_id, "anything"},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     PyModuleDef def = {
@@ -280,6 +302,7 @@ module_from_def_multiple_exec(PyObject *self, PyObject *spec)
     static PyModuleDef_Slot slots[] = {
         {Py_mod_exec, simple_exec},
         {Py_mod_exec, another_exec},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };

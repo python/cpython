@@ -1,2 +1,0 @@
-The undocumented :class:`!re.Scanner` class now forbids regular expressions containing capturing groups in its lexicon patterns. Patterns using capturing groups could
-previously lead to crashes with segmentation fault. Use non-capturing groups (?:...) instead.

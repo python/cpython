@@ -57,6 +57,7 @@ raised for division by zero and mod by zero.
 #endif
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_import.h"        // _PyImport_SetModuleString()
@@ -394,7 +395,7 @@ m_tgamma(double x)
     if (x == 0.0) {
         errno = EDOM;
         /* tgamma(+-0.0) = +-inf, divide-by-zero */
-        return copysign(Py_INFINITY, x);
+        return copysign(INFINITY, x);
     }
 
     /* integer arguments */
@@ -425,7 +426,7 @@ m_tgamma(double x)
         }
         else {
             errno = ERANGE;
-            return Py_INFINITY;
+            return INFINITY;
         }
     }
 
@@ -489,14 +490,14 @@ m_lgamma(double x)
         if (isnan(x))
             return x;  /* lgamma(nan) = nan */
         else
-            return Py_INFINITY; /* lgamma(+-inf) = +inf */
+            return INFINITY; /* lgamma(+-inf) = +inf */
     }
 
     /* integer arguments */
     if (x == floor(x) && x <= 2.0) {
         if (x <= 0.0) {
             errno = EDOM;  /* lgamma(n) = inf, divide-by-zero for */
-            return Py_INFINITY; /* integers n <= 0 */
+            return INFINITY; /* integers n <= 0 */
         }
         else {
             return 0.0; /* lgamma(1) = lgamma(2) = 0.0 */
@@ -632,7 +633,7 @@ m_log(double x)
             return log(x);
         errno = EDOM;
         if (x == 0.0)
-            return -Py_INFINITY; /* log(0) = -inf */
+            return -INFINITY; /* log(0) = -inf */
         else
             return Py_NAN; /* log(-ve) = nan */
     }
@@ -675,7 +676,7 @@ m_log2(double x)
     }
     else if (x == 0.0) {
         errno = EDOM;
-        return -Py_INFINITY; /* log2(0) = -inf, divide-by-zero */
+        return -INFINITY; /* log2(0) = -inf, divide-by-zero */
     }
     else {
         errno = EDOM;
@@ -691,7 +692,7 @@ m_log10(double x)
             return log10(x);
         errno = EDOM;
         if (x == 0.0)
-            return -Py_INFINITY; /* log10(0) = -inf */
+            return -INFINITY; /* log10(0) = -inf */
         else
             return Py_NAN; /* log10(-ve) = nan */
     }
@@ -1499,7 +1500,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
         errno = 0;
     } else if (exp > INT_MAX) {
         /* overflow */
-        r = copysign(Py_INFINITY, x);
+        r = copysign(INFINITY, x);
         errno = ERANGE;
     } else if (exp < INT_MIN) {
         /* underflow to +-0 */
@@ -1578,43 +1579,62 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
+loghelper_int(PyObject* arg, double (*func)(double))
+{
+    /* If it is int, do it ourselves. */
+    double x, result;
+    int64_t e;
+
+    /* Negative or zero inputs give a ValueError. */
+    if (!_PyLong_IsPositive((PyLongObject *)arg)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "expected a positive input");
+        return NULL;
+    }
+
+    x = PyLong_AsDouble(arg);
+    if (x == -1.0 && PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+            return NULL;
+        /* Here the conversion to double overflowed, but it's possible
+           to compute the log anyway.  Clear the exception and continue. */
+        PyErr_Clear();
+        x = _PyLong_Frexp((PyLongObject *)arg, &e);
+        assert(!PyErr_Occurred());
+        /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
+        result = fma(func(2.0), (double)e, func(x));
+    }
+    else
+        /* Successfully converted x to a double. */
+        result = func(x);
+    return PyFloat_FromDouble(result);
+}
+
+static PyObject*
 loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
-        double x, result;
-        int64_t e;
-
-        /* Negative or zero inputs give a ValueError. */
-        if (!_PyLong_IsPositive((PyLongObject *)arg)) {
-            /* The input can be an arbitrary large integer, so we
-               don't include it's value in the error message. */
-            PyErr_SetString(PyExc_ValueError,
-                            "expected a positive input");
+        return loghelper_int(arg, func);
+    }
+    /* Else let libm handle it by itself. */
+    PyObject *res = math_1(arg, func, 0, "expected a positive input, got %s");
+    if (res == NULL &&
+        PyErr_ExceptionMatches(PyExc_OverflowError) &&
+        PyIndex_Check(arg))
+    {
+        /* Here the conversion to double overflowed, but it's possible
+           to compute the log anyway.  Clear the exception, convert to
+           integer and continue. */
+        PyErr_Clear();
+        arg = _PyNumber_Index(arg);
+        if (arg == NULL) {
             return NULL;
         }
-
-        x = PyLong_AsDouble(arg);
-        if (x == -1.0 && PyErr_Occurred()) {
-            if (!PyErr_ExceptionMatches(PyExc_OverflowError))
-                return NULL;
-            /* Here the conversion to double overflowed, but it's possible
-               to compute the log anyway.  Clear the exception and continue. */
-            PyErr_Clear();
-            x = _PyLong_Frexp((PyLongObject *)arg, &e);
-            assert(e >= 0);
-            assert(!PyErr_Occurred());
-            /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
-            result = fma(func(2.0), (double)e, func(x));
-        }
-        else
-            /* Successfully converted x to a double. */
-            result = func(x);
-        return PyFloat_FromDouble(result);
+        res = loghelper_int(arg, func);
+        Py_DECREF(arg);
     }
-
-    /* Else let libm handle it by itself. */
-    return math_1(arg, func, 0, "expected a positive input, got %s");
+    return res;
 }
 
 
@@ -2963,7 +2983,7 @@ math_ulp_impl(PyObject *module, double x)
     if (isinf(x)) {
         return x;
     }
-    double inf = Py_INFINITY;
+    double inf = INFINITY;
     double x2 = nextafter(x, inf);
     if (isinf(x2)) {
         /* special case: x is the largest positive representable float */
@@ -2987,7 +3007,7 @@ math_exec(PyObject *module)
     if (PyModule_Add(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_Add(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
+    if (PyModule_Add(module, "inf", PyFloat_FromDouble(INFINITY)) < 0) {
         return -1;
     }
     if (PyModule_Add(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {

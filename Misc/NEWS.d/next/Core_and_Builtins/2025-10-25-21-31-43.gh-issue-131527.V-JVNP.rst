@@ -1,2 +1,0 @@
-Dynamic borrow checking for stackrefs is added to ``Py_STACKREF_DEBUG``
-mode. Patch by Mikhail Efimov.

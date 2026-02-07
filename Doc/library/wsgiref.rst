@@ -11,6 +11,11 @@
 
 --------------
 
+.. warning::
+
+   :mod:`wsgiref` is a reference implementation and is not recommended for
+   production. The module only implements basic security checks.
+
 The Web Server Gateway Interface (WSGI) is a standard interface between web
 server software and web applications written in Python. Having a standard
 interface makes it easy to use an application that supports WSGI with a number
@@ -21,7 +26,7 @@ and corner case of the WSGI design.  You don't need to understand every detail
 of WSGI just to install a WSGI application or to write a web application using
 an existing framework.
 
-:mod:`wsgiref` is a reference implementation of the WSGI specification that can
+:mod:`!wsgiref` is a reference implementation of the WSGI specification that can
 be used to add WSGI support to a web server or framework.  It provides utilities
 for manipulating WSGI environment variables and response headers, base classes
 for implementing WSGI servers, a demo HTTP server that serves WSGI applications,

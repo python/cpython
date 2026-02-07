@@ -577,6 +577,23 @@ class OpenerDirectorTests(unittest.TestCase):
         self.assertRaises(TypeError,
                           OpenerDirector().add_handler, NonHandler())
 
+    def test_no_protocol_methods(self):
+        # test the case that methods starts with handler type without the protocol
+        # like open*() or _open*().
+        # These methods should be ignored
+
+        o = OpenerDirector()
+        meth_spec = [
+            ["open"],
+            ["_open"],
+            ["error"]
+        ]
+
+        add_ordered_mock_handlers(o, meth_spec)
+
+        self.assertEqual(len(o.handle_open), 0)
+        self.assertEqual(len(o.handle_error), 0)
+
     def test_badly_named_methods(self):
         # test work-around for three methods that accidentally follow the
         # naming conventions for handler methods

@@ -159,7 +159,7 @@ The clipboard functions are also available in context menus.
 
 :guilabel:`S&how Completions`
    Open a scrollable list allowing selection of existing names. See
-   :ref:`Completions <completions>` in the Editing and navigation section below.
+   :ref:`Completions <completions>` in the Editing and Navigation section below.
 
 :guilabel:`E&xpand Word`
    Expand a prefix you have typed to match a full word in the same window;
@@ -168,7 +168,7 @@ The clipboard functions are also available in context menus.
 :guilabel:`Show C&all Tip`
    After an unclosed parenthesis for a function, open a small window with
    function parameter hints.  See :ref:`Calltips <calltips>` in the
-   Editing and navigation section below.
+   Editing and Navigation section below.
 
 :guilabel:`Show Surrounding P&arens`
    Highlight the surrounding parenthesis.
@@ -179,9 +179,9 @@ Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :guilabel:`F&ormat Paragraph`
-   Reformat the current blank-line-delimited paragraph in comment block or
-   multiline string or selected line in a string.  All lines in the
-   paragraph will be formatted to less than N columns, where N defaults to 72.
+   Rewrap the text block containing the text insert cursor.
+   Avoid code lines.  See :ref:`Format block<format-block>` in the
+   Editing and Navigation section below.
 
 :guilabel:`&Indent Region`
    Shift selected lines right by the indent width (default 4 spaces).
@@ -568,6 +568,20 @@ In an editor, import statements have no effect until one runs the file.
 One might want to run a file after writing import statements, after
 adding function definitions, or after opening an existing file.
 
+.. _format-block:
+
+Format block
+^^^^^^^^^^^^
+
+Reformat Paragraph rewraps a block ('paragraph') of contiguous equally
+indented non-blank comments, a similar block of text within a multiline
+string, or a selected subset of either.
+If needed, add a blank line to separate string from code.
+Partial lines in a selection expand to complete lines.
+The resulting lines have the same indent as before
+but have maximum total length of N columns (characters).
+Change the default N of 72 on the Window tab of IDLE Settings.
+
 .. _code-context:
 
 Code Context
@@ -663,7 +677,9 @@ looked for in the user's home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE's Python shell.
 
-Command line usage
+.. _idlelib-cli:
+
+Command-line usage
 ^^^^^^^^^^^^^^^^^^
 
 .. program:: idle

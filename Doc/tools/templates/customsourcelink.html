@@ -8,6 +8,12 @@
             rel="nofollow">{{ _('Show source') }}
         </a>
       </li>
+      {% if language != "en" %}
+      <li>
+        <a href="https://github.com/python/python-docs-{{ language }}/blob/{{ version }}/{{ pagename }}.po?plain=1"
+           rel="nofollow">{{ _('Show translation source') }}</a>
+      </li>
+      {% endif %}
     </ul>
   </div>
 {%- endif %}
