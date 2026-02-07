@@ -25,8 +25,7 @@ Reference Manual <pdb>`. You can also write your own debugger by using the code
 for pdb as an example.
 
 The IDLE interactive development environment, which is part of the standard
-Python distribution (normally available as
-`Tools/scripts/idle3 <https://github.com/python/cpython/blob/main/Tools/scripts/idle3>`_),
+Python distribution (normally available as :source:`Tools/scripts/idle3`),
 includes a graphical debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
@@ -79,7 +78,7 @@ set of modules required by a program and bind these modules together with a
 Python binary to produce a single executable.
 
 One is to use the freeze tool, which is included in the Python source tree as
-`Tools/freeze <https://github.com/python/cpython/tree/main/Tools/freeze>`_.
+:source:`Tools/freeze`.
 It converts Python byte code to C arrays; with a C compiler you can
 embed all your modules into a new program, which is then linked with the
 standard Python modules.
