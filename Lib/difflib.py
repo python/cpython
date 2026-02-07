@@ -1,7 +1,4 @@
-r"""
-{{TOCREG:(?m)^###\s+(?P<title>[^\n]*).*$}}
-{{TOC}}
-
+"""
 Module difflib -- helpers for computing deltas between objects.
 
 Function get_close_matches(word, possibilities, n=3, cutoff=0.6):
@@ -2865,7 +2862,7 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                 i, j, k = init_block = self.find_longest_match(*bounds)
             elif dtype is _RANGEWITHBLOCK:
                 # Range & pre-evaluated block
-                init_block, bounds = data
+                bounds, init_block = data
                 i, j, k = init_block
             else:
                 msg = 'Unknown data type: {!r}'
@@ -3015,9 +3012,9 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                     # Try quick evaluation without re-building
                     # Before cache was overriden
                     _bounds = data
-                    x = self.find_longest_match(*_bounds, quick_only=True)
-                    if x is not None:
-                        q.append((_RANGEWITHBLOCK, d, (x, _bounds)))
+                    block = self.find_longest_match(*_bounds, quick_only=True)
+                    if block is not None:
+                        q.append((_RANGEWITHBLOCK, d, (_bounds, block)))
                     else:
                         q.append((dtype, d, data))
                 else:
