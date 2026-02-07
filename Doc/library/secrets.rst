@@ -66,7 +66,7 @@ hard-to-guess URLs, and similar.
 
    Return a random byte string containing *nbytes* number of bytes.
 
-   If *nybtes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
+   If *nbytes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
    is used instead.
 
    .. doctest::
