@@ -1,4 +1,5 @@
 import enum
+import os
 import sys
 import textwrap
 import unittest
@@ -12,6 +13,9 @@ from test.support.script_helper import assert_python_failure
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
+
+NULL = None
+STDERR_FD = 2
 
 
 class Constant(enum.IntEnum):
@@ -180,7 +184,7 @@ class IsUniquelyReferencedTest(unittest.TestCase):
         self.assertTrue(_testcapi.is_uniquely_referenced(object()))
         self.assertTrue(_testcapi.is_uniquely_referenced([]))
         # Immortals
-        self.assertFalse(_testcapi.is_uniquely_referenced("spanish inquisition"))
+        self.assertFalse(_testcapi.is_uniquely_referenced(()))
         self.assertFalse(_testcapi.is_uniquely_referenced(42))
         # CRASHES is_uniquely_referenced(NULL)
 
@@ -221,6 +225,7 @@ class CAPITest(unittest.TestCase):
         """
         self.check_negative_refcount(code)
 
+    @support.requires_resource('cpu')
     def test_decref_delayed(self):
         # gh-130519: Test that _PyObject_XDecRefDelayed() and QSBR code path
         # handles destructors that are possibly re-entrant or trigger a GC.
@@ -245,6 +250,61 @@ class CAPITest(unittest.TestCase):
             self.assertFalse(_testcapi.pyobject_is_unique_temporary(x))
 
         func(object())
+
+        # Test that a newly created object in C is not considered
+        # a uniquely referenced temporary, because it's not on the stack.
+        # gh-142586: do the test in a loop over a list to test for handling
+        # tagged ints on the stack.
+        for i in [0, 1, 2]:
+            self.assertFalse(_testcapi.pyobject_is_unique_temporary_new_object())
+
+    def pyobject_dump(self, obj, release_gil=False):
+        pyobject_dump = _testcapi.pyobject_dump
+
+        try:
+            old_stderr = os.dup(STDERR_FD)
+        except OSError as exc:
+            # os.dup(STDERR_FD) is not supported on WASI
+            self.skipTest(f"os.dup() failed with {exc!r}")
+
+        filename = os_helper.TESTFN
+        try:
+            try:
+                with open(filename, "wb") as fp:
+                    fd = fp.fileno()
+                    os.dup2(fd, STDERR_FD)
+                    pyobject_dump(obj, release_gil)
+            finally:
+                os.dup2(old_stderr, STDERR_FD)
+                os.close(old_stderr)
+
+            with open(filename) as fp:
+                return fp.read().rstrip()
+        finally:
+            os_helper.unlink(filename)
+
+    def test_pyobject_dump(self):
+        # test string object
+        str_obj = 'test string'
+        output = self.pyobject_dump(str_obj)
+        hex_regex = r'(0x)?[0-9a-fA-F]+'
+        regex = (
+            fr"object address  : {hex_regex}\n"
+             r"object refcount : [0-9]+\n"
+            fr"object type     : {hex_regex}\n"
+             r"object type name: str\n"
+             r"object repr     : 'test string'"
+        )
+        self.assertRegex(output, regex)
+
+        # release the GIL
+        output = self.pyobject_dump(str_obj, release_gil=True)
+        self.assertRegex(output, regex)
+
+        # test NULL object
+        output = self.pyobject_dump(NULL)
+        self.assertRegex(output, r'<object at .* is freed>')
+
 
 if __name__ == "__main__":
     unittest.main()

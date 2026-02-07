@@ -5,7 +5,7 @@ import sys
 import threading
 import unittest
 from test import support
-from test.support import threading_helper
+from test.support import os_helper, threading_helper
 from test.support.import_helper import import_module
 fcntl = import_module('fcntl')
 termios = import_module('termios')
@@ -200,6 +200,17 @@ class IoctlTestsPty(unittest.TestCase):
         result = fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ, our_winsz)
         new_winsz = struct.unpack("HHHH", result)
         self.assertEqual(new_winsz[:2], (20, 40))
+
+    @unittest.skipUnless(hasattr(fcntl, 'FICLONE'), 'need fcntl.FICLONE')
+    def test_bad_fd(self):
+        # gh-134744: Test error handling
+        fd = os_helper.make_bad_fd()
+        with self.assertRaises(OSError):
+            fcntl.ioctl(fd, fcntl.FICLONE, fd)
+        with self.assertRaises(OSError):
+            fcntl.ioctl(fd, fcntl.FICLONE, b'\0' * 10)
+        with self.assertRaises(OSError):
+            fcntl.ioctl(fd, fcntl.FICLONE, b'\0' * 2048)
 
 
 if __name__ == "__main__":

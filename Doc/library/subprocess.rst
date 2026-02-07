@@ -649,7 +649,7 @@ functions.
 
       If specified, *env* must provide any variables required for the program to
       execute.  On Windows, in order to run a `side-by-side assembly`_ the
-      specified *env* **must** include a valid :envvar:`SystemRoot`.
+      specified *env* **must** include a valid ``%SystemRoot%``.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
@@ -831,7 +831,9 @@ Instances of the :class:`Popen` class have the following methods:
 
    If the process does not terminate after *timeout* seconds, a
    :exc:`TimeoutExpired` exception will be raised.  Catching this exception and
-   retrying communication will not lose any output.
+   retrying communication will not lose any output.  Supplying *input* to a
+   subsequent post-timeout :meth:`communicate` call is in undefined behavior
+   and may become an error in the future.
 
    The child process is not killed if the timeout expires, so in order to
    cleanup properly a well-behaved application should kill the child process and
@@ -843,6 +845,11 @@ Instances of the :class:`Popen` class have the following methods:
       except TimeoutExpired:
           proc.kill()
           outs, errs = proc.communicate()
+
+   After a call to :meth:`~Popen.communicate` raises :exc:`TimeoutExpired`, do
+   not call :meth:`~Popen.wait`. Use an additional :meth:`~Popen.communicate`
+   call to finish handling pipes and populate the :attr:`~Popen.returncode`
+   attribute.
 
    .. note::
 
@@ -1473,7 +1480,7 @@ handling consistency are valid for these functions.
 
    Return ``(exitcode, output)`` of executing *cmd* in a shell.
 
-   Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
+   Execute the string *cmd* in a shell with :func:`check_output` and
    return a 2-tuple ``(exitcode, output)``.
    *encoding* and *errors* are used to decode output;
    see the notes on :ref:`frequently-used-arguments` for more details.

@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_heapq_heappush__doc__,
@@ -32,7 +33,9 @@ _heapq_heappush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     heap = args[0];
     item = args[1];
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heappush_impl(module, heap, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -61,7 +64,9 @@ _heapq_heappop(PyObject *module, PyObject *arg)
         goto exit;
     }
     heap = arg;
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heappop_impl(module, heap);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -103,7 +108,9 @@ _heapq_heapreplace(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     heap = args[0];
     item = args[1];
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heapreplace_impl(module, heap, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -140,7 +147,9 @@ _heapq_heappushpop(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     heap = args[0];
     item = args[1];
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heappushpop_impl(module, heap, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -169,7 +178,9 @@ _heapq_heapify(PyObject *module, PyObject *arg)
         goto exit;
     }
     heap = arg;
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heapify_impl(module, heap);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -203,7 +214,9 @@ _heapq_heappush_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     heap = args[0];
     item = args[1];
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heappush_max_impl(module, heap, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -232,7 +245,9 @@ _heapq_heappop_max(PyObject *module, PyObject *arg)
         goto exit;
     }
     heap = arg;
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heappop_max_impl(module, heap);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -266,7 +281,9 @@ _heapq_heapreplace_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     heap = args[0];
     item = args[1];
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heapreplace_max_impl(module, heap, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -295,7 +312,9 @@ _heapq_heapify_max(PyObject *module, PyObject *arg)
         goto exit;
     }
     heap = arg;
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heapify_max_impl(module, heap);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -332,9 +351,11 @@ _heapq_heappushpop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     heap = args[0];
     item = args[1];
+    Py_BEGIN_CRITICAL_SECTION(heap);
     return_value = _heapq_heappushpop_max_impl(module, heap, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f55d8595ce150c76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e83d50002c29a96d input=a9049054013a1b77]*/

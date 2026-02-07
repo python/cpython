@@ -688,14 +688,14 @@ typealias_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(typealias_new__doc__,
-"typealias(name, value, *, type_params=<unrepresentable>)\n"
+"typealias(name, value, *, type_params=<unrepresentable>, qualname=None)\n"
 "--\n"
 "\n"
 "Create a TypeAliasType.");
 
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
-                   PyObject *type_params);
+                   PyObject *type_params, PyObject *qualname);
 
 static PyObject *
 typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -703,7 +703,7 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -712,7 +712,7 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(name), &_Py_ID(value), &_Py_ID(type_params), },
+        .ob_item = { &_Py_ID(name), &_Py_ID(value), &_Py_ID(type_params), &_Py_ID(qualname), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -721,20 +721,21 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "value", "type_params", NULL};
+    static const char * const _keywords[] = {"name", "value", "type_params", "qualname", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "typealias",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
     PyObject *name;
     PyObject *value;
     PyObject *type_params = NULL;
+    PyObject *qualname = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -750,11 +751,17 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    type_params = fastargs[2];
+    if (fastargs[2]) {
+        type_params = fastargs[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    qualname = fastargs[3];
 skip_optional_kwonly:
-    return_value = typealias_new_impl(type, name, value, type_params);
+    return_value = typealias_new_impl(type, name, value, type_params, qualname);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9dad71445e079303 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67ab9a5d1869f2c9 input=a9049054013a1b77]*/

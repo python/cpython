@@ -36,7 +36,7 @@ from token import *
 from token import EXACT_TOKEN_TYPES
 import _tokenize
 
-cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
+cookie_re = re.compile(br'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
@@ -86,7 +86,7 @@ def _all_string_prefixes():
     # The valid string prefixes. Only contain the lower case versions,
     #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
-    _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
+    _valid_string_prefixes = ['b', 'r', 'u', 'f', 't', 'br', 'fr', 'tr']
     # if we add binary f-strings, add: ['fb', 'fbr']
     result = {''}
     for prefix in _valid_string_prefixes:
@@ -274,7 +274,7 @@ class Untokenizer:
         toks_append = self.tokens.append
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
-        in_fstring = 0
+        in_fstring_or_tstring = 0
 
         for tok in _itertools.chain([token], iterable):
             toknum, tokval = tok[:2]
@@ -293,10 +293,10 @@ class Untokenizer:
             else:
                 prevstring = False
 
-            if toknum == FSTRING_START:
-                in_fstring += 1
-            elif toknum == FSTRING_END:
-                in_fstring -= 1
+            if toknum in {FSTRING_START, TSTRING_START}:
+                in_fstring_or_tstring += 1
+            elif toknum in {FSTRING_END, TSTRING_END}:
+                in_fstring_or_tstring -= 1
             if toknum == INDENT:
                 indents.append(tokval)
                 continue
@@ -311,8 +311,8 @@ class Untokenizer:
             elif toknum in {FSTRING_MIDDLE, TSTRING_MIDDLE}:
                 tokval = self.escape_brackets(tokval)
 
-            # Insert a space between two consecutive brackets if we are in an f-string
-            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring:
+            # Insert a space between two consecutive brackets if we are in an f-string or t-string
+            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring_or_tstring:
                 tokval = ' ' + tokval
 
             # Insert a space between two consecutive f-strings
@@ -385,24 +385,25 @@ def detect_encoding(readline):
         except StopIteration:
             return b''
 
-    def find_cookie(line):
+    def check(line, encoding):
+        # Check if the line matches the encoding.
+        if 0 in line:
+            raise SyntaxError("source code cannot contain null bytes")
         try:
-            # Decode as UTF-8. Either the line is an encoding declaration,
-            # in which case it should be pure ASCII, or it must be UTF-8
-            # per default encoding.
-            line_string = line.decode('utf-8')
+            line.decode(encoding)
         except UnicodeDecodeError:
             msg = "invalid or missing encoding declaration"
             if filename is not None:
                 msg = '{} for {!r}'.format(msg, filename)
             raise SyntaxError(msg)
 
-        match = cookie_re.match(line_string)
+    def find_cookie(line):
+        match = cookie_re.match(line)
         if not match:
             return None
-        encoding = _get_normal_name(match.group(1))
+        encoding = _get_normal_name(match.group(1).decode())
         try:
-            codec = lookup(encoding)
+            lookup(encoding)
         except LookupError:
             # This behaviour mimics the Python interpreter
             if filename is None:
@@ -433,18 +434,23 @@ def detect_encoding(readline):
 
     encoding = find_cookie(first)
     if encoding:
+        check(first, encoding)
         return encoding, [first]
     if not blank_re.match(first):
+        check(first, default)
         return default, [first]
 
     second = read_or_stop()
     if not second:
+        check(first, default)
         return default, [first]
 
     encoding = find_cookie(second)
     if encoding:
+        check(first + second, encoding)
         return encoding, [first, second]
 
+    check(first + second, default)
     return default, [first, second]
 
 

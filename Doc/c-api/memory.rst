@@ -102,7 +102,7 @@ All allocating functions belong to one of three different "domains" (see also
 strategies and are optimized for different purposes. The specific details on
 how every domain allocates memory or what internal functions each domain calls
 is considered an implementation detail, but for debugging purposes a simplified
-table can be found at :ref:`here <default-memory-allocators>`.
+table can be found at :ref:`default-memory-allocators`.
 The APIs used to allocate and free a block of memory must be from the same domain.
 For example, :c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
@@ -293,17 +293,39 @@ The following type-oriented macros are provided for convenience.  Note  that
 
    Same as :c:func:`PyMem_Free`.
 
-In addition, the following macro sets are provided for calling the Python memory
-allocator directly, without involving the C API functions listed above. However,
-note that their use does not preserve binary compatibility across Python
-versions and is therefore deprecated in extension modules.
 
-* ``PyMem_MALLOC(size)``
-* ``PyMem_NEW(type, size)``
-* ``PyMem_REALLOC(ptr, size)``
-* ``PyMem_RESIZE(ptr, type, size)``
-* ``PyMem_FREE(ptr)``
-* ``PyMem_DEL(ptr)``
+Deprecated aliases
+------------------
+
+These are :term:`soft deprecated` aliases to existing functions and macros.
+They exist solely for backwards compatibility.
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * Deprecated alias
+     * Corresponding function or macro
+   * * .. c:macro:: PyMem_MALLOC(size)
+     * :c:func:`PyMem_Malloc`
+   * * .. c:macro:: PyMem_NEW(type, size)
+     * :c:macro:`PyMem_New`
+   * * .. c:macro:: PyMem_REALLOC(ptr, size)
+     * :c:func:`PyMem_Realloc`
+   * * .. c:macro:: PyMem_RESIZE(ptr, type, size)
+     * :c:macro:`PyMem_Resize`
+   * * .. c:macro:: PyMem_FREE(ptr)
+     * :c:func:`PyMem_Free`
+   * * .. c:macro:: PyMem_DEL(ptr)
+     * :c:func:`PyMem_Free`
+
+.. versionchanged:: 3.4
+
+   The macros are now aliases of the corresponding functions and macros.
+   Previously, their behavior was the same, but their use did not necessarily
+   preserve binary compatibility across Python versions.
+
+.. deprecated:: 2.0
 
 
 .. _objectinterface:
@@ -375,6 +397,24 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
    before, undefined behavior occurs.
 
    If *p* is ``NULL``, no operation is performed.
+
+   Do not call this directly to free an object's memory; call the type's
+   :c:member:`~PyTypeObject.tp_free` slot instead.
+
+   Do not use this for memory allocated by :c:macro:`PyObject_GC_New` or
+   :c:macro:`PyObject_GC_NewVar`; use :c:func:`PyObject_GC_Del` instead.
+
+   .. seealso::
+
+      * :c:func:`PyObject_GC_Del` is the equivalent of this function for memory
+        allocated by types that support garbage collection.
+      * :c:func:`PyObject_Malloc`
+      * :c:func:`PyObject_Realloc`
+      * :c:func:`PyObject_Calloc`
+      * :c:macro:`PyObject_New`
+      * :c:macro:`PyObject_NewVar`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_free`
 
 
 .. _default-memory-allocators:
@@ -653,6 +693,10 @@ The arena allocator uses the following functions:
 This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
+
+Typically, it makes sense to disable the pymalloc allocator when building
+Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
+uncover low level bugs within the C code.
 
 Customize pymalloc Arena Allocator
 ----------------------------------

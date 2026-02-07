@@ -847,8 +847,8 @@ Other Language Changes
   respectively.
   (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
 
-* Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-  (:func:`@classmethod <classmethod>`) now inherit the method attributes
+* Static methods (:deco:`staticmethod`) and class methods
+  (:deco:`classmethod`) now inherit the method attributes
   (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
   ``__annotations__``) and have a new ``__wrapped__`` attribute.
   Moreover, static methods are now callable as regular functions.
@@ -901,7 +901,7 @@ Improved Modules
 asyncio
 -------
 
-Add missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+Add missing :meth:`~asyncio.loop.connect_accepted_socket`
 method.
 (Contributed by Alex Grönholm in :issue:`41332`.)
 
@@ -933,7 +933,7 @@ Base32 Encoding with Extended Hex Alphabet.
 bdb
 ---
 
-Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+Add :meth:`!clearBreakpoints` to reset all set breakpoints.
 (Contributed by Irit Katriel in :issue:`24160`.)
 
 bisect
@@ -1398,7 +1398,7 @@ A new verify flag :const:`~ssl.VERIFY_X509_PARTIAL_CHAIN` has been added.
 sqlite3
 -------
 
-Add audit events for :func:`~sqlite3.connect/handle`,
+Add audit events for :func:`~sqlite3.connect`,
 :meth:`~sqlite3.Connection.enable_load_extension`, and
 :meth:`~sqlite3.Connection.load_extension`.
 (Contributed by Erlend E. Aasland in :issue:`43762`.)
@@ -1622,7 +1622,7 @@ Deprecated
   compatibility. Specifically,
   :meth:`!find_loader`/:meth:`!find_module`
   (superseded by :meth:`~importlib.abc.MetaPathFinder.find_spec`),
-  :meth:`~importlib.abc.Loader.load_module`
+  ``importlib.abc.Loader.load_module``
   (superseded by :meth:`~importlib.abc.Loader.exec_module`),
   :meth:`!module_repr` (which the import system
   takes care of for you), the ``__package__`` attribute
@@ -1652,7 +1652,7 @@ Deprecated
   preference for :meth:`~zipimport.zipimporter.exec_module`.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* The use of :meth:`~importlib.abc.Loader.load_module` by the import
+* The use of ``importlib.abc.Loader.load_module`` by the import
   system now triggers an :exc:`ImportWarning` as
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)

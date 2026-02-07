@@ -146,8 +146,9 @@ def _parsedate_tz(data):
         return None
     # Check for a yy specified in two-digit format, then convert it to the
     # appropriate four-digit format, according to the POSIX standard. RFC 822
-    # calls for a two-digit yy, but RFC 2822 (which obsoletes RFC 822)
-    # mandates a 4-digit yy. For more information, see the documentation for
+    # calls for a two-digit yy, but RFC 2822 (which obsoletes RFC 822) already
+    # mandated a 4-digit yy, and RFC 5322 (which obsoletes RFC 2822) continues
+    # this requirement. For more information, see the documentation for
     # the time module.
     if yy < 100:
         # The year is between 1969 and 1999 (inclusive).
@@ -233,9 +234,11 @@ class AddrlistClass:
         self.CR = '\r\n'
         self.FWS = self.LWS + self.CR
         self.atomends = self.specials + self.LWS + self.CR
-        # Note that RFC 2822 now specifies '.' as obs-phrase, meaning that it
-        # is obsolete syntax.  RFC 2822 requires that we recognize obsolete
-        # syntax, so allow dots in phrases.
+        # Note that RFC 2822 section 4.1 introduced '.' as obs-phrase to handle
+        # existing practice (periods in display names), even though it was not
+        # allowed in RFC 822. RFC 5322 section 4.1 (which obsoletes RFC 2822)
+        # continues this requirement. We must recognize obsolete syntax, so
+        # allow dots in phrases.
         self.phraseends = self.atomends.replace('.', '')
         self.field = field
         self.commentlist = []

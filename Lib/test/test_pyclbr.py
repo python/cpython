@@ -11,7 +11,6 @@ from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
-import warnings
 
 
 StaticMethodType = type(staticmethod(lambda: None))
@@ -103,7 +102,7 @@ class PyclbrTest(TestCase):
         for name, value in dict.items():
             if name in ignore:
                 continue
-            self.assertHasAttr(module, name, ignore)
+            self.assertHasAttr(module, name)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
                 self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
@@ -246,15 +245,12 @@ class PyclbrTest(TestCase):
         # These were once some of the longest modules.
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('pickle', ignore=('partial', 'PickleBuffer'))
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         with temporary_main_spec():
             cm(
                 'pdb',
                 # pyclbr does not handle elegantly `typing` or properties
                 ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals',
-                        '_InteractState'),
+                        '_InteractState', 'rlcompleter'),
             )
         cm('pydoc', ignore=('input', 'output',))  # properties
 

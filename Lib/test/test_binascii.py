@@ -4,7 +4,8 @@ import unittest
 import binascii
 import array
 import re
-from test.support import bigmemtest, _1G, _4G
+import sys
+from test.support import bigmemtest, _1G, _4G, check_impl_detail
 from test.support.hypothesis_helper import hypothesis
 
 
@@ -38,13 +39,13 @@ class BinASCIITest(unittest.TestCase):
 
     def test_exceptions(self):
         # Check module exceptions
-        self.assertTrue(issubclass(binascii.Error, Exception))
-        self.assertTrue(issubclass(binascii.Incomplete, Exception))
+        self.assertIsSubclass(binascii.Error, Exception)
+        self.assertIsSubclass(binascii.Incomplete, Exception)
 
     def test_functions(self):
         # Check presence of all functions
         for name in all_functions:
-            self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
+            self.assertHasAttr(getattr(binascii, name), '__call__')
             self.assertRaises(TypeError, getattr(binascii, name))
 
     def test_returned_value(self):
@@ -479,6 +480,45 @@ class BinASCIITest(unittest.TestCase):
                          b'aGVsbG8=\n')
         self.assertEqual(binascii.b2a_base64(b, newline=False),
                          b'aGVsbG8=')
+        b = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base64(b), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, newline=True), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, newline=False), b'')
+
+    def test_b2a_base64_wrapcol(self):
+        b = self.type2test(b'www.python.org')
+        self.assertEqual(binascii.b2a_base64(b),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=0),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8),
+                         b'd3d3LnB5\ndGhvbi5v\ncmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=11),
+                         b'd3d3LnB5\ndGhvbi5v\ncmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=76),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8, newline=False),
+                         b'd3d3LnB5\ndGhvbi5v\ncmc=')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=1),
+                         b'd3d3\nLnB5\ndGhv\nbi5v\ncmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=sys.maxsize),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        if check_impl_detail():
+            self.assertEqual(binascii.b2a_base64(b, wrapcol=sys.maxsize*2),
+                             b'd3d3LnB5dGhvbi5vcmc=\n')
+            with self.assertRaises(OverflowError):
+                binascii.b2a_base64(b, wrapcol=2**1000)
+        with self.assertRaises(ValueError):
+            binascii.b2a_base64(b, wrapcol=-8)
+        with self.assertRaises(TypeError):
+            binascii.b2a_base64(b, wrapcol=8.0)
+        with self.assertRaises(TypeError):
+            binascii.b2a_base64(b, wrapcol='8')
+        b = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base64(b), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=0), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8, newline=False), b'')
 
     @hypothesis.given(
         binary=hypothesis.strategies.binary(),

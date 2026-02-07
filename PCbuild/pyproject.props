@@ -13,6 +13,7 @@
     <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen\</GeneratedFrozenModulesDir>
     <GeneratedZlibNgDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\zlib-ng\</GeneratedZlibNgDir>
     <GeneratedJitStencilsDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_$(Configuration)</GeneratedJitStencilsDir>
+    <GeneratedJitStencilsDir Condition="$(Configuration) == 'PGUpdate'">$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_PGInstrument</GeneratedJitStencilsDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
@@ -96,19 +97,16 @@
       <TargetMachine Condition="'$(Platform)' == 'x64'">MachineX64</TargetMachine>
       <TargetMachine Condition="'$(Platform)'=='ARM'">MachineARM</TargetMachine>
       <TargetMachine Condition="'$(Platform)'=='ARM64'">MachineARM64</TargetMachine>
-      <ProfileGuidedDatabase Condition="$(SupportPGO)">$(OutDir)$(TargetName).pgd</ProfileGuidedDatabase>
-      <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">PGInstrument</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(Configuration) != 'Debug'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition="$(Configuration) != 'Debug'">/OPT:REF,NOICF %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2:-pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument' and $(PlatformToolset) != 'ClangCL'">/GENPROFILE %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate' and $(PlatformToolset) != 'ClangCL'">/USEPROFILE %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">true</LinkTimeCodeGeneration>
-      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">true</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(Configuration) != 'Debug'">true</LinkTimeCodeGeneration>
     </Lib>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)PC;$(PySourcePath)Include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

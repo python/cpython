@@ -474,15 +474,32 @@ class CommonTests(TestBase):
 
     def test_signatures(self):
         # See https://github.com/python/cpython/issues/126654
-        msg = "expected 'shared' to be a dict"
+        msg = r"exec\(\) argument 'shared' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.exec(self.id, 'a', 1)
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.exec(self.id, 'a', shared=1)
+        msg = r"run_string\(\) argument 'shared' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.run_string(self.id, 'a', shared=1)
+        msg = r"run_func\(\) argument 'shared' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.run_func(self.id, lambda: None, shared=1)
+        # See https://github.com/python/cpython/issues/135855
+        msg = r"set___main___attrs\(\) argument 'updates' must be dict, not int"
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.set___main___attrs(self.id, 1)
+
+    def test_invalid_shared_none(self):
+        msg = r'must be dict, not None'
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.exec(self.id, 'a', shared=None)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_string(self.id, 'a', shared=None)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_func(self.id, lambda: None, shared=None)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.set___main___attrs(self.id, None)
 
     def test_invalid_shared_encoding(self):
         # See https://github.com/python/cpython/issues/127196
@@ -952,7 +969,8 @@ class RunFailedTests(TestBase):
             """)
 
         with self.subTest('script'):
-            self.assert_run_failed(SyntaxError, script)
+            with self.assertRaises(SyntaxError):
+                _interpreters.run_string(self.id, script)
 
         with self.subTest('module'):
             modname = 'spam_spam_spam'
@@ -1019,12 +1037,19 @@ class RunFuncTests(TestBase):
             with open(w, 'w', encoding="utf-8") as spipe:
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
+        failed = None
         def f():
-            _interpreters.set___main___attrs(self.id, dict(w=w))
-            _interpreters.run_func(self.id, script)
+            nonlocal failed
+            try:
+                _interpreters.set___main___attrs(self.id, dict(w=w))
+                _interpreters.run_func(self.id, script)
+            except Exception as exc:
+                failed = exc
         t = threading.Thread(target=f)
         t.start()
         t.join()
+        if failed:
+            raise Exception from failed
 
         with open(r, encoding="utf-8") as outfile:
             out = outfile.read()
@@ -1053,18 +1078,16 @@ class RunFuncTests(TestBase):
         spam = True
         def script():
             assert spam
-
         with self.assertRaises(ValueError):
             _interpreters.run_func(self.id, script)
 
-    # XXX This hasn't been fixed yet.
-    @unittest.expectedFailure
     def test_return_value(self):
         def script():
             return 'spam'
         with self.assertRaises(ValueError):
             _interpreters.run_func(self.id, script)
 
+#    @unittest.skip("we're not quite there yet")
     def test_args(self):
         with self.subTest('args'):
             def script(a, b=0):

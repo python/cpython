@@ -12,6 +12,15 @@ from test import support
 from test.support import import_helper
 
 
+class CustomHash:
+    def __init__(self, hash):
+        self.hash = hash
+    def __hash__(self):
+        return self.hash
+    def __repr__(self):
+        return f'<CustomHash {self.hash} at {id(self):#x}>'
+
+
 class DictTest(unittest.TestCase):
 
     def test_invalid_keyword_arguments(self):
@@ -290,6 +299,38 @@ class DictTest(unittest.TestCase):
             ['Cannot convert dictionary update sequence element #0 to a sequence'],
         )
 
+    def test_update_shared_keys(self):
+        class MyClass: pass
+
+        # Subclass str to enable us to create an object during the
+        # dict.update() call.
+        class MyStr(str):
+            def __hash__(self):
+                return super().__hash__()
+
+            def __eq__(self, other):
+                # Create an object that shares the same PyDictKeysObject as
+                # obj.__dict__.
+                obj2 = MyClass()
+                obj2.a = "a"
+                obj2.b = "b"
+                obj2.c = "c"
+                return super().__eq__(other)
+
+        obj = MyClass()
+        obj.a = "a"
+        obj.b = "b"
+
+        x = {}
+        x[MyStr("a")] = MyStr("a")
+
+        # gh-132617: this previously raised "dict mutated during update" error
+        x.update(obj.__dict__)
+
+        self.assertEqual(x, {
+            MyStr("a"): "a",
+            "b": "b",
+        })
 
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
@@ -787,8 +828,8 @@ class DictTest(unittest.TestCase):
 
     def test_missing(self):
         # Make sure dict doesn't have a __missing__ method
-        self.assertFalse(hasattr(dict, "__missing__"))
-        self.assertFalse(hasattr({}, "__missing__"))
+        self.assertNotHasAttr(dict, "__missing__")
+        self.assertNotHasAttr({}, "__missing__")
         # Test several cases:
         # (D) subclass defines __missing__ method returning a value
         # (E) subclass defines __missing__ method raising RuntimeError
@@ -1549,7 +1590,7 @@ class DictTest(unittest.TestCase):
         with check_unhashable_key():
             d.get(key)
 
-        # Only TypeError exception is overriden,
+        # Only TypeError exception is overridden,
         # other exceptions are left unchanged.
         class HashError:
             def __hash__(self):
@@ -1568,6 +1609,76 @@ class DictTest(unittest.TestCase):
             d.pop(key2)
         with self.assertRaises(KeyError):
             d.get(key2)
+
+    def test_clear_at_lookup(self):
+        # gh-140551 dict crash if clear is called at lookup stage
+        class X:
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                nonlocal d
+                d.clear()
+
+        d = {}
+        for _ in range(10):
+            d[X()] = None
+
+        self.assertEqual(len(d), 1)
+
+        d = {}
+        for _ in range(10):
+            d.setdefault(X(), None)
+
+        self.assertEqual(len(d), 1)
+
+    def test_split_table_update_with_str_subclass(self):
+        # gh-142218: inserting into a split table dictionary with a non str
+        # key that matches an existing key.
+        class MyStr(str): pass
+        class MyClass: pass
+        obj = MyClass()
+        obj.attr = 1
+        obj.__dict__[MyStr('attr')] = 2
+        self.assertEqual(obj.attr, 2)
+
+    def test_split_table_insert_with_str_subclass(self):
+        # gh-143189: inserting into split table dictionary with a non str
+        # key that matches an existing key in the shared table but not in
+        # the dict yet.
+
+        class MyStr(str): pass
+        class MyClass: pass
+
+        obj = MyClass()
+        obj.attr1 = 1
+
+        obj2 = MyClass()
+        d = obj2.__dict__
+        d[MyStr("attr1")] = 2
+        self.assertIsInstance(list(d)[0], MyStr)
+
+    def test_hash_collision_remove_add(self):
+        self.maxDiff = None
+        # There should be enough space, so all elements with unique hash
+        # will be placed in corresponding cells without collision.
+        n = 64
+        items = [(CustomHash(h), h) for h in range(n)]
+        # Keys with hash collision.
+        a = CustomHash(n)
+        b = CustomHash(n)
+        items += [(a, 'a'), (b, 'b')]
+        d = dict(items)
+        self.assertEqual(len(d), len(items), d)
+        del d[a]
+        # "a" has been replaced with a dummy.
+        del items[n]
+        self.assertEqual(len(d), len(items), d)
+        self.assertEqual(d, dict(items))
+        d[b] = 'c'
+        # "b" should not replace the dummy.
+        items[n] = (b, 'c')
+        self.assertEqual(len(d), len(items), d)
+        self.assertEqual(d, dict(items))
 
 
 class CAPITest(unittest.TestCase):

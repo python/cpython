@@ -963,20 +963,44 @@ PyFunction_Check:PyObject*:o:0:
 PyFunction_GetAnnotations:PyObject*::0:
 PyFunction_GetAnnotations:PyObject*:op:0:
 
+PyFunction_GET_ANNOTATIONS:PyObject*::0:
+PyFunction_GET_ANNOTATIONS:PyObject*:op:0:
+
 PyFunction_GetClosure:PyObject*::0:
 PyFunction_GetClosure:PyObject*:op:0:
+
+PyFunction_GET_CLOSURE:PyObject*::0:
+PyFunction_GET_CLOSURE:PyObject*:op:0:
 
 PyFunction_GetCode:PyObject*::0:
 PyFunction_GetCode:PyObject*:op:0:
 
+PyFunction_GET_CODE:PyObject*::0:
+PyFunction_GET_CODE:PyObject*:op:0:
+
 PyFunction_GetDefaults:PyObject*::0:
 PyFunction_GetDefaults:PyObject*:op:0:
+
+PyFunction_GET_DEFAULTS:PyObject*::0:
+PyFunction_GET_DEFAULTS:PyObject*:op:0:
+
+PyFunction_GetKwDefaults:PyObject*::0:
+PyFunction_GetKwDefaults:PyObject*:op:0:
+
+PyFunction_GET_KW_DEFAULTS:PyObject*::0:
+PyFunction_GET_KW_DEFAULTS:PyObject*:op:0:
 
 PyFunction_GetGlobals:PyObject*::0:
 PyFunction_GetGlobals:PyObject*:op:0:
 
+PyFunction_GET_GLOBALS:PyObject*::0:
+PyFunction_GET_GLOBALS:PyObject*:op:0:
+
 PyFunction_GetModule:PyObject*::0:
 PyFunction_GetModule:PyObject*:op:0:
+
+PyFunction_GET_MODULE:PyObject*::0:
+PyFunction_GET_MODULE:PyObject*:op:0:
 
 PyFunction_New:PyObject*::+1:
 PyFunction_New:PyObject*:code:+1:
@@ -1116,6 +1140,9 @@ PyInterpreterState_Clear:PyInterpreterState*:interp::
 
 PyInterpreterState_Delete:void:::
 PyInterpreterState_Delete:PyInterpreterState*:interp::
+
+PyInterpreterState_GetDict:PyObject*::0:
+PyInterpreterState_GetDict:PyInterpreterState*:interp::
 
 PyInterpreterState_GetID:int64_t:::
 PyInterpreterState_GetID:PyInterpreterState*:interp::
@@ -1445,6 +1472,9 @@ PyModule_Create2:PyObject*::+1:
 PyModule_Create2:PyModuleDef*:def::
 PyModule_Create2:int:module_api_version::
 
+PyModule_Exec:int:::
+PyModule_ExecDef:PyObject*:module:0:
+
 PyModule_ExecDef:int:::
 PyModule_ExecDef:PyObject*:module:0:
 PyModule_ExecDef:PyModuleDef*:def::
@@ -1457,6 +1487,10 @@ PyModule_FromDefAndSpec2:PyObject*::+1:
 PyModule_FromDefAndSpec2:PyModuleDef*:def::
 PyModule_FromDefAndSpec2:PyObject*:spec:0:
 PyModule_FromDefAndSpec2:int:module_api_version::
+
+PyModule_FromSlotsAndSpec:PyObject*::+1:
+PyModule_FromSlotsAndSpec:const PyModuleDef_Slot *:slots::
+PyModule_FromSlotsAndSpec:PyObject*:spec:0:
 
 PyModule_GetDef:PyModuleDef*::0:
 PyModule_GetDef:PyObject*:module:0:
@@ -1479,6 +1513,14 @@ PyModule_GetNameObject:PyObject*:module:0:
 PyModule_GetState:void*:::
 PyModule_GetState:PyObject*:module:0:
 
+PyModule_GetStateSize:int:::
+PyModule_GetStateSize:PyObject*:module:0:
+PyModule_GetToken:Py_ssize_t**:result::
+
+PyModule_GetToken:int:::
+PyModule_GetToken:PyObject*:module:0:
+PyModule_GetToken:void**:result::
+
 PyModule_New:PyObject*::+1:
 PyModule_New:char*:name::
 
@@ -1488,9 +1530,6 @@ PyModule_NewObject:PyObject*:name:+1:
 PyModule_SetDocString:int:::
 PyModule_SetDocString:PyObject*:module:0:
 PyModule_SetDocString:const char*:docstring::
-
-PyModuleDef_Init:PyObject*::0:
-PyModuleDef_Init:PyModuleDef*:def::
 
 PyNumber_Absolute:PyObject*::+1:
 PyNumber_Absolute:PyObject*:o:0:
@@ -2388,6 +2427,14 @@ PyType_GetFlags:PyTypeObject*:type:0:
 PyType_GetName:PyObject*::+1:
 PyType_GetName:PyTypeObject*:type:0:
 
+PyType_GetModuleByToken:PyObject*::+1:
+PyType_GetModuleByToken:PyTypeObject*:type:0:
+PyType_GetModuleByToken:PyModuleDef*:def::
+
+PyType_GetModuleByDef:PyObject*::0:
+PyType_GetModuleByDef:PyTypeObject*:type:0:
+PyType_GetModuleByDef:PyModuleDef*:def::
+
 PyType_GetQualName:PyObject*::+1:
 PyType_GetQualName:PyTypeObject*:type:0:
 
@@ -2921,12 +2968,6 @@ PyWeakref_CheckProxy:PyObject*:ob:0:
 
 PyWeakref_CheckRef:int:::
 PyWeakref_CheckRef:PyObject*:ob:0:
-
-PyWeakref_GET_OBJECT:PyObject*::0:
-PyWeakref_GET_OBJECT:PyObject*:ref:0:
-
-PyWeakref_GetObject:PyObject*::0:
-PyWeakref_GetObject:PyObject*:ref:0:
 
 PyWeakref_GetRef:int:::
 PyWeakref_GetRef:PyObject*:ref:0:

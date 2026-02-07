@@ -8,7 +8,9 @@ from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
 import contextlib
+import decimal
 import errno
+import fractions
 import gc
 import io
 import itertools
@@ -52,6 +54,7 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+SOLARIS = sys.platform.startswith("sunos")
 WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
@@ -1085,9 +1088,7 @@ class GeneralModuleTests(unittest.TestCase):
             'IPV6_USE_MIN_MTU',
         }
         for opt in opts:
-            self.assertTrue(
-                hasattr(socket, opt), f"Missing RFC3542 socket option '{opt}'"
-            )
+            self.assertHasAttr(socket, opt)
 
     def testHostnameRes(self):
         # Testing hostname resolution mechanisms
@@ -1175,7 +1176,10 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_indextoname() not available.')
     @support.skip_android_selinux('if_indextoname')
     def testInvalidInterfaceIndexToName(self):
-        self.assertRaises(OSError, socket.if_indextoname, 0)
+        with self.assertRaises(OSError) as cm:
+            socket.if_indextoname(0)
+        self.assertIsNotNone(cm.exception.errno)
+
         self.assertRaises(ValueError, socket.if_indextoname, -1)
         self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
@@ -1195,8 +1199,11 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_nametoindex() not available.')
     @support.skip_android_selinux('if_nametoindex')
     def testInvalidInterfaceNameToIndex(self):
+        with self.assertRaises(OSError) as cm:
+            socket.if_nametoindex("_DEADBEEF")
+        self.assertIsNotNone(cm.exception.errno)
+
         self.assertRaises(TypeError, socket.if_nametoindex, 0)
-        self.assertRaises(OSError, socket.if_nametoindex, '_DEADBEEF')
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),
                          'test needs sys.getrefcount()')
@@ -1311,10 +1318,20 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(s.gettimeout(), None)
 
         # Set the default timeout to 10, and see if it propagates
-        with socket_setdefaulttimeout(10):
-            self.assertEqual(socket.getdefaulttimeout(), 10)
+        with socket_setdefaulttimeout(10.125):
+            self.assertEqual(socket.getdefaulttimeout(), 10.125)
             with socket.socket() as sock:
-                self.assertEqual(sock.gettimeout(), 10)
+                self.assertEqual(sock.gettimeout(), 10.125)
+
+            socket.setdefaulttimeout(decimal.Decimal('11.125'))
+            self.assertEqual(socket.getdefaulttimeout(), 11.125)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), 11.125)
+
+            socket.setdefaulttimeout(fractions.Fraction(97, 8))
+            self.assertEqual(socket.getdefaulttimeout(), 12.125)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), 12.125)
 
             # Reset the default timeout to None, and see if it propagates
             socket.setdefaulttimeout(None)
@@ -1540,6 +1557,40 @@ class GeneralModuleTests(unittest.TestCase):
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse == 0, "failed to set reuse mode")
 
+    def test_setsockopt_errors(self):
+        # See issue #107546.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # No error expected.
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 2 ** 100)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, - 2 ** 100)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, 2 ** 100, 1)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(2 ** 100, socket.SO_REUSEADDR, 1)
+
+        with self.assertRaisesRegex(TypeError, "socket option should be int, bytes-like object or None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, dict())
+
+        with self.assertRaisesRegex(TypeError, "requires 4 arguments when the third argument is None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, None)
+
+        with self.assertRaisesRegex(TypeError, "only takes 4 arguments when the third argument is None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2)
+
+        with self.assertRaisesRegex(TypeError, "takes at least 3 arguments"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+
+        with self.assertRaisesRegex(TypeError, "takes at most 4 arguments"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2, 3)
+
     def testSendAfterClose(self):
         # testing send() after close() with timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -1593,11 +1644,11 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt", "Windows specific")
     def test_sock_ioctl(self):
-        self.assertTrue(hasattr(socket.socket, 'ioctl'))
-        self.assertTrue(hasattr(socket, 'SIO_RCVALL'))
-        self.assertTrue(hasattr(socket, 'RCVALL_ON'))
-        self.assertTrue(hasattr(socket, 'RCVALL_OFF'))
-        self.assertTrue(hasattr(socket, 'SIO_KEEPALIVE_VALS'))
+        self.assertHasAttr(socket.socket, 'ioctl')
+        self.assertHasAttr(socket, 'SIO_RCVALL')
+        self.assertHasAttr(socket, 'RCVALL_ON')
+        self.assertHasAttr(socket, 'RCVALL_OFF')
+        self.assertHasAttr(socket, 'SIO_KEEPALIVE_VALS')
         s = socket.socket()
         self.addCleanup(s.close)
         self.assertRaises(ValueError, s.ioctl, -1, None)
@@ -2359,6 +2410,45 @@ class ISOTPTest(unittest.TestCase):
         socket.PF_CAN
         socket.CAN_ISOTP
         socket.SOCK_DGRAM
+
+    @unittest.skipUnless(hasattr(socket, "SOL_CAN_ISOTP"),
+                         "missing <linux/can/isotp.h>")
+    def testISOTP(self):
+        socket.SOL_CAN_ISOTP
+
+        socket.CAN_ISOTP_OPTS
+        socket.CAN_ISOTP_RECV_FC
+
+        socket.CAN_ISOTP_TX_STMIN
+        socket.CAN_ISOTP_RX_STMIN
+        socket.CAN_ISOTP_LL_OPTS
+
+        socket.CAN_ISOTP_LISTEN_MODE
+        socket.CAN_ISOTP_EXTEND_ADDR
+        socket.CAN_ISOTP_TX_PADDING
+        socket.CAN_ISOTP_RX_PADDING
+        socket.CAN_ISOTP_CHK_PAD_LEN
+        socket.CAN_ISOTP_CHK_PAD_DATA
+        socket.CAN_ISOTP_HALF_DUPLEX
+        socket.CAN_ISOTP_FORCE_TXSTMIN
+        socket.CAN_ISOTP_FORCE_RXSTMIN
+        socket.CAN_ISOTP_RX_EXT_ADDR
+        socket.CAN_ISOTP_WAIT_TX_DONE
+        # This constant is not always available
+        # socket.CAN_ISOTP_SF_BROADCAST
+
+        socket.CAN_ISOTP_DEFAULT_FLAGS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_PAD_CONTENT
+        socket.CAN_ISOTP_DEFAULT_FRAME_TXTIME
+        socket.CAN_ISOTP_DEFAULT_RECV_BS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_RECV_STMIN
+        socket.CAN_ISOTP_DEFAULT_RECV_WFTMAX
+
+        socket.CAN_ISOTP_DEFAULT_LL_MTU
+        socket.CAN_ISOTP_DEFAULT_LL_TX_DL
+        socket.CAN_ISOTP_DEFAULT_LL_TX_FLAGS
 
     def testCreateSocket(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
@@ -3890,6 +3980,10 @@ class CmsgMacroTests(unittest.TestCase):
         # Test CMSG_SPACE() with various valid and invalid values,
         # checking the assumptions used by sendmsg().
         toobig = self.socklen_t_limit - socket.CMSG_SPACE(1) + 1
+        if SOLARIS and platform.processor() == "sparc":
+            # On Solaris SPARC, number of bytes returned by socket.CMSG_SPACE
+            # increases at different lengths; see gh-91214.
+            toobig -= 3
         values = list(range(257)) + list(range(toobig - 257, toobig))
 
         last = socket.CMSG_SPACE(0)
@@ -4036,6 +4130,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -4047,6 +4142,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparate.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -4060,6 +4156,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             len(MSG))
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -4074,6 +4171,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparateMinSpace.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
@@ -6082,10 +6180,10 @@ class UDPLITETimeoutTest(SocketUDPLITETest):
 class TestExceptions(unittest.TestCase):
 
     def testExceptionTree(self):
-        self.assertTrue(issubclass(OSError, Exception))
-        self.assertTrue(issubclass(socket.herror, OSError))
-        self.assertTrue(issubclass(socket.gaierror, OSError))
-        self.assertTrue(issubclass(socket.timeout, OSError))
+        self.assertIsSubclass(OSError, Exception)
+        self.assertIsSubclass(socket.herror, OSError)
+        self.assertIsSubclass(socket.gaierror, OSError)
+        self.assertIsSubclass(socket.timeout, OSError)
         self.assertIs(socket.error, OSError)
         self.assertIs(socket.timeout, TimeoutError)
 
@@ -7047,8 +7145,14 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             self.assertEqual(len(dec), msglen * multiplier)
             self.assertEqual(dec, msg * multiplier)
 
-    @support.requires_linux_version(4, 9)  # see issue29324
+    @support.requires_linux_version(4, 9)  # see gh-73510
     def test_aead_aes_gcm(self):
+        kernel_version = support._get_kernel_version("Linux")
+        if kernel_version is not None:
+            if kernel_version >= (6, 16) and kernel_version < (6, 18):
+                # See https://github.com/python/cpython/issues/139310.
+                self.skipTest("upstream Linux kernel issue")
+
         key = bytes.fromhex('c939cc13397c1d37de6ae0e1cb7c423c')
         iv = bytes.fromhex('b3d8cc017cbb89b39e0f67e2')
         plain = bytes.fromhex('c3b3c41f113a31b73d9a5cd432103069')

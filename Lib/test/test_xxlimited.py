@@ -31,7 +31,7 @@ class CommonTests:
         self.assertEqual(self.module.foo(1, 2), 3)
 
     def test_str(self):
-        self.assertTrue(issubclass(self.module.Str, str))
+        self.assertIsSubclass(self.module.Str, str)
         self.assertIsNot(self.module.Str, str)
 
         custom_string = self.module.Str("abcd")

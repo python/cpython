@@ -1016,7 +1016,9 @@ extension.  This regular expression matches ``foo.bar`` and
 Now, consider complicating the problem a bit; what if you want to match
 filenames where the extension is not ``bat``? Some incorrect attempts:
 
-``.*[.][^b].*$``  The first attempt above tries to exclude ``bat`` by requiring
+``.*[.][^b].*$``
+
+The first attempt above tries to exclude ``bat`` by requiring
 that the first character of the extension is not a ``b``.  This is wrong,
 because the pattern also doesn't match ``foo.bar``.
 
@@ -1043,7 +1045,9 @@ confusing.
 
 A negative lookahead cuts through all this confusion:
 
-``.*[.](?!bat$)[^.]*$``  The negative lookahead means: if the expression ``bat``
+``.*[.](?!bat$)[^.]*$``
+
+The negative lookahead means: if the expression ``bat``
 doesn't match at this point, try the rest of the pattern; if ``bat$`` does
 match, the whole pattern will fail.  The trailing ``$`` is required to ensure
 that something like ``sample.batch``, where the extension only starts with

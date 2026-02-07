@@ -492,6 +492,12 @@ The :mod:`test.support` module defines the following functions:
    tests.
 
 
+.. function:: get_resource_value(resource)
+
+   Return the value specified for *resource* (as :samp:`-u {resource}={value}`).
+   Return ``None`` if *resource* is disabled or no value is specified.
+
+
 .. function:: python_is_optimized()
 
    Return ``True`` if Python was not built with ``-O0`` or ``-Og``.
@@ -851,7 +857,7 @@ The :mod:`test.support` module defines the following functions:
    Decorator for tests that fill the address space.
 
 
-.. function:: linked_with_musl()
+.. function:: linked_to_musl()
 
    Return ``False`` if there is no evidence the interpreter was compiled with
    ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
@@ -1382,6 +1388,13 @@ The :mod:`test.support.threading_helper` module provides support for threading t
        # (to avoid reference cycles)
 
    .. versionadded:: 3.8
+
+
+.. function:: run_concurrently(worker_func, nthreads, args=(), kwargs={})
+
+    Run the worker function concurrently in multiple threads.
+    Re-raises an exception if any thread raises one, after all threads have
+    finished.
 
 
 :mod:`test.support.os_helper` --- Utilities for os tests

@@ -32,7 +32,8 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    struct _arena *arena);
+    struct _arena *arena,
+    PyObject *module);
 
 /* AST preprocessing */
 extern int _PyCompile_AstPreprocess(
@@ -41,7 +42,8 @@ extern int _PyCompile_AstPreprocess(
     PyCompilerFlags *flags,
     int optimize,
     struct _arena *arena,
-    int syntax_check_only);
+    int syntax_check_only,
+    PyObject *module);
 
 extern int _PyAST_Preprocess(
     struct _mod *,
@@ -49,7 +51,9 @@ extern int _PyAST_Preprocess(
     PyObject *filename,
     int optimize,
     int ff_features,
-    int syntax_check_only);
+    int syntax_check_only,
+    int enable_warnings,
+    PyObject *module);
 
 
 typedef struct {
@@ -95,6 +99,7 @@ typedef enum {
 enum _PyCompile_FBlockType {
      COMPILE_FBLOCK_WHILE_LOOP,
      COMPILE_FBLOCK_FOR_LOOP,
+     COMPILE_FBLOCK_ASYNC_FOR_LOOP,
      COMPILE_FBLOCK_TRY_EXCEPT,
      COMPILE_FBLOCK_FINALLY_TRY,
      COMPILE_FBLOCK_FINALLY_END,

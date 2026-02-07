@@ -30,7 +30,8 @@ __all__ = [
     "record_original_stdout", "get_original_stdout", "captured_stdout",
     "captured_stdin", "captured_stderr", "captured_output",
     # unittest
-    "is_resource_enabled", "requires", "requires_freebsd_version",
+    "is_resource_enabled", "get_resource_value", "requires", "requires_resource",
+    "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
@@ -39,13 +40,16 @@ __all__ = [
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
     "has_socket_support", "requires_working_socket",
+    "has_remote_subprocess_debugging", "requires_remote_subprocess_debugging",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
+    "skip_if_unlimited_stack_size",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
+    "support_remote_exec_only",
     # os
     "get_pagesize",
     # network
@@ -67,7 +71,7 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code",
+    "reset_code", "on_github_actions"
     ]
 
 
@@ -183,7 +187,7 @@ def get_attribute(obj, name):
         return attribute
 
 verbose = 1              # Flag set to 0 by regrtest.py
-use_resources = None     # Flag set to [] by regrtest.py
+use_resources = None     # Flag set to {} by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
@@ -298,6 +302,16 @@ def is_resource_enabled(resource):
     """
     return use_resources is None or resource in use_resources
 
+def get_resource_value(resource):
+    """Test whether a resource is enabled.
+
+    Known resources are set by regrtest.py.  If not running under regrtest.py,
+    all resources are assumed enabled unless use_resources has been set.
+    """
+    if use_resources is None:
+        return None
+    return use_resources.get(resource)
+
 def requires(resource, msg=None):
     """Raise ResourceDenied if the specified resource is not available."""
     if not is_resource_enabled(resource):
@@ -308,6 +322,16 @@ def requires(resource, msg=None):
         raise ResourceDenied("No socket support")
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
+
+def _get_kernel_version(sysname="Linux"):
+    import platform
+    if platform.system() != sysname:
+        return None
+    version_txt = platform.release().split('-', 1)[0]
+    try:
+        return tuple(map(int, version_txt.split('.')))
+    except ValueError:
+        return None
 
 def _requires_unix_version(sysname, min_version):
     """Decorator raising SkipTest if the OS is `sysname` and the version is less
@@ -540,10 +564,14 @@ def has_no_debug_ranges():
     except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
     return not _testcapi.config_get('code_debug_ranges')
-    return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
-    return unittest.skipIf(has_no_debug_ranges(), reason)
+    try:
+        skip = has_no_debug_ranges()
+    except unittest.SkipTest as e:
+        skip = True
+        reason = e.args[0] if e.args else reason
+    return unittest.skipIf(skip, reason)
 
 
 MS_WINDOWS = (sys.platform == 'win32')
@@ -568,8 +596,11 @@ else:
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 
+# Use is_wasm32 as a generic check for WebAssembly platforms.
+is_wasm32 = is_emscripten or is_wasi
+
 def skip_emscripten_stack_overflow():
-    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
+    return unittest.skipIf(is_emscripten, "Exhausts stack on Emscripten")
 
 def skip_wasi_stack_overflow():
     return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
@@ -624,6 +655,93 @@ def requires_working_socket(*, module=False):
             raise unittest.SkipTest(msg)
     else:
         return unittest.skipUnless(has_socket_support, msg)
+
+
+@functools.cache
+def has_remote_subprocess_debugging():
+    """Check if we have permissions to debug subprocesses remotely.
+
+    Returns True if we have permissions, False if we don't.
+    Checks for:
+    - Platform support (Linux, macOS, Windows only)
+    - On Linux: process_vm_readv support
+    - _remote_debugging module availability
+    - Actual subprocess debugging permissions (e.g., macOS entitlements)
+    Result is cached.
+    """
+    # Check platform support
+    if sys.platform not in ("linux", "darwin", "win32"):
+        return False
+
+    try:
+        import _remote_debugging
+    except ImportError:
+        return False
+
+    # On Linux, check for process_vm_readv support
+    if sys.platform == "linux":
+        if not getattr(_remote_debugging, "PROCESS_VM_READV_SUPPORTED", False):
+            return False
+
+    # First check if we can read our own process
+    if not _remote_debugging.is_python_process(os.getpid()):
+        return False
+
+    # Check subprocess access - debugging child processes may require
+    # additional permissions depending on platform security settings
+    import socket
+    import subprocess
+
+    # Create a socket for child to signal readiness
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    port = server.getsockname()[1]
+
+    # Child connects to signal it's ready, then waits for parent to close
+    child_code = f"""
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(("127.0.0.1", {port}))
+s.recv(1)  # Wait for parent to signal done
+"""
+    proc = subprocess.Popen(
+        [sys.executable, "-c", child_code],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        server.settimeout(5.0)
+        conn, _ = server.accept()
+        # Child is ready, test if we can probe it
+        result = _remote_debugging.is_python_process(proc.pid)
+        # Check if subprocess is still alive after probing
+        if proc.poll() is not None:
+            return False
+        conn.close()  # Signal child to exit
+        return result
+    except (socket.timeout, OSError):
+        return False
+    finally:
+        server.close()
+        proc.kill()
+        proc.wait()
+
+
+def requires_remote_subprocess_debugging():
+    """Skip tests that require remote subprocess debugging permissions.
+
+    This also implies subprocess support, so no need to use both
+    @requires_subprocess() and @requires_remote_subprocess_debugging().
+    """
+    if not has_subprocess_support:
+        return unittest.skip("requires subprocess support")
+    return unittest.skipUnless(
+        has_remote_subprocess_debugging(),
+        "requires remote subprocess debugging permissions"
+    )
+
 
 # Does strftime() support glibc extension like '%4Y'?
 has_strftime_extensions = False
@@ -945,6 +1063,31 @@ def check_sizeof(test, o, size):
             % (type(o), result, size)
     test.assertEqual(result, size, msg)
 
+def subTests(arg_names, arg_values, /, *, _do_cleanups=False):
+    """Run multiple subtests with different parameters.
+    """
+    single_param = False
+    if isinstance(arg_names, str):
+        arg_names = arg_names.replace(',',' ').split()
+        if len(arg_names) == 1:
+            single_param = True
+    arg_values = tuple(arg_values)
+    def decorator(func):
+        if isinstance(func, type):
+            raise TypeError('subTests() can only decorate methods, not classes')
+        @functools.wraps(func)
+        def wrapper(self, /, *args, **kwargs):
+            for values in arg_values:
+                if single_param:
+                    values = (values,)
+                subtest_kwargs = dict(zip(arg_names, values))
+                with self.subTest(**subtest_kwargs):
+                    func(self, *args, **kwargs, **subtest_kwargs)
+                if _do_cleanups:
+                    self.doCleanups()
+        return wrapper
+    return decorator
+
 #=======================================================================
 # Decorator/context manager for running a code in a different locale,
 # correctly resetting it afterwards.
@@ -1084,7 +1227,7 @@ def set_memlimit(limit: str) -> None:
     global real_max_memuse
     memlimit = _parse_memlimit(limit)
     if memlimit < _2G - 1:
-        raise ValueError('Memory limit {limit!r} too low to be useful')
+        raise ValueError(f'Memory limit {limit!r} too low to be useful')
 
     real_max_memuse = memlimit
     memlimit = min(memlimit, MAX_Py_ssize_t)
@@ -1101,7 +1244,6 @@ class _MemoryWatchdog:
         self.started = False
 
     def start(self):
-        import warnings
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
@@ -1327,6 +1469,7 @@ def reset_code(f: types.FunctionType) -> types.FunctionType:
     f.__code__ = f.__code__.replace()
     return f
 
+on_github_actions = "GITHUB_ACTIONS" in os.environ
 
 #=======================================================================
 # Check for the presence of docstrings.
@@ -1629,6 +1772,25 @@ def skip_if_pgo_task(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+def skip_if_unlimited_stack_size(test):
+    """Skip decorator for tests not run when an unlimited stack size is configured.
+
+    Tests using support.infinite_recursion([...]) may otherwise run into
+    an infinite loop, running until the memory on the system is filled and
+    crashing due to OOM.
+
+    See https://github.com/python/cpython/issues/143460.
+    """
+    if is_emscripten or is_wasi or os.name == "nt":
+        return test
+
+    import resource
+    curlim, maxlim = resource.getrlimit(resource.RLIMIT_STACK)
+    unlimited_stack_size_cond = curlim == maxlim and curlim in (-1, 0xFFFF_FFFF_FFFF_FFFF)
+    reason = "Not run due to unlimited stack size"
+    return unittest.skipIf(unlimited_stack_size_cond, reason)(test)
+
+
 def detect_api_mismatch(ref_api, other_api, *, ignore=()):
     """Returns the set of items in ref_api not in other_api, except for a
     defined list of items to be ignored in this check.
@@ -1653,7 +1815,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     'module'.
 
     The 'name_of_module' argument can specify (as a string or tuple thereof)
-    what module(s) an API could be defined in in order to be detected as a
+    what module(s) an API could be defined in order to be detected as a
     public API. One case for this is when 'module' imports part of its public
     API from other modules, possibly a C backend (like 'csv' and its '_csv').
 
@@ -2308,6 +2470,7 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
         qualname = f"{name}"
     msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
+    testcase.assertRaisesRegex(TypeError, msg, tp.__new__, tp, *args, **kwds)
 
 def get_recursion_depth():
     """Get the recursion depth of the caller function.
@@ -2359,7 +2522,7 @@ def infinite_recursion(max_depth=None):
         # very deep recursion.
         max_depth = 20_000
     elif max_depth < 3:
-        raise ValueError("max_depth must be at least 3, got {max_depth}")
+        raise ValueError(f"max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
     depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
     limit = depth + max_depth
@@ -2728,7 +2891,7 @@ def iter_builtin_types():
     # Fall back to making a best-effort guess.
     if hasattr(object, '__flags__'):
         # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
-        import datetime
+        import datetime  # noqa: F401
         seen = set()
         for cls, subs in walk_class_hierarchy(object):
             if cls in seen:
@@ -2865,7 +3028,7 @@ def force_color(color: bool):
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda file=None: color),
+        swap_attr(_colorize, "can_colorize", lambda *, file=None: color),
         EnvironmentVarGuard() as env,
     ):
         env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
@@ -2927,12 +3090,6 @@ def make_clean_env() -> dict[str, str]:
     clean_env.pop("FORCE_COLOR", None)
     clean_env.pop("NO_COLOR", None)
     return clean_env
-
-
-def initialized_with_pyrepl():
-    """Detect whether PyREPL was used during Python initialization."""
-    # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
-    return hasattr(sys.modules["__main__"], "__file__")
 
 
 WINDOWS_STATUS = {
@@ -3051,6 +3208,27 @@ def is_libssl_fips_mode():
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
 
+def _supports_remote_attaching():
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
+
+def _support_remote_exec_only_impl():
+    if not sys.is_remote_debug_enabled():
+        return unittest.skip("Remote debugging is not enabled")
+    if sys.platform not in ("darwin", "linux", "win32"):
+        return unittest.skip("Test only runs on Linux, Windows and macOS")
+    if sys.platform == "linux" and not _supports_remote_attaching():
+        return unittest.skip("Test only runs on Linux with process_vm_readv support")
+    return _id
+
+def support_remote_exec_only(test):
+    return _support_remote_exec_only_impl()(test)
 
 class EqualToForwardRef:
     """Helper to ease use of annotationlib.ForwardRef in tests.
@@ -3107,7 +3285,7 @@ def linked_to_musl():
 
     # emscripten (at least as far as we're concerned) and wasi use musl,
     # but platform doesn't know how to get the version, so set it to zero.
-    if is_emscripten or is_wasi:
+    if is_wasm32:
         _linked_to_musl = (0, 0, 0)
         return _linked_to_musl
 
@@ -3125,3 +3303,10 @@ def linked_to_musl():
         return _linked_to_musl
     _linked_to_musl = tuple(map(int, version.split('.')))
     return _linked_to_musl
+
+
+def control_characters_c0() -> list[str]:
+    """Returns a list of C0 control characters as strings.
+    C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
+    """
+    return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]

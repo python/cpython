@@ -50,7 +50,7 @@ class Generator:
         expanded to 8 spaces) than maxheaderlen, the header will split as
         defined in the Header class.  Set maxheaderlen to zero to disable
         header wrapping.  The default is 78, as recommended (but not required)
-        by RFC 2822.
+        by RFC 5322 section 2.1.1.
 
         The policy keyword specifies a policy object that controls a number of
         aspects of the generator's operation.  If no policy is specified,

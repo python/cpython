@@ -94,6 +94,7 @@ __all__ = [
 
 import __future__
 import difflib
+import functools
 import inspect
 import linecache
 import os
@@ -101,8 +102,9 @@ import pdb
 import re
 import sys
 import traceback
+import types
 import unittest
-from io import StringIO, IncrementalNewlineDecoder
+from io import StringIO, TextIOWrapper, BytesIO
 from collections import namedtuple
 import _colorize  # Used in doctests
 from _colorize import ANSIColors, can_colorize
@@ -235,10 +237,6 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
-def _newline_convert(data):
-    # The IO module provides a handy decoder for universal newline conversion
-    return IncrementalNewlineDecoder(None, True).decode(data, True)
-
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
@@ -250,10 +248,9 @@ def _load_testfile(filename, package, module_relative, encoding):
                 pass
         if hasattr(loader, 'get_data'):
             file_contents = loader.get_data(filename)
-            file_contents = file_contents.decode(encoding)
             # get_data() opens files as 'rb', so one must do the equivalent
             # conversion as universal newlines would do.
-            return _newline_convert(file_contents), filename
+            return TextIOWrapper(BytesIO(file_contents), encoding=encoding, newline=None).read(), filename
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
 
@@ -385,7 +382,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
         self.__out = out
         self.__debugger_used = False
         # do not play signal games in the pdb
-        pdb.Pdb.__init__(self, stdout=out, nosigint=True)
+        super().__init__(stdout=out, nosigint=True)
         # still use input() to get user input
         self.use_rawinput = 1
 
@@ -1140,7 +1137,9 @@ class DocTestFinder:
         if inspect.ismethod(obj): obj = obj.__func__
         if isinstance(obj, property):
             obj = obj.fget
-        if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
+        if isinstance(obj, functools.cached_property):
+            obj = obj.func
+        if inspect.isroutine(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
             obj = inspect.unwrap(obj)
             try:
@@ -1167,6 +1166,32 @@ class DocTestFinder:
             for lineno in range(lineno, len(source_lines)):
                 if pat.match(source_lines[lineno]):
                     return lineno
+
+        # Handle __test__ string doctests formatted as triple-quoted
+        # strings. Find a non-blank line in the test string and match it
+        # in the source, verifying subsequent lines also match to handle
+        # duplicate lines.
+        if isinstance(obj, str) and source_lines is not None:
+            obj_lines = obj.splitlines(keepends=True)
+            # Skip the first line (may be on same line as opening quotes)
+            # and any blank lines to find a meaningful line to match.
+            start_index = 1
+            while (start_index < len(obj_lines)
+                   and not obj_lines[start_index].strip()):
+                start_index += 1
+            if start_index < len(obj_lines):
+                target_line = obj_lines[start_index]
+                for lineno, source_line in enumerate(source_lines):
+                    if source_line == target_line:
+                        # Verify subsequent lines also match
+                        for i in range(start_index + 1, len(obj_lines) - 1):
+                            source_idx = lineno + i - start_index
+                            if source_idx >= len(source_lines):
+                                break
+                            if obj_lines[i] != source_lines[source_idx]:
+                                break
+                        else:
+                            return lineno - start_index
 
         # We couldn't find the line number.
         return None
@@ -1278,6 +1303,11 @@ class DocTestRunner:
     # Reporting methods
     #/////////////////////////////////////////////////////////////////
 
+    def report_skip(self, out, test, example):
+        """
+        Report that the given example was skipped.
+        """
+
     def report_start(self, out, test, example):
         """
         Report that the test runner is about to process the given
@@ -1375,6 +1405,8 @@ class DocTestRunner:
 
             # If 'SKIP' is set, then skip this example.
             if self.optionflags & SKIP:
+                if not quiet:
+                    self.report_skip(out, test, example)
                 skips += 1
                 continue
 
@@ -1395,11 +1427,11 @@ class DocTestRunner:
                 exec(compile(example.source, filename, "single",
                              compileflags, True), test.globs)
                 self.debugger.set_continue() # ==== Example Finished ====
-                exception = None
+                exc_info = None
             except KeyboardInterrupt:
                 raise
-            except:
-                exception = sys.exc_info()
+            except BaseException as exc:
+                exc_info = type(exc), exc, exc.__traceback__.tb_next
                 self.debugger.set_continue() # ==== Example Finished ====
 
             got = self._fakeout.getvalue()  # the actual output
@@ -1408,21 +1440,21 @@ class DocTestRunner:
 
             # If the example executed without raising any exceptions,
             # verify its output.
-            if exception is None:
+            if exc_info is None:
                 if check(example.want, got, self.optionflags):
                     outcome = SUCCESS
 
             # The example raised an exception:  check if it was expected.
             else:
-                formatted_ex = traceback.format_exception_only(*exception[:2])
-                if issubclass(exception[0], SyntaxError):
+                formatted_ex = traceback.format_exception_only(*exc_info[:2])
+                if issubclass(exc_info[0], SyntaxError):
                     # SyntaxError / IndentationError is special:
                     # we don't care about the carets / suggestions / etc
                     # We only care about the error message and notes.
                     # They start with `SyntaxError:` (or any other class name)
                     exception_line_prefixes = (
-                        f"{exception[0].__qualname__}:",
-                        f"{exception[0].__module__}.{exception[0].__qualname__}:",
+                        f"{exc_info[0].__qualname__}:",
+                        f"{exc_info[0].__module__}.{exc_info[0].__qualname__}:",
                     )
                     exc_msg_index = next(
                         index
@@ -1433,7 +1465,7 @@ class DocTestRunner:
 
                 exc_msg = "".join(formatted_ex)
                 if not quiet:
-                    got += _exception_traceback(exception)
+                    got += _exception_traceback(exc_info)
 
                 # If `example.exc_msg` is None, then we weren't expecting
                 # an exception.
@@ -1462,7 +1494,7 @@ class DocTestRunner:
             elif outcome is BOOM:
                 if not quiet:
                     self.report_unexpected_exception(out, test, example,
-                                                     exception)
+                                                     exc_info)
                 failures += 1
             else:
                 assert False, ("unknown outcome", outcome)
@@ -1989,8 +2021,8 @@ def testmod(m=None, name=None, globs=None, verbose=None,
     from module m (or the current module if m is not supplied), starting
     with m.__doc__.
 
-    Also test examples reachable from dict m.__test__ if it exists and is
-    not None.  m.__test__ maps names to functions, classes and strings;
+    Also test examples reachable from dict m.__test__ if it exists.
+    m.__test__ maps names to functions, classes and strings;
     function and class docstrings are tested even if the name is private;
     strings are tested directly, as if they were docstrings.
 
@@ -2272,12 +2304,63 @@ def set_unittest_reportflags(flags):
     return old
 
 
+class _DocTestCaseRunner(DocTestRunner):
+
+    def __init__(self, *args, test_case, test_result, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._test_case = test_case
+        self._test_result = test_result
+        self._examplenum = 0
+
+    def _subTest(self):
+        subtest = unittest.case._SubTest(self._test_case, str(self._examplenum), {})
+        self._examplenum += 1
+        return subtest
+
+    def report_skip(self, out, test, example):
+        unittest.case._addSkip(self._test_result, self._subTest(), '')
+
+    def report_success(self, out, test, example, got):
+        self._test_result.addSubTest(self._test_case, self._subTest(), None)
+
+    def report_unexpected_exception(self, out, test, example, exc_info):
+        tb = self._add_traceback(exc_info[2], test, example)
+        exc_info = (*exc_info[:2], tb)
+        self._test_result.addSubTest(self._test_case, self._subTest(), exc_info)
+
+    def report_failure(self, out, test, example, got):
+        msg = ('Failed example:\n' + _indent(example.source) +
+            self._checker.output_difference(example, got, self.optionflags).rstrip('\n'))
+        exc = self._test_case.failureException(msg)
+        tb = self._add_traceback(None, test, example)
+        exc_info = (type(exc), exc, tb)
+        self._test_result.addSubTest(self._test_case, self._subTest(), exc_info)
+
+    def _add_traceback(self, traceback, test, example):
+        if test.lineno is None or example.lineno is None:
+            lineno = None
+        else:
+            lineno = test.lineno + example.lineno + 1
+        return types.SimpleNamespace(
+            tb_frame = types.SimpleNamespace(
+                f_globals=test.globs,
+                f_code=types.SimpleNamespace(
+                    co_filename=test.filename,
+                    co_name=test.name,
+                ),
+            ),
+            tb_next = traceback,
+            tb_lasti = -1,
+            tb_lineno = lineno,
+        )
+
+
 class DocTestCase(unittest.TestCase):
 
     def __init__(self, test, optionflags=0, setUp=None, tearDown=None,
                  checker=None):
 
-        unittest.TestCase.__init__(self)
+        super().__init__()
         self._dt_optionflags = optionflags
         self._dt_checker = checker
         self._dt_test = test
@@ -2301,30 +2384,28 @@ class DocTestCase(unittest.TestCase):
         test.globs.clear()
         test.globs.update(self._dt_globs)
 
+    def run(self, result=None):
+        self._test_result = result
+        return super().run(result)
+
     def runTest(self):
         test = self._dt_test
-        old = sys.stdout
-        new = StringIO()
         optionflags = self._dt_optionflags
+        result = self._test_result
 
         if not (optionflags & REPORTING_FLAGS):
             # The option flags don't include any reporting flags,
             # so add the default reporting flags
             optionflags |= _unittest_reportflags
+        if getattr(result, 'failfast', False):
+            optionflags |= FAIL_FAST
 
-        runner = DocTestRunner(optionflags=optionflags,
-                               checker=self._dt_checker, verbose=False)
-
-        try:
-            runner.DIVIDER = "-"*70
-            results = runner.run(test, out=new.write, clear_globs=False)
-            if results.skipped == results.attempted:
-                raise unittest.SkipTest("all examples were skipped")
-        finally:
-            sys.stdout = old
-
-        if results.failed:
-            raise self.failureException(self.format_failure(new.getvalue()))
+        runner = _DocTestCaseRunner(optionflags=optionflags,
+                               checker=self._dt_checker, verbose=False,
+                               test_case=self, test_result=result)
+        results = runner.run(test, clear_globs=False)
+        if results.skipped == results.attempted:
+            raise unittest.SkipTest("all examples were skipped")
 
     def format_failure(self, err):
         test = self._dt_test
@@ -2439,7 +2520,7 @@ class DocTestCase(unittest.TestCase):
 class SkipDocTestCase(DocTestCase):
     def __init__(self, module):
         self.module = module
-        DocTestCase.__init__(self, None)
+        super().__init__(None)
 
     def setUp(self):
         self.skipTest("DocTestSuite will not work with -O2 and above")

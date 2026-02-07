@@ -1260,7 +1260,7 @@ class TestAscii(unittest.TestCase):
 
     def test_controlnames(self):
         for name in curses.ascii.controlnames:
-            self.assertTrue(hasattr(curses.ascii, name), name)
+            self.assertHasAttr(curses.ascii, name)
 
     def test_ctypes(self):
         def check(func, expected):

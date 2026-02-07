@@ -36,6 +36,7 @@ typedef struct _callback_context
     PyObject *callable;
     PyObject *module;
     pysqlite_state *state;
+    Py_ssize_t refcount;
 } callback_context;
 
 enum autocommit_mode {

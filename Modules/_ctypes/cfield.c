@@ -160,8 +160,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         if ((bitfield_size + bit_offset) > byte_size * 8) {
             PyErr_Format(
                 PyExc_ValueError,
-                "bit field %R overflows its type (%zd + %zd >= %zd)",
-                name, bit_offset, byte_size*8);
+                "bit field %R overflows its type (%zd + %zd > %zd)",
+                name, bit_offset, bitfield_size, byte_size * 8);
             goto error;
         }
     }
@@ -759,7 +759,7 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 
 /* We don't use _Complex types here, using arrays instead, as the C11+
    standard says: "Each complex type has the same representation and alignment
@@ -1599,7 +1599,7 @@ for base_code, base_c_type in [
     ///////////////////////////////////////////////////////////////////////////
 
     TABLE_ENTRY_SW(d, &ffi_type_double);
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
         TABLE_ENTRY(D, &ffi_type_complex_double);
         TABLE_ENTRY(F, &ffi_type_complex_float);
