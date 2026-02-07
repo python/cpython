@@ -1,0 +1,3 @@
+Attribute access suggestions in :exc:`AttributeError` tracebacks are now
+prepended with a dot (e.g. ``'.datetime.now'``) to make them easier to
+understand. Contributed by Bartosz Sławecki.
