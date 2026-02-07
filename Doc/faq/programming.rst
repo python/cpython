@@ -1511,7 +1511,8 @@ check whether an object is one of Python's built-in types, for example,
 Note that :func:`isinstance` also checks for virtual inheritance from an
 :term:`abstract base class`.  So, the test will return ``True`` for a
 registered class even if hasn't directly or indirectly inherited from it.  To
-test for "true inheritance", scan the :term:`MRO` of the class:
+test for "true inheritance", scan the :term:`method resolution order` (MRO) of
+the class:
 
 .. testcode::
 
