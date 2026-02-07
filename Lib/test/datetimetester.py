@@ -1212,7 +1212,7 @@ class TestDateOnly(unittest.TestCase):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
 
-    def test_strptime_C99_shorthand_year_month_day(self):
+    def test_strptime_F_format(self):
         formats = dict(short="%F",long="%Y-%m-%d")
         test_date = "2025-10-26"
         shorthand = datetime.strptime(test_date,formats["short"])
