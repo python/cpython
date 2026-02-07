@@ -693,7 +693,7 @@ partial_repr(PyObject *self)
     PyObject *name;
     Py_ssize_t i, n;
     PyObject *key, *value;
-    PyObject* args;
+    PyObject *args;
     int status;
 
     status = Py_ReprEnter(self);
