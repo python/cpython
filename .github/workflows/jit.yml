@@ -113,11 +113,28 @@ jobs:
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-  jit-with-disabled-gil:
-    name: Free-Threaded (Debug)
+  jit-linux-extras:
+    name: ${{ matrix.name }}
     needs: interpreter
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Free-Threaded (Debug)
+            configure_flags: --enable-experimental-jit --with-pydebug --disable-gil
+            test_env: ""
+            continue_on_error: true
+          - name: JIT without optimizations (Debug)
+            configure_flags: --enable-experimental-jit --with-pydebug
+            test_env: "PYTHON_UOPS_OPTIMIZE=0"
+            continue_on_error: false
+          - name: JIT with tail calling interpreter
+            configure_flags: --enable-experimental-jit --with-tail-call-interp --with-pydebug
+            use_clang: true
+            test_env: ""
+            continue_on_error: false
     steps:
       - uses: actions/checkout@v6
         with:
@@ -125,54 +142,16 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - name: Build with JIT enabled and GIL disabled
+      - name: Build
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
           export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
-          ./configure --enable-experimental-jit --with-pydebug --disable-gil
+          if [ "${{ matrix.use_clang }}" = "true" ]; then
+            export CC=clang-${{ env.LLVM_VERSION }}
+          fi
+          ./configure ${{ matrix.configure_flags }}
           make all --jobs 4
       - name: Run tests
         run: |
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-        continue-on-error: true
-
-  no-opt-jit:
-    name: JIT without optimizations (Debug)
-    needs: interpreter
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-      - name: Build with JIT
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
-          ./configure --enable-experimental-jit --with-pydebug
-          make all --jobs 4
-      - name: Run tests without optimizations
-        run: |
-          PYTHON_UOPS_OPTIMIZE=0 ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-  tail-call-jit:
-    name: JIT with tail calling interpreter
-    needs: interpreter
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-      - name: Build with JIT and tailcall
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
-          CC=clang-${{ env.LLVM_VERSION }} ./configure --enable-experimental-jit --with-tail-call-interp --with-pydebug
-          make all --jobs 4
+          ${{ matrix.test_env }} ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+        continue-on-error: ${{ matrix.continue_on_error }}
