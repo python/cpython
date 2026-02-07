@@ -11,8 +11,8 @@ Programming FAQ
 General questions
 =================
 
-Is there a source code level debugger with breakpoints, single-stepping, etc.?
-------------------------------------------------------------------------------
+Is there a source-code level debugger with breakpoints and single-stepping?
+---------------------------------------------------------------------------
 
 Yes.
 
@@ -208,7 +208,7 @@ Why do lambdas defined in a loop with different values all return the same resul
 ----------------------------------------------------------------------------------
 
 Assume you use a for loop to define a few different lambdas (or even plain
-functions), e.g.::
+functions), for example::
 
    >>> squares = []
    >>> for x in range(5):
@@ -227,7 +227,7 @@ they all return ``16``::
 This happens because ``x`` is not local to the lambdas, but is defined in
 the outer scope, and it is accessed when the lambda is called --- not when it
 is defined.  At the end of the loop, the value of ``x`` is ``4``, so all the
-functions now return ``4**2``, i.e. ``16``.  You can also verify this by
+functions now return ``4**2``, or ``16``.  You can also verify this by
 changing the value of ``x`` and see how the results of the lambdas change::
 
    >>> x = 8
@@ -298,9 +298,9 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
+1. standard library modules -- such as :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
 2. third-party library modules (anything installed in Python's site-packages
-   directory) -- e.g. :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
+   directory) -- such as :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
 3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
@@ -494,11 +494,11 @@ new objects).
 
 In other words:
 
-* If we have a mutable object (:class:`list`, :class:`dict`, :class:`set`,
-  etc.), we can use some specific operations to mutate it and all the variables
+* If we have a mutable object (such as :class:`list`, :class:`dict`, :class:`set`),
+  we can use some specific operations to mutate it and all the variables
   that refer to it will see the change.
-* If we have an immutable object (:class:`str`, :class:`int`, :class:`tuple`,
-  etc.), all the variables that refer to it will always see the same value,
+* If we have an immutable object (such as :class:`str`, :class:`int`, :class:`tuple`),
+  all the variables that refer to it will always see the same value,
   but operations that transform that value into a new value always return a new
   object.
 
@@ -511,7 +511,7 @@ How do I write a function with output parameters (call by reference)?
 
 Remember that arguments are passed by assignment in Python.  Since assignment
 just creates references to objects, there's no alias between an argument name in
-the caller and callee, and so no call-by-reference per se.  You can achieve the
+the caller and callee, and so no call-by-reference as such.  You can achieve the
 desired effect in a number of ways.
 
 1) By returning a tuple of the results::
@@ -868,9 +868,9 @@ with either a space or parentheses.
 How do I convert a string to a number?
 --------------------------------------
 
-For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
+For integers, use the built-in :func:`int` type constructor, for example, ``int('144')
 == 144``.  Similarly, :func:`float` converts to a floating-point number,
-e.g. ``float('144') == 144.0``.
+for example, ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
 144`` holds true, and ``int('0x144')`` raises :exc:`ValueError`. ``int(string,
@@ -887,18 +887,18 @@ unwanted side effects.  For example, someone could pass
 directory.
 
 :func:`eval` also has the effect of interpreting numbers as Python expressions,
-so that e.g. ``eval('09')`` gives a syntax error because Python does not allow
+so that, for example, ``eval('09')`` gives a syntax error because Python does not allow
 leading '0' in a decimal number (except '0').
 
 
 How do I convert a number to a string?
 --------------------------------------
 
-To convert, e.g., the number ``144`` to the string ``'144'``, use the built-in type
+For example, to convert the number ``144`` to the string ``'144'``, use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
 the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
-the :ref:`f-strings` and :ref:`formatstrings` sections,
-e.g. ``"{:04d}".format(144)`` yields
+the :ref:`f-strings` and :ref:`formatstrings` sections.
+For example, ``"{:04d}".format(144)`` yields
 ``'0144'`` and ``"{:.3f}".format(1.0/3.0)`` yields ``'0.333'``.
 
 
@@ -1217,7 +1217,7 @@ list, deleting duplicates as you go::
            else:
                last = mylist[i]
 
-If all elements of the list may be used as set keys (i.e. they are all
+If all elements of the list may be used as set keys (that is, they are all
 :term:`hashable`) this is often faster ::
 
    mylist = list(set(mylist))
@@ -1504,8 +1504,8 @@ How do I check if an object is an instance of a given class or of a subclass of 
 Use the built-in function :func:`isinstance(obj, cls) <isinstance>`.  You can
 check if an object
 is an instance of any of a number of classes by providing a tuple instead of a
-single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
-check whether an object is one of Python's built-in types, e.g.
+single class, for example, ``isinstance(obj, (class1, class2, ...))``, and can also
+check whether an object is one of Python's built-in types, for example,
 ``isinstance(obj, str)`` or ``isinstance(obj, (int, float, complex))``.
 
 Note that :func:`isinstance` also checks for virtual inheritance from an
@@ -1645,7 +1645,7 @@ How can I organize my code to make it easier to change the base class?
 
 You could assign the base class to an alias and derive from the alias.  Then all
 you have to change is the value assigned to the alias.  Incidentally, this trick
-is also handy if you want to decide dynamically (e.g. depending on availability
+is also handy if you want to decide dynamically (such as depending on availability
 of resources) which base class to use.  Example::
 
    class Base:
@@ -1731,7 +1731,7 @@ default arguments.  For example::
 
 This is not entirely equivalent, but close enough in practice.
 
-You could also try a variable-length argument list, e.g. ::
+You could also try a variable-length argument list, for example ::
 
    def __init__(self, *args):
        ...
@@ -1783,7 +1783,7 @@ The :keyword:`del` statement does not necessarily call :meth:`~object.__del__` -
 decrements the object's reference count, and if this reaches zero
 :meth:`!__del__` is called.
 
-If your data structures contain circular links (e.g. a tree where each child has
+If your data structures contain circular links (for example, a tree where each child has
 a parent reference and each parent has a list of children) the reference counts
 will never go back to zero.  Once in a while Python runs an algorithm to detect
 such cycles, but the garbage collector might run some time after the last
@@ -2092,7 +2092,7 @@ one user but run as another, such as if you are testing with a web server.
 
 Unless the :envvar:`PYTHONDONTWRITEBYTECODE` environment variable is set,
 creation of a .pyc file is automatic if you're importing a module and Python
-has the ability (permissions, free space, etc...) to create a ``__pycache__``
+has the ability (permissions, free space, and so on) to create a ``__pycache__``
 subdirectory and write the compiled module to that subdirectory.
 
 Running Python on a top level script is not considered an import and no
