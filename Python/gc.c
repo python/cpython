@@ -1485,7 +1485,6 @@ completed_scavenge(GCState *gcstate)
         gc_list_merge(&gcstate->old[visited].head, &gcstate->old[not_visited].head);
         gc_list_set_space(&gcstate->old[not_visited].head, not_visited);
     }
-    assert(gc_list_is_empty(&gcstate->old[visited].head));
     gcstate->work_to_do = 0;
     gcstate->phase = GC_PHASE_MARK;
 }
@@ -1709,6 +1708,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 
     if (gc_list_is_empty(not_visited)) {
         completed_scavenge(gcstate);
+        assert(gc_list_is_empty(&gcstate->old[gcstate->visited_space].head));
     }
     validate_spaces(gcstate);
 }
@@ -1720,21 +1720,42 @@ gc_collect_full(PyThreadState *tstate,
     GC_STAT_ADD(2, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     validate_spaces(gcstate);
-    PyGC_Head *young = &gcstate->young.head;
-    PyGC_Head *pending = &gcstate->old[gcstate->visited_space^1].head;
+    PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
-    untrack_tuples(young);
-    /* merge all generations into visited */
-    gc_list_merge(young, pending);
-    gc_list_validate_space(pending, 1-gcstate->visited_space);
-    gc_list_set_space(pending, gcstate->visited_space);
-    gcstate->young.count = 0;
-    gc_list_merge(pending, visited);
+    untrack_tuples(&gcstate->young.head);
+
+    // Move objects that are reachable from known roots into
+    // the "visited" set.
+    gc_list_set_space(visited, 1-gcstate->visited_space);
+    gc_list_merge(visited, not_visited);
+    Py_ssize_t objects_marked = mark_at_start(tstate);
+    GC_STAT_ADD(2, objects_transitively_reachable, objects_marked);
+    stats->candidates += objects_marked;
     validate_spaces(gcstate);
 
-    gc_collect_region(tstate, visited, visited,
-                      stats);
+    // Prepare increment set, it contains "young+not_visited". The "visited"
+    // set contains objects known to not be garbage and so they will be
+    // excluded from the gc_collect_region() operation.
+    PyGC_Head increment;
+    gc_list_init(&increment);
+    gc_list_set_space(&gcstate->young.head, gcstate->visited_space);
+    gc_list_merge(&gcstate->young.head, &increment);
+    gc_list_validate_space(&increment, gcstate->visited_space);
+    gc_list_set_space(not_visited, gcstate->visited_space);
+    gc_list_merge(not_visited, &increment);
+    validate_list(&increment, collecting_clear_unreachable_clear);
+    gc_list_validate_space(&increment, gcstate->visited_space);
+
+    // Find cyclic garbage by comparing edge counts with reference counts.
+    // Objects that are not garbage will be in "survivors".
+    PyGC_Head survivors;
+    gc_list_init(&survivors);
+    gc_collect_region(tstate, &increment, &survivors, stats);
+    gc_list_merge(&survivors, visited);
+    assert(gc_list_is_empty(&increment));
+    assert(gc_list_is_empty(not_visited));
     validate_spaces(gcstate);
+
     gcstate->young.count = 0;
     gcstate->old[0].count = 0;
     gcstate->old[1].count = 0;
