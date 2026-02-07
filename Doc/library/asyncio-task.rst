@@ -771,6 +771,9 @@ Timeouts
        An :ref:`asynchronous context manager <async-context-managers>`
        for cancelling overdue coroutines.
 
+       Prefer using :func:`asyncio.timeout` or :func:`asyncio.timeout_at`
+       rather than instantiating :class:`!Timeout` directly.
+
        ``when`` should be an absolute time at which the context should time out,
        as measured by the event loop's clock:
 
