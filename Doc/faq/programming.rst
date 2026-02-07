@@ -56,13 +56,15 @@ Are there tools to help find bugs or perform static analysis?
 
 Yes.
 
-`Pylint <https://pylint.pycqa.org/en/latest/index.html>`_ and
-`Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
+`Ruff <https://docs.astral.sh/ruff/>`__,
+`Pylint <https://pylint.readthedocs.io/>`__ and
+`Pyflakes <https://github.com/PyCQA/pyflakes>`__ do basic checking that will
 help you catch bugs sooner.
 
-Static type checkers such as `Mypy <https://mypy-lang.org/>`_,
-`Pyre <https://pyre-check.org/>`_, and
-`Pytype <https://github.com/google/pytype>`_ can check type hints in Python
+Static type checkers such as `mypy <https://mypy-lang.org/>`__,
+`ty <https://docs.astral.sh/ty/>`__,
+`Pyrefly <https://pyrefly.org/>`__, and
+`pytype <https://github.com/google/pytype>`__ can check type hints in Python
 source code.
 
 
