@@ -748,16 +748,16 @@ sqlite3
 
 * The :ref:`command-line interface <sqlite3-cli>` has several new features:
 
-   * SQL keyword completion on <tab>.
-     (Contributed by Long Tan in :gh:`133393`.)
+  * SQL keyword completion on <tab>.
+    (Contributed by Long Tan in :gh:`133393`.)
 
-   * Prompts, error messages, and help text are now colored.
-     This is enabled by default, see :ref:`using-on-controlling-color` for
-     details.
-     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
+  * Prompts, error messages, and help text are now colored.
+    This is enabled by default, see :ref:`using-on-controlling-color` for
+    details.
+    (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
-   * Table, index, trigger, view, column, function, and schema completion on <tab>.
-     (Contributed by Long Tan in :gh:`136101`.)
+  * Table, index, trigger, view, column, function, and schema completion on <tab>.
+    (Contributed by Long Tan in :gh:`136101`.)
 
 
 ssl
@@ -769,21 +769,21 @@ ssl
 
 * Added new methods for managing groups used for SSL key agreement
 
-   * :meth:`ssl.SSLContext.set_groups` sets the groups allowed for doing
-     key agreement, extending the previous
-     :meth:`ssl.SSLContext.set_ecdh_curve` method.
-     This new API provides the ability to list multiple groups and
-     supports fixed-field and post-quantum groups in addition to ECDH
-     curves. This method can also be used to control what key shares
-     are sent in the TLS handshake.
-   * :meth:`ssl.SSLSocket.group` returns the group selected for doing key
-     agreement on the current connection after the TLS handshake completes.
-     This call requires OpenSSL 3.2 or later.
-   * :meth:`ssl.SSLContext.get_groups` returns a list of all available key
-     agreement groups compatible with the minimum and maximum TLS versions
-     currently set in the context. This call requires OpenSSL 3.5 or later.
+  * :meth:`ssl.SSLContext.set_groups` sets the groups allowed for doing
+    key agreement, extending the previous
+    :meth:`ssl.SSLContext.set_ecdh_curve` method.
+    This new API provides the ability to list multiple groups and
+    supports fixed-field and post-quantum groups in addition to ECDH
+    curves. This method can also be used to control what key shares
+    are sent in the TLS handshake.
+  * :meth:`ssl.SSLSocket.group` returns the group selected for doing key
+    agreement on the current connection after the TLS handshake completes.
+    This call requires OpenSSL 3.2 or later.
+  * :meth:`ssl.SSLContext.get_groups` returns a list of all available key
+    agreement groups compatible with the minimum and maximum TLS versions
+    currently set in the context. This call requires OpenSSL 3.5 or later.
 
-   (Contributed by Ron Frederick in :gh:`136306`.)
+  (Contributed by Ron Frederick in :gh:`136306`.)
 
 * Added a new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
   ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
@@ -807,7 +807,7 @@ ssl
     selected for the server to complete the TLS handshake on the current
     connection. This call requires OpenSSL 3.5 or later.
 
-   (Contributed by Ron Frederick in :gh:`138252`.)
+  (Contributed by Ron Frederick in :gh:`138252`.)
 
 subprocess
 ----------
