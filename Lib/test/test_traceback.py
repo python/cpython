@@ -4186,7 +4186,7 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
             (CaseChangeOverSubstitution, "'.BLuch'"),
         ]:
             actual = self.get_suggestion(cls(), 'bluch')
-            self.assertIn(suggestion, actual)
+            self.assertIn('Did you mean ' + suggestion, actual)
 
     def test_suggestions_underscored(self):
         class A:
