@@ -806,8 +806,9 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6, matcher=None):
     Optional arg cutoff (default 0.6) is a float in [0, 1].  Possibilities
     that don't score at least that similar to word are ignored.
 
-    Optional arg matcher is a subclass of SequenceMatcherBase.
-    Default (if None) is SequenceMatcher.
+    Optional arg matcher is a callable that takes 3 positional arguments.
+        i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
+        Default (if None) is SequenceMatcher class.
 
     The best (no more than n) matches among the possibilities are returned
     in a list, sorted by similarity score, most similar first.
@@ -829,9 +830,8 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6, matcher=None):
         raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
     if matcher is None:
         matcher = SequenceMatcher
-    elif not issubclass(matcher, SequenceMatcherBase):
-        msg = "matcher must be a subclass of SequenceMatcherBase: %r"
-        raise TypeError(msg % (matcher,))
+    elif not callable(matcher):
+        raise TypeError("matcher must be callable: %r" % (matcher,))
     result = []
     s = matcher()
     s.set_seq2(word)
@@ -968,22 +968,22 @@ class Differ:
           whitespace characters (a blank or tab; **note**: bad idea to include
           newline in this!).  Use of IS_CHARACTER_JUNK is recommended.
 
-        - `linematcher`: Subclass of SequenceMatcherBase. If None, defaults
-          to SequenceMatcher.
+        - `linematcher`: callable that takes 3 positional arguments.
+          i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
+          Default (if None) is SequenceMatcher class.
 
-        - `charmatcher`: Subclass of SequenceMatcherBase. If None, defaults
-          to SequenceMatcher.
+        - `charmatcher`: callable that takes 3 positional arguments.
+          i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
+          Default (if None) is SequenceMatcher class.
         """
         if linematcher is None:
             linematcher = SequenceMatcher
-        elif not issubclass(linematcher, SequenceMatcherBase):
-            msg = "linematcher must be a subclass of SequenceMatcherBase: %r"
-            raise TypeError(msg % (linematcher,))
+        elif not callable(linematcher):
+            raise TypeError("linematcher must be callable: %r" % (linematcher,))
         if charmatcher is None:
             charmatcher = SequenceMatcher
-        elif not issubclass(charmatcher, SequenceMatcherBase):
-            msg = "charmatcher must be a subclass of SequenceMatcherBase: %r"
-            raise TypeError(msg % (charmatcher,))
+        elif not callable(charmatcher):
+            raise TypeError("charmatcher must be callable: %r" % (charmatcher,))
         self.linejunk = linejunk
         self.charjunk = charjunk
         self.linematcher = linematcher
@@ -1273,8 +1273,9 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     'git diff --color'. Even if enabled, it can be
     controlled using environment variables such as 'NO_COLOR'.
 
-    Optional arg matcher is a subclass of SequenceMatcherBase.
-    Default (if None) is SequenceMatcher.
+    Optional arg matcher is a callable that takes 3 positional arguments.
+    i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
+    Default (if None) is SequenceMatcher class.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
@@ -1300,9 +1301,8 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     """
     if matcher is None:
         matcher = SequenceMatcher
-    elif not issubclass(matcher, SequenceMatcherBase):
-        msg = "matcher must be a subclass of SequenceMatcherBase: %r"
-        raise TypeError(msg % (matcher,))
+    elif not callable(matcher):
+        raise TypeError("matcher must be callable: %r" % (matcher,))
 
     if color and can_colorize():
         t = get_theme(force_color=True).difflib
@@ -1371,8 +1371,9 @@ def context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='',
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
 
-    Optional arg matcher is a subclass of SequenceMatcherBase.
-    Default (if None) is SequenceMatcher.
+    Optional arg matcher is a callable that takes 3 positional arguments.
+    i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
+    Default (if None) is SequenceMatcher class.
 
     The context diff format normally has a header for filenames and
     modification times.  Any or all of these may be specified using
@@ -1401,9 +1402,8 @@ def context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='',
     """
     if matcher is None:
         matcher = SequenceMatcher
-    elif not issubclass(matcher, SequenceMatcherBase):
-        msg = "matcher must be a subclass of SequenceMatcherBase: %r"
-        raise TypeError(msg % (matcher,))
+    elif not callable(matcher):
+        raise TypeError("matcher must be callable: %r" % (matcher,))
 
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     prefix = dict(insert='+ ', delete='- ', replace='! ', equal='  ')
@@ -1509,11 +1509,13 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK,
       whitespace characters (a blank or tab; note: it's a bad idea to
       include newline in this!).
 
-    - `linematcher`: Subclass of SequenceMatcherBase. If None, defaults
-      to SequenceMatcher.
+    - `linematcher`: callable that takes 3 positional arguments.
+      i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
+      Default (if None) is SequenceMatcher class.
 
-    - `charmatcher`: Subclass of SequenceMatcherBase. If None, defaults
-      to SequenceMatcher.
+    - `charmatcher`: callable that takes 3 positional arguments.
+      i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
+      Default (if None) is SequenceMatcher class.
 
     Tools/scripts/ndiff.py is a command-line front-end to this function.
 
