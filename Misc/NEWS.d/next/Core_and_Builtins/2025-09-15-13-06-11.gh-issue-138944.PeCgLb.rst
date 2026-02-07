@@ -1,3 +1,0 @@
-Fix :exc:`SyntaxError` message when invalid syntax appears on the same line
-as a valid ``import ... as ...`` or ``from ... import ... as ...``
-statement. Patch by Brian Schubert.

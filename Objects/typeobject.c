@@ -4,6 +4,7 @@
 #include "pycore_abstract.h"      // _PySequence_IterSearch()
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
+#include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_interpframe.h"   // _PyInterpreterFrame
@@ -81,7 +82,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || defined(Py_DEBUG)
 // Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
@@ -2578,7 +2579,7 @@ traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
     mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
         if (mp->type == Py_T_OBJECT_EX) {
-            char *addr = (char *)self + mp->offset;
+            void *addr = _PyMember_GetOffset(self, mp);
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
                 int err = visit(obj, arg);
@@ -2653,7 +2654,7 @@ clear_slots(PyTypeObject *type, PyObject *self)
     mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
         if (mp->type == Py_T_OBJECT_EX && !(mp->flags & Py_READONLY)) {
-            char *addr = (char *)self + mp->offset;
+            void *addr = _PyMember_GetOffset(self, mp);
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
                 *(PyObject **)addr = NULL;
@@ -4343,14 +4344,6 @@ type_new_slots_bases(type_new_ctx *ctx)
 static int
 type_new_slots_impl(type_new_ctx *ctx, PyObject *dict)
 {
-    /* Are slots allowed? */
-    if (ctx->nslot > 0 && ctx->base->tp_itemsize != 0) {
-        PyErr_Format(PyExc_TypeError,
-                     "nonempty __slots__ not supported for subtype of '%s'",
-                     ctx->base->tp_name);
-        return -1;
-    }
-
     if (type_new_visit_slots(ctx) < 0) {
         return -1;
     }
@@ -4377,14 +4370,13 @@ type_new_slots(type_new_ctx *ctx, PyObject *dict)
     ctx->add_dict = 0;
     ctx->add_weak = 0;
     ctx->may_add_dict = (ctx->base->tp_dictoffset == 0);
-    ctx->may_add_weak = (ctx->base->tp_weaklistoffset == 0
-                         && ctx->base->tp_itemsize == 0);
+    ctx->may_add_weak = (ctx->base->tp_weaklistoffset == 0);
 
     if (ctx->slots == NULL) {
         if (ctx->may_add_dict) {
             ctx->add_dict++;
         }
-        if (ctx->may_add_weak) {
+        if (ctx->may_add_weak && ctx->base->tp_itemsize == 0) {
             ctx->add_weak++;
         }
     }
@@ -4650,6 +4642,16 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
     if (et->ht_slots != NULL) {
         PyMemberDef *mp = _PyHeapType_GET_MEMBERS(et);
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
+        int after_items = (ctx->base->tp_itemsize != 0 &&
+                           !(ctx->base->tp_flags & Py_TPFLAGS_ITEMS_AT_END));
+        if (ctx->base->tp_itemsize != 0 &&
+            !(ctx->base->tp_flags & Py_TPFLAGS_TUPLE_SUBCLASS))
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "arbitrary __slots__ not supported for subtype of '%s'",
+                         ctx->base->tp_name);
+            return -1;
+        }
         for (Py_ssize_t i = 0; i < nslot; i++, mp++) {
             mp->name = PyUnicode_AsUTF8(
                 PyTuple_GET_ITEM(et->ht_slots, i));
@@ -4658,6 +4660,9 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
             }
             mp->type = Py_T_OBJECT_EX;
             mp->offset = slotoffset;
+            if (after_items) {
+                mp->flags |= _Py_AFTER_ITEMS;
+            }
 
             /* __dict__ and __weakref__ are already filtered out */
             assert(strcmp(mp->name, "__dict__") != 0);
@@ -4889,8 +4894,14 @@ type_new_init(type_new_ctx *ctx)
     set_tp_dict(type, dict);
 
     PyHeapTypeObject *et = (PyHeapTypeObject*)type;
-    et->ht_slots = ctx->slots;
-    ctx->slots = NULL;
+    if (ctx->slots && PyTuple_GET_SIZE(ctx->slots)) {
+        et->ht_slots = ctx->slots;
+        ctx->slots = NULL;
+    }
+    else {
+        et->ht_slots = NULL;
+        Py_CLEAR(ctx->slots);
+    }
 
     return type;
 
@@ -5874,21 +5885,13 @@ get_base_by_token_recursive(PyObject *bases, void *token)
 }
 
 int
-PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    assert(token != NULL);
+    assert(PyType_Check(type));
+
     if (result != NULL) {
         *result = NULL;
-    }
-
-    if (token == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "PyType_GetBaseByToken called with token=NULL");
-        return -1;
-    }
-    if (!PyType_Check(type)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected a type, got a '%T' object", type);
-        return -1;
     }
 
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
@@ -5899,7 +5902,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     if (((PyHeapTypeObject*)type)->ht_token == token) {
 found:
         if (result != NULL) {
-            *result = (PyTypeObject *)Py_NewRef(type);
+            *result = type;
         }
         return 1;
     }
@@ -5931,6 +5934,30 @@ found:
         }
     }
     return 0;
+}
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+{
+    if (result != NULL) {
+         *result = NULL;
+    }
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        return -1;
+    }
+
+    int res = _PyType_GetBaseByToken_Borrow(type, token, result);
+    if (res > 0 && result) {
+        Py_INCREF(*result);
+    }
+    return res;
 }
 
 
@@ -6036,7 +6063,7 @@ static PyObject *
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
     _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
-    assert(_PyASCIIObject_CAST(name)->hash != -1);
+    assert(PyUnstable_Unicode_GET_CACHED_HASH(name) != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
     // We're releasing this under the lock for simplicity sake because it's always a
     // exact unicode object or Py_None so it's safe to do so.
@@ -6348,93 +6375,13 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
 
    */
 PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missing_attribute)
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute)
 {
-    PyTypeObject *metatype = Py_TYPE(type);
-    PyObject *meta_attribute, *attribute;
-    descrgetfunc meta_get;
-    PyObject* res;
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute name must be string, not '%.200s'",
-                     Py_TYPE(name)->tp_name);
+    _PyStackRef ref = _Py_type_getattro_stackref(type, name, suppress_missing_attribute);
+    if (PyStackRef_IsNull(ref)) {
         return NULL;
     }
-
-    /* Initialize this type (we'll assume the metatype is initialized) */
-    if (!_PyType_IsReady(type)) {
-        if (PyType_Ready(type) < 0)
-            return NULL;
-    }
-
-    /* No readable descriptor found yet */
-    meta_get = NULL;
-
-    /* Look for the attribute in the metatype */
-    meta_attribute = _PyType_LookupRef(metatype, name);
-
-    if (meta_attribute != NULL) {
-        meta_get = Py_TYPE(meta_attribute)->tp_descr_get;
-
-        if (meta_get != NULL && PyDescr_IsData(meta_attribute)) {
-            /* Data descriptors implement tp_descr_set to intercept
-             * writes. Assume the attribute is not overridden in
-             * type's tp_dict (and bases): call the descriptor now.
-             */
-            res = meta_get(meta_attribute, (PyObject *)type,
-                           (PyObject *)metatype);
-            Py_DECREF(meta_attribute);
-            return res;
-        }
-    }
-
-    /* No data descriptor found on metatype. Look in tp_dict of this
-     * type and its bases */
-    attribute = _PyType_LookupRef(type, name);
-    if (attribute != NULL) {
-        /* Implement descriptor functionality, if any */
-        descrgetfunc local_get = Py_TYPE(attribute)->tp_descr_get;
-
-        Py_XDECREF(meta_attribute);
-
-        if (local_get != NULL) {
-            /* NULL 2nd argument indicates the descriptor was
-             * found on the target object itself (or a base)  */
-            res = local_get(attribute, (PyObject *)NULL,
-                            (PyObject *)type);
-            Py_DECREF(attribute);
-            return res;
-        }
-
-        return attribute;
-    }
-
-    /* No attribute found in local __dict__ (or bases): use the
-     * descriptor from the metatype, if any */
-    if (meta_get != NULL) {
-        PyObject *res;
-        res = meta_get(meta_attribute, (PyObject *)type,
-                       (PyObject *)metatype);
-        Py_DECREF(meta_attribute);
-        return res;
-    }
-
-    /* If an ordinary attribute was found on the metatype, return it now */
-    if (meta_attribute != NULL) {
-        return meta_attribute;
-    }
-
-    /* Give up */
-    if (suppress_missing_attribute == NULL) {
-        PyErr_Format(PyExc_AttributeError,
-                        "type object '%.100s' has no attribute '%U'",
-                        type->tp_name, name);
-    } else {
-        // signal the caller we have not set an PyExc_AttributeError and gave up
-        *suppress_missing_attribute = 1;
-    }
-    return NULL;
+    return PyStackRef_AsPyObjectSteal(ref);
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -6444,6 +6391,137 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
     return _Py_type_getattro_impl(type, name, NULL);
+}
+
+/* Like _Py_type_getattro but returns a _PyStackRef.
+   This can return a deferred reference in the free-threaded build
+   when the attribute is found without going through a descriptor.
+
+   suppress_missing_attribute (optional):
+   * NULL: do not suppress the exception
+   * Non-zero pointer: suppress the PyExc_AttributeError and
+     set *suppress_missing_attribute to 1 to signal we are returning NULL while
+     having suppressed the exception (other exceptions are not suppressed)
+*/
+_PyStackRef
+_Py_type_getattro_stackref(PyTypeObject *type, PyObject *name,
+                           int *suppress_missing_attribute)
+{
+    PyTypeObject *metatype = Py_TYPE(type);
+    descrgetfunc meta_get = NULL;
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return PyStackRef_NULL;
+    }
+
+    /* Initialize this type (we'll assume the metatype is initialized) */
+    if (!_PyType_IsReady(type)) {
+        if (PyType_Ready(type) < 0)
+            return PyStackRef_NULL;
+    }
+
+    /* Set up GC-visible stack refs */
+    _PyCStackRef result_ref, meta_attribute_ref, attribute_ref;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyThreadState_PushCStackRef(tstate, &result_ref);
+    _PyThreadState_PushCStackRef(tstate, &meta_attribute_ref);
+    _PyThreadState_PushCStackRef(tstate, &attribute_ref);
+
+    /* Look for the attribute in the metatype */
+    _PyType_LookupStackRefAndVersion(metatype, name, &meta_attribute_ref.ref);
+
+    if (!PyStackRef_IsNull(meta_attribute_ref.ref)) {
+        PyObject *meta_attr_obj = PyStackRef_AsPyObjectBorrow(meta_attribute_ref.ref);
+        meta_get = Py_TYPE(meta_attr_obj)->tp_descr_get;
+
+        if (meta_get != NULL && PyDescr_IsData(meta_attr_obj)) {
+            /* Data descriptors implement tp_descr_set to intercept
+             * writes. Assume the attribute is not overridden in
+             * type's tp_dict (and bases): call the descriptor now.
+             */
+            PyObject *res = meta_get(meta_attr_obj, (PyObject *)type,
+                                     (PyObject *)metatype);
+            if (res != NULL) {
+                result_ref.ref = PyStackRef_FromPyObjectSteal(res);
+            }
+            goto done;
+        }
+    }
+
+    /* No data descriptor found on metatype. Look in tp_dict of this
+     * type and its bases */
+    _PyType_LookupStackRefAndVersion(type, name, &attribute_ref.ref);
+    if (!PyStackRef_IsNull(attribute_ref.ref)) {
+        /* Implement descriptor functionality, if any */
+        PyObject *attr_obj = PyStackRef_AsPyObjectBorrow(attribute_ref.ref);
+        descrgetfunc local_get = Py_TYPE(attr_obj)->tp_descr_get;
+
+        /* Release meta_attribute early since we found in local dict */
+        PyStackRef_CLEAR(meta_attribute_ref.ref);
+
+        if (local_get != NULL) {
+            /* Special case staticmethod to avoid descriptor call overhead.
+             * staticmethod.__get__ just returns the wrapped callable. */
+            if (Py_TYPE(attr_obj) == &PyStaticMethod_Type) {
+                PyObject *callable = _PyStaticMethod_GetFunc(attr_obj);
+                if (callable) {
+                    result_ref.ref = PyStackRef_FromPyObjectNew(callable);
+                    goto done;
+                }
+            }
+            /* NULL 2nd argument indicates the descriptor was
+             * found on the target object itself (or a base)  */
+            PyObject *res = local_get(attr_obj, (PyObject *)NULL,
+                                      (PyObject *)type);
+            if (res != NULL) {
+                result_ref.ref = PyStackRef_FromPyObjectSteal(res);
+            }
+            goto done;
+        }
+
+        /* No descriptor, return the attribute directly */
+        result_ref.ref = attribute_ref.ref;
+        attribute_ref.ref = PyStackRef_NULL;
+        goto done;
+    }
+
+    /* No attribute found in local __dict__ (or bases): use the
+     * descriptor from the metatype, if any */
+    if (meta_get != NULL) {
+        PyObject *meta_attr_obj = PyStackRef_AsPyObjectBorrow(meta_attribute_ref.ref);
+        PyObject *res = meta_get(meta_attr_obj, (PyObject *)type,
+                                 (PyObject *)metatype);
+        if (res != NULL) {
+            result_ref.ref = PyStackRef_FromPyObjectSteal(res);
+        }
+        goto done;
+    }
+
+    /* If an ordinary attribute was found on the metatype, return it now */
+    if (!PyStackRef_IsNull(meta_attribute_ref.ref)) {
+        result_ref.ref = meta_attribute_ref.ref;
+        meta_attribute_ref.ref = PyStackRef_NULL;
+        goto done;
+    }
+
+    /* Give up */
+    if (suppress_missing_attribute == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "type object '%.100s' has no attribute '%U'",
+                     type->tp_name, name);
+    }
+    else {
+        // signal the caller we have not set an PyExc_AttributeError and gave up
+        *suppress_missing_attribute = 1;
+    }
+
+done:
+    _PyThreadState_PopCStackRef(tstate, &attribute_ref);
+    _PyThreadState_PopCStackRef(tstate, &meta_attribute_ref);
+    return _PyThreadState_PopCStackRefSteal(tstate, &result_ref);
 }
 
 // Called by type_setattro().  Updates both the type dict and
@@ -6545,6 +6623,18 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     PyTypeObject *metatype = Py_TYPE(type);
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_INLINE_VALUES));
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
+
+#ifdef Py_GIL_DISABLED
+    // gh-139103: Enable deferred refcounting for functions assigned
+    // to type objects.  This is important for `dataclass.__init__`,
+    // which is generated dynamically.
+    if (value != NULL &&
+        PyFunction_Check(value) &&
+        !_PyObject_HasDeferredRefcount(value))
+    {
+        PyUnstable_Object_EnableDeferredRefcount(value);
+    }
+#endif
 
     PyObject *old_value = NULL;
     PyObject *descr = _PyType_LookupRef(metatype, name);
@@ -7089,12 +7179,6 @@ PyTypeObject PyType_Type = {
    symmetrically, __new__() complains about excess arguments unless
    __init__() is overridden and __new__() is not overridden
    (IOW, if __new__() is overridden or __init__() is not overridden).
-
-   However, for backwards compatibility, this breaks too much code.
-   Therefore, in 2.6, we'll *warn* about excess arguments when both
-   methods are overridden; for all other cases we'll use the above
-   rules.
-
 */
 
 /* Forward */
@@ -8328,7 +8412,15 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
         descr = PyDescr_NewClassMethod(type, meth);
     }
     else if (meth->ml_flags & METH_STATIC) {
-        PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, NULL);
+        PyObject *mod = type_module(type);
+        if (mod == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                return -1;
+            }
+            PyErr_Clear();
+        }
+        PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, mod);
+        Py_XDECREF(mod);
         if (cfunc == NULL) {
             return -1;
         }
@@ -10118,7 +10210,7 @@ wrap_init(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
 }
 
 static PyObject *
-tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
+tp_new_wrapper(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyTypeObject *staticbase;
     PyObject *arg0, *res;
@@ -10130,13 +10222,13 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
     }
     PyTypeObject *type = (PyTypeObject *)self;
 
-    if (!PyTuple_Check(args) || PyTuple_GET_SIZE(args) < 1) {
+    if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(): not enough arguments",
                      type->tp_name);
         return NULL;
     }
-    arg0 = PyTuple_GET_ITEM(args, 0);
+    arg0 = args[0];
     if (!PyType_Check(arg0)) {
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(X): X is not a type object (%s)",
@@ -10178,16 +10270,26 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
-    if (args == NULL)
+    PyObject *args_tuple = PyTuple_FromArray(args + 1, nargs - 1);
+    if (args_tuple == NULL) {
         return NULL;
-    res = type->tp_new(subtype, args, kwds);
-    Py_DECREF(args);
+    }
+    PyObject *kwds = NULL;
+    if (kwnames != NULL) {
+        kwds = _PyStack_AsDict(args + nargs, kwnames);
+        if (kwds == NULL) {
+            Py_DECREF(args_tuple);
+            return NULL;
+        }
+    }
+    res = type->tp_new(subtype, args_tuple, kwds);
+    Py_DECREF(args_tuple);
+    Py_XDECREF(kwds);
     return res;
 }
 
 static struct PyMethodDef tp_new_methoddef[] = {
-    {"__new__", _PyCFunction_CAST(tp_new_wrapper), METH_VARARGS|METH_KEYWORDS,
+    {"__new__", _PyCFunction_CAST(tp_new_wrapper), METH_FASTCALL|METH_KEYWORDS,
      PyDoc_STR("__new__($type, *args, **kwargs)\n--\n\n"
                "Create and return a new object.  "
                "See help(type) for accurate signature.")},
@@ -10886,15 +10988,19 @@ static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *func, *result;
+    PyObject *result;
 
-    func = PyObject_GetAttr((PyObject *)type, &_Py_ID(__new__));
-    if (func == NULL) {
+    _PyCStackRef func_ref;
+    _PyThreadState_PushCStackRef(tstate, &func_ref);
+    func_ref.ref = _PyObject_GetAttrStackRef((PyObject *)type, &_Py_ID(__new__));
+    if (PyStackRef_IsNull(func_ref.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &func_ref);
         return NULL;
     }
 
+    PyObject *func = PyStackRef_AsPyObjectBorrow(func_ref.ref);
     result = _PyObject_Call_Prepend(tstate, func, (PyObject *)type, args, kwds);
-    Py_DECREF(func);
+    _PyThreadState_PopCStackRef(tstate, &func_ref);
     return result;
 }
 

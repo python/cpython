@@ -7,12 +7,16 @@
 
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
 
+**Source code:** :source:`PC/winreg.c`
+
 --------------
 
 These functions expose the Windows registry API to Python.  Instead of using an
 integer as the registry handle, a :ref:`handle object <handle-object>` is used
 to ensure that the handles are closed correctly, even if the programmer neglects
 to explicitly close them.
+
+.. availability:: Windows.
 
 .. _exception-changed:
 
@@ -23,7 +27,7 @@ to explicitly close them.
 .. _functions:
 
 Functions
-------------------
+---------
 
 This module offers the following functions:
 
@@ -552,9 +556,9 @@ This module offers the following functions:
 .. _constants:
 
 Constants
-------------------
+---------
 
-The following constants are defined for use in many :mod:`winreg` functions.
+The following constants are defined for use in many :mod:`!winreg` functions.
 
 .. _hkey-constants:
 
@@ -816,6 +820,6 @@ integer handle, and also disconnect the Windows handle from the handle object.
    will automatically close *key* when control leaves the :keyword:`with` block.
 
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Handle objects are now compared by their underlying Windows handle value
    instead of object identity for equality comparisons.

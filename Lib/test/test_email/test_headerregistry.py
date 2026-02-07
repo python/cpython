@@ -8,6 +8,7 @@ from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
 from test.support import ALWAYS_EQ
+from test.support import warnings_helper
 
 
 DITTO = object()
@@ -252,7 +253,7 @@ class TestContentTypeHeader(TestHeaderBase):
         if 'utf-8%E2%80%9D' in source and 'ascii' not in source:
             import encodings
             encodings._cache.clear()
-            with self.assertWarns(DeprecationWarning):
+            with warnings_helper.check_warnings(('', DeprecationWarning)):
                 h = self.make_header('Content-Type', source)
         else:
             h = self.make_header('Content-Type', source)
@@ -1819,6 +1820,19 @@ class TestFolding(TestHeaderBase):
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
             'Message-ID:\n <ईमेलfromMessage@wők.com>\n')
+
+    def test_fold_references(self):
+        h = self.make_header(
+            'References',
+            '<referenceid1thatislongerthan@maxlinelength.com> '
+            '<referenceid2thatislongerthan@maxlinelength.com>'
+            )
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'References: '
+            '<referenceid1thatislongerthan@maxlinelength.com>\n'
+            ' <referenceid2thatislongerthan@maxlinelength.com>\n')
+
 
 if __name__ == '__main__':
     unittest.main()

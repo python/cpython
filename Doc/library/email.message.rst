@@ -14,7 +14,7 @@
 .. versionadded:: 3.6 [1]_
 
 The central class in the :mod:`email` package is the :class:`EmailMessage`
-class, imported from the :mod:`email.message` module.  It is the base class for
+class, imported from the :mod:`!email.message` module.  It is the base class for
 the :mod:`email` object model.  :class:`EmailMessage` provides the core
 functionality for setting and querying header fields, for accessing message
 bodies, and for creating or modifying structured messages.
@@ -57,7 +57,7 @@ message objects.
    :class:`~email.policy.default` policy, which follows the rules of the email
    RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
    the Python standard ``\n`` line endings).  For more information see the
-   :mod:`~email.policy` documentation.
+   :mod:`~email.policy` documentation. [2]_
 
    .. method:: as_string(unixfrom=False, maxheaderlen=None, policy=None)
 
@@ -749,3 +749,9 @@ message objects.
 .. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`.  Docs for legacy message class moved to
        :ref:`compat32_message`.
+
+.. [2] The :class:`EmailMessage` class requires a policy that provides a
+       ``content_manager`` attribute for content management methods like
+       ``set_content()`` and ``get_content()`` to work. The legacy
+       :const:`~email.policy.compat32` policy does not support these methods
+       and should not be used with :class:`EmailMessage`.

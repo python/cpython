@@ -1331,6 +1331,10 @@ Reading directories
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
+
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
@@ -1364,6 +1368,10 @@ Reading directories
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
 
    .. seealso::
       :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
@@ -1875,7 +1883,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
 =====================================   ==============================================
-:mod:`os` and :mod:`os.path`            :mod:`pathlib`
+:mod:`os` and :mod:`os.path`            :mod:`!pathlib`
 =====================================   ==============================================
 :func:`os.path.dirname`                 :attr:`PurePath.parent`
 :func:`os.path.basename`                :attr:`PurePath.name`

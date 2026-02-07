@@ -223,7 +223,6 @@ PyDict_DelItem                           PyMapping_DelItem
 PyDict_DelItemString                     PyMapping_DelItemString
 PyDict_GetItem                           -
 PyDict_GetItemWithError                  PyObject_GetItem
-_PyDict_GetItemIdWithError               -
 PyDict_GetItemString                     PyMapping_GetItemString
 PyDict_Items                             PyMapping_Items
 PyDict_Keys                              PyMapping_Keys

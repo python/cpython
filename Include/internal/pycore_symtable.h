@@ -151,7 +151,12 @@ extern int _PySymtable_LookupOptional(struct symtable *, void *, PySTEntryObject
 extern void _PySymtable_Free(struct symtable *);
 
 extern PyObject *_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name);
-extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
+
+// Export for '_pickle' shared extension
+PyAPI_FUNC(PyObject *)
+_Py_Mangle(PyObject *, PyObject *);
+PyAPI_FUNC(int)
+_Py_IsPrivateName(PyObject *);
 
 /* Flags for def-use information */
 
@@ -188,7 +193,8 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     const char *str,
     PyObject *filename,
     int start,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    PyObject *module);
 
 int _PyFuture_FromAST(
     struct _mod * mod,
