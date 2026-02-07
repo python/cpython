@@ -1133,8 +1133,7 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 if suggestion.isascii():
-                    # Prepending attribute accesses with a dot makes the message much
-                    # easier to understand in the most common cases.
+                    # Prepending attribute accesses with a dot makes the message much clearer.
                     # See GH-144285.
                     self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
                 else:
