@@ -1,0 +1,1 @@
+Register ``multiprocessing.managers.SetProxy`` as ``collections.abc.MutableSet`` rather than ``MutableMapping``.
