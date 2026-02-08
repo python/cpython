@@ -1,1 +1,2 @@
-``NamedTuple`` function now works if the ``fields`` argument is a generator
+Fix :class:`typing.NamedTuple`` incorrectly
+inferring its fields when passing a generator.
