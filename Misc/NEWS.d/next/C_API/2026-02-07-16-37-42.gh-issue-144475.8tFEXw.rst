@@ -1,5 +1,6 @@
-Fixed a bug in :func:`functools.partial` when calling :func:`repr` on a partial 
-object that could occur when the ``fn``, ``args``, or ``kw`` arguments are modified 
-during a call to :func:`repr`. Now, calls to :func:`repr` will use the original 
-arguments when generating the string representation of the partial object. 
+Fixed a bug in :func:`functools.partial` when calling :func:`repr` on a partial
+object that could occur when the ``fn``, ``args``, or ``kw`` arguments are modified
+during a call to :func:`repr`. Now, calls to :func:`repr` will use the original
+arguments when generating the string representation of the partial object.
 Subsequent calls will use the updated arguments instead.
+
