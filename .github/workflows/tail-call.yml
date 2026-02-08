@@ -54,11 +54,10 @@ jobs:
           $env:PlatformToolset = "v145"
           ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
       - name: Test
+        if: matrix.run_tests
         shell: pwsh
         run: |
-          if ("${{ matrix.run_tests }}" -eq "true") {
-            ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-          }
+          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   macos:
     name: ${{ matrix.target }}
