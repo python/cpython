@@ -11,7 +11,7 @@ Programming FAQ
 General questions
 =================
 
-Is there a source-code level debugger with breakpoints and single-stepping?
+Is there a source code-level debugger with breakpoints and single-stepping?
 ---------------------------------------------------------------------------
 
 Yes.
@@ -25,7 +25,7 @@ Reference Manual <pdb>`. You can also write your own debugger by using the code
 for pdb as an example.
 
 The IDLE interactive development environment, which is part of the standard
-Python distribution (normally available as :source:`Tools/scripts/idle3`),
+Python distribution (normally available as :mod:`idlelib`),
 includes a graphical debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
