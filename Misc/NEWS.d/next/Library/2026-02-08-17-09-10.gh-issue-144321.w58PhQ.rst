@@ -1,2 +1,3 @@
-Fix :class:`typing.NamedTuple` incorrectly
-inferring its fields when passing a generator.
+The functional syntax for creating :class:`typing.NamedTuple`
+classes now supports passing any :term:`iterable` of fields and types.
+Previously, only sequences were supported.
