@@ -1,0 +1,13 @@
+Document the *name* and *mode* attributes of :class:`io.FileIO`,
+:class:`io.BufferedReader`, :class:`io.BufferedWriter`, and
+:class:`io.TextIOWrapper` classes. # # Uncomment one of these "section:"
+lines to specify which section # this entry should go in in Misc/NEWS.d. #
+#.. section: Security #.. section: Core and Builtins #.. section: Library
+#.. section: Documentation #.. section: Tests #.. section: Build #..
+section: Windows #.. section: macOS #.. section: IDLE #.. section:
+Tools/Demos #.. section: C API
+
+# Write your Misc/NEWS.d entry below.  It should be a simple ReST paragraph.
+# Don't start with "- Issue #<n>: " or "- gh-issue-<n>: " or that sort of
+stuff.
+###########################################################################
