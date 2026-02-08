@@ -5,6 +5,7 @@ import sys
 import time
 import threading
 import unittest
+from test import support
 from unittest import mock
 
 if sys.platform != 'win32':
@@ -322,6 +323,59 @@ class ProactorTests(WindowsEventsTestCase):
 
         stop.set()
         thr.join()
+
+    def test_add_reader_invalid_argument(self):
+        def assert_raises():
+            return self.assertRaisesRegex(ValueError, r"Invalid file object")
+
+        def cb(sock):
+            return None
+
+        with assert_raises():
+            self.loop.add_reader(object(), cb)
+        with assert_raises():
+            self.loop.add_writer(object(), cb)
+
+        with assert_raises():
+            self.loop.remove_reader(object())
+        with assert_raises():
+            self.loop.remove_writer(object())
+
+    def test_selector_thread(self):
+        self.assertIsNone(self.loop._selector_thread)
+        a, b = socket.socketpair()
+
+        async def _test():
+            read_future = asyncio.Future()
+            sent = b"asdf"
+
+            def write():
+                a.sendall(sent)
+                self.loop.remove_writer(a)
+
+            def read():
+                msg = b.recv(100)
+                read_future.set_result(msg)
+
+            self.loop.add_reader(b, read)
+            _selector_thread = self.loop._selector_thread
+            self.assertIn(b.fileno(), _selector_thread._readers)
+            self.assertIsNotNone(_selector_thread)
+            self.loop.add_writer(a, write)
+            self.assertIs(self.loop._selector_thread, _selector_thread)
+            self.assertIn(a.fileno(), _selector_thread._writers)
+            msg = await asyncio.wait_for(read_future, timeout=support.SHORT_TIMEOUT)
+
+            self.loop.remove_writer(a)
+            self.assertNotIn(a.fileno(), _selector_thread._writers)
+            self.loop.remove_reader(b)
+            self.assertNotIn(b.fileno(), _selector_thread._readers)
+            a.close()
+            b.close()
+            self.assertIs(self.loop._selector_thread, _selector_thread)
+            self.assertEqual(msg, sent)
+
+        self.loop.run_until_complete(_test())
 
 
 class WinPolicyTests(WindowsEventsTestCase):

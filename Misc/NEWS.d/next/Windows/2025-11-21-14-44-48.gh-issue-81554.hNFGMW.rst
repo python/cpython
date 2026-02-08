@@ -1,0 +1,2 @@
+Added support for :meth:`~asyncio.loop.add_reader` to :class:`~asyncio.ProactorEventLoop` on Windows by
+running :func:`select.select` in a background thread.
