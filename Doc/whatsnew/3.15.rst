@@ -1343,6 +1343,13 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+* :mod:`tempfile`:
+
+  * The ``prefix`` and ``suffix`` parameters of the tempfile functions,
+    :func:`tempfile.mkdtemp`, :func:`tempfile.mkstemp` and
+    :func:`tempfile.NamedTemporaryFile`, will be sanitized to use only the
+    basename of the provided values if they contain a directory separator.
+
 * ``__version__``
 
   * The ``__version__``, ``version`` and ``VERSION`` attributes have been

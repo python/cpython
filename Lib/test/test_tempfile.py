@@ -625,8 +625,10 @@ class TestMkstemp(BaseTestCase):
                 dir = tempfile.gettempdirb()
         if pre is None:
             pre = output_type()
+        pre = os.path.basename(pre)
         if suf is None:
             suf = output_type()
+        suf = os.path.basename(suf)
         (fd, name) = tempfile.mkstemp(dir=dir, prefix=pre, suffix=suf)
         (ndir, nbase) = os.path.split(name)
         adir = os.path.abspath(dir)
@@ -647,6 +649,8 @@ class TestMkstemp(BaseTestCase):
         self.do_create(pre="a", suf="b")
         self.do_create(pre="aa", suf=".txt")
         self.do_create(dir=".")
+        self.do_create(pre=f"{os.sep}myhome")
+        self.do_create(suf=f"{os.sep}home")
 
     def test_basic_with_bytes_names(self):
         # mkstemp can create files when given name parts all
@@ -657,6 +661,8 @@ class TestMkstemp(BaseTestCase):
         self.do_create(dir=d, suf=b"b")
         self.do_create(dir=d, pre=b"a", suf=b"b")
         self.do_create(dir=d, pre=b"aa", suf=b".txt")
+        self.do_create(dir=d, pre=os.fsencode(f"{os.sep}home"))
+        self.do_create(dir=d, suf=os.fsencode(f"{os.sep}home"))
         self.do_create(dir=b".")
         with self.assertRaises(TypeError):
             self.do_create(dir=".", pre=b"aa", suf=b".txt")
@@ -724,6 +730,8 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             pre = output_type()
         if suf is None:
             suf = output_type()
+        pre = os.path.basename(pre)
+        suf = os.path.basename(suf)
         name = tempfile.mkdtemp(dir=dir, prefix=pre, suffix=suf)
 
         try:
@@ -740,6 +748,8 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         os.rmdir(self.do_create(suf="b"))
         os.rmdir(self.do_create(pre="a", suf="b"))
         os.rmdir(self.do_create(pre="aa", suf=".txt"))
+        os.rmdir(self.do_create(pre=f"{os.sep}home"))
+        os.rmdir(self.do_create(suf=f"{os.sep}home"))
 
     def test_basic_with_bytes_names(self):
         # mkdtemp can create directories when given all binary parts
@@ -749,6 +759,8 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         os.rmdir(self.do_create(dir=d, suf=b"b"))
         os.rmdir(self.do_create(dir=d, pre=b"a", suf=b"b"))
         os.rmdir(self.do_create(dir=d, pre=b"aa", suf=b".txt"))
+        os.rmdir(self.do_create(dir=d, pre=os.fsencode(f"{os.sep}home")))
+        os.rmdir(self.do_create(dir=d, suf=os.fsencode(f"{os.sep}home")))
         with self.assertRaises(TypeError):
             os.rmdir(self.do_create(dir=d, pre="aa", suf=b".txt"))
         with self.assertRaises(TypeError):
@@ -943,9 +955,19 @@ class TestMktemp(BaseTestCase):
 class TestNamedTemporaryFile(BaseTestCase):
     """Test NamedTemporaryFile()."""
 
-    def do_create(self, dir=None, pre="", suf="", delete=True):
+    def do_create(self, dir=None, pre=None, suf=None, delete=True):
+        output_type = tempfile._infer_return_type(dir, pre, suf)
         if dir is None:
-            dir = tempfile.gettempdir()
+            if output_type is str:
+                dir = tempfile.gettempdir()
+            else:
+                dir = tempfile.gettempdirb()
+        if pre is None:
+            pre = output_type()
+        if suf is None:
+            suf = output_type()
+        pre = os.path.basename(pre)
+        suf = os.path.basename(suf)
         file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf,
                                            delete=delete)
 
@@ -960,6 +982,10 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.do_create(suf="b")
         self.do_create(pre="a", suf="b")
         self.do_create(pre="aa", suf=".txt")
+        self.do_create(pre=f"{os.sep}home")
+        self.do_create(pre=os.fsencode(f"{os.sep}home"))
+        self.do_create(suf=f"{os.sep}home")
+        self.do_create(suf=os.fsencode(f"{os.sep}home"))
 
     def test_method_lookup(self):
         # Issue #18879: Looking up a temporary file method should keep it
