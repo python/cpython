@@ -306,10 +306,28 @@ def isgeneratorfunction(obj):
 _is_coroutine_mark = object()
 
 def _has_coroutine_mark(f):
-    while ismethod(f):
-        f = f.__func__
-    f = functools._unwrap_partial(f)
-    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_mark
+    while True:
+        # Methods: unwrap first (methods cannot be coroutine-marked)
+        if ismethod(f):
+            f = f.__func__
+            continue
+
+        # Direct marker check
+        if getattr(f, "_is_coroutine_marker", None) is _is_coroutine_mark:
+            return True
+
+        # Functions created by partialmethod descriptors keep a __partialmethod__ reference
+        pm = getattr(f, "__partialmethod__", None)
+        if isinstance(pm, functools.partialmethod):
+            f = pm
+            continue
+
+        # partial and partialmethod share .func
+        if isinstance(f, (functools.partial, functools.partialmethod)):
+            f = f.func
+            continue
+
+        return False
 
 def markcoroutinefunction(func):
     """
