@@ -129,7 +129,8 @@ may name multiple exceptions as a parenthesized tuple, for example::
 A class in an :keyword:`except` clause matches exceptions which are instances of the
 class itself or one of its derived classes (but not the other way around --- an
 *except clause* listing a derived class does not match instances of its base classes).
-For example, the following code will print B, C, D in that order::
+
+For example, the following code will print B, C in that order::
 
    class B(Exception):
        pass
@@ -137,21 +138,29 @@ For example, the following code will print B, C, D in that order::
    class C(B):
        pass
 
-   class D(C):
-       pass
-
-   for cls in [B, C, D]:
+   for cls in [B, C]:
        try:
            raise cls()
-       except D:
-           print("D")
        except C:
+           # Matches C but not B.
            print("C")
        except B:
+           # Matches B; not reached for C.
            print("B")
 
 Note that if the *except clauses* were reversed (with ``except B`` first), it
-would have printed B, B, B --- the first matching *except clause* is triggered.
+would have printed B, B --- the first matching *except clause* is triggered,
+like in the following example::
+
+   for cls in [B, C]:
+       try:
+           raise cls()
+       except B:
+           # Matches B and C both.
+           print("B")
+       except C:
+           # Not reached (the previous clause ate B and C)
+           print("C")
 
 When an exception occurs, it may have associated values, also known as the
 exception's *arguments*. The presence and types of the arguments depend on the
