@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>%VERSION%, (c) 2001-2024 Python Software Foundation.</string>
+	<string>%VERSION%</string>
 	<key>CFBundleLongVersionString</key>
 	<string>%VERSION%, (c) 2001-2024 Python Software Foundation.</string>
 	<key>CFBundleSignature</key>
