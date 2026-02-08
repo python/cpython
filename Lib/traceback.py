@@ -11,6 +11,7 @@ import keyword
 import tokenize
 import io
 import _colorize
+import threading
 
 from contextlib import suppress
 
@@ -203,11 +204,89 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     return line
 
 
-def _safe_string(value, what, func=str):
+def _remove_exception(exc_value, other_exc_value, _seen=None):
+    if _seen is None:
+        _seen = set()
+    if id(exc_value) not in _seen:
+        _seen.add(id(exc_value))
+        if isinstance(exc_value.__cause__, BaseException):
+            if exc_value.__cause__ is other_exc_value:
+                exc_value.__cause__ = None
+            elif isinstance(exc_value.__cause__, BaseExceptionGroup):
+                if other_exc_value in exc_value.__cause__.exceptions:
+                    exc_value.__cause__ = None
+                else:
+                    _remove_exception(exc_value.__cause__, other_exc_value, _seen)
+                    for i in exc_value.__cause__.exceptions:
+                        _remove_exception(i, other_exc_value, _seen)
+            else:
+                _remove_exception(exc_value.__cause__, other_exc_value, _seen)
+        if isinstance(exc_value.__context__, BaseException):
+            if exc_value.__context__ is other_exc_value:
+                exc_value.__context__ = None
+            elif isinstance(exc_value.__context__, BaseExceptionGroup):
+                if other_exc_value in exc_value.__context__.exceptions:
+                    exc_value.__context__ = None
+                else:
+                    _remove_exception(
+                        exc_value.__context__, other_exc_value, _seen
+                    )
+                    for i in exc_value.__context__.exceptions:
+                        _remove_exception(i, other_exc_value, _seen)
+            else:
+                _remove_exception(
+                    exc_value.__context__, other_exc_value, _seen
+                )
+
+
+def _traceback_to_tuples(tb):
+    extracted = extract_tb(tb)
+    return tuple(
+        (f.filename, f.lineno, getattr(f, "name", None), f.line)
+        for f in extracted
+    )  # handle SyntaxError
+
+
+def _safe_string(value, what, func=str,
+        exception_target=None, exception_exclude=None):
     try:
         return func(value)
     except:
-        return f'<{what} {func.__name__}() failed>'
+        if isinstance(exception_target, list):
+            typ, val, tb = sys.exc_info()
+            _add_exception_note(typ, val, tb, f"{what} {func.__name__}()",
+                               exception_target, exception_exclude)
+        return f"<{what} {func.__name__}() failed>"
+
+
+_ADD_EXC_NOTE_LIMIT = 10
+
+
+def _add_exception_note(exc_type, exc_value, exc_tb, where,
+        exception_target, exception_exclude=None, _seen=threading.local()):
+    if not hasattr(_seen, "_seen"):
+        _seen._seen = set()
+    if not hasattr(_seen, "times"):
+        _seen.times = 0
+    if not isinstance(exception_target, list):
+        return
+    _seen.times += 1
+    tb_tuple = _traceback_to_tuples(exc_tb)
+    if tb_tuple not in _seen._seen and _seen.times <= _ADD_EXC_NOTE_LIMIT:
+        _seen._seen.add(tb_tuple)
+        if exception_exclude is not None:
+            _remove_exception(exc_value, exception_exclude)
+        msg = "".join(TracebackException(exc_type, exc_value, exc_tb).format())
+        while msg.endswith("\n") or msg.endswith(" "):
+            msg = msg[:-1]
+        exception_target.append(
+            f"\nException ignored in {where}:"
+        )
+        exception_target.append(msg)
+    _seen.times -= 1
+    if _seen.times <= 0:
+        _seen.times = 0
+        _seen._seen.clear()
 
 # --
 
@@ -1077,12 +1156,13 @@ class TracebackException:
 
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
-        self._str = _safe_string(exc_value, 'exception')
-        try:
-            self.__notes__ = getattr(exc_value, '__notes__', None)
-        except Exception as e:
-            self.__notes__ = [
-                f'Ignored error getting __notes__: {_safe_string(e, '__notes__', repr)}']
+        exception_target = []
+        self._str = _safe_string(
+            exc_value,
+            "exception",
+            exception_target=exception_target,
+            exception_exclude=exc_value,
+        )
 
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
@@ -1143,6 +1223,35 @@ class TracebackException:
                         self._str += f" Or did you forget to import '{wrong_name}'?"
                     else:
                         self._str += f". Did you forget to import '{wrong_name}'?"
+        try:
+            original__notes__ = getattr(exc_value, "__notes__", None)
+        except Exception as e:
+            original__notes__ = [
+                f"Ignored error getting __notes__: {_safe_string(e, '__notes__', repr, exception_target, e)}"
+            ]
+        if original__notes__ is not None and not (
+            isinstance(original__notes__, collections.abc.Sequence)
+            and not isinstance(original__notes__, (str, bytes))
+        ):
+            original__notes__ = [
+                _safe_string(
+                    original__notes__,
+                    "__notes__",
+                    repr,
+                    exception_target,
+                    exc_value,
+                )
+            ]
+        final_string_list = []
+        if original__notes__ is not None: # avoid that __bool__ raise Exception
+            for i in original__notes__:
+                final_string_list.append(
+                    _safe_string(
+                        i, "note", str, exception_target, exc_value
+                    )
+                )
+        self.__notes__ = final_string_list
+        self.exception_target = exception_target
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1271,6 +1380,7 @@ class TracebackException:
         well, recursively, with indentation relative to their nesting depth.
         """
         colorize = kwargs.get("colorize", False)
+        exception_target = kwargs.get("exception_target", True)
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1293,15 +1403,11 @@ class TracebackException:
         else:
             yield from [indent + l for l in self._format_syntax_error(stype, colorize=colorize)]
 
-        if (
-            isinstance(self.__notes__, collections.abc.Sequence)
-            and not isinstance(self.__notes__, (str, bytes))
-        ):
-            for note in self.__notes__:
-                note = _safe_string(note, 'note')
+        for note in self.__notes__:
+            yield from [indent + l + '\n' for l in note.split('\n')]
+        if exception_target:
+            for note in self.exception_target:
                 yield from [indent + l + '\n' for l in note.split('\n')]
-        elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
@@ -1518,6 +1624,7 @@ class TracebackException:
         string in the output.
         """
         colorize = kwargs.get("colorize", False)
+        exception_target = kwargs.get("exception_target", True)
         if _ctx is None:
             _ctx = _ExceptionPrintContext()
 
@@ -1548,7 +1655,7 @@ class TracebackException:
                 if exc.stack:
                     yield from _ctx.emit('Traceback (most recent call last):\n')
                     yield from _ctx.emit(exc.stack.format(colorize=colorize))
-                yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
+                yield from _ctx.emit(exc.format_exception_only(colorize=colorize, exception_target=exception_target))
             elif _ctx.exception_group_depth > self.max_group_depth:
                 # exception group, but depth exceeds limit
                 yield from _ctx.emit(
@@ -1565,7 +1672,7 @@ class TracebackException:
                         margin_char = '+' if is_toplevel else None)
                     yield from _ctx.emit(exc.stack.format(colorize=colorize))
 
-                yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
+                yield from _ctx.emit(exc.format_exception_only(colorize=colorize, exception_target=exception_target))
                 num_excs = len(exc.exceptions)
                 if num_excs <= self.max_group_width:
                     n = num_excs
@@ -1588,7 +1695,7 @@ class TracebackException:
                            f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
                     if not truncated:
-                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize)
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize, exception_target=exception_target)
                     else:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''
@@ -1656,6 +1763,11 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 
     return None
 
+
+# add "exception_target=None"
+# then we can handle the exception raised from suggestion
+# use function "_add_exception_note"
+# it won't add in gh-135660
 
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
