@@ -551,8 +551,8 @@ get_threadsafety(pysqlite_state *state)
     switch (mode) {
     case 0:        // Single-thread mode; threads may not share the module.
         return 0;
-    case 1:        // Serialized mode; threads may share the module,
-        return 3;  // connections, and cursors.
+    case 1:        // Serialized mode; until #118172 is fixed, is the same as
+        return 1;  // Multi-thread mode.
     case 2:        // Multi-thread mode; threads may share the module, but not
         return 1;  // connections.
     default:
