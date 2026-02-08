@@ -3439,7 +3439,7 @@ unpack_helper(compiler *c, location loc, asdl_expr_seq *elts)
         }
         else if (elt->kind == Starred_kind) {
             return _PyCompile_Error(c, loc,
-                "multiple starred expressions in assignment");
+                "multiple starred targets in assignment");
         }
     }
     if (!seen_star) {
@@ -5424,7 +5424,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
             /* In all legitimate cases, the Starred node was already replaced
              * by codegen_list/codegen_tuple. XXX: is that okay? */
             return _PyCompile_Error(c, loc,
-                "starred assignment target must be in a list or tuple");
+                "starred target must be in a list or tuple");
         default:
             return _PyCompile_Error(c, loc,
                 "can't use starred expression here");

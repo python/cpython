@@ -1,0 +1,2 @@
+Error messages incorrectly using the term "starred expression" have been
+corrected.
