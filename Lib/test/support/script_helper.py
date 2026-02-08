@@ -303,7 +303,14 @@ def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
 
 
 @support.requires_subprocess()
-def run_test_script(script):
+def run_test_script(script, **kwargs):
+    """Run the file *script* in a child interpreter.
+
+    Keyword arguments are passed on to subprocess.run() within.
+
+    Asserts if the child exits non-zero.  Prints child output after
+    execution when run in verbose mode.
+    """
     # use -u to try to get the full output if the test hangs or crash
     if support.verbose:
         def title(text):
@@ -315,7 +322,7 @@ def run_test_script(script):
         # In verbose mode, the child process inherit stdout and stdout,
         # to see output in realtime and reduce the risk of losing output.
         args = [sys.executable, "-E", "-X", "faulthandler", "-u", script, "-v"]
-        proc = subprocess.run(args)
+        proc = subprocess.run(args, **kwargs)
         print(title(f"{name} completed: exit code {proc.returncode}"),
               flush=True)
         if proc.returncode:

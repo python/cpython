@@ -2643,6 +2643,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/decimaltestdata \
 		test/dtracedata \
 		test/encoded_modules \
+		test/hashlibdata \
 		test/leakers \
 		test/libregrtest \
 		test/mathdata \
