@@ -1,0 +1,1 @@
+Add "selected" label to the IDLE statusbar. Label is updated to show selected number of characters in the editor.
