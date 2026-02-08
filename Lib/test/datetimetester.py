@@ -15,6 +15,7 @@ import sys
 import textwrap
 import unittest
 import warnings
+import platform
 
 from array import array
 
@@ -1588,6 +1589,21 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime("m:%m d:%d y:%y"), "m:03 d:02 y:05")
         self.assertEqual(t.strftime(""), "") # SF bug #761337
         self.assertEqual(t.strftime('x'*1000), 'x'*1000) # SF bug #1556784
+
+        # See gh-137165
+        if platform.system() in ("Darwin", "iOS", "FreeBSD"):
+            self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:05")
+        else:
+            if platform.system() == "Windows":
+                self.assertEqual(t.strftime("m:%#m d:%#d y:%#y"), "m:3 d:2 y:5")
+            self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:5")
+
+        self.assertEqual(t.strftime("%-j. %-U. %-W. %-V."), "61. 9. 9. 9.")
+
+        # unsupported %-format specifiers are passed through unchanged.
+        self.assertEqual(t.strftime("%-1"), "%-1")
+        self.assertEqual(t.strftime("%--"), "%--")
+        self.assertEqual(t.strftime("%-#"), "%-#")
 
         self.assertRaises(TypeError, t.strftime) # needs an arg
         self.assertRaises(TypeError, t.strftime, "one", "two") # too many args
@@ -4006,6 +4022,14 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
         # A naive object replaces %z, %:z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%:z' '%Z'"), "'' '' ''")
+
+        # See gh-137165
+        self.assertEqual(t.strftime('%-H %-M %-S %f'), "1 2 3 000004")
+        if platform.system() == 'Windows':
+            self.assertEqual(t.strftime('%#H %#M %#S %f'), "1 2 3 000004")
+
+        t_zero = self.theclass(0, 0, 0, 4)
+        self.assertEqual(t_zero.strftime('%-H %-M %-S %f'), "0 0 0 000004")
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:

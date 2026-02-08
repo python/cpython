@@ -1857,6 +1857,54 @@ make_freplacement(PyObject *object)
     return PyUnicode_FromString(freplacement);
 }
 
+#if defined(MS_WINDOWS) || defined(__ANDROID__)
+static PyObject *
+make_dash_replacement(PyObject *object, Py_UCS4 ch, PyObject *timetuple)
+{
+    PyObject *strftime = NULL;
+    PyObject *fmt_obj = NULL;
+    PyObject *res = NULL;
+    PyObject *stripped = NULL;
+
+    strftime = PyImport_ImportModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
+        goto error;
+    }
+
+    fmt_obj = PyUnicode_FromFormat("%%%c", (char)ch);
+    if (fmt_obj == NULL) {
+        goto error;
+    }
+
+    res = PyObject_CallFunctionObjArgs(strftime, fmt_obj, timetuple, NULL);
+    if (res == NULL) {
+        goto error;
+    }
+
+    stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
+    if (stripped == NULL) {
+        goto error;
+    }
+
+    if (PyUnicode_GET_LENGTH(stripped) == 0) {
+        Py_DECREF(stripped);
+        stripped = PyUnicode_FromString("0");
+    }
+
+    Py_DECREF(fmt_obj);
+    Py_DECREF(strftime);
+    Py_DECREF(res);
+    return stripped;
+
+error:
+    Py_XDECREF(fmt_obj);
+    Py_XDECREF(strftime);
+    Py_XDECREF(res);
+    Py_XDECREF(stripped);
+    return NULL;
+}
+#endif
+
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
  * giving special meanings to the %z, %:z, %Z and %f format codes via a
@@ -1874,6 +1922,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
+    PyObject *dash_replacement = NULL;  /* py string, replacement for %- */
 
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
@@ -2003,6 +2052,31 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
+        /* non-0-pad Windows and Android support */
+        else if (ch == '-' && i < flen) {
+            Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
+            i++;
+
+            if (strchr("dmHIMSjUWVy", (int)next_ch) == NULL) {
+                replacement = PyUnicode_FromFormat("%%%%-%c", (char)next_ch);
+                if (replacement == NULL) {
+                    goto Error;
+                }
+            }
+            else {
+                #if defined(MS_WINDOWS) || defined(__ANDROID__)
+                Py_XDECREF(dash_replacement);
+
+                dash_replacement = make_dash_replacement(object, next_ch, timetuple);
+                if (dash_replacement == NULL) {
+                    goto Error;
+                }
+                replacement = dash_replacement;
+                #else
+                continue;
+                #endif
+            }
+        }
         else {
             /* percent followed by something else */
             continue;
@@ -2041,6 +2115,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
+    Py_XDECREF(dash_replacement);
     Py_XDECREF(strftime);
     return result;
 

@@ -213,6 +213,11 @@ def _need_normalize_century():
             _normalize_century = True
     return _normalize_century
 
+def _make_dash_replacement(ch, timetuple):
+    fmt = '%' + ch
+    val = _time.strftime(fmt, timetuple)
+    return val.lstrip('0') or '0'
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -284,6 +289,19 @@ def _wrap_strftime(object, format, timetuple):
                         push('{:04}'.format(year))
                         if ch == 'F':
                             push('-{:02}-{:02}'.format(*timetuple[1:3]))
+                elif ch == '-':
+                    if i < n:
+                        next_ch = format[i]
+                        i += 1
+                        if next_ch not in 'dmHIMSjUWVy':
+                            push('%%-' + next_ch)
+                        else:
+                            if sys.platform in ['win32', 'android']:
+                                push(_make_dash_replacement(next_ch, timetuple))
+                            else:
+                                push('%-' + next_ch)
+                    else:
+                        push('%-')
                 else:
                     push('%')
                     push(ch)
