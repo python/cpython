@@ -1357,11 +1357,12 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     cls_dict.pop('__dict__', None)
     cls_dict.pop('__weakref__', None)  # gh-102069
 
+    # Set the `__qualname__ accordingly
+    if (qualname := getattr(cls, '__qualname__', None)) is not None:
+        cls_dict['__qualname__'] = qualname
+
     # And finally create the class.
-    qualname = getattr(cls, '__qualname__', None)
     newcls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
-    if qualname is not None:
-        newcls.__qualname__ = qualname
 
     if is_frozen:
         # Need this for pickling frozen classes with slots.
