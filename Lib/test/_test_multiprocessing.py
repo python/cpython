@@ -4757,7 +4757,7 @@ class _TestSharedMemory(BaseTestCase):
         self.assertEqual(current_format, sl._get_packing_format(0))
 
         # Verify attributes are readable.
-        self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
+        self.assertEqual(sl.format, '5s5sdqxxxxxx?xxxxxxxx?q')
 
         # Exercise len().
         self.assertEqual(len(sl), 7)
@@ -4785,7 +4785,7 @@ class _TestSharedMemory(BaseTestCase):
         self.assertEqual(sl[3], 42)
         sl[4] = 'some'  # Change type at a given position.
         self.assertEqual(sl[4], 'some')
-        self.assertEqual(sl.format, '8s8sdq8sxxxxxxx?q')
+        self.assertEqual(sl.format, '5s5sdq4sxxxxxxx?q')
         with self.assertRaisesRegex(ValueError,
                                     "exceeds available storage"):
             sl[4] = 'far too many'
@@ -4886,6 +4886,34 @@ class _TestSharedMemory(BaseTestCase):
 
                 with self.assertRaises(FileNotFoundError):
                     pickle.loads(serialized_sl)
+
+    def test_shared_memory_ShareableList_trailing_nulls(self):
+        # gh-106939: ShareableList should preserve trailing null bytes
+        # in bytes and str values.
+        sl = shared_memory.ShareableList([
+            b'\x03\x02\x01\x00\x00\x00',
+            '?\x00',
+            b'\x00\x00\x00',
+            b'',
+            b'no nulls',
+        ])
+        self.addCleanup(sl.shm.unlink)
+        self.addCleanup(sl.shm.close)
+
+        self.assertEqual(sl[0], b'\x03\x02\x01\x00\x00\x00')
+        self.assertEqual(sl[1], '?\x00')
+        self.assertEqual(sl[2], b'\x00\x00\x00')
+        self.assertEqual(sl[3], b'')
+        self.assertEqual(sl[4], b'no nulls')
+
+        sl2 = shared_memory.ShareableList(name=sl.shm.name)
+        self.addCleanup(sl2.shm.close)
+        self.assertEqual(sl2[0], b'\x03\x02\x01\x00\x00\x00')
+        self.assertEqual(sl2[1], '?\x00')
+        self.assertEqual(sl2[2], b'\x00\x00\x00')
+        self.assertEqual(sl2[3], b'')
+        self.assertEqual(sl2[4], b'no nulls')
+
 
     def test_shared_memory_cleaned_after_process_termination(self):
         cmd = '''if 1:

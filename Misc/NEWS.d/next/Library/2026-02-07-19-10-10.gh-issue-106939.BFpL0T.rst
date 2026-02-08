@@ -1,0 +1,3 @@
+:class:`~multiprocessing.shared_memory.ShareableList` keeps the trailing
+null bytes for :class:`bytes` and :class:`str` values. Previously they were
+stripped silently.

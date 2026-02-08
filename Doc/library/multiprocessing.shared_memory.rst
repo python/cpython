@@ -311,34 +311,9 @@ finishes execution.
    existing :class:`!ShareableList`, specify its shared memory block's unique
    name while leaving *sequence* set to ``None``.
 
-   .. note::
-
-      A known issue exists for :class:`bytes` and :class:`str` values.
-      If they end with ``\x00`` nul bytes or characters, those may be
-      *silently stripped* when fetching them by index from the
-      :class:`!ShareableList`. This ``.rstrip(b'\x00')`` behavior is
-      considered a bug and may go away in the future. See :gh:`106939`.
-
-   For applications where rstripping of trailing nulls is a problem,
-   work around it by always unconditionally appending an extra non-0
-   byte to the end of such values when storing and unconditionally
-   removing it when fetching:
-
-   .. doctest::
-
-       >>> from multiprocessing import shared_memory
-       >>> nul_bug_demo = shared_memory.ShareableList(['?\x00', b'\x03\x02\x01\x00\x00\x00'])
-       >>> nul_bug_demo[0]
-       '?'
-       >>> nul_bug_demo[1]
-       b'\x03\x02\x01'
-       >>> nul_bug_demo.shm.unlink()
-       >>> padded = shared_memory.ShareableList(['?\x00\x07', b'\x03\x02\x01\x00\x00\x00\x07'])
-       >>> padded[0][:-1]
-       '?\x00'
-       >>> padded[1][:-1]
-       b'\x03\x02\x01\x00\x00\x00'
-       >>> padded.shm.unlink()
+   .. versionchanged:: next
+      Trailing null bytes are preserved for :class:`bytes` and :class:`str`
+      values now. Previously they were stripped silently. See :gh:`106939`.
 
    .. method:: count(value)
 
