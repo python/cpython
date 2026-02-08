@@ -13,6 +13,8 @@ Based on the J. Myers POP3 draft, Jan. 96
 
 # Imports
 
+import base64
+import binascii
 import errno
 import re
 import socket
@@ -46,6 +48,8 @@ CRLF = CR+LF
 # 512 characters, including CRLF. We have selected 2048 just to be on
 # the safe side.
 _MAXLINE = 2048
+# maximum number of AUTH challenges we are willing to process (parity with smtplib)
+_MAXCHALLENGE = 5
 
 
 class POP3:
@@ -426,6 +430,79 @@ class POP3:
         self._tls_established = True
         return resp
 
+    def auth(self, mechanism, authobject, *, initial_response_ok=True):
+        """Authenticate to the POP3 server using AUTH (RFC 5034)."""
+        mech = mechanism.upper()
+
+        initial = None
+        if initial_response_ok and callable(authobject):
+            initial = authobject()
+        if isinstance(initial, str):
+            initial = initial.encode('ascii', 'strict')
+        if initial is not None and not isinstance(initial, (bytes, bytearray)):
+            raise TypeError('authobject() must return str or bytes for initial response')
+
+        if initial is not None:
+            b64 = base64.b64encode(initial).decode('ascii')
+            cmd = f'AUTH {mech} {b64}'
+            if len(cmd.encode('ascii')) <= 253:
+                self._putcmd(cmd)
+            else:
+                self._putcmd(f'AUTH {mech}')
+        else:
+            self._putcmd(f'AUTH {mech}')
+
+        auth_challenge_count = 0
+        while True:
+            line, _ = self._getline()
+
+            if line.startswith(b'+OK'):
+                return line
+
+            if line.startswith(b'-ERR'):
+                raise error_proto(line.decode('ascii', 'replace'))
+            # Challenge line: "+ <b64>" or just "+" (empty challenge)
+            if line != b'+' and not line.startswith(b'+ '):
+                raise error_proto(f'malformed AUTH challenge line: {line!r}')
+
+            auth_challenge_count += 1
+            if auth_challenge_count > _MAXCHALLENGE:
+                raise error_proto('Server AUTH mechanism infinite loop. Last response: ', repr(line))
+
+            chal = line[1:]
+            if chal.startswith(b' '):
+                chal = chal[1:]
+            chal = chal.rstrip(b'\r\n')
+            if chal:
+                try:
+                    challenge = base64.b64decode(chal, validate=True)
+                except (binascii.Error, ValueError):
+                    self._putcmd('*')
+                    line, _ = self._getline()
+                    raise error_proto(line.decode('ascii', 'replace'))
+            else:
+                challenge = b''
+
+            resp = authobject(challenge)
+            if resp is None:
+                resp = b''
+            if isinstance(resp, str):
+                resp = resp.encode('ascii', 'strict')
+            if not isinstance(resp, (bytes, bytearray)):
+                raise TypeError('authobject(challenge) must return str or bytes')
+
+            if resp == b'*':
+                self._putcmd('*')
+            else:
+                self._putcmd(base64.b64encode(resp).decode('ascii'))
+
+    def auth_plain(self, user, password, authzid=''):
+        """Return an authobject suitable for SASL PLAIN."""
+        def _auth_plain(challenge=None):
+            # Per RFC 4616, the response is: authzid UTF8 NUL authcid UTF8 NUL passwd UTF8
+            return f"{authzid}\0{user}\0{password}"
+        return _auth_plain
+
 
 if HAVE_SSL:
 
@@ -460,6 +537,7 @@ if HAVE_SSL:
             SSL/TLS session.
             """
             raise error_proto('-ERR TLS session already established')
+
 
     __all__.append("POP3_SSL")
 
