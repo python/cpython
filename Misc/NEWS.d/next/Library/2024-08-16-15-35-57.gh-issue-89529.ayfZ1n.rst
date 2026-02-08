@@ -1,0 +1,2 @@
+Disallow ``default_factory`` for dataclass fields if the dataclass does not
+have an ``__init__`` method. Patch by Bénédikt Tran.
