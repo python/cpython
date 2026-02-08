@@ -1,0 +1,3 @@
+Fix ``venv``'s ``activate.fish`` prompt hook to preserve the previous command
+status without sourcing ``exit`` from stdin, avoiding prompt corruption in
+interactive fish sessions.
