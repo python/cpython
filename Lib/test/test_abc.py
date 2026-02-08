@@ -682,6 +682,62 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             self.assertEqual(saved_kwargs, dict(name="test"))
 
+
+        def test_subclasscheck_in_init_subclass1(self):
+            # test for gh-82266
+            class A(metaclass=abc_ABCMeta):
+                pass
+
+            class B(metaclass=abc_ABCMeta):
+                def __init_subclass__(cls):
+                    assert not issubclass(cls, A)
+
+            class C(A):
+                pass
+
+            try:
+                class AB(A, B):
+                    pass
+            except Exception:
+                pass
+
+            self.assertTrue(issubclass(C, A))
+            self.assertFalse(issubclass(C, B))
+
+        def test_subclasscheck_in_init_subclass2(self):
+            # test for gh-116093
+            class A(metaclass=abc_ABCMeta):
+                pass
+
+            class B(metaclass=abc_ABCMeta):
+                def __init_subclass__(cls, **kwargs):
+                    super().__init_subclass__()
+                    issubclass(A, A)
+                    issubclass(A, B)
+
+            class AB(A, B):
+                pass
+
+            self.assertFalse(issubclass(A, B))
+
+        def test_subclasscheck_in_init_subclass3(self):
+            # test for gh-119699
+            class A(metaclass=abc_ABCMeta):
+                pass
+
+            class B(A):
+                def __init_subclass__(cls, **kwargs):
+                    super().__init_subclass__()
+                    issubclass(B, C)
+
+            class C(A):
+                pass
+
+            class BC(B, C):
+                pass
+
+            self.assertTrue(issubclass(B, B))
+
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
 TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(_py_abc.ABCMeta,
