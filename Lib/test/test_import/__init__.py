@@ -45,6 +45,7 @@ from test.support import (
     Py_GIL_DISABLED,
     no_rerun,
     force_not_colorized_test_class,
+    catch_unraisable_exception
 )
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -2516,6 +2517,32 @@ class SubinterpImportTests(unittest.TestCase):
 
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
+
+    @requires_subinterpreters
+    def test_pyinit_function_raises_exception(self):
+        # gh-144601: PyInit functions that raised exceptions would cause a
+        # crash when imported from a subinterpreter.
+        import _testsinglephase
+        filename = _testsinglephase.__file__
+        script = f"""if True:
+        from test.test_import import import_extension_from_file
+
+        import_extension_from_file('_testsinglephase_raise_exception', {filename!r})"""
+
+        interp = _interpreters.create()
+        try:
+            with catch_unraisable_exception() as cm:
+                exception = _interpreters.run_string(interp, script)
+                unraisable = cm.unraisable
+        finally:
+            _interpreters.destroy(interp)
+
+        self.assertIsNotNone(exception)
+        self.assertIsNotNone(exception.type.__name__, "ImportError")
+        self.assertIsNotNone(exception.msg, "failed to import from subinterpreter due to exception")
+        self.assertIsNotNone(unraisable)
+        self.assertIs(unraisable.exc_type, RuntimeError)
+        self.assertEqual(str(unraisable.exc_value), "evil")
 
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
