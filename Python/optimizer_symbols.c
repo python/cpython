@@ -766,6 +766,34 @@ _Py_uop_sym_get_probable_value(JitOptRef ref)
     Py_UNREACHABLE();
 }
 
+PyTypeObject *
+_Py_uop_sym_get_probable_type(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_PREDICATE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+        case JIT_SYM_COMPACT_INT:
+        case JIT_SYM_KNOWN_CLASS_TAG:
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            return _Py_uop_sym_get_type(ref);
+        case JIT_SYM_RECORDED_GEN_FUNC_TAG:
+            return NULL;
+        case JIT_SYM_RECORDED_VALUE_TAG:
+            return Py_TYPE(sym->recorded_value.value);
+        case JIT_SYM_RECORDED_TYPE_TAG:
+            return sym->recorded_type.type;
+    }
+    Py_UNREACHABLE();
+}
+
 PyCodeObject *
 _Py_uop_sym_get_probable_func_code(JitOptRef ref)
 {

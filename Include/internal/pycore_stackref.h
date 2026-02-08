@@ -427,11 +427,17 @@ PyStackRef_IsTaggedInt(_PyStackRef i)
     return (i.bits & Py_TAG_BITS) == Py_INT_TAG;
 }
 
+static inline bool
+PyStackRef_CanTagInt(intptr_t i)
+{
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (intptr_t)(((uintptr_t)i) << Py_TAGGED_SHIFT),
+                                     Py_TAGGED_SHIFT) == i;
+}
+
 static inline _PyStackRef
 PyStackRef_TagInt(intptr_t i)
 {
-    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (intptr_t)(((uintptr_t)i) << Py_TAGGED_SHIFT),
-                                     Py_TAGGED_SHIFT) == i);
+    assert(PyStackRef_CanTagInt(i));
     return (_PyStackRef){ .bits = ((((uintptr_t)i) << Py_TAGGED_SHIFT) | Py_INT_TAG) };
 }
 

@@ -303,6 +303,7 @@ extern void _Py_uop_sym_set_recorded_type(JitOptContext *ctx, JitOptRef sym, PyT
 extern void _Py_uop_sym_set_recorded_gen_func(JitOptContext *ctx, JitOptRef ref, PyFunctionObject *value);
 extern PyCodeObject *_Py_uop_sym_get_probable_func_code(JitOptRef sym);
 extern PyObject *_Py_uop_sym_get_probable_value(JitOptRef sym);
+extern PyTypeObject * _Py_uop_sym_get_probable_type(JitOptRef ref);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);

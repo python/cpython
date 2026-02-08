@@ -883,28 +883,28 @@ dummy_func(
         tier2 op(_UNPACK_INDICES, (container, start, stop -- container, sta, sto)) {
             Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
             int err = _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart);
-            if (err != 0) {
-                err = _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop);
-            }
-            PyStackRef_CLOSE(stop);
-            PyStackRef_CLOSE(start);
             if (err == 0) {
-                PyStackRef_CLOSE(container);
-                ERROR_IF(true);
+                ERROR_NO_POP();
+            }
+            err = _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop);
+            if (err == 0) {
+                ERROR_NO_POP();
             }
             Py_ssize_t len = PyObject_Length(PyStackRef_AsPyObjectBorrow(container));
             if (len < 0) {
-                PyStackRef_CLOSE(container);
-                ERROR_IF(true);
+                ERROR_NO_POP();
             }
             PySlice_AdjustIndices(len, &istart, &istop, 1);
+            DEOPT_IF(!PyStackRef_CanTagInt(istart));
+            DEOPT_IF(!PyStackRef_CanTagInt(istop));
+            PyStackRef_CLOSE(stop);
+            PyStackRef_CLOSE(start);
             sta = PyStackRef_TagInt((intptr_t)istart);
             sto = PyStackRef_TagInt((intptr_t)istop);
         }
 
         tier2 op(_BINARY_SLICE_LIST, (container, start, stop -- res)) {
             PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
-            EXIT_IF(!PyList_CheckExact(container_o));
             Py_ssize_t istart = PyStackRef_UntagInt(start);
             Py_ssize_t istop = PyStackRef_UntagInt(stop);
             DEAD(start);
@@ -917,7 +917,6 @@ dummy_func(
 
         tier2 op(_BINARY_SLICE_TUPLE, (container, start, stop -- res)) {
             PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
-            EXIT_IF(!PyTuple_CheckExact(container_o));
             Py_ssize_t istart = PyStackRef_UntagInt(start);
             Py_ssize_t istop = PyStackRef_UntagInt(stop);
             DEAD(start);
@@ -930,7 +929,6 @@ dummy_func(
 
         tier2 op(_BINARY_SLICE_UNICODE, (container, start, stop -- res)) {
             PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
-            EXIT_IF(!PyUnicode_CheckExact(container_o));
             Py_ssize_t istart = PyStackRef_UntagInt(start);
             Py_ssize_t istop = PyStackRef_UntagInt(stop);
             DEAD(start);
@@ -5710,6 +5708,10 @@ dummy_func(
             }
         }
 
+        tier2 op(_GUARD_3OS_TYPE, (ty/4, third, nos, tos -- third, nos, tos)) {
+            EXIT_IF(PyStackRef_TYPE(third) != (PyTypeObject *)ty);
+        }
+
         /* Record ops for jit tracer.
          *
          * NOTE: These uops are NOPs for normal evaluation.
@@ -5727,8 +5729,8 @@ dummy_func(
             RECORD_VALUE(PyStackRef_AsPyObjectBorrow(nos));
         }
 
-        tier2 op(_RECORD_3OS_TYPE, (container, nos, tos -- container, nos, tos)) {
-            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(container)));
+        tier2 op(_RECORD_3OS_TYPE, (third, nos, tos -- third, nos, tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(third)));
         }
 
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {

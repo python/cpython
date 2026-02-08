@@ -28,9 +28,9 @@ void _PyOpcode_RecordFunction_NOS(_PyInterpreterFrame *frame, _PyStackRef *stack
 }
 
 void _PyOpcode_RecordFunction_3OS_TYPE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int oparg, PyObject **recorded_value) {
-    _PyStackRef container;
-    container = stack_pointer[-3];
-    *recorded_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
+    _PyStackRef third;
+    third = stack_pointer[-3];
+    *recorded_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(third));
     Py_INCREF(*recorded_value);
 }
 

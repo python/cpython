@@ -906,18 +906,21 @@
             JitOptRef container;
             JitOptRef res;
             container = stack_pointer[-3];
-            PyTypeObject *type = sym_get_type(container);
+            PyTypeObject *type = sym_get_probable_type(container);
             if (type == &PyList_Type) {
+                ADD_OP(_GUARD_3OS_TYPE, 0, (uintptr_t)type);
                 ADD_OP(_UNPACK_INDICES, 0, 0);
                 ADD_OP(_BINARY_SLICE_LIST, 0, 0);
                 res = sym_new_type(ctx, type);
             }
             else if (type == &PyTuple_Type) {
+                ADD_OP(_GUARD_3OS_TYPE, 0, (uintptr_t)type);
                 ADD_OP(_UNPACK_INDICES, 0, 0);
                 ADD_OP(_BINARY_SLICE_TUPLE, 0, 0);
                 res = sym_new_type(ctx, type);
             }
             else if (type == &PyUnicode_Type) {
+                ADD_OP(_GUARD_3OS_TYPE, 0, (uintptr_t)type);
                 ADD_OP(_UNPACK_INDICES, 0, 0);
                 ADD_OP(_BINARY_SLICE_UNICODE, 0, 0);
                 res = sym_new_type(ctx, type);
@@ -4210,6 +4213,10 @@
             break;
         }
 
+        case _GUARD_3OS_TYPE: {
+            break;
+        }
+
         case _RECORD_TOS: {
             JitOptRef tos;
             tos = stack_pointer[-1];
@@ -4233,10 +4240,10 @@
         }
 
         case _RECORD_3OS_TYPE: {
-            JitOptRef container;
-            container = stack_pointer[-3];
+            JitOptRef third;
+            third = stack_pointer[-3];
             PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
-            sym_set_type(container, tp);
+            sym_set_recorded_type(third, tp);
             break;
         }
 
