@@ -2340,6 +2340,76 @@ test case
             gc_collect()  # For PyPy or other GCs.
             self.assertEqual(MyException.ninstance, 0)
 
+    def test_status(self):
+        # Issue 68437 - unittest API for detecting test failure in cleanup/teardown
+        class Foo(unittest.TestCase):
+            def test_success(self):
+                pass
+            @unittest.expectedFailure
+            def test_unexpected_success(self):
+                pass
+            def test_failed(self):
+                self.assertTrue(False)
+            @unittest.expectedFailure
+            def test_expected_failure(self):
+                self.assertTrue(False)
+            @unittest.skip
+            def test_skipped(self):
+                self.assertTrue(False)
+            def test_skipped_exception(self):
+                raise unittest.SkipTest()
+            def test_subtest_success(self):
+                with self.subTest():
+                    pass
+                with self.subTest():
+                    pass
+            def test_subtest_failed1(self):
+                with self.subTest():
+                    self.assertTrue(True)
+                with self.subTest():
+                    self.assertTrue(False)
+            def test_subtest_failed2(self):
+                with self.subTest():
+                    self.assertTrue(False)
+                with self.subTest():
+                    self.assertTrue(True)
+
+        test = Foo('test_success')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.SUCCESS)
+
+        test = Foo('test_unexpected_success')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.UNEXPECTED_SUCCESS)
+
+        test = Foo('test_failed')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.FAILED)
+
+        test = Foo('test_expected_failure')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.EXPECTED_FAILURE)
+
+        test = Foo('test_skipped')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.SKIPPED)
+
+        test = Foo('test_skipped_exception')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.SKIPPED)
+
+        test = Foo('test_subtest_success')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.SUCCESS)
+
+        test = Foo('test_subtest_failed1')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.FAILED)
+
+        test = Foo('test_subtest_failed2')
+        test.run()
+        self.assertEqual(test.status, unittest.TestStatus.FAILED)
+
 
 if __name__ == "__main__":
     unittest.main()
