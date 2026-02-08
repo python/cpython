@@ -30,9 +30,10 @@ import threading
 import unittest
 import urllib.parse
 import warnings
+from collections import Counter
 
 from test.support import (
-    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess
+    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess, subTests
 )
 from test.support import gc_collect
 from test.support import threading_helper, import_helper
@@ -1727,6 +1728,284 @@ class ExtensionTests(unittest.TestCase):
         """)
         result = con.execute("select foo from test").fetchone()[0]
         self.assertEqual(result, 5, "Basic test of Connection.executescript")
+
+
+class ParamsCxCloseInIterMany:
+    def __init__(self, cx):
+        self.cx = cx
+
+    def __iter__(self):
+        self.cx.close()
+        return iter([(1,), (2,), (3,)])
+
+
+def ParamsCxCloseInNext(cx):
+    for i in range(10):
+        cx.close()
+        yield (i,)
+
+
+class ExecutionConcurrentlyCloseConnectionBaseTests:
+    """Tests when execute() and executemany() concurrently close the connection."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # A fresh module is required for this class so that adapters
+        # registered by the tests do not pollute other tests.
+        cls.sqlite = import_helper.import_fresh_module("sqlite3", fresh=["_sqlite3"])
+
+    def inittest(self, **adapters):
+        """Return a pair (connection, connection or cursor) to use in tests."""
+        # Counter for the number of calls to the tracked functions.
+        self.ncalls = Counter()
+
+        cx = self.sqlite.connect(":memory:")
+        self.addCleanup(cx.close)
+
+        # table to use to query the database to ensure that it's not closed
+        cx.execute(f"create table canary(flag nunmber)")
+        cx.execute(f"insert into canary values (?)", (1,))
+
+        self.colname = "a"
+        cx.execute(f"create table tmp({self.colname} number)")
+        return cx, self.executor(cx)
+
+    def executor(self, connection):
+        """Return a cursor-like interface from a given SQLite3 connection."""
+        raise NotImplementedError
+
+    def check_alive(self, executor):
+        # check that the connection is alive by making a dummy query
+        res = executor.execute("SELECT * from canary").fetchall()
+        self.assertEqual(res, [(1,)])
+
+    def check_execute(self, executor, payload, *, named=False):
+        self.assertEqual(self.ncalls.total(), 0)
+        self.check_alive(executor)
+
+        binding = f"(:{self.colname})" if named else "(?)"
+        msg = r"Cannot operate on a closed database\."
+        with self.assertRaisesRegex(self.sqlite.ProgrammingError, msg):
+            executor.execute(f"insert into tmp values {binding}", payload)
+
+    def check_executemany(self, executor, payload, *, named=False):
+        self.assertEqual(self.ncalls.total(), 0)
+        self.check_alive(executor)
+
+        binding = f"(:{self.colname})" if named else "(?)"
+        msg = r"Cannot operate on a closed database\."
+        with self.assertRaisesRegex(self.sqlite.ProgrammingError, msg):
+            executor.executemany(f"insert into tmp values {binding}", payload)
+
+    # Simple tests
+
+    def test_execute(self):
+        # Prevent SIGSEGV when closing the connection while binding parameters.
+        #
+        # Internally, the connection's state is checked after bind_parameters().
+        # Without this check, we would only be aware of the closed connection
+        # by calling an sqlite3 function afterwards. However, it is important
+        # that we report the error before leaving the execute() call.
+        #
+        # Regression test for https://github.com/python/cpython/issues/143198.
+
+        class PT:
+            def __getitem__(_, i):
+                self.ncalls[None] += 1
+                cx.close()
+                return 1
+            def __len__(self):
+                return 1
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, PT())
+        self.assertEqual(self.ncalls[None], 1)
+
+    @subTests("params_factory", (ParamsCxCloseInIterMany, ParamsCxCloseInNext))
+    def test_executemany_iterator(self, params_factory):
+        # Prevent SIGSEGV with iterable of parameters closing the connection.
+        # Regression test for https://github.com/python/cpython/issues/143198.
+        cx, ex = self.inittest()
+        self.check_executemany(ex, params_factory(cx))
+
+    # The test constructs an iterable of parameters of length 'n'
+    # and the connection is closed when we access the j-th one.
+    # The iterable is of type 'map' but the test wraps that map
+    # with 'iterable_wrapper' to exercise internals.
+    @subTests(("j", "n"), ([0, 1], [0, 3], [1, 3], [2, 3]))
+    @subTests("iterable_wrapper", (list, lambda x: x, lambda x: iter(x)))
+    def test_executemany_iterable(self, j, n, iterable_wrapper):
+        # Prevent SIGSEGV when closing the connection while binding parameters.
+        #
+        # Internally, the connection's state is checked after bind_parameters().
+        # Without this check, we would only be aware of the closed connection
+        # by calling an sqlite3 function afterwards. However, it is important
+        # that we report the error before leaving executemany() call.
+        #
+        # Regression test for https://github.com/python/cpython/issues/143198.
+
+        class PT:
+            case = self
+            def __init__(self, value):
+                self.value = value
+            def __getitem__(self, i):
+                if self.value == j:
+                    self.case.ncalls[None] = j
+                    cx.close()
+                return self.value
+            def __len__(self):
+                return 1
+
+        cx, ex = self.inittest()
+        items = iterable_wrapper(map(PT, range(n)))
+        self.check_executemany(ex, items)
+        self.assertEqual(self.ncalls[None], j)
+
+    # Tests when the SQL parameters are given as a sequence.
+
+    def test_invalid_params_sequence_size(self):
+        class I:
+            def __index__(_):
+                self.ncalls["I.__index__"] += 1
+                cx.close()
+                return 1
+
+        class S:  # emulate a non-native sequence object
+            def __getitem__(self):
+                raise RuntimeError("must not be called")
+            def __len__(_):
+                self.ncalls["S.__len__"] += 1
+                return I()
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, S())
+        self.assertEqual(self.ncalls["S.__len__"], 1)
+        self.assertEqual(self.ncalls["I.__index__"], 1)
+
+        cx, ex = self.inittest()
+        self.check_executemany(ex, [S()])
+        self.assertEqual(self.ncalls["S.__len__"], 1)
+        self.assertEqual(self.ncalls["I.__index__"], 1)
+
+    def test_invalid_params_sequence_item(self):
+        class S:  # emulate a non-native sequence object
+            def __getitem__(_, i):
+                self.ncalls[None] += 1
+                cx.close()
+                return 1
+            def __len__(self):
+                return 1
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, S())
+        self.assertEqual(self.ncalls[None], 1)
+
+        cx, ex = self.inittest()
+        self.check_executemany(ex, [S()])
+        self.assertEqual(self.ncalls[None], 1)
+
+    def test_invalid_params_sequence_item_close_in_adapter(self):
+        class S: pass
+        def adapter(s):
+            self.ncalls[None] += 1
+            cx.close()
+            return 1
+
+        self.sqlite.register_adapter(S, adapter)
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, [S()])
+        self.assertEqual(self.ncalls[None], 1)
+
+        cx, ex = self.inittest()
+        self.check_executemany(ex, [[S()]])
+        self.assertEqual(self.ncalls[None], 1)
+
+    def test_invalid_params_sequence_item_close_after_adapted(self):
+        class B(bytearray):
+            def __buffer__(_, flags):
+                self.ncalls[None] += 1
+                cx.close()
+                return super().__buffer__(flags)
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, [B()])
+        self.assertEqual(self.ncalls[None], 1)
+
+        cx, ex = self.inittest()
+        self.check_executemany(ex, [[B()]])
+        self.assertEqual(self.ncalls[None], 1)
+
+    # Tests when the SQL parameters are given as a mapping.
+
+    def test_invalid_params_mapping_item(self):
+        class S(dict):
+            def __getitem__(_, key):
+                self.assertEqual(key, self.colname)
+                self.ncalls[self.colname] += 1
+                cx.close()
+                return 1
+            def __len__(self):
+                return 1
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, S(), named=True)
+        self.assertEqual(self.ncalls[self.colname], 1)
+
+        cx, ex = self.inittest()
+        self.check_executemany(ex, [S()], named=True)
+        self.assertEqual(self.ncalls[self.colname], 1)
+
+    def test_invalid_params_mapping_item_close_in_adapter(self):
+        class S: pass
+        def adapter(s):
+            self.ncalls[None] += 1
+            cx.close()
+            return 1
+
+        self.sqlite.register_adapter(S, adapter)
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, {self.colname: S()}, named=True)
+        self.assertEqual(self.ncalls[None], 1)
+
+        cx, ex = self.inittest()
+        self.check_executemany(ex, [{self.colname: S()}], named=True)
+        self.assertEqual(self.ncalls[None], 1)
+
+    def test_invalid_params_mapping_item_close_after_adapted(self):
+        class B(bytearray):
+            def __buffer__(_, flags):
+                self.ncalls[None] += 1
+                cx.close()
+                return super().__buffer__(flags)
+
+        cx, ex = self.inittest()
+        self.check_execute(ex, {self.colname: B()}, named=True)
+        self.assertEqual(self.ncalls[None], 1)
+
+        cx, ex = self.inittest()
+        self.check_executemany(ex, [{self.colname: B()}], named=True)
+        self.assertEqual(self.ncalls[None], 1)
+
+
+class ConnectionExecutionConcurrentlyCloseConnectionTests(
+    ExecutionConcurrentlyCloseConnectionBaseTests,
+    unittest.TestCase,
+):
+    """Regression tests for conn.execute() and conn.executemany()."""
+    def executor(self, connection):
+        return connection
+
+
+class CursorExecutionConcurrentlyCloseConnectionTests(
+    ExecutionConcurrentlyCloseConnectionBaseTests,
+    unittest.TestCase,
+):
+    """Regression tests for cursor.execute() and cursor.executemany()."""
+    def executor(self, connection):
+        return connection.cursor()
 
 
 class ClosedConTests(unittest.TestCase):
