@@ -436,6 +436,9 @@ class Instruction(_Instruction):
         formatter.print_instruction(self, False)
         return output.getvalue()
 
+def _get_dis_theme():
+    from _colorize import get_theme
+    return get_theme().dis
 
 class Formatter:
 
@@ -480,6 +483,7 @@ class Formatter:
 
     def print_instruction_line(self, instr, mark_as_current):
         """Format instruction details for inclusion in disassembly output."""
+        theme = _get_dis_theme()
         lineno_width = self.lineno_width
         offset_width = self.offset_width
         label_width = self.label_width
@@ -527,7 +531,7 @@ class Formatter:
         else:
             fields.append('   ')
         # Column: Opcode name
-        fields.append(instr.opname.ljust(_OPNAME_WIDTH))
+        fields.append(f"{theme.color_by_opname(instr.opname)}{instr.opname.ljust(_OPNAME_WIDTH)}{theme.reset}")
         # Column: Opcode argument
         if instr.arg is not None:
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
@@ -537,11 +541,12 @@ class Formatter:
             fields.append(repr(instr.arg).rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
             if instr.argrepr:
-                fields.append('(' + instr.argrepr + ')')
+                fields.append(f'{theme.argument_detail}(' + instr.argrepr + f'){theme.reset}')
         print(' '.join(fields).rstrip(), file=self.file)
 
     def print_exception_table(self, exception_entries):
         file = self.file
+        theme = _get_dis_theme()
         if exception_entries:
             print("ExceptionTable:", file=file)
             for entry in exception_entries:
@@ -549,7 +554,12 @@ class Formatter:
                 start = entry.start_label
                 end = entry.end_label
                 target = entry.target_label
-                print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
+                print(
+                    f"  {theme.exception_label}L{start}{theme.reset} to "
+                    f"{theme.exception_label}L{end}{theme.reset} "
+                    f"-> {theme.exception_label}L{target}{theme.reset} [{entry.depth}]{lasti}",
+                    file=file,
+                )
 
 
 class ArgResolver:
@@ -833,13 +843,14 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
 
 def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False, show_offsets=False, show_positions=False):
     disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions)
+    theme = _get_dis_theme()
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
         for x in co.co_consts:
             if hasattr(x, 'co_code'):
                 print(file=file)
-                print("Disassembly of %r:" % (x,), file=file)
+                print(f"{theme.label_bg}{theme.label_fg}Disassembly of {x!r}:{theme.reset}", file=file)
                 _disassemble_recursive(
                     x, file=file, depth=depth, show_caches=show_caches,
                     adaptive=adaptive, show_offsets=show_offsets, show_positions=show_positions
