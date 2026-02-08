@@ -1,0 +1,3 @@
+Deprecate :pep:`456` support for providing an external definition
+of the string hashing scheme. Removal is scheduled for Python 3.19.
+Patch by Bénédikt Tran.
