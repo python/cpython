@@ -642,7 +642,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             signal.set_wakeup_fd(self._csock.fileno())
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
-                               extra=None, server=None):
+                               extra=None, server=None, context=None):
         return _ProactorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
@@ -837,7 +837,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
                        ssl_handshake_timeout=None,
-                       ssl_shutdown_timeout=None):
+                       ssl_shutdown_timeout=None, context=None):
 
         def loop(f=None):
             try:

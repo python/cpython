@@ -14,6 +14,7 @@ to modify the meaning of the API call itself.
 """
 
 import collections
+import contextvars
 import collections.abc
 import concurrent.futures
 import errno
@@ -289,6 +290,7 @@ class Server(events.AbstractServer):
         self._ssl_shutdown_timeout = ssl_shutdown_timeout
         self._serving = False
         self._serving_forever_fut = None
+        self._context = contextvars.copy_context()
 
     def __repr__(self):
         return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
@@ -318,7 +320,7 @@ class Server(events.AbstractServer):
             self._loop._start_serving(
                 self._protocol_factory, sock, self._ssl_context,
                 self, self._backlog, self._ssl_handshake_timeout,
-                self._ssl_shutdown_timeout)
+                self._ssl_shutdown_timeout, context=self._context)
 
     def get_loop(self):
         return self._loop
@@ -1211,9 +1213,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             self, sock, protocol_factory, ssl,
             server_hostname, server_side=False,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None):
+            ssl_shutdown_timeout=None, context=None):
 
         sock.setblocking(False)
+        context = context if context is not None else contextvars.copy_context()
 
         protocol = protocol_factory()
         waiter = self.create_future()
@@ -1225,7 +1228,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 ssl_handshake_timeout=ssl_handshake_timeout,
                 ssl_shutdown_timeout=ssl_shutdown_timeout)
         else:
-            transport = self._make_socket_transport(sock, protocol, waiter)
+            transport = self._make_socket_transport(sock, protocol, waiter, context=context)
 
         try:
             await waiter
