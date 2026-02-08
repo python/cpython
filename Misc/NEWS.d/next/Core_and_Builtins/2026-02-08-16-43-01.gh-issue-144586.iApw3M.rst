@@ -1,2 +1,2 @@
-Improve _Py_yield to improve light weight cpu instruction. Patch By Donghee
+Improve _Py_yield to use light weight cpu instruction. Patch By Donghee
 Na.
