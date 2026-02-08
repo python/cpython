@@ -573,6 +573,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     # We can't just leave it to `copy_function` because legacy
                     # code with a custom `copy_function` may rely on copytree
                     # doing the right thing.
+                    if dirs_exist_ok and os.path.lexists(dstname):
+                        os.unlink(dstname)
                     os.symlink(linkto, dstname)
                     copystat(srcobj, dstname, follow_symlinks=not symlinks)
                 else:
