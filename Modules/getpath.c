@@ -969,6 +969,12 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     }
     Py_DECREF(r);
 
+    if (PyDict_GetItemString(configDict, "_error") != NULL) {
+        Py_DECREF(dict);
+        PySys_WriteStdout("\n");
+        return PyStatus_Error("error evaluating path");
+    }
+
     if (_PyConfig_FromDict(config, configDict) < 0) {
         PyErr_FormatUnraisable("Exception ignored while reading getpath results");
         Py_DECREF(dict);
