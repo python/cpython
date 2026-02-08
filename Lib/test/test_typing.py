@@ -8468,7 +8468,7 @@ class NamedTupleTests(BaseTestCase):
                 def name(self):
                     return __class__.__name__
 
-    def test_named_tuple_generator_input(self):
+    def test_named_tuple_non_sequence_input(self):
         field_names = ["x", "y"]
         field_values = [int, int]
         Point = NamedTuple("Point", zip(field_names, field_values))
