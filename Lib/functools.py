@@ -893,21 +893,21 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _get_singledispatch_annotated_param(func, *, role):
+def _get_singledispatch_annotated_param(func, functype):
     """Find the first positional and user-specified parameter in a callable
     or descriptor.
 
     Used by singledispatch for registration by type annotation of the parameter.
     """
     if isinstance(func, staticmethod):
-        idx = 0  # Take the very first parameter.
+        idx = 0
         func = func.__func__
     elif isinstance(func, (classmethod, MethodType)):
-        idx = 1  # Skip *cls* or *self*.
+        idx = 1  # Skip parameter bound by instance-level access.
         func = func.__func__
     else:
-        # Skip *self* when called from `singledispatchmethod.register`.
-        idx = 0 if role == "function" else 1
+        # Assume and skip bound parameter when singledispatchmethod is used.
+        idx = 1 if functype == "method" else 0
     # Fast path: emulate `inspect._signature_from_function` if possible.
     if isinstance(func, FunctionType) and not hasattr(func, "__wrapped__"):
         func_code = func.__code__
@@ -923,7 +923,7 @@ def _get_singledispatch_annotated_param(func, *, role):
     except IndexError:
         pass
     else:
-        # Allow variadic positional "(*args)" parameters for backward compatibility.
+        # Allow variadic positional '(*args)' parameters for backward compatibility.
         if param.kind not in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
             return param.name
     raise TypeError(
@@ -978,7 +978,7 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
-    def register(cls, func=None, __role__="function"):
+    def register(cls, func=None, __functype__="function"):
         """generic_func.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_func*.
@@ -1003,7 +1003,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            argname = _get_singledispatch_annotated_param(func, role=__role__)
+            argname = _get_singledispatch_annotated_param(func, functype=__functype__)
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
@@ -1015,7 +1015,7 @@ def singledispatch(func):
             except KeyError:
                 raise TypeError(
                     f"Invalid first argument to `register()`: {func!r}. "
-                    "Use either `@register(some_class)` or add a type "
+                    f"Use either `@register(some_class)` or add a type "
                     f"annotation to parameter {argname!r} of your callable."
                 ) from None
 
@@ -1055,7 +1055,7 @@ def singledispatch(func):
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
     wrapper.register = register
-    wrapper.register.__text_signature__ = "(cls, func)"  # Hide private parameters from help().
+    wrapper.register.__text_signature__ = "(cls, func)"  # Hide __functype__ from help().
     wrapper.dispatch = dispatch
     wrapper.registry = MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
@@ -1083,7 +1083,7 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        return self.dispatcher.register(cls, func=method, __role__="method")
+        return self.dispatcher.register(cls, func=method, __functype__="method")
 
     def __get__(self, obj, cls=None):
         return _singledispatchmethod_get(self, obj, cls)
