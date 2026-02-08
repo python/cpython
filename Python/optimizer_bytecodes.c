@@ -1491,7 +1491,7 @@ dummy_func(void) {
         sym_set_const(callable, list_append);
     }
 
-    op(_BINARY_SLICE, (container, start, stop -- res)) {
+    op(_BINARY_SLICE, (container, start, stop -- res, c, sta, sto)) {
         // Slicing a string/list/tuple always returns the same type.
         PyTypeObject *type = sym_get_type(container);
         if (type == &PyUnicode_Type ||
@@ -1503,6 +1503,9 @@ dummy_func(void) {
         else {
             res = sym_new_not_null(ctx);
         }
+        c = container;
+        sta = start;
+        sto = stop;
     }
 
     op(_GUARD_GLOBALS_VERSION, (version/1 --)) {

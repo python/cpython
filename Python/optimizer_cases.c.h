@@ -903,8 +903,15 @@
         }
 
         case _BINARY_SLICE: {
+            JitOptRef stop;
+            JitOptRef start;
             JitOptRef container;
             JitOptRef res;
+            JitOptRef c;
+            JitOptRef sta;
+            JitOptRef sto;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
             container = stack_pointer[-3];
             PyTypeObject *type = sym_get_type(container);
             if (type == &PyUnicode_Type ||
@@ -916,9 +923,15 @@
             else {
                 res = sym_new_not_null(ctx);
             }
-            CHECK_STACK_BOUNDS(-2);
+            c = container;
+            sta = start;
+            sto = stop;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[-2] = c;
+            stack_pointer[-1] = sta;
+            stack_pointer[0] = sto;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

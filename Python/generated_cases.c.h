@@ -1377,6 +1377,10 @@
             _PyStackRef start;
             _PyStackRef stop;
             _PyStackRef res;
+            _PyStackRef c;
+            _PyStackRef sta;
+            _PyStackRef sto;
+            _PyStackRef value;
             // _SPECIALIZE_BINARY_SLICE
             {
                 #if ENABLE_SPECIALIZATION
@@ -1388,36 +1392,55 @@
                 stop = stack_pointer[-1];
                 start = stack_pointer[-2];
                 container = stack_pointer[-3];
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                    PyStackRef_AsPyObjectSteal(stop));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyObject *slice = PySlice_New(PyStackRef_AsPyObjectBorrow(start),
+                    PyStackRef_AsPyObjectBorrow(stop),
+                    NULL);
                 PyObject *res_o;
                 if (slice == NULL) {
                     res_o = NULL;
                 }
                 else {
-                    stack_pointer += -2;
-                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     res_o = PyObject_GetItem(PyStackRef_AsPyObjectBorrow(container), slice);
                     Py_DECREF(slice);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    stack_pointer += 2;
                 }
-                stack_pointer += -3;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(container);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
+                c = container;
+                sta = start;
+                sto = stop;
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            // _POP_TOP
+            {
+                value = sto;
+                stack_pointer[-3] = res;
+                stack_pointer[-2] = c;
+                stack_pointer[-1] = sta;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = sta;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = c;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 

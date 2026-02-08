@@ -862,12 +862,11 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_BINARY_SLICE, (container, start, stop -- res)) {
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop));
+        op(_BINARY_SLICE, (container, start, stop -- res, c, sta, sto)) {
+            PyObject *slice = PySlice_New(PyStackRef_AsPyObjectBorrow(start),
+                                         PyStackRef_AsPyObjectBorrow(stop),
+                                         NULL);
             PyObject *res_o;
-            // Can't use ERROR_IF() here, because we haven't
-            // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
                 res_o = NULL;
             }
@@ -875,12 +874,17 @@ dummy_func(
                 res_o = PyObject_GetItem(PyStackRef_AsPyObjectBorrow(container), slice);
                 Py_DECREF(slice);
             }
-            PyStackRef_CLOSE(container);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            c = container;
+            sta = start;
+            sto = stop;
+            INPUTS_DEAD();
         }
 
-        macro(BINARY_SLICE) = _SPECIALIZE_BINARY_SLICE + _BINARY_SLICE;
+        macro(BINARY_SLICE) = _SPECIALIZE_BINARY_SLICE + _BINARY_SLICE + POP_TOP + POP_TOP + POP_TOP;
 
         specializing op(_SPECIALIZE_STORE_SLICE, (v, container, start, stop -- v, container, start, stop)) {
             // Placeholder until we implement STORE_SLICE specialization

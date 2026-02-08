@@ -2098,6 +2098,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_SUBSCR_DICT", uops)
         self.assertLessEqual(count_ops(ex, "_POP_TOP"), 2)
 
+    def test_binary_slice(self):
+        def testfunc(n):
+            x = 0
+            s = "hello world"
+            a, b = 1, 4
+            for _ in range(n):
+                v = s[a:b]
+                x += len(v)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_SLICE", uops)
+        self.assertGreaterEqual(count_ops(ex, "_POP_TOP"), 3)
+
     def test_contains_op(self):
         def testfunc(n):
             x = 0
