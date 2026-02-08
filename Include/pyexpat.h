@@ -6,9 +6,8 @@
 #define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.1"
 #define PyExpat_CAPSULE_NAME "pyexpat.expat_CAPI"
 
-struct PyExpat_CAPI
-{
-    char* magic; /* set to PyExpat_CAPI_MAGIC */
+struct PyExpat_CAPI {
+    char *magic; /* set to PyExpat_CAPI_MAGIC */
     int size; /* set to sizeof(struct PyExpat_CAPI) */
     int MAJOR_VERSION;
     int MINOR_VERSION;
@@ -64,4 +63,3 @@ struct PyExpat_CAPI
         XML_Parser parser, float maxAmplificationFactor);
     /* always add new stuff to the end! */
 };
-
