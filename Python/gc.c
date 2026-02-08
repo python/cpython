@@ -1345,21 +1345,6 @@ gc_list_set_space(PyGC_Head *list, int space)
     return size;
 }
 
-/* Making progress in the incremental collector
- * In order to eventually collect all cycles
- * the incremental collector must progress through the old
- * space faster than objects are added to the old space.
- *
- * Each young or incremental collection adds a number of
- * objects, S (for survivors) to the old space, and
- * incremental collectors scan I objects from the old space.
- * I > S must be true. We also want I > S * N to be where
- * N > 1. Higher values of N mean that the old space is
- * scanned more rapidly.
- * The default incremental threshold of 10 translates to
- * N == 1.4 (1 + 4/threshold)
- */
-
 /* Divide by 10, so that the default incremental threshold of 10
  * scans objects at 1% of the heap size */
 #define SCAN_RATE_DIVISOR 10
