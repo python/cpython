@@ -1,0 +1,4 @@
+Improve error message in :mod:`zoneinfo` when timezone data is not found due
+to missing :pypi:`tzdata` package. The new error message provides clear
+instructions on how to resolve the issue, including installing the package
+and links to documentation. Patch by daram62.
