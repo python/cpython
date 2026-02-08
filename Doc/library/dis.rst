@@ -1275,12 +1275,16 @@ iterations of the loop.
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
    or :opcode:`CALL_KW` when calling the unbound method.
-   Otherwise, ``NULL`` and the object returned by
-   the attribute lookup are pushed.
+   Otherwise, the object returned by the attribute lookup
+   and ``NULL`` are pushed.
 
    .. versionchanged:: 3.12
       If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
       pushed to the stack before the attribute or unbound method respectively.
+
+   .. versionchanged:: 3.13
+      ``NULL`` or ``self`` is now pushed to the stack after the attribute
+      or unbound method respectively.
 
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
@@ -1437,6 +1441,9 @@ iterations of the loop.
    .. versionchanged:: 3.11
       If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
       stack before the global variable.
+
+   .. versionchanged:: 3.13
+      ``NULL`` is now pushed to the stack after the global variable.
 
 .. opcode:: LOAD_FAST (var_num)
 
