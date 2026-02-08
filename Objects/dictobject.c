@@ -4641,10 +4641,8 @@ dict_traverse(PyObject *op, visitproc visit, void *arg)
 
     if (DK_IS_UNICODE(keys)) {
         if (_PyDict_HasSplitTable(mp)) {
-            if (!mp->ma_values->embedded) {
-                for (i = 0; i < n; i++) {
-                    Py_VISIT(mp->ma_values->values[i]);
-                }
+            for (i = 0; i < n; i++) {
+                Py_VISIT(mp->ma_values->values[i]);
             }
         }
         else {
@@ -7171,6 +7169,13 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return 0;
     }
+    PyDictObject *dict = _PyObject_ManagedDictPointer(obj)->dict;
+    if (dict != NULL) {
+        // GH-130327: If there's a managed dictionary available, we should
+        // *always* traverse it, including when inline values are available.
+        Py_VISIT(dict);
+        return 0;
+    }
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {
@@ -7180,7 +7185,6 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
             return 0;
         }
     }
-    Py_VISIT(_PyObject_ManagedDictPointer(obj)->dict);
     return 0;
 }
 
