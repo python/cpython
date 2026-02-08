@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #if defined(MS_WINDOWS)
-#  include <emmintrin.h>  // _mm_pause()
+#  include <intrin.h>  // _mm_pause(), __yield()
 #endif
 
 //_Py_UNLOCKED is defined as 0 and _Py_LOCKED as 1 in Include/cpython/pylock.h
@@ -87,8 +87,10 @@ _Py_yield(void)
     __asm__ volatile ("yield" ::: "memory");
 #elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
     __asm__ volatile ("or 27,27,27" ::: "memory");
-#elif defined(MS_WINDOWS)
+#elif defined(_M_X64) || defined(_M_IX86)
     _mm_pause();
+#elif defined(_M_ARM64) || defined(_M_ARM)
+    __yield();
 #elif defined(HAVE_SCHED_H)
     sched_yield();
 #endif
