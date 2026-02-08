@@ -329,15 +329,16 @@ Once the GC knows the list of unreachable objects, a very delicate process start
 with the objective of completely destroying these objects. Roughly, the process
 follows these steps in order:
 
-1. Handle and clear weak references (if any). Weak references to unreachable objects
-   are set to `None`. If the weak reference has an associated callback, the callback
-   is enqueued to be called once the clearing of weak references is finished.  We only
-   invoke callbacks for weak references that are themselves reachable. If both the weak
-   reference and the pointed-to object are unreachable we do not execute the callback.
-   This is partly for historical reasons: the callback could resurrect an unreachable
-   object and support for weak references predates support for object resurrection.
-   Ignoring the weak reference's callback is fine because both the object and the weakref
-   are going away, so it's legitimate to say the weak reference is going away first.
+1. Handle weak references with callbacks (if any).  If the weak reference has
+   an associated callback, the callback is enqueued to be called after the weak
+   reference is cleared.  We only invoke callbacks for weak references that
+   are themselves reachable. If both the weak reference and the pointed-to
+   object are unreachable we do not execute the callback.  This is partly for
+   historical reasons: the callback could resurrect an unreachable object
+   and support for weak references predates support for object resurrection.
+   Ignoring the weak reference's callback is fine because both the object and
+   the weakref are going away, so it's legitimate to say the weak reference is
+   going away first.
 2. If an object has legacy finalizers (`tp_del` slot) move it to the
    `gc.garbage` list.
 3. Call the finalizers (`tp_finalize` slot) and mark the objects as already
@@ -346,7 +347,12 @@ follows these steps in order:
 4. Deal with resurrected objects. If some objects have been resurrected, the GC
    finds the new subset of objects that are still unreachable by running the cycle
    detection algorithm again and continues with them.
-5. Call the `tp_clear` slot of every object so all internal links are broken and
+5. Clear any weak references that still refer to unreachable objects.  The
+   `wr_object` attribute for these weakrefs are set to `None`.  Note that some
+   of these weak references maybe have been newly created during the running of
+   finalizers in step 3.  Also, clear any weak references that are part of the
+   unreachable set.
+6. Call the `tp_clear` slot of every object so all internal links are broken and
    the reference counts fall to 0, triggering the destruction of all unreachable
    objects.
 

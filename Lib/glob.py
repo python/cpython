@@ -22,6 +22,9 @@ def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     dot are special cases that are not matched by '*' and '?'
     patterns by default.
 
+    The order of the returned list is undefined. Sort it if you need a
+    particular order.
+
     If `include_hidden` is true, the patterns '*', '?', '**'  will match hidden
     directories.
 
@@ -39,6 +42,9 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     fnmatch. However, unlike fnmatch, filenames starting with a
     dot are special cases that are not matched by '*' and '?'
     patterns.
+
+    The order of the returned paths is undefined. Sort them if you need a
+    particular order.
 
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
@@ -121,21 +127,6 @@ def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
         if _isdir(dirname, dir_fd):
             return [basename]
     return []
-
-_deprecated_function_message = (
-    "{name} is deprecated and will be removed in Python {remove}. Use "
-    "glob.glob and pass a directory to its root_dir argument instead."
-)
-
-def glob0(dirname, pattern):
-    import warnings
-    warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    return _glob0(dirname, pattern, None, False)
-
-def glob1(dirname, pattern):
-    import warnings
-    warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    return _glob1(dirname, pattern, None, False)
 
 # This helper function recursively yields relative pathnames inside a literal
 # directory.

@@ -10,7 +10,7 @@
 
 --------------
 
-The :mod:`xml.etree.ElementTree` module implements a simple and efficient API
+The :mod:`!xml.etree.ElementTree` module implements a simple and efficient API
 for parsing and creating XML data.
 
 .. versionchanged:: 3.3
@@ -20,16 +20,15 @@ for parsing and creating XML data.
    The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.etree.ElementTree` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 Tutorial
 --------
 
-This is a short tutorial for using :mod:`xml.etree.ElementTree` (``ET`` in
+This is a short tutorial for using :mod:`!xml.etree.ElementTree` (``ET`` in
 short).  The goal is to demonstrate some of the building blocks and basic
 concepts of the module.
 
@@ -657,6 +656,10 @@ Functions
    .. versionchanged:: 3.13
       Added the :meth:`!close` method.
 
+   .. versionchanged:: 3.15
+      A :exc:`ResourceWarning` is now emitted if the iterator opened a file
+      and is not explicitly closed.
+
 
 .. function:: parse(source, parser=None)
 
@@ -792,7 +795,7 @@ Here's an example that demonstrates use of the XInclude module. To include an XM
 
 By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
 
-To process this file, load it as usual, and pass the root element to the :mod:`xml.etree.ElementTree` module:
+To process this file, load it as usual, and pass the root element to the :mod:`!xml.etree.ElementTree` module:
 
 .. code-block:: python
 
@@ -1399,10 +1402,10 @@ XMLParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      Note that :meth:`flush` has been backported to some prior releases of
-      CPython as a security fix.  Check for availability of :meth:`flush`
-      using :func:`hasattr` if used in code running across a variety of Python
-      versions.
+      :meth:`!flush`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
 
       .. versionadded:: 3.13
 
@@ -1477,10 +1480,10 @@ XMLPullParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      Note that :meth:`flush` has been backported to some prior releases of
-      CPython as a security fix.  Check for availability of :meth:`flush`
-      using :func:`hasattr` if used in code running across a variety of Python
-      versions.
+      :meth:`!flush`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
 
       .. versionadded:: 3.13
 
