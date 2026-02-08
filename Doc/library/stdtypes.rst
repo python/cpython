@@ -2720,7 +2720,9 @@ expression support in the :mod:`re` module).
 
       ``\v`` and ``\f`` added to list of line boundaries.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> 'ab c\n\nde fg\rkl\r\n'.splitlines()
       ['ab c', '', 'de fg', 'kl']
@@ -2729,14 +2731,18 @@ expression support in the :mod:`re` module).
 
    Unlike :meth:`~str.split` when a delimiter string *sep* is given, this
    method returns an empty list for the empty string, and a terminal line
-   break does not result in an extra line::
+   break does not result in an extra line:
+
+   .. doctest::
 
       >>> "".splitlines()
       []
       >>> "One line\n".splitlines()
       ['One line']
 
-   For comparison, ``split('\n')`` gives::
+   For comparison, ``split('\n')`` gives:
+
+   .. doctest::
 
       >>> ''.split('\n')
       ['']
