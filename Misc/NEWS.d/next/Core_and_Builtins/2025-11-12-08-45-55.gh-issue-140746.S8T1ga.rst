@@ -1,0 +1,1 @@
+Fix :func:`threading.Thread.start` that can hang indefinitely in case of heap memory exhaustion during initialization of the new thread.
