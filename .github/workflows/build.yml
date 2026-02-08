@@ -248,78 +248,32 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
-  build-ubuntu-ssltests-openssl:
-    name: 'Ubuntu SSL tests with OpenSSL'
-    runs-on: ${{ matrix.os }}
+  build-ubuntu-ssltests:
+    name: 'Ubuntu SSL tests'
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
-        # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
-        # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
-        # supported by important vendors such as AWS-LC.
-        openssl_ver: [1.1.1w, 3.0.18, 3.3.5, 3.4.3, 3.5.4, 3.6.0]
+        include:
+          # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
+          # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
+          # supported by important vendors such as AWS-LC.
+          - { ssl: openssl, ssl_ver: 1.1.1w }
+          - { ssl: openssl, ssl_ver: 3.0.18 }
+          - { ssl: openssl, ssl_ver: 3.3.5 }
+          - { ssl: openssl, ssl_ver: 3.4.3 }
+          - { ssl: openssl, ssl_ver: 3.5.4 }
+          - { ssl: openssl, ssl_ver: 3.6.0 }
+          - { ssl: awslc,   ssl_ver: 1.55.0 }
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
-      OPENSSL_VER: ${{ matrix.openssl_ver }}
+      SSL_VER: ${{ matrix.ssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
-      OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
-      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: false
-    - name: Runner image version
-      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Register gcc problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Configure OpenSSL env vars
-      run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
-      uses: actions/cache@v5
-      with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure CPython
-      run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: SSL tests
-      run: ./python Lib/test/ssltests.py
-
-  build-ubuntu-ssltests-awslc:
-    name: 'Ubuntu SSL tests with AWS-LC'
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    needs: build-context
-    if: needs.build-context.outputs.run-ubuntu == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04]
-        awslc_ver: [1.55.0]
-    env:
-      AWSLC_VER: ${{ matrix.awslc_ver}}
-      MULTISSL_DIR: ${{ github.workspace }}/multissl
-      OPENSSL_DIR: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}
-      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}/lib
+      SSL_DIR: ${{ github.workspace }}/multissl/${{ matrix.ssl }}/${{ matrix.ssl_ver }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/${{ matrix.ssl }}/${{ matrix.ssl_ver }}/lib
     steps:
     - uses: actions/checkout@v6
       with:
@@ -333,39 +287,40 @@ jobs:
     - name: Configure SSL lib env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
-    - name: 'Restore AWS-LC build'
-      id: cache-aws-lc
+        echo "SSL_DIR=${GITHUB_WORKSPACE}/multissl/${{ matrix.ssl }}/${SSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/${{ matrix.ssl }}/${SSL_VER}/lib" >> "$GITHUB_ENV"
+    - name: 'Restore SSL build'
+      id: cache-ssl
       uses: actions/cache@v5
       with:
-        path: ./multissl/aws-lc/${{ matrix.awslc_ver }}
-        key: ${{ matrix.os }}-multissl-aws-lc-${{ matrix.awslc_ver }}
-    - name: Install AWS-LC
-      if: steps.cache-aws-lc.outputs.cache-hit != 'true'
+        path: ./multissl/${{ env.SSL }}/${{ env.SSL_VER }}
+        key: ${{ env.IMAGE_OS_VERSION }}-multissl-${{ env.SSL }}-${{ env.SSL_VER }}
+    - name: Install SSL
+      if: steps.cache-ssl.outputs.cache-hit != 'true'
       run: |
         python3 Tools/ssl/multissltests.py \
           --steps=library \
           --base-directory "$MULTISSL_DIR" \
-          --awslc ${{ matrix.awslc_ver }} \
+          --ssl ${{ matrix.ssl }} \
+          --ssl-versions ${{ matrix.ssl_ver }} \
           --system Linux
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure CPython
       run: |
-        ./configure CFLAGS="-fdiagnostics-format=json" \
-          --config-cache \
-          --enable-slower-safety \
-          --with-pydebug \
-          --with-openssl="$OPENSSL_DIR" \
-          --with-builtin-hashlib-hashes=blake2 \
-          --with-ssl-default-suites=openssl
+        CMD=(./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$SSL_DIR")
+        if [ "${{ matrix.ssl }}" = "openssl" ]; then
+          "${CMD[@]}"
+        else
+          "${CMD[@]}" --with-builtin-hashlib-hashes=blake2 --with-ssl-default-suites=openssl
+        fi
     - name: Build CPython
-      run: make -j
+      run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: Verify python is linked to AWS-LC
+      if: matrix.ssl == 'aws-lc'
       run: ./python -c 'import ssl; print(ssl.OPENSSL_VERSION)' | grep AWS-LC
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
@@ -451,7 +406,7 @@ jobs:
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --ssl 'openssl' --ssl-versions "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
@@ -569,7 +524,7 @@ jobs:
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --ssl 'openssl' --ssl-versions "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
@@ -698,8 +653,7 @@ jobs:
     - build-windows-msi
     - build-macos
     - build-ubuntu
-    - build-ubuntu-ssltests-awslc
-    - build-ubuntu-ssltests-openssl
+    - build-ubuntu-ssltests
     - build-ios
     - build-wasi
     - test-hypothesis
@@ -716,8 +670,7 @@ jobs:
         allowed-failures: >-
           build-android,
           build-windows-msi,
-          build-ubuntu-ssltests-awslc,
-          build-ubuntu-ssltests-openssl,
+          build-ubuntu-ssltests,
           test-hypothesis,
           cifuzz,
         allowed-skips: >-
@@ -748,8 +701,7 @@ jobs:
             !fromJSON(needs.build-context.outputs.run-ubuntu)
             && '
             build-ubuntu,
-            build-ubuntu-ssltests-awslc,
-            build-ubuntu-ssltests-openssl,
+            build-ubuntu-ssltests,
             test-hypothesis,
             build-asan,
             build-san,
