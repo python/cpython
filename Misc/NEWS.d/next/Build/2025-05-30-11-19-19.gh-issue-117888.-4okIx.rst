@@ -1,0 +1,1 @@
+Report error if platform triplet detection fails.
