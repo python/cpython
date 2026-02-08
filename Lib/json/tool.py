@@ -84,23 +84,23 @@ def main():
 
     try:
         if options.infile == '-':
-            infile = sys.stdin
+            in_f = sys.stdin.fileno()
         else:
-            infile = open(options.infile, encoding='utf-8')
-        try:
+            in_f = options.infile
+
+        if options.outfile is None:
+            out_f = sys.stdout.fileno()
+        else:
+            out_f = options.outfile
+
+        with (open(in_f, 'r', encoding='utf-8') as infile,
+              open(out_f, 'w', encoding='utf-8') as outfile):
+
             if options.json_lines:
                 objs = (json.loads(line) for line in infile)
             else:
-                objs = (json.load(infile),)
-        finally:
-            if infile is not sys.stdin:
-                infile.close()
+                objs = [json.load(infile)]
 
-        if options.outfile is None:
-            outfile = sys.stdout
-        else:
-            outfile = open(options.outfile, 'w', encoding='utf-8')
-        with outfile:
             if can_colorize(file=outfile):
                 t = get_theme(tty_file=outfile).syntax
                 for obj in objs:
@@ -111,6 +111,7 @@ def main():
                 for obj in objs:
                     json.dump(obj, outfile, **dump_args)
                     outfile.write('\n')
+
     except ValueError as e:
         raise SystemExit(e)
 
