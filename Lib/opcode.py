@@ -7,7 +7,7 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "stack_effect", "hascompare", "opname", "opmap",
            "HAVE_ARGUMENT", "EXTENDED_ARG", "hasarg", "hasconst", "hasname",
-           "hasjump", "hasjrel", "hasjabs", "hasfree", "haslocal", "hasexc"]
+           "hasjump", "hasjrel", "hasjabs", "hasjforward", "hasjback", "hasfree", "haslocal", "hasexc"]
 
 import builtins
 import _opcode
@@ -16,6 +16,18 @@ from _opcode import stack_effect
 from _opcode_metadata import (_specializations, _specialized_opmap, opmap,  # noqa: F401
                               HAVE_ARGUMENT, MIN_INSTRUMENTED_OPCODE)  # noqa: F401
 EXTENDED_ARG = opmap['EXTENDED_ARG']
+
+def _is_backward_jump_op(op):
+    """Helper function to identify backward jump opcodes."""
+    # Get the opcode name from the op number
+    op_name = opname[op] if op < len(opname) else None
+    return op_name in (
+        'JUMP_BACKWARD',
+        'JUMP_BACKWARD_NO_INTERRUPT',
+        'FOR_ITER',
+        'END_ASYNC_FOR',
+    )
+
 
 opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
 for m in (opmap, _specialized_opmap):
@@ -34,6 +46,11 @@ hasjabs = []
 hasfree = [op for op in opmap.values() if _opcode.has_free(op)]
 haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
 hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
+
+hasjforward = [op for op in hasjump if not _is_backward_jump_op(op)]
+hasjback = [op for op in hasjump if _is_backward_jump_op(op)]
+
+
 
 
 _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
