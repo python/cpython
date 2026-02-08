@@ -1180,21 +1180,32 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if order:
         # Create and set the ordering methods.
         flds = [f for f in field_list if f.compare]
-        self_tuple = _tuple_str('self', flds)
-        other_tuple = _tuple_str('other', flds)
         for name, op in [('__lt__', '<'),
                          ('__le__', '<='),
                          ('__gt__', '>'),
                          ('__ge__', '>='),
                          ]:
             # Create a comparison function.  If the fields in the object are
-            # named 'x' and 'y', then self_tuple is the string
-            # '(self.x,self.y)' and other_tuple is the string
-            # '(other.x,other.y)'.
+            # named 'x' and 'y'.
+            # if self.x != other.x:
+            #   return self.x {op} other.x
+            # if self.y != other.y:
+            #   return self.y {op} other.y
+            # return {op.endswith("=")}
+            return_when_equal = f'   return {op.endswith("=")}'
             func_builder.add_fn(name,
                             ('self', 'other'),
-                            [ '  if other.__class__ is self.__class__:',
-                             f'   return {self_tuple}{op}{other_tuple}',
+                            [ '  if self is other:',
+                              # __eq__ has this self guard, add here for consistency
+                              return_when_equal,
+                              '  if other.__class__ is self.__class__:',
+                              *(
+                                f'   if self.{f.name} != other.{f.name}:\n'
+                                f'    return self.{f.name} {op} other.{f.name}'
+                                for f in flds
+                              ),
+                              # the instances are equal here, return constant
+                              return_when_equal,
                               '  return NotImplemented'],
                             overwrite_error='Consider using functools.total_ordering')
 
