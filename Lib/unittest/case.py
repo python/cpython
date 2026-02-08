@@ -14,7 +14,8 @@ import types
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
-                   _count_diff_hashable, _common_shorten_repr)
+                   _count_diff_hashable, _common_shorten_repr,
+                   _shorten, _MIN_END_LEN, _MAX_LENGTH)
 
 __unittest = True
 
@@ -1212,14 +1213,48 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertDictEqual(self, d1, d2, msg=None):
-        self.assertIsInstance(d1, dict, 'First argument is not a dictionary')
-        self.assertIsInstance(d2, dict, 'Second argument is not a dictionary')
+        self.assertIsInstance(d1, dict, "First argument is not a dictionary")
+        self.assertIsInstance(d2, dict, "Second argument is not a dictionary")
 
         if d1 != d2:
-            standardMsg = '%s != %s' % _common_shorten_repr(d1, d2)
-            diff = ('\n' + '\n'.join(difflib.ndiff(
-                           pprint.pformat(d1).splitlines(),
-                           pprint.pformat(d2).splitlines())))
+            standardMsg = "%s != %s" % _common_shorten_repr(d1, d2)
+
+            d1keys = set(d1.keys())
+            d2keys = set(d2.keys())
+            d1extrakeys = d1keys - d2keys
+            d2extrakeys = d2keys - d1keys
+            commonkeys = d1keys & d2keys
+            lines = []
+            def _value_repr(value):
+                return _shorten(safe_repr(value), _MAX_LENGTH//2-_MIN_END_LEN, _MIN_END_LEN)
+            def _justified_values(d, keys, prefix):
+                items = [(_value_repr(key), _value_repr(d[key])) for key in sorted(keys)]
+                justify_width = max(len(key) for key, value in items)
+                justify_width = max(min(justify_width, _MAX_LENGTH - _MIN_END_LEN - 2), 4)
+                return ("  %s %s: %s," % (prefix, key.ljust(justify_width), value) for key, value in items)
+            if commonkeys:
+                commonvalues = []
+                for key in sorted(commonkeys):
+                    if d1[key] == d2[key]:
+                        commonvalues.append(key)
+                        commonkeys.remove(key)
+                if commonvalues:
+                    lines.extend(_justified_values(d1, commonvalues, " "))
+                if commonkeys:
+                    lines.append("Keys in both dicts with differing values:")
+                    for key in sorted(commonkeys):
+                        key_repr = _value_repr(key)
+                        lines.append("  - %s: %s," % (key_repr, _value_repr(d1[key])))
+                        lines.append("  + %s: %s," % (key_repr, _value_repr(d2[key])))
+            if d1extrakeys:
+                lines.append("Keys in the first dict but not the second:")
+                lines.extend(_justified_values(d1, d1extrakeys, "-"))
+            if d2extrakeys:
+                lines.append("Keys in the second dict but not the first:")
+                lines.extend(_justified_values(d2, d2extrakeys, "+"))
+
+            diff = "\n{\n%s\n}" % '\n'.join(lines)
+
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
