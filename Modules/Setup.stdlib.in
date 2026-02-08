@@ -190,6 +190,7 @@
 # Limited API template modules; must be built as shared modules.
 @MODULE_XXLIMITED_TRUE@xxlimited xxlimited.c
 @MODULE_XXLIMITED_35_TRUE@xxlimited_35 xxlimited_35.c
+@MODULE_XXLIMITED_3_13_TRUE@xxlimited_3_13 xxlimited_3_13.c
 
 
 # for performance
