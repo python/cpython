@@ -2441,11 +2441,25 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_dot_atom
 
-    def test_get_dot_atom_only(self):
-        dot_atom = self._test_get_x(parser.get_dot_atom,
-            'foo.bar.bing', 'foo.bar.bing', 'foo.bar.bing', [], '')
-        self.assertEqual(dot_atom.token_type, 'dot-atom')
-        self.assertEqual(len(dot_atom), 1)
+    @params
+    def test_get_dot_atom(self, s, *args, **kw):
+        atom = self._test_parse(parser.get_dot_atom, C(s), *args, **kw)
+        if 'exception' in kw:
+            return
+        self.assertIsInstance(atom, parser.DotAtom)
+        self.assertEqual(atom.token_type, 'dot-atom')
+        self.verify_terminal_types(atom, 'dot', 'atext', 'ptext', 'fws', 'vtext')
+
+    params_test_get_dot_atom = old_api_only(
+
+        # Atom is a subset of dot atom, so get_dot_atom should pass any
+        # get_atom test except those involving the dot (full_stop).
+        include_unless(
+            lambda n, *a, **k:  'full_stop' in n,
+            label='from_test_get_atom',
+            )(params_test_get_atom),
+
+        )
 
     def test_get_dot_atom_with_wsp(self):
         self._test_get_x(parser.get_dot_atom,

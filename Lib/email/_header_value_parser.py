@@ -1391,7 +1391,7 @@ def get_dot_atom(value):
     word.
     """
     dot_atom = DotAtom()
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         dot_atom.append(token)
     if value.startswith('=?'):
