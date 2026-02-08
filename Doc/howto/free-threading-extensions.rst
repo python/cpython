@@ -384,6 +384,55 @@ Important Considerations
   internal extension state, standard mutexes or other synchronization
   primitives might be more appropriate.
 
+.. _per-object-locks:
+
+Per-Object Locks (``ob_mutex``)
+...............................
+
+In the free-threaded build, each Python object contains a :c:member:`~PyObject.ob_mutex`
+field of type :c:type:`PyMutex`.  This mutex is **reserved for use by the
+critical section API** (:c:macro:`Py_BEGIN_CRITICAL_SECTION` /
+:c:macro:`Py_END_CRITICAL_SECTION`).
+
+.. warning::
+
+   Do **not** lock ``ob_mutex`` directly with ``PyMutex_Lock(&obj->ob_mutex)``.
+   Mixing direct ``PyMutex_Lock`` calls with the critical section API on the
+   same mutex can cause deadlocks, because the critical section implementation
+   may suspend and release its locks when contention is detected.
+
+Even if your own code never uses critical sections on a particular object type,
+**CPython internals may use the critical section API on any Python object**.
+For example, the garbage collector or other interpreter internals may enter a
+critical section on your object.  If your code holds ``ob_mutex`` directly at
+that point, a deadlock can occur.
+
+If your extension type needs its own lock, add a separate :c:type:`PyMutex`
+field (or another synchronization primitive) to your object struct.
+:c:type:`PyMutex` is very lightweight — it is only one byte — so there is
+negligible cost to having an additional one::
+
+    /* WRONG — do not lock ob_mutex directly */
+    PyMutex_Lock(&obj->ob_mutex);
+    ...
+    PyMutex_Unlock(&obj->ob_mutex);
+
+    /* RIGHT — use critical sections for ob_mutex */
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    ...
+    Py_END_CRITICAL_SECTION();
+
+    /* RIGHT — use your own mutex for your own state */
+    typedef struct {
+        PyObject_HEAD
+        PyMutex my_mutex;   /* separate lock for extension state */
+        int my_data;
+    } MyObject;
+
+    PyMutex_Lock(&self->my_mutex);
+    self->my_data++;
+    PyMutex_Unlock(&self->my_mutex);
+
 
 Building Extensions for the Free-Threaded Build
 ===============================================
