@@ -189,6 +189,11 @@ class ForwardRef:
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
+            if self.__forward_module__ is not None:
+                return getattr(
+                    sys.modules.get(self.__forward_module__, None),
+                    arg,
+                )
             if arg in locals:
                 return locals[arg]
             elif arg in globals:
