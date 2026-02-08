@@ -1,0 +1,1 @@
+Optimize ``_ITER_CHECK_RANGE`` and ``_ITER_CHECK_LIST`` in the JIT
