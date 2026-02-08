@@ -1,0 +1,2 @@
+Add support for module attributes in the :term:`REPL` auto-completion of
+imports.
