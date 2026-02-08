@@ -40,6 +40,7 @@ from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
+from .utils import MULTILINE_PS4
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -390,7 +391,7 @@ class _ReadlineWrapper:
             reader.ps1 = ps1
             reader.ps2 = ps1
             reader.ps3 = ps2
-            reader.ps4 = ""
+            reader.ps4 = MULTILINE_PS4
             with warnings.catch_warnings(action="ignore"):
                 return reader.readline()
         finally:

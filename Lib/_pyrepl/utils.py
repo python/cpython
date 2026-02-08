@@ -59,6 +59,16 @@ class ColorSpan(NamedTuple):
     tag: str
 
 
+DEFAULT_PS1 = ">>> "
+DEFAULT_PS2 = "... "
+
+# mimics behavior of _ReadlineWrapper.multiline
+MULTILINE_PS1 = DEFAULT_PS1
+MULTILINE_PS2 = DEFAULT_PS1
+MULTILINE_PS3 = DEFAULT_PS2
+MULTILINE_PS4 = ""
+
+
 @functools.cache
 def str_width(c: str) -> int:
     if ord(c) < 128:

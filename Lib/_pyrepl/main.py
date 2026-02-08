@@ -47,10 +47,11 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
 
     # set sys.{ps1,ps2} just before invoking the interactive interpreter. This
     # mimics what CPython does in pythonrun.c
+    from .utils import DEFAULT_PS1, DEFAULT_PS2
     if not hasattr(sys, "ps1"):
-        sys.ps1 = ">>> "
+        sys.ps1 = DEFAULT_PS1
     if not hasattr(sys, "ps2"):
-        sys.ps2 = "... "
+        sys.ps2 = DEFAULT_PS2
 
     from .console import InteractiveColoredConsole
     from .simple_interact import run_multiline_interactive_console

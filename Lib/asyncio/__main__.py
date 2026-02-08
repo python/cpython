@@ -14,6 +14,7 @@ import warnings
 
 from _colorize import get_theme
 from _pyrepl.console import InteractiveColoredConsole
+from _pyrepl.utils import DEFAULT_PS1
 
 from . import futures
 
@@ -104,7 +105,7 @@ class REPLThread(threading.Thread):
                     startup_code = compile(f.read(), startup_path, "exec")
                     exec(startup_code, console.locals)
 
-            ps1 = getattr(sys, "ps1", ">>> ")
+            ps1 = getattr(sys, "ps1", DEFAULT_PS1)
             if CAN_USE_PYREPL:
                 theme = get_theme().syntax
                 ps1 = f"{theme.prompt}{ps1}{theme.reset}"
