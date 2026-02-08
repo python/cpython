@@ -94,6 +94,14 @@ class FunctionTest(unittest.TestCase):
         self.assertIsNone(m)
         m = idprog.match(' space')
         self.assertEqual(m.group(0), ' space')
+        m = idprog.match('  space')
+        self.assertTrue(m.groups()[0].isidentifier())
+        m = idprog.match(' 42')
+        self.assertFalse(m.groups()[0].isidentifier())
+        m = idprog.match(' dot·[T]')
+        self.assertTrue(m.groups()[0].isidentifier())
+        m = idprog.match(' cls()')
+        self.assertTrue(m.groups()[0].isidentifier())
 
 
 class ColorConfigTest(unittest.TestCase):
