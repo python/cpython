@@ -71,6 +71,12 @@ SAMPLE_WITH_C_CALL = """
 from _testcapi import pyobject_vectorcall
 
 def foo(a, b, c):
+    nested_dict = \
+        {'a': {'b': {'c': {'d': 1, 'e': 2, 'f': 3}, 'g': {'h': 4, 'i': 5}},
+                'j': 6,
+                'k': {'l': 7, 'm': {'n': 8, 'o': 9}}},
+        'p': {'q': {'r': 10, 's': {'t': 11, 'u': {'v': 12, 'w': 13, 'x': 14}}}},
+        'y': {'z': 15}}
     bar(a, b, c)
 
 def bar(a, b, c):
@@ -94,7 +100,7 @@ class StackNavigationTests(DebuggerTests):
                                   cmds_after_breakpoint=['py-up', 'py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 17, in baz \(args=\(1, 2, 3\)\)
 #[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
 $''')
 
@@ -123,9 +129,9 @@ $''')
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 17, in baz \(args=\(1, 2, 3\)\)
 #[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 17, in baz \(args=\(1, 2, 3\)\)
 $''')
 
 class PyPrintTests(DebuggerTests):
@@ -162,6 +168,22 @@ class PyPrintTests(DebuggerTests):
                                   cmds_after_breakpoint=['py-up', 'py-print len'])
         self.assertMultilineMatches(bt,
                                     r".*\nbuiltin 'len' = <built-in method len of module object at remote 0x-?[0-9a-f]+>\n.*")
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_pretty_printing(self):
+        'Verify that the "py-print" with pretty printing command works'
+        bt = self.get_stack_trace(source=SAMPLE_WITH_C_CALL,
+                                  cmds_after_breakpoint=['py-up', 'py-up', 'set py-verbose-print on', 'py-print nested_dict'])
+        self.assertMultilineMatches(bt,
+                                    r'''.*^
+local 'nested_dict' = \\
+ {'a': {'b': {'c': {'d': 1, 'e': 2, 'f': 3}, 'g': {'h': 4, 'i': 5}},
+        'j': 6,
+        'k': {'l': 7, 'm': {'n': 8, 'o': 9}}},
+  'p': {'q': {'r': 10, 's': {'t': 11, 'u': {'v': 12, 'w': 13, 'x': 14}}}},
+  'y': {'z': 15}}.*$
+''')
 
 class PyLocalsTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
