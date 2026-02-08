@@ -941,6 +941,7 @@ DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
 ABI_THREAD
 ABIFLAGS
+PATCHELF
 LN
 MKDIR_P
 INSTALL_DATA
@@ -8268,6 +8269,59 @@ if test -z "$LN" ; then
 		*) LN=ln;;
 	esac
 fi
+
+# patchelf is required on Linux to set the SONAME of libpython3.so for stable ABI support
+
+case $ac_sys_system in
+	Linux*)
+		# Extract the first word of "patchelf", so it can be a program name with args.
+set dummy patchelf; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_PATCHELF+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) if test -n "$PATCHELF"; then
+  ac_cv_prog_PATCHELF="$PATCHELF" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_PATCHELF="patchelf"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi ;;
+esac
+fi
+PATCHELF=$ac_cv_prog_PATCHELF
+if test -n "$PATCHELF"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PATCHELF" >&5
+printf "%s\n" "$PATCHELF" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+		if test -z "$PATCHELF"; then
+			as_fn_error $? "patchelf is required on Linux for stable ABI support. Please install patchelf." "$LINENO" 5
+		fi
+		;;
+esac
 
 # For calculating the .so ABI tag.
 

@@ -1719,6 +1719,17 @@ if test -z "$LN" ; then
 	esac
 fi
 
+# patchelf is required on Linux to set the SONAME of libpython3.so for stable ABI support
+AC_SUBST([PATCHELF])
+case $ac_sys_system in
+	Linux*)
+		AC_CHECK_PROG([PATCHELF], [patchelf], [patchelf], [])
+		if test -z "$PATCHELF"; then
+			AC_MSG_ERROR([patchelf is required on Linux for stable ABI support. Please install patchelf.])
+		fi
+		;;
+esac
+
 # For calculating the .so ABI tag.
 AC_SUBST([ABIFLAGS])
 AC_SUBST([ABI_THREAD])
