@@ -357,7 +357,7 @@ def mkstemp(suffix=None, prefix=None, dir=None, text=False):
 
     return _mkstemp_inner(dir, prefix, suffix, flags, output_type)
 
-
+# TODO: Suggest AppContainer mkdtemp fix
 def mkdtemp(suffix=None, prefix=None, dir=None):
     """User-callable function to create and return a unique temporary
     directory.  The return value is the pathname of the directory.
