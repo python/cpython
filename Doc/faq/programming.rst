@@ -8,11 +8,11 @@ Programming FAQ
 
    .. contents::
 
-General Questions
+General questions
 =================
 
-Is there a source code level debugger with breakpoints, single-stepping, etc.?
-------------------------------------------------------------------------------
+Is there a source code-level debugger with breakpoints and single-stepping?
+---------------------------------------------------------------------------
 
 Yes.
 
@@ -25,8 +25,7 @@ Reference Manual <pdb>`. You can also write your own debugger by using the code
 for pdb as an example.
 
 The IDLE interactive development environment, which is part of the standard
-Python distribution (normally available as
-`Tools/scripts/idle3 <https://github.com/python/cpython/blob/main/Tools/scripts/idle3>`_),
+Python distribution (normally available as :mod:`idlelib`),
 includes a graphical debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
@@ -48,7 +47,6 @@ There are a number of commercial Python IDEs that include graphical debuggers.
 They include:
 
 * `Wing IDE <https://wingware.com/>`_
-* `Komodo IDE <https://www.activestate.com/products/komodo-ide/>`_
 * `PyCharm <https://www.jetbrains.com/pycharm/>`_
 
 
@@ -57,13 +55,15 @@ Are there tools to help find bugs or perform static analysis?
 
 Yes.
 
-`Pylint <https://pylint.pycqa.org/en/latest/index.html>`_ and
-`Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
+`Ruff <https://docs.astral.sh/ruff/>`__,
+`Pylint <https://pylint.readthedocs.io/>`__ and
+`Pyflakes <https://github.com/PyCQA/pyflakes>`__ do basic checking that will
 help you catch bugs sooner.
 
-Static type checkers such as `Mypy <https://mypy-lang.org/>`_,
-`Pyre <https://pyre-check.org/>`_, and
-`Pytype <https://github.com/google/pytype>`_ can check type hints in Python
+Static type checkers such as `mypy <https://mypy-lang.org/>`__,
+`ty <https://docs.astral.sh/ty/>`__,
+`Pyrefly <https://pyrefly.org/>`__, and
+`pytype <https://github.com/google/pytype>`__ can check type hints in Python
 source code.
 
 
@@ -79,7 +79,7 @@ set of modules required by a program and bind these modules together with a
 Python binary to produce a single executable.
 
 One is to use the freeze tool, which is included in the Python source tree as
-`Tools/freeze <https://github.com/python/cpython/tree/main/Tools/freeze>`_.
+:source:`Tools/freeze`.
 It converts Python byte code to C arrays; with a C compiler you can
 embed all your modules into a new program, which is then linked with the
 standard Python modules.
@@ -110,7 +110,7 @@ Yes.  The coding style required for standard library modules is documented as
 :pep:`8`.
 
 
-Core Language
+Core language
 =============
 
 .. _faq-unboundlocalerror:
@@ -208,7 +208,7 @@ Why do lambdas defined in a loop with different values all return the same resul
 ----------------------------------------------------------------------------------
 
 Assume you use a for loop to define a few different lambdas (or even plain
-functions), e.g.::
+functions), for example::
 
    >>> squares = []
    >>> for x in range(5):
@@ -227,7 +227,7 @@ they all return ``16``::
 This happens because ``x`` is not local to the lambdas, but is defined in
 the outer scope, and it is accessed when the lambda is called --- not when it
 is defined.  At the end of the loop, the value of ``x`` is ``4``, so all the
-functions now return ``4**2``, i.e. ``16``.  You can also verify this by
+functions now return ``4**2``, or ``16``.  You can also verify this by
 changing the value of ``x`` and see how the results of the lambdas change::
 
    >>> x = 8
@@ -298,9 +298,9 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
+1. standard library modules -- such as :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
 2. third-party library modules (anything installed in Python's site-packages
-   directory) -- e.g. :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
+   directory) -- such as :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
 3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
@@ -494,11 +494,11 @@ new objects).
 
 In other words:
 
-* If we have a mutable object (:class:`list`, :class:`dict`, :class:`set`,
-  etc.), we can use some specific operations to mutate it and all the variables
+* If we have a mutable object (such as :class:`list`, :class:`dict`, :class:`set`),
+  we can use some specific operations to mutate it and all the variables
   that refer to it will see the change.
-* If we have an immutable object (:class:`str`, :class:`int`, :class:`tuple`,
-  etc.), all the variables that refer to it will always see the same value,
+* If we have an immutable object (such as :class:`str`, :class:`int`, :class:`tuple`),
+  all the variables that refer to it will always see the same value,
   but operations that transform that value into a new value always return a new
   object.
 
@@ -511,7 +511,7 @@ How do I write a function with output parameters (call by reference)?
 
 Remember that arguments are passed by assignment in Python.  Since assignment
 just creates references to objects, there's no alias between an argument name in
-the caller and callee, and so no call-by-reference per se.  You can achieve the
+the caller and callee, and so no call-by-reference as such.  You can achieve the
 desired effect in a number of ways.
 
 1) By returning a tuple of the results::
@@ -868,9 +868,9 @@ with either a space or parentheses.
 How do I convert a string to a number?
 --------------------------------------
 
-For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
+For integers, use the built-in :func:`int` type constructor, for example, ``int('144')
 == 144``.  Similarly, :func:`float` converts to a floating-point number,
-e.g. ``float('144') == 144.0``.
+for example, ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
 144`` holds true, and ``int('0x144')`` raises :exc:`ValueError`. ``int(string,
@@ -887,18 +887,18 @@ unwanted side effects.  For example, someone could pass
 directory.
 
 :func:`eval` also has the effect of interpreting numbers as Python expressions,
-so that e.g. ``eval('09')`` gives a syntax error because Python does not allow
+so that, for example, ``eval('09')`` gives a syntax error because Python does not allow
 leading '0' in a decimal number (except '0').
 
 
 How do I convert a number to a string?
 --------------------------------------
 
-To convert, e.g., the number ``144`` to the string ``'144'``, use the built-in type
+For example, to convert the number ``144`` to the string ``'144'``, use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
 the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
-the :ref:`f-strings` and :ref:`formatstrings` sections,
-e.g. ``"{:04d}".format(144)`` yields
+the :ref:`f-strings` and :ref:`formatstrings` sections.
+For example, ``"{:04d}".format(144)`` yields
 ``'0144'`` and ``"{:.3f}".format(1.0/3.0)`` yields ``'0.333'``.
 
 
@@ -908,7 +908,7 @@ How do I modify a string in place?
 You can't, because strings are immutable.  In most situations, you should
 simply construct a new string from the various parts you want to assemble
 it from.  However, if you need an object with the ability to modify in-place
-unicode data, try using an :class:`io.StringIO` object or the :mod:`array`
+Unicode data, try using an :class:`io.StringIO` object or the :mod:`array`
 module::
 
    >>> import io
@@ -1143,7 +1143,7 @@ them into a list and call :meth:`str.join` at the end::
        chunks.append(s)
    result = ''.join(chunks)
 
-(another reasonably efficient idiom is to use :class:`io.StringIO`)
+(Another reasonably efficient idiom is to use :class:`io.StringIO`.)
 
 To accumulate many :class:`bytes` objects, the recommended idiom is to extend
 a :class:`bytearray` object using in-place concatenation (the ``+=`` operator)::
@@ -1153,7 +1153,7 @@ a :class:`bytearray` object using in-place concatenation (the ``+=`` operator)::
        result += b
 
 
-Sequences (Tuples/Lists)
+Sequences (tuples/lists)
 ========================
 
 How do I convert between tuples and lists?
@@ -1217,8 +1217,8 @@ list, deleting duplicates as you go::
            else:
                last = mylist[i]
 
-If all elements of the list may be used as set keys (i.e. they are all
-:term:`hashable`) this is often faster ::
+If all elements of the list may be used as set keys (that is, they are all
+:term:`hashable`) this is often faster::
 
    mylist = list(set(mylist))
 
@@ -1254,7 +1254,7 @@ difference is that a Python list can contain objects of many different types.
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
 note that `NumPy <https://numpy.org/>`_
-and other third party packages define array-like structures with
+and other third-party packages define array-like structures with
 various characteristics as well.
 
 To get Lisp-style linked lists, you can emulate *cons cells* using tuples::
@@ -1504,14 +1504,15 @@ How do I check if an object is an instance of a given class or of a subclass of 
 Use the built-in function :func:`isinstance(obj, cls) <isinstance>`.  You can
 check if an object
 is an instance of any of a number of classes by providing a tuple instead of a
-single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
-check whether an object is one of Python's built-in types, e.g.
+single class, for example, ``isinstance(obj, (class1, class2, ...))``, and can also
+check whether an object is one of Python's built-in types, for example,
 ``isinstance(obj, str)`` or ``isinstance(obj, (int, float, complex))``.
 
 Note that :func:`isinstance` also checks for virtual inheritance from an
 :term:`abstract base class`.  So, the test will return ``True`` for a
 registered class even if hasn't directly or indirectly inherited from it.  To
-test for "true inheritance", scan the :term:`MRO` of the class:
+test for "true inheritance", scan the :term:`method resolution order` (MRO) of
+the class:
 
 .. testcode::
 
@@ -1574,7 +1575,7 @@ call it::
 What is delegation?
 -------------------
 
-Delegation is an object oriented technique (also called a design pattern).
+Delegation is an object-oriented technique (also called a design pattern).
 Let's say you have an object ``x`` and want to change the behaviour of just one
 of its methods.  You can create a new class that provides a new implementation
 of the method you're interested in changing and delegates all other methods to
@@ -1645,7 +1646,7 @@ How can I organize my code to make it easier to change the base class?
 
 You could assign the base class to an alias and derive from the alias.  Then all
 you have to change is the value assigned to the alias.  Incidentally, this trick
-is also handy if you want to decide dynamically (e.g. depending on availability
+is also handy if you want to decide dynamically (such as depending on availability
 of resources) which base class to use.  Example::
 
    class Base:
@@ -1710,9 +1711,9 @@ How can I overload constructors (or methods) in Python?
 This answer actually applies to all methods, but the question usually comes up
 first in the context of constructors.
 
-In C++ you'd write
+In C++ you'd write:
 
-.. code-block:: c
+.. code-block:: c++
 
     class C {
         C() { cout << "No arguments\n"; }
@@ -1731,7 +1732,7 @@ default arguments.  For example::
 
 This is not entirely equivalent, but close enough in practice.
 
-You could also try a variable-length argument list, e.g. ::
+You could also try a variable-length argument list, for example::
 
    def __init__(self, *args):
        ...
@@ -1783,7 +1784,7 @@ The :keyword:`del` statement does not necessarily call :meth:`~object.__del__` -
 decrements the object's reference count, and if this reaches zero
 :meth:`!__del__` is called.
 
-If your data structures contain circular links (e.g. a tree where each child has
+If your data structures contain circular links (for example, a tree where each child has
 a parent reference and each parent has a list of children) the reference counts
 will never go back to zero.  Once in a while Python runs an algorithm to detect
 such cycles, but the garbage collector might run some time after the last
@@ -1999,7 +2000,7 @@ The two principal tools for caching methods are
 former stores results at the instance level and the latter at the class
 level.
 
-The *cached_property* approach only works with methods that do not take
+The ``cached_property`` approach only works with methods that do not take
 any arguments.  It does not create a reference to the instance.  The
 cached method result will be kept only as long as the instance is alive.
 
@@ -2008,7 +2009,7 @@ method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
 
-The *lru_cache* approach works with methods that have :term:`hashable`
+The ``lru_cache`` approach works with methods that have :term:`hashable`
 arguments.  It creates a reference to the instance unless special
 efforts are made to pass in weak references.
 
@@ -2042,11 +2043,11 @@ This example shows the various techniques::
             # Depends on the station_id, date, and units.
 
 The above example assumes that the *station_id* never changes.  If the
-relevant instance attributes are mutable, the *cached_property* approach
+relevant instance attributes are mutable, the ``cached_property`` approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-To make the *lru_cache* approach work when the *station_id* is mutable,
+To make the ``lru_cache`` approach work when the *station_id* is mutable,
 the class needs to define the :meth:`~object.__eq__` and :meth:`~object.__hash__`
 methods so that the cache can detect relevant attribute updates::
 
@@ -2092,10 +2093,10 @@ one user but run as another, such as if you are testing with a web server.
 
 Unless the :envvar:`PYTHONDONTWRITEBYTECODE` environment variable is set,
 creation of a .pyc file is automatic if you're importing a module and Python
-has the ability (permissions, free space, etc...) to create a ``__pycache__``
+has the ability (permissions, free space, and so on) to create a ``__pycache__``
 subdirectory and write the compiled module to that subdirectory.
 
-Running Python on a top level script is not considered an import and no
+Running Python on a top-level script is not considered an import and no
 ``.pyc`` will be created.  For example, if you have a top-level module
 ``foo.py`` that imports another module ``xyz.py``, when you run ``foo`` (by
 typing ``python foo.py`` as a shell command), a ``.pyc`` will be created for
@@ -2114,7 +2115,7 @@ the ``compile()`` function in that module interactively::
 
 This will write the ``.pyc`` to a ``__pycache__`` subdirectory in the same
 location as ``foo.py`` (or you can override that with the optional parameter
-``cfile``).
+*cfile*).
 
 You can also automatically compile all files in a directory or directories using
 the :mod:`compileall` module.  You can do it from the shell prompt by running
@@ -2219,7 +2220,7 @@ changed module, do this::
    importlib.reload(modname)
 
 Warning: this technique is not 100% fool-proof.  In particular, modules
-containing statements like ::
+containing statements like::
 
    from modname import some_objects
 
