@@ -159,6 +159,13 @@ class GlobTests(unittest.TestCase):
                                              self.norm('a', 'bcd', 'efg')])
         eq(self.glob('a', 'bcd', '*g'), [self.norm('a', 'bcd', 'efg')])
 
+    def test_glob_consistency(self):
+        eq = self.assertSequencesEqual_noorder
+        if sys.platform.startswith("win"):
+            eq(self.glob(r'a\\\\bcd/efg', '*'), [(rf'{self.tempdir}\a\\\\bcd/efg\ha')])
+        else:
+            eq(self.glob('a////bcd/efg', '*'), [(f'{self.tempdir}/a////bcd/efg/ha')])
+
     def test_glob_directory_names(self):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('*', 'D'), [self.norm('a', 'D')])
