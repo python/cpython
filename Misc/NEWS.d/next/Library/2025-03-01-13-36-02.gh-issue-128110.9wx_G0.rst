@@ -1,0 +1,5 @@
+Fix bug in the parsing of email address headers that could result in
+extraneous spaces in the decoded text when using a modern email policy.
+Space between pairs of adjacent rfc2047 encoded-words is now ignored, per
+rfc2047 section 6.2 (and consistent with existing parsing of unstructured
+headers like *Subject*).

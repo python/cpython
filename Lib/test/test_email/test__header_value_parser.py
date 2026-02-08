@@ -1060,6 +1060,79 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_phrase(' (foo) ')
 
+    def test_get_phrase_adjacent_ew(self):
+        # In structured headers, the requirement to ignore linear-white-space
+        # between adjacent encoded-words is actually implemented by get_atom.
+        # But it's easier to see the results by testing get_phrase.
+        self._test_get_x(parser.get_phrase, '=?ascii?q?Joi?= \t =?ascii?q?ned?=', 'Joined', 'Joined', [], '')
+
+    def test_get_phrase_adjacent_ew_different_encodings(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=', 'Bérénice', 'Bérénice', [], ''
+        )
+
+    def test_get_phrase_adjacent_ew_encoded_spaces(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
+            'Encoded spaces preserved',
+            'Encoded spaces preserved',
+            [],
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_comment_is_not_linear_white_space(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Comment?= (is not) =?ascii?q?linear-white-space?=',
+            'Comment (is not) linear-white-space',
+            'Comment linear-white-space',
+            [],
+            '',
+            comments=['is not'],
+        )
+
+    def test_get_phrase_adjacent_ew_no_error_on_defects(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
+            'Defect still joins',
+            'Defect still joins',
+            [errors.InvalidHeaderDefect],  # whitespace inside encoded word
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_ignore_non_ew(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?No?= =?join?= for non-ew',
+            'No =?join?= for non-ew',
+            'No =?join?= for non-ew',
+            [],
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_ignore_invalid_ew(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?No?= =?ascii?rot13?wbva= for invalid ew',
+            'No =?ascii?rot13?wbva= for invalid ew',
+            'No =?ascii?rot13?wbva= for invalid ew',
+            [],
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_missing_space(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Joi?==?ascii?q?ned?=',
+            'Joined',
+            'Joined',
+            [errors.InvalidHeaderDefect],  # missing trailing whitespace
+            ''
+        )
+
     # get_local_part
 
     def test_get_local_part_simple(self):
@@ -2395,6 +2468,22 @@ class TestParser(TestParserMixin, TestEmailBase):
                          address.all_mailboxes)
         self.assertEqual(address.mailboxes[0].display_name,
                          'Éric')
+        self.assertEqual(address[0].token_type,
+                         'mailbox')
+
+    def test_get_address_rfc2047_display_name_adjacent_ews(self):
+        address = self._test_get_x(parser.get_address,
+            '=?utf-8?q?B=C3=A9r?= =?utf-8?q?=C3=A9nice?= <foo@example.com>',
+            'Bérénice <foo@example.com>',
+            'Bérénice <foo@example.com>',
+            [],
+            '')
+        self.assertEqual(address.token_type, 'address')
+        self.assertEqual(len(address.mailboxes), 1)
+        self.assertEqual(address.mailboxes,
+                         address.all_mailboxes)
+        self.assertEqual(address.mailboxes[0].display_name,
+                         'Bérénice')
         self.assertEqual(address[0].token_type,
                          'mailbox')
 
