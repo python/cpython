@@ -767,7 +767,7 @@ def main():
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
         elif opt in ('-X', '--no-docstrings'):
-            fp = open(arg)
+            fp = open(arg, encoding='utf-8')
             try:
                 while 1:
                     line = fp.readline()
@@ -794,7 +794,7 @@ def main():
     # initialize list of strings to exclude
     if options.excludefilename:
         try:
-            with open(options.excludefilename) as fp:
+            with open(options.excludefilename, encoding='utf-8') as fp:
                 options.toexclude = fp.readlines()
         except OSError:
             print(f"Can't read --exclude-file: {options.excludefilename}",
@@ -834,7 +834,7 @@ def main():
     else:
         if options.outpath:
             options.outfile = os.path.join(options.outpath, options.outfile)
-        fp = open(options.outfile, 'w')
+        fp = open(options.outfile, 'w', encoding='utf-8')
         closep = 1
     try:
         write_pot_file(visitor.messages, options, fp)
