@@ -540,11 +540,24 @@ done:
         PyErr_SetFromWindowsErr(err);
         result = NULL;
     } else if (len <= MAXPATHLEN) {
-        const wchar_t *p = resolved;
+        wchar_t *p = resolved;
         if (0 == wcsncmp(p, L"\\\\?\\", 4)) {
-            if (GetFileAttributesW(&p[4]) != INVALID_FILE_ATTRIBUTES) {
-                p += 4;
-                len -= 4;
+            if (0 == wcsncmp(&p[4], L"UNC\\", 4)) {
+                // A \\?\UNC\ path. Try converting to a \\ path.
+                p[6] = L'\\';
+                if (GetFileAttributesW(&p[6]) != INVALID_FILE_ATTRIBUTES) {
+                    p += 6;
+                    len -= 6;
+                } else {
+                    // Change back to a \\?\UNC\ path.
+                    p[6] = L'C';
+                }
+            } else {
+                // Maybe a drive path like \\?\C:\. Try stripping the prefix.
+                if (GetFileAttributesW(&p[4]) != INVALID_FILE_ATTRIBUTES) {
+                    p += 4;
+                    len -= 4;
+                }
             }
         }
         if (CompareStringOrdinal(path, (int)pathlen, p, len, TRUE) == CSTR_EQUAL) {
