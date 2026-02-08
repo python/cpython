@@ -1032,6 +1032,9 @@ xml.parsers.expat
 
   .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 
+* Add support for `namespace prefixes <https://www.w3.org/TR/xml-names/#dt-prefix>`_.
+  (Contributed by Yassir Karroum in :gh:`118317`.)
+
 
 zlib
 ----
