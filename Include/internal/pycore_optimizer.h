@@ -206,8 +206,12 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 
 #define REF_IS_BORROWED 1
-#define REF_IS_INVALID  2
+#define REF_IS_UNIQUE   2
+#define REF_IS_INVALID  3
 #define REF_TAG_BITS    3
+
+#define REF_GET_TAG(x)   ((uintptr_t)(x) & (REF_TAG_BITS))
+#define REF_CLEAR_TAG(x) ((uintptr_t)(x) & (~REF_TAG_BITS))
 
 #define JIT_BITS_TO_PTR_MASKED(REF) ((JitOptSymbol *)(((REF).bits) & (~REF_TAG_BITS)))
 
@@ -229,13 +233,34 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 static inline JitOptRef
 PyJitRef_WrapInvalid(void *ptr)
 {
-    return (JitOptRef){.bits=(uintptr_t)ptr | REF_IS_INVALID};
+    return (JitOptRef){.bits = REF_CLEAR_TAG((uintptr_t)ptr) | REF_IS_INVALID};
 }
 
 static inline bool
 PyJitRef_IsInvalid(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_INVALID) == REF_IS_INVALID;
+    return REF_GET_TAG(ref.bits) == REF_IS_INVALID;
+}
+
+static inline JitOptRef
+PyJitRef_MakeUnique(JitOptRef ref)
+{
+    return (JitOptRef){ REF_CLEAR_TAG(ref.bits) | REF_IS_UNIQUE };
+}
+
+static inline bool
+PyJitRef_IsUnique(JitOptRef ref)
+{
+    return REF_GET_TAG(ref.bits) == REF_IS_UNIQUE;
+}
+
+static inline JitOptRef
+PyJitRef_StripBorrowInfo(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        return ref;
+    }
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) };
 }
 
 static inline JitOptRef
@@ -245,9 +270,18 @@ PyJitRef_StripReferenceInfo(JitOptRef ref)
 }
 
 static inline JitOptRef
+PyJitRef_RemoveUnique(JitOptRef ref)
+{
+    if (PyJitRef_IsUnique(ref)) {
+        ref = PyJitRef_StripReferenceInfo(ref);
+    }
+    return ref;
+}
+
+static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
-    return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
+    return (JitOptRef){ .bits = REF_CLEAR_TAG(ref.bits) | REF_IS_BORROWED };
 }
 
 static const JitOptRef PyJitRef_NULL = {.bits = REF_IS_BORROWED};
@@ -261,7 +295,7 @@ PyJitRef_IsNull(JitOptRef ref)
 static inline int
 PyJitRef_IsBorrowed(JitOptRef ref)
 {
-    return (ref.bits & REF_IS_BORROWED) == REF_IS_BORROWED;
+    return REF_GET_TAG(ref.bits) == REF_IS_BORROWED;
 }
 
 extern bool _Py_uop_sym_is_null(JitOptRef sym);

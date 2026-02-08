@@ -92,20 +92,24 @@ dummy_func(void) {
         if (sym_is_null(value)) {
             ctx->done = true;
         }
+        value = PyJitRef_RemoveUnique(value);
     }
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        value = PyJitRef_RemoveUnique(value);
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = PyJitRef_Borrow(GETLOCAL(oparg));
+        assert(!PyJitRef_IsUnique(value));
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         JitOptRef temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
+        value = PyJitRef_RemoveUnique(value);
     }
 
     op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
@@ -120,7 +124,7 @@ dummy_func(void) {
 
     op(_SWAP_FAST, (value -- trash)) {
         JitOptRef tmp = GETLOCAL(oparg);
-        GETLOCAL(oparg) = value;
+        GETLOCAL(oparg) = PyJitRef_RemoveUnique(value);
         trash = tmp;
     }
 
@@ -687,6 +691,7 @@ dummy_func(void) {
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
+        bottom = PyJitRef_RemoveUnique(bottom);
         top = bottom;
     }
 
@@ -934,7 +939,7 @@ dummy_func(void) {
 
     op(_RETURN_VALUE, (retval -- res)) {
         // Mimics PyStackRef_MakeHeapSafe in the interpreter.
-        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
+        JitOptRef temp = PyJitRef_StripBorrowInfo(retval);
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -1278,6 +1283,7 @@ dummy_func(void) {
 
     op(_BUILD_TUPLE, (values[oparg] -- tup)) {
         tup = sym_new_tuple(ctx, oparg, values);
+        tup = PyJitRef_MakeUnique(tup);
     }
 
     op(_BUILD_LIST, (values[oparg] -- list)) {
@@ -1301,11 +1307,20 @@ dummy_func(void) {
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
+        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 2) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, oparg, 0);
+        }
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
     }
 
     op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
+        if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == 3) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, oparg, 0);
+        }
+        else if (PyJitRef_IsUnique(seq) && sym_tuple_length(seq) == oparg) {
+            ADD_OP(_UNPACK_SEQUENCE_UNIQUE_TUPLE, oparg, 0);
+        }
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
         }

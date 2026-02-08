@@ -7126,6 +7126,69 @@
             break;
         }
 
+        case _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r12: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef seq;
+            _PyStackRef val1;
+            _PyStackRef val0;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            seq = _stack_item_0;
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+            stack_pointer[0] = val1;
+            stack_pointer[1] = val0;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _tos_cache1 = val0;
+            _tos_cache0 = val1;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(2);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r13: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef seq;
+            _PyStackRef val2;
+            _PyStackRef val1;
+            _PyStackRef val0;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            seq = _stack_item_0;
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+            val2 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 2));
+            stack_pointer[0] = val2;
+            stack_pointer[1] = val1;
+            stack_pointer[2] = val0;
+            stack_pointer += 3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _tos_cache2 = val0;
+            _tos_cache1 = val1;
+            _tos_cache0 = val2;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _UNPACK_SEQUENCE_TUPLE_r10: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -7157,6 +7220,38 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _UNPACK_SEQUENCE_UNIQUE_TUPLE_r10: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef seq;
+            _PyStackRef *values;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            oparg = CURRENT_OPARG();
+            seq = _stack_item_0;
+            values = &stack_pointer[0];
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            assert(PyTuple_CheckExact(seq_o));
+            assert(PyTuple_GET_SIZE(seq_o) == oparg);
+            assert(_PyObject_IsUniquelyReferenced(seq_o));
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            PyObject **items = _PyTuple_ITEMS(seq_o);
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = PyStackRef_FromPyObjectSteal(items[i]);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _tos_cache0 = PyStackRef_ZERO_BITS;
+            _tos_cache1 = PyStackRef_ZERO_BITS;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(0);
+            stack_pointer += oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

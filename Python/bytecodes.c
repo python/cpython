@@ -30,7 +30,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
 #include "pycore_template.h"      // _PyTemplate_Build()
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_tuple.h"         // _PyTuple_Free(), _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
 #include "pycore_dict.h"
@@ -1659,6 +1659,25 @@ dummy_func(
             PyStackRef_CLOSE(seq);
         }
 
+        op(_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE, (seq -- val1, val0)) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
+        }
+
+        op(_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE, (seq -- val2, val1, val0)) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+            val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+            val2 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 2));
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
+        }
+
         macro(UNPACK_SEQUENCE_TUPLE) =
             _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE;
 
@@ -1672,6 +1691,20 @@ dummy_func(
                 *values++ = PyStackRef_FromPyObjectNew(items[i]);
             }
             DECREF_INPUTS();
+        }
+
+        op(_UNPACK_SEQUENCE_UNIQUE_TUPLE, (seq -- values[oparg])) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            assert(PyTuple_CheckExact(seq_o));
+            assert(PyTuple_GET_SIZE(seq_o) == oparg);
+            assert(_PyObject_IsUniquelyReferenced(seq_o));
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            PyObject **items = _PyTuple_ITEMS(seq_o);
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = PyStackRef_FromPyObjectSteal(items[i]);
+            }
+            PyObject_GC_UnTrack(seq_o);
+            _PyTuple_Free(seq_o);
         }
 
         macro(UNPACK_SEQUENCE_LIST) =

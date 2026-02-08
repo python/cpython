@@ -205,6 +205,19 @@ PyTuple_Pack(Py_ssize_t n, ...)
 
 /* Methods */
 
+void
+_PyTuple_Free(PyObject *obj)
+{
+    assert(PyTuple_CheckExact(obj));
+    PyTupleObject *op = _PyTuple_CAST(obj);
+    assert(Py_SIZE(op) != 0);
+
+    // This will abort on the empty singleton (if there is one).
+    if (!maybe_freelist_push(op)) {
+        Py_TYPE(op)->tp_free((PyObject *)op);
+    }
+}
+
 static void
 tuple_dealloc(PyObject *self)
 {
