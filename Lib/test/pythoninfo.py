@@ -528,6 +528,7 @@ def collect_sysconfig(info_add):
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',
+        'PY_CORE_EXE_LDFLAGS',
         'PY_LDFLAGS',
         'PY_LDFLAGS_NODIST',
         'PY_STDMODULE_CFLAGS',

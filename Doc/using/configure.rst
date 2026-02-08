@@ -1650,6 +1650,9 @@ Linker flags
    value to be able to build extension modules using the
    directories specified in the environment variables.
 
+   Please consider using ``EXE_LDFLAGS`` if the supplied linker flags are
+   executable specific, e.g. GCC's ``-pie`` flag.
+
 .. envvar:: LIBS
 
    Linker flags to pass libraries to the linker when linking the Python
@@ -1684,6 +1687,30 @@ Linker flags
    Linker flags used for building the interpreter object files.
 
    .. versionadded:: 3.8
+
+.. envvar:: EXE_LDFLAGS
+
+   Linker flags used for building executable targets such as the
+   interpreter. If supplied, :envvar:`PY_CORE_EXE_LDFLAGS`
+   will be used in replacement of :envvar:`PY_CORE_LDFLAGS`.
+
+   .. versionadded:: 3.15
+
+.. envvar:: CONFIGURE_EXE_LDFLAGS
+
+   Value of :envvar:`EXE_LDFLAGS` variable passed to the ``./configure``
+   script.
+
+   .. versionadded:: 3.15
+
+.. envvar:: PY_CORE_EXE_LDFLAGS
+
+   Linker flags used for building the interpreter and
+   executable targets.
+
+   Default: ``$(PY_CORE_LDFLAGS)``
+
+   .. versionadded:: 3.15
 
 
 .. rubric:: Footnotes
