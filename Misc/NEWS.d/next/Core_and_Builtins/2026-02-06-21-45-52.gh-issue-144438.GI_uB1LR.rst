@@ -1,0 +1,2 @@
+Align the QSBR thread state array to a 64-byte cache line boundary to
+avoid false sharing in the :term:`free-threaded build`.
