@@ -108,6 +108,7 @@ MOVE_RIGHT = "\x1b[{}C"
 MOVE_UP = "\x1b[{}A"
 MOVE_DOWN = "\x1b[{}B"
 CLEAR = "\x1b[H\x1b[J"
+CLEAR_ALL= "\x1b[3J\x1b[2J\x1b[H"
 
 # State of control keys: https://learn.microsoft.com/en-us/windows/console/key-event-record-str
 ALT_ACTIVE = 0x01 | 0x02
@@ -504,6 +505,12 @@ class WindowsConsole(Console):
         self.__write(CLEAR)
         self.posxy = 0, 0
         self.screen = []
+
+
+    def clear_all(self) -> None:
+        """Clear screen and scrollback buffer."""
+        self.__write(CLEAR_ALL)
+        self.clear()
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
