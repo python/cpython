@@ -46,6 +46,7 @@ internationalized, to the local language and cultural habits.
 import operator
 import os
 import sys
+import locale
 
 
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
@@ -229,7 +230,6 @@ def c2py(plural):
 
 
 def _expand_lang(loc):
-    import locale
     loc = locale.normalize(loc)
     COMPONENT_CODESET   = 1 << 0
     COMPONENT_TERRITORY = 1 << 1
@@ -491,11 +491,16 @@ def find(domain, localedir=None, languages=None, all=False):
         localedir = _default_localedir
     if languages is None:
         languages = []
-        for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            val = os.environ.get(envar)
-            if val:
-                languages = val.split(':')
-                break
+        if val := os.environ.get('LANGUAGE'):
+            languages = val.split(':')
+        elif (loc := locale.getlocale()) != (None, None):
+            languages = [".".join(filter(None, loc))]
+        else:
+            for envar in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
+                val = os.environ.get(envar)
+                if val:
+                    languages = val.split(':')
+                    break
         if 'C' not in languages:
             languages.append('C')
     # now normalize and expand the languages
