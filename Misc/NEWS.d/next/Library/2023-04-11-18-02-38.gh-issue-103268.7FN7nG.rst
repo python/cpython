@@ -1,0 +1,1 @@
+Add property to ipaddress.IPv6Address to report RFC6052/RFC8215 embedded IPv4Address
