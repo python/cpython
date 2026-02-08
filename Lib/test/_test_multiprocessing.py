@@ -1003,6 +1003,42 @@ class _TestProcess(BaseTestCase):
         proc.start()
         proc.join()
 
+    @classmethod
+    def _create_child_and_get_ppid(cls, queue, remaining):
+        queue.put(os.getppid())
+        remaining -= 1
+        if remaining > 0:
+            proc = cls.Process(target=cls._create_child_and_get_ppid, args=(queue, remaining))
+            proc.start()
+            proc.join()
+
+
+    def test_forkserver_reuse(self):
+        # existing forkserver spawned by parent should be reused by children
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver start method specific")
+
+        forkserver = multiprocessing.forkserver._forkserver
+        forkserver.ensure_running()
+        self.assertTrue(forkserver._forkserver_pid)
+        forkserver_pid = forkserver._forkserver_pid
+
+        # start children recursively
+        ppid_queue = self.Queue()
+        proc = self.Process(target=self._create_child_and_get_ppid, args=(ppid_queue, 3))
+        proc.start()
+        proc.join()
+        for i in range(3):
+            # all descendants should have the same ppid (forkserver)
+            ppid = ppid_queue.get()
+            assert ppid == forkserver_pid
+
+        # forkserver should live after descendants ends
+        forkserver.ensure_running()
+        assert forkserver._forkserver_pid == forkserver_pid
+
 #
 #
 #
