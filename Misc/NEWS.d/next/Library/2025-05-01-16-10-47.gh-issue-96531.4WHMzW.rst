@@ -1,0 +1,3 @@
+Use the ``O_WRONLY`` flag instead of ``O_RDWR`` when opening file descriptors
+for :class:`tempfile.TemporaryFile` and :class:`tempfile.NamedTemporaryFile`
+objects created with a write-only mode).
