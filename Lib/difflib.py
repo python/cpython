@@ -220,9 +220,9 @@ class SequenceMatcherBase:
         self.b = b
         self.matching_blocks = self.opcodes = None
         self.fullbcount = None
-        self._prepare_b()
+        self._prepare_seq2()
 
-    def _prepare_b(self):
+    def _prepare_seq2(self):
         """Preparation function that is called at the end of `set_seq2`.
             It is usually used to:
                 a) Process junk
@@ -591,7 +591,7 @@ class SequenceMatcher(SequenceMatcherBase):
     # kinds of matches, it's best to call set_seq2 once, then set_seq1
     # repeatedly
 
-    def _prepare_b(self):
+    def _prepare_seq2(self):
         self.__chain_b()
 
     def __chain_b(self):
@@ -2786,7 +2786,7 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
             balancing : float in [0, 1]
                 a ratio that specifies the proportion of `skew` for which
                     balancing action will be attempted.
-                if 0, no balancing actions will occur
+                If 0, it is turned off and no balancing will take place.
 
         Balancing:
             Balancing action will commence if abs(skew) >= 1 - balancing,
@@ -2795,19 +2795,43 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                 worst possible skew values will be eligible for balancing.
             Note for the future: balancing procedure scales to k-strings well
 
-        Skewed matching block visually:
+        Balancing in action:
+            balancing = 2/3
+            seq1 = '-xx-yy-###-'
+            seq2 = '_###_xx_yy_'
 
-                   m1 = (6 + 9) / 2 = 7.5
-                   |
-            ------###--
-            --###------
-               |
-               m2 = (2 + 5) / 2 = 3.5
+                    m1 = (7 + 10) / 2 = 8.5
+               A    |
+            -xx-yy-###-
+            _###_xx_yy_
+              |   B
+              m2 = (1 + 4) / 2 = 2.5
 
-            skew = 7.5 / 11 - 3.5 / 11 = 0.3636
-            do_balancing = abs(skew) > 1 - balancing
+            skew = 8.5 / 11 - 2.5 / 11 = 0.545
+            do_balancing = abs(skew) > 1 - balancing = 0.545 > 0.333 = True
 
-            with balancing == 2/3, this would try alternatives with lookahead
+            Once it has been decided to do balancing, the procedure is:
+            1. Select a set of alternative candidate blocks
+                To do so, we find longest substring for 2 ranges
+                    that exclude matched block in one of the sequences:
+
+                a) -xx-yy-
+                   _###_xx_yy_
+
+                b) -xx-yy-###-
+                       _xx_yy_
+
+                Thus the full candidate set is:
+                    ### - initial longest block
+                    xx  - found in both ranges
+            2. For each candidate find 2 additional blocks (on each side)
+                ### - has no nearby matches
+                xx  - has another 'yy' on the right
+            3. Select a candidate for which the sum of 3 block lengths is highest
+                ### - 3 (only the candidate)
+                xx  - 4 (xx + yy)
+
+            Thus, for this example, xx is picked.
 
         Comparison to SequenceMatcher:
             In terms of results, the following 2 are equivalent:
@@ -2831,7 +2855,7 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
         self.balancing = balancing
         super().__init__(isjunk, a, b)
 
-    def _prepare_b(self):
+    def _prepare_seq2(self):
         b = self.b
         self.bjunk = bjunk = set()
         if self.isjunk:
