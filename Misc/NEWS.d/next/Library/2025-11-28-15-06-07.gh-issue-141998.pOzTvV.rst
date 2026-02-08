@@ -1,0 +1,2 @@
+Fixes syntax highlighting/colorization being applied to input that is read
+in via the pyrepl readline interface

@@ -374,7 +374,12 @@ class _ReadlineWrapper:
         prompt_str = str(prompt)
         reader.ps1 = prompt_str
         sys.audit("builtins.input", prompt_str)
-        result = reader.readline(startup_hook=self.startup_hook)
+        try:
+            can_colorize = reader.can_colorize
+            reader.can_colorize = False
+            result = reader.readline(startup_hook=self.startup_hook)
+        finally:
+            reader.can_colorize = can_colorize
         sys.audit("builtins.input/result", result)
         return result
 
