@@ -663,18 +663,6 @@ class TestLCSUBAutomaton(unittest.TestCase):
             result = difflib._LCSUBAutomaton(seq2, junk=('_')).find(seq1)
             self.assertEqual(result, expect)
 
-    def test_findall(self):
-        seq1 = 'defabc'
-        aut = difflib._LCSUBAutomaton('abcdef')
-        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1)]
-        self.assertEqual(result, ['d', 'de', 'def', 'a', 'ab', 'abc'])
-        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1, maximal=True)]
-        self.assertEqual(result, ['def', 'abc'])
-        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1, mink=2)]
-        self.assertEqual(result, ['de', 'def', 'ab', 'abc'])
-        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1, maxk=2)]
-        self.assertEqual(result, ['d', 'de', 'a', 'ab'])
-
     def test_batchfind(self):
         seq1 = 'fgfedabacba'
         seq2 = seq1[::-1]

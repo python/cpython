@@ -2714,7 +2714,7 @@ def _calc_candidate_score(block0, block1, block2):
         total = ∑ length^p
         where p is such that c^p == (0.9c)^p + (0.2c)^p
 
-        If only 1 block found, it is a definite score.
+        If only 1 block found, it is a definitive score.
         Otherwise, it gets bonus for each additional block
         as it has poential to recurse further to each side
     """
@@ -2731,7 +2731,9 @@ def _calc_candidate_score(block0, block1, block2):
     total = sum(k**_BALANCE_SCORE_POWER for k in lengths)
     nk = len(lengths)
     if nk > 1:
-        total += (nk - 1) * min(lengths) / 3
+        min_len = min(lengths)
+        ratio = min(1 / 2, min_len / max(lengths))
+        total += (nk - 1) * min_len * ratio
     return total
 
 
