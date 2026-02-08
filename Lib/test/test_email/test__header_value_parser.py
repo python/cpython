@@ -2461,56 +2461,45 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         with_wsp = C(
             '\t  foo.bar.bing  ',
-            '\t  foo.bar.bing  ',
-            ' foo.bar.bing ',
-            [],
-            '',
+            value=' foo.bar.bing ',
             ),
 
         with_comments_and_wsp = C(
             ' (sing)  foo.bar.bing (here) ',
-            ' (sing)  foo.bar.bing (here) ',
-            ' foo.bar.bing ',
-            [],
-            '',
+            value=' foo.bar.bing ',
             comments=['sing', 'here'],
             ),
 
         space_ends_dot_atom = C(
             ' (sing)  foo.bar .bing (here) ',
-            ' (sing)  foo.bar ',
-            ' foo.bar ',
-            [],
-            '.bing (here) ',
+            value=' foo.bar ',
+            remainder='.bing (here) ',
             comments=['sing'],
             ),
 
         no_atom_raises = C(
             ' (foo) ',
-            exception=(errors.HeaderParseError, '.*')
+            exception=(errors.HeaderParseError, r'expected')
             ),
 
         leading_dot_raises = C(
             ' (foo) .bar',
-            exception=(errors.HeaderParseError, '.*')
+            exception=(errors.HeaderParseError, r'expected.*\.bar')
             ),
 
         two_dots_raises = C(
             'bar..bang',
-            exception=(errors.HeaderParseError, '.*')
+            exception=(errors.HeaderParseError, r'expected.*\.\.bang')
             ),
 
         trailing_dot_raises = C(
             ' (foo) bar.bang. foo',
-            exception=(errors.HeaderParseError, '.*')
+            exception=(errors.HeaderParseError, r'expected.*\. foo')
             ),
 
         rfc2047_atom = C(
             '=?utf-8?q?=20bob?=',
-            ' bob',
-            ' bob',
-            [],
-            '',
+            stringified=' bob',
             ),
 
         )
