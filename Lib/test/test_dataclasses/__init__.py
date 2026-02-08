@@ -3404,6 +3404,14 @@ class TestFrozen(unittest.TestCase):
 
             c = C('hello')
             self.assertEqual(deepcopy(c), c)
+    def test_frozen_slots_setattr(self):
+        # gh-143969: Ensure frozen+slots uses object.__setattr__
+        @dataclass(frozen=True, slots=True)
+        class A:
+            x: int
+        a = A(1)
+        with self.assertRaisesRegex(FrozenInstanceError, 'cannot assign to field'):
+            a.x = 2
 
 
 class TestSlots(unittest.TestCase):
