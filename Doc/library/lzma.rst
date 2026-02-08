@@ -147,7 +147,7 @@ Reading and writing compressed files
 Compressing and decompressing data in memory
 --------------------------------------------
 
-.. class:: LZMACompressor(format=FORMAT_XZ, check=-1, preset=None, filters=None)
+.. class:: LZMACompressor(format=FORMAT_XZ, check=-1, preset=None, filters=None, *, mt_options=None)
 
    Create a compressor object, which can be used to compress data incrementally.
 
@@ -198,13 +198,23 @@ Compressing and decompressing data in memory
    Higher presets produce smaller output, but make the compression process
    slower.
 
+   Additionally when *format* is specified as :const:`FORMAT_XZ`, adding the
+   *mt_options* dictionary argument instructs the module to use the
+   multithreaded compressor implementation. These options provided in
+   *mt_options* currently have a meaning, anything else is silently ignored:
+
+   * *threads*: the desired number of threads the underlying library should use
+
+   * *block_size*: Maximum uncompressed size of a block.
+
    .. note::
 
       In addition to being more CPU-intensive, compression with higher presets
       also requires much more memory (and produces output that needs more memory
       to decompress). With preset ``9`` for example, the overhead for an
-      :class:`LZMACompressor` object can be as high as 800 MiB. For this reason,
-      it is generally best to stick with the default preset.
+      :class:`LZMACompressor` object can be as high as 800 MiB per worker
+      thread. For this reason, it is generally best to stick with the default
+      preset.
 
    The *filters* argument (if provided) should be a filter chain specifier.
    See :ref:`filter-chain-specs` for details.
@@ -247,6 +257,19 @@ Compressing and decompressing data in memory
    the stream being decompressed. This argument is required if *format* is
    :const:`FORMAT_RAW`, but should not be used for other formats.
    See :ref:`filter-chain-specs` for more information about filter chains.
+
+   Additionally when *format* is specified as :const:`FORMAT_XZ`, adding the
+   *mt_options* dictionary argument instructs the module to use the
+   multithreaded decompressor implementation which decompresses blocks in
+   parallel. These options provided in *mt_options* currently have a meaning,
+   anything else is silently ignored:
+
+   * *threads*: the desired number of threads the underlying library should use
+
+   * *memlimit_threading*: A soft memory limit. Lets the underlying library
+     scale (down) the actual number of worker threads to stay within the budget.
+     At least one worker will always be used even if over this limit. Use
+     *memlimit* argument if there is a hard memory limit to enforce.
 
    .. note::
       This class does not transparently handle inputs containing multiple
@@ -304,16 +327,16 @@ Compressing and decompressing data in memory
 
       .. versionadded:: 3.5
 
-.. function:: compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None)
+.. function:: compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None, *, mt_options=None)
 
    Compress *data* (a :class:`bytes` object), returning the compressed data as a
    :class:`bytes` object.
 
    See :class:`LZMACompressor` above for a description of the *format*, *check*,
-   *preset* and *filters* arguments.
+   *preset*, *filters* and *mt_options* arguments.
 
 
-.. function:: decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None)
+.. function:: decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None, *, mt_options=None)
 
    Decompress *data* (a :class:`bytes` object), returning the uncompressed data
    as a :class:`bytes` object.
@@ -322,7 +345,7 @@ Compressing and decompressing data in memory
    decompress all of these streams, and return the concatenation of the results.
 
    See :class:`LZMADecompressor` above for a description of the *format*,
-   *memlimit* and *filters* arguments.
+   *preset*, *filters* and *mt_options* arguments.
 
 
 Miscellaneous
