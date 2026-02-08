@@ -62,29 +62,45 @@ Python Interface
 The module defines three convenience functions and a public class:
 
 
-.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000, globals=None)
+.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>,\
+                     number=1000000, globals=None,\
+                     *,\
+                     global_setup='pass')
 
-   Create a :class:`Timer` instance with the given statement, *setup* code and
-   *timer* function and run its :meth:`.timeit` method with *number* executions.
+   Create a :class:`Timer` instance with the given statement, *setup* code,
+   *global_setup* global code and *timer* function and run its :meth:`.timeit`
+   method with the given *number* executions.
    The optional *globals* argument specifies a namespace in which to execute the
-   code.
+   code. Names created in the global setup are seen as globals in the setup and
+   testing code.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
+   .. versionchanged:: next
+      The optional *global_setup* parameter was added.
 
-.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=5, number=1000000, globals=None)
 
-   Create a :class:`Timer` instance with the given statement, *setup* code and
-   *timer* function and run its :meth:`.repeat` method with the given *repeat*
-   count and *number* executions.  The optional *globals* argument specifies a
-   namespace in which to execute the code.
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>,\
+                     repeat=5, number=1000000, globals=None,\
+                     *,\
+                     global_setup='pass')
+
+   Create a :class:`Timer` instance with the given statement, *setup* code,
+   *global_setup* global code and *timer* function and run its :meth:`.repeat`
+   method with the given *repeat* count and *number* executions.
+   The optional *globals* argument specifies a namespace in which to execute the
+   code. Names created in the global setup are seen as globals in the setup and
+   testing code.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
    .. versionchanged:: 3.7
       Default value of *repeat* changed from 3 to 5.
+
+   .. versionchanged:: next
+      The optional *global_setup* parameter was added.
 
 
 .. function:: default_timer()
@@ -96,25 +112,39 @@ The module defines three convenience functions and a public class:
       :func:`time.perf_counter` is now the default timer.
 
 
-.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None)
+.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>,\
+                 globals=None, *, global_setup='pass')
 
    Class for timing execution speed of small code snippets.
 
    The constructor takes a statement to be timed, an additional statement used
-   for setup, and a timer function.  Both statements default to ``'pass'``;
+   for setup and global setup, and a timer function.
+   Statements default to ``'pass'``;
    the timer function is platform-dependent (see the module doc string).
-   *stmt* and *setup* may also contain multiple statements separated by ``;``
-   or newlines, as long as they don't contain multi-line string literals.  The
-   statement will by default be executed within timeit's namespace; this behavior
-   can be controlled by passing a namespace to *globals*.
+
+   *stmt*, *setup* and *global_setup* may also contain multiple statements
+   separated by ``;`` or newlines, as long as they don't contain multi-line
+   string literals.
+
+   The statement will by default be executed within timeit's namespace; this behavior
+   can be controlled by passing a namespace to *globals*. Names created in the
+   global setup are seen as globals in the setup and testing code, and may
+   overwrite those already specified in *globals*.
+
+   The distinction between *setup* and *global_setup* is that *setup* is
+   executed once per :meth:`.timeit` call while *global_setup* is executed
+   only at construction time. *global_setup* is typically useful to execute
+   top-level-only statements such as :ref:`future statements <future>` and
+   :ref:`wildcard imports <import>`.
 
    To measure the execution time of the first statement, use the :meth:`.timeit`
    method.  The :meth:`.repeat` and :meth:`.autorange` methods are convenience
    methods to call :meth:`.timeit` multiple times.
 
-   The execution time of *setup* is excluded from the overall timed execution run.
+   The execution time of *setup* or *global_setup* is excluded from the
+   overall timed execution run.
 
-   The *stmt* and *setup* parameters can also take objects that are callable
+   The *stmt*, *setup* and *global_setup* parameters can also take objects that are callable
    without arguments.  This will embed calls to them in a timer function that
    will then be executed by :meth:`.timeit`.  Note that the timing overhead is a
    little larger in this case because of the extra function calls.
@@ -122,10 +152,14 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
+   .. versionchanged:: next
+      The optional *global_setup* parameter was added.
+
    .. method:: Timer.timeit(number=1000000)
 
-      Time *number* executions of the main statement.  This executes the setup
-      statement once, and then returns the time it takes to execute the main
+      Time *number* executions of the main statement.
+
+      This executes the setup statement once, and then returns the time it takes to execute the main
       statement a number of times.  The default timer returns seconds as a float.
       The argument is the number of times through the loop, defaulting to one
       million.  The main statement, the setup statement and the timer function
@@ -208,7 +242,7 @@ Command-Line Interface
 
 When called as a program from the command line, the following form is used::
 
-   python -m timeit [-n N] [-r N] [-u U] [-s S] [-p] [-v] [-h] [statement ...]
+   python -m timeit [-n N] [-r N] [-u U] [-s S] [-g S] [-p] [-v] [-h] [statement ...]
 
 Where the following options are understood:
 
@@ -224,7 +258,13 @@ Where the following options are understood:
 
 .. option:: -s S, --setup=S
 
+   statement to be executed once per timer repetition (default ``pass``)
+
+.. option:: -g S, --global-setup=S
+
    statement to be executed once initially (default ``pass``)
+
+   .. versionadded:: next
 
 .. option:: -p, --process
 

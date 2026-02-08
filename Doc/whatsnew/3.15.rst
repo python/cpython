@@ -942,6 +942,21 @@ tomllib
 .. _official TOML changelog: https://github.com/toml-lang/toml/blob/main/CHANGELOG.md
 
 
+timeit
+------
+
+* :class:`~timeit.Timer` now support global setup statements which
+  are typically useful for top-level-only statements such as future
+  statements or wildcard imports.
+
+  Contrary to normal setup statements which are executed every time
+  a timer is repeated, global setup statements are executed exactly
+  once when constructing the ``Timer`` object and their side-effects
+  remain active for the entire object lifetime.
+
+  (Contributed by Bénédikt Tran in :gh:`137578`.)
+
+
 types
 ------
 
