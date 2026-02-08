@@ -1295,13 +1295,22 @@ wave
   which were deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133873`.)
 
-
 zipimport
 ---------
 
 * Remove deprecated :meth:`!zipimport.zipimporter.load_module`.
   Use :meth:`zipimport.zipimporter.exec_module` instead.
   (Contributed by Jiahao Li in :gh:`133656`.)
+
+Others
+------
+
+* Removed support for handling returned
+  non-:class:`float`/:class:`complex` types from
+  :meth:`~object.__float__` and :meth:`~object.__complex__`,
+  respectively.  This had previously raised a
+  :exc:`DeprecationWarning` since Python 3.7.
+  (Contributed by Sergey B Kirpichev in :gh:`109311`.)
 
 
 Deprecated
