@@ -1,0 +1,2 @@
+A bug in :func:`doctest._SpoofOut.truncate` was causing None to be passed to :func:`StringIO.seek` when no size was given.
+A simple fix skips the seek call when no size is given so the buffer can be truncated from the current position.
