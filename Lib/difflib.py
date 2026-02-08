@@ -2380,61 +2380,6 @@ class _LCSUBAutomaton:
             self.nodes = self._build(start2, stop2)
             self.cache = key
 
-    def findall(self, seq1, start1=0, stop1=None, start2=0, stop2=None, *,
-                mink=1, maxk=None, maximal=False):
-        """Find all common substrings from single O(n) scan
-        Args:
-            mink : int
-                filter out shorter length matches
-            maxk : int
-                filter out longer length matches
-            maximal : bool
-                Example: 2 sequences: seq2 = 'abcdef', seq1 = 'defabc'
-                These are matches for each iteration:
-                    1. 'd'
-                    2. 'de'
-                    3. 'def'
-                    4. 'a'
-                    5. 'ab'
-                    6. 'abc'
-                If maximal is True, then it will only include 'def' and `abc`
-        """
-        if maxk is None:
-            maxk = _MAXSIZE
-        if not 0 < mink <= maxk:
-            raise ValueError(f'not 0 < {mink=} <= {maxk=}')
-        start1, stop1 = _adjust_indices(len(seq1), start1, stop1)
-        start2, stop2 = _adjust_indices(self.size2, start2, stop2)
-        if start1 >= stop1 or start2 >= stop2:
-            return
-
-        if self.cache != (start2, stop2):
-            self.build(start2, stop2)
-
-        it = self._finditer(seq1, start1, stop1)
-        if not maximal:
-            for block in it:
-                k = block[2]
-                if mink <= k and (maxk is None or k <= maxk):
-                    one_mk = 1 - k
-                    yield (block[0] + one_mk, block[1] + one_mk, k)
-        else:
-            for last in it:
-                break
-            else:
-                return
-            k = last[2]
-            for block in it:
-                if block[2] <= k:
-                    if mink <= k and (maxk is None or k <= maxk):
-                        one_mk = 1 - k
-                        yield (last[0] + one_mk, last[1] + one_mk, k)
-                last = block
-                k = last[2]
-            if mink <= k and (maxk is None or k <= maxk):
-                one_mk = 1 - k
-                yield (last[0] + one_mk, last[1] + one_mk, k)
-
     def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
         """Find leftmost longest match
             Firstly, it will be leftmost in seq1
