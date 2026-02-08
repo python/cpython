@@ -2540,7 +2540,7 @@ requires, and these work on all supported platforms.
 |  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
 |           | space-padded decimal number.   |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-26,            |       |
+|  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            |       |
 |           | the ISO 8601 format.           | 1001-12-30             |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%g``   | Last 2 digits of ISO 8601 year | 00, 01, ..., 99        | \(0)  |
