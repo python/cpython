@@ -40,6 +40,7 @@ class IsolatedAsyncioTestCase(TestCase):
         super().__init__(methodName)
         self._asyncioRunner = None
         self._asyncioTestContext = contextvars.copy_context()
+        self._setup_successful = None  # None = unknown, bool = yes or no
 
     async def asyncSetUp(self):
         pass
@@ -91,12 +92,21 @@ class IsolatedAsyncioTestCase(TestCase):
         return result
 
     def _callSetUp(self):
+        self._setup_successful = False
         # Force loop to be initialized and set as the current loop
         # so that setUp functions can use get_event_loop() and get the
         # correct loop instance.
         self._asyncioRunner.get_loop()
         self._asyncioTestContext.run(self.setUp)
+        # Since we have already called `setUp`, so we will need to clean things
+        # afterwards, even if `asyncSetUp` will fail.
+        self._setup_successful = True
         self._callAsync(self.asyncSetUp)
+
+    def _callCleanupAfterFailedSetup(self):
+        if self._setup_successful is True:
+            # `asyncSetUp` failed, cleaning up what we have:
+            self._asyncioTestContext.run(self.tearDown)
 
     def _callTestMethod(self, method):
         result = self._callMaybeAsync(method)
