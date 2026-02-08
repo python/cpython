@@ -1716,7 +1716,7 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
-        output=None, is_cli=False):
+        output=None, is_cli=False, is_interactive=False):
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
@@ -1732,7 +1732,11 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
         except ImportError as exc:
             if is_cli:
                 raise
-            print(exc)
+            if is_interactive:
+                # don't show the usual hints if we're running interactively
+                print(exc.args[0].splitlines(False)[0])
+            else:
+                print(exc)
     else:
         try:
             s = render_doc(thing, title, forceload, plaintext)
@@ -2016,10 +2020,7 @@ has the same effect as typing a particular string at the help> prompt.
                     and request[0] not in request[1:-1]):
                 request = request[1:-1]
             if request.lower() in ('q', 'quit', 'exit'): break
-            if request == 'help':
-                self.intro()
-            else:
-                self.help(request)
+            self.help(request, is_interactive=True)
 
     def getline(self, prompt):
         """Read one line, using input() when appropriate."""
@@ -2030,10 +2031,12 @@ has the same effect as typing a particular string at the help> prompt.
             self.output.flush()
             return self.input.readline()
 
-    def help(self, request, is_cli=False):
+    def help(self, request, is_cli=False, is_interactive=False):
         if isinstance(request, str):
             request = request.strip()
-            if request == 'keywords': self.listkeywords()
+            if request == 'help':
+                self.helphelp(is_interactive=is_interactive)
+            elif request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
             elif request == 'modules': self.listmodules()
@@ -2045,11 +2048,41 @@ has the same effect as typing a particular string at the help> prompt.
                 doc(eval(request), 'Help on %s:', output=self._output, is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
+            elif request:
+                doc(request, 'Help on %s:', output=self._output, is_cli=is_cli, is_interactive=is_interactive)
             else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
-        elif isinstance(request, Helper): self()
+        elif isinstance(request, (Helper, type(builtins.help))):
+            self.helphelp(is_interactive=is_interactive)
         else: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
         self.output.write('\n')
+
+    def helphelp(self, is_interactive=False):
+        if is_interactive:
+            self.intro()
+        else:
+            pager(textwrap.dedent("""\
+                help - Interactive Help
+                =======================
+
+                The built-in help function implements an interactive help utility.  You
+                can make use of it in a few different ways:
+
+                * Calling help() with no arguments starts an interactive help session.
+
+                * The behavior of help(x) depends on the type of the argument:
+
+                    * If x is a string, help(x) provides information about the given
+                      topic.  For example, help("class") will provide information about
+                      the "class" keyword, and help("math.sqrt") will provide
+                      information about the "math.sqrt" function.
+
+                    * If x is a class or a built-in type, help(x) provides information
+                      about that type.  For example, help(str) will provide information
+                      about the str type.
+
+                    * Otherwise, help(x) provides information about x's type. For
+                      example, help(42) will provide information about the int type.
+            """))
 
     def intro(self):
         self.output.write(_introdoc())
