@@ -587,3 +587,8 @@ if 'create-social-cards' not in tags:  # noqa: F821
         '<meta property="og:image:width" content="200">',
         '<meta property="og:image:height" content="200">',
     )
+
+# Options to adjust search results sorting
+# ----------------------------------------
+
+html_search_scorer = "tools/static/search_scorer.js"
