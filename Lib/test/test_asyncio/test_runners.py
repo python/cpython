@@ -283,6 +283,20 @@ class RunTests(BaseTest):
 
         asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
+    def test_default_task_factory(self):
+        async def main():
+            factory = asyncio.get_running_loop().get_task_factory()
+            self.assertIsNone(factory)
+
+        asyncio.run(main())
+
+    def test_eager_task_factory(self):
+        async def main():
+            factory = asyncio.get_running_loop().get_task_factory()
+            self.assertIs(factory, asyncio.eager_task_factory)
+
+        asyncio.run(main(), eager_tasks=True)
+
 
 class RunnerTests(BaseTest):
 
@@ -521,6 +535,22 @@ class RunnerTests(BaseTest):
             result = runner.run(coro())
 
         self.assertEqual(0, result.repr_count)
+
+    def test_default_task_factory(self):
+        async def main():
+            factory = asyncio.get_running_loop().get_task_factory()
+            self.assertIsNone(factory)
+
+        with asyncio.Runner() as runner:
+            runner.run(main())
+
+    def test_eager_task_factory(self):
+        async def main():
+            factory = asyncio.get_running_loop().get_task_factory()
+            self.assertIs(factory, asyncio.eager_task_factory)
+
+        with asyncio.Runner(eager_tasks=True) as runner:
+            runner.run(main())
 
 
 if __name__ == '__main__':
