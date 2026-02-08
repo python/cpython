@@ -832,3 +832,94 @@ have three read-only attributes:
 callable, weak referenceable, and can have attributes.  There are some important
 differences.  For instance, the :attr:`~definition.__name__` and :attr:`~definition.__doc__` attributes
 are not created automatically.
+
+Annotation support
+^^^^^^^^^^^^^^^^^^
+
+:class:`partial` and :class:`partialmethod` objects support the :attr:`~object.__annotate__` protocol for
+annotation introspection. This allows tools like :func:`annotationlib.get_annotations` to retrieve
+annotations that accurately reflect the signature of the partial or partialmethod object.
+
+For :class:`partial` objects, :func:`annotationlib.get_annotations` returns only the annotations
+for parameters that have not been bound by the partial application, along with the return annotation
+if present. Positional arguments bind to parameters in order, and the annotations for those parameters
+are excluded from the result:
+
+.. doctest::
+
+   >>> from functools import partial
+   >>> from annotationlib import get_annotations
+   >>> def func(a: int, b: str, c: float) -> bool:
+   ...     return True
+   >>> partial_func = partial(func, 1)  # Binds 'a'
+   >>> get_annotations(partial_func)
+   {'b': <class 'str'>, 'c': <class 'float'>, 'return': <class 'bool'>}
+
+Keyword arguments in :class:`partial` set default values but do not remove parameters from the
+signature, so their annotations are retained:
+
+.. doctest::
+
+   >>> partial_func_kw = partial(func, b="hello")  # Sets default for 'b'
+   >>> get_annotations(partial_func_kw)
+   {'a': <class 'int'>, 'b': <class 'str'>, 'c': <class 'float'>, 'return': <class 'bool'>}
+
+For :class:`partialmethod` objects accessed through a class (unbound), the first parameter
+(usually ``self`` or ``cls``) is preserved, and subsequent parameters are handled similarly
+to :class:`partial`:
+
+.. doctest::
+
+   >>> from functools import partialmethod
+   >>> class MyClass:
+   ...     def method(self, a: int, b: str) -> bool:
+   ...         return True
+   ...     partial_method = partialmethod(method, 1)  # Binds 'a'
+   >>> get_annotations(MyClass.partial_method)
+   {'b': <class 'str'>, 'return': <class 'bool'>}
+
+When a :class:`partialmethod` is accessed through an instance (bound), it becomes a
+:class:`partial` object and is handled accordingly:
+
+.. doctest::
+
+   >>> obj = MyClass()
+   >>> get_annotations(obj.partial_method)  # Same as above, 'self' is also bound
+   {'b': <class 'str'>, 'return': <class 'bool'>}
+
+This behavior ensures that :func:`annotationlib.get_annotations` returns annotations that
+accurately reflect the signature of the partial or partialmethod object, as determined by
+:func:`inspect.signature`.
+
+If :func:`annotationlib.get_annotations` cannot reliably determine which parameters are bound
+(for example, if :func:`inspect.signature` raises an error), it will raise a :exc:`TypeError`
+rather than returning incorrect annotations. This ensures that you either get correct annotations
+or a clear error, never incorrect annotations:
+
+.. doctest::
+
+   >>> from functools import partial
+   >>> import inspect
+   >>> def func(a: int, b: str) -> bool:
+   ...     return True
+   >>> partial_func = partial(func, 1)
+   >>> # Simulate a case where signature inspection fails
+   >>> original_sig = inspect.signature
+   >>> def broken_signature(obj):
+   ...     if isinstance(obj, partial):
+   ...         raise ValueError("Cannot inspect signature")
+   ...     return original_sig(obj)
+   >>> inspect.signature = broken_signature
+   >>> try:
+   ...     get_annotations(partial_func)
+   ... except TypeError as e:
+   ...     print(f"Got expected error: {e}")
+   ... finally:
+   ...     inspect.signature = original_sig
+   Got expected error: Cannot compute annotations for ...: unable to determine signature
+
+This design prevents the common error of returning annotations that include parameters which
+have already been bound by the partial application.
+
+.. versionadded:: next
+   Added :attr:`~object.__annotate__` support to :class:`partial` and :class:`partialmethod`.
