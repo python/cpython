@@ -43,12 +43,26 @@ The :mod:`!getpass` module provides two functions:
       On Unix systems, when *echo_char* is set, the terminal will be
       configured to operate in
       :manpage:`noncanonical mode <termios(3)#Canonical_and_noncanonical_mode>`.
-      In particular, this means that line editing shortcuts such as
-      :kbd:`Ctrl+U` will not work and may insert unexpected characters into
-      the input.
+      Common terminal control characters are supported:
+
+      * :kbd:`Ctrl+A` - Move cursor to beginning of line
+      * :kbd:`Ctrl+E` - Move cursor to end of line
+      * :kbd:`Ctrl+K` - Kill (delete) from cursor to end of line
+      * :kbd:`Ctrl+U` - Kill (delete) entire line
+      * :kbd:`Ctrl+W` - Erase previous word
+      * :kbd:`Ctrl+V` - Insert next character literally (quote)
+      * :kbd:`Backspace`/:kbd:`DEL` - Delete character before cursor
+
+      These shortcuts work by reading the terminal's configured control
+      character mappings from termios settings.
 
    .. versionchanged:: 3.14
       Added the *echo_char* parameter for keyboard feedback.
+
+   .. versionchanged:: 3.15
+      When using *echo_char* on Unix, keyboard shortcuts (including cursor
+      movement and line editing) are now properly handled using the terminal's
+      control character configuration.
 
 .. exception:: GetPassWarning
 

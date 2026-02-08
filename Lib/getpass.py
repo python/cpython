@@ -26,6 +26,40 @@ __all__ = ["getpass","getuser","GetPassWarning"]
 class GetPassWarning(UserWarning): pass
 
 
+# Default POSIX control character mappings
+_POSIX_CTRL_CHARS = {
+    'ERASE': '\x7f',   # DEL/Backspace
+    'KILL': '\x15',    # Ctrl+U - kill line
+    'WERASE': '\x17',  # Ctrl+W - erase word
+    'LNEXT': '\x16',   # Ctrl+V - literal next
+    'EOF': '\x04',     # Ctrl+D - EOF
+    'INTR': '\x03',    # Ctrl+C - interrupt
+    'SOH': '\x01',     # Ctrl+A - start of heading (beginning of line)
+    'ENQ': '\x05',     # Ctrl+E - enquiry (end of line)
+    'VT': '\x0b',      # Ctrl+K - vertical tab (kill forward)
+}
+
+
+def _get_terminal_ctrl_chars(fd):
+    """Extract control characters from terminal settings.
+
+    Returns a dict mapping control char names to their str values.
+    Falls back to POSIX defaults if termios isn't available.
+    """
+    res = _POSIX_CTRL_CHARS.copy()
+    try:
+        old = termios.tcgetattr(fd)
+        cc = old[6]  # Index 6 is the control characters array
+    except (termios.error, OSError):
+        return res
+    # Ctrl+A/E/K are not in termios, use POSIX defaults
+    for name in ('ERASE', 'KILL', 'WERASE', 'LNEXT', 'EOF', 'INTR'):
+        cap = getattr(termios, f'V{name}')
+        if cap < len(cc):
+            res[name] = cc[cap].decode('latin-1')
+    return res
+
+
 def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
     """Prompt for a password, with echo turned off.
 
@@ -73,15 +107,19 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
                 old = termios.tcgetattr(fd)     # a copy to save
                 new = old[:]
                 new[3] &= ~termios.ECHO  # 3 == 'lflags'
+                # Extract control characters before changing terminal mode
+                term_ctrl_chars = None
                 if echo_char:
                     new[3] &= ~termios.ICANON
+                    term_ctrl_chars = _get_terminal_ctrl_chars(fd)
                 tcsetattr_flags = termios.TCSAFLUSH
                 if hasattr(termios, 'TCSASOFT'):
                     tcsetattr_flags |= termios.TCSASOFT
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
                     passwd = _raw_input(prompt, stream, input=input,
-                                        echo_char=echo_char)
+                                        echo_char=echo_char,
+                                        term_ctrl_chars=term_ctrl_chars)
 
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
@@ -159,7 +197,8 @@ def _check_echo_char(echo_char):
                          f"character, got: {echo_char!r}")
 
 
-def _raw_input(prompt="", stream=None, input=None, echo_char=None):
+def _raw_input(prompt="", stream=None, input=None, echo_char=None,
+               term_ctrl_chars=None):
     # This doesn't save the string in the GNU readline history.
     if not stream:
         stream = sys.stderr
@@ -177,7 +216,8 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None):
         stream.flush()
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
     if echo_char:
-        return _readline_with_echo_char(stream, input, echo_char)
+        return _readline_with_echo_char(stream, input, echo_char,
+                                        term_ctrl_chars)
     line = input.readline()
     if not line:
         raise EOFError
@@ -186,33 +226,144 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None):
     return line
 
 
-def _readline_with_echo_char(stream, input, echo_char):
-    passwd = ""
-    eof_pressed = False
+class _PasswordLineEditor:
+    """Handles line editing for password input with echo character."""
+
+    def __init__(self, stream, echo_char, ctrl_chars):
+        self.stream = stream
+        self.echo_char = echo_char
+        self.passwd = ""
+        self.cursor_pos = 0
+        self.eof_pressed = False
+        self.literal_next = False
+        self.ctrl = ctrl_chars
+        self._dispatch = {
+            ctrl_chars['SOH']: self._handle_move_start,     # Ctrl+A
+            ctrl_chars['ENQ']: self._handle_move_end,       # Ctrl+E
+            ctrl_chars['VT']: self._handle_kill_forward,    # Ctrl+K
+            ctrl_chars['KILL']: self._handle_kill_line,     # Ctrl+U
+            ctrl_chars['WERASE']: self._handle_erase_word,  # Ctrl+W
+            ctrl_chars['ERASE']: self._handle_erase,        # DEL
+            '\b': self._handle_erase,                       # Backspace
+        }
+
+    def _refresh_display(self):
+        """Redraw the entire password line with *echo_char*."""
+        self.stream.write('\r' + ' ' * len(self.passwd) + '\r')
+        self.stream.write(self.echo_char * len(self.passwd))
+        if self.cursor_pos < len(self.passwd):
+            self.stream.write('\b' * (len(self.passwd) - self.cursor_pos))
+        self.stream.flush()
+
+    def _erase_chars(self, count):
+        """Erase count echo characters from display."""
+        self.stream.write("\b \b" * count)
+
+    def _insert_char(self, char):
+        """Insert character at cursor position."""
+        self.passwd = self.passwd[:self.cursor_pos] + char + self.passwd[self.cursor_pos:]
+        self.cursor_pos += 1
+        # Only refresh if inserting in middle
+        if self.cursor_pos < len(self.passwd):
+            self._refresh_display()
+        else:
+            self.stream.write(self.echo_char)
+            self.stream.flush()
+
+    def _handle_move_start(self):
+        """Move cursor to beginning (Ctrl+A)."""
+        self.cursor_pos = 0
+
+    def _handle_move_end(self):
+        """Move cursor to end (Ctrl+E)."""
+        self.cursor_pos = len(self.passwd)
+
+    def _handle_erase(self):
+        """Delete character before cursor (Backspace/DEL)."""
+        if self.cursor_pos > 0:
+            self.passwd = self.passwd[:self.cursor_pos-1] + self.passwd[self.cursor_pos:]
+            self.cursor_pos -= 1
+            # Only refresh if deleting from middle
+            if self.cursor_pos < len(self.passwd):
+                self._refresh_display()
+            else:
+                self.stream.write("\b \b")
+                self.stream.flush()
+
+    def _handle_kill_line(self):
+        """Erase entire line (Ctrl+U)."""
+        self._erase_chars(len(self.passwd))
+        self.passwd = ""
+        self.cursor_pos = 0
+        self.stream.flush()
+
+    def _handle_kill_forward(self):
+        """Kill from cursor to end (Ctrl+K)."""
+        chars_to_delete = len(self.passwd) - self.cursor_pos
+        self.passwd = self.passwd[:self.cursor_pos]
+        self._erase_chars(chars_to_delete)
+        self.stream.flush()
+
+    def _handle_erase_word(self):
+        """Erase previous word (Ctrl+W)."""
+        old_cursor = self.cursor_pos
+        # Skip trailing spaces
+        while self.cursor_pos > 0 and self.passwd[self.cursor_pos-1] == ' ':
+            self.cursor_pos -= 1
+        # Delete the word
+        while self.cursor_pos > 0 and self.passwd[self.cursor_pos-1] != ' ':
+            self.cursor_pos -= 1
+        # Remove the deleted portion
+        self.passwd = self.passwd[:self.cursor_pos] + self.passwd[old_cursor:]
+        self._refresh_display()
+
+    def handle(self, char):
+        """Handle a single character input. Returns True if handled."""
+        self.eof_pressed = False
+        handler = self._dispatch.get(char)
+        if handler:
+            handler()
+            return True
+        return False
+
+
+def _readline_with_echo_char(stream, input, echo_char, term_ctrl_chars=None):
+    """Read password with echo character and line editing support."""
+    if term_ctrl_chars is None:
+        term_ctrl_chars = _POSIX_CTRL_CHARS.copy()
+
+    editor = _PasswordLineEditor(stream, echo_char, term_ctrl_chars)
+
     while True:
         char = input.read(1)
-        if char == '\n' or char == '\r':
+
+        # Check for line terminators
+        if char in ('\n', '\r'):
             break
-        elif char == '\x03':
+        # Handle literal next mode FIRST (Ctrl+V quotes next char)
+        elif editor.literal_next:
+            editor._insert_char(char)
+            editor.literal_next = False
+            editor.eof_pressed = False
+        # Check if it's the LNEXT character
+        elif char == editor.ctrl['LNEXT']:
+            editor.literal_next = True
+            editor.eof_pressed = False
+        # Check for special control characters
+        elif char == editor.ctrl['INTR']:
             raise KeyboardInterrupt
-        elif char == '\x7f' or char == '\b':
-            if passwd:
-                stream.write("\b \b")
-                stream.flush()
-            passwd = passwd[:-1]
-        elif char == '\x04':
-            if eof_pressed:
+        elif char == editor.ctrl['EOF']:
+            if editor.eof_pressed:
                 break
-            else:
-                eof_pressed = True
+            editor.eof_pressed = True
         elif char == '\x00':
-            continue
-        else:
-            passwd += char
-            stream.write(echo_char)
-            stream.flush()
-            eof_pressed = False
-    return passwd
+            pass
+        # Dispatch to handler or insert as normal character
+        elif not editor.handle(char):
+            editor._insert_char(char)
+            editor.eof_pressed = False
+
+    return editor.passwd
 
 
 def getuser():

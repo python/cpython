@@ -1,0 +1,4 @@
+:func:`getpass.getpass` with ``echo_char`` now handles keyboard shortcuts
+including Ctrl+A/E (cursor movement), Ctrl+K/U (kill line), Ctrl+W (erase word),
+and Ctrl+V (literal next) by reading the terminal's control character settings
+and processing them appropriately in non-canonical mode. Patch by Sanyam Khurana.
