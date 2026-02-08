@@ -89,6 +89,7 @@ class Timeout:
         self._state = _State.ENTERED
         self._task = task
         self._cancelling = self._task.cancelling()
+        self._must_cancel = self._task._must_cancel
         self.reschedule(self._when)
         return self
 
@@ -106,10 +107,13 @@ class Timeout:
 
         if self._state is _State.EXPIRING:
             self._state = _State.EXPIRED
-
-            if self._task.uncancel() <= self._cancelling and exc_type is not None:
-                # Since there are no new cancel requests, we're
-                # handling this.
+            if (
+                self._task.uncancel() <= self._cancelling
+                and exc_type is not None
+                and not self._must_cancel
+            ):
+                # Since there are no new cancel requests
+                # and the task doesn't _have to_ raise CancelledError, we're handling this.
                 if issubclass(exc_type, exceptions.CancelledError):
                     raise TimeoutError from exc_val
                 elif exc_val is not None:
