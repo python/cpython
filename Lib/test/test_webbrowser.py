@@ -67,6 +67,11 @@ class GenericBrowserCommandTest(CommandTestMixin, unittest.TestCase):
                    options=[],
                    arguments=[URL])
 
+    def test_reject_dash_prefixes(self):
+        browser = self.browser_class(name=CMD_NAME)
+        with self.assertRaises(ValueError):
+            browser.open(f"--key=val {URL}")
+
 
 class BackgroundBrowserCommandTest(CommandTestMixin, unittest.TestCase):
 
