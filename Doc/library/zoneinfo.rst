@@ -49,8 +49,21 @@ method or :meth:`datetime.astimezone <datetime.datetime.astimezone>`::
     >>> dt.tzname()
     'PDT'
 
-Datetimes constructed in this way are compatible with datetime arithmetic and
-handle daylight saving time transitions with no further intervention::
+Datetimes constructed in this way are compatible with datetime arithmetic in most cases,
+but some operations may not account for daylight saving time transitions as expected.
+
+.. note::
+
+    When adding or subtracting a :class:`datetime.timedelta` to a timezone-aware
+    :class:`datetime.datetime` object using the same :class:`ZoneInfo` instance,
+    daylight saving time transitions are not accounted for. These operations are
+    performed in local (naive) time.
+
+    To perform arithmetic that accounts for time zone transitions,
+    convert the datetime object to UTC with :meth:`~datetime.datetime.astimezone`,
+    perform the arithmetic, and convert the result back to the local time zone.
+
+.. code-block:: pycon
 
     >>> dt_add = dt + timedelta(days=1)
 
