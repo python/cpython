@@ -611,7 +611,7 @@ when the choices specified are strings::
    >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
-   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from sum, max)
 
 You can disable suggestions by setting ``suggest_on_error`` to ``False``::
 
@@ -1164,8 +1164,8 @@ if the argument was not one of the acceptable values::
    Namespace(move='rock')
    >>> parser.parse_args(['fire'])
    usage: game.py [-h] {rock,paper,scissors}
-   game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
-   'paper', 'scissors')
+   game.py: error: argument move: invalid choice: 'fire' (choose from rock,
+   paper, scissors)
 
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
 :class:`tuple` objects, and custom sequences are all supported.
