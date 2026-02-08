@@ -2755,6 +2755,41 @@ def _calc_skew(i, j, k, alo, ahi, blo, bhi):
     return apos - bpos
 
 
+# s.t.: c^p == (0.9c)^p + (0.2c)^p
+_BALANCE_SCORE_POWER = 1.284320049734199
+
+
+def _calc_candidate_score(block0, block1, block2):
+    """Calculates the score for 1-3 block candidates for balancing procedure
+
+    Score is calculated so that long match is preferred
+        to many small ones but not too aggressively,
+        so to be able to jump out of skewed positions.
+
+        total = ∑ length^p
+        where p is such that c^p == (0.9c)^p + (0.2c)^p
+
+        If only 1 block found, it is a definite score.
+        Otherwise, it gets bonus for each additional block
+        as it has poential to recurse further to each side
+    """
+    k0 = block0[2]
+    k1 = block1[2]
+    k2 = block2[2]
+    if not k1:
+        raise ValueError('Middle block should not be null')
+    lengths = [k1]
+    if k0:
+        lengths.append(k0)
+    if k2:
+        lengths.append(k2)
+    total = sum(k**_BALANCE_SCORE_POWER for k in lengths)
+    nk = len(lengths)
+    if nk > 1:
+        total += (nk - 1) * min(lengths) / 3
+    return total
+
+
 class GestaltSequenceMatcher(SequenceMatcherBase):
     """
     GestaltSequenceMatcher is a flexible class for comparing pairs
@@ -2831,6 +2866,9 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                 ### - 3 (only the candidate)
                 xx  - 4 (xx + yy)
 
+                NOTE: Selection score is slightly more involved than sum of blocks.
+                    See `_calc_candidate_score` for details.
+
             Thus, for this example, xx is picked.
 
         Comparison to SequenceMatcher:
@@ -2882,7 +2920,6 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
 
         if bjunk:
             # Extend match to surrounding junk
-            # [2026-02-07@dgpb]: Note, expanding will happen even when no-match
             block = _expand_block_to_junk(
                 bjunk, block, a, b, alo, ahi, blo, bhi, inverse=False)
 
@@ -2944,7 +2981,7 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
 
         Note, one can get `a`, `b`, `automaton`, etc from self
         """
-        pass
+        return None
 
     def _get_matching_blocks(self):
         balancing = self.balancing
@@ -2991,10 +3028,14 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                 if mtype is REPLACEBLOCK:
                     i, j, k = data
                     data = [(i, j, k)]
+
                 elif mtype is ANCHORBLOCKS or mtype is RESULTBLOCKS:
-                    data = sorted(data)
+                    data = list(data)
+                    if len(data) > 1:
+                        data.sort()
+
                 else:
-                    msg = 'Unknown `_modifier` return type: {!r}'
+                    msg = 'Unknown `self._modifier(...)` return type: {!r}'
                     raise RuntimeError(msg.format(mtype))
 
                 # 2.1.2. Validate
@@ -3005,11 +3046,11 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                         continue
                     if not (i0 <= i <= i + k <= ahi) or not (j0 <= j <= j + k <= bhi):
                         msg = (
-                            '`_modifier` returned invalid block, which '
+                            '`self._modifier(...)` returned invalid block, which '
                             'is either out of bounds or overlaps with a nearby one'
-                            'block={}, while current interval is {}'
+                            'block={}, last_bound={}, current_interval={}'
                         )
-                        raise RuntimeError(msg.format(data, bounds))
+                        raise RuntimeError(msg.format(data, (i0, j0), bounds))
                     validated.append((i, j, k))
                     i0 = i + k
                     j0 = j + k
@@ -3071,17 +3112,15 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
                     block_list = self.batch_find_longest_match(jobs)
                     job_results = dict(zip(jobs, block_list))
 
-                    # 2.2.3. Pick middle block of best tripple
+                    # 2.2.3. Pick middle block of the best tripple
                     for triple in triples:
-                        triple[0] = job_results[triple[0]]
-                        triple[2] = job_results[triple[2]]
-                        # NOTE: k**1.3 is empirically tuned
-                        # prefers one long match to many small ones
-                        # but not too aggressively, so to be able to jump
-                        # out of skewed positions
-                        total = sum(t[2]**1.3 for t in triple)
-                        skew = _calc_skew(*triple[1], *bounds)
-                        triple.append((total, -abs(skew)))
+                        triple[0] = t0 = job_results[triple[0]]
+                        triple[2] = t2 = job_results[triple[2]]
+                        t1 = triple[1]
+                        score = _calc_candidate_score(t0, t1, t2)
+                        # NOTE: secondary key is `skew` as above
+                        mid_skew = _calc_skew(*t1, *bounds)
+                        triple.append((score, -abs(mid_skew)))
                     best = max(triples, key=lambda x: x[-1])
                     tail_blocks = best[1:2]
 
