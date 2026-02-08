@@ -1215,8 +1215,8 @@ class TestDateOnly(unittest.TestCase):
     def test_strptime_F_format(self):
         test_date = "2025-10-26"
         self.assertEqual(
-            datetime.strptime(test_date,"%F"),
-            datetime.strptime(test_date,"%Y-%m-%d")
+            datetime.strptime(test_date, "%F"),
+            datetime.strptime(test_date, "%Y-%m-%d")
         )
 
     def test_strptime_T_format(self):
