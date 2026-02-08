@@ -3524,7 +3524,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def read(self, n: int = -1) -> AnyStr:
+    def read(self, n: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
@@ -3532,15 +3532,15 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def readline(self, limit: int = -1) -> AnyStr:
+    def readline(self, limit: int = -1, /) -> AnyStr:
         pass
 
     @abstractmethod
-    def readlines(self, hint: int = -1) -> list[AnyStr]:
+    def readlines(self, hint: int = -1, /) -> list[AnyStr]:
         pass
 
     @abstractmethod
-    def seek(self, offset: int, whence: int = 0) -> int:
+    def seek(self, offset: int, whence: int = 0, /) -> int:
         pass
 
     @abstractmethod
@@ -3552,7 +3552,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def truncate(self, size: int | None = None) -> int:
+    def truncate(self, size: int | None = None, /) -> int:
         pass
 
     @abstractmethod
@@ -3560,11 +3560,11 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def write(self, s: AnyStr) -> int:
+    def write(self, s: AnyStr, /) -> int:
         pass
 
     @abstractmethod
-    def writelines(self, lines: list[AnyStr]) -> None:
+    def writelines(self, lines: list[AnyStr], /) -> None:
         pass
 
     @abstractmethod
@@ -3572,7 +3572,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, type, value, traceback, /) -> None:
         pass
 
 
@@ -3582,7 +3582,7 @@ class BinaryIO(IO[bytes]):
     __slots__ = ()
 
     @abstractmethod
-    def write(self, s: bytes | bytearray) -> int:
+    def write(self, s: bytes | bytearray, /) -> int:
         pass
 
     @abstractmethod
