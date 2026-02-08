@@ -1,3 +1,4 @@
-Fixed a bug in partial.__repr__() that could occur when objects replaced the 
-args tuple during __repr__ evaluation. Now, partial.__repr__() uses the 
+Fixed a bug in partial.__repr__() that could occur when objects replaced the
+args tuple during __repr__ evaluation. Now, partial.__repr__() uses the
 original args tuple for but subsequent calls would use an updated args tuple
+
