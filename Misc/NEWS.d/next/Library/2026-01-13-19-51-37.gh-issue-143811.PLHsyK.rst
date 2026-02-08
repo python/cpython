@@ -1,0 +1,3 @@
+:exc:`AttributeError` and :exc:`NameError` exceptions raised with no message
+now get helpful default messages when displaying traceback. Patch by Bartosz
+Sławecki.
