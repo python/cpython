@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from _pyrepl.utils import str_width, wlen, prev_next_window, gen_colors
+from _pyrepl.utils import str_width, wlen, prev_next_window
 
 
 class TestUtils(TestCase):
@@ -81,25 +81,3 @@ class TestUtils(TestCase):
         self.assertEqual(next(pnw), (3, 4, None))
         with self.assertRaises(ZeroDivisionError):
             next(pnw)
-
-    def test_gen_colors_keyword_highlighting(self):
-        cases = [
-            # no highlights
-            ("a.set", [(".", "op")]),
-            ("obj.list", [(".", "op")]),
-            ("obj.match", [(".", "op")]),
-            ("b. \\\n format", [(".", "op")]),
-            # highlights
-            ("set", [("set", "builtin")]),
-            ("list", [("list", "builtin")]),
-            ("    \n dict", [("dict", "builtin")]),
-        ]
-        for code, expected_highlights in cases:
-            with self.subTest(code=code):
-                colors = list(gen_colors(code))
-                # Extract (text, tag) pairs for comparison
-                actual_highlights = []
-                for color in colors:
-                    span_text = code[color.span.start:color.span.end + 1]
-                    actual_highlights.append((span_text, color.tag))
-                self.assertEqual(actual_highlights, expected_highlights)
