@@ -243,6 +243,16 @@ Interpreter objects
    Generally, :class:`Interpreter` shouldn't be called directly.
    Instead, use :func:`create` or one of the other module functions.
 
+   In addition to interpreters created by this module (via
+   :func:`create`), an :class:`!Interpreter` object may wrap
+   interpreters not created by the module.  Some methods fail for such
+   interpreters, as noted below for each such method.
+
+   An interpreter may be marked as currently executing code in its
+   :mod:`!__main__` module.  See :meth:`~Interpreter.is_running`.
+   Some methods of a running :class:`!interpreter` fail, as noted
+   below for each such method.
+
    .. attribute:: id
 
       (read-only)
@@ -271,20 +281,32 @@ Interpreter objects
       Some objects are actually shared and some are copied efficiently,
       but most are copied via :mod:`pickle`.  See :ref:`interp-object-sharing`.
 
+      This method fails for unsupported modules.
+      It also fails for running modules.
+
    .. method:: exec(code, /, dedent=True)
 
       Run the given source code in the interpreter (in the current thread).
+
+      This method fails for unsupported modules.
+      It also fails for running modules.
 
    .. method:: call(callable, /, *args, **kwargs)
 
       Return the result of calling running the given function in the
       interpreter (in the current thread).
 
+      This method fails for unsupported modules.
+      It also fails for running modules.
+
    .. _interp-call-in-thread:
 
    .. method:: call_in_thread(callable, /, *args, **kwargs)
 
       Run the given function in the interpreter (in a new thread).
+
+      This method fails for unsupported modules.
+      It also fails for running modules.
 
 Exceptions
 ^^^^^^^^^^
