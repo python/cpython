@@ -9471,9 +9471,18 @@ printf "%s\n" "$BOLT_APPLY_FLAGS" >&6; }
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
-save_CFLAGS=$CFLAGS
-CFLAGS="-fstrict-overflow -fno-strict-overflow"
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if $CC supports -fstrict-overflow and -fno-strict-overflow" >&5
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-strict-overflow" >&5
+printf %s "checking for --with-strict-overflow... " >&6; }
+
+# Check whether --with-strict-overflow was given.
+if test ${with_strict_overflow+y}
+then :
+  withval=$with_strict_overflow;
+    if test "x$with_strict_overflow" = xyes
+then :
+                              save_CFLAGS=$CFLAGS
+       CFLAGS="-fstrict-overflow -fno-strict-overflow"
+       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if $CC supports -fstrict-overflow and -fno-strict-overflow" >&5
 printf %s "checking if $CC supports -fstrict-overflow and -fno-strict-overflow... " >&6; }
 if test ${ac_cv_cc_supports_fstrict_overflow+y}
 then :
@@ -9495,42 +9504,40 @@ then :
   ac_cv_cc_supports_fstrict_overflow=yes
 else case e in #(
   e) ac_cv_cc_supports_fstrict_overflow=no
-   ;;
+          ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
- ;;
+        ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_supports_fstrict_overflow" >&5
 printf "%s\n" "$ac_cv_cc_supports_fstrict_overflow" >&6; }
-CFLAGS=$save_CFLAGS
+       CFLAGS=$save_CFLAGS
 
-if test "x$ac_cv_cc_supports_fstrict_overflow" = xyes
+       if test "x$ac_cv_cc_supports_fstrict_overflow" = xyes
 then :
   STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
-           NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+          NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
 else case e in #(
-  e) STRICT_OVERFLOW_CFLAGS=""
-           NO_STRICT_OVERFLOW_CFLAGS="" ;;
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&5
+printf "%s\n" "$as_me: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&2;}
+          STRICT_OVERFLOW_CFLAGS=""
+          NO_STRICT_OVERFLOW_CFLAGS="" ;;
 esac
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-strict-overflow" >&5
-printf %s "checking for --with-strict-overflow... " >&6; }
-
-# Check whether --with-strict-overflow was given.
-if test ${with_strict_overflow+y}
-then :
-  withval=$with_strict_overflow;
-    if test "x$ac_cv_cc_supports_fstrict_overflow" = xno
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&5
-printf "%s\n" "$as_me: WARNING: --with-strict-overflow=yes requires a compiler that supports -fstrict-overflow" >&2;}
+else case e in #(
+  e) STRICT_OVERFLOW_CFLAGS=""
+       NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
+     ;;
+esac
 fi
 
 else case e in #(
   e) with_strict_overflow=no
+   STRICT_OVERFLOW_CFLAGS=""
+   NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
  ;;
 esac
 fi

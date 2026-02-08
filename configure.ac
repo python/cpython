@@ -2235,28 +2235,6 @@ AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
-dnl Historically, some of our code assumed that signed integer overflow
-dnl is defined behaviour via twos-complement.
-dnl Set STRICT_OVERFLOW_CFLAGS and NO_STRICT_OVERFLOW_CFLAGS depending on compiler support.
-dnl Pass the latter to modules that depend on such behaviour.
-_SAVE_VAR([CFLAGS])
-CFLAGS="-fstrict-overflow -fno-strict-overflow"
-AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
-               [ac_cv_cc_supports_fstrict_overflow],
-  AC_COMPILE_IFELSE(
-    [AC_LANG_PROGRAM([[]], [[]])],
-    [ac_cv_cc_supports_fstrict_overflow=yes],
-    [ac_cv_cc_supports_fstrict_overflow=no]
-  )
-)
-_RESTORE_VAR([CFLAGS])
-
-AS_VAR_IF([ac_cv_cc_supports_fstrict_overflow], [yes],
-          [STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
-           NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"],
-          [STRICT_OVERFLOW_CFLAGS=""
-           NO_STRICT_OVERFLOW_CFLAGS=""])
-
 AC_MSG_CHECKING([for --with-strict-overflow])
 AC_ARG_WITH([strict-overflow],
   AS_HELP_STRING(
@@ -2265,12 +2243,37 @@ AC_ARG_WITH([strict-overflow],
   ),
   [
     AS_VAR_IF(
-      [ac_cv_cc_supports_fstrict_overflow], [no],
-      [AC_MSG_WARN([--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow])],
-      []
+      [with_strict_overflow], [yes],
+      [dnl Historically, some of our code assumed that signed integer overflow
+       dnl is defined behaviour via twos-complement.
+       dnl Set STRICT_OVERFLOW_CFLAGS and NO_STRICT_OVERFLOW_CFLAGS depending on compiler support.
+       dnl Pass the latter to modules that depend on such behaviour.
+       _SAVE_VAR([CFLAGS])
+       CFLAGS="-fstrict-overflow -fno-strict-overflow"
+       AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
+                      [ac_cv_cc_supports_fstrict_overflow],
+         AC_COMPILE_IFELSE(
+           [AC_LANG_PROGRAM([[]], [[]])],
+           [ac_cv_cc_supports_fstrict_overflow=yes],
+           [ac_cv_cc_supports_fstrict_overflow=no]
+         )
+       )
+       _RESTORE_VAR([CFLAGS])
+
+       AS_VAR_IF([ac_cv_cc_supports_fstrict_overflow], [yes],
+         [STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+          NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"],
+         [AC_MSG_WARN([--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow])
+          STRICT_OVERFLOW_CFLAGS=""
+          NO_STRICT_OVERFLOW_CFLAGS=""])
+      ],
+      [STRICT_OVERFLOW_CFLAGS=""
+       NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"]
     )
   ],
-  [with_strict_overflow=no]
+  [with_strict_overflow=no
+   STRICT_OVERFLOW_CFLAGS=""
+   NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"]
 )
 AC_MSG_RESULT([$with_strict_overflow])
 
