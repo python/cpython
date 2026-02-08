@@ -298,6 +298,11 @@ The :mod:`!csv` module defines the following classes:
       Twenty-one rows after the header are sampled; if more than half of the
       columns + rows meet the criteria, :const:`True` is returned.
 
+      Additionally, if all columns are found to be strings and have varying
+      lengths, the average length of all the strings becomes a crucial factor
+      in the determination process.
+
+
    .. note::
 
       This method is a rough heuristic and may produce both false positives and
