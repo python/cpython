@@ -270,18 +270,13 @@ class WindowsConsole(Console):
             self._erase_to_end()
 
         self.__write(newline[x_pos:])
-        if wlen(newline) == self.width:
-            # If we wrapped we want to start at the next line
-            self._move_relative(0, y + 1)
-            self.posxy = 0, y + 1
-        else:
-            self.posxy = wlen(newline), y
+        self.posxy = min(wlen(newline), self.width - 1), y
 
-            if "\x1b" in newline or y != self.posxy[1] or '\x1a' in newline:
-                # ANSI escape characters are present, so we can't assume
-                # anything about the position of the cursor.  Moving the cursor
-                # to the left margin should work to get to a known position.
-                self.move_cursor(0, y)
+        if "\x1b" in newline or y != self.posxy[1] or '\x1a' in newline:
+            # ANSI escape characters are present, so we can't assume
+            # anything about the position of the cursor.  Moving the cursor
+            # to the left margin should work to get to a known position.
+            self.move_cursor(0, y)
 
     def _scroll(
         self, top: int, bottom: int, left: int | None = None, right: int | None = None
