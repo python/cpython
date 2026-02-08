@@ -168,7 +168,7 @@ class GenericBrowser(BaseBrowser):
     """Class for all browsers started with a command
        and without remote functionality."""
 
-    def __init__(self, name):
+    def __init__(self, name, *, _supports_file=True):
         if isinstance(name, str):
             self.name = name
             self.args = ["%s"]
@@ -177,9 +177,20 @@ class GenericBrowser(BaseBrowser):
             self.name = name[0]
             self.args = name[1:]
         self.basename = os.path.basename(self.name)
+        # whether it supports file:// URLs
+        # set to False for generic openers like xdg-open,
+        # which do not launch webbrowsers reliably
+        self._supports_file = _supports_file
 
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
+
+        if not self._supports_file:
+            # skip me for `file://` URLs for generic openers (e.g. xdg-open)
+            proto, _sep, _rest = url.partition(":")
+            if _sep and proto.lower() == "file":
+                return False
+
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -197,6 +208,12 @@ class BackgroundBrowser(GenericBrowser):
        background."""
 
     def open(self, url, new=0, autoraise=True):
+        if not self._supports_file:
+            # skip me for `file://` URLs for generic openers (e.g. xdg-open)
+            proto, _sep, _rest = url.partition(":")
+            if _sep and proto.lower() == "file":
+                return False
+
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         sys.audit("webbrowser.open", url)
@@ -415,19 +432,66 @@ class Edge(UnixBrowser):
 # Platform support for Unix
 #
 
+
+def _locate_xdg_desktop(name: str) -> str | None:
+    """Locate .desktop file by name
+
+    Returns absolute path to .desktop file found on $XDG_DATA search path
+    or None if no matching .desktop file is found.
+
+    Needed for `gio launch` support.
+    """
+    if not name.endswith(".desktop"):
+        # ensure it ends in .desktop
+        name += ".desktop"
+    xdg_data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser(
+        "~/.local/share"
+    )
+    xdg_data_dirs = os.environ.get("XDG_DATA_DIRS") or "/usr/local/share/:/usr/share/"
+    all_data_dirs = [xdg_data_home]
+    all_data_dirs.extend(xdg_data_dirs.split(os.pathsep))
+    for data_dir in all_data_dirs:
+        desktop_path = os.path.join(data_dir, "applications", name)
+        if os.path.exists(desktop_path):
+            return desktop_path
+    return None
+
 # These are the right tests because all these Unix browsers require either
 # a console terminal or an X display to run.
 
 def register_X_browsers():
 
+    # use gtk[4]-launch to launch preferred browser by name, if found
+    # this should be _before_ xdg-open, which doesn't necessarily launch a browser
+    if _os_preferred_browser:
+        for gtk_launch in ("gtk4-launch", "gtk-launch"):
+            if shutil.which(gtk_launch):
+                register(
+                    gtk_launch,
+                    None,
+                    BackgroundBrowser([gtk_launch, _os_preferred_browser, "%s"]),
+                )
+
     # use xdg-open if around
     if shutil.which("xdg-open"):
-        register("xdg-open", None, BackgroundBrowser("xdg-open"))
+        # `xdg-open` does NOT guarantee a browser is launched,
+        # so skip it for `file://`
+        register("xdg-open", None, BackgroundBrowser("xdg-open", _supports_file=False))
 
-    # Opens an appropriate browser for the URL scheme according to
+
+    # Opens the default application for the URL scheme according to
     # freedesktop.org settings (GNOME, KDE, XFCE, etc.)
     if shutil.which("gio"):
-        register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
+        if _os_preferred_browser:
+            absolute_browser = _locate_xdg_desktop(_os_preferred_browser)
+            if absolute_browser:
+                register(
+                    "gio-launch",
+                    None,
+                    BackgroundBrowser(["gio", "launch", absolute_browser, "%s"]),
+                )
+        # `gio open` does NOT guarantee a browser is launched
+        register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"], _supports_file=False))
 
     xdg_desktop = os.getenv("XDG_CURRENT_DESKTOP", "").split(":")
 
@@ -435,13 +499,24 @@ def register_X_browsers():
     if (("GNOME" in xdg_desktop or
          "GNOME_DESKTOP_SESSION_ID" in os.environ) and
             shutil.which("gvfs-open")):
-        register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
+        register("gvfs-open", None, BackgroundBrowser("gvfs-open", _supports_file=False))
 
     # The default KDE browser
-    if (("KDE" in xdg_desktop or
-         "KDE_FULL_SESSION" in os.environ) and
-            shutil.which("kfmclient")):
-        register("kfmclient", Konqueror, Konqueror("kfmclient"))
+    if ("KDE" in xdg_desktop or
+         "KDE_FULL_SESSION" in os.environ):
+        if shutil.which("kioclient"):
+            # launch URL with http[s] handler
+            register("kioclient", None, BackgroundBrowser(["kioclient", "exec", "%s", "x-scheme-handler/https"]))
+        if shutil.which("kfmclient"):
+            register("kfmclient", Konqueror, Konqueror("kfmclient"))
+
+    # The default XFCE browser
+    if "XFCE" in xdg_desktop and shutil.which("exo-open"):
+        register(
+            "exo-open",
+            None,
+            BackgroundBrowser(["exo-open", "--launch", "WebBrowser", "%s"]),
+        )
 
     # Common symbolic link for the default X11 browser
     if shutil.which("x-www-browser"):
