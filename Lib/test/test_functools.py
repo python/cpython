@@ -310,6 +310,38 @@ class TestPartial:
                       [f'{name}({capture!r}, {args_repr}, {kwargs_repr})'
                        for kwargs_repr in kwargs_reprs])
 
+    def test_equality(self):
+        p = functools.partial(capture, 1, 2, a=10, b=20)
+        q = functools.partial(capture, 1, 2, a=10, b=20)
+
+        self.assertTrue(p == q)
+        self.assertFalse(p != q)
+        self.assertTrue(p.__eq__(q))
+        self.assertFalse(p.__ne__(q))
+        self.assertTrue(p.func == q.func)
+        self.assertTrue(p.func == capture)
+        self.assertTrue(p.args == q.args)
+        self.assertTrue(p.keywords == q.keywords)
+
+        k = self.partial(capture, 1, 2, a=10)
+        self.assertFalse(p == k)
+        self.assertTrue(p != k)
+        self.assertTrue(p.func == k.func)
+        self.assertTrue(p.args == k.args)
+        self.assertFalse(p.keywords == k.keywords)
+
+        a = self.partial(capture)
+        b = self.partial(signature)
+        self.assertFalse(a == b)
+        self.assertTrue(a != b)
+
+        # Check against other types
+        self.assertNotEqual(p.func, repr)
+        self.assertNotEqual(p, capture)
+        self.assertNotEqual(q, capture)
+        self.assertNotEqual(q, functools.partial)
+
+
     def test_recursive_repr(self):
         name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
