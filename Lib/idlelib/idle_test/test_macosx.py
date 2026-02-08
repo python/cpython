@@ -41,6 +41,9 @@ class InitTktypeTest(unittest.TestCase):
     def test_init_sets_tktype(self):
         "Test that _init_tk_type sets _tk_type according to platform."
         for platform, types in ('darwin', alltypes), ('other', nontypes):
+            orig_root = None
+            macosx._idle_root = self.root
+            self.addCleanup(lambda: setattr(macosx, "_idle_root", orig_root))
             with self.subTest(platform=platform):
                 macosx.platform = platform
                 macosx._tk_type = None
