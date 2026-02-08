@@ -1,0 +1,3 @@
+Fix error handling for non-blocking ``connect`` calls which meant
+:meth:`socket.socket.connect` was sometimes raising a :exc:`BlockingIOError`
+instead of waiting when a connection could not be immediately completed.
