@@ -1328,8 +1328,13 @@ class Path(PurePath):
                     child, follow_symlinks, preserve_metadata)
             if preserve_metadata:
                 _copy_info(source.info, self)
-        else:
+        elif source.info.is_file():
             self._copy_from_file(source, preserve_metadata)
+        elif not source.info.exists(follow_symlinks=follow_symlinks):
+            self._copy_from_file(source, preserve_metadata)
+        else:
+            raise io.UnsupportedOperation(
+                f"{source!r} is a special file and cannot be copied")
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
