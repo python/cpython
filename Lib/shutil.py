@@ -443,8 +443,13 @@ def copystat(src, dst, *, follow_symlinks=True):
     else:
         st = lookup("stat")(src, follow_symlinks=follow)
     mode = stat.S_IMODE(st.st_mode)
-    lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
-        follow_symlinks=follow)
+    try:
+        lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
+            follow_symlinks=follow)
+    except OSError as e:
+        # Ignore permission errors when setting file times (gh-42948).
+        if e.errno not in (errno.EPERM, errno.EACCES):
+            raise
     # We must copy extended attributes before the file is (potentially)
     # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
     _copyxattr(src, dst, follow_symlinks=follow)
