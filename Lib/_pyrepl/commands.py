@@ -66,7 +66,7 @@ class KillCommand(Command):
         b = r.buffer
         text = b[start:end]
         del b[start:end]
-        if is_kill(r.last_command):
+        if is_kill(r.last_command) and r.kill_ring:
             if start < r.pos:
                 r.kill_ring[-1] = text + r.kill_ring[-1]
             else:
