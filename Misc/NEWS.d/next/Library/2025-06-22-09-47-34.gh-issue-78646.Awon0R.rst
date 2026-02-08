@@ -1,0 +1,1 @@
+Add :class:`bytearray` support for ipaddress.
