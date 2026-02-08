@@ -1,6 +1,7 @@
 """Filename globbing utility."""
 
 import contextlib
+import errno
 import os
 import re
 import fnmatch
@@ -171,7 +172,9 @@ def _iterdir(dirname, dir_fd, dironly):
         finally:
             if fd is not None:
                 os.close(fd)
-    except OSError:
+    except OSError as e:
+        if e.errno == errno.EMFILE:
+            raise
         return
 
 def _listdir(dirname, dir_fd, dironly):
