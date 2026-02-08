@@ -1063,10 +1063,28 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 
 def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
                   logger=None, owner=None, group=None, root_dir=None):
-    """Create a zip file from all the files under 'base_dir'.
+    """Create a zip file. Returns the name of the zip file.
 
-    The output zip file will be named 'base_name' + ".zip".  Returns the
-    name of the output zip file.
+    - `base_name` is used as the name for the zip file, with a suffix
+      of '.zip'.
+    - `base_dir` is the directory containing the files to be included
+      in the zip file. The zip file is created at the same level in the
+      directory structure as `base_dir`.
+
+    Symbolic links to files and directories are followed and the
+    targets of the links included in the zip file. This matches the
+    default behaviour of command-line zip utilities on
+    Linux/UNIX/Windows systems.
+
+    Hard links to files are followed and the targets of the links
+    included in the zip file. There is no de-duplication of multiple
+    hard links to the same file that is provided by other formats,
+    e.g. tar.
+
+    CAUTION: This function uses os.walk() to prepare the list of files to be
+    included in the zip file. os.walk() does not keep track of which
+    directories have already been visited. A symbolic link to a directory that
+    is a parent of itself will lead to infinite recursion.
     """
     import zipfile  # late import for breaking circular dependency
 
@@ -1094,7 +1112,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
                 zf.write(base_dir, arcname)
                 if logger is not None:
                     logger.info("adding '%s'", base_dir)
-            for dirpath, dirnames, filenames in os.walk(base_dir):
+            for dirpath, dirnames, filenames in os.walk(base_dir, followlinks=True):
                 arcdirpath = dirpath
                 if root_dir is not None:
                     arcdirpath = os.path.relpath(arcdirpath, root_dir)
@@ -1183,16 +1201,16 @@ def unregister_archive_format(name):
 
 def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
                  dry_run=0, owner=None, group=None, logger=None):
-    """Create an archive file (eg. zip or tar).
+    """Create an archive file (e.g. zip or tar).
 
     'base_name' is the name of the file to create, minus any format-specific
     extension; 'format' is the archive format: one of "zip", "tar", "gztar",
     "bztar", "xztar", or "zstdtar".  Or any other registered format.
 
     'root_dir' is a directory that will be the root directory of the
-    archive; ie. we typically chdir into 'root_dir' before creating the
+    archive; i.e. we typically chdir into 'root_dir' before creating the
     archive.  'base_dir' is the directory where we start archiving from;
-    ie. 'base_dir' will be the common prefix of all files and
+    i.e. 'base_dir' will be the common prefix of all files and
     directories in the archive.  'root_dir' and 'base_dir' both default
     to the current directory.  Returns the name of the archive file.
 
