@@ -87,6 +87,69 @@ class TestsWithSourceFile(unittest.TestCase):
         os_helper.unlink(TESTFN2)
 
 
+class TestRemove(unittest.TestCase):
+    def setUp(self):
+        # Create test data.
+        line_gen = ("Test of zipfile line %d." % i for i in range(1000000))
+        self.data = '\n'.join(line_gen).encode('ascii')
+
+    def _write_large_file(self, fh):
+        # It will contain enough copies of self.data to reach about 8 GiB.
+        filecount = 8*1024**3 // len(self.data)
+
+        next_time = time.monotonic() + _PRINT_WORKING_MSG_INTERVAL
+        for num in range(filecount):
+            fh.write(self.data)
+            # Print still working message since this test can be really slow
+            if next_time <= time.monotonic():
+                next_time = time.monotonic() + _PRINT_WORKING_MSG_INTERVAL
+                print((
+                '  writing %d of %d, be patient...' %
+                (num, filecount)), file=sys.__stdout__)
+                sys.__stdout__.flush()
+
+    def test_remove_large_file(self):
+        # Try the temp file.  If we do TESTFN2, then it hogs
+        # gigabytes of disk space for the duration of the test.
+        with TemporaryFile() as f:
+            self._test_remove_large_file(f)
+            self.assertFalse(f.closed)
+
+    def _test_remove_large_file(self, f):
+        file = 'datafile.txt'
+        file1 = 'dummy.txt'
+        data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
+        with zipfile.ZipFile(f, 'w') as zh:
+            with zh.open(file1, 'w', force_zip64=True) as fh:
+                self._write_large_file(fh)
+            zh.writestr(file, data)
+
+        with zipfile.ZipFile(f, 'a') as zh:
+            zh.remove(file1)
+            self.assertIsNone(zh.testzip())
+
+    def test_remove_before_large_file(self):
+        # Try the temp file.  If we do TESTFN2, then it hogs
+        # gigabytes of disk space for the duration of the test.
+        with TemporaryFile() as f:
+            self._test_remove_before_large_file(f)
+            self.assertFalse(f.closed)
+
+    def _test_remove_before_large_file(self, f):
+        file = 'datafile.txt'
+        file1 = 'dummy.txt'
+        data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
+        with zipfile.ZipFile(f, 'w') as zh:
+            zh.writestr(file, data)
+            with zh.open(file1, 'w', force_zip64=True) as fh:
+                self._write_large_file(fh)
+            expected_size = zh.getinfo(file1).file_size
+
+        with zipfile.ZipFile(f, 'a') as zh:
+            zh.remove(file)
+            self.assertIsNone(zh.testzip())
+
+
 class OtherTests(unittest.TestCase):
     def testMoreThan64kFiles(self):
         # This test checks that more than 64k files can be added to an archive,
