@@ -287,6 +287,39 @@ geturl, and info, methods as returned by the ``urllib.response`` module::
       <title>Page Not Found</title>\n
       ...
 
+Handling redirects
+~~~~~~~~~~~~~~~~~~~
+
+Since a redirect also raises a :exc:`~urllib.error.HTTPError`, you can implement
+an exception handler to make follow-up requests and handle the redirects.
+
+For example ::
+
+    >>> import urllib.request
+    >>> import urllib.parse
+    >>> url = 'http://example.com/redirect'
+    >>> data = 'example=data'.encode('utf-8')
+    >>> req = urllib.request.Request(url, data)
+    >>> while True:
+    ...     try:
+    ...         print(f'{req.get_method()}: {req.get_full_url()}')
+    ...         resp = urllib.request.urlopen(req)
+    ...         break
+    ...     except urllib.error.HTTPError as e:
+    ...         if e.status != 307:
+    ...             raise
+    ...         redirected_url = urllib.parse.urljoin(url, e.headers['Location'])
+    ...         req = urllib.request.Request(redirected_url, data)
+    ...
+    POST: http://example.com/url
+    POST: http://example.com/redirect-1
+    POST: http://example.com/redirect-2
+    POST: http://example.com/final-url
+    b'{"example":"response"}\n'
+
+Since a new request is created for each redirect, any necessary data or other
+parameters must be explicitly passed to the new request.
+
 Wrapping it Up
 --------------
 
