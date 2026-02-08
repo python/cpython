@@ -3238,8 +3238,8 @@ Safe importing of main module
            print('hello')
 
        if __name__ == '__main__':
-           freeze_support()
            set_start_method('spawn')
+           freeze_support()
            p = Process(target=foo)
            p.start()
 
