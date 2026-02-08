@@ -1,0 +1,3 @@
+Improve :exc:`AttributeError` suggestions for classes with a custom
+:meth:`~object.__dir__` method returning a list of unsortable values.
+Patch by Bénédikt Tran.
