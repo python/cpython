@@ -2520,6 +2520,8 @@ class SubinterpImportTests(unittest.TestCase):
 
     @requires_subinterpreters
     def test_pyinit_function_raises_exception(self):
+        # gh-144601: PyInit functions that raised exceptions would cause a
+        # crash when imported from a subinterpreter.
         import _testsinglephase
         filename = _testsinglephase.__file__
         script = f"""if True:
