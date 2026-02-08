@@ -1,0 +1,2 @@
+In the New REPL, resize triggers redraw now. Also fixed cross-line width
+calculation and content rendering during scrolling.
