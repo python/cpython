@@ -111,3 +111,33 @@ class TestEncode(CTest):
         self.assertEqual(enc(['spam', {'ham': 'eggs'}], 3)[0], expected2)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}], 3.0)
         self.assertRaises(TypeError, enc, ['spam', {'ham': 'eggs'}])
+
+    def test_mutate_items_during_encode(self):
+        c_make_encoder = getattr(self.json.encoder, 'c_make_encoder', None)
+        if c_make_encoder is None:
+            self.skipTest("c_make_encoder not available")
+
+        cache = []
+
+        class BadDict(dict):
+            def items(self):
+                entries = [("boom", object())]
+                cache.append(entries)
+                return entries
+
+        def encode_str(obj):
+            if cache:
+                cache.pop().clear()
+            return '"x"'
+
+        encoder = c_make_encoder(
+            None, lambda o: "null",
+            encode_str, None,
+            ": ", ", ", False,
+            False, True
+        )
+
+        try:
+            encoder(BadDict(real=1), 0)
+        except (ValueError, RuntimeError):
+            pass
