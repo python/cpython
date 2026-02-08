@@ -333,6 +333,10 @@ slicing::
    >>> word[42:]
    ''
 
+Some sequences also support extended slicing with a third "step" parameter:
+``s[i:j:k]``.  See :ref:`Common Sequence Operations <typesseq-common>` for
+details.
+
 Python strings cannot be changed --- they are :term:`immutable`.
 Therefore, assigning to an indexed position in the string results in an error::
 
