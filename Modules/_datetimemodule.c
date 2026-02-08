@@ -2692,7 +2692,7 @@ delta_divmod(PyObject *left, PyObject *right)
         Py_DECREF(divmod);
         return NULL;
     }
-    result = PyTuple_Pack(2, PyTuple_GET_ITEM(divmod, 0), delta);
+    result = PyTuple_FromArray((PyObject*[]){ PyTuple_GET_ITEM(divmod, 0), delta }, 2);
     Py_DECREF(delta);
     Py_DECREF(divmod);
     return result;
@@ -4478,8 +4478,8 @@ timezone_getinitargs(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
     if (self->name == NULL)
-        return PyTuple_Pack(1, self->offset);
-    return PyTuple_Pack(2, self->offset, self->name);
+        return PyTuple_FromArray((PyObject*[]){ self->offset }, 1);
+    return PyTuple_FromArray((PyObject*[]){ self->offset, self->name }, 2);
 }
 
 static PyMethodDef timezone_methods[] = {
@@ -5228,9 +5228,9 @@ time_getstate(PyDateTime_Time *self, int proto)
             /* Set the first bit of the first byte */
             PyBytes_AS_STRING(basestate)[0] |= (1 << 7);
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
-            result = PyTuple_Pack(1, basestate);
+            result = PyTuple_FromArray((PyObject*[]){ basestate }, 1);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = PyTuple_FromArray((PyObject*[]){ basestate, self->tzinfo }, 2);
         Py_DECREF(basestate);
     }
     return result;
@@ -7150,9 +7150,9 @@ datetime_getstate(PyDateTime_DateTime *self, int proto)
             /* Set the first bit of the third byte */
             PyBytes_AS_STRING(basestate)[2] |= (1 << 7);
         if (! HASTZINFO(self) || self->tzinfo == Py_None)
-            result = PyTuple_Pack(1, basestate);
+            result = PyTuple_FromArray((PyObject*[]){ basestate }, 1);
         else
-            result = PyTuple_Pack(2, basestate, self->tzinfo);
+            result = PyTuple_FromArray((PyObject*[]){ basestate, self->tzinfo }, 2);
         Py_DECREF(basestate);
     }
     return result;
