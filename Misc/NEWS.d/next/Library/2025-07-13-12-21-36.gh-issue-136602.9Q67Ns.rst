@@ -1,0 +1,2 @@
+Fix wrong ``offset_data`` being used for sparse files with an additional
+``size`` PAX keyword.
