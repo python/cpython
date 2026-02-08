@@ -2801,7 +2801,9 @@ expression support in the :mod:`re` module).
    Return a titlecased version of the string where words start with an uppercase
    character and the remaining characters are lowercase.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> 'Hello world'.title()
       'Hello World'
@@ -2809,7 +2811,9 @@ expression support in the :mod:`re` module).
    The algorithm uses a simple language-independent definition of a word as
    groups of consecutive letters.  The definition works in many contexts but
    it means that apostrophes in contractions and possessives form word
-   boundaries, which may not be the desired result::
+   boundaries, which may not be the desired result:
+
+   .. doctest::
 
         >>> "they're bill's friends from the UK".title()
         "They'Re Bill'S Friends From The Uk"
@@ -2818,7 +2822,9 @@ expression support in the :mod:`re` module).
    splits words on spaces only.
 
    Alternatively, a workaround for apostrophes can be constructed using regular
-   expressions::
+   expressions:
+
+   .. doctest::
 
         >>> import re
         >>> def titlecase(s):
@@ -2829,7 +2835,7 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
-   See also :meth:`istitle`.
+   See also :meth:`istitle` and :meth:`capitalize`.
 
 
 .. method:: str.translate(table, /)
