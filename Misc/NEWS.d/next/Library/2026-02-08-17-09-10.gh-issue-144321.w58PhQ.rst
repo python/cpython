@@ -1,2 +1,2 @@
-Fix :class:`typing.NamedTuple`` incorrectly
+Fix :class:`typing.NamedTuple` incorrectly
 inferring its fields when passing a generator.
