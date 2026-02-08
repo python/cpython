@@ -1466,7 +1466,7 @@ from the power operator, there are only two levels, one for multiplicative
 operators and one for additive operators:
 
 .. productionlist:: python-grammar
-   m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `m_expr` |
+   m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `u_expr` |
          : `m_expr` "//" `u_expr` | `m_expr` "/" `u_expr` |
          : `m_expr` "%" `u_expr`
    a_expr: `m_expr` | `a_expr` "+" `m_expr` | `a_expr` "-" `m_expr`
