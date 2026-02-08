@@ -168,10 +168,14 @@ class RaceTestBase:
                 s.discard(i - 1)
                 i += 1
 
-        t1 = Thread(target=reader)
-        t2 = Thread(target=writer)
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        threads = [
+            Thread(target=reader),
+            Thread(target=writer),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
     def test_length_hint_exhaust_race(self):
         NUM_LOOPS = 10_000
@@ -199,10 +203,14 @@ class RaceTestBase:
                     it.__length_hint__()
                 barrier.wait()
 
-        t1 = Thread(target=reader)
-        t2 = Thread(target=exhauster)
-        t1.start(); t2.start()
-        t1.join(); t2.join()
+        threads = [
+            Thread(target=reader),
+            Thread(target=exhauster),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
     def test_iternext_concurrent_exhaust_race(self):
         NUM_LOOPS = 20_000
@@ -227,11 +235,15 @@ class RaceTestBase:
                 barrier.wait()
                 barrier.wait()
 
-        t1 = Thread(target=advancer)
-        t2 = Thread(target=advancer)
-        t3 = Thread(target=producer)
-        t1.start(); t2.start(); t3.start()
-        t1.join(); t2.join(); t3.join()
+        threads = [
+            Thread(target=advancer),
+            Thread(target=advancer),
+            Thread(target=producer),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
 
 @threading_helper.requires_working_threading()

@@ -1056,23 +1056,24 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
+
 #ifdef Py_GIL_DISABLED
     PySetObject *so = si->si_set;
     if (so != NULL) {
-        Py_BEGIN_CRITICAL_SECTION(so);
-        Py_ssize_t pos = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_pos);
-        if (pos >= 0 &&
+        Py_BEGIN_CRITICAL_SECTION2(op, so);
+        if (si->si_pos >= 0 &&
             si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used))
         {
             len = si->len;
         }
-        Py_END_CRITICAL_SECTION();
+        Py_END_CRITICAL_SECTION2();
     }
 #else
     if (si->si_set != NULL && si->si_used == si->si_set->used) {
         len = si->len;
     }
 #endif
+
     return PyLong_FromSsize_t(len);
 }
 
@@ -1104,18 +1105,22 @@ static PyMethodDef setiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyObject *setiter_iternext(PyObject *self)
+static PyObject *
+setiter_iternext(PyObject *self)
 {
     setiterobject *si = (setiterobject*)self;
     PyObject *key = NULL;
     Py_ssize_t i, mask;
     setentry *entry;
     PySetObject *so = si->si_set;
-    int exhausted = 0;
+#ifndef Py_GIL_DISABLED
+    int decref_so = 0;
+#endif
 
-    if (so == NULL)
+    if (so == NULL) {
         return NULL;
-    assert (PyAnySet_Check(so));
+    }
+    assert(PyAnySet_Check(so));
 
     Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
     Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used);
@@ -1126,61 +1131,54 @@ static PyObject *setiter_iternext(PyObject *self)
         return NULL;
     }
 
-    Py_BEGIN_CRITICAL_SECTION(so);
 #ifdef Py_GIL_DISABLED
-    /* si_pos may be read outside the lock; keep it atomic in FT builds */
-    i = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_pos);
-    if (i < 0) {
-        /* iterator already exhausted */
-        goto done;
-    }
-#else
+    Py_BEGIN_CRITICAL_SECTION2(self, so);
     i = si->si_pos;
-    if (i < 0) {
-        /* iterator already exhausted */
-        exhausted = 1;
-    }
-#endif
-
-    if (!exhausted) {
-        assert(i >= 0);
+    if (i >= 0) {
         entry = so->table;
         mask = so->mask;
-        while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
+        while (i <= mask &&
+                (entry[i].key == NULL || entry[i].key == dummy)) {
             i++;
         }
         if (i <= mask) {
             key = Py_NewRef(entry[i].key);
-#ifdef Py_GIL_DISABLED
-            FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, i + 1);
-#else
             si->si_pos = i + 1;
-#endif
             si->len--;
         }
         else {
-#ifdef Py_GIL_DISABLED
-            /* free-threaded: keep si_set; just mark exhausted */
-            FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, -1);
+            si->si_pos = -1;
             si->len = 0;
-#else
-            si->si_set = NULL;
-#endif
         }
     }
-
-#ifdef Py_GIL_DISABLED
-done:
-#endif
+    Py_END_CRITICAL_SECTION2();
+    return key;
+#else
+    Py_BEGIN_CRITICAL_SECTION(so);
+    i = si->si_pos;
+    entry = so->table;
+    mask = so->mask;
+    while (i <= mask &&
+            (entry[i].key == NULL || entry[i].key == dummy)) {
+        i++;
+    }
+    if (i <= mask) {
+        key = Py_NewRef(entry[i].key);
+        si->si_pos = i + 1;
+        si->len--;
+    } 
+    else {
+        si->si_set = NULL;
+        decref_so = 1;
+    }
     Py_END_CRITICAL_SECTION();
 
-    if (key == NULL) {
-#ifndef Py_GIL_DISABLED
+    if (decref_so) {
         Py_DECREF(so);
-#endif
         return NULL;
     }
     return key;
+#endif
 }
 
 PyTypeObject PySetIter_Type = {
