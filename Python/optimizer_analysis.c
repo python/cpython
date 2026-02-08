@@ -278,6 +278,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_set_recorded_gen_func(SYM, VAL) _Py_uop_sym_set_recorded_gen_func(ctx, SYM, VAL)
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
+#define sym_get_probable_type _Py_uop_sym_get_probable_type
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2

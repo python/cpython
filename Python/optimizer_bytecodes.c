@@ -1500,16 +1500,34 @@ dummy_func(void) {
 
     op(_BINARY_SLICE, (container, start, stop -- res)) {
         // Slicing a string/list/tuple always returns the same type.
-        PyTypeObject *type = sym_get_type(container);
-        if (type == &PyUnicode_Type ||
-            type == &PyList_Type ||
-            type == &PyTuple_Type)
-        {
+        PyTypeObject *type = sym_get_probable_type(container);
+        if (type == &PyList_Type) {
+            ADD_OP(_GUARD_3OS_TYPE, 0, (uintptr_t)type);
+            ADD_OP(_UNPACK_INDICES, 0, 0);
+            ADD_OP(_BINARY_SLICE_LIST, 0, 0);
+            res = sym_new_type(ctx, type);
+        }
+        else if (type == &PyTuple_Type) {
+            ADD_OP(_GUARD_3OS_TYPE, 0, (uintptr_t)type);
+            ADD_OP(_UNPACK_INDICES, 0, 0);
+            ADD_OP(_BINARY_SLICE_TUPLE, 0, 0);
+            res = sym_new_type(ctx, type);
+        }
+        else if (type == &PyUnicode_Type) {
+            ADD_OP(_GUARD_3OS_TYPE, 0, (uintptr_t)type);
+            ADD_OP(_UNPACK_INDICES, 0, 0);
+            ADD_OP(_BINARY_SLICE_UNICODE, 0, 0);
             res = sym_new_type(ctx, type);
         }
         else {
             res = sym_new_not_null(ctx);
         }
+    }
+
+    op(_UNPACK_INDICES, (container, start, stop -- container, sta, sto)) {
+        (void)container;
+        sta = sym_new_compact_int(ctx);
+        sto = sym_new_compact_int(ctx);
     }
 
     op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
@@ -1624,6 +1642,11 @@ dummy_func(void) {
     op(_RECORD_TOS_TYPE, (tos -- tos)) {
         PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
         sym_set_recorded_type(tos, tp);
+    }
+
+    op(_RECORD_3OS_TYPE, (third, nos, tos -- third, nos, tos)) {
+        PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
+        sym_set_recorded_type(third, tp);
     }
 
     op(_RECORD_NOS, (nos, tos -- nos, tos)) {

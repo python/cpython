@@ -1,0 +1,1 @@
+Implement scalar replacement of ``BINARY_SLICE`` for list, tuple, and unicode in the JIT.
