@@ -1109,6 +1109,123 @@ def make_encoding_map(decoding_map):
             m[v] = None
     return m
 
+_surrogates_re = None
+
+def rehandle_surrogatepass(string, errors):
+    handler = None
+    global _surrogates_re
+    if not _surrogates_re:
+        import re
+        _surrogates_re = re.compile('[\ud800-\uefff]+')
+    pos = 0
+    res = []
+    while True:
+        m = _surrogates_re.search(string, pos)
+        if m:
+            if handler is None:
+                handler = lookup_error(errors)
+            res.append(string[pos: m.start()])
+            repl, pos = handler(UnicodeTranslateError(string, m.start(), m.end(),
+                                                      'lone surrogates'))
+            res.append(repl)
+        elif pos:
+            res.append(string[pos:])
+            return ''.join(res)
+        else:
+            return string[:]
+
+def rehandle_surrogateescape(string, errors):
+    handler = None
+    global _surrogates_re
+    if not _surrogates_re:
+        import re
+        _surrogates_re = re.compile('[\ud800-\uefff]+')
+    pos = 0
+    res = []
+    while True:
+        m = _surrogates_re.search(string, pos)
+        if m:
+            if handler is None:
+                handler = lookup_error(errors)
+            start = m.start()
+            res.append(string[pos: start])
+            try:
+                baddata = string[start: m.end()].encode('ascii', 'surrogateescape')
+            except UnicodeEncodeError as err:
+                raise UnicodeTranslateError(string,
+                        err.start + start,err.end + start,
+                        r'surrogates not in range \udc80-\udcff') from None
+            try:
+                repl, pos = handler(UnicodeDecodeError('unicode', baddata,
+                                                       0, len(baddata),
+                                                       'lone surrogates'))
+            except UnicodeDecodeError as err:
+                raise UnicodeTranslateError(string,
+                                            err.start + start,
+                                            err.end + start,
+                                            err.reason) from None
+            pos += start
+            res.append(repl)
+        elif pos:
+            res.append(string[pos:])
+            return ''.join(res)
+        else:
+            return string[:]
+
+_astral_re = None
+
+def handle_astrals(string, errors):
+    handler = None
+    global _astral_re
+    if not _astral_re:
+        import re
+        _astral_re = re.compile(r'[^\u0000-\uffff]+')
+    pos = 0
+    res = []
+    while True:
+        m = _astral_re.search(string, pos)
+        if m:
+            if handler is None:
+                handler = lookup_error(errors)
+            res.append(string[pos: m.start()])
+            repl, pos = handler(UnicodeTranslateError(string, m.start(), m.end(),
+                                                      'astral characters'))
+            res.append(repl)
+        elif pos:
+            res.append(string[pos:])
+            return ''.join(res)
+        else:
+            return string[:]
+
+def _decompose_astral(match):
+    res = []
+    for c in match.group():
+        k = ord(c) - 0x10000
+        res.append('%c%c' % (0xd800 + (k >> 10), 0xdc00 + (k & 0x3ff)))
+    return ''.join(res)
+
+def decompose_astrals(string):
+    global _astral_re
+    if not _astral_re:
+        import re
+        _astral_re = re.compile(r'[^\u0000-\uffff]+')
+    return _astral_re.sub(_decompose_astral, string)
+
+_surrogate_pair_re = None
+
+def _compose_surrogate_pair(match):
+    hi, lo = match.group()
+    hi = ord(hi) - 0xd800
+    lo = ord(lo) - 0xdc00
+    return chr(0x10000 + (hi << 10) + lo)
+
+def compose_surrogate_pairs(string):
+    global _surrogate_pair_re
+    if not _surrogate_pair_re:
+        import re
+        _surrogate_pair_re = re.compile(r'[\ud800-\udbff][\udc00-\udfff]')
+    return _surrogate_pair_re.sub(_compose_surrogate_pair, string)
+
 ### error handlers
 
 strict_errors = lookup_error("strict")
