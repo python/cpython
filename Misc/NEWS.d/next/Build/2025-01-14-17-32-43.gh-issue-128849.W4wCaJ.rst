@@ -1,0 +1,2 @@
+Enable loading hot code into 2MB pages (hugify) when BOLT optimizations are
+enabled.
