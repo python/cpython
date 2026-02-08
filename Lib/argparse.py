@@ -739,14 +739,15 @@ class HelpFormatter(object):
         # The textwrap module is used only for formatting help.
         # Delay its import for speeding up the common usage of argparse.
         import textwrap
-        return textwrap.wrap(text, width)
+        return textwrap.wrap(text, width, ignore_ansi_escape=True)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
         import textwrap
         return textwrap.fill(text, width,
                              initial_indent=indent,
-                             subsequent_indent=indent)
+                             subsequent_indent=indent,
+                             ignore_ansi_escape=True)
 
     def _get_help_string(self, action):
         return action.help
