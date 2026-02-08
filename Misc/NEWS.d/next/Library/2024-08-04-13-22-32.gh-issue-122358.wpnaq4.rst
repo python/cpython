@@ -1,0 +1,1 @@
+Remove :func:`!re._compile`, leaving a compatibility alias to :func:`re.compile`.
