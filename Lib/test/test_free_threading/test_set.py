@@ -148,6 +148,103 @@ class RaceTestBase:
         for t in threads:
             t.join()
 
+    def test_length_hint_used_race(self):
+        s = set(range(2000))
+        it = iter(s)
+
+        NUM_LOOPS = 50_000
+        barrier = Barrier(2)
+
+        def reader():
+            barrier.wait()
+            for _ in range(NUM_LOOPS):
+                it.__length_hint__()
+
+        def writer():
+            barrier.wait()
+            i = 0
+            for _ in range(NUM_LOOPS):
+                s.add(i)
+                s.discard(i - 1)
+                i += 1
+
+        threads = [
+            Thread(target=reader),
+            Thread(target=writer),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+    def test_length_hint_exhaust_race(self):
+        NUM_LOOPS = 10_000
+        INNER_HINTS = 20
+        barrier = Barrier(2)
+        box = {"it": None}
+
+        def exhauster():
+            for _ in range(NUM_LOOPS):
+                s = set(range(256))
+                box["it"] = iter(s)
+                barrier.wait()          # start together
+                try:
+                    while True:
+                        next(box["it"])
+                except StopIteration:
+                    pass
+                barrier.wait()          # end iteration
+
+        def reader():
+            for _ in range(NUM_LOOPS):
+                barrier.wait()
+                it = box["it"]
+                for _ in range(INNER_HINTS):
+                    it.__length_hint__()
+                barrier.wait()
+
+        threads = [
+            Thread(target=reader),
+            Thread(target=exhauster),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+    def test_iternext_concurrent_exhaust_race(self):
+        NUM_LOOPS = 20_000
+        barrier = Barrier(3)
+        box = {"it": None}
+
+        def advancer():
+            for _ in range(NUM_LOOPS):
+                barrier.wait()
+                it = box["it"]
+                while True:
+                    try:
+                        next(it)
+                    except StopIteration:
+                        break
+                barrier.wait()
+
+        def producer():
+            for _ in range(NUM_LOOPS):
+                s = set(range(64))
+                box["it"] = iter(s)
+                barrier.wait()
+                barrier.wait()
+
+        threads = [
+            Thread(target=advancer),
+            Thread(target=advancer),
+            Thread(target=producer),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
 
 @threading_helper.requires_working_threading()
 class SmallSetTest(RaceTestBase, unittest.TestCase):

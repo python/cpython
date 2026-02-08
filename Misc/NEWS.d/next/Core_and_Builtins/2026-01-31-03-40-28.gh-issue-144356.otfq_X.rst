@@ -1,0 +1,1 @@
+Fix a data race in ``set_iterator.__length_hint__`` under ``Py_GIL_DISABLED``.
