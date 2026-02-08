@@ -133,6 +133,40 @@ class EnvBuilder:
         else:
             return path1 == path2
 
+    @classmethod
+    def _getpath_realpath(cls, path):
+        """Mimics getpath.realpath
+
+        It only mimics it for HAVE_READLINK.
+        There are a few differences listed here:
+        - we ensure that we have a resolvable abspath first
+          (i.e. exists and no symlink loop)
+        - we stop if a candidate does not resolve to the same file
+          (this can happen with normpath)
+        """
+        result = os.path.abspath(path)
+        try:
+            real_path = os.path.realpath(result, strict=True)
+        except OSError:
+            logger.warning('Unable to resolve %r real path', result)
+            return result
+        if sysconfig.get_config_var('HAVE_READLINK'):
+            while os.path.islink(result):
+                link = os.readlink(result)
+                if os.path.isabs(link):
+                    candidate = link
+                else:
+                    candidate = os.path.join(os.path.dirname(result), link)
+                    candidate = os.path.normpath(candidate)
+                # shall exists and be the same file as the original one
+                valid = os.path.exists(candidate) and os.path.samefile(real_path, candidate)
+                if not valid:
+                    logger.warning('Stopped resolving %r because %r is not the same file',
+                                   result, candidate)
+                    break
+                result = candidate
+        return result
+
     def ensure_directories(self, env_dir):
         """
         Create the directories for the environment.
@@ -163,7 +197,8 @@ class EnvBuilder:
                              'Python interpreter. Provide an explicit path or '
                              'check that your PATH environment variable is '
                              'correctly set.')
-        dirname, exename = os.path.split(os.path.abspath(executable))
+        # only resolve executable symlinks, not the full chain, see gh-106045
+        dirname, exename = os.path.split(self._getpath_realpath(executable))
         if sys.platform == 'win32':
             # Always create the simplest name in the venv. It will either be a
             # link back to executable, or a copy of the appropriate launcher
