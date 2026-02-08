@@ -112,7 +112,7 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: and_(a, b)
               __and__(a, b)
 
-   Return the bitwise and of *a* and *b*.
+   Return ``a & b``.
 
 
 .. function:: floordiv(a, b)
@@ -136,13 +136,13 @@ The mathematical and bitwise operations are the most numerous:
               __inv__(obj)
               __invert__(obj)
 
-   Return the bitwise inverse of the number *obj*.  This is equivalent to ``~obj``.
+   Return ``~obj``.
 
 
 .. function:: lshift(a, b)
               __lshift__(a, b)
 
-   Return *a* shifted left by *b*.
+   Return ``a << b``.
 
 
 .. function:: mod(a, b)
@@ -154,7 +154,7 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: mul(a, b)
               __mul__(a, b)
 
-   Return ``a * b``, for *a* and *b* numbers.
+   Return ``a * b``.
 
 
 .. function:: matmul(a, b)
@@ -174,25 +174,25 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: or_(a, b)
               __or__(a, b)
 
-   Return the bitwise or of *a* and *b*.
+   Return ``a | b``.
 
 
 .. function:: pos(obj)
               __pos__(obj)
 
-   Return *obj* positive (``+obj``).
+   Return ``+obj``.
 
 
 .. function:: pow(a, b)
               __pow__(a, b)
 
-   Return ``a ** b``, for *a* and *b* numbers.
+   Return ``a ** b``.
 
 
 .. function:: rshift(a, b)
               __rshift__(a, b)
 
-   Return *a* shifted right by *b*.
+   Return ``a >> b``.
 
 
 .. function:: sub(a, b)
@@ -211,7 +211,7 @@ The mathematical and bitwise operations are the most numerous:
 .. function:: xor(a, b)
               __xor__(a, b)
 
-   Return the bitwise exclusive or of *a* and *b*.
+   Return ``a ^ b``.
 
 
 Operations which work with sequences (some of them with mappings too) include:
@@ -219,7 +219,7 @@ Operations which work with sequences (some of them with mappings too) include:
 .. function:: concat(a, b)
               __concat__(a, b)
 
-   Return ``a + b`` for *a* and *b* sequences.
+   Return ``a + b``.
 
 
 .. function:: contains(a, b)
@@ -405,13 +405,13 @@ Python syntax and the functions in the :mod:`!operator` module.
 +-----------------------+-------------------------+---------------------------------------+
 | Division              | ``a // b``              | ``floordiv(a, b)``                    |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise And           | ``a & b``               | ``and_(a, b)``                        |
+| And                   | ``a & b``               | ``and_(a, b)``                        |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise Exclusive Or  | ``a ^ b``               | ``xor(a, b)``                         |
+| Exclusive Or          | ``a ^ b``               | ``xor(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise Inversion     | ``~ a``                 | ``invert(a)``                         |
+| Inversion             | ``~ a``                 | ``invert(a)``                         |
 +-----------------------+-------------------------+---------------------------------------+
-| Bitwise Or            | ``a | b``               | ``or_(a, b)``                         |
+| Or                    | ``a | b``               | ``or_(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
 | Exponentiation        | ``a ** b``              | ``pow(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
