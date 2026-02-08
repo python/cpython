@@ -685,13 +685,17 @@ class OtherTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             m[MyIndex()]
 
+        # Other exceptions can be raised when working on a released buffer.
+        # See https://github.com/python/cpython/issues/142665.
         ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        self.assertEqual(list(m[:MyIndex()]), [255] * 4)
+        with self.assertRaises(BufferError):
+            m[:MyIndex()]
 
         ba = None
         m = memoryview(bytearray(b'\xff'*size))
-        self.assertEqual(list(m[MyIndex():8]), [255] * 4)
+        with self.assertRaises(BufferError):
+            m[MyIndex():8]
 
         ba = None
         m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
