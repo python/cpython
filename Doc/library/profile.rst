@@ -53,6 +53,12 @@ a straightforward migration path.
    to :mod:`profiling.tracing`. Existing code using ``import cProfile`` will
    continue to work without modification.
 
+.. note::
+
+   Only one profiler can be active at any given time.
+   Attemting to enable a profiler while another one is already in use will
+   result in a :exc:`ValueError`.
+
 
 :mod:`!profile` and :mod:`!profiling.tracing` module reference
 ==============================================================
