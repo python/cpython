@@ -84,8 +84,8 @@ Dictionary Objects
 
    Insert *val* into the dictionary *p* with a key of *key*.  *key* must be
    :term:`hashable`; if it isn't, :exc:`TypeError` will be raised. Return
-   ``0`` on success or ``-1`` on failure.  This function *does not* steal a
-   reference to *val*.
+   ``0`` on success or ``-1`` on failure.
+   This function *does not* ":term:`steal`" a reference to *val*.
 
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
