@@ -16,6 +16,13 @@ byte by doing ``obj[index] = 97``, or change a subsequence by assigning to a
 slice: ``obj[i1:i2] = b'...'``.  You can also read and write data starting at
 the current file position, and :meth:`seek` through the file to different positions.
 
+.. note::
+   Iterating over a mmap object yields :class:`bytes` objects of length 1; this
+   differs from :class:`bytearray` which yields :class:`int` values in the range
+   [0, 255]. This behavior has been retained for backwards-compatibility. To get
+   an iterator that iterates over bytes you can create a :class:`memoryview` object
+   referencing the mmap object.
+
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
 descriptor for a file opened for update. If you wish to map an existing Python
