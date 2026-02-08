@@ -1326,6 +1326,8 @@ class FractionTest(unittest.TestCase):
             (F('1234567.123456'), '.5_e', '1.234_57e+06'),
             # z flag is legal, but never makes a difference to the output
             (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
+            # Accept unicode in width and precision
+            (F(22, 7), '١١.٦e', '3.142857e+00'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1525,6 +1527,8 @@ class FractionTest(unittest.TestCase):
             (F(151, 1000), '.1f', '0.2'),
             (F(22, 7), '.02f', '3.14'),  # issue gh-130662
             (F(22, 7), '005.02f', '03.14'),
+            # Accept unicode in width and precision
+            (F(22, 7), '٧.٢f', '   3.14'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):

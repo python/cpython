@@ -1,0 +1,2 @@
+Allow unicode digits for width and precision fields of format specifications
+of :class:`fractions.Fraction`.  Patch by Sergey B Kirpichev.
