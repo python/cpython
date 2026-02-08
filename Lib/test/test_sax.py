@@ -9,8 +9,9 @@ try:
 except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise unittest.SkipTest("no XML parsers available")
-from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
-                             XMLFilterBase, prepare_input_source
+from xml.sax.saxutils import (XMLGenerator, escape, unescape, quoteattr,
+                              is_valid_name,
+                              XMLFilterBase, prepare_input_source)
 from xml.sax.expatreader import create_parser
 from xml.sax.handler import (feature_namespaces, feature_external_ges,
                              LexicalHandler)
@@ -342,6 +343,23 @@ class SaxutilsTest(unittest.TestCase):
     def test_single_double_quoteattr(self):
         self.assertEqual(quoteattr("Includes 'single' and \"double\" quotes"),
                          "\"Includes 'single' and &quot;double&quot; quotes\"")
+
+    def test_is_valid_name(self):
+        self.assertFalse(is_valid_name(''))
+        self.assertTrue(is_valid_name('name'))
+        self.assertTrue(is_valid_name('NAME'))
+        self.assertTrue(is_valid_name('name0:-._·'))
+        self.assertTrue(is_valid_name('_'))
+        self.assertTrue(is_valid_name(':'))
+        self.assertTrue(is_valid_name('Ñàḿĕ'))
+        self.assertTrue(is_valid_name('\U000EFFFF'))
+        self.assertFalse(is_valid_name('0'))
+        self.assertFalse(is_valid_name('-'))
+        self.assertFalse(is_valid_name('.'))
+        self.assertFalse(is_valid_name('·'))
+        self.assertFalse(is_valid_name('na me'))
+        for c in '<>/!?=\x00\x01\x7f\ud800\udfff\ufffe\uffff\U000F0000':
+            self.assertFalse(is_valid_name('name' + c))
 
     # ===== make_parser
     def test_make_parser(self):
