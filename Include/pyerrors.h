@@ -235,6 +235,8 @@ PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
 /* In signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
+PyAPI_FUNC(int) PyErr_CheckSignalsDetached(PyThreadState *state);
+PyAPI_FUNC(int) PyErr_AreSignalsPending(PyThreadState *state);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 PyAPI_FUNC(int) PyErr_SetInterruptEx(int signum);
