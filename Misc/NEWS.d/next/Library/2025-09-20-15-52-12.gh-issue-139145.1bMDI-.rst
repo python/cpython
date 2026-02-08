@@ -1,0 +1,4 @@
+Prevents tkinter ending up in a busy loop when ``vwait`` (and other Tcl commands
+that run their own tight event loop) are used with Python in interactive mode,
+and the user types any input on stdin while ``vwait`` is still running. Patch
+by Michiel de Hoon.
