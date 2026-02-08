@@ -2458,6 +2458,27 @@ class BaseTaskTests:
                         'raised by inner task to the gather() caller.'
                     )
 
+    def test_cancel_gather_3(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+        barrier = asyncio.Barrier(2)
+
+        async def f1():
+            await barrier.wait()
+            await asyncio.sleep(1)
+
+        async def f2():
+            return 42
+
+        async def main():
+            gfut = asyncio.gather(f2(), f1(), f2(), return_exceptions=True)
+            await barrier.wait()
+            gfut.cancel("my message")
+            await gfut
+
+        with self.assertRaisesRegex(asyncio.CancelledError, "my message"):
+            loop.run_until_complete(main())
+
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
 
