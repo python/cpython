@@ -474,6 +474,21 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
+    def test_utf8_round_trip_preserves_unicode_body(self):
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        msg.set_content("oh là là, know what I mean, know what I mean?")
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.SMTPUTF8)
+        g.flatten(msg)
+        out = s.getvalue()
+        parsed = message_from_bytes(out, policy=policy.default.clone(utf8=True))
+
+        self.assertEqual(parsed["Subject"], 'Nudge nudge, wink, wink \u1F609')
+        self.assertEqual(parsed.get_body().get_content(), "oh là là, know what I mean, know what I mean?\r\n")
+
 
 if __name__ == '__main__':
     unittest.main()
