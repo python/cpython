@@ -892,6 +892,12 @@ dummy_func(
                 PyStackRef_CLOSE(container);
                 ERROR_IF(true);
             }
+            Py_ssize_t len = PyObject_Length(PyStackRef_AsPyObjectBorrow(container));
+            if (len < 0) {
+                PyStackRef_CLOSE(container);
+                ERROR_IF(true);
+            }
+            PySlice_AdjustIndices(len, &istart, &istop, 1);
             sta = PyStackRef_TagInt((intptr_t)istart);
             sto = PyStackRef_TagInt((intptr_t)istop);
         }
@@ -903,7 +909,6 @@ dummy_func(
             Py_ssize_t istop = PyStackRef_UntagInt(stop);
             DEAD(start);
             DEAD(stop);
-            PySlice_AdjustIndices(PyList_GET_SIZE(container_o), &istart, &istop, 1);
             PyObject *res_o = PyList_GetSlice(container_o, istart, istop);
             PyStackRef_CLOSE(container);
             ERROR_IF(res_o == NULL);
@@ -917,7 +922,6 @@ dummy_func(
             Py_ssize_t istop = PyStackRef_UntagInt(stop);
             DEAD(start);
             DEAD(stop);
-            PySlice_AdjustIndices(PyTuple_GET_SIZE(container_o), &istart, &istop, 1);
             PyObject *res_o = PyTuple_GetSlice(container_o, istart, istop);
             PyStackRef_CLOSE(container);
             ERROR_IF(res_o == NULL);
@@ -931,7 +935,6 @@ dummy_func(
             Py_ssize_t istop = PyStackRef_UntagInt(stop);
             DEAD(start);
             DEAD(stop);
-            PySlice_AdjustIndices(PyUnicode_GET_LENGTH(container_o), &istart, &istop, 1);
             PyObject *res_o = PyUnicode_Substring(container_o, istart, istop);
             PyStackRef_CLOSE(container);
             ERROR_IF(res_o == NULL);

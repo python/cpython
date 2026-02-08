@@ -5283,6 +5283,19 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_ssize_t len = PyObject_Length(PyStackRef_AsPyObjectBorrow(container));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (len < 0) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(container);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PySlice_AdjustIndices(len, &istart, &istop, 1);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             sta = PyStackRef_TagInt((intptr_t)istart);
             sto = PyStackRef_TagInt((intptr_t)istop);
             _tos_cache2 = sto;
@@ -5323,7 +5336,6 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PySlice_AdjustIndices(PyList_GET_SIZE(container_o), &istart, &istop, 1);
             PyObject *res_o = PyList_GetSlice(container_o, istart, istop);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -1;
@@ -5372,7 +5384,6 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PySlice_AdjustIndices(PyTuple_GET_SIZE(container_o), &istart, &istop, 1);
             PyObject *res_o = PyTuple_GetSlice(container_o, istart, istop);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -1;
@@ -5421,7 +5432,6 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PySlice_AdjustIndices(PyUnicode_GET_LENGTH(container_o), &istart, &istop, 1);
             PyObject *res_o = PyUnicode_Substring(container_o, istart, istop);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -1;
