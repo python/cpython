@@ -1,0 +1,2 @@
+Fix asyncio selector stall if :class:`!asyncio._SelectorTransport` is
+resurrected from GC for .close() after the fd has been reused.
