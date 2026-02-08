@@ -1,0 +1,1 @@
+Improve performance :meth:`copy.deepcopy`  setting keep alive key on the memo construction.
