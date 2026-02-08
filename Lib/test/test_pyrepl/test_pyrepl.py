@@ -12,7 +12,7 @@ import sys
 import tempfile
 from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, skipIf, SkipTest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
@@ -2105,3 +2105,94 @@ class TestPyReplCtrlD(TestCase):
         )
         reader, _ = handle_all_events(events)
         self.assertEqual("hello", "".join(reader.buffer))
+
+
+@skipUnless(sys.platform == "win32", "Windows console behavior only")
+class TestWindowsConsoleEolWrap(TestCase):
+    """
+    When a line exactly fills the terminal width, Windows consoles differ on
+    whether the cursor immediately wraps to the next row (depends on host/mode).
+    We use _has_wrapped_to_next_row() to determine the actual behavior.
+    """
+
+    def _make_console_like(self, *, width: int, vt: bool):
+        from _pyrepl import windows_console as wc
+
+        con = object.__new__(wc.WindowsConsole)
+
+        # Minimal state needed by __write_changed_line()
+        con.width = width
+        con.screen = []
+        con.posxy = (0, 0)
+        setattr(con, "_WindowsConsole__offset", 0)
+        setattr(con, "_WindowsConsole__vt_support", vt)
+
+        # Stub out side-effecting methods used by __write_changed_line()
+        con._hide_cursor = Mock()
+        con._erase_to_end = Mock()
+        con._move_relative = Mock()
+        con.move_cursor = Mock()
+        setattr(con, "_WindowsConsole__write", Mock())
+
+        return con, wc
+
+    def _run_exact_width_case(self, *, vt: bool, did_wrap: bool):
+        width = 10
+        y = 3
+        con, wc = self._make_console_like(width=width, vt=vt)
+
+        with patch.object(con, "_has_wrapped_to_next_row", return_value=did_wrap):
+            old = ""
+            new = "a" * width
+            wc.WindowsConsole._WindowsConsole__write_changed_line(con, y, old, new, 0)
+
+        if did_wrap:
+            self.assertEqual(con.posxy, (0, y + 1))
+            self.assertNotIn((0, y + 1), [c.args for c in con._move_relative.mock_calls])
+        else:
+            self.assertEqual(con.posxy, (width, y))
+            self.assertNotIn((0, y + 1), [c.args for c in con._move_relative.mock_calls])
+
+    def test_exact_width_line_did_wrap_vt_and_legacy(self):
+        for vt in (True, False):
+            with self.subTest(vt=vt):
+                self._run_exact_width_case(vt=vt, did_wrap=True)
+
+    def test_exact_width_line_did_not_wrap_vt_and_legacy(self):
+        for vt in (True, False):
+            with self.subTest(vt=vt):
+                self._run_exact_width_case(vt=vt, did_wrap=False)
+
+
+@skipUnless(sys.platform == "win32", "Windows console behavior only")
+class TestHasWrappedToNextRow(TestCase):
+    def _make_console_like(self):
+        from _pyrepl import windows_console as wc
+
+        con = object.__new__(wc.WindowsConsole)
+        setattr(con, "_WindowsConsole__offset", 0)
+        return con, wc
+
+    def test_returns_true_when_wrapped(self):
+        con, wc = self._make_console_like()
+        y = 3
+
+        def fake_gcsbi(_h, info):
+            info.srWindow.Top = 0
+            info.dwCursorPosition.Y = y + 1
+            return True
+
+        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi):
+            self.assertTrue(con._has_wrapped_to_next_row(y))
+
+    def test_returns_false_when_not_wrapped(self):
+        con, wc = self._make_console_like()
+        y = 3
+
+        def fake_gcsbi(_h, info):
+            info.srWindow.Top = 0
+            info.dwCursorPosition.Y = y
+            return True
+
+        with patch.object(wc, "GetConsoleScreenBufferInfo", side_effect=fake_gcsbi):
+            self.assertFalse(con._has_wrapped_to_next_row(y))

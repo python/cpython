@@ -1,0 +1,1 @@
+Fix Windows REPL cursor desynchronization when a line exactly fills the terminal width.

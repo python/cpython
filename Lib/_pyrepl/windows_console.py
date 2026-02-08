@@ -246,6 +246,18 @@ class WindowsConsole(Console):
         if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
+    def _has_wrapped_to_next_row(self, y: int) -> bool:
+        """
+        Return True if the real console cursor wrapped to the next visible row.
+        """
+        info = CONSOLE_SCREEN_BUFFER_INFO()
+        if not GetConsoleScreenBufferInfo(OutHandle, info):
+            raise WinError(get_last_error())
+
+        win_y = int(info.dwCursorPosition.Y - info.srWindow.Top)
+        expected = y - self.__offset
+        return win_y == expected + 1
+
     def __write_changed_line(
         self, y: int, oldline: str, newline: str, px_coord: int
     ) -> None:
@@ -271,9 +283,11 @@ class WindowsConsole(Console):
 
         self.__write(newline[x_pos:])
         if wlen(newline) == self.width:
-            # If we wrapped we want to start at the next line
-            self._move_relative(0, y + 1)
-            self.posxy = 0, y + 1
+            if self._has_wrapped_to_next_row(y):
+                self.posxy = 0, y + 1
+            else:
+                # Terminal did not wrap; cursor stays at end-of-line.
+                self.posxy = self.width, y
         else:
             self.posxy = wlen(newline), y
 
