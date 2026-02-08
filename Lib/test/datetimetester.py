@@ -2200,6 +2200,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.theclass.strptime(test_date, "%Y-%m-%d")
         )
 
+
 #############################################################################
 # datetime tests
 
