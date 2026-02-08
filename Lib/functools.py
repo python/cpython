@@ -19,7 +19,7 @@ from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import GenericAlias, MethodType, MappingProxyType, UnionType
+from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
 
 ################################################################################
@@ -1060,6 +1060,12 @@ class _singledispatchmethod_get:
         # Set instance attributes which cannot be handled in __getattr__()
         # because they conflict with type descriptors.
         func = unbound.func
+        # Dispatch on the second argument if a generic method turns into
+        # a bound method on instance-level access.
+        if obj is None and isinstance(func, FunctionType):
+            self._skip_bound_arg = True
+        else:
+            self._skip_bound_arg = False
         try:
             self.__module__ = func.__module__
         except AttributeError:
@@ -1088,7 +1094,12 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        method = self._dispatch(args[0].__class__)
+        if self._skip_bound_arg:
+            method = self._dispatch(args[1].__class__)
+            if not isinstance(method, FunctionType):
+                args = args[1:]
+        else:
+            method = self._dispatch(args[0].__class__)
         if hasattr(method, "__get__"):
             method = method.__get__(self._obj, self._cls)
         return method(*args, **kwargs)
