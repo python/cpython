@@ -1290,6 +1290,49 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
+    def test_make_heap_safe_optimized(self):
+        def returns_owned(x):
+            return x + 1
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_owned(a)
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
+        def returns_immortal():
+            return None
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a = returns_immortal()
+            return a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNone(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_RETURN_VALUE", uops)
+
+    def test_make_heap_safe_yield_correctness(self):
+        def gen(n):
+            for i in range(n):
+                yield i + i
+        def testfunc(n):
+            for x in gen(n):
+                pass
+        testfunc(TIER2_THRESHOLD * 2)
+        gen_ex = get_first_executor(gen)
+        self.assertIsNotNone(gen_ex)
+        uops = get_opnames(gen_ex)
+        self.assertNotIn("_MAKE_HEAP_SAFE", uops)
+        self.assertIn("_YIELD_VALUE", uops)
+
     def test_for_iter(self):
         def testfunc(n):
             t = 0

@@ -139,6 +139,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DELETE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_2] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_MAKE_HEAP_SAFE] = 0,
     [_RETURN_VALUE] = HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
@@ -1332,6 +1333,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { 1, 2, _CALL_INTRINSIC_2_r21 },
             { -1, -1, -1 },
+        },
+    },
+    [_MAKE_HEAP_SAFE] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _MAKE_HEAP_SAFE_r01 },
+            { 1, 1, _MAKE_HEAP_SAFE_r11 },
+            { 2, 2, _MAKE_HEAP_SAFE_r22 },
+            { 3, 3, _MAKE_HEAP_SAFE_r33 },
         },
     },
     [_RETURN_VALUE] = {
@@ -3742,6 +3752,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_DELETE_SUBSCR_r20] = _DELETE_SUBSCR,
     [_CALL_INTRINSIC_1_r11] = _CALL_INTRINSIC_1,
     [_CALL_INTRINSIC_2_r21] = _CALL_INTRINSIC_2,
+    [_MAKE_HEAP_SAFE_r01] = _MAKE_HEAP_SAFE,
+    [_MAKE_HEAP_SAFE_r11] = _MAKE_HEAP_SAFE,
+    [_MAKE_HEAP_SAFE_r22] = _MAKE_HEAP_SAFE,
+    [_MAKE_HEAP_SAFE_r33] = _MAKE_HEAP_SAFE,
     [_RETURN_VALUE_r11] = _RETURN_VALUE,
     [_GET_AITER_r11] = _GET_AITER,
     [_GET_ANEXT_r12] = _GET_ANEXT,
@@ -5104,6 +5118,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_MAKE_CELL_r00] = "_MAKE_CELL_r00",
     [_MAKE_FUNCTION] = "_MAKE_FUNCTION",
     [_MAKE_FUNCTION_r11] = "_MAKE_FUNCTION_r11",
+    [_MAKE_HEAP_SAFE] = "_MAKE_HEAP_SAFE",
+    [_MAKE_HEAP_SAFE_r01] = "_MAKE_HEAP_SAFE_r01",
+    [_MAKE_HEAP_SAFE_r11] = "_MAKE_HEAP_SAFE_r11",
+    [_MAKE_HEAP_SAFE_r22] = "_MAKE_HEAP_SAFE_r22",
+    [_MAKE_HEAP_SAFE_r33] = "_MAKE_HEAP_SAFE_r33",
     [_MAKE_WARM] = "_MAKE_WARM",
     [_MAKE_WARM_r00] = "_MAKE_WARM_r00",
     [_MAKE_WARM_r11] = "_MAKE_WARM_r11",
@@ -5608,6 +5627,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _CALL_INTRINSIC_2:
             return 2;
+        case _MAKE_HEAP_SAFE:
+            return 0;
         case _RETURN_VALUE:
             return 1;
         case _GET_AITER:
