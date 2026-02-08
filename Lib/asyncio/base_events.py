@@ -1345,6 +1345,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         # have a chance to get called before "ssl_protocol.connection_made()".
         transport.pause_reading()
 
+        # gh-142352: move buffered StreamReader data to SSLProtocol
+        if server_side:
+            stream_reader = getattr(protocol, '_stream_reader', None)
+            if stream_reader is not None:
+                buffer = stream_reader._buffer
+                if buffer:
+                    ssl_protocol._incoming.write(buffer)
+                    buffer.clear()
+
         transport.set_protocol(ssl_protocol)
         conmade_cb = self.call_soon(ssl_protocol.connection_made, transport)
         resume_cb = self.call_soon(transport.resume_reading)
