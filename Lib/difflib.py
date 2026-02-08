@@ -2425,7 +2425,7 @@ class _LCSUBAutomaton:
                 return
             k = last[2]
             for block in it:
-                if block[2] < k:
+                if block[2] <= k:
                     if mink <= k and (maxk is None or k <= maxk):
                         one_mk = 1 - k
                         yield (last[0] + one_mk, last[1] + one_mk, k)
