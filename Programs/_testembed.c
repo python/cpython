@@ -1743,6 +1743,16 @@ static int initconfig_getint(PyInitConfig *config, const char *name)
     return (int)value;
 }
 
+static void initconfig_error(PyInitConfig *config)
+{
+    const char *err_msg;
+    int res = PyInitConfig_GetError(config, &err_msg);
+    assert(res == 1);
+
+    printf("Python init failed: %s\n", err_msg);
+    PyInitConfig_Free(config);
+}
+
 
 static int test_initconfig_api(void)
 {
@@ -1797,12 +1807,8 @@ static int test_initconfig_api(void)
     return 0;
 
 error:
-    {
-        const char *err_msg;
-        (void)PyInitConfig_GetError(config, &err_msg);
-        printf("Python init failed: %s\n", err_msg);
-        exit(1);
-    }
+    initconfig_error(config);
+    return 1;
 }
 
 
@@ -1955,12 +1961,8 @@ static int test_initconfig_module(void)
     return 0;
 
 error:
-    {
-        const char *err_msg;
-        (void)PyInitConfig_GetError(config, &err_msg);
-        printf("Python init failed: %s\n", err_msg);
-        exit(1);
-    }
+    initconfig_error(config);
+    return 1;
 }
 
 
@@ -2174,6 +2176,79 @@ static int test_init_in_background_thread(void)
         return -1;
     }
     return PyThread_join_thread(handle);
+}
+
+
+static PyStatus init_callback(void *arg)
+{
+    const char *msg = (const char*)arg;
+    fprintf(stderr, "%s\n", msg);
+
+    // Write sorted(sys.modules) to sys.stderr
+    PyObject *modules = PySys_GetAttrString("modules");
+    if (modules == NULL) {
+        return PyStatus_Error("failed to get sys.modules");
+    }
+
+    PyObject *builtins = PyEval_GetBuiltins();  // borrowed ref
+    if (builtins == NULL) {
+        Py_DECREF(modules);
+        return PyStatus_Error("failed to get builtins");
+    }
+
+    PyObject *sorted;
+    if (PyDict_GetItemStringRef(builtins, "sorted", &sorted) <= 0) {
+        Py_DECREF(modules);
+        return PyStatus_Error("failed to get sorted");
+    }
+
+    PyObject *names = PyObject_CallOneArg(sorted, modules);
+    Py_DECREF(modules);
+    if (names == NULL) {
+        return PyStatus_Error("sorted failed");
+    }
+
+    PySys_FormatStderr("sys.modules: %R\n", names);
+    Py_DECREF(names);
+
+    // Write sys.meta_path to sys.stderr
+    const char *code = (
+        "import sys; "
+        "print(f\"sys.meta_path: {sys.meta_path}\", file=sys.stderr)");
+    if (PyRun_SimpleString(code) < 0) {
+        return PyStatus_Error("PyRun_SimpleString failed");
+    }
+
+    return PyStatus_Ok();
+}
+
+
+static int test_init_callback(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
+        goto error;
+    }
+
+    const char *msg = "Hello Callback!";
+    if (PyInitConfig_SetInitCallback(config, init_callback, (void*)msg) < 0) {
+        goto error;
+    }
+
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+    return 0;
+
+error:
+    initconfig_error(config);
+    return 1;
 }
 
 
@@ -2665,6 +2740,7 @@ static struct TestCase TestCases[] = {
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
     {"test_init_in_background_thread", test_init_in_background_thread},
+    {"test_init_callback", test_init_callback},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

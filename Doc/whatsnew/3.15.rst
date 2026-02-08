@@ -1434,6 +1434,11 @@ New features
   a module from a *spec* and *initfunc*.
   (Contributed by Itamar Oren in :gh:`116146`.)
 
+* Add :c:func:`PyInitConfig_SetInitCallback` to execute code as soon as the
+  Python interpreter is initialized, before the first import. For example, it
+  can be used to add a meta path importer into :data:`sys.meta_path`.
+  (Contributed by Victor Stinner in :gh:`142417`.)
+
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 

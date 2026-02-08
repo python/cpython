@@ -1889,6 +1889,20 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_init_in_background_thread")
         self.assertEqual(err, "")
 
+    def test_init_callback(self):
+        out, err = self.run_embedded_interpreter("test_init_callback")
+        modules = [
+            '_frozen_importlib', '_imp', '_thread', '_warnings', '_weakref',
+            'builtins', 'sys']
+        meta_path = (
+            "[<class '_frozen_importlib.BuiltinImporter'>, "
+            "<class '_frozen_importlib.FrozenImporter'>]")
+        self.assertEqual(err.splitlines(),
+            ["Hello Callback!",
+             f"sys.modules: {modules}",
+             f"sys.meta_path: {meta_path}"])
+        self.assertEqual(out, "")
+
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_open_code_hook(self):
