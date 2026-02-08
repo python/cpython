@@ -225,7 +225,7 @@ struct _ts {
     PyObject *threading_local_key;
 
     /* Used by `threading.local`s to be remove keys/values for dying threads.
-       The PyThreadObject must hold the only reference to this value.
+       The PyThreadState must hold the only reference to this value.
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
