@@ -1,0 +1,1 @@
+``NamedTuple`` function now works if the ``fields`` argument is a generator
