@@ -2,9 +2,10 @@ import os
 import subprocess
 import sys
 import unittest
+from contextlib import contextmanager
 from textwrap import dedent
 
-from test.support import os_helper, requires_resource
+from test.support import os_helper, requires_resource, Py_DEBUG
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
 if sys.platform != "win32":
@@ -109,11 +110,107 @@ class TestConsoleIO(unittest.TestCase):
 
 
 class TestOther(unittest.TestCase):
+    # We can't suppress the msgbox with invalid input without debug build
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    @contextmanager
+    def set_crt_dbg_report_to_stderr(self):
+        mode = msvcrt.CrtSetReportMode(msvcrt.CRT_ASSERT, msvcrt.CRTDBG_MODE_FILE)
+        file = msvcrt.CrtSetReportFile(msvcrt.CRT_ASSERT, msvcrt.CRTDBG_FILE_STDERR)
+        try:
+            yield
+        finally:
+            msvcrt.CrtSetReportMode(msvcrt.CRT_ASSERT, mode)
+            msvcrt.CrtSetReportFile(msvcrt.CRT_ASSERT, file)
+
     def test_heap_min(self):
         try:
             msvcrt.heapmin()
         except OSError:
             pass
+
+    def test_GetErrorMode(self):
+        errmode = msvcrt.GetErrorMode()
+        self.assertIsInstance(errmode, int)
+        self.assertGreaterEqual(errmode, 0)
+
+    def test_SetErrorMode(self):
+        origin = msvcrt.GetErrorMode()
+        def cleanup():
+            msvcrt.SetErrorMode(0)
+            msvcrt.SetErrorMode(origin)
+        self.addCleanup(cleanup)
+
+        msvcrt.SetErrorMode(0)
+        old = msvcrt.GetErrorMode()
+
+        returned = msvcrt.SetErrorMode(msvcrt.SEM_NOOPENFILEERRORBOX)
+        self.assertEqual(returned, old)
+        self.assertTrue(msvcrt.GetErrorMode() & msvcrt.SEM_NOOPENFILEERRORBOX)
+
+        msvcrt.SetErrorMode(-1)
+        msvcrt.SetErrorMode(2**32-1)  # max unsigned int
+        msvcrt.SetErrorMode(-2**31)
+
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    def test_set_error_mode(self):
+        old = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
+        self.addCleanup(msvcrt.set_error_mode, old)
+
+        returned = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
+        self.assertIs(type(returned), int)
+        self.assertNotEqual(returned, -1)
+        self.assertEqual(old, returned)
+
+        returned = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
+        self.assertEqual(returned, msvcrt.OUT_TO_STDERR)
+
+        with self.set_crt_dbg_report_to_stderr():
+            self.assertEqual(msvcrt.set_error_mode(-1), -1)
+            self.assertEqual(msvcrt.set_error_mode(2**31-1), -1)
+            self.assertEqual(msvcrt.set_error_mode(-2**31), -1)
+
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    def test_CrtSetReportMode(self):
+        old = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                      msvcrt.CRTDBG_REPORT_MODE)
+        self.addCleanup(msvcrt.CrtSetReportMode, msvcrt.CRT_WARN, old)
+
+        returned = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_MODE_DEBUG)
+        self.assertIs(type(returned), int)
+        self.assertNotEqual(returned, -1)
+        self.assertEqual(old, returned)
+
+        returned = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_MODE)
+        self.assertEqual(returned, msvcrt.CRTDBG_MODE_DEBUG)
+
+        self.assertRaises(OSError, msvcrt.CrtSetReportMode, -1, -1)
+        self.assertRaises(OSError, msvcrt.CrtSetReportMode, 2**31-1, 2**31-1)
+        self.assertRaises(OSError, msvcrt.CrtSetReportMode, -2**31, -2**31)
+
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    def test_CrtSetReportFile(self):
+        # Set the report mode to CRTDBG_REPORT_FILE at first.
+        old_mode = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_MODE)
+        self.addCleanup(msvcrt.CrtSetReportMode, msvcrt.CRT_WARN, old_mode)
+        old_file = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_FILE)
+        self.addCleanup(msvcrt.CrtSetReportFile, msvcrt.CRT_WARN, old_file)
+
+        returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_FILE_STDOUT)
+        self.assertIs(type(returned), int)
+        self.assertEqual(old_file, returned)
+
+        returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_FILE)
+        self.assertEqual(returned, msvcrt.get_osfhandle(sys.stdout.fileno()))
+
+        msvcrt.CrtSetReportFile(-1, -1)
+        msvcrt.CrtSetReportFile(2**31-1, 2**31-1)
+        msvcrt.CrtSetReportFile(-2**31, -2**31)
 
 
 if __name__ == "__main__":
