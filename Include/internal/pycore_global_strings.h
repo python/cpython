@@ -462,6 +462,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(exc_value)
         STRUCT_FOR_ID(excepthook)
         STRUCT_FOR_ID(exception)
+        STRUCT_FOR_ID(exist_ok)
         STRUCT_FOR_ID(existing_file_name)
         STRUCT_FOR_ID(exit)
         STRUCT_FOR_ID(exp)

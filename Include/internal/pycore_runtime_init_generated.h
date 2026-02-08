@@ -1737,6 +1737,7 @@ extern "C" {
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
+    INIT_ID(exist_ok), \
     INIT_ID(existing_file_name), \
     INIT_ID(exit), \
     INIT_ID(exp), \

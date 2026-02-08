@@ -89,7 +89,7 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
 
-.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE)
+.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE, *, options=0, exist_ok=True)
 
    Creates or opens the specified key, returning a
    :ref:`handle object <handle-object>`.
@@ -104,6 +104,13 @@ This module offers the following functions:
    *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_WRITE`.  See
    :ref:`Access Rights <access-rights>` for other allowed values.
+
+   *options* is an interger and can be zero or one of the predefined
+   :ref:`REG_OPTION_* constants <hkey-constants>`.
+
+   *exist_ok* is a boolean.
+   When set to False, a :exc:`FileExistsError` will be raised
+   if the key already exists.  Default is ``True``.
 
    If *key* is one of the predefined keys, *sub_key* may be ``None``. In that
    case, the handle returned is the same key handle passed in to the function.
@@ -121,6 +128,9 @@ This module offers the following functions:
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
+
+   .. versionchanged:: 3.15
+      Added *options* and *exist_ok* parameters.
 
 
 .. function:: DeleteKey(key, sub_key)
@@ -322,7 +332,6 @@ This module offers the following functions:
 
 
 .. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ)
-              OpenKeyEx(key, sub_key, reserved=0, access=KEY_READ)
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 
@@ -331,7 +340,11 @@ This module offers the following functions:
 
    *sub_key* is a string that identifies the sub_key to open.
 
-   *reserved* is a reserved integer, and must be zero.  The default is zero.
+   *reserved* is a reserved integer and should be zero.  If it is not zero,
+   it will be treated as the options parameter in :func:`OpenKeyEx`.
+   You should use the :func:`OpenKeyEx` directly instead in this case,
+   this parameter is only included for compatibility reasons.
+   The default value is zero.
 
    *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
@@ -350,6 +363,54 @@ This module offers the following functions:
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
+
+   .. deprecated-removed:: 3.15 3.17
+      *reserved* is deprecated and will be removed in the future.
+      Please use :func:`OpenKeyEx` instead.
+
+.. function:: OpenKeyEx(key, sub_key, options=0, access=KEY_READ, *, reserved=0)
+
+   Opens the specified key, returning a :ref:`handle object <handle-object>`.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that identifies the sub_key to open.
+
+   *access* is an integer that specifies an access mask that describes the desired
+   security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
+   Rights <access-rights>` for other allowed values.
+
+   *options* specifies the option to apply when opening the key.
+   Can be zero or one of the predefined
+   :ref:`REG_OPTION_* constants <hkey-constants>`.
+
+   *reserved* is a reserved integer and should be zero.
+   If it is not zero, it will be treated as the options parameter.
+   You should use the *options* parameter directly instead,
+   this parameter is only included for compatibility reasons.
+   The default value is zero.
+
+   The result is a new handle to the specified key.
+
+   If the function fails, :exc:`OSError` is raised.
+
+   .. audit-event:: winreg.OpenKey key,sub_key,access winreg.OpenKey
+
+   .. audit-event:: winreg.OpenKey/result key winreg.OpenKey
+
+   .. versionchanged:: 3.2
+      Allow the use of named arguments.
+
+   .. versionchanged:: 3.3
+      See :ref:`above <exception-changed>`.
+
+   .. versionchanged:: 3.15
+      Added *options* parameter.
+
+   .. deprecated-removed:: 3.15 3.17
+      *reserved* is deprecated and will be removed in the future.
+      Please use *options* instead.
 
 
 .. function:: QueryInfoKey(key)
