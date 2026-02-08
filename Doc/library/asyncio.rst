@@ -31,6 +31,9 @@ asyncio is often a perfect fit for IO-bound and high-level
 
 .. seealso::
 
+   :ref:`asyncio-chat-server-howto`
+      Build a TCP chat server with asyncio streams.
+
    :ref:`a-conceptual-overview-of-asyncio`
       Explanation of the fundamentals of asyncio.
 

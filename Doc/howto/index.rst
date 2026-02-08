@@ -14,6 +14,7 @@ Python Library Reference.
    :hidden:
 
    a-conceptual-overview-of-asyncio.rst
+   asyncio-chat-server.rst
    cporting.rst
    curses.rst
    descriptor.rst
@@ -42,6 +43,7 @@ Python Library Reference.
 General:
 
 * :ref:`a-conceptual-overview-of-asyncio`
+* :ref:`asyncio-chat-server-howto`
 * :ref:`annotations-howto`
 * :ref:`argparse-tutorial`
 * :ref:`descriptorhowto`
