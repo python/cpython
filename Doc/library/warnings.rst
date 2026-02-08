@@ -626,9 +626,18 @@ Available Context Managers
     If the *record* argument is :const:`False` (the default) the context manager
     returns :class:`None` on entry. If *record* is :const:`True`, a list is
     returned that is progressively populated with objects as seen by a custom
-    :func:`showwarning` function (which also suppresses output to ``sys.stdout``).
-    Each object in the list has attributes with the same names as the arguments to
-    :func:`showwarning`.
+    :func:`showwarning` function (which also suppresses output to ``sys.stderr``).
+    Each object in the list is guaranteed to have the following attributes:
+
+      - ``message``: the warning message (an instance of :exc:`Warning`)
+      - ``category``: the warning category (a subclass of :exc:`Warning`)
+      - ``filename``: the file name where the warning occurred (str)
+      - ``lineno``: the line number in the file (int)
+      - ``file``: the file object used for output (if any)
+      - ``line``: the line of source code (if available)
+      - ``source``: the original object that generated the warning (if available)
+
+    The type of these objects is not specified and may change; only the presence of these attributes is guaranteed.
 
     The *module* argument takes a module that will be used instead of the
     module returned when you import :mod:`!warnings` whose filter will be
