@@ -39,6 +39,16 @@ class FalseyLenException(Exception):
         return 0
 
 
+class CancelNotifyTestException(Exception):
+    pass
+
+
+def blocking_raiser(barrier=None):
+    if barrier is not None:
+        barrier.wait()
+    raise CancelNotifyTestException()
+
+
 class ExecutorTest:
 
     # Executor.shutdown() and context manager usage is tested by
@@ -247,3 +257,33 @@ class ExecutorTest:
         msg = 'lenlen'
         with self.assertRaisesRegex(FalseyLenException, msg):
             self.executor.submit(raiser, FalseyLenException, msg).result()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_notifies_cancelled_futures(self):
+        if self.worker_count < 2:
+            self.skipTest("test requires more than one worker")
+
+        # TODO: remove when gh-109934 is fixed
+        if self.executor_type is futures.ThreadPoolExecutor:
+            self.skipTest("gh-109934: skipping thread pool executor")
+
+        # gh-136655: ensure cancelled futures are notified
+        count = self.worker_count * 2
+        barrier = self.create_barrier(self.worker_count + 1, timeout=1)
+        with self.executor as exec:
+            fs = [exec.submit(blocking_raiser,
+                              barrier if index < self.worker_count else None)
+                  for index in range(count)]
+
+            exec.shutdown(wait=False, cancel_futures=True)
+            try:
+                barrier.wait()
+            except threading.BrokenBarrierError:
+                pass
+
+            for future in fs:
+                self.assertRaises(
+                    (CancelNotifyTestException, futures.CancelledError, threading.BrokenBarrierError),
+                    future.result)
+
+            self.assertIn('CANCELLED_AND_NOTIFIED', [f._state for f in fs])
