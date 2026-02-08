@@ -3207,6 +3207,12 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
+For a general non-string Python object ``obj``, numeric conversion types
+attempt to format values, converted first to built-in :class:`float` (by
+``float(obj)``, for floating-point formats) and :class:`int` (by
+``operator.index(obj)`` for ``'o'``, ``'x'``, ``'X'`` or ``'c'`` formats, or by
+``int(obj)`` for other integer formats) types.
+
 Notes:
 
 (1)
