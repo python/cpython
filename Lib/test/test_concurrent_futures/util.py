@@ -80,6 +80,9 @@ class ExecutorMixin:
 class ThreadPoolMixin(ExecutorMixin):
     executor_type = futures.ThreadPoolExecutor
 
+    def create_barrier(self, count):
+        return threading.Barrier(count)
+
     def create_event(self):
         return threading.Event()
 
@@ -87,6 +90,9 @@ class ThreadPoolMixin(ExecutorMixin):
 @support.skip_if_sanitizer("gh-129824: data races in InterpreterPool tests", thread=True)
 class InterpreterPoolMixin(ExecutorMixin):
     executor_type = futures.InterpreterPoolExecutor
+
+    def create_barrier(self, count):
+        self.skipTest("InterpreterPoolExecutor doesn't support barriers")
 
     def create_event(self):
         self.skipTest("InterpreterPoolExecutor doesn't support events")
@@ -107,6 +113,9 @@ class ProcessPoolForkMixin(ExecutorMixin):
             self.skipTest("TSAN doesn't support threads after fork")
         return super().get_context()
 
+    def create_barrier(self, count):
+        return self.manager.Barrier(count)
+
     def create_event(self):
         return self.manager.Event()
 
@@ -121,6 +130,9 @@ class ProcessPoolSpawnMixin(ExecutorMixin):
         except NotImplementedError:
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         return super().get_context()
+
+    def create_barrier(self, count):
+        return self.manager.Barrier(count)
 
     def create_event(self):
         return self.manager.Event()
@@ -140,6 +152,9 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
         if support.check_sanitizer(thread=True):
             self.skipTest("TSAN doesn't support threads after fork")
         return super().get_context()
+
+    def create_barrier(self, count):
+        return self.manager.Barrier(count)
 
     def create_event(self):
         return self.manager.Event()
