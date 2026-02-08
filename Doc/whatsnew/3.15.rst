@@ -699,6 +699,13 @@ os
   (Contributed by Jeffrey Bosboom and Victor Stinner in :gh:`83714`.)
 
 
+netrc
+-----
+
+* Added support for the :envvar:`!NETRC` environment variable in :func:`netrc.netrc`.
+  (Contributed by Berthin Torres in :gh:`135788`.)
+
+
 os.path
 -------
 
