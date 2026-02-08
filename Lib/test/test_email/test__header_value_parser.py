@@ -2459,41 +2459,48 @@ class TestParser(TestParserMixin, TestEmailBase):
             label='from_test_get_atom',
             )(params_test_get_atom),
 
+        test_get_dot_atom_with_wsp = C(
+            '\t  foo.bar.bing  ', '\t  foo.bar.bing  ', ' foo.bar.bing ', [], '')
+            ,
+
+        test_get_dot_atom_with_comments_and_wsp = C(
+            ' (sing)  foo.bar.bing (here) ', ' (sing)  foo.bar.bing (here) ',
+                ' foo.bar.bing ', [], '',
+            comments=['sing', 'here'],
+            ),
+
+        test_get_dot_atom_space_ends_dot_atom = C(
+            ' (sing)  foo.bar .bing (here) ', ' (sing)  foo.bar ',
+                ' foo.bar ', [], '.bing (here) ',
+            comments=['sing'],
+            ),
+
+        test_get_dot_atom_no_atom_raises = C(
+                                ' (foo) ',
+                     exception=(errors.HeaderParseError, '.*')
+            ),
+
+        test_get_dot_atom_leading_dot_raises = C(
+                                ' (foo) .bar',
+                     exception=(errors.HeaderParseError, '.*')
+            ),
+
+        test_get_dot_atom_two_dots_raises = C(
+                                'bar..bang',
+                     exception=(errors.HeaderParseError, '.*')
+            ),
+
+        test_get_dot_atom_trailing_dot_raises = C(
+                                ' (foo) bar.bang. foo',
+                     exception=(errors.HeaderParseError, '.*')
+            ),
+
+        test_get_dot_atom_rfc2047_atom = C(
+            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
+            ,
+
         )
 
-    def test_get_dot_atom_with_wsp(self):
-        self._test_get_x(parser.get_dot_atom,
-            '\t  foo.bar.bing  ', '\t  foo.bar.bing  ', ' foo.bar.bing ', [], '')
-
-    def test_get_dot_atom_with_comments_and_wsp(self):
-        self._test_get_x(parser.get_dot_atom,
-            ' (sing)  foo.bar.bing (here) ', ' (sing)  foo.bar.bing (here) ',
-                ' foo.bar.bing ', [], '')
-
-    def test_get_dot_atom_space_ends_dot_atom(self):
-        self._test_get_x(parser.get_dot_atom,
-            ' (sing)  foo.bar .bing (here) ', ' (sing)  foo.bar ',
-                ' foo.bar ', [], '.bing (here) ')
-
-    def test_get_dot_atom_no_atom_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom(' (foo) ')
-
-    def test_get_dot_atom_leading_dot_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom(' (foo) .bar')
-
-    def test_get_dot_atom_two_dots_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom('bar..bang')
-
-    def test_get_dot_atom_trailing_dot_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_dot_atom(' (foo) bar.bang. foo')
-
-    def test_get_dot_atom_rfc2047_atom(self):
-        self._test_get_x(parser.get_dot_atom,
-            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
 
     # get_word (if this were black box we'd repeat all the qs/atom tests)
 
