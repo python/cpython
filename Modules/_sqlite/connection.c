@@ -38,6 +38,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL
+#include "pycore_weakref.h"
 
 #include <stdbool.h>
 
@@ -143,6 +144,7 @@ class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionTyp
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
 
+static int _pysqlite_drop_unused_blob_references(pysqlite_Connection* self);
 static void incref_callback_context(callback_context *ctx);
 static void decref_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
@@ -300,6 +302,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->thread_ident = PyThread_get_thread_ident();
     self->statement_cache = statement_cache;
     self->blobs = blobs;
+    self->created_blobs = 0;
     self->row_factory = Py_NewRef(Py_None);
     self->text_factory = Py_NewRef(&PyUnicode_Type);
     self->trace_ctx = NULL;
@@ -621,6 +624,10 @@ blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
     rc = PyList_Append(self->blobs, weakref);
     Py_DECREF(weakref);
     if (rc < 0) {
+        goto error;
+    }
+
+    if (_pysqlite_drop_unused_blob_references(self) < 0) {
         goto error;
     }
 
@@ -1047,6 +1054,39 @@ final_callback(sqlite3_context *context)
 
 error:
     PyGILState_Release(threadstate);
+}
+
+static int
+_pysqlite_drop_unused_blob_references(pysqlite_Connection* self)
+{
+    /* we only need to do this once in a while */
+    self->created_blobs++;
+    if (self->created_blobs < 200 || self->created_blobs < PyList_GET_SIZE(self->blobs) / 4) {
+        return 0;
+    }
+
+    self->created_blobs = 0;
+
+    PyObject* new_list = PyList_New(0);
+    if (!new_list) {
+        return -1;
+    }
+
+    assert(PyList_CheckExact(self->blobs));
+    Py_ssize_t imax = PyList_GET_SIZE(self->blobs);
+    for (Py_ssize_t i = 0; i < imax; i++) {
+        PyObject* weakref = PyList_GET_ITEM(self->blobs, i);
+        if (_PyWeakref_IsDead(weakref)) {
+            continue;
+        }
+        if (PyList_Append(new_list, weakref) != 0) {
+            Py_DECREF(new_list);
+            return -1;
+        }
+    }
+
+    Py_SETREF(self->blobs, new_list);
+    return 0;
 }
 
 /* Allocate a UDF/callback context structure. In order to ensure that the state
