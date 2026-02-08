@@ -942,7 +942,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%.400s got multiple values for argument '%U'",
+                        "%.400s got multiple values for argument %R",
                         Py_TYPE(self)->tp_name, key);
                     res = -1;
                     goto cleanup;
@@ -965,7 +965,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else if (contains == 0) {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                        "%.400s.__init__ got an unexpected keyword argument %R. "
                         "Support for arbitrary keyword arguments is deprecated "
                         "and will be removed in Python 3.15.",
                         Py_TYPE(self)->tp_name, key
@@ -1009,7 +1009,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "Field '%U' is missing from %.400s._field_types. "
+                        "Field %R is missing from %.400s._field_types. "
                         "This will become an error in Python 3.15.",
                         name, Py_TYPE(self)->tp_name
                     ) < 0) {
@@ -1044,7 +1044,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
+                    "%.400s.__init__ missing 1 required positional argument: %R. "
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
@@ -1207,7 +1207,7 @@ ast_type_replace_check(PyObject *self,
             if (rc == 0) {
                 PyErr_Format(PyExc_TypeError,
                              "%.400s.__replace__ got an unexpected keyword "
-                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
+                             "argument %R.", Py_TYPE(self)->tp_name, key);
                 Py_DECREF(expecting);
                 return -1;
             }
@@ -1512,7 +1512,7 @@ ast_repr_list(PyObject *list, int depth)
 
     for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
@@ -1536,7 +1536,7 @@ ast_repr_list(PyObject *list, int depth)
         }
 
         if (i == 0 && length > 2) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ...", 5) < 0) {
                 goto error;
             }
         }
@@ -1640,7 +1640,7 @@ ast_repr_max_depth(AST_object *self, int depth)
         }
 
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 Py_DECREF(name);
                 Py_DECREF(value_repr);
                 goto error;

@@ -10,7 +10,7 @@ Run this module to regenerate the files:
 """
 
 import unittest
-from test.support import import_helper, verbose
+from test.support import import_helper
 import re
 from dataclasses import dataclass
 from functools import cached_property

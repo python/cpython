@@ -36,7 +36,7 @@ and the C layer.
    responsible for defining byte ordering and padding between elements.
    See :ref:`struct-alignment` for details.
 
-Several :mod:`struct` functions (and methods of :class:`Struct`) take a *buffer*
+Several :mod:`!struct` functions (and methods of :class:`Struct`) take a *buffer*
 argument.  This refers to objects that implement the :ref:`bufferobjects` and
 provide either a readable or read-writable buffer.  The most common types used
 for that purpose are :class:`bytes` and :class:`bytearray`, but many other types
@@ -479,7 +479,7 @@ at the end, assuming the platform's longs are aligned on 4-byte boundaries::
 Applications
 ------------
 
-Two main applications for the :mod:`struct` module exist, data
+Two main applications for the :mod:`!struct` module exist, data
 interchange between Python and C code within an application or another
 application compiled using the same compiler (:ref:`native formats<struct-native-formats>`), and
 data interchange between applications using agreed upon data layout
@@ -571,7 +571,7 @@ below were executed on a 32-bit machine::
 Classes
 -------
 
-The :mod:`struct` module also defines the following type:
+The :mod:`!struct` module also defines the following type:
 
 
 .. class:: Struct(format)

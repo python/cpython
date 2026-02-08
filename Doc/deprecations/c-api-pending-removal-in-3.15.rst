@@ -1,10 +1,9 @@
 Pending removal in Python 3.15
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* The bundled copy of ``libmpdecimal``.
 * The :c:func:`!PyImport_ImportModuleNoBlock`:
   Use :c:func:`PyImport_ImportModule` instead.
-* :c:func:`PyWeakref_GetObject` and :c:func:`PyWeakref_GET_OBJECT`:
+* :c:func:`!PyWeakref_GetObject` and :c:func:`!PyWeakref_GET_OBJECT`:
   Use :c:func:`PyWeakref_GetRef` instead. The `pythoncapi-compat project
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
@@ -60,7 +59,7 @@ Pending removal in Python 3.15
     Set :c:member:`PyConfig.program_name` instead.
   * :c:func:`!Py_SetPythonHome()`:
     Set :c:member:`PyConfig.home` instead.
-  * :c:func:`PySys_ResetWarnOptions`:
+  * :c:func:`!PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
 
   The :c:func:`Py_InitializeFromConfig` API should be used with

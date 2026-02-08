@@ -49,8 +49,9 @@
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
-#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
-        || (defined(__cplusplus) && __cplusplus >= 201103)
+#if !defined(_MSC_VER) && \
+    ((defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) \
+        || (defined(__cplusplus) && __cplusplus >= 201103))
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -503,28 +504,30 @@ extern "C" {
  * Thread support is stubbed and any attempt to create a new thread fails.
  */
 #if (!defined(HAVE_PTHREAD_STUBS) && \
+     !defined(__wasi__) && \
       (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
 #  define Py_CAN_START_THREADS 1
 #endif
 
+
+/* gh-142163: Some libraries rely on HAVE_THREAD_LOCAL being undefined, so
+ * we can only define it only when Py_BUILD_CORE is set.*/
+#ifdef Py_BUILD_CORE
+// This is no longer coupled to _Py_thread_local.
+#  define HAVE_THREAD_LOCAL 1
+#endif
+
 #ifdef WITH_THREAD
-#  ifdef Py_BUILD_CORE
-#    ifdef HAVE_THREAD_LOCAL
-#      error "HAVE_THREAD_LOCAL is already defined"
-#    endif
-#    define HAVE_THREAD_LOCAL 1
-#    ifdef thread_local
-#      define _Py_thread_local thread_local
-#    elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
-#      define _Py_thread_local _Thread_local
-#    elif defined(_MSC_VER)  /* AKA NT_THREADS */
-#      define _Py_thread_local __declspec(thread)
-#    elif defined(__GNUC__)  /* includes clang */
-#      define _Py_thread_local __thread
-#    else
-       // fall back to the PyThread_tss_*() API, or ignore.
-#      undef HAVE_THREAD_LOCAL
-#    endif
+#  ifdef thread_local
+#    define _Py_thread_local thread_local
+#  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#    define _Py_thread_local _Thread_local
+#  elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#    define _Py_thread_local __declspec(thread)
+#  elif defined(__GNUC__)  /* includes clang */
+#    define _Py_thread_local __thread
+#  else
+#    error "no supported thread-local variable storage classifier"
 #  endif
 #endif
 
@@ -666,25 +669,6 @@ extern "C" {
 #endif
 
 
-// _Py_NO_SANITIZE_UNDEFINED(): Disable Undefined Behavior sanitizer (UBsan)
-// on a function.
-//
-// Clang and GCC 9.0+ use __attribute__((no_sanitize("undefined"))).
-// GCC 4.9+ uses __attribute__((no_sanitize_undefined)).
-#if defined(__has_feature)
-#  if __has_feature(undefined_behavior_sanitizer)
-#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
-#  endif
-#endif
-#if !defined(_Py_NO_SANITIZE_UNDEFINED) && defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
-#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
-#endif
-#ifndef _Py_NO_SANITIZE_UNDEFINED
-#  define _Py_NO_SANITIZE_UNDEFINED
-#endif
-
-
 // _Py_NONSTRING: The nonstring variable attribute specifies that an object or
 // member declaration with type array of char, signed char, or unsigned char,
 // or pointer to such a type is intended to store character arrays that do not
@@ -697,6 +681,12 @@ extern "C" {
 #  define _Py_NONSTRING __attribute__((nonstring))
 #else
 #  define _Py_NONSTRING
+#endif
+
+
+// Assume the stack grows down unless specified otherwise
+#ifndef _Py_STACK_GROWS_DOWN
+#  define _Py_STACK_GROWS_DOWN 1
 #endif
 
 

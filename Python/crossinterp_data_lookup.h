@@ -12,7 +12,8 @@ typedef _PyXIData_regitem_t dlregitem_t;
 // forward
 static void _xidregistry_init(dlregistry_t *);
 static void _xidregistry_fini(dlregistry_t *);
-static xidatafunc _lookup_getdata_from_registry(dlcontext_t *, PyObject *);
+static _PyXIData_getdata_t _lookup_getdata_from_registry(
+                                            dlcontext_t *, PyObject *);
 
 
 /* used in crossinterp.c */
@@ -49,7 +50,7 @@ get_lookup_context(PyThreadState *tstate, dlcontext_t *res)
     return 0;
 }
 
-static xidatafunc
+static _PyXIData_getdata_t
 lookup_getdata(dlcontext_t *ctx, PyObject *obj)
 {
    /* Cross-interpreter objects are looked up by exact match on the class.
@@ -87,25 +88,52 @@ _PyXIData_FormatNotShareableError(PyThreadState *tstate,
     va_end(vargs);
 }
 
+int
+_PyXI_UnwrapNotShareableError(PyThreadState * tstate, _PyXI_failure *failure)
+{
+    PyObject *exctype = get_notshareableerror_type(tstate);
+    assert(exctype != NULL);
+    if (!_PyErr_ExceptionMatches(tstate, exctype)) {
+        return -1;
+    }
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    if (failure != NULL) {
+        _PyXI_errcode code = _PyXI_ERR_NOT_SHAREABLE;
+        if (_PyXI_InitFailure(failure, code, exc) < 0) {
+            return -1;
+        }
+    }
+    PyObject *cause = PyException_GetCause(exc);
+    if (cause != NULL) {
+        Py_DECREF(exc);
+        exc = cause;
+    }
+    else {
+        assert(PyException_GetContext(exc) == NULL);
+    }
+    _PyErr_SetRaisedException(tstate, exc);
+    return 0;
+}
 
-xidatafunc
+
+_PyXIData_getdata_t
 _PyXIData_Lookup(PyThreadState *tstate, PyObject *obj)
 {
     dlcontext_t ctx;
     if (get_lookup_context(tstate, &ctx) < 0) {
-        return NULL;
+        return (_PyXIData_getdata_t){0};
     }
     return lookup_getdata(&ctx, obj);
 }
 
 
 /***********************************************/
-/* a registry of {type -> xidatafunc} */
+/* a registry of {type -> _PyXIData_getdata_t} */
 /***********************************************/
 
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   xidatafunc. It would be simpler and more efficient.  */
+/* For now we use a global registry of shareable classes.
+   An alternative would be to add a tp_* slot for a class's
+   _PyXIData_getdata_t.  It would be simpler and more efficient. */
 
 
 /* registry lifecycle */
@@ -200,7 +228,7 @@ _xidregistry_find_type(dlregistry_t *xidregistry, PyTypeObject *cls)
     return NULL;
 }
 
-static xidatafunc
+static _PyXIData_getdata_t
 _lookup_getdata_from_registry(dlcontext_t *ctx, PyObject *obj)
 {
     PyTypeObject *cls = Py_TYPE(obj);
@@ -209,10 +237,12 @@ _lookup_getdata_from_registry(dlcontext_t *ctx, PyObject *obj)
     _xidregistry_lock(xidregistry);
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
-    xidatafunc func = matched != NULL ? matched->getdata : NULL;
+    _PyXIData_getdata_t getdata = matched != NULL
+        ? matched->getdata
+        : (_PyXIData_getdata_t){0};
 
     _xidregistry_unlock(xidregistry);
-    return func;
+    return getdata;
 }
 
 
@@ -220,12 +250,13 @@ _lookup_getdata_from_registry(dlcontext_t *ctx, PyObject *obj)
 
 static int
 _xidregistry_add_type(dlregistry_t *xidregistry,
-                      PyTypeObject *cls, xidatafunc getdata)
+                      PyTypeObject *cls, _PyXIData_getdata_t getdata)
 {
     dlregitem_t *newhead = PyMem_RawMalloc(sizeof(dlregitem_t));
     if (newhead == NULL) {
         return -1;
     }
+    assert((getdata.basic == NULL) != (getdata.fallback == NULL));
     *newhead = (dlregitem_t){
         // We do not keep a reference, to avoid keeping the class alive.
         .cls = cls,
@@ -283,13 +314,13 @@ _xidregistry_clear(dlregistry_t *xidregistry)
 
 int
 _PyXIData_RegisterClass(PyThreadState *tstate,
-                        PyTypeObject *cls, xidatafunc getdata)
+                        PyTypeObject *cls, _PyXIData_getdata_t getdata)
 {
     if (!PyType_Check(cls)) {
         PyErr_Format(PyExc_ValueError, "only classes may be registered");
         return -1;
     }
-    if (getdata == NULL) {
+    if (getdata.basic == NULL && getdata.fallback == NULL) {
         PyErr_Format(PyExc_ValueError, "missing 'getdata' func");
         return -1;
     }
@@ -304,7 +335,8 @@ _PyXIData_RegisterClass(PyThreadState *tstate,
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
-        assert(matched->getdata == getdata);
+        assert(matched->getdata.basic == getdata.basic);
+        assert(matched->getdata.fallback == getdata.fallback);
         matched->refcount += 1;
         goto finally;
     }
@@ -608,7 +640,8 @@ _tuple_shared_free(void* data)
 }
 
 static int
-_tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
+_tuple_shared(PyThreadState *tstate, PyObject *obj, xidata_fallback_t fallback,
+              _PyXIData_t *xidata)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(obj);
     if (len < 0) {
@@ -636,7 +669,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 
         int res = -1;
         if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetXIData(tstate, item, xidata_i);
+            res = _PyObject_GetXIData(tstate, item, fallback, xidata_i);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
         if (res < 0) {
@@ -689,10 +722,28 @@ _PyFunction_FromXIData(_PyXIData_t *xidata)
         return NULL;
     }
     // Create a new function.
+    // For stateless functions (no globals) we use __main__ as __globals__,
+    // just like we do for builtins like exec().
     assert(PyCode_Check(code));
-    PyObject *globals = PyDict_New();
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *globals = _PyEval_GetGlobalsFromRunningMain(tstate);  // borrowed
     if (globals == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            Py_DECREF(code);
+            return NULL;
+        }
+        globals = PyDict_New();
+        if (globals == NULL) {
+            Py_DECREF(code);
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(globals);
+    }
+    if (_PyEval_EnsureBuiltins(tstate, globals, NULL) < 0) {
         Py_DECREF(code);
+        Py_DECREF(globals);
         return NULL;
     }
     PyObject *func = PyFunction_New(code, globals);
@@ -737,40 +788,48 @@ _PyFunction_GetXIData(PyThreadState *tstate, PyObject *func,
 static void
 _register_builtins_for_crossinterpreter_data(dlregistry_t *xidregistry)
 {
+#define REGISTER(TYPE, GETDATA) \
+    _xidregistry_add_type(xidregistry, (PyTypeObject *)TYPE, \
+                          ((_PyXIData_getdata_t){.basic=(GETDATA)}))
+#define REGISTER_FALLBACK(TYPE, GETDATA) \
+    _xidregistry_add_type(xidregistry, (PyTypeObject *)TYPE, \
+                          ((_PyXIData_getdata_t){.fallback=(GETDATA)}))
     // None
-    if (_xidregistry_add_type(xidregistry, (PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
+    if (REGISTER(Py_TYPE(Py_None), _none_shared) != 0) {
         Py_FatalError("could not register None for cross-interpreter sharing");
     }
 
     // int
-    if (_xidregistry_add_type(xidregistry, &PyLong_Type, _long_shared) != 0) {
+    if (REGISTER(&PyLong_Type, _long_shared) != 0) {
         Py_FatalError("could not register int for cross-interpreter sharing");
     }
 
     // bytes
-    if (_xidregistry_add_type(xidregistry, &PyBytes_Type, _PyBytes_GetXIData) != 0) {
+    if (REGISTER(&PyBytes_Type, _PyBytes_GetXIData) != 0) {
         Py_FatalError("could not register bytes for cross-interpreter sharing");
     }
 
     // str
-    if (_xidregistry_add_type(xidregistry, &PyUnicode_Type, _str_shared) != 0) {
+    if (REGISTER(&PyUnicode_Type, _str_shared) != 0) {
         Py_FatalError("could not register str for cross-interpreter sharing");
     }
 
     // bool
-    if (_xidregistry_add_type(xidregistry, &PyBool_Type, _bool_shared) != 0) {
+    if (REGISTER(&PyBool_Type, _bool_shared) != 0) {
         Py_FatalError("could not register bool for cross-interpreter sharing");
     }
 
     // float
-    if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
+    if (REGISTER(&PyFloat_Type, _float_shared) != 0) {
         Py_FatalError("could not register float for cross-interpreter sharing");
     }
 
     // tuple
-    if (_xidregistry_add_type(xidregistry, &PyTuple_Type, _tuple_shared) != 0) {
+    if (REGISTER_FALLBACK(&PyTuple_Type, _tuple_shared) != 0) {
         Py_FatalError("could not register tuple for cross-interpreter sharing");
     }
 
     // For now, we do not register PyCode_Type or PyFunction_Type.
+#undef REGISTER
+#undef REGISTER_FALLBACK
 }

@@ -31,7 +31,9 @@ PostgreSQL or Oracle.
 
 The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.15.2 or newer.
+requires the third-party `SQLite <https://sqlite.org/>`_ library.
+
+.. include:: ../includes/optional-module.rst
 
 This document includes four main sections:
 
@@ -507,6 +509,15 @@ Module constants
    Version number of the runtime SQLite library as a :class:`tuple` of
    :class:`integers <int>`.
 
+.. data:: SQLITE_KEYWORDS
+
+   A :class:`tuple` containing all SQLite keywords.
+
+   This constant is only available if Python was compiled with SQLite
+   3.24.0 or greater.
+
+   .. versionadded:: 3.15
+
 .. data:: threadsafety
 
    Integer constant required by the DB-API 2.0, stating the level of thread
@@ -611,7 +622,7 @@ Connection objects
       supplied, this must be a :term:`callable` returning
       an instance of :class:`Cursor` or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, rowid, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -622,8 +633,8 @@ Connection objects
       :param str column:
           The name of the column where the blob is located.
 
-      :param str row:
-          The name of the row where the blob is located.
+      :param int rowid:
+          The row id where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write
@@ -1482,7 +1493,9 @@ Cursor objects
       :type parameters: :class:`dict` | :term:`sequence`
 
       :raises ProgrammingError:
-         If *sql* contains more than one SQL statement.
+         When *sql* contains more than one SQL statement.
+         When :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
 
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -1491,13 +1504,11 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
-      .. deprecated-removed:: 3.12 3.14
+      .. versionchanged:: 3.14
 
-         :exc:`DeprecationWarning` is emitted if
+         :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and *parameters* is a sequence instead of a :class:`dict`.
-         Starting with Python 3.14, :exc:`ProgrammingError` will
-         be raised instead.
 
       Use :meth:`executescript` to execute multiple SQL statements.
 
@@ -1519,8 +1530,10 @@ Cursor objects
       :type parameters: :term:`iterable`
 
       :raises ProgrammingError:
-         If *sql* contains more than one SQL statement,
-         or is not a DML statement.
+         When *sql* contains more than one SQL statement
+         or is not a DML statement,
+         When :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences instead of :class:`dict`\s.
 
       Example:
 
@@ -1544,14 +1557,12 @@ Cursor objects
 
       .. _RETURNING clauses: https://www.sqlite.org/lang_returning.html
 
-      .. deprecated-removed:: 3.12 3.14
+      .. versionchanged:: 3.14
 
-         :exc:`DeprecationWarning` is emitted if
+         :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and the items in *parameters* are sequences
          instead of :class:`dict`\s.
-         Starting with Python 3.14, :exc:`ProgrammingError` will
-         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
@@ -1602,6 +1613,9 @@ Cursor objects
       If the *size* parameter is used, then it is best for it to retain the same
       value from one :meth:`fetchmany` call to the next.
 
+      .. versionchanged:: 3.15
+         Negative *size* values are rejected by raising :exc:`ValueError`.
+
    .. method:: fetchall()
 
       Return all (remaining) rows of a query result as a :class:`list`.
@@ -1628,6 +1642,9 @@ Cursor objects
 
       Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
       The default value is 1 which means a single row would be fetched per call.
+
+      .. versionchanged:: 3.15
+         Negative values are rejected by raising :exc:`ValueError`.
 
    .. attribute:: connection
 
@@ -2279,7 +2296,7 @@ This section shows recipes for common adapters and converters.
 
    def adapt_datetime_iso(val):
        """Adapt datetime.datetime to timezone-naive ISO 8601 date."""
-       return val.isoformat()
+       return val.replace(tzinfo=None).isoformat()
 
    def adapt_datetime_epoch(val):
        """Adapt datetime.datetime to Unix timestamp."""

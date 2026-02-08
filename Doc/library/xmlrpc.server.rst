@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`xmlrpc.server` module provides a basic server framework for XML-RPC
+The :mod:`!xmlrpc.server` module provides a basic server framework for XML-RPC
 servers written in Python.  Servers can either be free standing, using
 :class:`SimpleXMLRPCServer`, or embedded in a CGI environment, using
 :class:`CGIXMLRPCRequestHandler`.
@@ -19,9 +19,9 @@ servers written in Python.  Servers can either be free standing, using
 
 .. warning::
 
-   The :mod:`xmlrpc.server` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   The :mod:`!xmlrpc.server` module is not secure against maliciously
+   constructed data.  If you need to parse untrusted or unauthenticated data,
+   see :ref:`xml-security`.
 
 .. include:: ../includes/wasm-notavail.rst
 

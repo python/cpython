@@ -1,9 +1,11 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 /* Declarations shared between different parts of the _zstd module*/
 
 #ifndef ZSTD_MODULE_H
 #define ZSTD_MODULE_H
+
+#include "zstddict.h"
 
 /* Type specs */
 extern PyType_Spec zstd_dict_type_spec;
@@ -25,6 +27,7 @@ typedef struct {
 typedef enum {
     ERR_DECOMPRESS,
     ERR_COMPRESS,
+    ERR_SET_PLEDGED_INPUT_SIZE,
 
     ERR_LOAD_D_DICT,
     ERR_LOAD_C_DICT,
@@ -43,13 +46,16 @@ typedef enum {
     DICT_TYPE_PREFIX = 2
 } dictionary_type;
 
+extern ZstdDict *
+_Py_parse_zstd_dict(const _zstd_state *state,
+                    PyObject *dict, int *type);
+
 /* Format error message and set ZstdError. */
 extern void
-set_zstd_error(const _zstd_state* const state,
-               const error_type type, size_t zstd_ret);
+set_zstd_error(const _zstd_state *state,
+               error_type type, size_t zstd_ret);
 
 extern void
-set_parameter_error(const _zstd_state* const state, int is_compress,
-                    int key_v, int value_v);
+set_parameter_error(int is_compress, int key_v, int value_v);
 
 #endif  // !ZSTD_MODULE_H

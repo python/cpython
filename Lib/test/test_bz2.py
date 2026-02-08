@@ -184,7 +184,7 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             pdata = bz2f.peek()
             self.assertNotEqual(len(pdata), 0)
-            self.assertTrue(self.TEXT.startswith(pdata))
+            self.assertStartsWith(self.TEXT, pdata)
             self.assertEqual(bz2f.read(), self.TEXT)
 
     def testReadInto(self):
@@ -768,7 +768,7 @@ class BZ2FileTest(BaseTest):
             with BZ2File(bio) as bz2f:
                 pdata = bz2f.peek()
                 self.assertNotEqual(len(pdata), 0)
-                self.assertTrue(self.TEXT.startswith(pdata))
+                self.assertStartsWith(self.TEXT, pdata)
                 self.assertEqual(bz2f.read(), self.TEXT)
 
     def testWriteBytesIO(self):
