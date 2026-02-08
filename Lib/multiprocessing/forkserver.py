@@ -172,8 +172,6 @@ class ForkServer(object):
                     main_kws['sys_path'] = data['sys_path']
                 if 'init_main_from_path' in data:
                     main_kws['main_path'] = data['init_main_from_path']
-                if 'sys_argv' in data:
-                    main_kws['sys_argv'] = data['sys_argv']
                 if self._preload_on_error != 'ignore':
                     main_kws['on_error'] = self._preload_on_error
 
@@ -197,6 +195,8 @@ class ForkServer(object):
                     exe = spawn.get_executable()
                     args = [exe] + util._args_from_interpreter_flags()
                     args += ['-c', cmd]
+                    if self._preload_modules:
+                        args += data["sys_argv"]
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 except:
                     os.close(alive_w)
@@ -282,7 +282,7 @@ def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
 
 
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, sys_argv=None, authkey_r=None, on_error='ignore'):
+         *, authkey_r=None, on_error='ignore'):
     """Run forkserver."""
     if authkey_r is not None:
         try:
@@ -292,6 +292,11 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
             os.close(authkey_r)
     else:
         authkey = b''
+
+    if preload:
+        sys_argv = sys.argv[1:]
+    else:
+        sys_argv = None
 
     _handle_preload(preload, main_path, sys_path, sys_argv, on_error)
 
