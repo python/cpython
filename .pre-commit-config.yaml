@@ -99,6 +99,33 @@ repos:
     hooks:
       - id: zizmor
 
+  - repo: https://github.com/oxipng/oxipng
+    rev: v9.1.5
+    hooks:
+      - id: oxipng
+        args: [--strip=safe, --alpha]
+        # Exclude all existing pngs
+        exclude: |
+          (?x)^(
+              Android/testbed/app/src/main/res/drawable-xxhdpi/ic_launcher\.png|
+              Doc/howto/logging_flow\.png|
+              Doc/library/hashlib-blake2-tree\.png|
+              Doc/library/kde_example\.png|
+              Doc/library/pathlib-inheritance\.png|
+              Doc/library/tk_msg\.png|
+              Doc/library/turtle-star\.png|
+              Doc/using/mac_installer_[^/]*\.png|
+              Doc/using/win_install[^/]*\.png|
+              InternalDocs/images/python-cyclic-gc-[^/]*-new-page\.png|
+              Lib/idlelib/Icons/idle_[^/]*\.png|
+              Lib/profiling/sampling/_assets/python-logo-only\.png|
+              Lib/test/test_email/data/python\.png|
+              Lib/test/tkinterdata/python\.png|
+              Objects/object_layout_[^/]*\.png|
+              PC/icons/[^/]*\.png|
+              Tools/msi/bundle/SideBar\.png|
+          )$
+
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v1.0.2
     hooks:
