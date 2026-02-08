@@ -760,8 +760,9 @@ The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
 
 #. find a module, loading and initializing it if necessary
-#. define a name or names in the local namespace for the scope where
-   the :keyword:`import` statement occurs.
+#. define a name or names in the current namespace for the scope where
+   the :keyword:`import` statement occurs, just as an assignment statement
+   would, including global, local, and nonlocal semantics.
 
 When the statement contains multiple clauses (separated by
 commas) the two steps are carried out separately for each clause, just
@@ -806,7 +807,7 @@ The :keyword:`from` form uses a slightly more complex process:
    #. if not, attempt to import a submodule with that name and then
       check the imported module again for that attribute
    #. if the attribute is not found, :exc:`ImportError` is raised.
-   #. otherwise, a reference to that value is stored in the local namespace,
+   #. otherwise, a reference to that value is stored in the current namespace,
       using the name in the :keyword:`!as` clause if it is present,
       otherwise using the attribute name
 
