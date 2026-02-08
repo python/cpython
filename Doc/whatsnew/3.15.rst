@@ -1221,6 +1221,16 @@ platform
   (Contributed by Alexey Makridenko in :gh:`133604`.)
 
 
+pprint
+------
+
+* Add a *block_style* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted in a block style similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
+  (Contributed by Stefan Todoran and Semyon Moroz in :gh:`112632`.)
+
+
 sre_*
 -----
 
