@@ -1,0 +1,1 @@
+Fix :meth:`turtle.clone` items management when clearing cloned turtle items.
