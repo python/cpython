@@ -1,14 +1,21 @@
 """Support for template string literals (t-strings)."""
 
-__all__ = [
-    "Interpolation",
-    "Template",
-]
-
 t = t"{0}"
 Template = type(t)
 Interpolation = type(t.interpolations[0])
 del t
+
+def convert(obj, /, conversion):
+    """Convert *obj* using formatted string literal semantics."""
+    if conversion is None:
+        return obj
+    if conversion == 'r':
+        return repr(obj)
+    if conversion == 's':
+        return str(obj)
+    if conversion == 'a':
+        return ascii(obj)
+    raise ValueError(f'invalid conversion specifier: {conversion}')
 
 def _template_unpickle(*args):
     import itertools

@@ -58,7 +58,10 @@ except ImportError:
         raise TypeError
     except TypeError as exc:
         TracebackType = type(exc.__traceback__)
-        FrameType = type(exc.__traceback__.tb_frame)
+
+    _f = (lambda: sys._getframe())()
+    FrameType = type(_f)
+    FrameLocalsProxyType = type(_f.f_locals)
 
     GetSetDescriptorType = type(FunctionType.__code__)
     MemberDescriptorType = type(FunctionType.__globals__)
@@ -273,10 +276,20 @@ class _GeneratorWrapper:
     @property
     def gi_yieldfrom(self):
         return self.__wrapped.gi_yieldfrom
+    @property
+    def gi_suspended(self):
+        return self.__wrapped.gi_suspended
+    @property
+    def gi_state(self):
+        return self.__wrapped.gi_state
+    @property
+    def cr_state(self):
+        return self.__wrapped.gi_state.replace('GEN_', 'CORO_')
     cr_code = gi_code
     cr_frame = gi_frame
     cr_running = gi_running
     cr_await = gi_yieldfrom
+    cr_suspended = gi_suspended
     def __next__(self):
         return next(self.__wrapped)
     def __iter__(self):

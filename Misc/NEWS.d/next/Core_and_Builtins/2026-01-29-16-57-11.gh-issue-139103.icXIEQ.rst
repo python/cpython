@@ -1,0 +1,2 @@
+Improve scaling of :func:`~collections.namedtuple` instantiation in the
+free-threaded build.

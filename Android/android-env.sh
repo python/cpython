@@ -24,7 +24,7 @@ fail() {
 # * https://android.googlesource.com/platform/ndk/+/ndk-rXX-release/docs/BuildSystemMaintainers.md
 #   where XX is the NDK version. Do a diff against the version you're upgrading from, e.g.:
 #   https://android.googlesource.com/platform/ndk/+/ndk-r25-release..ndk-r26-release/docs/BuildSystemMaintainers.md
-ndk_version=27.2.12479018
+ndk_version=27.3.13750724
 
 ndk=$ANDROID_HOME/ndk/$ndk_version
 if ! [ -e "$ndk" ]; then

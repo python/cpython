@@ -8,9 +8,6 @@ and networks.
 
 """
 
-__version__ = '1.0'
-
-
 import functools
 
 IPV4LENGTH = 32
@@ -1479,6 +1476,10 @@ class IPv4Interface(IPv4Address):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.hostmask)
 
+    @property
+    def is_unspecified(self):
+        return self._ip == 0 and self.network.is_unspecified
+
 
 class IPv4Network(_BaseV4, _BaseNetwork):
 
@@ -1545,7 +1546,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == (self.max_prefixlen):
-            self.hosts = lambda: [IPv4Address(addr)]
+            self.hosts = lambda: iter((IPv4Address(addr),))
 
     @property
     @functools.lru_cache()
@@ -2336,7 +2337,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == self.max_prefixlen:
-            self.hosts = lambda: [IPv6Address(addr)]
+            self.hosts = lambda: iter((IPv6Address(addr),))
 
     def hosts(self):
         """Generate Iterator over usable hosts in a network.
@@ -2415,3 +2416,12 @@ class _IPv6Constants:
 
 IPv6Address._constants = _IPv6Constants
 IPv6Network._constants = _IPv6Constants
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

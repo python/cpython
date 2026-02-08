@@ -147,7 +147,7 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 
    Return ``1`` if found and removed, ``0`` if not found (no action taken), and ``-1`` if an
    error is encountered.  Does not raise :exc:`KeyError` for missing keys.  Raise a
-   :exc:`TypeError` if the *key* is unhashable.  Unlike the Python :meth:`~frozenset.discard`
+   :exc:`TypeError` if the *key* is unhashable.  Unlike the Python :meth:`~set.discard`
    method, this function does not automatically convert unhashable sets into
    temporary frozensets. Raise :exc:`SystemError` if *set* is not an
    instance of :class:`set` or its subtype.
@@ -166,3 +166,20 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
    Empty an existing set of all elements. Return ``0`` on
    success. Return ``-1`` and raise :exc:`SystemError` if *set* is not an instance of
    :class:`set` or its subtype.
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. c:macro:: PySet_MINSIZE
+
+   A :term:`soft deprecated` constant representing the size of an internal
+   preallocated table inside :c:type:`PySetObject` instances.
+
+   This is documented solely for completeness, as there are no guarantees
+   that a given version of CPython uses preallocated tables with a fixed
+   size.
+   In code that does not deal with unstable set internals,
+   :c:macro:`!PySet_MINSIZE` can be replaced with a small constant like ``8``.
+
+   If looking for the size of a set, use :c:func:`PySet_Size` instead.
