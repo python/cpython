@@ -370,6 +370,12 @@
         }
 
         case _GUARD_TOS_SLICE: {
+            JitOptRef tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PySlice_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(tos, &PySlice_Type);
             break;
         }
 
