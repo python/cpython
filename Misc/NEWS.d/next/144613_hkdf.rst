@@ -1,0 +1,23 @@
+#
+# Please enter the relevant GitHub issue number here:
+#
+.. gh-issue: 144613
+
+#
+# Uncomment one of these "section:" lines to specify which section
+# this entry should go in in Misc/NEWS.d.
+#
+#.. section: Security
+#.. section: Core and Builtins
+.. section: Library
+Add HKDF (HMAC-based Extract-and-Expand Key Derivation Function) module to the standard library, implementing RFC 5869. Supports SHA-1 and SHA-256 and includes RFC test vectors for both PRK and OKM outputs.
+#.. section: Documentation
+#.. section: Tests
+#.. section: Build
+#.. section: Windows
+#.. section: macOS
+#.. section: IDLE
+#.. section: Tools/Demos
+#.. section: C API
+
+###########################################################################
