@@ -11,7 +11,6 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import errno
 import io
-import itertools
 import os
 import sys
 import socket
@@ -45,8 +44,6 @@ BUFSIZE = 64 * 1024
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
 
-_mmap_counter = itertools.count()
-
 default_family = 'AF_INET'
 families = ['AF_INET']
 
@@ -78,8 +75,7 @@ def arbitrary_address(family):
     elif family == 'AF_UNIX':
         return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
-        return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
-                               (os.getpid(), next(_mmap_counter)), dir="")
+        return r'\\.\pipe\pyc-' + os.urandom(8).hex()
     else:
         raise ValueError('unrecognized family')
 
@@ -472,16 +468,26 @@ class Listener(object):
     def __init__(self, address=None, family=None, backlog=1, authkey=None):
         family = family or (address and address_type(address)) \
                  or default_family
-        address = address or arbitrary_address(family)
-
         _validate_family(family)
-        if family == 'AF_PIPE':
-            self._listener = PipeListener(address, backlog)
-        else:
-            self._listener = SocketListener(address, family, backlog)
-
         if authkey is not None and not isinstance(authkey, bytes):
             raise TypeError('authkey should be a byte string')
+
+        if family == 'AF_PIPE':
+            if address:
+                self._listener = PipeListener(address, backlog)
+            else:
+                while True:
+                    address = arbitrary_address(family)
+                    try:
+                        self._listener = PipeListener(address, backlog)
+                        break
+                    except OSError as e:
+                        if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
+                                              _winapi.ERROR_ACCESS_DENIED):
+                            raise
+        else:
+            address = address or arbitrary_address(family)
+            self._listener = SocketListener(address, family, backlog)
 
         self._authkey = authkey
 
@@ -570,7 +576,6 @@ else:
         '''
         Returns pair of connection objects at either end of a pipe
         '''
-        address = arbitrary_address('AF_PIPE')
         if duplex:
             openmode = _winapi.PIPE_ACCESS_DUPLEX
             access = _winapi.GENERIC_READ | _winapi.GENERIC_WRITE
@@ -580,15 +585,23 @@ else:
             access = _winapi.GENERIC_WRITE
             obsize, ibsize = 0, BUFSIZE
 
-        h1 = _winapi.CreateNamedPipe(
-            address, openmode | _winapi.FILE_FLAG_OVERLAPPED |
-            _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE,
-            _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
-            _winapi.PIPE_WAIT,
-            1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER,
-            # default security descriptor: the handle cannot be inherited
-            _winapi.NULL
-            )
+        while True:
+            address = arbitrary_address('AF_PIPE')
+            try:
+                h1 = _winapi.CreateNamedPipe(
+                    address, openmode | _winapi.FILE_FLAG_OVERLAPPED |
+                    _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE,
+                    _winapi.PIPE_TYPE_MESSAGE | _winapi.PIPE_READMODE_MESSAGE |
+                    _winapi.PIPE_WAIT,
+                    1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER,
+                    # default security descriptor: the handle cannot be inherited
+                    _winapi.NULL
+                    )
+                break
+            except OSError as e:
+                if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
+                                      _winapi.ERROR_ACCESS_DENIED):
+                    raise
         h2 = _winapi.CreateFile(
             address, access, 0, _winapi.NULL, _winapi.OPEN_EXISTING,
             _winapi.FILE_FLAG_OVERLAPPED, _winapi.NULL

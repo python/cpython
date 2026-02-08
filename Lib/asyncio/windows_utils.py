@@ -6,11 +6,9 @@ if sys.platform != 'win32':  # pragma: no cover
     raise ImportError('win32 only')
 
 import _winapi
-import itertools
 import msvcrt
 import os
 import subprocess
-import tempfile
 import warnings
 
 
@@ -23,7 +21,6 @@ __all__ = 'pipe', 'Popen', 'PIPE', 'PipeHandle'
 BUFSIZE = 8192
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
-_mmap_counter = itertools.count()
 
 
 # Replacement for os.pipe() using handles instead of fds
@@ -31,10 +28,6 @@ _mmap_counter = itertools.count()
 
 def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     """Like os.pipe() but with overlapped support and using handles not fds."""
-    address = tempfile.mktemp(
-        prefix=r'\\.\pipe\python-pipe-{:d}-{:d}-'.format(
-            os.getpid(), next(_mmap_counter)))
-
     if duplex:
         openmode = _winapi.PIPE_ACCESS_DUPLEX
         access = _winapi.GENERIC_READ | _winapi.GENERIC_WRITE
@@ -56,9 +49,17 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
 
     h1 = h2 = None
     try:
-        h1 = _winapi.CreateNamedPipe(
-            address, openmode, _winapi.PIPE_WAIT,
-            1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL)
+        while True:
+            address = r'\\.\pipe\python-pipe-' + os.urandom(8).hex()
+            try:
+                h1 = _winapi.CreateNamedPipe(
+                    address, openmode, _winapi.PIPE_WAIT,
+                    1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL)
+                break
+            except OSError as e:
+                if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
+                                      _winapi.ERROR_ACCESS_DENIED):
+                    raise
 
         h2 = _winapi.CreateFile(
             address, access, 0, _winapi.NULL, _winapi.OPEN_EXISTING,
