@@ -576,6 +576,10 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     os.symlink(linkto, dstname)
                     copystat(srcobj, dstname, follow_symlinks=not symlinks)
                 else:
+                    # if the link is not to an absolute path it is relative to
+                    # the source (see gh-91205)
+                    if not os.path.isabs(linkto):
+                        linkto = os.path.join(os.path.dirname(srcname), linkto)
                     # ignore dangling symlink if the flag is on
                     if not os.path.exists(linkto) and ignore_dangling_symlinks:
                         continue
