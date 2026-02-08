@@ -740,6 +740,11 @@ Retrieving source code
    A :exc:`TypeError` is raised if the object is a built-in module, class, or
    function.
 
+   .. note::
+      This function returns the lines of source code where the object is
+      defined, including indentation. It always returns full lines and does not
+      strip other code that may appear on the same line.
+
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
       former.
