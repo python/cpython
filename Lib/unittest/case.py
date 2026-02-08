@@ -557,10 +557,12 @@ class TestCase(object):
             params_map = _OrderedChainMap(params)
         else:
             params_map = parent.params.new_child(params)
-        self._subtest = _SubTest(self, msg, params_map)
+        subtest = _SubTest(self, msg, params_map)
+        self._subtest = subtest
+        cleanup_helper = _SubTestCleanupHelper(subtest, self._outcome)
         try:
             with self._outcome.testPartExecutor(self._subtest, subTest=True):
-                yield
+                yield cleanup_helper
             if not self._outcome.success:
                 result = self._outcome.result
                 if result is not None and result.failfast:
@@ -570,6 +572,7 @@ class TestCase(object):
                 # stop now and register the expected failure.
                 raise _ShouldStop
         finally:
+            cleanup_helper.doCleanups()
             self._subtest = parent
 
     def _addExpectedFailure(self, result, exc_info):
@@ -1626,3 +1629,47 @@ class _SubTest(TestCase):
 
     def __str__(self):
         return "{} {}".format(self.test_case, self._subDescription())
+
+
+class _SubTestCleanupHelper:
+    """
+    Helper class to manage cleanups and context managers inside subTest blocks,
+    without exposing full TestCase functionality.
+    """
+
+    def __init__(self, subtest, outcome=None):
+        self._cleanups = []
+        self._subtest = subtest
+        self._outcome = outcome
+
+    @staticmethod
+    def _callCleanup(function, /, *args, **kwargs):
+        function(*args, **kwargs)
+
+    def addCleanup(self, function, /, *args, **kwargs):
+        """Add a function, with arguments, to be called when the test is
+        completed. Functions added are called on a LIFO basis and are
+        called after tearDown on test failure or success.
+
+        Cleanup items are called even if setUp fails (unlike tearDown)."""
+        self._cleanups.append((function, args, kwargs))
+
+    def enterContext(self, cm):
+        """Enters the supplied context manager.
+
+        If successful, also adds its __exit__ method as a cleanup
+        function and returns the result of the __enter__ method.
+        """
+        return _enter_context(cm, self.addCleanup)
+
+    def doCleanups(self):
+        """Execute all cleanup functions registered for this subtest."""
+        outcome = self._outcome or _Outcome()
+        while self._cleanups:
+            function, args, kwargs = self._cleanups.pop()
+            if hasattr(outcome, 'testPartExecutor'):
+                with outcome.testPartExecutor(self._subtest, subTest=True):
+                    self._callCleanup(function, *args, **kwargs)
+            else:
+                self._callCleanup(function, *args, **kwargs)
+        return outcome.success
