@@ -9298,6 +9298,39 @@ printf "%s\n" "\"Found llvm-bolt\"" >&6; }
     as_fn_error $? "llvm-bolt is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
 
+  # Check for packed relocations (-Wl,-z,pack-relative-relocs) which use DT_RELR format.
+  # BOLT has issues analyzing these compact relocations.
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for packed relocations in LDFLAGS" >&5
+printf %s "checking for packed relocations in LDFLAGS... " >&6; }
+  has_packed_relocs="no"
+  case "$LDFLAGS $LDFLAGS_NODIST" in
+    *-Wl,-z,pack-relative-relocs*)
+      has_packed_relocs="yes"
+      ;;
+  esac
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $has_packed_relocs" >&5
+printf "%s\n" "$has_packed_relocs" >&6; }
+
+  # Check BOLT version if it's < 21.1.0, to determine if we need to skip functions with computed gotos.
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking llvm-bolt version" >&5
+printf %s "checking llvm-bolt version... " >&6; }
+  llvm_bolt_version=$("${LLVM_BOLT}" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${llvm_bolt_version}" >&5
+printf "%s\n" "${llvm_bolt_version}" >&6; }
+
+  # Parse version
+  llvm_bolt_major=$(echo "${llvm_bolt_version}" | cut -d. -f1)
+  llvm_bolt_minor=$(echo "${llvm_bolt_version}" | cut -d. -f2)
+
+  bolt_need_skip_computed_goto="yes"
+  if test -n "${llvm_bolt_major}" && test "${llvm_bolt_major}" -ge 21; then
+    if test "${llvm_bolt_major}" -gt 21 || test "${llvm_bolt_minor}" -ge 1; then
+      bolt_need_skip_computed_goto="no"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: LLVM ${llvm_bolt_version} supports computed gotos" >&5
+printf "%s\n" "LLVM ${llvm_bolt_version} supports computed gotos" >&6; }
+    fi
+  fi
+
 
   if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}merge-fdata", so it can be a program name with args.
@@ -9433,9 +9466,68 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1 "
+  BOLT_COMMON_FLAGS=" -update-debug-sections "
 
+
+        if test "${bolt_need_skip_computed_goto}" = "yes"; then
+        BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1"
+            if test "${has_packed_relocs}" != "yes" && test "${ac_cv_cc_name}" = "gcc" && test "${with_lto}" != "no" && test -n "${with_lto}"; then
+      BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS},sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1"
+    fi
+  fi
+
+      if test "${has_packed_relocs}" = "yes"; then
+    bolt_base="_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1"
+    bolt_sre_lto="sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1"
+    bolt_all_lto="_PyEval_EvalFrameDefault.lto_priv.0/1,${bolt_sre_lto}"
+
+    case "${ac_cv_cc_name}" in
+      gcc)
+                bolt_skip_list=""
+
+                bolt_need_base=$( (test "${bolt_need_skip_computed_goto}" != "yes" && test "${enable_shared}" = "yes") && echo "yes" || echo "no")
+        bolt_need_lto=$( (test "${with_lto}" != "no" && test -n "${with_lto}") && echo "yes" || echo "no")
+        bolt_need_pgo=$( (test "${enable_optimizations}" = "yes" && test "${enable_shared}" = "yes") && echo "yes" || echo "no")
+
+                test "${bolt_need_base}" = "yes" && bolt_skip_list="${bolt_base}"
+        if test "${bolt_need_lto}" = "yes"; then
+          if test "${enable_shared}" = "yes"; then
+            test -n "${bolt_skip_list}" && bolt_skip_list="${bolt_skip_list},"
+            bolt_skip_list="${bolt_skip_list}${bolt_all_lto}"
+          elif test "${bolt_need_skip_computed_goto}" != "yes"; then
+            bolt_skip_list="${bolt_all_lto}"
+          else
+                        test -n "${bolt_skip_list}" && bolt_skip_list="${bolt_skip_list},"
+            bolt_skip_list="${bolt_skip_list}${bolt_all_lto}"
+          fi
+        fi
+        if test "${bolt_need_pgo}" = "yes"; then
+          test -n "${bolt_skip_list}" && bolt_skip_list="${bolt_skip_list},"
+          if test "${bolt_need_lto}" = "yes"; then
+            bolt_skip_list="${bolt_skip_list}_PyEval_EvalFrameDefault.localalias.lto_priv.0/1"
+          else
+            bolt_skip_list="${bolt_skip_list}_PyEval_EvalFrameDefault.localalias/1"
+          fi
+        fi
+
+                if test -n "${bolt_skip_list}"; then
+          if test "${bolt_need_skip_computed_goto}" = "yes"; then
+            BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS},${bolt_skip_list}"
+          else
+            BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=${bolt_skip_list}"
+          fi
+        fi
+        ;;
+      clang*)
+        if test "${bolt_need_skip_computed_goto}" != "yes"; then
+          BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=${bolt_base}"
+        fi
+        ;;
+    esac
+  fi
 fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_COMMON_FLAGS" >&5
+printf "%s\n" "$BOLT_COMMON_FLAGS" >&6; }
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking BOLT_INSTRUMENT_FLAGS" >&5
