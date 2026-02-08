@@ -103,12 +103,25 @@ Module contents
      ignored.
 
    - *eq*: If true (the default), an :meth:`~object.__eq__` method will be
-     generated.  This method compares the class as if it were a tuple
-     of its fields, in order.  Both instances in the comparison must
-     be of the identical type.
+     generated.
 
-     If the class already defines :meth:`!__eq__`, this parameter is
-     ignored.
+     This method compares the class by comparing each field in order. Both
+     instances in the comparison must be of the identical type.
+
+     .. versionchanged:: 3.13
+        The generated ``__eq__`` method now compares each field individually
+        (for example, ``self.a == other.a and self.b == other.b``), rather than
+        comparing tuples of fields as in previous versions.
+
+     This change makes the comparison faster but it may alter results in cases
+     where attributes compare equal by identity but not by value (such as
+     ``float('nan')``).
+
+     In Python 3.12 and earlier, the comparison was performed by creating
+     tuples of the fields and comparing them (for example,
+     ``(self.a, self.b) == (other.a, other.b)``).
+
+     If the class already defines :meth:`!__eq__`, this parameter is ignored.
 
    - *order*: If true (the default is ``False``), :meth:`~object.__lt__`,
      :meth:`~object.__le__`, :meth:`~object.__gt__`, and :meth:`~object.__ge__` methods will be
