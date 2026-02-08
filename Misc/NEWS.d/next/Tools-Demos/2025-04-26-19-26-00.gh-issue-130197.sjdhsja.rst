@@ -1,0 +1,2 @@
+Fix and test the ``--exclude-docstrings`` option in :program:`pygettext`.
+Note: the option was also renamed from ``--no-docstrings`` for clarity.
