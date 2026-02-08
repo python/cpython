@@ -1166,7 +1166,7 @@ setiter_iternext(PyObject *self)
         key = Py_NewRef(entry[i].key);
         si->si_pos = i + 1;
         si->len--;
-    } 
+    }
     else {
         si->si_set = NULL;
         decref_so = 1;
