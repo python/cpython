@@ -2718,14 +2718,14 @@ def _calc_candidate_score(block0, block1, block2):
         Otherwise, it gets bonus for each additional block
         as it has poential to recurse further to each side
     """
-    k0 = block0[2]
     k1 = block1[2]
-    k2 = block2[2]
     if not k1:
         raise ValueError('Middle block should not be null')
     lengths = [k1]
+    k0 = block0[2]
     if k0:
         lengths.append(k0)
+    k2 = block2[2]
     if k2:
         lengths.append(k2)
     total = sum(k**_BALANCE_SCORE_POWER for k in lengths)
