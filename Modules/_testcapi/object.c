@@ -201,6 +201,22 @@ test_py_try_inc_ref(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_py_set_immortal(PyObject *self, PyObject *unused)
+{
+    // the object is allocated on C stack as otherwise,
+    // it would trip the refleak checker when the object
+    // is made immortal and leak memory
+    PyObject object = {0};
+    Py_SET_REFCNT(&object, 1);
+    Py_SET_TYPE(&object, &PyBaseObject_Type);
+    assert(!PyUnstable_IsImmortal(&object));
+    PyUnstable_SetImmortal(&object);
+    assert(PyUnstable_IsImmortal(&object));
+    Py_DECREF(&object);  // should not dealloc
+    assert(PyUnstable_IsImmortal(&object));
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 _test_incref(PyObject *ob)
@@ -528,6 +544,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_is_unique_temporary", pyobject_is_unique_temporary, METH_O},
     {"pyobject_is_unique_temporary_new_object", pyobject_is_unique_temporary_new_object, METH_NOARGS},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
+    {"test_py_set_immortal", test_py_set_immortal, METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
     {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},
