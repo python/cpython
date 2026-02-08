@@ -2005,6 +2005,28 @@ test case
             pass
         self.assertIsNone(value)
 
+    def testAssertLogsKeepHandlers(self):
+      # Verify keep_handlers=True preserves existing handlers
+      handler_records = []
+      handler = logging.Handler()
+      handler.emit = lambda record: handler_records.append(record)
+      log_foo.addHandler(handler)
+      test_message = "test message"
+
+      try:
+          with self.assertNoStderr():
+              with self.assertLogs('foo', level='INFO', keep_handlers=True) as cm:
+                  log_foo.info(test_message)
+
+              self.assertEqual(cm.output, [f'INFO:foo:{test_message}'])
+
+              self.assertEqual(len(handler_records), 1)
+              self.assertEqual(handler_records[0].getMessage(), test_message)
+
+              self.assertEqual(log_foo.handlers, [handler])
+      finally:
+          log_foo.removeHandler(handler)
+
     def testAssertStartsWith(self):
         self.assertStartsWith('ababahalamaha', 'ababa')
         self.assertStartsWith('ababahalamaha', ('x', 'ababa', 'y'))
