@@ -186,5 +186,18 @@ class FormatDateTests(unittest.TestCase):
         string = utils.formatdate(timeval, localtime=True)
         self.assertEqual(string, 'Thu, 01 Dec 2011 18:00:00 +0300')
 
+# Issue #126845: Some edge cases seem to differ from RFC28222 spec
+class ParsedateToDatetimeTest(unittest.TestCase):
+    def test_year_parsing_edge_cases(self):
+        expectations = {
+            "Sat, 15 Aug 0001 23:12:09 +0500": "2001",
+            "Thu, 1 Sep 1 23:12:09 +0800": "2001",
+            "Thu, 7 Oct 123 23:12:09 +0500": "2023",
+            "Tue, 17 Nov 2026 12:12:09 +0500": "2026",
+        }
+        for input_string, output_string in expectations.items():
+            with self.subTest(input_string=input_string):
+                self.assertEqual(str(utils.parsedate_to_datetime(input_string))[:4], output_string)
+
 if __name__ == '__main__':
     unittest.main()
