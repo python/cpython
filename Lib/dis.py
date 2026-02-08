@@ -551,6 +551,8 @@ class Formatter:
                 target = entry.target_label
                 print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
 
+def _hasconst_like(op):
+    return op in hasconst or op == LOAD_SMALL_INT
 
 class ArgResolver:
     def __init__(self, co_consts=None, names=None, varname_from_oparg=None, labels_map=None):
@@ -585,7 +587,7 @@ class ArgResolver:
             #    _disassemble_bytes needs the string repr of the
             #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
             argval = arg
-            if deop in hasconst:
+            if _hasconst_like(deop):
                 argval, argrepr = _get_const_info(deop, arg, self.co_consts)
             elif deop in hasname:
                 if deop == LOAD_GLOBAL:
@@ -685,7 +687,7 @@ def _get_const_value(op, arg, co_consts):
        Otherwise (if it is a LOAD_CONST and co_consts is not
        provided) returns the dis.UNKNOWN sentinel.
     """
-    assert op in hasconst or op == LOAD_SMALL_INT
+    assert _hasconst_like(op)
 
     if op == LOAD_SMALL_INT:
         return arg
@@ -1008,8 +1010,7 @@ def _find_imports(co):
         if op == IMPORT_NAME and i >= 2:
             from_op = opargs[i-1]
             level_op = opargs[i-2]
-            if (from_op[0] in hasconst and
-                (level_op[0] in hasconst or level_op[0] == LOAD_SMALL_INT)):
+            if from_op[0] in hasconst and _hasconst_like(level_op[0]):
                 level = _get_const_value(level_op[0], level_op[1], consts)
                 fromlist = _get_const_value(from_op[0], from_op[1], consts)
                 yield (names[oparg], level, fromlist)
