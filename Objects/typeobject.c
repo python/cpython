@@ -4644,7 +4644,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
         int after_items = (ctx->base->tp_itemsize != 0 &&
                            !(ctx->base->tp_flags & Py_TPFLAGS_ITEMS_AT_END));
-        if (ctx->base->tp_itemsize != 0 &&
+        if (after_items &&
             !(ctx->base->tp_flags & Py_TPFLAGS_TUPLE_SUBCLASS))
         {
             PyErr_Format(PyExc_TypeError,
