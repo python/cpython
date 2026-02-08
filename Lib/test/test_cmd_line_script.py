@@ -583,6 +583,23 @@ class CmdLineTest(unittest.TestCase):
             'stdout=%r stderr=%r' % (stdout, stderr))
         self.assertEqual(0, rc)
 
+    def test_skip_source_first_line(self):
+        script = textwrap.dedent("""\
+            print("First line")
+            print("Second line")
+            """)
+        with os_helper.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_ok(script_name)
+            text = stdout.decode('ascii')
+            self.assertIn("First line", text)
+            self.assertIn("Second line", text)
+
+            exitcode, stdout, stderr = assert_python_ok('-x', script_name)
+            text = stdout.decode('ascii')
+            self.assertNotIn("First line", text)
+            self.assertIn("Second line", text)
+
     def test_issue20500_exit_with_exception_value(self):
         script = textwrap.dedent("""\
             import sys
