@@ -3595,12 +3595,22 @@ date_repr(PyObject *op)
                                 GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
+/*[clinic input]
+datetime.date.isoformat
+
+    basic: bool = False
+
+Return string in ISO 8601 format, YYYY-MM-DD.
+
+If basic is true, uses the basic format, YYYYMMDD.
+[clinic start generated code]*/
+
 static PyObject *
-date_isoformat(PyObject *op, PyObject *Py_UNUSED(dummy))
+datetime_date_isoformat_impl(PyDateTime_Date *self, int basic)
+/*[clinic end generated code: output=c458fbf6d05e16f2 input=1bd448614fd107d0]*/
 {
-    PyDateTime_Date *self = PyDate_CAST(op);
-    return PyUnicode_FromFormat("%04d-%02d-%02d",
-                                GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
+    const char *format = basic ? "%04d%02d%02d" : "%04d-%02d-%02d";
+    return PyUnicode_FromFormat(format, GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
 /* str() calls the appropriate isoformat() method. */
@@ -3992,8 +4002,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
-    {"isoformat", date_isoformat, METH_NOARGS,
-     PyDoc_STR("Return string in ISO 8601 format, YYYY-MM-DD.")},
+    DATETIME_DATE_ISOFORMAT_METHODDEF
 
     {"isoweekday", date_isoweekday, METH_NOARGS,
      PyDoc_STR("Return the day of the week represented by the date.\n"
@@ -4835,11 +4844,13 @@ time_str(PyObject *op)
 datetime.time.isoformat
 
     timespec: str(c_default="NULL") = 'auto'
+    basic: bool = False
 
 Return the time formatted according to ISO.
 
-The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
-part is omitted if self.microsecond == 0.
+The full format is 'HH:MM:SS.mmmmmm+zz:zz'. If basic is true,
+separators ':' are removed from the output (e.g., HHMMSS).
+By default, the fractional part is omitted if self.microsecond == 0.
 
 The optional argument timespec specifies the number of additional
 terms of the time to include. Valid options are 'auto', 'hours',
@@ -4847,20 +4858,32 @@ terms of the time to include. Valid options are 'auto', 'hours',
 [clinic start generated code]*/
 
 static PyObject *
-datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
-/*[clinic end generated code: output=2bcc7cab65c35545 input=afbbbd953d10ad07]*/
+datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec,
+                             int basic)
+/*[clinic end generated code: output=3eafefc852100d3c input=8d6445ce8d611c40]*/
 {
     char buf[100];
 
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
-    static const char * const specs[][2] = {
+    static const char *const specs_extended[][2] = {
         {"hours", "%02d"},
         {"minutes", "%02d:%02d"},
         {"seconds", "%02d:%02d:%02d"},
         {"milliseconds", "%02d:%02d:%02d.%03d"},
         {"microseconds", "%02d:%02d:%02d.%06d"},
     };
+    static const char *const specs_basic[][2] = {
+        {"hours", "%02d"},
+        {"minutes", "%02d%02d"},
+        {"seconds", "%02d%02d%02d"},
+        {"milliseconds", "%02d%02d%02d.%03d"},
+        {"microseconds", "%02d%02d%02d.%06d"},
+    };
+
+    const char *const (*specs)[2] = basic ? specs_basic : specs_extended;
+    // due to array decaying, Py_ARRAY_LENGTH(specs) would return 0
+    size_t specs_count = basic ? Py_ARRAY_LENGTH(specs_basic) : Py_ARRAY_LENGTH(specs_extended);
     size_t given_spec;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -4874,7 +4897,7 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
         }
     }
     else {
-        for (given_spec = 0; given_spec < Py_ARRAY_LENGTH(specs); given_spec++) {
+        for (given_spec = 0; given_spec < specs_count; given_spec++) {
             if (strcmp(timespec, specs[given_spec][0]) == 0) {
                 if (given_spec == 3) {
                     /* milliseconds */
@@ -4885,7 +4908,7 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
         }
     }
 
-    if (given_spec == Py_ARRAY_LENGTH(specs)) {
+    if (given_spec == specs_count) {
         PyErr_Format(PyExc_ValueError, "Unknown timespec value");
         return NULL;
     }
@@ -4899,8 +4922,8 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buf, sizeof(buf), ":", self->tzinfo,
-                         Py_None) < 0) {
+    const char *offset_sep = basic ? "" : ":";
+    if (format_utcoffset(buf, sizeof(buf), offset_sep, self->tzinfo, Py_None) < 0) {
         Py_DECREF(result);
         return NULL;
     }
@@ -6380,6 +6403,7 @@ datetime.datetime.isoformat
 
     sep: int(accept={str}, c_default="'T'", py_default="'T'") = ord('T')
     timespec: str(c_default="NULL") = 'auto'
+    basic: bool = False
 
 Return the time formatted according to ISO.
 
@@ -6390,7 +6414,8 @@ If self.tzinfo is not None, the UTC offset is also attached, giving
 a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
 
 Optional argument sep specifies the separator between date and
-time, default 'T'.
+time, default 'T'. If basic is true, separators ':' and '-' are
+removed from the output (e.g., YYYYMMDDTHHMMSS).
 
 The optional argument timespec specifies the number of additional
 terms of the time to include. Valid options are 'auto', 'hours',
@@ -6399,20 +6424,31 @@ terms of the time to include. Valid options are 'auto', 'hours',
 
 static PyObject *
 datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
-                                 const char *timespec)
-/*[clinic end generated code: output=9b6ce1383189b0bf input=2fa2512172ccf5d5]*/
+                                 const char *timespec, int basic)
+/*[clinic end generated code: output=9df35f63fda85c52 input=e7936e3183ce301c]*/
 {
     char buffer[100];
 
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
-    static const char * const specs[][2] = {
+    static const char *const specs_extended[][2] = {
         {"hours", "%04d-%02d-%02d%c%02d"},
         {"minutes", "%04d-%02d-%02d%c%02d:%02d"},
         {"seconds", "%04d-%02d-%02d%c%02d:%02d:%02d"},
         {"milliseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%03d"},
         {"microseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%06d"},
     };
+    static const char *const specs_basic[][2] = {
+        {"hours", "%04d%02d%02d%c%02d"},
+        {"minutes", "%04d%02d%02d%c%02d%02d"},
+        {"seconds", "%04d%02d%02d%c%02d%02d%02d"},
+        {"milliseconds", "%04d%02d%02d%c%02d%02d%02d.%03d"},
+        {"microseconds", "%04d%02d%02d%c%02d%02d%02d.%06d"},
+    };
+
+    const char *const(*specs)[2] = basic ? specs_basic : specs_extended;
+    // due to array decaying, Py_ARRAY_LENGTH(specs) would return 0
+    size_t specs_count = basic ? Py_ARRAY_LENGTH(specs_basic) : Py_ARRAY_LENGTH(specs_extended);
     size_t given_spec;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -6426,7 +6462,7 @@ datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
         }
     }
     else {
-        for (given_spec = 0; given_spec < Py_ARRAY_LENGTH(specs); given_spec++) {
+        for (given_spec = 0; given_spec < specs_count; given_spec++) {
             if (strcmp(timespec, specs[given_spec][0]) == 0) {
                 if (given_spec == 3) {
                     us = us / 1000;
@@ -6436,7 +6472,7 @@ datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
         }
     }
 
-    if (given_spec == Py_ARRAY_LENGTH(specs)) {
+    if (given_spec == specs_count) {
         PyErr_Format(PyExc_ValueError, "Unknown timespec value");
         return NULL;
     }
@@ -6452,7 +6488,8 @@ datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buffer, sizeof(buffer), ":", self->tzinfo, (PyObject *)self) < 0) {
+    const char *offset_sep = basic ? "" : ":";
+    if (format_utcoffset(buffer, sizeof(buffer), offset_sep, self->tzinfo, (PyObject *)self) < 0) {
         Py_DECREF(result);
         return NULL;
     }
