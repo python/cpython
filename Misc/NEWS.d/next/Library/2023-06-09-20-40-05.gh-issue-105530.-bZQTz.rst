@@ -1,0 +1,2 @@
+Send HTTP headers with non-ISO-8859-1 characters as UTF-8 with MIME
+encoded-word syntax (per RFC 2047)
