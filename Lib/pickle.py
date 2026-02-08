@@ -1876,8 +1876,10 @@ class _Unpickler:
                     inst_dict[intern(k)] = v
                 else:
                     inst_dict[k] = v
-        if slotstate:
-            for k, v in slotstate.items():
+        if slotstate is not None:
+             if not isinstance(slotstate, dict):
+                raise UnpicklingError("slot state is not a dictionary")
+             for k, v in slotstate.items():
                 setattr(inst, k, v)
     dispatch[BUILD[0]] = load_build
 
