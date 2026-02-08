@@ -461,6 +461,33 @@ arguments (:pep:`791`).
 Improved modules
 ================
 
+abc
+---
+
+* Reduce memory usage of :func:`issubclass` checks for :class:`abc.ABCMeta` subclasses.
+
+  :class:`abc.ABCMeta` subclasses can trigger downstream checks:
+
+  ``issubclass(Some, Class)`` -> ``issubclass(Some, Parent)`` -> ``issubclass(Some, Top)``
+  (nothing found) -> ``issubclass(Some, Class.__subclasses__)`` -> ``issubclass(Some, SubClass)``
+  -> ``issubclass(Some, SubClass.__subclasses__)`` -> ...
+
+  Due to caching of ``issubclass`` result within each ABC class,
+  this could lead to memory bloat in large class trees, e.g. thousands of subclasses.
+
+  Now :meth:`!abc.ABCMeta.register` recursively calls ``Parent.register(subclass)``,
+  ``Top.register(subclass)`` and so on for all base classes, so downstream checks are not needed.
+  Also :meth:`!abc.ABCMeta.__new__` checks if ``__subclasses__`` method is present within class,
+  and if not, disables recursive downstream checks in :func:`issubclass`
+  for specific abstract class and all its children.
+
+  This reduces both the number of checks, and the RAM usage by internal caches:
+
+  ``issubclass(Some, Class)`` -> ``issubclass(Some, Parent)`` -> ``issubclass(Some, Top)``
+  (nothing found, stops here)
+
+  (Contributed by Maxim Martynov in :gh:`92810`.)
+
 argparse
 --------
 
