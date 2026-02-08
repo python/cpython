@@ -10,7 +10,8 @@
 __all__ = [
     'Process', 'current_process', 'active_children', 'freeze_support',
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition',
-    'Event', 'Barrier', 'Queue', 'Manager', 'Pipe', 'Pool', 'JoinableQueue'
+    'Event', 'Barrier', 'Queue', 'Manager', 'Pipe', 'Pool', 'JoinableQueue',
+    'ProcessError', 'parent_process', 'cpu_count', 'Value', 'Array', 'Manager'
     ]
 
 #
@@ -24,7 +25,7 @@ import array
 
 from .connection import Pipe
 from threading import Lock, RLock, Semaphore, BoundedSemaphore
-from threading import Event, Condition, Barrier
+from threading import Event, Condition, Barrier, ThreadError
 from queue import Queue
 
 #
@@ -62,7 +63,10 @@ class DummyProcess(threading.Thread):
 #
 
 Process = DummyProcess
+ProcessError = ThreadError
 current_process = threading.current_thread
+parent_process = threading.main_thread
+cpu_count = threading.active_count
 current_process()._children = weakref.WeakKeyDictionary()
 
 def active_children():
