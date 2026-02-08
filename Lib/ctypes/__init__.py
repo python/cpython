@@ -458,6 +458,8 @@ class CDLL(object):
                 if name and name.endswith(")") and ".a(" in name:
                     mode |= _os.RTLD_MEMBER | _os.RTLD_NOW
             self._name = name
+            if handle is not None:
+                return handle
             return _dlopen(name, mode)
 
     def __repr__(self):
