@@ -908,14 +908,17 @@
             container = stack_pointer[-3];
             PyTypeObject *type = sym_get_type(container);
             if (type == &PyList_Type) {
+                ADD_OP(_UNPACK_INDICES, 0, 0);
                 ADD_OP(_BINARY_SLICE_LIST, 0, 0);
                 res = sym_new_type(ctx, type);
             }
             else if (type == &PyTuple_Type) {
+                ADD_OP(_UNPACK_INDICES, 0, 0);
                 ADD_OP(_BINARY_SLICE_TUPLE, 0, 0);
                 res = sym_new_type(ctx, type);
             }
             else if (type == &PyUnicode_Type) {
+                ADD_OP(_UNPACK_INDICES, 0, 0);
                 ADD_OP(_BINARY_SLICE_UNICODE, 0, 0);
                 res = sym_new_type(ctx, type);
             }
@@ -926,6 +929,19 @@
             stack_pointer[-3] = res;
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _UNPACK_INDICES: {
+            JitOptRef container;
+            JitOptRef sta;
+            JitOptRef sto;
+            container = stack_pointer[-3];
+            (void)container;
+            sta = sym_new_compact_int(ctx);
+            sto = sym_new_compact_int(ctx);
+            stack_pointer[-2] = sta;
+            stack_pointer[-1] = sto;
             break;
         }
 

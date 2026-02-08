@@ -117,6 +117,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_BINARY_OP_EXTEND] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_EXTEND] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_UNPACK_INDICES] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE_LIST] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE_TUPLE] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE_UNICODE] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -1138,6 +1139,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 1, 3, _BINARY_SLICE_r31 },
+        },
+    },
+    [_UNPACK_INDICES] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 3, _UNPACK_INDICES_r33 },
         },
     },
     [_BINARY_SLICE_LIST] = {
@@ -3731,6 +3741,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_BINARY_OP_EXTEND_r22] = _GUARD_BINARY_OP_EXTEND,
     [_BINARY_OP_EXTEND_r23] = _BINARY_OP_EXTEND,
     [_BINARY_SLICE_r31] = _BINARY_SLICE,
+    [_UNPACK_INDICES_r33] = _UNPACK_INDICES,
     [_BINARY_SLICE_LIST_r31] = _BINARY_SLICE_LIST,
     [_BINARY_SLICE_TUPLE_r31] = _BINARY_SLICE_TUPLE,
     [_BINARY_SLICE_UNICODE_r31] = _BINARY_SLICE_UNICODE,
@@ -5425,6 +5436,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_UNARY_NOT_r33] = "_UNARY_NOT_r33",
     [_UNPACK_EX] = "_UNPACK_EX",
     [_UNPACK_EX_r10] = "_UNPACK_EX_r10",
+    [_UNPACK_INDICES] = "_UNPACK_INDICES",
+    [_UNPACK_INDICES_r33] = "_UNPACK_INDICES_r33",
     [_UNPACK_SEQUENCE] = "_UNPACK_SEQUENCE",
     [_UNPACK_SEQUENCE_r10] = "_UNPACK_SEQUENCE_r10",
     [_UNPACK_SEQUENCE_LIST] = "_UNPACK_SEQUENCE_LIST",
@@ -5605,6 +5618,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _BINARY_SLICE:
             return 3;
+        case _UNPACK_INDICES:
+            return 2;
         case _BINARY_SLICE_LIST:
             return 3;
         case _BINARY_SLICE_TUPLE:

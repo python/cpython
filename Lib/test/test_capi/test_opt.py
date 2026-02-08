@@ -3094,6 +3094,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, [2, 3])
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertIn("_UNPACK_INDICES", uops)
         self.assertIn("_BINARY_SLICE_LIST", uops)
         self.assertNotIn("_BINARY_SLICE", uops)
 
@@ -3109,6 +3110,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, (2, 3))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertIn("_UNPACK_INDICES", uops)
         self.assertIn("_BINARY_SLICE_TUPLE", uops)
         self.assertNotIn("_BINARY_SLICE", uops)
 
@@ -3124,6 +3126,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, "el")
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertIn("_UNPACK_INDICES", uops)
         self.assertIn("_BINARY_SLICE_UNICODE", uops)
         self.assertNotIn("_BINARY_SLICE", uops)
 

@@ -880,17 +880,32 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
+        tier2 op(_UNPACK_INDICES, (container, start, stop -- container, sta, sto)) {
+            Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
+            int err = _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart);
+            if (err != 0) {
+                err = _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop);
+            }
+            PyStackRef_CLOSE(stop);
+            PyStackRef_CLOSE(start);
+            if (err == 0) {
+                PyStackRef_CLOSE(container);
+                ERROR_IF(true);
+            }
+            sta = PyStackRef_TagInt((intptr_t)istart);
+            sto = PyStackRef_TagInt((intptr_t)istop);
+        }
+
         tier2 op(_BINARY_SLICE_LIST, (container, start, stop -- res)) {
             PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
             EXIT_IF(!PyList_CheckExact(container_o));
-            Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
-            PyObject *res_o = NULL;
-            if (_PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart) &&
-                _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop)) {
-                PySlice_AdjustIndices(PyList_GET_SIZE(container_o), &istart, &istop, 1);
-                res_o = PyList_GetSlice(container_o, istart, istop);
-            }
-            DECREF_INPUTS();
+            Py_ssize_t istart = PyStackRef_UntagInt(start);
+            Py_ssize_t istop = PyStackRef_UntagInt(stop);
+            DEAD(start);
+            DEAD(stop);
+            PySlice_AdjustIndices(PyList_GET_SIZE(container_o), &istart, &istop, 1);
+            PyObject *res_o = PyList_GetSlice(container_o, istart, istop);
+            PyStackRef_CLOSE(container);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -898,14 +913,13 @@ dummy_func(
         tier2 op(_BINARY_SLICE_TUPLE, (container, start, stop -- res)) {
             PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
             EXIT_IF(!PyTuple_CheckExact(container_o));
-            Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
-            PyObject *res_o = NULL;
-            if (_PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart) &&
-                _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop)) {
-                PySlice_AdjustIndices(PyTuple_GET_SIZE(container_o), &istart, &istop, 1);
-                res_o = PyTuple_GetSlice(container_o, istart, istop);
-            }
-            DECREF_INPUTS();
+            Py_ssize_t istart = PyStackRef_UntagInt(start);
+            Py_ssize_t istop = PyStackRef_UntagInt(stop);
+            DEAD(start);
+            DEAD(stop);
+            PySlice_AdjustIndices(PyTuple_GET_SIZE(container_o), &istart, &istop, 1);
+            PyObject *res_o = PyTuple_GetSlice(container_o, istart, istop);
+            PyStackRef_CLOSE(container);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -913,14 +927,13 @@ dummy_func(
         tier2 op(_BINARY_SLICE_UNICODE, (container, start, stop -- res)) {
             PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
             EXIT_IF(!PyUnicode_CheckExact(container_o));
-            Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
-            PyObject *res_o = NULL;
-            if (_PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart) &&
-                _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop)) {
-                PySlice_AdjustIndices(PyUnicode_GET_LENGTH(container_o), &istart, &istop, 1);
-                res_o = PyUnicode_Substring(container_o, istart, istop);
-            }
-            DECREF_INPUTS();
+            Py_ssize_t istart = PyStackRef_UntagInt(start);
+            Py_ssize_t istop = PyStackRef_UntagInt(stop);
+            DEAD(start);
+            DEAD(stop);
+            PySlice_AdjustIndices(PyUnicode_GET_LENGTH(container_o), &istart, &istop, 1);
+            PyObject *res_o = PyUnicode_Substring(container_o, istart, istop);
+            PyStackRef_CLOSE(container);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
