@@ -112,7 +112,7 @@ Some facts and figures:
    | ``'w'`` or       | Open for uncompressed writing.              |
    | ``'w:'``         |                                             |
    +------------------+---------------------------------------------+
-   | ``'w:gz'``       | Open for gzip compressed writing.           |
+   | ``'w:gz'``       | Open for gzip-compressed writing.           |
    +------------------+---------------------------------------------+
    | ``'w:bz2'``      | Open for bzip2 compressed writing.          |
    +------------------+---------------------------------------------+
@@ -167,7 +167,7 @@ Some facts and figures:
    | ``'r|'``    | Open a *stream* of uncompressed tar blocks |
    |             | for reading.                               |
    +-------------+--------------------------------------------+
-   | ``'r|gz'``  | Open a gzip compressed *stream* for        |
+   | ``'r|gz'``  | Open a gzip-compressed *stream* for        |
    |             | reading.                                   |
    +-------------+--------------------------------------------+
    | ``'r|bz2'`` | Open a bzip2 compressed *stream* for       |
@@ -181,7 +181,7 @@ Some facts and figures:
    +-------------+--------------------------------------------+
    | ``'w|'``    | Open an uncompressed *stream* for writing. |
    +-------------+--------------------------------------------+
-   | ``'w|gz'``  | Open a gzip compressed *stream* for        |
+   | ``'w|gz'``  | Open a gzip-compressed *stream* for        |
    |             | writing.                                   |
    +-------------+--------------------------------------------+
    | ``'w|bz2'`` | Open a bzip2 compressed *stream* for       |
@@ -1375,6 +1375,12 @@ How to extract an entire tar archive to the current working directory::
    tar.extractall(filter='data')
    tar.close()
 
+The same example using the :keyword:`with` statement::
+
+   import tarfile
+   with tarfile.open("sample.tar.gz") as tar:
+      tar.extractall(filter='data')
+
 How to extract a subset of a tar archive with :meth:`TarFile.extractall` using
 a generator function instead of a list::
 
@@ -1390,7 +1396,7 @@ a generator function instead of a list::
    tar.extractall(members=py_files(tar))
    tar.close()
 
-How to read a gzip compressed tar archive and display some member information::
+How to read a gzip-compressed tar archive and display some member information::
 
    import tarfile
    tar = tarfile.open("sample.tar.gz", "r:gz")
@@ -1403,6 +1409,15 @@ How to read a gzip compressed tar archive and display some member information::
        else:
            print("something else.")
    tar.close()
+
+How to extract a gzip-compressed tar archive from standard input using
+:data:`sys.stdin.buffer <sys.stdin>` as the *fileobj* parameter
+in :meth:`TarFile.open` into the current working directory::
+
+   import sys
+   import tarfile
+   with tarfile.open(fileobj=sys.stdin.buffer, mode="r:gz") as tar:
+       tar.extractall(filter="data")
 
 Writing examples
 ~~~~~~~~~~~~~~~~
@@ -1422,9 +1437,18 @@ The same example using the :keyword:`with` statement::
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
+How to create a gzip-compressed tar archive from a list of filenames
+read from the standard input using :data:`sys.stdin <sys.stdin>`::
+
+   import sys
+   import tarfile
+   with tarfile.open("sample.tar.gz", mode="w|gz") as tar:
+      for filename in sys.stdin:
+         tar.add(filename.strip())
+
 How to create and write an archive to stdout using
 :data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
-in :meth:`TarFile.add`::
+in :meth:`TarFile.open`::
 
     import sys
     import tarfile
