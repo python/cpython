@@ -10912,7 +10912,7 @@ then :
 
 else case e in #(
   e) as_fn_append CFLAGS_NODIST " $jit_flags"
-           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\""
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\" --llvm-tools-install-dir=\"$LLVM_TOOLS_INSTALL_DIR\""
            if test "x$Py_DEBUG" = xtrue
 then :
   as_fn_append REGEN_JIT_COMMAND " --debug"
