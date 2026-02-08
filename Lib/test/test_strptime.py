@@ -659,8 +659,8 @@ class StrptimeTests(unittest.TestCase):
     def test_strptime_T_format(self):
         test_time = "15:00:00"
         self.assertEqual(
-            time.strptime(test_time,"%T"),
-            time.strptime(test_time,"%H:%M:%S")
+            time.strptime(test_time, "%T"),
+            time.strptime(test_time, "%H:%M:%S")
         )
 
 class Strptime12AMPMTests(unittest.TestCase):
