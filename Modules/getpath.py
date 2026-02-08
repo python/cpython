@@ -614,6 +614,12 @@ else:
         prefix = abspath('')
         warn('Could not find platform independent libraries <prefix>')
 
+    # First try to detect exec_prefix by looking alongside our runtime library, if known
+    if library and not exec_prefix:
+        library_dir = dirname(library)
+        if PLATSTDLIB_LANDMARK:
+            if isdir(joinpath(library_dir, PLATSTDLIB_LANDMARK)):
+                exec_prefix = library_dir
 
     # Detect exec_prefix by searching from executable for the platstdlib_dir
     if PLATSTDLIB_LANDMARK and not exec_prefix:

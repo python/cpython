@@ -1,0 +1,1 @@
+Use same logic to look for exec_prefix as for prefix
