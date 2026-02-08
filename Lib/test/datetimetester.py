@@ -1222,8 +1222,8 @@ class TestDateOnly(unittest.TestCase):
     def test_strptime_T_format(self):
         test_time = "15:00:00"
         self.assertEqual(
-            datetime.strptime(test_time,"%T"),
-            datetime.strptime(test_time,"%H:%M:%S")
+            datetime.strptime(test_time, "%T"),
+            datetime.strptime(test_time, "%H:%M:%S")
         )
 
 class SubclassDate(date):
