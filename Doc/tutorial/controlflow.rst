@@ -587,9 +587,10 @@ There are three forms, which can be combined.
 Default Argument Values
 -----------------------
 
-The most useful form is to specify a default value for one or more arguments.
-This creates a function that can be called with fewer arguments than it is
-defined to allow.  For example::
+The most useful form is to specify a default value for one or more parameters.
+All positional only parameters (that is, without default values) must come
+first, followed by those with defaults. This allows a function to be called
+with fewer arguments than it is defined to allow. For example::
 
    def ask_ok(prompt, retries=4, reminder='Please try again!'):
        while True:
