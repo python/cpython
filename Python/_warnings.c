@@ -697,7 +697,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         if (truncated == NULL)
             goto error;
 
-        PyFile_WriteObject(sourceline, f_stderr, Py_PRINT_RAW);
+        PyFile_WriteObject(truncated, f_stderr, Py_PRINT_RAW);
         Py_DECREF(truncated);
         PyFile_WriteString("\n", f_stderr);
     }
