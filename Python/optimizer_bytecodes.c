@@ -1625,6 +1625,11 @@ dummy_func(void) {
         sym_set_recorded_type(tos, tp);
     }
 
+    op(_RECORD_3OS_TYPE, (container, nos, tos -- container, nos, tos)) {
+        PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
+        sym_set_type(container, tp);
+    }
+
     op(_RECORD_NOS, (nos, tos -- nos, tos)) {
         sym_set_recorded_value(nos, (PyObject *)this_instr->operand0);
     }

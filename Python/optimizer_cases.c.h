@@ -4216,6 +4216,14 @@
             break;
         }
 
+        case _RECORD_3OS_TYPE: {
+            JitOptRef container;
+            container = stack_pointer[-3];
+            PyTypeObject *tp = (PyTypeObject *)this_instr->operand0;
+            sym_set_type(container, tp);
+            break;
+        }
+
         case _RECORD_NOS_GEN_FUNC: {
             JitOptRef nos;
             nos = stack_pointer[-2];

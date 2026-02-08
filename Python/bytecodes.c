@@ -925,7 +925,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        macro(BINARY_SLICE) = _SPECIALIZE_BINARY_SLICE + _BINARY_SLICE;
+        macro(BINARY_SLICE) = _RECORD_3OS_TYPE + _SPECIALIZE_BINARY_SLICE + _BINARY_SLICE;
 
         specializing op(_SPECIALIZE_STORE_SLICE, (v, container, start, stop -- v, container, start, stop)) {
             // Placeholder until we implement STORE_SLICE specialization
@@ -5709,6 +5709,10 @@ dummy_func(
 
         tier2 op(_RECORD_NOS, (nos, tos -- nos, tos)) {
             RECORD_VALUE(PyStackRef_AsPyObjectBorrow(nos));
+        }
+
+        tier2 op(_RECORD_3OS_TYPE, (container, nos, tos -- container, nos, tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(container)));
         }
 
         tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {

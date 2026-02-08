@@ -3084,9 +3084,9 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_binary_slice_list(self):
         def testfunc(n):
+            data = [1, 2, 3, 4, 5]
             a, b = 1, 3
             for _ in range(n):
-                data = [1, 2, 3, 4, 5]
                 x = data[a:b]
             return x
 
@@ -3099,9 +3099,9 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_binary_slice_tuple(self):
         def testfunc(n):
+            data = (1, 2, 3, 4, 5)
             a, b = 1, 3
             for _ in range(n):
-                data = (1, 2, 3, 4, 5)
                 x = data[a:b]
             return x
 
@@ -3114,9 +3114,9 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_binary_slice_unicode(self):
         def testfunc(n):
+            data = "hello"
             a, b = 1, 3
             for _ in range(n):
-                data = "hello"
                 x = data[a:b]
             return x
 
