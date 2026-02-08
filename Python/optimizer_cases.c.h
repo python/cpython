@@ -2621,6 +2621,12 @@
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyList_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(iter, &PyList_Type);
             break;
         }
 
@@ -2669,6 +2675,12 @@
         }
 
         case _ITER_CHECK_RANGE: {
+            JitOptRef iter;
+            iter = stack_pointer[-2];
+            if (sym_matches_type(iter, &PyRange_Type)) {
+                ADD_OP(_NOP, 0, 0);
+            }
+            sym_set_type(iter, &PyRange_Type);
             break;
         }
 
