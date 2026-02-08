@@ -259,6 +259,71 @@ class ThreadedImportTests(unittest.TestCase):
                           'partial', 'pool_in_threads.py')
         script_helper.assert_python_ok(fn)
 
+    def test_import_failure_race_condition(self):
+        # Regression test for race condition where a thread could receive
+        # a partially-initialized module when another thread's import fails.
+        # The race occurs when:
+        # 1. Thread 1 starts importing, adds module to sys.modules
+        # 2. Thread 2 sees the module in sys.modules
+        # 3. Thread 1's import fails, removes module from sys.modules
+        # 4. Thread 2 should NOT return the stale module reference
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN)
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+
+        # Create a module that partially initializes then fails
+        modname = 'failing_import_module'
+        with open(os.path.join(TESTFN, modname + '.py'), 'w') as f:
+            f.write('''
+import time
+PARTIAL_ATTR = 'initialized'
+time.sleep(0.05)  # Widen race window
+raise RuntimeError("Intentional import failure")
+''')
+        self.addCleanup(forget, modname)
+        importlib.invalidate_caches()
+
+        errors = []
+        results = []
+
+        def do_import(delay=0):
+            time.sleep(delay)
+            try:
+                mod = __import__(modname)
+                # If we got a module, verify it's in sys.modules
+                if modname not in sys.modules:
+                    errors.append(
+                        f"Got module {mod!r} but {modname!r} not in sys.modules"
+                    )
+                elif sys.modules[modname] is not mod:
+                    errors.append(
+                        f"Got different module than sys.modules[{modname!r}]"
+                    )
+                else:
+                    results.append(('success', mod))
+            except RuntimeError:
+                results.append(('RuntimeError',))
+            except Exception as e:
+                errors.append(f"Unexpected exception: {e}")
+
+        # Run multiple iterations to increase chance of hitting the race
+        for _ in range(10):
+            errors.clear()
+            results.clear()
+            if modname in sys.modules:
+                del sys.modules[modname]
+
+            t1 = threading.Thread(target=do_import, args=(0,))
+            t2 = threading.Thread(target=do_import, args=(0.01,))
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+
+            # Neither thread should have errors about stale modules
+            self.assertEqual(errors, [], f"Race condition detected: {errors}")
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()
