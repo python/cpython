@@ -1,0 +1,1 @@
+Fix proxy bypass on URLs with a port in :mod:`urllib.request`.
