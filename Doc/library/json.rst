@@ -146,7 +146,6 @@ See :ref:`json-commandline` for detailed documentation.
    This module's encoders and decoders preserve input and output order by
    default.  Order is only lost if the underlying containers are unordered.
 
-
 Basic Usage
 -----------
 
@@ -258,12 +257,8 @@ Basic Usage
 
    .. note::
 
-      Keys in key/value pairs of JSON are always of the type :class:`str`. When
-      a dictionary is converted into JSON, all the keys of the dictionary are
-      coerced to strings. As a result of this, if a dictionary is converted
-      into JSON and then back into a dictionary, the dictionary may not equal
-      the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
-      keys.
+      The encoder dose not preserve the types of dictionary keys in Python.
+      Read more at :ref:`json-key-convertion`
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
@@ -365,6 +360,11 @@ Basic Usage
 
    .. versionchanged:: 3.9
       The keyword argument *encoding* has been removed.
+
+   .. note::
+
+      The decoder preserves the keys in JSON text as :class:`str`.
+      Read more at :ref:`json-key-convertion`
 
 
 Encoders and Decoders
@@ -581,6 +581,28 @@ Encoders and Decoders
             for chunk in json.JSONEncoder().iterencode(bigobject):
                 mysocket.write(chunk)
 
+.. _json-key-convertion:
+
+JSON Key Convertion
+^^^^^^^^^^^^^^^^^^^
+
+:rfc:`7159` requires that keys in key/value pairs of JSON are always of the
+type :class:`str`. When a dictionary is converted into JSON, all the keys
+of the dictionary arecoerced to strings.When a JSON object is converted into
+dictionaries,all the keys of the dictionary are strings.
+For example:
+
+   >>> import json
+   >>> foo={1:"spam"}
+   >>> result=json.dumps(foo)
+   >>> print(result)
+   {"1": "spam"}
+   >>> print(foo)
+   {1: 'spam'}
+   >>> print(foo==result)
+   False
+
+It can be seen that non-string keys are converted into strings after being encoded as JSON
 
 Exceptions
 ----------
