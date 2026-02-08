@@ -1212,6 +1212,20 @@ class TestDateOnly(unittest.TestCase):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
 
+    def test_strptime_F_format(self):
+        test_date = "2025-10-26"
+        self.assertEqual(
+            datetime.strptime(test_date,"%F"),
+            datetime.strptime(test_date,"%Y-%m-%d")
+        )
+
+    def test_strptime_T_format(self):
+        test_time = "15:00:00"
+        self.assertEqual(
+            datetime.strptime(test_time,"%T"),
+            datetime.strptime(test_time,"%H:%M:%S")
+        )
+
 class SubclassDate(date):
     sub_var = 1
 
