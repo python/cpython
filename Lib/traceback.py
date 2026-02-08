@@ -11,6 +11,7 @@ import keyword
 import tokenize
 import io
 import _colorize
+import dis
 
 from contextlib import suppress
 
@@ -1709,8 +1710,9 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         d = (
             list(frame.f_locals)
             + list(frame.f_globals)
-            + list(frame.f_builtins)
         )
+        if not dis.opname[frame.f_code.co_code[frame.f_lasti]].startswith('DELETE_'):
+            d += list(frame.f_builtins)
         d = [x for x in d if isinstance(x, str)]
         if not_normalized and wrong_name in d:
             return wrong_name
