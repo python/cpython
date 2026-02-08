@@ -424,6 +424,45 @@ class _ModuleLockManager:
         self._lock.release()
 
 
+class _HierarchicalLockManager:
+    """Manages acquisition of multiple module locks in hierarchical order.
+
+    This prevents deadlocks by ensuring all threads acquire locks in the
+    same order (parent modules before child modules).
+    """
+
+    def __init__(self, name):
+        self._name = name
+        self._module_chain = self._get_module_chain(name)
+        self._locks = []
+
+    def _get_module_chain(self, name):
+        """Get all modules in the hierarchy from root to leaf.
+
+        For example: 'a.b.c' -> ['a', 'a.b', 'a.b.c']
+        """
+        parts = name.split('.')
+        return ['.'.join(parts[:i+1]) for i in range(len(parts))]
+
+    def __enter__(self):
+        # Acquire locks for all modules in hierarchy order (parent to child)
+        for module_name in self._module_chain:
+            # Only acquire lock if module is not already fully loaded
+            module = sys.modules.get(module_name)
+            if (module is None or
+                getattr(getattr(module, "__spec__", None), "_initializing", False)):
+                lock = _get_module_lock(module_name)
+                lock.acquire()
+                self._locks.append((module_name, lock))
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        # Release locks in reverse order (child to parent)
+        for module_name, lock in reversed(self._locks):
+            lock.release()
+        self._locks.clear()
+
+
 # The following two functions are for consumption by Python/import.c.
 
 def _get_module_lock(name):
@@ -1270,7 +1309,14 @@ def _find_and_load(name, import_):
     module = sys.modules.get(name, _NEEDS_LOADING)
     if (module is _NEEDS_LOADING or
         getattr(getattr(module, "__spec__", None), "_initializing", False)):
-        with _ModuleLockManager(name):
+
+        # Use hierarchical locking for nested modules to prevent deadlocks
+        if '.' in name:
+            lock_manager = _HierarchicalLockManager(name)
+        else:
+            lock_manager = _ModuleLockManager(name)
+
+        with lock_manager:
             module = sys.modules.get(name, _NEEDS_LOADING)
             if module is _NEEDS_LOADING:
                 return _find_and_load_unlocked(name, import_)
