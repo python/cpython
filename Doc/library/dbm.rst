@@ -525,3 +525,70 @@ The :mod:`!dbm.dumb` module defines the following:
 
       Synchronize the on-disk directory and data files.  This method is called
       by the :meth:`shelve.Shelf.sync` method.
+
+
+.. _dbm-commandline:
+.. program:: dbm
+
+Command-line interface
+----------------------
+
+.. module:: dbm.__main__
+    :synopsis: A command-line interface for DBM database operations.
+
+**Source code:** :source:`Lib/dbm/__main__.py`
+
+--------------
+
+The :mod:`dbm` module can be invoked as a script via ``python -m dbm``
+to identify, examine, and reorganize DBM database files.
+
+Command-line options
+^^^^^^^^^^^^^^^^^^^^
+
+.. option:: --whichdb file [file ...]
+
+   Identify the database type for one or more database files:
+
+   .. code-block:: shell-session
+
+      $ python -m dbm --whichdb *.db
+      dbm.gnu - database1.db
+      dbm.sqlite3 - database2.db
+      UNKNOWN - corrupted.db
+
+   This command uses the :func:`whichdb` function to determine the type
+   of each database file. Files that cannot be identified are marked as
+   ``UNKNOWN``.
+
+.. option:: --dump file
+
+   Display the contents of a database file:
+
+   .. code-block:: shell-session
+
+      $ python -m dbm --dump mydb.db
+      username: john_doe
+      email: john@example.com
+      last_login: 2024-01-15
+
+   Keys and values are displayed in ``key: value`` format. Binary data
+   is decoded using UTF-8 with error replacement for display purposes.
+
+.. option:: --reorganize file
+
+   Reorganize and compact a database file to reduce disk space:
+
+   .. code-block:: shell-session
+
+      $ python -m dbm --reorganize mydb.db
+      Reorganized database 'mydb.db'
+
+   This operation uses the database's native :meth:`!reorganize` method
+   when available (:mod:`dbm.sqlite3`, :mod:`dbm.gnu`, :mod:`dbm.dumb`).
+   For database types that don't support reorganization, an error message
+   is displayed.
+
+.. option:: -h, --help
+
+   Show the help message.
