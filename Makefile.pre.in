@@ -2464,6 +2464,12 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	else \
 		$(INSTALL_PROGRAM) $(STRIPFLAG) Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+		install_name_tool \
+			-change $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
+				@rpath/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
+			-add_rpath @executable_path/`$(RUNSHARED) ./$(BUILDPYTHON) -c \
+				"import os; print(os.path.relpath('$(PYTHONFRAMEWORKPREFIX)', '$(BINDIR)'))"` \
+			"$(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE)"; \
 	fi
 	-if test "$(VERSION)" != "$(LDVERSION)"; then \
 		if test -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
@@ -3067,6 +3073,9 @@ frameworkinstallversionedstructure:	$(LDLIBRARY)
 	$(LN) -fsn Versions/Current/Headers $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers
 	$(LN) -fsn Versions/Current/Resources $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+	@# Use @rpath-based install name to avoid encoded actual prefix
+	install_name_tool -id @rpath/$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
+		"$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)"
 
 # iOS/tvOS/watchOS uses a non-versioned framework with Info.plist in the
 # framework root, no .lproj data, and only stub compilation assistance binaries

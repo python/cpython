@@ -13780,7 +13780,7 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
 
 			if test "$enable_framework"; then
-				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+				LINKFORSHARED="$LINKFORSHARED -Wl,-headerpad_max_install_names "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
 		elif test $ac_sys_system = "iOS"; then
