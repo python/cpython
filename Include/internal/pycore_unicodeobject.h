@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_fileutils.h"     // _Py_error_handler
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_PTR_RELEASE()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 
@@ -32,6 +33,110 @@ extern PyObject* _PyUnicode_ResizeCompact(
     PyObject *unicode,
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
+extern int _PyUnicode_DecodeCallErrorHandler(
+    const char *errors,
+    PyObject **errorHandler,
+    const char *encoding,
+    const char *reason,
+    const char **input,
+    const char **inend,
+    Py_ssize_t *startinpos,
+    Py_ssize_t *endinpos,
+    PyObject **exceptionObject,
+    const char **inptr,
+    _PyUnicodeWriter *writer);
+extern char* _PyUnicode_backslashreplace(
+    PyBytesWriter *writer,
+    char *str,
+    PyObject *unicode,
+    Py_ssize_t collstart,
+    Py_ssize_t collend);
+extern char* _PyUnicode_xmlcharrefreplace(
+    PyBytesWriter *writer,
+    char *str,
+    PyObject *unicode,
+    Py_ssize_t collstart,
+    Py_ssize_t collend);
+extern PyObject* _PyUnicode_EncodeCallErrorHandler(
+    const char *errors,
+    PyObject **errorHandler,
+    const char *encoding,
+    const char *reason,
+    PyObject *unicode,
+    PyObject **exceptionObject,
+    Py_ssize_t startpos,
+    Py_ssize_t endpos,
+    Py_ssize_t *newpos);
+extern void _PyUnicode_RaiseEncodeException(
+    PyObject **exceptionObject,
+    const char *encoding,
+    PyObject *unicode,
+    Py_ssize_t startpos,
+    Py_ssize_t endpos,
+    const char *reason);
+extern Py_ssize_t _PyUnicode_DecodeASCII(
+    const char *start,
+    const char *end,
+    Py_UCS1 *dest);
+extern PyObject* _PyUnicode_EncodeUTF8(
+    PyObject *unicode,
+    _Py_error_handler error_handler,
+    const char *errors);
+extern PyObject* _PyUnicode_DecodeUTF8(
+    const char *s,
+    Py_ssize_t size,
+    _Py_error_handler error_handler,
+    const char *errors,
+    Py_ssize_t *consumed);
+
+// Export for '_json' shared extension
+PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
+    PyObject *op,
+    int check_content);
+
+
+#ifdef Py_DEBUG
+#  define _PyUnicode_CHECK(op) _PyUnicode_CheckConsistency(op, 0)
+#else
+#  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
+#endif
+
+static inline char* _PyUnicode_UTF8(PyObject *op)
+{
+    return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
+}
+
+static inline char* PyUnicode_UTF8(PyObject *op)
+{
+    assert(_PyUnicode_CHECK(op));
+    if (PyUnicode_IS_COMPACT_ASCII(op)) {
+        return ((char*)(_PyASCIIObject_CAST(op) + 1));
+    }
+    else {
+         return _PyUnicode_UTF8(op);
+    }
+}
+
+static inline Py_ssize_t PyUnicode_UTF8_LENGTH(PyObject *op)
+{
+    assert(_PyUnicode_CHECK(op));
+    if (PyUnicode_IS_COMPACT_ASCII(op)) {
+         return _PyASCIIObject_CAST(op)->length;
+    }
+    else {
+         return _PyCompactUnicodeObject_CAST(op)->utf8_length;
+    }
+}
+
+static inline void PyUnicode_SET_UTF8(PyObject *op, char *utf8)
+{
+    FT_ATOMIC_STORE_PTR_RELEASE(_PyCompactUnicodeObject_CAST(op)->utf8, utf8);
+}
+
+static inline void PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length)
+{
+    _PyCompactUnicodeObject_CAST(op)->utf8_length = length;
+}
 
 
 /* Generic helper macro to convert characters of different types.
@@ -115,11 +220,6 @@ _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 }
 
 /* --- Unicode API -------------------------------------------------------- */
-
-// Export for '_json' shared extension
-PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
-    PyObject *op,
-    int check_content);
 
 PyAPI_FUNC(void) _PyUnicode_ExactDealloc(PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);

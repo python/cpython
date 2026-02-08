@@ -353,10 +353,10 @@ Objects/typeobject.c	-	slotdefs	-
 # It initialized only once when main interpeter starts
 Objects/typeobject.c	-	slotdefs_name_counts	-
 Objects/unicodeobject.c	-	stripfuncnames	-
-Objects/unicodeobject.c	-	utf7_category	-
-Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
-Objects/unicodeobject.c	unicode_decode_call_errorhandler_writer	argparse	-
-Objects/unicodeobject.c	unicode_encode_call_errorhandler	argparse	-
+Objects/unicode_codecs_utf.c	-	utf7_category	-
+Objects/unicodeobject.c	_PyUnicode_DecodeCallErrorHandler	argparse	-
+Objects/unicodeobject.c	_PyUnicode_DecodeCallErrorHandler	argparse	-
+Objects/unicodeobject.c	_PyUnicode_EncodeCallErrorHandler	argparse	-
 Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-

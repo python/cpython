@@ -352,8 +352,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             case _Py_ERROR_BACKSLASHREPLACE:
                 /* subtract preallocated bytes */
                 writer->size -= max_char_size * (endpos - startpos);
-                p = backslashreplace(writer, p,
-                                     unicode, startpos, endpos);
+                p = _PyUnicode_backslashreplace(writer, p,
+                                                unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
                 i += (endpos - startpos - 1);
@@ -362,8 +362,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             case _Py_ERROR_XMLCHARREFREPLACE:
                 /* subtract preallocated bytes */
                 writer->size -= max_char_size * (endpos - startpos);
-                p = xmlcharrefreplace(writer, p,
-                                      unicode, startpos, endpos);
+                p = _PyUnicode_xmlcharrefreplace(writer, p,
+                                                 unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
                 i += (endpos - startpos - 1);
@@ -384,7 +384,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 assert(startpos < endpos);
                 _Py_FALLTHROUGH;
             default:
-                rep = unicode_encode_call_errorhandler(
+                rep = _PyUnicode_EncodeCallErrorHandler(
                       errors, &error_handler_obj, "utf-8", "surrogates not allowed",
                       unicode, &exc, startpos, endpos, &newpos);
                 if (!rep)
@@ -415,9 +415,10 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 else {
                     /* rep is unicode */
                     if (!PyUnicode_IS_ASCII(rep)) {
-                        raise_encode_exception(&exc, "utf-8", unicode,
-                                               startpos, endpos,
-                                               "surrogates not allowed");
+                        _PyUnicode_RaiseEncodeException(
+                            &exc, "utf-8", unicode,
+                            startpos, endpos,
+                            "surrogates not allowed");
                         goto error;
                     }
 
@@ -452,7 +453,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 #if STRINGLIB_SIZEOF_CHAR > 2
         else /* ch >= 0x10000 */
         {
-            assert(ch <= MAX_UNICODE);
+            assert(ch <= _Py_MAX_UNICODE);
             /* Encode UCS4 Unicode ordinals */
             *p++ = (char)(0xf0 | (ch >> 18));
             *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
