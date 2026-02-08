@@ -129,9 +129,9 @@ class InteractiveSession(unittest.TestCase):
         out, err = self.run_cli(commands=(
             "CREATE TABLE table_ (id INTEGER);",
             "CREATE TABLE sqlitee (id INTEGER);",
-            "CREATE TEMP TABLE temp_table (id INTEGER);",
+            "CREATE TEMP TABLE table_ (id INTEGER);",
             "CREATE VIEW view_ AS SELECT 1;",
-            "CREATE TEMP VIEW temp_view AS SELECT 1;",
+            "CREATE TEMP VIEW view_ AS SELECT 1;",
             "ATTACH ':memory:' AS attach_;",
             "CREATE TABLE attach_.table_ (id INTEGER);",
             "CREATE VIEW attach_.view_ AS SELECT 1;",
@@ -150,10 +150,34 @@ class InteractiveSession(unittest.TestCase):
                   "attach_.view_",
                   "sqlitee",
                   "table_",
-                  "temp.temp_table",
-                  "temp.temp_view",
+                  "temp.table_",
+                  "temp.view_",
                   "view_")
-        self.assertIn("\n".join(tables), out)
+        self.assertEqual("\n".join(tables), out.replace(self.PS1, "").strip())
+
+    def test_interact_indexes(self):
+        out, err = self.run_cli(commands=(
+            "CREATE TABLE table_ (id INTEGER);",
+            "CREATE INDEX idx_table_ ON table_ (id);",
+            "CREATE TEMP TABLE temp_table (id INTEGER);",
+            "CREATE INDEX temp.idx_temp_table_ ON temp_table (id);",
+            "ATTACH ':memory:' AS attach_;",
+            "CREATE TABLE attach_.attach_table (id INTEGER);",
+            "CREATE INDEX attach_.idx_attach_table ON attach_table (id);",
+            ".indexes",
+            ".indices",
+            ))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 10)
+        self.assertEqual(out.count(self.PS2), 0)
+        expected = ("attach_.idx_attach_table",
+                    "idx_table_",
+                    "temp.idx_temp_table_",
+                    "attach_.idx_attach_table",
+                    "idx_table_",
+                    "temp.idx_temp_table_")
+        self.assertEqual("\n".join(expected), out.replace(self.PS1, "").strip())
 
     def test_interact_empty_source(self):
         out, err = self.run_cli(commands=("", " "))
