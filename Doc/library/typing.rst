@@ -2505,7 +2505,7 @@ types.
       func(C())  # Passes static type check
 
    See :pep:`544` for more details. Protocol classes decorated with
-   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   :deco:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures. Protocol classes without this decorator cannot be used
    as the second argument to :func:`isinstance` or :func:`issubclass`.
@@ -2552,7 +2552,7 @@ types.
 
    .. note::
 
-        :func:`!runtime_checkable` will check only the presence of the required
+        :deco:`!runtime_checkable` will check only the presence of the required
         methods or attributes, not their type signatures or types.
         For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
@@ -3013,7 +3013,7 @@ Functions and decorators
    Decorator to mark an object as providing
    :func:`dataclass <dataclasses.dataclass>`-like behavior.
 
-   ``dataclass_transform`` may be used to
+   ``@dataclass_transform`` may be used to
    decorate a class, metaclass, or a function that is itself a decorator.
    The presence of ``@dataclass_transform()`` tells a static type checker that the
    decorated object performs runtime "magic" that
@@ -3068,7 +3068,7 @@ Functions and decorators
    ``kw_only``, and ``slots``. It must be possible for the value of these
    arguments (``True`` or ``False``) to be statically evaluated.
 
-   The arguments to the ``dataclass_transform`` decorator can be used to
+   The arguments to the ``@dataclass_transform`` decorator can be used to
    customize the default behaviors of the decorated class, metaclass, or
    function:
 
@@ -3132,8 +3132,8 @@ Functions and decorators
           keyword-only. If ``True``, the field will be keyword-only. If
           ``False``, it will not be keyword-only. If unspecified, the value of
           the ``kw_only`` parameter on the object decorated with
-          ``dataclass_transform`` will be used, or if that is unspecified, the
-          value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+          ``@dataclass_transform`` will be used, or if that is unspecified, the
+          value of ``kw_only_default`` on ``@dataclass_transform`` will be used.
       * - ``alias``
         - Provides an alternative name for the field. This alternative
           name is used in the synthesized ``__init__`` method.

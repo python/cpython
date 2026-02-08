@@ -120,30 +120,30 @@ Module Contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`~enum.property`
+   :deco:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       member names.  The ``value`` and ``name`` attributes are implemented this
       way.
 
-   :func:`unique`
+   :deco:`unique`
 
       Enum class decorator that ensures only one name is bound to any one value.
 
-   :func:`verify`
+   :deco:`verify`
 
       Enum class decorator that checks user-selectable constraints on an
       enumeration.
 
-   :func:`member`
+   :deco:`member`
 
       Make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`nonmember`
+   :deco:`nonmember`
 
       Do not make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`global_enum`
+   :deco:`global_enum`
 
       Modify the :class:`str() <str>` and :func:`repr` of an enum
       to show its members as belonging to the module instead of its class,
@@ -976,7 +976,7 @@ Utilities and Decorators
 
 .. decorator:: property
 
-   A decorator similar to the built-in *property*, but specifically for
+   A decorator similar to the built-in :deco:`property`, but specifically for
    enumerations.  It allows member attributes to have the same names as members
    themselves.
 

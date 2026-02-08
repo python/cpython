@@ -1283,7 +1283,7 @@ typing
   :func:`issubclass`, but warnings were not previously emitted if it was merely
   imported or accessed from the :mod:`!typing` module.
 
-* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+* Deprecated :deco:`!typing.no_type_check_decorator` has been removed.
   (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 

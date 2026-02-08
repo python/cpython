@@ -2161,7 +2161,7 @@ Basic customization
    :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
-   operations from a single root operation, see :func:`functools.total_ordering`.
+   operations from a single root operation, see :deco:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
    with :ref:`expressions-value-comparisons`: equality compares according to
@@ -2585,7 +2585,7 @@ implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
-The :func:`property` function is implemented as a data descriptor. Accordingly,
+The :deco:`property` decorator is implemented as a data descriptor. Accordingly,
 instances cannot override the behavior of a property.
 
 

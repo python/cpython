@@ -1849,7 +1849,7 @@ some consistency rules, if possible:
 
   The last two expressions apply to totally ordered collections (e.g. to
   sequences, but not to sets or mappings). See also the
-  :func:`~functools.total_ordering` decorator.
+  :deco:`~functools.total_ordering` decorator.
 
 * The :func:`hash` result should be consistent with equality.
   Objects that are equal should either have the same hash value,

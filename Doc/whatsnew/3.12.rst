@@ -146,7 +146,7 @@ New typing features:
 
 * :ref:`PEP 692 <whatsnew312-pep692>`, using :class:`~typing.TypedDict` to
   annotate :term:`**kwargs <argument>`
-* :ref:`PEP 698 <whatsnew312-pep698>`, :func:`typing.override` decorator
+* :ref:`PEP 698 <whatsnew312-pep698>`, :deco:`typing.override` decorator
 
 Important deprecations, removals or restrictions:
 
@@ -511,7 +511,7 @@ See :pep:`692` for more details.
 PEP 698: Override Decorator for Static Typing
 ---------------------------------------------
 
-A new decorator :func:`typing.override` has been added to the :mod:`typing`
+A new decorator :deco:`typing.override` has been added to the :mod:`typing`
 module. It indicates to type checkers that the method is intended to override
 a method in a superclass. This allows type checkers to catch mistakes where
 a method that is intended to override something in a base class
@@ -1021,7 +1021,7 @@ typing
   ``__orig_bases__`` attribute. (Contributed by Adrian Garcia Badaracco in
   :gh:`103699`.)
 
-* Add ``frozen_default`` parameter to :func:`typing.dataclass_transform`.
+* Add ``frozen_default`` parameter to :deco:`typing.dataclass_transform`.
   (Contributed by Erik De Bonte in :gh:`99957`.)
 
 unicodedata
@@ -1747,7 +1747,7 @@ Changes in the Python API
   around process-global resources, which are best managed from the main interpreter.
   (Contributed by Donghee Na in :gh:`99127`.)
 
-* The undocumented locking behavior of :func:`~functools.cached_property`
+* The undocumented locking behavior of :deco:`~functools.cached_property`
   is removed, because it locked across all instances of the class, leading to high
   lock contention. This means that a cached property getter function could now run
   more than once for a single instance, if two threads race. For most simple

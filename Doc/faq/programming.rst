@@ -1995,7 +1995,7 @@ How do I cache method calls?
 ----------------------------
 
 The two principal tools for caching methods are
-:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+:deco:`functools.cached_property` and :deco:`functools.lru_cache`.  The
 former stores results at the instance level and the latter at the class
 level.
 

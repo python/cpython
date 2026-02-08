@@ -448,7 +448,7 @@ object with an :attr:`!_as_parameter_` attribute::
    >>>
 
 If you don't want to store the instance's data in the :attr:`!_as_parameter_`
-instance variable, you could define a :class:`property` which makes the
+instance variable, you could define a :deco:`property` which makes the
 attribute available on request.
 
 
