@@ -1,0 +1,1 @@
+Update the Python copy module implementation to match the implementation of the pickle module. For objects setting reduction methods like :meth:`~object.__copy__` , :meth:`~object.__reduce_ex__` or :meth:`~object.__reduce__` to ``None``, a call to :meth:`copy.copy` or :meth:`copy.deepcopy` will result in a :exc:`TypeError`.
