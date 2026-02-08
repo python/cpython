@@ -640,6 +640,133 @@ class TestRestore(unittest.TestCase):
             ''.join(difflib.restore([], 3))
 
 
+class TestLCSUBAutomaton(unittest.TestCase):
+    def test_find(self):
+        cases = [
+            ('abd', 'abcabd', (0, 3, 3)),
+            ('dab', 'abcabd', (1, 0, 2)),
+        ]
+        collect = []
+        for seq1, seq2, expect in cases:
+            result = difflib._LCSUBAutomaton(seq2).find(seq1)
+            self.assertEqual(result, expect)
+            collect.append(result)
+
+    def test_find_with_junk(self):
+        cases = [
+            ('ab_abd', 'abcabd', (3, 3, 3)),
+            ('abd_', 'ab_abd_', (0, 3, 3)),
+            ('abcbd', 'abc_bd', (0, 0, 3)),
+            ('cbd', 'abc_bd', (1, 4, 2)),
+        ]
+        for seq1, seq2, expect in cases:
+            result = difflib._LCSUBAutomaton(seq2, junk=('_')).find(seq1)
+            self.assertEqual(result, expect)
+
+    def test_findall(self):
+        seq1 = 'defabc'
+        aut = difflib._LCSUBAutomaton('abcdef')
+        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1)]
+        self.assertEqual(result, ['d', 'de', 'def', 'a', 'ab', 'abc'])
+        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1, maximal=True)]
+        self.assertEqual(result, ['def', 'abc'])
+        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1, mink=2)]
+        self.assertEqual(result, ['de', 'def', 'ab', 'abc'])
+        result = [seq1[i:i+k] for i, j, k in aut.findall(seq1, maxk=2)]
+        self.assertEqual(result, ['d', 'de', 'a', 'ab'])
+
+    def test_batchfind(self):
+        seq1 = 'fgfedabacba'
+        seq2 = seq1[::-1]
+        n = len(seq1)
+
+        intervals = []
+        for i in range(n - 1):
+            for j in range(i + 1, min(i + 5, n)):
+                intervals.append((i, j))
+        bounds_list = []
+        for alo, ahi in intervals:
+            for blo, bhi in intervals:
+                bounds_list.append((alo, ahi, blo, bhi))
+
+        aut = difflib._LCSUBAutomaton(seq2)
+        results1 = [aut.find(seq1, *bounds) for bounds in bounds_list]
+        results2 = aut.batchfind(seq1, bounds_list)
+        self.assertEqual(results1, results2)
+
+
+seq1_skew = """
+def foo1(a, b):
+    a += 1
+    b += 1
+    return a + b
+
+def foo2(a, b):
+    a += 2
+    b += 2
+    return a + b
+
+def foo3(a, b):
+    c = a + b
+    d = c + a * b
+    r = sum(range(d))
+    return r
+"""
+
+
+seq2_skew = """
+def foo3(a, b):
+    c = a + b
+    d = c + a * b
+    r = sum(range(d))
+    return r
+#
+def foo1(a, b):
+    a += 1
+    b += 1
+    return a + b
+#
+def foo2(a, b):
+    a += 2
+    b += 2
+    return a + b
+"""
+
+
+class TestGestaltSequenceMatcher(unittest.TestCase):
+    def test_cross_test_with_autojunk_false(self):
+        cases = [
+            ("ABCDEFGHIJKLMNOP" * 50, "ACEGIKMOQBDFHJLNP" * 50),
+            (
+                "".join(chr(ord('a') + i % 10) * (i + 1) for i in range(30)),
+                "".join(chr(ord('a') + i % 10) * (30 - i) for i in range(30))
+            ),
+            (
+                "A" + "X"*99 + "BCDEFGHIJKLMNOPQRSTUVWXYZ"*2,
+                "BCDEFGHIJKLMNOPQRSTUVWXYZ"*2 + "A" + "X"*99
+            )
+        ]
+        for seq1, seq2 in cases:
+            for isjunk in [None, lambda x: x in 'aeAE']:
+                sm1 = difflib.SequenceMatcher(isjunk, seq1, seq2, autojunk=False)
+                sm2 = difflib.GestaltSequenceMatcher(isjunk, seq1, seq2)
+                self.assertEqual(sm1.bjunk, sm2.bjunk)
+                blocks1 = sm1.get_matching_blocks()
+                blocks2 = sm2.get_matching_blocks()
+                self.assertEqual(blocks1, blocks2)
+                self.assertAlmostEqual(sm1.ratio(), sm2.ratio(), places=3)
+
+    def test_balancing(self):
+        seq1 = seq1_skew.strip().splitlines()
+        seq2 = seq2_skew.strip().splitlines()
+        sm1 = difflib.GestaltSequenceMatcher(None, seq1, seq2)
+        sm2 = difflib.GestaltSequenceMatcher(None, seq1, seq2, balancing=2/3)
+        blocks1 = list(map(tuple, sm1.get_matching_blocks()))
+        blocks2 = list(map(tuple, sm2.get_matching_blocks()))
+        self.assertEqual(blocks1, [(10, 0, 5), (15, 15, 0)])
+        self.assertEqual(blocks2, [(0, 6, 4), (5, 11, 4), (15, 15, 0)])
+
+
 def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
 
