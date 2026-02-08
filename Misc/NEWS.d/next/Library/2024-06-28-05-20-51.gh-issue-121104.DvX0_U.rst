@@ -1,0 +1,2 @@
+Added :meth:`!unittest.TestCase.assertMappingEqual` to test if two mappings are equal.
+Patch by Ben Hsing
