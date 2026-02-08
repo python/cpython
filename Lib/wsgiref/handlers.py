@@ -3,7 +3,7 @@
 from .util import FileWrapper, guess_scheme, is_hop_by_hop
 from .headers import Headers
 
-import sys, os, time
+import sys, os, time, re
 
 __all__ = [
     'BaseHandler', 'SimpleHandler', 'BaseCGIHandler', 'CGIHandler',
@@ -15,6 +15,9 @@ _weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 _monthname = [None, # Dummy so we can use 1-based month numbers
               "Jan", "Feb", "Mar", "Apr", "May", "Jun",
               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+_name_disallowed_re = re.compile(r'[\x00-\x1F\x7F]')
+_value_disallowed_re = re.compile(r'[\x00-\x08\x0A-\x1F\x7F]')
 
 def format_date_time(timestamp):
     year, month, day, hh, mm, ss, wd, y, z = time.gmtime(timestamp)
@@ -237,13 +240,13 @@ class BaseHandler:
 
         self.status = status
         self.headers = self.headers_class(headers)
-        status = self._convert_string_type(status, "Status")
+        status = self._convert_string_type(status, "Status", name=True)
         self._validate_status(status)
 
         if __debug__:
             for name, val in headers:
-                name = self._convert_string_type(name, "Header name")
-                val = self._convert_string_type(val, "Header value")
+                name = self._convert_string_type(name, "Header name", name=True)
+                val = self._convert_string_type(val, "Header value", name=False)
                 assert not is_hop_by_hop(name),\
                        f"Hop-by-hop header, '{name}: {val}', not allowed"
 
@@ -257,9 +260,12 @@ class BaseHandler:
         if status[3] != " ":
             raise AssertionError("Status message must have a space after code")
 
-    def _convert_string_type(self, value, title):
+    def _convert_string_type(self, value, title, *, name):
         """Convert/check value type."""
         if type(value) is str:
+            regex = (_name_disallowed_re if name else _value_disallowed_re)
+            if regex.search(value):
+                raise ValueError("Control characters not allowed in header names, values and statuses")
             return value
         raise AssertionError(
             "{0} must be of type str (got {1})".format(title, repr(value))

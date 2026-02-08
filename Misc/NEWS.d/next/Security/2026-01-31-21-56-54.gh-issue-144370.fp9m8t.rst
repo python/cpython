@@ -1,0 +1,1 @@
+Disallow usage of control characters in header names, values and statuses in ``Lib/wsgiref/handlers.py`` for security. Patch by Benedikt Johannes.
