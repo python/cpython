@@ -111,17 +111,3 @@ FUNC_NAME(MODULE_NAME)(void)
 {
     return _testcext_slots;
 }
-
-// Also define the soft-deprecated entrypoint to ensure it isn't called
-
-#define _INITFUNC_NAME(NAME) PyInit_ ## NAME
-#define INITFUNC_NAME(NAME) _INITFUNC_NAME(NAME)
-
-PyMODINIT_FUNC
-INITFUNC_NAME(MODULE_NAME)(void)
-{
-    PyErr_SetString(
-        PyExc_AssertionError,
-        "PyInit_* function called while a PyModExport_* one is available");
-    return NULL;
-}
