@@ -1,0 +1,4 @@
+Impove :exc:`TypeError` error message
+when :meth:`!weakref.WeakKeyDictionary.update`
+
+is used with keyword-only parameters.
