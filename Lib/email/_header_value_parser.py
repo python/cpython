@@ -1869,30 +1869,39 @@ def get_dot_atom_text(value, start):
             )
     return dot_atom_text, start
 
-def get_dot_atom(value):
+@_deprecate_old_api
+def get_dot_atom(value, start):
     """ dot-atom = [CFWS] dot-atom-text [CFWS]
 
-    Any place we can have a dot atom, we could instead have an rfc2047 encoded
-    word.
+    Return a DotAtom containing leading and trailing CFWSList tokens, if
+    appropriate, as well as a DotAtomText token, containing all of the
+    characters up to the next SPECIAL character or the end of value,
+    and a pointer to the special or the len of value.
+
+    Decode any encoded words, regardless of whitespace, registering defects
+    if the RFC required whitespace is missing.
+
+    Register defects if there are any non-printable or invalid characters in
+    the non-whitespace tokens.
+
     """
     dot_atom = DotAtom()
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    vlen = len(value)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
         dot_atom.append(token)
-    if value.startswith('=?'):
-        try:
-            token, value = get_encoded_word(value)
-        except errors.HeaderParseError:
-            # XXX: need to figure out how to register defects when
-            # appropriate here.
-            token, value = get_dot_atom_text(value)
-    else:
-        token, value = get_dot_atom_text(value)
-    dot_atom.append(token)
-    if value and value[0] in CFWS_LEADER:
-        token, value = get_cfws(value)
+    tl, start = get_dot_atom_text(value, start)
+    if (tl[0].token_type == 'encoded-word'
+            and dot_atom and not dot_atom[-1].endswith_fws()
+        ):
+        dot_atom.defects.append(_MissingWhitespaceBeforeEWDefect)
+    dot_atom.append(tl)
+    if start < vlen and value[start] in CFWS_LEADER:
+        token, start = get_cfws(value, start)
+        if tl[-1].token_type == 'encoded-word' and not token.startswith_fws():
+            dot_atom.defects.append(_MissingWhitespaceAfterEWDefect)
         dot_atom.append(token)
-    return dot_atom, value
+    return dot_atom, start
 
 def get_word(value):
     """word = atom / quoted-string

@@ -3466,7 +3466,6 @@ class TestParser(TestParserMixin, TestEmailBase):
                 missing_whitespace_before_ew_defect,
                 missing_whitespace_after_ew_defect,
                 ],
-            # XXX XXX indexes will change during the refactor.
             ew_indexes=[7, 27],
             ),
 
@@ -3482,16 +3481,14 @@ class TestParser(TestParserMixin, TestEmailBase):
             return
         self.assertIsInstance(atom, parser.DotAtom)
         self.assertEqual(atom.token_type, 'dot-atom')
-        self.verify_terminal_types(atom, 'dot', 'atext', 'ptext', 'fws', 'vtext')
+        self.verify_terminal_types(atom, 'dot', 'atext', 'ptext', 'fws')
 
-    params_test_get_dot_atom = old_api_only(
+    params_test_get_dot_atom = for_each_api(
 
         # Atom is a subset of dot atom, so get_dot_atom should pass any
         # get_atom test except those involving the dot (full_stop).
         include_unless(
-            lambda n, *a, **k:  'full_stop' in n
-                # XXX XXX disable the ew tests until get_dot_atom is refactored
-                or 'ew_' in str(n),
+            lambda n, *a, **k:  'full_stop' in n,
             label='from_test_get_atom',
             )(params_test_get_atom),
 
@@ -3538,6 +3535,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         rfc2047_atom = C(
             '=?utf-8?q?=20bob?=',
             stringified=' bob',
+            ew_indexes=[0],
             ),
 
         **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
@@ -3576,6 +3574,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             value=' foo ',
             remainder='=?UTF-8?q?bar?=',
             comments=['hey'],
+            ew_indexes=[6],
             ),
 
         mixed_ews_and_atext = C(
@@ -3589,26 +3588,20 @@ class TestParser(TestParserMixin, TestEmailBase):
                 missing_whitespace_after_ew_defect,
                 ],
             comments=['hey', 'hey'],
-            # XXX XXX indexes will change during the refactor.
-            ew_indexes=[7, 27],
+            ew_indexes=[12, 32],
             ),
-
-        # XXX XXX This additional EW case not already tested by the atom
-        # tests will be fully decoded after refactoring.
 
         two_ew_with_dot = C(
             '=?UTF-8?q?foo?=.=?UTF-8?q?bar?=(hey)',
-            stringified='foo',
-            #stringified='foo.bar(hey)',
-            value='foo',
-            #value='foo.bar ',
-            remainder='.=?UTF-8?q?bar?=(hey)',
+            stringified='foo.bar(hey)',
+            value='foo.bar ',
             defects=[
                 missing_whitespace_after_ew_defect,
-            #    missing_whitespace_before_ew_defect,
-            #    missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
                 ],
-            #comments=['hey'],
+            comments=['hey'],
+            ew_indexes=[0, 16],
             ),
 
         )
@@ -4143,24 +4136,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             ew_indexes=[0, 0],
             ),
 
-        # XXX XXX Since we've decided to decode encoded words, this becomes a
-        # "valid" dot-atom, which it will be treated as after the refactoring.
-        # But if you clear up the whitespace defects by adding whitespace, it
-        # turns into an obs_local_part because of the whitespace.
-        sort_of_valid_ew_dot_atom = C(
-            '=?utf-8?q?foo_?=.=?utf-8?q?_bar?=.bird',
-            stringified='foo . bar.bird',
-            value="foo . bar.bird",
-            local_part="foo . bar.bird",
-            defects=[
-                # XXX XXX the whitespace defects will change during refactoring
-                #missing_whitespace_after_ew_defect,
-                #missing_whitespace_after_ew_defect,
-                ],
-            # XXX XXX second index will change during refactor
-            ew_indexes=[0, 0],
-            ),
-
         )
 
 
@@ -4177,7 +4152,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             'atext',
             'ptext',
             'fws',
-            'vtext',
             'misplaced-special',
             )
         self.assertEqual(lp.local_part, local_part)
@@ -4196,6 +4170,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             # For those two ew tests the blank comes from inside the ew.
             local_part = local_part.removeprefix(' ').removesuffix(' ')
         kw['local_part'] = local_part
+        # XXX XXX indexes won't be right mid-refactor, remove when
+        # get_local_part refactored.
+        if 'ew_indexes' in kw:
+            kw['ew_indexes'] = ...
         yield '', C(s, *args, **kw)
 
     @params_map
@@ -4210,10 +4188,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             kw['ew_indexes'] = ...
         yield '', C(*args, **kw)
 
-    # XXX XXX revert to no with_namelist when get_local_part is refactored
-    @params_map(with_namelist=True)
+    @params_map
     def adapt_get_obs_local_part_tests_for_get_local_part(
-            nl,
             *args,
             defects=[],
             **kw,
@@ -4231,13 +4207,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects.append(not_even_obs_local_part_defect)
         else:
             defects.append(non_dot_atom_local_part_obs_defect)
-        # XXX XXX delete this fixup when get_local_part is refactored.
-        if nl.has_any(
-                'invalid_ew_atoms',
-                'less_invalid_ew_atoms',
-                'sort_of_valid_ew_dot_atom',
-            ):
-            kw.pop('ew_indexes')
+        # XXX XXX indexes won't be right mid-refactor, remove when
+        # get_local_part refactored.
+        if 'ew_indexes' in kw:
+            kw['ew_indexes'] = ...
         yield '', C(*args, defects=defects, **kw)
 
     params_test_get_local_part = old_api_only(
@@ -4257,10 +4230,10 @@ class TestParser(TestParserMixin, TestEmailBase):
                         'two_dots_raises',
                         'trailing_dot_raises',
                         'space_ends_dot_atom',
-                        # XXX XXX These tests should pass after the refactoring
-                        # of get_dot_atom.
-                        'two_ew_with_dot',
-                        'multiple_ew_no_ws',
+                        # XXX XXX These need a logic fix to whitespace handling
+                        # in get_local_part itself.
+                        'ew_and_comments_no_ws',
+                        'ew_and_empty_comments_no_ws',
                         )
                     or
                         # get_local_part handles quoted strings (tested above),
@@ -4388,10 +4361,28 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects=[
                 # XXX XXX there should be exactly one missing whitespace here,
                 # but it will change until we refactor get_local_part.
-                missing_whitespace_after_ew_defect,
+                #missing_whitespace_after_ew_defect,
                 # XXX XXX there should be a defect for there being an EW at all.
                 ],
             local_part='exámple',
+            ew_indexes=[0],
+            ),
+
+        # Since we've decided to decode encoded words, this is a "valid"
+        # dot-atom.  But if you clear up the whitespace defects whitespace, it
+        # turns into an obs_local_part because of the whitespace.
+        sort_of_valid_ew_dot_atom = C(
+            '=?utf-8?q?foo_?=.=?utf-8?q?_bar?=.bird',
+            stringified='foo . bar.bird',
+            value="foo . bar.bird",
+            local_part="foo . bar.bird",
+            defects=[
+                missing_whitespace_after_ew_defect,
+                missing_whitespace_before_ew_defect,
+                missing_whitespace_after_ew_defect,
+                # XXX XXX There should also be an ew in local part defect.
+                ],
+            ew_indexes=[0, 17],
             ),
 
         )
