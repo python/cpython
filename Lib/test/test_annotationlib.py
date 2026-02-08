@@ -1594,6 +1594,84 @@ class TestCallAnnotateFunction(unittest.TestCase):
             # Some non-Format value
             annotationlib.call_annotate_function(annotate, 7)
 
+    def test_basic_non_function_annotate(self):
+        class Annotate:
+            def __call__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    return {'x': str}
+                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                    return {'x': int}
+                elif format == __Format.STRING:
+                    return {'x': "float"}
+                else:
+                    raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(Annotate(), Format.VALUE)
+        self.assertEqual(annotations, {"x": str})
+
+        annotations = annotationlib.call_annotate_function(Annotate(), Format.STRING)
+        self.assertEqual(annotations, {"x": "float"})
+
+        with self.assertRaises(AttributeError) as cm:
+            annotations = annotationlib.call_annotate_function(
+                Annotate(), Format.FORWARDREF
+            )
+
+        self.assertEqual(cm.exception.name, "__builtins__")
+        self.assertIsInstance(cm.exception.obj, Annotate)
+
+    def test_full_non_function_annotate(self):
+        def outer():
+            local = str
+
+            class Annotate:
+                called_formats = []
+
+                def __call__(self, format=None, *, _self=None):
+                    nonlocal local
+                    if _self is not None:
+                        self, format = _self, self
+
+                    self.called_formats.append(format)
+                    if format == 1:  # VALUE
+                        return {"x": MyClass, "y": int, "z": local}
+                    if format == 2:  # VALUE_WITH_FAKE_GLOBALS
+                        return {"w": unknown, "x": MyClass, "y": int, "z": local}
+                    raise NotImplementedError
+
+                __globals__ = {"MyClass": MyClass}
+                __builtins__ = {"int": int}
+                __closure__ = (types.CellType(str),)
+                __defaults__ = (None,)
+
+                __kwdefaults__ = property(lambda self: dict(_self=self))
+                __code__ = property(lambda self: self.__call__.__code__)
+
+            return Annotate()
+
+        annotate = outer()
+
+        self.assertEqual(
+            annotationlib.call_annotate_function(annotate, Format.VALUE),
+            {"x": MyClass, "y": int, "z": str}
+        )
+        self.assertEqual(annotate.called_formats[-1], Format.VALUE)
+
+        self.assertEqual(
+            annotationlib.call_annotate_function(annotate, Format.STRING),
+            {"w": "unknown", "x": "MyClass", "y": "int", "z": "local"}
+        )
+        self.assertIn(Format.STRING, annotate.called_formats)
+        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
+
+        self.assertEqual(
+            annotationlib.call_annotate_function(annotate, Format.FORWARDREF),
+            {"w": support.EqualToForwardRef("unknown"), "x": MyClass, "y": int, "z": str}
+        )
+        self.assertIn(Format.FORWARDREF, annotate.called_formats)
+        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
+
     def test_error_from_value_raised(self):
         # Test that the error from format.VALUE is raised
         # if all formats fail
