@@ -1,0 +1,1 @@
+Add support for t-strings to the logging module. Patch by Carey Metcalfe.
