@@ -210,7 +210,12 @@ class PurePath:
         try:
             return self._hash
         except AttributeError:
-            self._hash = hash(self._str_normcase)
+            if self.parser is posixpath:
+                self._hash = hash((self.root, tuple(self._tail)))
+            else:
+                self._hash = hash((self.drive.lower(),
+                                   self.root.lower(),
+                                   tuple([part.lower() for part in self._tail])))
             return self._hash
 
     def __eq__(self, other):
