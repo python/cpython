@@ -265,9 +265,17 @@ The constructors :func:`int`, :func:`float`, and
    pair: operator; % (percent)
    pair: operator; **
 
+.. _stdtypes-mixed-arithmetic:
+
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
-operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point.
+operands of different built-in numeric types, the operand with the "narrower"
+type is widened to that of the other:
+
+* If both arguments are complex numbers, no conversion is performed;
+* if either argument is a complex or a floating-point number, the other is
+  converted to a floating-point number;
+* otherwise, both must be integers and no conversion is necessary.
+
 Arithmetic with complex and real operands is defined by the usual mathematical
 formula, for example::
 

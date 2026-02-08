@@ -50,8 +50,7 @@ The token constants are:
 
 .. data:: NAME
 
-   Token value that indicates an :ref:`identifier <identifiers>`.
-   Note that keywords are also initially tokenized as ``NAME`` tokens.
+   Token value that indicates an :ref:`identifier or keyword <identifiers>`.
 
 .. data:: NUMBER
 
