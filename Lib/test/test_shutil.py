@@ -2115,12 +2115,13 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
     def check_unpack_archive_with_converter(self, format, converter, **kwargs):
+        make_format = kwargs.pop("make_format", format)
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
 
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        filename = make_archive(base_name, format, root_dir, base_dir)
+        filename = make_archive(base_name, make_format, root_dir, base_dir)
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
@@ -2167,6 +2168,12 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive('zip')
         with self.assertRaises(TypeError):
             self.check_unpack_archive('zip', filter='data')
+
+    @support.requires_zlib()
+    def test_unpack_archive_whl(self):
+        self.check_unpack_archive('whl', make_format='zip')
+        with self.assertRaises(TypeError):
+            self.check_unpack_archive('whl', filter='data', make_format='zip')
 
     def test_unpack_registry(self):
 
