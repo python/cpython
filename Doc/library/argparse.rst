@@ -706,6 +706,10 @@ The add_argument() method
 
    * deprecated_ - Whether or not use of the argument is deprecated.
 
+   The method returns an :class:`Action` object representing the argument.
+   This object can be used to further customize behavior or to inspect
+   argument properties.
+
 The following sections describe how each of these are used.
 
 
