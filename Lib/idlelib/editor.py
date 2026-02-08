@@ -1446,10 +1446,10 @@ class EditorWindow:
             c = y.get_continuation_type()
             if c != pyparse.C_NONE:
                 # The current statement hasn't ended yet.
-                if c == pyparse.C_STRING_FIRST_LINE:
-                    # After the first line of a string do not indent at all.
-                    pass
-                elif c == pyparse.C_STRING_NEXT_LINES:
+                if (
+                    c == pyparse.C_STRING_FIRST_LINE
+                    or c == pyparse.C_STRING_NEXT_LINES
+                ):
                     # Inside a string which started before this line;
                     # just mimic the current indent.
                     text.insert("insert", indent, self.user_input_insert_tags)
