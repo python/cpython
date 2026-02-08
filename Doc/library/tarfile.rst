@@ -145,6 +145,10 @@ Some facts and figures:
    a Zstandard dictionary used to improve compression of smaller amounts of
    data.
 
+   For modes ``'w:gz'`` and ``'w|gz'``, :func:`tarfile.open` accepts the
+   keyword argument *mtime* to create a gzip archive header with that mtime. By
+   default, the mtime is set to the time of creation of the archive.
+
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
