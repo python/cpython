@@ -689,11 +689,13 @@ partial_repr(PyObject *self)
     partialobject *pto = partialobject_CAST(self);
     PyObject *result = NULL;
     PyObject *arglist;
+    PyObject *fn;
+    PyObject *args;
+    PyObject *kw;
     PyObject *mod;
     PyObject *name;
     Py_ssize_t i, n;
     PyObject *key, *value;
-    PyObject *args;
     int status;
 
     status = Py_ReprEnter(self);
@@ -702,26 +704,27 @@ partial_repr(PyObject *self)
             return NULL;
         return PyUnicode_FromString("...");
     }
+    /* Reference arguments in case they change */
+    fn = Py_NewRef(pto->fn);
+    args = Py_NewRef(pto->args);
+    kw = Py_NewRef(pto->kw);
+    assert(PyTuple_Check(args));
+    assert(PyDict_Check(kw));
 
     arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */
-    args = Py_NewRef(pto->args);
-    assert(PyTuple_Check(args));
     n = PyTuple_GET_SIZE(args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
                                         PyTuple_GET_ITEM(args, i)));
-        if (arglist == NULL) {
-            Py_DECREF(args);
+        if (arglist == NULL)
             goto done;
-        }
+
     }
-    Py_DECREF(args);
     /* Pack keyword arguments */
-    assert (PyDict_Check(pto->kw));
-    for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
+    for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
         /* Prevent key.__str__ from deleting the value. */
         Py_INCREF(value);
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
@@ -733,25 +736,26 @@ partial_repr(PyObject *self)
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
-        goto error;
+        Py_DECREF(arglist);
+        goto done;
     }
     name = PyType_GetQualName(Py_TYPE(pto));
     if (name == NULL) {
+        Py_DECREF(arglist);
         Py_DECREF(mod);
-        goto error;
+        goto done;
     }
-    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist);
+    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, fn, arglist);
     Py_DECREF(mod);
     Py_DECREF(name);
     Py_DECREF(arglist);
 
  done:
     Py_ReprLeave(self);
+    Py_DECREF(fn);
+    Py_DECREF(args);
+    Py_DECREF(kw);
     return result;
- error:
-    Py_DECREF(arglist);
-    Py_ReprLeave(self);
-    return NULL;
 }
 
 /* Pickle strategy:
