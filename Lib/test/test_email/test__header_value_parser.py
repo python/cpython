@@ -2482,9 +2482,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             exception=(errors.HeaderParseError, r'expected')
             ),
 
-        leading_dot_raises = C(
-            ' (foo) .bar',
-            exception=(errors.HeaderParseError, r'expected.*\.bar')
+        **for_each_character(RFC_SPECIALS, skip='(')(
+            leading_special_raises = C(
+                ' (foo) {char}bar',
+                exception=(errors.HeaderParseError, r'(?i)expected.*{echar}bar')
+                ),
             ),
 
         two_dots_raises = C(
@@ -2500,6 +2502,76 @@ class TestParser(TestParserMixin, TestEmailBase):
         rfc2047_atom = C(
             '=?utf-8?q?=20bob?=',
             stringified=' bob',
+            ),
+
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
+            non_printable_in_atext = C(
+                'foo.{char}.bar',
+                defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        undecodable_characters = C(
+            'foo.🎁.bar'.encode().decode('us-ascii', errors='surrogateescape'),
+            defects=[undecodable_bytes_defect],
+            ),
+
+        **for_each_character(RFC_SPECIALS, skip='.(')(
+            ends_at_special = C(
+                '(hey)foo.bar{char}.bird',
+                value=' foo.bar',
+                remainder='{char}.bird',
+                comments=['hey'],
+                ),
+            ),
+
+        **for_each_character(RFC_SPECIALS, skip='(')(
+            ends_at_special_after_comment = C(
+                '(hey)foo.bar(hey){char} bird',
+                value=' foo.bar ',
+                remainder='{char} bird',
+                comments=['hey', 'hey'],
+                ),
+            ),
+
+        two_ew_two_atoms = C(
+            '(hey) =?UTF-8?q?foo?= =?UTF-8?q?bar?=',
+            stringified='(hey) foo ',
+            value=' foo ',
+            remainder='=?UTF-8?q?bar?=',
+            comments=['hey'],
+            ),
+
+        # XXX XXX These additional EW cases not already tested by the atom
+        # tests will be fully decoded after refactoring.
+
+        mixed_ews_and_atext = C(
+            '(hey)foo.bar=?UTF-8?q?_foo?=bar.=?UTF-8?q?foo?=bar (hey)',
+            #stringified='(hey)foo.bar foobar.foobar (hey)',
+            value=' foo.bar=?UTF-8?q?_foo?=bar.=?UTF-8?q?foo?=bar ',
+            #value=' foo.bar foobar.foobar ',
+            #defects=[
+            #    missing_whitespace_before_ew_defect,
+            #    missing_whitespace_after_ew_defect,
+            #    missing_whitespace_before_ew_defect,
+            #    missing_whitespace_after_ew_defect,
+            #    ],
+            comments=['hey', 'hey'],
+            ),
+
+        two_ew_with_dot = C(
+            '=?UTF-8?q?foo?=.=?UTF-8?q?bar?=(hey)',
+            stringified='foo',
+            #stringified='foo.bar(hey)',
+            value='foo',
+            #value='foo.bar ',
+            remainder='.=?UTF-8?q?bar?=(hey)',
+            defects=[
+                missing_whitespace_after_ew_defect,
+            #    missing_whitespace_before_ew_defect,
+            #    missing_whitespace_after_ew_defect,
+                ],
+            #comments=['hey'],
             ),
 
         )
