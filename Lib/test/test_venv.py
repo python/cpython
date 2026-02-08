@@ -34,6 +34,9 @@ try:
 except ImportError:
     ctypes = None
 
+# Implementation name for lib directory (e.g., 'python' for CPython, 'pypy' for PyPy)
+IMPL_NAME = sysconfig._get_implementation().lower()
+
 # Platforms that set sys._base_executable can create venvs from within
 # another venv, so no need to skip tests that require venv.create().
 requireVenvCreate = unittest.skipUnless(
@@ -75,7 +78,7 @@ class BaseTest(unittest.TestCase):
             self.include = 'Include'
         else:
             self.bindir = 'bin'
-            self.lib = ('lib', f'python{sysconfig._get_python_version_abi()}')
+            self.lib = ('lib', f'{IMPL_NAME}{sysconfig._get_python_version_abi()}')
             self.include = 'include'
         executable = sys._base_executable
         self.exe = os.path.split(executable)[-1]
@@ -357,8 +360,8 @@ class BasicTest(BaseTest):
             ('bin',),
             ('include',),
             ('lib',),
-            ('lib', 'python%d.%d' % sys.version_info[:2]),
-            ('lib', 'python%d.%d' % sys.version_info[:2], 'site-packages'),
+            ('lib', '%s%d.%d' % (IMPL_NAME, *sys.version_info[:2])),
+            ('lib', '%s%d.%d' % (IMPL_NAME, *sys.version_info[:2]), 'site-packages'),
         )
 
     def create_contents(self, paths, filename):
@@ -688,7 +691,7 @@ class BasicTest(BaseTest):
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
         abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
-        stdlib_zip = f"python{sys.version_info.major}{sys.version_info.minor}{abi_thread}"
+        stdlib_zip = f"{IMPL_NAME}{sys.version_info.major}{sys.version_info.minor}{abi_thread}"
         zip_landmark = os.path.join(non_installed_dir,
                                     platlibdir,
                                     stdlib_zip)
