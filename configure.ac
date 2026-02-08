@@ -7400,7 +7400,7 @@ AC_LINK_IFELSE(
     #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
-    #include <linux/random.h>
+    #include <sys/random.h>
 
     int main(void) {
         char buffer[1];
