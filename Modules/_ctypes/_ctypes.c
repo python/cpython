@@ -2946,7 +2946,7 @@ KeepRef_lock_held(CDataObject *target, Py_ssize_t index, PyObject *keep)
     CDataObject *ob;
     PyObject *key;
 
-/* Optimization: no need to store None */
+    /* Optimization: no need to store None */
     if (keep == Py_None) {
         Py_DECREF(Py_None);
         return 0;
@@ -5724,8 +5724,34 @@ Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
        pointer instance has b_length set to 2 instead of 1, and we set
        'value' itself as the second item of the b_objects list, additionally.
     */
+
+    CDataObject * root = self->b_base;
+    /* perhaps, this is a bit excessive: if we have are in a chain of pointers
+     that starts with non-pointer (e.g. a union), can we consider the current
+     pointer to be "detached" from this chain? */
+    while (root != NULL && root->b_base != NULL) {
+        root = root->b_base;
+    }
+
+    /* If the b_base is NULL now or if we are a part of chain of pointers fully
+     modeled within ctypes, AND the value is a pointer, array, struct or union,
+     we just override the b_base. */
+    if ((root == NULL || PyType_IsSubtype(Py_TYPE(root), st->PyCPointer_Type)) &&
+        (PyType_IsSubtype(Py_TYPE(value), st->PyCPointer_Type) ||
+         PyType_IsSubtype(Py_TYPE(value), st->PyCArray_Type) ||
+         PyType_IsSubtype(Py_TYPE(value), st->Struct_Type) ||
+         PyType_IsSubtype(Py_TYPE(value), st->Union_Type))
+    ) {
+        Py_XSETREF(self->b_base, (CDataObject *) Py_NewRef(value));
+        return 0; // no need to add `value` to `keep` objects - it's in b_base
+    }
+
+    /* If we are a part of chain of pointers that is not fully modeled within
+     ctypes, (or modeled in a complex way, e.g., with arrays and structures),
+     then everything should be covered by keepref logic bellow */
+
     Py_INCREF(value);
-    if (-1 == KeepRef(self, 1, value))
+    if (-1 == KeepRef_lock_held(self, 1, value))
         return -1;
 
     keep = GetKeepedObjects(dst);
@@ -5733,7 +5759,7 @@ Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
         return -1;
 
     Py_INCREF(keep);
-    return KeepRef(self, 0, keep);
+    return KeepRef_lock_held(self, 0, keep);
 }
 
 static int
