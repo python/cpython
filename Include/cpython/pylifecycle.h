@@ -25,6 +25,8 @@ PyAPI_FUNC(PyStatus) Py_PreInitializeFromArgs(
 PyAPI_FUNC(PyStatus) Py_InitializeFromConfig(
     const PyConfig *config);
 
+PyAPI_FUNC(PyStatus) Py_InitializeMain(void);
+
 PyAPI_FUNC(int) Py_RunMain(void);
 
 

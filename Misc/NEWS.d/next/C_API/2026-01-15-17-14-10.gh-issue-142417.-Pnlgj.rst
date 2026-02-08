@@ -1,0 +1,4 @@
+Add :c:func:`Py_InitializeMain` function to move to the "Main"
+initialization phase, finish the Python initialization. Rename also
+:c:member:`!PyConfig._init_main` to :c:member:`PyConfig.init_main`. Patch by
+Victor Stinner.
