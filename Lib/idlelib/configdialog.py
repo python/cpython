@@ -69,9 +69,7 @@ class ConfigDialog(Toplevel):
             self.withdraw()
 
         self.title(title or 'IDLE Preferences')
-        x = parent.winfo_rootx() + 20
-        y = parent.winfo_rooty() + (30 if not _htest else 150)
-        self.geometry(f'+{x}+{y}')
+        
         # Each theme element key is its display name.
         # The first value of the tuple is the sample area tag name.
         # The second value is the display name list sort index.
@@ -87,6 +85,15 @@ class ConfigDialog(Toplevel):
         # self.bind('<F1>', self.Help) #context help
         # Attach callbacks after loading config to avoid calling them.
         tracers.attach()
+
+        self.update()
+        x = parent.winfo_rootx() + 20
+        y = parent.winfo_rooty() + (30 if not _htest else 150)
+        w = self.winfo_width()    
+        h = self.winfo_height()    
+        
+        self.geometry(f'{w}x{h}+{x}+{y}')
+        self.resizable(height=FALSE, width=FALSE)
 
         if not _utest:
             self.grab_set()
@@ -112,7 +119,7 @@ class ConfigDialog(Toplevel):
             activate_config_changes: Tell editors to reload.
         """
         self.frame = frame = Frame(self, padding=5)
-        self.frame.grid(sticky="nwes")
+        self.frame.pack(expand=1, fill="both")
         self.note = note = Notebook(frame)
         self.extpage = ExtPage(note)
         self.highpage = HighPage(note, self.extpage)
