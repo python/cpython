@@ -1,0 +1,1 @@
+Update the ``offset`` with the remainder when closing a :func:`tarfile.TarFile`.
