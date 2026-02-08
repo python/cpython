@@ -235,6 +235,33 @@ def _reconstruct(x, memo, func, args,
     if deep:
         memo[id(x)] = y
 
+    if isinstance(state, list):
+        if listiter is not None:
+            if deep:
+                for item in listiter:
+                    item = deepcopy(item, memo)
+                    y.append(item)
+            else:
+                for item in listiter:
+                    y.append(item)
+
+        if state is not None:
+            if deep:
+                state = deepcopy(state, memo)
+            if hasattr(y, '__setstate__'):
+                y.__setstate__(state)
+            else:
+                if isinstance(state, tuple) and len(state) == 2:
+                    state, slotstate = state
+                else:
+                    slotstate = None
+                if state is not None:
+                    y.__dict__.update(state)
+                if slotstate is not None:
+                    for key, value in slotstate.items():
+                        setattr(y, key, value)
+        return y
+
     if state is not None:
         if deep:
             state = deepcopy(state, memo)
