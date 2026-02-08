@@ -1,0 +1,4 @@
+:func:`shutil.make_archive` no longer adds the the ``'.'`` entry to tar
+arhives and the ``'./'`` prefix to tar entries unless ``base_dir='.'`` is
+explicitly specified. It now adds the ``'.'`` entry to zip arhives if
+``base_dir='.'`` is explicitly specified.

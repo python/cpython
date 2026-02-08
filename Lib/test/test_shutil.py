@@ -1649,9 +1649,9 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertTrue(tarfile.is_tarfile(archive))
             with tarfile.open(archive, 'r') as tf:
                 self.assertCountEqual(tf.getnames(),
-                        ['.', './dist', './dist/sub', './dist/sub2',
-                         './dist/file1', './dist/file2', './dist/sub/file3',
-                         './outer'])
+                        ['dist', 'dist/sub', 'dist/sub2',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3',
+                         'outer'])
 
         # Test with base_dir.
         with os_helper.temp_cwd(), no_chdir:
@@ -1691,9 +1691,9 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertTrue(tarfile.is_tarfile(archive))
             with tarfile.open(archive, 'r:gz') as tf:
                 self.assertCountEqual(tf.getnames(),
-                        ['.', './dist', './dist/sub', './dist/sub2',
-                         './dist/file1', './dist/file2', './dist/sub/file3',
-                         './outer'])
+                        ['dist', 'dist/sub', 'dist/sub2',
+                         'dist/file1', 'dist/file2', 'dist/sub/file3',
+                         'outer'])
 
         # Test with base_dir.
         with os_helper.change_cwd(root_dir), no_chdir:
@@ -1851,7 +1851,7 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertTrue(zipfile.is_zipfile(archive))
             with zipfile.ZipFile(archive) as zf:
                 self.assertCountEqual(zf.namelist(),
-                        ['dist/', 'dist/sub/', 'dist/sub2/',
+                        ['./', 'dist/', 'dist/sub/', 'dist/sub2/',
                          'dist/file1', 'dist/file2', 'dist/sub/file3',
                          'outer'])
 
