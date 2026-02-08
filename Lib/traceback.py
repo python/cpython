@@ -1135,7 +1135,7 @@ class TracebackException:
                 if suggestion.isascii():
                     self._str += f". Did you mean '.{suggestion}' instead of '.{wrong_name}'?"
                 else:
-                    self._str += f". Did you mean: '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
+                    self._str += f". Did you mean '.{suggestion}' ({suggestion!a}) instead of '.{wrong_name}' ({wrong_name!a})?"
         elif exc_type and issubclass(exc_type, NameError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
