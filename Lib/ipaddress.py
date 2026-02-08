@@ -150,6 +150,12 @@ def v6_int_to_packed(address):
         raise ValueError("Address negative or too large for IPv6")
 
 
+def _check_ip_version(a, b):
+    if a.version != b.version:
+        # does this need to raise a ValueError?
+        raise TypeError(f"{a} and {b} are not of the same version")
+
+
 def _split_optional_netmask(address):
     """Helper to split the netmask and raise AddressValueError if needed"""
     addr = str(address).split('/')
@@ -213,7 +219,7 @@ def summarize_address_range(first, last):
 
     Raise:
         TypeError:
-            If the first and last objects are not IP addresses.
+            If the first or last objects are not IP addresses.
             If the first and last objects are not the same version.
         ValueError:
             If the last object is not greater than the first.
@@ -223,9 +229,7 @@ def summarize_address_range(first, last):
     if (not (isinstance(first, _BaseAddress) and
              isinstance(last, _BaseAddress))):
         raise TypeError('first and last must be IP addresses, not networks')
-    if first.version != last.version:
-        raise TypeError("%s and %s are not of the same version" % (
-                         first, last))
+    _check_ip_version(first, last)
     if first > last:
         raise ValueError('last IP address must be greater than first')
 
@@ -316,40 +320,39 @@ def collapse_addresses(addresses):
         TypeError: If passed a list of mixed version objects.
 
     """
-    addrs = []
     ips = []
     nets = []
 
-    # split IP addresses and networks
+    # split IP addresses/interfaces and networks
     for ip in addresses:
         if isinstance(ip, _BaseAddress):
-            if ips and ips[-1].version != ip.version:
-                raise TypeError("%s and %s are not of the same version" % (
-                                 ip, ips[-1]))
-            ips.append(ip)
-        elif ip._prefixlen == ip.max_prefixlen:
-            if ips and ips[-1].version != ip.version:
-                raise TypeError("%s and %s are not of the same version" % (
-                                 ip, ips[-1]))
-            try:
-                ips.append(ip.ip)
-            except AttributeError:
-                ips.append(ip.network_address)
+            if ips:
+                _check_ip_version(ips[-1], ip)
+            if hasattr(ip, "ip") and isinstance(ip.ip, _BaseAddress):
+                ips.append(ip.ip)  # interface IP address
+            else:
+                ips.append(ip)
+        elif isinstance(ip, _BaseNetwork):
+            if ip.prefixlen == ip.max_prefixlen:
+                if ips:
+                    _check_ip_version(ips[-1], ip)
+                ips.append(ip.network_address)  # network address
+            else:
+                if nets:
+                    _check_ip_version(nets[-1], ip)
+                nets.append(ip)
         else:
-            if nets and nets[-1].version != ip.version:
-                raise TypeError("%s and %s are not of the same version" % (
-                                 ip, nets[-1]))
-            nets.append(ip)
+            raise TypeError(f"{ip} is not an IP object")
 
     # sort and dedup
     ips = sorted(set(ips))
-
     # find consecutive address ranges in the sorted sequence and summarize them
+    nets_from_range = []
     if ips:
         for first, last in _find_address_range(ips):
-            addrs.extend(summarize_address_range(first, last))
+            nets_from_range.extend(summarize_address_range(first, last))
 
-    return _collapse_addresses_internal(addrs + nets)
+    return _collapse_addresses_internal(nets_from_range + nets)
 
 
 def get_mixed_type_key(obj):
@@ -567,21 +570,15 @@ class _BaseAddress(_IPAddressBase):
         return self._ip
 
     def __eq__(self, other):
-        try:
-            return (self._ip == other._ip
-                    and self.version == other.version)
-        except AttributeError:
+        if not isinstance(other, _BaseAddress):
             return NotImplemented
+        return self._ip == other._ip and self.version == other.version
 
     def __lt__(self, other):
         if not isinstance(other, _BaseAddress):
             return NotImplemented
-        if self.version != other.version:
-            raise TypeError('%s and %s are not of the same version' % (
-                             self, other))
-        if self._ip != other._ip:
-            return self._ip < other._ip
-        return False
+        _check_ip_version(self, other)
+        return self._ip < other._ip
 
     # Shorthand for Integer addition and subtraction. This is not
     # meant to ever support addition/subtraction of addresses.
@@ -708,9 +705,7 @@ class _BaseNetwork(_IPAddressBase):
     def __lt__(self, other):
         if not isinstance(other, _BaseNetwork):
             return NotImplemented
-        if self.version != other.version:
-            raise TypeError('%s and %s are not of the same version' % (
-                             self, other))
+        _check_ip_version(self, other)
         if self.network_address != other.network_address:
             return self.network_address < other.network_address
         if self.netmask != other.netmask:
@@ -718,30 +713,31 @@ class _BaseNetwork(_IPAddressBase):
         return False
 
     def __eq__(self, other):
-        try:
-            return (self.version == other.version and
-                    self.network_address == other.network_address and
-                    int(self.netmask) == int(other.netmask))
-        except AttributeError:
+        if not isinstance(other, _BaseNetwork):
             return NotImplemented
+        return (self.version == other.version and
+                self.network_address == other.network_address and
+                int(self.netmask._ip) == int(other.netmask))
 
     def __hash__(self):
         return hash((int(self.network_address), int(self.netmask)))
 
     def __contains__(self, other):
-        # always false if one is v4 and the other is v6.
-        if self.version != other.version:
-            return False
-        # dealing with another network.
         if isinstance(other, _BaseNetwork):
+            # should __contains__ actually implement subnet_of()
+            # and supernet_of() instead?
             return False
-        # dealing with another address
-        else:
-            # address
-            return other._ip & self.netmask._ip == self.network_address._ip
+        if isinstance(other, _BaseAddress):
+            return (
+                self.version == other.version
+                and (other._ip & self.netmask._ip) == self.network_address._ip
+            )
+        return NotImplemented
 
     def overlaps(self, other):
         """Tell if self is partly contained in other."""
+        if not isinstance(other, _BaseNetwork):
+            raise TypeError(f"expecting a network object, not {type(other)}")
         return self.network_address in other or (
             self.broadcast_address in other or (
                 other.network_address in self or (
@@ -821,13 +817,9 @@ class _BaseNetwork(_IPAddressBase):
             ValueError: If other is not completely contained by self.
 
         """
-        if not self.version == other.version:
-            raise TypeError("%s and %s are not of the same version" % (
-                             self, other))
-
         if not isinstance(other, _BaseNetwork):
-            raise TypeError("%s is not a network object" % other)
-
+            raise TypeError(f"expecting a network object, not {type(other)}")
+        _check_ip_version(self, other)
         if not other.subnet_of(self):
             raise ValueError('%s not contained in %s' % (other, self))
         if other == self:
@@ -870,7 +862,7 @@ class _BaseNetwork(_IPAddressBase):
         'HostA._ip < HostB._ip'
 
         Args:
-            other: An IP object.
+            other: An IP network object.
 
         Returns:
             If the IP versions of self and other are the same, returns:
@@ -892,10 +884,9 @@ class _BaseNetwork(_IPAddressBase):
               TypeError if the IP versions are different.
 
         """
-        # does this need to raise a ValueError?
-        if self.version != other.version:
-            raise TypeError('%s and %s are not of the same type' % (
-                             self, other))
+        if not isinstance(other, _BaseNetwork):
+            raise TypeError(f"expecting a network object, not {type(other)}")
+        _check_ip_version(self, other)
         # self.version == other.version below here:
         if self.network_address < other.network_address:
             return -1
@@ -1026,22 +1017,21 @@ class _BaseNetwork(_IPAddressBase):
 
     @staticmethod
     def _is_subnet_of(a, b):
-        try:
-            # Always false if one is v4 and the other is v6.
-            if a.version != b.version:
-                raise TypeError(f"{a} and {b} are not of the same version")
-            return (b.network_address <= a.network_address and
-                    b.broadcast_address >= a.broadcast_address)
-        except AttributeError:
-            raise TypeError(f"Unable to test subnet containment "
-                            f"between {a} and {b}")
+        # The caller must ensure that 'a' and 'b' are both networks.
+        _check_ip_version(a, b)
+        return (b.network_address <= a.network_address and
+                b.broadcast_address >= a.broadcast_address)
 
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""
+        if not isinstance(other, _BaseNetwork):
+            raise TypeError(f"expecting a network object, not {type(other)}")
         return self._is_subnet_of(self, other)
 
     def supernet_of(self, other):
         """Return True if this network is a supernet of other."""
+        if not isinstance(other, _BaseNetwork):
+            raise TypeError(f"expecting a network object, not {type(other)}")
         return self._is_subnet_of(other, self)
 
     @property
@@ -1429,28 +1419,27 @@ class IPv4Interface(IPv4Address):
                           self._prefixlen)
 
     def __eq__(self, other):
+        if not isinstance(other, IPv4Interface):
+            if isinstance(other, IPv4Address):
+                # avoid falling back to IPv4Address.__eq__(other, self)
+                return False
+            return NotImplemented
+        # An interface with an associated network is NOT the
+        # same as an unassociated address. That's why the hash
+        # takes the extra info into account.
         address_equal = IPv4Address.__eq__(self, other)
-        if address_equal is NotImplemented or not address_equal:
-            return address_equal
-        try:
-            return self.network == other.network
-        except AttributeError:
-            # An interface with an associated network is NOT the
-            # same as an unassociated address. That's why the hash
-            # takes the extra info into account.
-            return False
+        return address_equal and self.network == other.network
 
     def __lt__(self, other):
+        # We *do* allow addresses and interfaces to be sorted. The
+        # unassociated address is considered less than all interfaces.
         address_less = IPv4Address.__lt__(self, other)
-        if address_less is NotImplemented:
-            return NotImplemented
-        try:
-            return (self.network < other.network or
-                    self.network == other.network and address_less)
-        except AttributeError:
-            # We *do* allow addresses and interfaces to be sorted. The
-            # unassociated address is considered less than all interfaces.
-            return False
+        if isinstance(other, IPv4Interface):
+            assert address_less is not NotImplemented
+            # compare interfaces by their network first
+            return (self.network < other.network
+                    or (self.network == other.network and address_less))
+        return address_less
 
     def __hash__(self):
         return hash((self._ip, self._prefixlen, int(self.network.network_address)))
@@ -2219,28 +2208,27 @@ class IPv6Interface(IPv6Address):
                           self._prefixlen)
 
     def __eq__(self, other):
+        if not isinstance(other, IPv6Interface):
+            if isinstance(other, IPv6Address):
+                # avoid falling back to IPv6Address.__eq__(other, self)
+                return False
+            return NotImplemented
+        # An interface with an associated network is NOT the
+        # same as an unassociated address. That's why the hash
+        # takes the extra info into account.
         address_equal = IPv6Address.__eq__(self, other)
-        if address_equal is NotImplemented or not address_equal:
-            return address_equal
-        try:
-            return self.network == other.network
-        except AttributeError:
-            # An interface with an associated network is NOT the
-            # same as an unassociated address. That's why the hash
-            # takes the extra info into account.
-            return False
+        return address_equal and self.network == other.network
 
     def __lt__(self, other):
+        # We *do* allow addresses and interfaces to be sorted. The
+        # unassociated address is considered less than all interfaces.
         address_less = IPv6Address.__lt__(self, other)
-        if address_less is NotImplemented:
-            return address_less
-        try:
-            return (self.network < other.network or
-                    self.network == other.network and address_less)
-        except AttributeError:
-            # We *do* allow addresses and interfaces to be sorted. The
-            # unassociated address is considered less than all interfaces.
-            return False
+        if isinstance(other, IPv6Interface):
+            assert address_less is not NotImplemented
+            # compare interfaces by their network first
+            return (self.network < other.network
+                    or (self.network == other.network and address_less))
+        return address_less
 
     def __hash__(self):
         return hash((self._ip, self._prefixlen, int(self.network.network_address)))
