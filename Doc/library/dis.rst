@@ -400,7 +400,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
    .. versionchanged:: 3.10
       The :pep:`626` :meth:`~codeobject.co_lines` method is used instead of the
-      :attr:`~codeobject.co_firstlineno` and :attr:`~codeobject.co_lnotab`
+      :attr:`~codeobject.co_firstlineno` and :attr:`!codeobject.co_lnotab`
       attributes of the :ref:`code object <code-objects>`.
 
    .. versionchanged:: 3.13
