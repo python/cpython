@@ -610,6 +610,34 @@ Dialect_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+Dialect_str(DialectObj *self) {
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    PyObject *module = PyType_GetModule(Py_TYPE(self));
+    PyObject *dialects = get_csv_state(module)->dialects;
+
+    while (PyDict_Next(dialects, &pos, &key, &value)) {
+        if (value == (PyObject *)self) {
+            Py_INCREF(key);
+
+            return key;
+        }
+    }
+
+    return PyUnicode_FromString("unknown");
+}
+
+static PyObject *
+Dialect_repr(DialectObj *self) {
+    PyObject *str = Dialect_str(self);
+    PyObject *repr = PyUnicode_FromFormat("%s(%R)", Py_TYPE(self)->tp_name, str);
+
+    Py_DECREF(str);
+
+    return repr;
+}
+
 static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_doc, (char*)Dialect_Type_doc},
     {Py_tp_members, Dialect_memberlist},
@@ -619,6 +647,8 @@ static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_dealloc, Dialect_dealloc},
     {Py_tp_clear, Dialect_clear},
     {Py_tp_traverse, Dialect_traverse},
+    {Py_tp_str, Dialect_str},
+    {Py_tp_repr, Dialect_repr},
     {0, NULL}
 };
 

@@ -205,6 +205,7 @@ class Test_Csv(unittest.TestCase):
             def __str__(self):
                 raise OSError
         self._write_error_test(OSError, [BadItem()])
+
     def test_write_bigfield(self):
         # This exercises the buffer realloc functionality
         bigstring = 'X' * 50000
@@ -552,6 +553,19 @@ class Test_Csv(unittest.TestCase):
                                                        escapechar="\\")):
                         self.assertEqual(row, rows[i])
 
+    def test_dict_reader_repr(self):
+        fileobj = StringIO()
+        reader = csv.DictReader(fileobj)
+        expected = "%s('%s')" % (reader.__class__.__name__, reader.dialect)
+        self.assertEqual(repr(reader), expected)
+
+    def test_dict_writer_repr(self):
+        fileobj = StringIO()
+        writer = csv.DictWriter(fileobj, fieldnames=[])
+        expected = "%s('%s')" % (writer.__class__.__name__, writer.dialect)
+        self.assertEqual(repr(writer), expected)
+
+
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
@@ -685,6 +699,16 @@ class TestDialectRegistry(unittest.TestCase):
             dialect = csv.get_dialect(name)
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 self.assertRaises(TypeError, pickle.dumps, dialect, proto)
+
+    def test_dialect_str(self):
+        for name in csv.list_dialects():
+            dialect = csv.get_dialect(name)
+            self.assertEqual(str(dialect), name)
+
+    def test_dialect_repr(self):
+        for name in csv.list_dialects():
+            dialect = csv.get_dialect(name)
+            self.assertRegex(repr(dialect), r"\w+\.Dialect\('%s'\)" % name)
 
 class TestCsvBase(unittest.TestCase):
     def readerAssertEqual(self, input, expected_result):
