@@ -277,13 +277,13 @@ EXACT_TOKEN_TYPES = {
 %s
 }
 
-def ISTERMINAL(x: int) -> bool:
+def ISTERMINAL(x):
     return x < NT_OFFSET
 
-def ISNONTERMINAL(x: int) -> bool:
+def ISNONTERMINAL(x):
     return x >= NT_OFFSET
 
-def ISEOF(x: int) -> bool:
+def ISEOF(x):
     return x == ENDMARKER
 '''
 
