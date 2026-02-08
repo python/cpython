@@ -1,0 +1,4 @@
+Fixed a bug in ``partial.__repr__()`` that could occur when ``fn``, ``args``,
+or ``kw`` are modified during a ``repr`` call. Now, ``partial.__repr__()``
+will use the original arguments when generating the return string.
+Subsequent calls will use the updated arguments instead.
