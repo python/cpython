@@ -6893,166 +6893,176 @@ dnl have_panel=[no, yes]
 have_curses=no
 have_panel=no
 
-dnl PY_CHECK_CURSES(LIBCURSES, LIBPANEL)
-dnl Sets 'have_curses' and 'have_panel'.
-dnl For the PKG_CHECK_MODULES() calls, we can safely reuse the first variable
-dnl here, since we're only calling the macro a second time if the first call
-dnl fails.
-AC_DEFUN([PY_CHECK_CURSES], [dnl
-AS_VAR_PUSHDEF([curses_var], [m4_toupper([$1])])
-AS_VAR_PUSHDEF([panel_var], [m4_toupper([$2])])
-PKG_CHECK_MODULES([CURSES], [$1],
-  [AC_DEFINE([HAVE_]curses_var, [1], [Define if you have the '$1' library])
-   AS_VAR_SET([have_curses], [yes])
-   PKG_CHECK_MODULES([PANEL], [$2],
-    [AC_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
-     AS_VAR_SET([have_panel], [yes])],
-    [AS_VAR_SET([have_panel], [no])])],
-  [AS_VAR_SET([have_curses], [no])])
-AS_VAR_POPDEF([curses_var])
-AS_VAR_POPDEF([panel_var])])
+AC_MSG_CHECKING([for --disable-curses])
+AC_ARG_ENABLE([curses], [AS_HELP_STRING(
+                [--disable-curses],
+                [disable building curses module (default is no)])], [
+  AS_VAR_IF([enable_curses], [yes], [Py_CHECK_NCURSES=yes], [Py_CHECK_NCURSES=no])
+], [Py_CHECK_NCURSES=yes])
+AC_MSG_RESULT([$Py_CHECK_NCURSES])
 
-# Check for ncursesw/panelw first. If that fails, try ncurses/panel.
-PY_CHECK_CURSES([ncursesw], [panelw])
-AS_VAR_IF([have_curses], [no],
-          [PY_CHECK_CURSES([ncurses], [panel])])
-
-WITH_SAVE_ENV([
-  # Make sure we've got the header defines.
-  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS $PANEL_CFLAGS"])
-  AC_CHECK_HEADERS(m4_normalize([
-    ncursesw/curses.h ncursesw/ncurses.h ncursesw/panel.h
-    ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
-    curses.h ncurses.h panel.h
-  ]))
-
-  # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
-  AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
-    [AS_VAR_IF([have_curses], [no],
-      [AS_VAR_SET([have_curses], [yes])
-       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
+if test "$Py_CHECK_NCURSES" == 'yes' ; then
+  dnl PY_CHECK_CURSES(LIBCURSES, LIBPANEL)
+  dnl Sets 'have_curses' and 'have_panel'.
+  dnl For the PKG_CHECK_MODULES() calls, we can safely reuse the first variable
+  dnl here, since we're only calling the macro a second time if the first call
+  dnl fails.
+  AC_DEFUN([PY_CHECK_CURSES], [dnl
+  AS_VAR_PUSHDEF([curses_var], [m4_toupper([$1])])
+  AS_VAR_PUSHDEF([panel_var], [m4_toupper([$2])])
+  PKG_CHECK_MODULES([CURSES], [$1],
+    [AC_DEFINE([HAVE_]curses_var, [1], [Define if you have the '$1' library])
+     AS_VAR_SET([have_curses], [yes])
+     PKG_CHECK_MODULES([PANEL], [$2],
+      [AC_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
+       AS_VAR_SET([have_panel], [yes])],
+      [AS_VAR_SET([have_panel], [no])])],
     [AS_VAR_SET([have_curses], [no])])
-  AC_SEARCH_LIBS([update_panels], [panelw panel],
-    [AS_VAR_IF([have_panel], [no],
-      [AS_VAR_SET([have_panel], [yes])
-       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
-    [AS_VAR_SET([have_panel], [no])])
+  AS_VAR_POPDEF([curses_var])
+  AS_VAR_POPDEF([panel_var])])
 
-dnl Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
-dnl structs since version 5.7.  If the macro is defined as zero before including
-dnl [n]curses.h, ncurses will expose fields of the structs regardless of the
-dnl configuration.
-AC_DEFUN([_CURSES_INCLUDES],dnl
-[
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-])
+  # Check for ncursesw/panelw first. If that fails, try ncurses/panel.
+  PY_CHECK_CURSES([ncursesw], [panelw])
+  AS_VAR_IF([have_curses], [no],
+            [PY_CHECK_CURSES([ncurses], [panel])])
 
-AS_IF([test "have_curses" != "no"], [
-dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
-dnl the macro to 700.
-CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+  WITH_SAVE_ENV([
+    # Make sure we've got the header defines.
+    AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS $PANEL_CFLAGS"])
+    AC_CHECK_HEADERS(m4_normalize([
+      ncursesw/curses.h ncursesw/ncurses.h ncursesw/panel.h
+      ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
+      curses.h ncurses.h panel.h
+    ]))
 
-AS_VAR_IF([ac_sys_system], [Darwin], [
-  dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-  dnl System-supplied ncurses combines libncurses/libpanel and supports wide
-  dnl characters, so we can use it like ncursesw.
-  dnl If a locally-supplied version of libncursesw is found, we will use that.
-  dnl There should also be a libpanelw.
-  dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
-  dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
+    # Check that we're able to link with crucial curses/panel functions. This
+    # also serves as a fallback in case pkg-config failed.
+    AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
+    AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
+      [AS_VAR_IF([have_curses], [no],
+        [AS_VAR_SET([have_curses], [yes])
+         CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
+      [AS_VAR_SET([have_curses], [no])])
+    AC_SEARCH_LIBS([update_panels], [panelw panel],
+      [AS_VAR_IF([have_panel], [no],
+        [AS_VAR_SET([have_panel], [yes])
+         PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
+      [AS_VAR_SET([have_panel], [no])])
 
-  AS_VAR_APPEND([CURSES_CFLAGS], [" -D_XOPEN_SOURCE_EXTENDED=1"])
-])
+  dnl Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+  dnl structs since version 5.7.  If the macro is defined as zero before including
+  dnl [n]curses.h, ncurses will expose fields of the structs regardless of the
+  dnl configuration.
+  AC_DEFUN([_CURSES_INCLUDES],dnl
+  [
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
+  ])
 
-dnl pyconfig.h defines _XOPEN_SOURCE=700
-PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+  AS_IF([test "have_curses" != "no"], [
+  dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
+  dnl the macro to 700.
+  CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-# On Solaris, term.h requires curses.h
-AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
+  AS_VAR_IF([ac_sys_system], [Darwin], [
+    dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
+    dnl System-supplied ncurses combines libncurses/libpanel and supports wide
+    dnl characters, so we can use it like ncursesw.
+    dnl If a locally-supplied version of libncursesw is found, we will use that.
+    dnl There should also be a libpanelw.
+    dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
+    dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
 
-# On HP/UX 11.0, mvwdelch is a block with a return statement
-AC_CACHE_CHECK([whether mvwdelch is an expression], [ac_cv_mvwdelch_is_expression],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
-  int rtn;
-  rtn = mvwdelch(0,0,0);
-]])],
-[ac_cv_mvwdelch_is_expression=yes],
-[ac_cv_mvwdelch_is_expression=no]))
+    AS_VAR_APPEND([CURSES_CFLAGS], [" -D_XOPEN_SOURCE_EXTENDED=1"])
+  ])
 
-if test "$ac_cv_mvwdelch_is_expression" = yes
-then
-  AC_DEFINE([MVWDELCH_IS_EXPRESSION], [1],
-  [Define if mvwdelch in curses.h is an expression.])
+  dnl pyconfig.h defines _XOPEN_SOURCE=700
+  PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
+  # On Solaris, term.h requires curses.h
+  AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
+
+  # On HP/UX 11.0, mvwdelch is a block with a return statement
+  AC_CACHE_CHECK([whether mvwdelch is an expression], [ac_cv_mvwdelch_is_expression],
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
+    int rtn;
+    rtn = mvwdelch(0,0,0);
+  ]])],
+  [ac_cv_mvwdelch_is_expression=yes],
+  [ac_cv_mvwdelch_is_expression=no]))
+
+  if test "$ac_cv_mvwdelch_is_expression" = yes
+  then
+    AC_DEFINE([MVWDELCH_IS_EXPRESSION], [1],
+    [Define if mvwdelch in curses.h is an expression.])
+  fi
+
+  AC_CACHE_CHECK([whether WINDOW has _flags], [ac_cv_window_has_flags],
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
+    WINDOW *w;
+    w->_flags = 0;
+  ]])],
+  [ac_cv_window_has_flags=yes],
+  [ac_cv_window_has_flags=no]))
+
+
+  if test "$ac_cv_window_has_flags" = yes
+  then
+    AC_DEFINE([WINDOW_HAS_FLAGS], [1],
+    [Define if WINDOW in curses.h offers a field _flags.])
+  fi
+
+  dnl PY_CHECK_CURSES_FUNC(FUNCTION)
+  AC_DEFUN([PY_CHECK_CURSES_FUNC],
+  [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
+    AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+    AC_CACHE_CHECK(
+      [for curses function $1],
+      [py_var],
+      [AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
+          #ifndef $1
+          void *x=$1
+          #endif
+        ])],
+        [AS_VAR_SET([py_var], [yes])],
+        [AS_VAR_SET([py_var], [no])])]
+    )
+    AS_VAR_IF(
+      [py_var],
+      [yes],
+      [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+    AS_VAR_POPDEF([py_var])
+    AS_VAR_POPDEF([py_define])
+  ])
+
+  PY_CHECK_CURSES_FUNC([is_pad])
+  PY_CHECK_CURSES_FUNC([is_term_resized])
+  PY_CHECK_CURSES_FUNC([resize_term])
+  PY_CHECK_CURSES_FUNC([resizeterm])
+  PY_CHECK_CURSES_FUNC([immedok])
+  PY_CHECK_CURSES_FUNC([syncok])
+  PY_CHECK_CURSES_FUNC([wchgat])
+  PY_CHECK_CURSES_FUNC([filter])
+  PY_CHECK_CURSES_FUNC([has_key])
+  PY_CHECK_CURSES_FUNC([typeahead])
+  PY_CHECK_CURSES_FUNC([use_env])
+  CPPFLAGS=$ac_save_cppflags
+  ])dnl have_curses != no
+  ])dnl save env
 fi
-
-AC_CACHE_CHECK([whether WINDOW has _flags], [ac_cv_window_has_flags],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
-  WINDOW *w;
-  w->_flags = 0;
-]])],
-[ac_cv_window_has_flags=yes],
-[ac_cv_window_has_flags=no]))
-
-
-if test "$ac_cv_window_has_flags" = yes
-then
-  AC_DEFINE([WINDOW_HAS_FLAGS], [1],
-  [Define if WINDOW in curses.h offers a field _flags.])
-fi
-
-dnl PY_CHECK_CURSES_FUNC(FUNCTION)
-AC_DEFUN([PY_CHECK_CURSES_FUNC],
-[ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
-  AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
-  AC_CACHE_CHECK(
-    [for curses function $1],
-    [py_var],
-    [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
-        #ifndef $1
-        void *x=$1
-        #endif
-      ])],
-      [AS_VAR_SET([py_var], [yes])],
-      [AS_VAR_SET([py_var], [no])])]
-  )
-  AS_VAR_IF(
-    [py_var],
-    [yes],
-    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
-  AS_VAR_POPDEF([py_var])
-  AS_VAR_POPDEF([py_define])
-])
-
-PY_CHECK_CURSES_FUNC([is_pad])
-PY_CHECK_CURSES_FUNC([is_term_resized])
-PY_CHECK_CURSES_FUNC([resize_term])
-PY_CHECK_CURSES_FUNC([resizeterm])
-PY_CHECK_CURSES_FUNC([immedok])
-PY_CHECK_CURSES_FUNC([syncok])
-PY_CHECK_CURSES_FUNC([wchgat])
-PY_CHECK_CURSES_FUNC([filter])
-PY_CHECK_CURSES_FUNC([has_key])
-PY_CHECK_CURSES_FUNC([typeahead])
-PY_CHECK_CURSES_FUNC([use_env])
-CPPFLAGS=$ac_save_cppflags
-])dnl have_curses != no
-])dnl save env
 
 AC_MSG_NOTICE([checking for device files])
 
