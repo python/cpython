@@ -2483,6 +2483,19 @@ expression support in the :mod:`re` module).
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.partition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".partition(' ')
+      ('Monty', ' ', "Python's Flying Circus")
+      >>> 'Monty Python'.partition('-')
+      ('Monty Python', '', '')
+
+   See also :meth:`rpartition`.
+
 
 .. method:: str.removeprefix(prefix, /)
 
