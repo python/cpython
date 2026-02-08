@@ -562,7 +562,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: mbox(path, factory=None, create=True)
+.. class:: mbox(path, factory=None, create=True, from_matcher=None)
 
    A subclass of :class:`Mailbox` for mailboxes in mbox format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -574,6 +574,22 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    The mbox format is the classic format for storing mail on Unix systems. All
    messages in an mbox mailbox are stored in a single file with the beginning of
    each message indicated by a line whose first five characters are "From ".
+
+   The parameter *from_matcher* can be used to override this default, by providing
+   a boolean function that takes the line as its sole parameter.
+   The default matcher is ``lambda line: line.startswith(b'From ')``.
+   A stricter matcher might be:
+   ``lambda line: re.match(b'From .+ \\d\\d\\d\\d\\r?\\n', line)``.
+
+   One alternate matcher is included:
+   - ``'full'``: this matches the syntax ``From <sender> <asctime>[ info]``
+   The ``asctime`` field must match the standard syntax, i.e. the fixed length (24 char) string:
+   ``(Mon|...|Sun) (Jan|...|Dec) [ |d]d hh:mm:ss yyyy``.
+   The date field can have a leading space instead of a leading ``0``.
+   [The month and day-of-week fields are always in English]
+   A boolean function might be useful in some cases where the body text contains
+   un-quoted "From " lines. In such cases, it might help to check that the year (and month)
+   are the expected values for the mbox. Any other "From " lines are likely to be un-quoted body text.
 
    Several variations of the mbox format exist to address perceived shortcomings in
    the original. In the interest of compatibility, :class:`!mbox` implements the
