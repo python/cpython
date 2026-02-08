@@ -70,7 +70,9 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 // error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
 
-// Yield the processor to other threads (e.g., sched_yield).
+// Yield the processor using a lightweight CPU pause hint (e.g., x86 PAUSE,
+// AArch64 WFE). Falls back to sched_yield()/SwitchToThread() on platforms
+// without a known pause instruction.
 extern void _Py_yield(void);
 
 

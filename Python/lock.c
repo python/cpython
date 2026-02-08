@@ -43,7 +43,19 @@ struct mutex_entry {
 void
 _Py_yield(void)
 {
-#ifdef MS_WINDOWS
+#if defined(__GNUC__) || defined(__clang__)
+#  if defined(__x86_64__) || defined(__i386__)
+    __asm__ volatile ("pause" ::: "memory");
+#  elif defined(__aarch64__)
+    __asm__ volatile ("wfe");
+#  elif defined(__arm__) && __ARM_ARCH >= 7
+    __asm__ volatile ("yield" ::: "memory");
+#  elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
+    __asm__ volatile ("or 27,27,27" ::: "memory");
+#  else
+    sched_yield();
+#  endif
+#elif defined(MS_WINDOWS)
     SwitchToThread();
 #elif defined(HAVE_SCHED_H)
     sched_yield();
