@@ -907,15 +907,51 @@
             JitOptRef res;
             container = stack_pointer[-3];
             PyTypeObject *type = sym_get_type(container);
-            if (type == &PyUnicode_Type ||
-                type == &PyList_Type ||
-                type == &PyTuple_Type)
-            {
+            if (type == &PyList_Type) {
+                ADD_OP(_BINARY_SLICE_LIST, 0, 0);
+                res = sym_new_type(ctx, type);
+            }
+            else if (type == &PyTuple_Type) {
+                ADD_OP(_BINARY_SLICE_TUPLE, 0, 0);
+                res = sym_new_type(ctx, type);
+            }
+            else if (type == &PyUnicode_Type) {
+                ADD_OP(_BINARY_SLICE_UNICODE, 0, 0);
                 res = sym_new_type(ctx, type);
             }
             else {
                 res = sym_new_not_null(ctx);
             }
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_SLICE_LIST: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_SLICE_TUPLE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_SLICE_UNICODE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = res;
             stack_pointer += -2;

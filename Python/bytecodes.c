@@ -880,6 +880,51 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
+        tier2 op(_BINARY_SLICE_LIST, (container, start, stop -- res)) {
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            EXIT_IF(!PyList_CheckExact(container_o));
+            Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
+            PyObject *res_o = NULL;
+            if (_PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart) &&
+                _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop)) {
+                PySlice_AdjustIndices(PyList_GET_SIZE(container_o), &istart, &istop, 1);
+                res_o = PyList_GetSlice(container_o, istart, istop);
+            }
+            DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
+        tier2 op(_BINARY_SLICE_TUPLE, (container, start, stop -- res)) {
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            EXIT_IF(!PyTuple_CheckExact(container_o));
+            Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
+            PyObject *res_o = NULL;
+            if (_PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart) &&
+                _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop)) {
+                PySlice_AdjustIndices(PyTuple_GET_SIZE(container_o), &istart, &istop, 1);
+                res_o = PyTuple_GetSlice(container_o, istart, istop);
+            }
+            DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
+        tier2 op(_BINARY_SLICE_UNICODE, (container, start, stop -- res)) {
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            EXIT_IF(!PyUnicode_CheckExact(container_o));
+            Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
+            PyObject *res_o = NULL;
+            if (_PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(start), &istart) &&
+                _PyEval_SliceIndex(PyStackRef_AsPyObjectBorrow(stop), &istop)) {
+                PySlice_AdjustIndices(PyUnicode_GET_LENGTH(container_o), &istart, &istop, 1);
+                res_o = PyUnicode_Substring(container_o, istart, istop);
+            }
+            DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+        }
+
         macro(BINARY_SLICE) = _SPECIALIZE_BINARY_SLICE + _BINARY_SLICE;
 
         specializing op(_SPECIALIZE_STORE_SLICE, (v, container, start, stop -- v, container, start, stop)) {

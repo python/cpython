@@ -3082,6 +3082,51 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_GUARD_TOS_TUPLE", uops)
 
+    def test_binary_slice_list(self):
+        def testfunc(n):
+            a, b = 1, 3
+            for _ in range(n):
+                data = [1, 2, 3, 4, 5]
+                x = data[a:b]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, [2, 3])
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_SLICE_LIST", uops)
+        self.assertNotIn("_BINARY_SLICE", uops)
+
+    def test_binary_slice_tuple(self):
+        def testfunc(n):
+            a, b = 1, 3
+            for _ in range(n):
+                data = (1, 2, 3, 4, 5)
+                x = data[a:b]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (2, 3))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_SLICE_TUPLE", uops)
+        self.assertNotIn("_BINARY_SLICE", uops)
+
+    def test_binary_slice_unicode(self):
+        def testfunc(n):
+            a, b = 1, 3
+            for _ in range(n):
+                data = "hello"
+                x = data[a:b]
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, "el")
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_SLICE_UNICODE", uops)
+        self.assertNotIn("_BINARY_SLICE", uops)
+
     def test_unary_invert_long_type(self):
         def testfunc(n):
             for _ in range(n):

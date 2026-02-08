@@ -117,6 +117,9 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_BINARY_OP_EXTEND] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_EXTEND] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_SLICE_LIST] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_SLICE_TUPLE] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_SLICE_UNICODE] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -1134,6 +1137,33 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 1, 3, _BINARY_SLICE_r31 },
+        },
+    },
+    [_BINARY_SLICE_LIST] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 3, _BINARY_SLICE_LIST_r31 },
+        },
+    },
+    [_BINARY_SLICE_TUPLE] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 3, _BINARY_SLICE_TUPLE_r31 },
+        },
+    },
+    [_BINARY_SLICE_UNICODE] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 1, 3, _BINARY_SLICE_UNICODE_r31 },
         },
     },
     [_STORE_SLICE] = {
@@ -3700,6 +3730,9 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_BINARY_OP_EXTEND_r22] = _GUARD_BINARY_OP_EXTEND,
     [_BINARY_OP_EXTEND_r23] = _BINARY_OP_EXTEND,
     [_BINARY_SLICE_r31] = _BINARY_SLICE,
+    [_BINARY_SLICE_LIST_r31] = _BINARY_SLICE_LIST,
+    [_BINARY_SLICE_TUPLE_r31] = _BINARY_SLICE_TUPLE,
+    [_BINARY_SLICE_UNICODE_r31] = _BINARY_SLICE_UNICODE,
     [_STORE_SLICE_r30] = _STORE_SLICE,
     [_BINARY_OP_SUBSCR_LIST_INT_r23] = _BINARY_OP_SUBSCR_LIST_INT,
     [_BINARY_OP_SUBSCR_LIST_SLICE_r21] = _BINARY_OP_SUBSCR_LIST_SLICE,
@@ -4316,6 +4349,12 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_SUBTRACT_INT_r23] = "_BINARY_OP_SUBTRACT_INT_r23",
     [_BINARY_SLICE] = "_BINARY_SLICE",
     [_BINARY_SLICE_r31] = "_BINARY_SLICE_r31",
+    [_BINARY_SLICE_LIST] = "_BINARY_SLICE_LIST",
+    [_BINARY_SLICE_LIST_r31] = "_BINARY_SLICE_LIST_r31",
+    [_BINARY_SLICE_TUPLE] = "_BINARY_SLICE_TUPLE",
+    [_BINARY_SLICE_TUPLE_r31] = "_BINARY_SLICE_TUPLE_r31",
+    [_BINARY_SLICE_UNICODE] = "_BINARY_SLICE_UNICODE",
+    [_BINARY_SLICE_UNICODE_r31] = "_BINARY_SLICE_UNICODE_r31",
     [_BUILD_INTERPOLATION] = "_BUILD_INTERPOLATION",
     [_BUILD_INTERPOLATION_r01] = "_BUILD_INTERPOLATION_r01",
     [_BUILD_LIST] = "_BUILD_LIST",
@@ -5563,6 +5602,12 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_OP_EXTEND:
             return 2;
         case _BINARY_SLICE:
+            return 3;
+        case _BINARY_SLICE_LIST:
+            return 3;
+        case _BINARY_SLICE_TUPLE:
+            return 3;
+        case _BINARY_SLICE_UNICODE:
             return 3;
         case _STORE_SLICE:
             return 4;
