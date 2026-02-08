@@ -281,11 +281,6 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
         return Py_NewRef(item);
     }
 
-    if (PyList_GET_SIZE(heap) == 0) {
-        PyErr_SetString(PyExc_IndexError, "index out of range");
-        return NULL;
-    }
-
     returnitem = PyList_GET_ITEM(heap, 0);
     PyListObject *list = _PyList_CAST(heap);
     FT_ATOMIC_STORE_PTR_RELAXED(list->ob_item[0], Py_NewRef(item));
