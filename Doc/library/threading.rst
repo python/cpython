@@ -1144,9 +1144,11 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
         one and return ``True`` immediately.
       * If the internal counter is zero on entry, block until awoken by a call to
         :meth:`~Semaphore.release`.  Once awoken (and the counter is greater
-        than 0), decrement the counter by 1 and return ``True``.  Exactly one
-        thread will be awoken by each call to :meth:`~Semaphore.release`.  The
-        order in which threads are awoken should not be relied on.
+        than 0), decrement the counter by 1 and return ``True``.  Each call to
+        :meth:`~Semaphore.release` will wake up threads according to its *n*
+        parameter (default 1): if *j* threads are waiting and ``release(n)``
+        is called, ``min(j, n)`` threads will be awoken.  The order in which
+        threads are awoken should not be relied on.
 
       When invoked with *blocking* set to ``False``, do not block.  If a call
       without an argument would block, return ``False`` immediately; otherwise, do
@@ -1166,7 +1168,8 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
 
       Release a semaphore, incrementing the internal counter by *n*.  When it
       was zero on entry and other threads are waiting for it to become larger
-      than zero again, wake up *n* of those threads.
+      than zero again, wake up to *n* of those threads (or all of them if
+      fewer than *n* are waiting).
 
       .. versionchanged:: 3.9
          Added the *n* parameter to release multiple waiting threads at once.
