@@ -145,6 +145,13 @@ class BaseHTTPServerTestCase(BaseTestCase):
             self.send_header('Connection', 'close')
             self.end_headers()
 
+        def do_NOHEADERS(self):
+            try:
+                self.end_headers()
+                self.send_error(HTTPStatus.OK, "OK")
+            except Exception as e:
+                self.send_error(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
+
         def do_KEEP(self):
             self.send_response(HTTPStatus.NO_CONTENT)
             self.send_header('Content-Type', 'text/html')
@@ -282,6 +289,11 @@ class BaseHTTPServerTestCase(BaseTestCase):
         self.con.request('TEST', '/')
         res = self.con.getresponse()
         self.assertEqual(res.status, HTTPStatus.NO_CONTENT)
+
+    def test_end_no_headers(self):
+       self.con.request('NOHEADERS', '/')
+       res = self.con.getresponse()
+       self.assertEqual(res.status, HTTPStatus.OK)
 
     def test_return_header_keep_alive(self):
         self.con.request('KEEP', '/')
