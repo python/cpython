@@ -23,7 +23,7 @@ env:
   LLVM_VERSION: 21
 
 jobs:
-  tail-call:
+  windows:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
@@ -41,22 +41,74 @@ jobs:
             runner: windows-2025-vs2026
             build_flags: --disable-gil
             run_tests: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Build
+        shell: pwsh
+        run: |
+          $env:PlatformToolset = "v145"
+          ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
+      - name: Test
+        shell: pwsh
+        run: |
+          if ("${{ matrix.run_tests }}" -eq "true") {
+            ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          }
+
+  macos:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - target: x86_64-apple-darwin/clang
-            architecture: x86_64
             runner: macos-15-intel
           - target: aarch64-apple-darwin/clang
-            architecture: aarch64
             runner: macos-14
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install llvm@${{ env.LLVM_VERSION }}
+      - name: Build
+        run: |
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          export PATH="/usr/local/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          export PATH="/opt/homebrew/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
+          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp
+          make all --jobs 4
+      - name: Test
+        run: |
+          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  linux:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - target: x86_64-unknown-linux-gnu/gcc
-            architecture: x86_64
             runner: ubuntu-24.04
             configure_flags: --with-pydebug
           - target: x86_64-unknown-linux-gnu/gcc-free-threading
-            architecture: x86_64
             runner: ubuntu-24.04
             configure_flags: --disable-gil
           - target: aarch64-unknown-linux-gnu/gcc
-            architecture: aarch64
             runner: ubuntu-24.04-arm
             configure_flags: --with-pydebug
     steps:
@@ -66,34 +118,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      - name: Native Windows MSVC (release)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $env:PlatformToolset = "v145"
-          ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
-          if ("${{ matrix.run_tests }}" -eq "true") {
-            ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-          }
-
-      - name: Native macOS (release)
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install llvm@${{ env.LLVM_VERSION }}
-          export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/usr/local/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
-          export PATH="/opt/homebrew/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
-          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp
-          make all --jobs 4
-          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-      - name: Native Linux
-        if: runner.os == 'Linux'
+      - name: Build
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
           export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
           CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp ${{ matrix.configure_flags }}
           make all --jobs 4
+      - name: Test
+        run: |
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
