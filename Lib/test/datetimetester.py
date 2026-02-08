@@ -1208,9 +1208,12 @@ class TestDateOnly(unittest.TestCase):
         with self.assertRaises(ValueError):
             # The existing behavior that GH-70647 seeks to change.
             date.strptime('02-29', '%m-%d')
+        with self.assertRaises(ValueError):
+            date.strptime('02-29', '%m-%e')
         with self._assertNotWarns(DeprecationWarning):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
+            date.strptime('02-29,2024', '%m-%e,%Y')
 
 class SubclassDate(date):
     sub_var = 1
@@ -3096,10 +3099,15 @@ class TestDateTime(TestDate):
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
             self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            self.theclass.strptime('03-14.159265', '%m-%e.%f')
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('20-03-14.159265', '%y-%m-%d.%f')
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('02-29,2024', '%m-%d,%Y')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('02-29,2024', '%m-%e,%Y')
 
     def test_strptime_z_empty(self):
         for directive in ('z', ':z'):

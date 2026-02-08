@@ -466,7 +466,7 @@ class TimeRE(dict):
                 case 'Y' | 'y' | 'G':
                     nonlocal year_in_format
                     year_in_format = True
-                case 'd':
+                case 'd' | 'e':
                     nonlocal day_of_month_in_format
                     day_of_month_in_format = True
             return self[directive]
@@ -475,10 +475,9 @@ class TimeRE(dict):
             import warnings
             warnings.warn("""\
 Parsing dates involving a day of month without a year specified is ambiguous
-and fails to parse leap day. The default behavior will change in Python 3.15
-to either always raise an exception or to use a different default year (TBD).
-To avoid trouble, add a specific year to the input & format.
-See https://github.com/python/cpython/issues/70647.""",
+and fails to parse leap day. The default behavior will change in Python 3.18
+to either always raise an exception or to use a different default year.
+To avoid trouble, add a specific year to the input and format.""",
                           DeprecationWarning,
                           skip_file_prefixes=(os.path.dirname(__file__),))
         return format

@@ -1,6 +1,11 @@
 Pending removal in Python 3.18
 ------------------------------
 
+* :mod:`datetime`:
+
+  * :meth:`~datetime.datetime.strptime` calls using a format string containing
+    a day of month without a year. This has been deprecated since Python 3.13.
+
 * :mod:`decimal`:
 
   * The non-standard and undocumented :class:`~decimal.Decimal` format
