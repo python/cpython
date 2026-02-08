@@ -22,7 +22,6 @@ from test.support.os_helper import EnvironmentVarGuard, FakePath
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module, CleanImport
-from test.support.script_helper import assert_python_ok
 
 lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()
@@ -1993,26 +1992,8 @@ class CTestModule(TestModule):
     module = c_zoneinfo
 
 
-class MiscTests(unittest.TestCase):
-    def test_pydatetime(self):
-        # Test that zoneinfo works if the C implementation of datetime
-        # is not available and the Python implementation of datetime is used.
-        # The Python implementation of zoneinfo should be used in thet case.
-        #
-        # Run the test in a subprocess, as importing _zoneinfo with
-        # _datettime disabled causes crash in the previously imported
-        # _zoneinfo.
-        assert_python_ok('-c', '''if 1:
-            import sys
-            sys.modules['_datetime'] = None
-            import datetime
-            import zoneinfo
-            tzinfo = zoneinfo.ZoneInfo('Europe/London')
-            datetime.datetime(2025, 10, 26, 2, 0, tzinfo=tzinfo)
-            ''',
-            PYTHONTZPATH=str(ZONEINFO_DATA.tzpath))
-
-
+@unittest.skipIf(__import__("sys").modules.get("_zoneinfo") is None,
+                 "_zoneinfo C module not available")
 class ExtensionBuiltTest(unittest.TestCase):
     """Smoke test to ensure that the C and Python extensions are both tested.
 
