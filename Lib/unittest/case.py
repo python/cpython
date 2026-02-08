@@ -420,6 +420,9 @@ class TestCase(object):
            method when executed. Raises a ValueError if the instance does
            not have a method with the specified name.
         """
+
+        super(TestCase, self).__init__()
+
         self._testMethodName = methodName
         self._outcome = None
         self._testMethodDoc = 'No test'
