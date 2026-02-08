@@ -3037,7 +3037,7 @@ def force_colorized(func):
     def wrapper(*args, **kwargs):
         with force_color(True):
             return func(*args, **kwargs)
-    return wrapper
+    return thread_unsafe(wrapper)  # modifying the environment is thread-unsafe
 
 
 def force_not_colorized(func):
