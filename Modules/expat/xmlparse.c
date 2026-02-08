@@ -1,4 +1,4 @@
-/* 28bcd8b1ba7eb595d82822908257fd9c3589b4243e3c922d0369f35bfcd7b506 (2.7.3+)
+/* fab937ab8b186d7d296013669c332e6dfce2f99567882cff1f8eb24223c524a7 (2.7.4+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -13,7 +13,7 @@
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
    Copyright (c) 2016      Eric Rahm <erahm@mozilla.com>
-   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2026 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Gaurav <g.gupta@samsung.com>
    Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
    Copyright (c) 2016      Gustavo Grieco <gustavo.grieco@imag.fr>
@@ -42,6 +42,9 @@
    Copyright (c) 2024-2025 Berkay Eren Ürün <berkay.ueruen@siemens.com>
    Copyright (c) 2024      Hanno Böck <hanno@gentoo.org>
    Copyright (c) 2025      Matthew Fernandez <matthew.fernandez@gmail.com>
+   Copyright (c) 2025      Atrem Borovik <polzovatellllk@gmail.com>
+   Copyright (c) 2025      Alfonso Gregory <gfunni234@gmail.com>
+   Copyright (c) 2026      Rosen Penev <rosenp@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -101,7 +104,7 @@
 #include <limits.h> /* INT_MAX, UINT_MAX */
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv, rand_s */
-#include <stdint.h> /* uintptr_t */
+#include <stdint.h> /* SIZE_MAX, uintptr_t */
 #include <math.h>   /* isnan */
 
 #ifdef _WIN32
@@ -134,11 +137,6 @@
 #  endif /* defined(GRND_NONBLOCK) */
 #endif   /* defined(HAVE_GETRANDOM) || defined(HAVE_SYSCALL_GETRANDOM) */
 
-#if defined(HAVE_LIBBSD)                                                       \
-    && (defined(HAVE_ARC4RANDOM_BUF) || defined(HAVE_ARC4RANDOM))
-#  include <bsd/stdlib.h>
-#endif
-
 #if defined(_WIN32) && ! defined(LOAD_LIBRARY_SEARCH_SYSTEM32)
 #  define LOAD_LIBRARY_SEARCH_SYSTEM32 0x00000800
 #endif
@@ -155,8 +153,6 @@
       * Linux >=3.17 + glibc (including <2.25) (syscall SYS_getrandom): HAVE_SYSCALL_GETRANDOM, \
       * BSD / macOS >=10.7 / glibc >=2.36 (arc4random_buf): HAVE_ARC4RANDOM_BUF, \
       * BSD / macOS (including <10.7) / glibc >=2.36 (arc4random): HAVE_ARC4RANDOM, \
-      * libbsd (arc4random_buf): HAVE_ARC4RANDOM_BUF + HAVE_LIBBSD, \
-      * libbsd (arc4random): HAVE_ARC4RANDOM + HAVE_LIBBSD, \
       * Linux (including <3.17) / BSD / macOS (including <10.7) / Solaris >=8 (/dev/urandom): XML_DEV_URANDOM, \
       * Windows >=Vista (rand_s): _WIN32. \
     \
@@ -311,8 +307,11 @@ typedef struct tag {
   const char *rawName; /* tagName in the original encoding */
   int rawNameLength;
   TAG_NAME name; /* tagName in the API encoding */
-  char *buf;     /* buffer for name components */
-  char *bufEnd;  /* end of the buffer */
+  union {
+    char *raw;     /* for byte-level access (rawName storage) */
+    XML_Char *str; /* for character-level access (converted name) */
+  } buf;           /* buffer for name components */
+  char *bufEnd;    /* end of the buffer */
   BINDING *bindings;
 } TAG;
 
@@ -349,7 +348,7 @@ typedef struct {
 typedef struct block {
   struct block *next;
   int size;
-  XML_Char s[1];
+  XML_Char s[];
 } BLOCK;
 
 typedef struct {
@@ -1230,8 +1229,11 @@ generate_hash_secret_salt(XML_Parser parser) {
 #  endif /* ! defined(_WIN32) && defined(XML_DEV_URANDOM) */
   /* .. and self-made low quality for backup: */
 
+  entropy = gather_time_entropy();
+#  if ! defined(__wasi__)
   /* Process ID is 0 bits entropy if attacker has local access */
-  entropy = gather_time_entropy() ^ getpid();
+  entropy ^= getpid();
+#  endif
 
   /* Factors are 2^31-1 and 2^61-1 (Mersenne primes M31 and M61) */
   if (sizeof(unsigned long) == 4) {
@@ -1754,6 +1756,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser, const XML_Char *context,
   XML_ExternalEntityRefHandler oldExternalEntityRefHandler;
   XML_SkippedEntityHandler oldSkippedEntityHandler;
   XML_UnknownEncodingHandler oldUnknownEncodingHandler;
+  void *oldUnknownEncodingHandlerData;
   XML_ElementDeclHandler oldElementDeclHandler;
   XML_AttlistDeclHandler oldAttlistDeclHandler;
   XML_EntityDeclHandler oldEntityDeclHandler;
@@ -1799,6 +1802,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser, const XML_Char *context,
   oldExternalEntityRefHandler = parser->m_externalEntityRefHandler;
   oldSkippedEntityHandler = parser->m_skippedEntityHandler;
   oldUnknownEncodingHandler = parser->m_unknownEncodingHandler;
+  oldUnknownEncodingHandlerData = parser->m_unknownEncodingHandlerData;
   oldElementDeclHandler = parser->m_elementDeclHandler;
   oldAttlistDeclHandler = parser->m_attlistDeclHandler;
   oldEntityDeclHandler = parser->m_entityDeclHandler;
@@ -1859,6 +1863,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser, const XML_Char *context,
   parser->m_externalEntityRefHandler = oldExternalEntityRefHandler;
   parser->m_skippedEntityHandler = oldSkippedEntityHandler;
   parser->m_unknownEncodingHandler = oldUnknownEncodingHandler;
+  parser->m_unknownEncodingHandlerData = oldUnknownEncodingHandlerData;
   parser->m_elementDeclHandler = oldElementDeclHandler;
   parser->m_attlistDeclHandler = oldAttlistDeclHandler;
   parser->m_entityDeclHandler = oldEntityDeclHandler;
@@ -1934,7 +1939,7 @@ XML_ParserFree(XML_Parser parser) {
     }
     p = tagList;
     tagList = tagList->parent;
-    FREE(parser, p->buf);
+    FREE(parser, p->buf.raw);
     destroyBindings(p->bindings, parser);
     FREE(parser, p);
   }
@@ -2599,7 +2604,7 @@ XML_GetBuffer(XML_Parser parser, int len) {
       // NOTE: We are avoiding MALLOC(..) here to leave limiting
       //       the input size to the application using Expat.
       newBuf = parser->m_mem.malloc_fcn(bufferSize);
-      if (newBuf == 0) {
+      if (newBuf == NULL) {
         parser->m_errorCode = XML_ERROR_NO_MEMORY;
         return NULL;
       }
@@ -3126,7 +3131,7 @@ storeRawNames(XML_Parser parser) {
     size_t bufSize;
     size_t nameLen = sizeof(XML_Char) * (tag->name.strLen + 1);
     size_t rawNameLen;
-    char *rawNameBuf = tag->buf + nameLen;
+    char *rawNameBuf = tag->buf.raw + nameLen;
     /* Stop if already stored.  Since m_tagStack is a stack, we can stop
        at the first entry that has already been copied; everything
        below it in the stack is already been accounted for in a
@@ -3142,22 +3147,22 @@ storeRawNames(XML_Parser parser) {
     if (rawNameLen > (size_t)INT_MAX - nameLen)
       return XML_FALSE;
     bufSize = nameLen + rawNameLen;
-    if (bufSize > (size_t)(tag->bufEnd - tag->buf)) {
-      char *temp = REALLOC(parser, tag->buf, bufSize);
+    if (bufSize > (size_t)(tag->bufEnd - tag->buf.raw)) {
+      char *temp = REALLOC(parser, tag->buf.raw, bufSize);
       if (temp == NULL)
         return XML_FALSE;
-      /* if tag->name.str points to tag->buf (only when namespace
+      /* if tag->name.str points to tag->buf.str (only when namespace
          processing is off) then we have to update it
       */
-      if (tag->name.str == (XML_Char *)tag->buf)
+      if (tag->name.str == tag->buf.str)
         tag->name.str = (XML_Char *)temp;
       /* if tag->name.localPart is set (when namespace processing is on)
          then update it as well, since it will always point into tag->buf
       */
       if (tag->name.localPart)
         tag->name.localPart
-            = (XML_Char *)temp + (tag->name.localPart - (XML_Char *)tag->buf);
-      tag->buf = temp;
+            = (XML_Char *)temp + (tag->name.localPart - tag->buf.str);
+      tag->buf.raw = temp;
       tag->bufEnd = temp + bufSize;
       rawNameBuf = temp + nameLen;
     }
@@ -3472,12 +3477,12 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
         tag = MALLOC(parser, sizeof(TAG));
         if (! tag)
           return XML_ERROR_NO_MEMORY;
-        tag->buf = MALLOC(parser, INIT_TAG_BUF_SIZE);
-        if (! tag->buf) {
+        tag->buf.raw = MALLOC(parser, INIT_TAG_BUF_SIZE);
+        if (! tag->buf.raw) {
           FREE(parser, tag);
           return XML_ERROR_NO_MEMORY;
         }
-        tag->bufEnd = tag->buf + INIT_TAG_BUF_SIZE;
+        tag->bufEnd = tag->buf.raw + INIT_TAG_BUF_SIZE;
       }
       tag->bindings = NULL;
       tag->parent = parser->m_tagStack;
@@ -3490,31 +3495,32 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
       {
         const char *rawNameEnd = tag->rawName + tag->rawNameLength;
         const char *fromPtr = tag->rawName;
-        toPtr = (XML_Char *)tag->buf;
+        toPtr = tag->buf.str;
         for (;;) {
-          int bufSize;
           int convLen;
           const enum XML_Convert_Result convert_res
               = XmlConvert(enc, &fromPtr, rawNameEnd, (ICHAR **)&toPtr,
                            (ICHAR *)tag->bufEnd - 1);
-          convLen = (int)(toPtr - (XML_Char *)tag->buf);
+          convLen = (int)(toPtr - tag->buf.str);
           if ((fromPtr >= rawNameEnd)
               || (convert_res == XML_CONVERT_INPUT_INCOMPLETE)) {
             tag->name.strLen = convLen;
             break;
           }
-          bufSize = (int)(tag->bufEnd - tag->buf) << 1;
+          if (SIZE_MAX / 2 < (size_t)(tag->bufEnd - tag->buf.raw))
+            return XML_ERROR_NO_MEMORY;
+          const size_t bufSize = (size_t)(tag->bufEnd - tag->buf.raw) * 2;
           {
-            char *temp = REALLOC(parser, tag->buf, bufSize);
+            char *temp = REALLOC(parser, tag->buf.raw, bufSize);
             if (temp == NULL)
               return XML_ERROR_NO_MEMORY;
-            tag->buf = temp;
+            tag->buf.raw = temp;
             tag->bufEnd = temp + bufSize;
             toPtr = (XML_Char *)temp + convLen;
           }
         }
       }
-      tag->name.str = (XML_Char *)tag->buf;
+      tag->name.str = tag->buf.str;
       *toPtr = XML_T('\0');
       result
           = storeAtts(parser, enc, s, &(tag->name), &(tag->bindings), account);
@@ -3878,7 +3884,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
      * from -Wtype-limits on platforms where
      * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-    if ((unsigned)parser->m_attsSize > (size_t)(-1) / sizeof(ATTRIBUTE)) {
+    if ((unsigned)parser->m_attsSize > SIZE_MAX / sizeof(ATTRIBUTE)) {
       parser->m_attsSize = oldAttsSize;
       return XML_ERROR_NO_MEMORY;
     }
@@ -3897,7 +3903,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
      * from -Wtype-limits on platforms where
      * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #  if UINT_MAX >= SIZE_MAX
-    if ((unsigned)parser->m_attsSize > (size_t)(-1) / sizeof(XML_AttrInfo)) {
+    if ((unsigned)parser->m_attsSize > SIZE_MAX / sizeof(XML_AttrInfo)) {
       parser->m_attsSize = oldAttsSize;
       return XML_ERROR_NO_MEMORY;
     }
@@ -4073,7 +4079,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
        * from -Wtype-limits on platforms where
        * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-      if (nsAttsSize > (size_t)(-1) / sizeof(NS_ATT)) {
+      if (nsAttsSize > SIZE_MAX / sizeof(NS_ATT)) {
         /* Restore actual size of memory in m_nsAtts */
         parser->m_nsAttsPower = oldNsAttsPower;
         return XML_ERROR_NO_MEMORY;
@@ -4256,7 +4262,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
      * from -Wtype-limits on platforms where
      * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-    if ((unsigned)(n + EXPAND_SPARE) > (size_t)(-1) / sizeof(XML_Char)) {
+    if ((unsigned)(n + EXPAND_SPARE) > SIZE_MAX / sizeof(XML_Char)) {
       return XML_ERROR_NO_MEMORY;
     }
 #endif
@@ -4502,7 +4508,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
        * from -Wtype-limits on platforms where
        * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-      if ((unsigned)(len + EXPAND_SPARE) > (size_t)(-1) / sizeof(XML_Char)) {
+      if ((unsigned)(len + EXPAND_SPARE) > SIZE_MAX / sizeof(XML_Char)) {
         return XML_ERROR_NO_MEMORY;
       }
 #endif
@@ -4529,7 +4535,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
      * from -Wtype-limits on platforms where
      * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-    if ((unsigned)(len + EXPAND_SPARE) > (size_t)(-1) / sizeof(XML_Char)) {
+    if ((unsigned)(len + EXPAND_SPARE) > SIZE_MAX / sizeof(XML_Char)) {
       return XML_ERROR_NO_MEMORY;
     }
 #endif
@@ -5920,15 +5926,18 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
              * from -Wtype-limits on platforms where
              * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-            if (parser->m_groupSize > (size_t)(-1) / sizeof(int)) {
+            if (parser->m_groupSize > SIZE_MAX / sizeof(int)) {
+              parser->m_groupSize /= 2;
               return XML_ERROR_NO_MEMORY;
             }
 #endif
 
             int *const new_scaff_index = REALLOC(
                 parser, dtd->scaffIndex, parser->m_groupSize * sizeof(int));
-            if (new_scaff_index == NULL)
+            if (new_scaff_index == NULL) {
+              parser->m_groupSize /= 2;
               return XML_ERROR_NO_MEMORY;
+            }
             dtd->scaffIndex = new_scaff_index;
           }
         } else {
@@ -7190,7 +7199,7 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
        * from -Wtype-limits on platforms where
        * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-      if ((unsigned)count > (size_t)(-1) / sizeof(DEFAULT_ATTRIBUTE)) {
+      if ((unsigned)count > SIZE_MAX / sizeof(DEFAULT_ATTRIBUTE)) {
         return 0;
       }
 #endif
@@ -7666,8 +7675,7 @@ dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
        * from -Wtype-limits on platforms where
        * sizeof(int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-      if ((size_t)oldE->nDefaultAtts
-          > ((size_t)(-1) / sizeof(DEFAULT_ATTRIBUTE))) {
+      if ((size_t)oldE->nDefaultAtts > SIZE_MAX / sizeof(DEFAULT_ATTRIBUTE)) {
         return 0;
       }
 #endif
@@ -7869,7 +7877,7 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
       unsigned long newMask = (unsigned long)newSize - 1;
 
       /* Detect and prevent integer overflow */
-      if (newSize > (size_t)(-1) / sizeof(NAMED *)) {
+      if (newSize > SIZE_MAX / sizeof(NAMED *)) {
         return NULL;
       }
 
@@ -8105,7 +8113,7 @@ poolBytesToAllocateFor(int blockSize) {
 static XML_Bool FASTCALL
 poolGrow(STRING_POOL *pool) {
   if (pool->freeBlocks) {
-    if (pool->start == 0) {
+    if (pool->start == NULL) {
       pool->blocks = pool->freeBlocks;
       pool->freeBlocks = pool->freeBlocks->next;
       pool->blocks->next = NULL;
@@ -8217,7 +8225,7 @@ nextScaffoldPart(XML_Parser parser) {
      * from -Wtype-limits on platforms where
      * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-    if (parser->m_groupSize > ((size_t)(-1) / sizeof(int))) {
+    if (parser->m_groupSize > SIZE_MAX / sizeof(int)) {
       return -1;
     }
 #endif
@@ -8244,7 +8252,7 @@ nextScaffoldPart(XML_Parser parser) {
        * from -Wtype-limits on platforms where
        * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-      if (dtd->scaffSize > (size_t)(-1) / 2u / sizeof(CONTENT_SCAFFOLD)) {
+      if (dtd->scaffSize > SIZE_MAX / 2u / sizeof(CONTENT_SCAFFOLD)) {
         return -1;
       }
 #endif
@@ -8294,15 +8302,15 @@ build_model(XML_Parser parser) {
    * from -Wtype-limits on platforms where
    * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
 #if UINT_MAX >= SIZE_MAX
-  if (dtd->scaffCount > (size_t)(-1) / sizeof(XML_Content)) {
+  if (dtd->scaffCount > SIZE_MAX / sizeof(XML_Content)) {
     return NULL;
   }
-  if (dtd->contentStringLen > (size_t)(-1) / sizeof(XML_Char)) {
+  if (dtd->contentStringLen > SIZE_MAX / sizeof(XML_Char)) {
     return NULL;
   }
 #endif
   if (dtd->scaffCount * sizeof(XML_Content)
-      > (size_t)(-1) - dtd->contentStringLen * sizeof(XML_Char)) {
+      > SIZE_MAX - dtd->contentStringLen * sizeof(XML_Char)) {
     return NULL;
   }
 
