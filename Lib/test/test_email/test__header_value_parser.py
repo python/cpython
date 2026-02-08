@@ -2459,45 +2459,59 @@ class TestParser(TestParserMixin, TestEmailBase):
             label='from_test_get_atom',
             )(params_test_get_atom),
 
-        test_get_dot_atom_with_wsp = C(
-            '\t  foo.bar.bing  ', '\t  foo.bar.bing  ', ' foo.bar.bing ', [], '')
-            ,
+        with_wsp = C(
+            '\t  foo.bar.bing  ',
+            '\t  foo.bar.bing  ',
+            ' foo.bar.bing ',
+            [],
+            '',
+            ),
 
-        test_get_dot_atom_with_comments_and_wsp = C(
-            ' (sing)  foo.bar.bing (here) ', ' (sing)  foo.bar.bing (here) ',
-                ' foo.bar.bing ', [], '',
+        with_comments_and_wsp = C(
+            ' (sing)  foo.bar.bing (here) ',
+            ' (sing)  foo.bar.bing (here) ',
+            ' foo.bar.bing ',
+            [],
+            '',
             comments=['sing', 'here'],
             ),
 
-        test_get_dot_atom_space_ends_dot_atom = C(
-            ' (sing)  foo.bar .bing (here) ', ' (sing)  foo.bar ',
-                ' foo.bar ', [], '.bing (here) ',
+        space_ends_dot_atom = C(
+            ' (sing)  foo.bar .bing (here) ',
+            ' (sing)  foo.bar ',
+            ' foo.bar ',
+            [],
+            '.bing (here) ',
             comments=['sing'],
             ),
 
-        test_get_dot_atom_no_atom_raises = C(
-                                ' (foo) ',
-                     exception=(errors.HeaderParseError, '.*')
+        no_atom_raises = C(
+            ' (foo) ',
+            exception=(errors.HeaderParseError, '.*')
             ),
 
-        test_get_dot_atom_leading_dot_raises = C(
-                                ' (foo) .bar',
-                     exception=(errors.HeaderParseError, '.*')
+        leading_dot_raises = C(
+            ' (foo) .bar',
+            exception=(errors.HeaderParseError, '.*')
             ),
 
-        test_get_dot_atom_two_dots_raises = C(
-                                'bar..bang',
-                     exception=(errors.HeaderParseError, '.*')
+        two_dots_raises = C(
+            'bar..bang',
+            exception=(errors.HeaderParseError, '.*')
             ),
 
-        test_get_dot_atom_trailing_dot_raises = C(
-                                ' (foo) bar.bang. foo',
-                     exception=(errors.HeaderParseError, '.*')
+        trailing_dot_raises = C(
+            ' (foo) bar.bang. foo',
+            exception=(errors.HeaderParseError, '.*')
             ),
 
-        test_get_dot_atom_rfc2047_atom = C(
-            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
-            ,
+        rfc2047_atom = C(
+            '=?utf-8?q?=20bob?=',
+            ' bob',
+            ' bob',
+            [],
+            '',
+            ),
 
         )
 
