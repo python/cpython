@@ -1,4 +1,5 @@
-Fixed a bug in :meth:`functools.partial.__repr__()` that could occur when ``fn``, ``args``,
-or ``kw`` are modified during a :func:`repr` call. Now, ``partial.__repr__()``
+Fixed a bug in :meth:`functools.partial.__repr__` that could occur when ``fn``, ``args``,
+or ``kw`` are modified during a :func:`repr` call. Now, ``partial.__repr__``
 will use the original arguments when generating the return string.
 Subsequent calls will use the updated arguments instead.
+
