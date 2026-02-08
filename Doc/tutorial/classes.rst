@@ -583,6 +583,7 @@ expressions are also allowed.  This can be useful, for example, when the base
 class is defined in another module::
 
    class DerivedClassName(modname.BaseClassName):
+       ...
 
 Execution of a derived class definition proceeds the same as for a base class.
 When the class object is constructed, the base class is remembered.  This is

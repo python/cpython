@@ -161,7 +161,7 @@ breaking client code.  For example, in the :mod:`statistics` module, the
 parameter name *dist* may be changed in the future.  This was made
 possible with the following function specification::
 
-  def quantiles(dist, /, *, n=4, method='exclusive')
+  def quantiles(dist, /, *, n=4, method='exclusive'):
       ...
 
 Since the parameters to the left of ``/`` are not exposed as possible
@@ -180,7 +180,7 @@ is an excerpt from code in the :mod:`collections` module::
   class Counter(dict):
 
       def __init__(self, iterable=None, /, **kwds):
-          # Note "iterable" is a possible keyword argument
+          ...  # Note "iterable" is a possible keyword argument
 
 See :pep:`570` for a full description.
 
