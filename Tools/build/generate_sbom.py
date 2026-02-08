@@ -1,18 +1,18 @@
 """Tool for generating Software Bill of Materials (SBOM) for Python's dependencies"""
+
+import glob
+import hashlib
+import json
 import os
 import random
 import re
-import hashlib
-import json
-import glob
-from pathlib import Path, PurePosixPath, PureWindowsPath
 import subprocess
 import sys
 import time
 import typing
 import urllib.error
 import urllib.request
-import typing
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 
@@ -274,7 +274,7 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
         license_concluded = package["licenseConcluded"]
         error_if(
             license_concluded != "NOASSERTION",
-            f"License identifier must be 'NOASSERTION'"
+            "License identifier must be 'NOASSERTION'"
         )
 
 
