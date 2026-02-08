@@ -2426,14 +2426,23 @@ The third argument is used when loading packages as part of test discovery.
 A typical ``load_tests`` function that loads tests from a specific set of
 :class:`TestCase` classes may look like::
 
-    test_cases = (TestCase1, TestCase2, TestCase3)
-
     def load_tests(loader, tests, pattern):
         suite = TestSuite()
-        for test_class in test_cases:
+        for test_class in make_testcase_classes():
             tests = loader.loadTestsFromTestCase(test_class)
             suite.addTests(tests)
         return suite
+
+This could be used to load a set of tests that are dynamically generated to
+run against different backends, for example::
+
+    def make_testcase_classes():
+        for backend in backends:
+            yield type(
+                '{}Test'.format(backend.name),
+                (TheBaseClass, unittest.TestCase),
+                {'backend': backend}
+            )
 
 If discovery is started in a directory containing a package, either from the
 command line or by calling :meth:`TestLoader.discover`, then the package
