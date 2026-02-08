@@ -1989,6 +1989,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pos1));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pos2));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(posix));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(posmode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(prec));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(preserve_exc));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(print_file_and_line));

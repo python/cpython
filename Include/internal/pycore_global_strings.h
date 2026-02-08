@@ -712,6 +712,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(pos1)
         STRUCT_FOR_ID(pos2)
         STRUCT_FOR_ID(posix)
+        STRUCT_FOR_ID(posmode)
         STRUCT_FOR_ID(prec)
         STRUCT_FOR_ID(preserve_exc)
         STRUCT_FOR_ID(print_file_and_line)
