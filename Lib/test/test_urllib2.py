@@ -1397,8 +1397,11 @@ class HandlerTests(unittest.TestCase):
             # Change response for subsequent connection
             conn.__class__.fakedata = b"HTTP/1.1 200 OK\r\n\r\nHello!"
         http.client.HTTPConnection.request = request
-        fp = urllib.request.urlopen("http://python.org/path")
-        self.assertEqual(fp.geturl(), "http://python.org/path?query")
+        with mock.patch('urllib.request.getproxies', return_value={}):
+            # Disable proxy for predictable URL handling
+            urllib.request.install_opener(None)
+            fp = urllib.request.urlopen("http://python.org/path")
+            self.assertEqual(fp.geturl(), "http://python.org/path?query")
 
     def test_redirect_encoding(self):
         # Some characters in the redirect target may need special handling,
@@ -1416,7 +1419,8 @@ class HandlerTests(unittest.TestCase):
                 )
                 return result
         handler = Handler()
-        opener = urllib.request.build_opener(handler)
+        with mock.patch('urllib.request.getproxies', return_value={}):
+            opener = urllib.request.build_opener(handler)
         tests = (
             (b'/p\xC3\xA5-dansk/', b'/p%C3%A5-dansk/'),
             (b'/spaced%20path/', b'/spaced%20path/'),
