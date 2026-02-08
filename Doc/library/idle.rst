@@ -49,7 +49,8 @@ possible to have multiple editor windows simultaneously.  On Windows and
 Linux, each has its own top menu.  Each menu documented below indicates
 which window type it is associated with.
 
-Output windows, such as used for Edit => Find in Files, are a subtype of editor
+Output windows, such as used for :menuselection:`&Edit --> Find in Files`,
+are a subtype of editor
 window.  They currently have the same top menu but a different
 default title and context menu.
 
@@ -60,116 +61,116 @@ described below are moved around to conform to Apple guidelines.
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-New File
+:guilabel:`&New File`
    Create a new file editing window.
 
-Open...
+:guilabel:`&Open...`
    Open an existing file with an Open dialog.
 
-Open Module...
+:guilabel:`Open &Module...`
    Open an existing module (searches sys.path).
 
-Recent Files
+:guilabel:`&Recent Files`
    Open a list of recent files.  Click one to open it.
 
 .. index::
    single: Module browser
    single: Path browser
 
-Module Browser
+:guilabel:`Module &Browser`
    Show functions, classes, and methods in the current Editor file in a
    tree structure.  In the shell, open a module first.
 
-Path Browser
+:guilabel:`&Path Browser`
    Show sys.path directories, modules, functions, classes and methods in a
    tree structure.
 
-Save
+:guilabel:`&Save`
    Save the current window to the associated file, if there is one.  Windows
    that have been changed since being opened or last saved have a \* before
    and after the window title.  If there is no associated file,
    do Save As instead.
 
-Save As...
+:guilabel:`Save &As...`
    Save the current window with a Save As dialog.  The file saved becomes the
    new associated file for the window. (If your file manager is set to hide
    extensions, the current extension will be omitted in the file name box.
    If the new filename has no '.', '.py' and '.txt' will be added for Python
    and text files, except that on macOS Aqua,'.py' is added for all files.)
 
-Save Copy As...
+:guilabel:`Save Cop&y As...`
    Save the current window to different file without changing the associated
    file.  (See Save As note above about filename extensions.)
 
-Print Window
+:guilabel:`Prin&t Window`
    Print the current window to the default printer.
 
-Close Window
+:guilabel:`&Close Window`
    Close the current window (if an unsaved editor, ask to save; if an unsaved
    Shell, ask to quit execution).  Calling ``exit()`` or ``close()`` in the Shell
    window also closes Shell.  If this is the only window, also exit IDLE.
 
-Exit IDLE
+:guilabel:`E&xit IDLE`
    Close all windows and quit IDLE (ask to save unsaved edit windows).
 
 Edit menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Undo
+:guilabel:`&Undo`
    Undo the last change to the current window.  A maximum of 1000 changes may
    be undone.
 
-Redo
+:guilabel:`&Redo`
    Redo the last undone change to the current window.
 
-Select All
+:guilabel:`Select &All`
    Select the entire contents of the current window.
 
-Cut
+:guilabel:`Cu&t`
    Copy selection into the system-wide clipboard; then delete the selection.
 
-Copy
+:guilabel:`&Copy`
    Copy selection into the system-wide clipboard.
 
-Paste
+:guilabel:`&Paste`
    Insert contents of the system-wide clipboard into the current window.
 
 The clipboard functions are also available in context menus.
 
-Find...
+:guilabel:`&Find...`
    Open a search dialog with many options
 
-Find Again
+:guilabel:`Find A&gain`
    Repeat the last search, if there is one.
 
-Find Selection
+:guilabel:`Find &Selection`
    Search for the currently selected string, if there is one.
 
-Find in Files...
+:guilabel:`Find in Files...`
    Open a file search dialog.  Put results in a new output window.
 
-Replace...
+:guilabel:`R&eplace...`
    Open a search-and-replace dialog.
 
-Go to Line
+:guilabel:`Go to &Line`
    Move the cursor to the beginning of the line requested and make that
    line visible.  A request past the end of the file goes to the end.
    Clear any selection and update the line and column status.
 
-Show Completions
+:guilabel:`S&how Completions`
    Open a scrollable list allowing selection of existing names. See
    :ref:`Completions <completions>` in the Editing and Navigation section below.
 
-Expand Word
+:guilabel:`E&xpand Word`
    Expand a prefix you have typed to match a full word in the same window;
    repeat to get a different expansion.
 
-Show Call Tip
+:guilabel:`Show C&all Tip`
    After an unclosed parenthesis for a function, open a small window with
    function parameter hints.  See :ref:`Calltips <calltips>` in the
    Editing and Navigation section below.
 
-Show Surrounding Parens
+:guilabel:`Show Surrounding P&arens`
    Highlight the surrounding parenthesis.
 
 .. _format-menu:
@@ -177,38 +178,38 @@ Show Surrounding Parens
 Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Format Paragraph
+:guilabel:`F&ormat Paragraph`
    Rewrap the text block containing the text insert cursor.
    Avoid code lines.  See :ref:`Format block<format-block>` in the
    Editing and Navigation section below.
 
-Indent Region
+:guilabel:`&Indent Region`
    Shift selected lines right by the indent width (default 4 spaces).
 
-Dedent Region
+:guilabel:`&Dedent Region`
    Shift selected lines left by the indent width (default 4 spaces).
 
-Comment Out Region
+:guilabel:`Comment &Out Region`
    Insert ## in front of selected lines.
 
-Uncomment Region
+:guilabel:`U&ncomment Region`
    Remove leading # or ## from selected lines.
 
-Tabify Region
+:guilabel:`Tabify Region`
    Turn *leading* stretches of spaces into tabs. (Note: We recommend using
    4 space blocks to indent Python code.)
 
-Untabify Region
+:guilabel:`Untabify Region`
    Turn *all* tabs into the correct number of spaces.
 
-Toggle Tabs
+:guilabel:`Toggle Tabs`
    Open a dialog to switch between indenting with spaces and tabs.
 
-New Indent Width
+:guilabel:`New Indent Width`
    Open a dialog to change indent width. The accepted default by the Python
    community is 4 spaces.
 
-Strip Trailing Whitespace
+:guilabel:`S&trip Trailing Whitespace`
    Remove trailing space and other whitespace characters after the last
    non-whitespace character of a line by applying :meth:`str.rstrip` to each line,
    including lines within multiline strings.  Except for Shell windows,
@@ -222,7 +223,7 @@ Run menu (Editor window only)
 
 .. _run-module:
 
-Run Module
+:guilabel:`R&un Module`
    Do :ref:`Check Module <check-module>`.  If no error, restart the shell to clean the
    environment, then execute the module.  Output is displayed in the Shell
    window.  Note that output requires use of ``print`` or ``write``.
@@ -233,14 +234,14 @@ Run Module
 
 .. _run-custom:
 
-Run... Customized
+:guilabel:`Run... &Customized`
    Same as :ref:`Run Module <run-module>`, but run the module with customized
    settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
    on a command line. The module can be run in the Shell without restarting.
 
 .. _check-module:
 
-Check Module
+:guilabel:`C&heck Module`
    Check the syntax of the module currently open in the Editor window. If the
    module has not been saved IDLE will either prompt the user to save or
    autosave, as selected in the General tab of the Idle Settings dialog.  If
@@ -249,32 +250,32 @@ Check Module
 
 .. _python-shell:
 
-Python Shell
+:guilabel:`Python Shell`
    Open or wake up the Python Shell window.
 
 
 Shell menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-View Last Restart
+:guilabel:`&View Last Restart`
   Scroll the shell window to the last Shell restart.
 
-Restart Shell
+:guilabel:`&Restart Shell`
   Restart the shell to clean the environment and reset display and exception handling.
 
-Previous History
+:guilabel:`&Previous History`
   Cycle through earlier commands in history which match the current entry.
 
-Next History
+:guilabel:`&Next History`
   Cycle through later commands in history which match the current entry.
 
-Interrupt Execution
+:guilabel:`&Interrupt Execution`
   Stop a running program.
 
 Debug menu (Shell window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Go to File/Line
+:guilabel:`&Go to File/Line`
    Look on the current line. with the cursor, and the line above for a filename
    and line number.  If found, open the file if not already open, and show the
    line.  Use this to view source lines referenced in an exception traceback
@@ -285,22 +286,22 @@ Go to File/Line
    single: debugger
    single: stack viewer
 
-Debugger (toggle)
+:guilabel:`&Debugger` (toggle)
    When activated, code entered in the Shell or run from an Editor will run
    under the debugger.  In the Editor, breakpoints can be set with the context
    menu.  This feature is still incomplete and somewhat experimental.
 
-Stack Viewer
+:guilabel:`&Stack Viewer`
    Show the stack traceback of the last exception in a tree widget, with
    access to locals and globals.
 
-Auto-open Stack Viewer
+:guilabel:`&Auto-open Stack Viewer`
    Toggle automatically opening the stack viewer on an unhandled exception.
 
 Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Configure IDLE
+:guilabel:`Configure &IDLE`
    Open a configuration dialog and change preferences for the following:
    fonts, indentation, keybindings, text color themes, startup windows and
    size, additional help sources, and extensions.  On macOS, open the
@@ -311,18 +312,18 @@ Configure IDLE
 Most configuration options apply to all windows or all future windows.
 The option items below only apply to the active window.
 
-Show/Hide Code Context (Editor Window only)
+:guilabel:`Show/Hide &Code Context` (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
    :ref:`Code Context <code-context>` in the Editing and Navigation section
    below.
 
-Show/Hide Line Numbers (Editor Window only)
+:guilabel:`Show/Hide &Line Numbers` (Editor Window only)
    Open a column to the left of the edit window which shows the number
    of each line of text.  The default is off, which may be changed in the
    preferences (see :ref:`Setting preferences <preferences>`).
 
-Zoom/Restore Height
+:guilabel:`&Zoom/Restore Height`
    Toggles the window between normal size and maximum height. The initial size
    defaults to 40 lines by 80 chars unless changed on the General tab of the
    Configure IDLE dialog.  The maximum height for a screen is determined by
@@ -339,18 +340,19 @@ Lists the names of all open windows; select one to bring it to the foreground
 Help menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-About IDLE
+:guilabel:`&About IDLE`
    Display version, copyright, license, credits, and more.
 
-IDLE Help
+:guilabel:`&IDLE Help`
    Display this IDLE document, detailing the menu options, basic editing and
    navigation, and other tips.
 
-Python Docs
+:guilabel:`Python &Docs`
    Access local Python documentation, if installed, or start a web browser
-   and open docs.python.org showing the latest Python documentation.
+   and open `docs.python.org <https://docs.python.org/3/>`_ showing the latest
+   Python documentation.
 
-Turtle Demo
+:guilabel:`Turtle Demo`
    Run the turtledemo module with example Python code and turtle drawings.
 
 Additional help sources may be added here with the Configure IDLE dialog under
@@ -366,7 +368,7 @@ for more on Help menu choices.
    single: breakpoints
 
 Context menus
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 Open a context menu by right-clicking in a window (Control-click on macOS).
 Context menus have the standard clipboard functions also on the Edit menu.
@@ -1040,7 +1042,7 @@ The Lib/idlelib package implements the IDLE application.  See the rest
 of this page for how to use IDLE.
 
 The files in idlelib are described in idlelib/README.txt.  Access it
-either in idlelib or click Help => About IDLE on the IDLE menu.  This
+either in idlelib or click :menuselection:`&Help --> &About IDLE` on the IDLE menu.  This
 file also maps IDLE menu items to the code that implements the item.
 Except for files listed under 'Startup', the idlelib code is 'private' in
 sense that feature changes can be backported (see :pep:`434`).
