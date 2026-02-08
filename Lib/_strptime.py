@@ -461,13 +461,16 @@ class TimeRE(dict):
         year_in_format = False
         day_of_month_in_format = False
         def repl(m):
+            nonlocal year_in_format, day_of_month_in_format
             directive = m.group()[1:] # exclude `%` symbol
             match directive:
                 case 'Y' | 'y' | 'G':
-                    nonlocal year_in_format
+                    if year_in_format:
+                        import warnings
+                        warnings.warn("When using conflicting directives only the last one will be used.",
+                                      SyntaxWarning, skip_file_prefixes=(os.path.dirname(__file__),))
                     year_in_format = True
                 case 'd':
-                    nonlocal day_of_month_in_format
                     day_of_month_in_format = True
             return self[directive]
         format = re_sub(r'%[-_0^#]*[0-9]*([OE]?[:\\]?.?)', repl, format)

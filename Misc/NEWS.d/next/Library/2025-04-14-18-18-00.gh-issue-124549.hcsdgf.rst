@@ -1,0 +1,2 @@
+Raise a warning in :func:`datetime.datetime.strptime` and :func:`datetime.date.strptime`
+when conflicting directives are provided.
