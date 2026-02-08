@@ -1,0 +1,2 @@
+Make it possible for the COMPILER definition in getcompiler.c to be static
+in order to make builds reproducible.

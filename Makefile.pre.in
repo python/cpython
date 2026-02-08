@@ -1926,6 +1926,13 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
+ifdef UNVERSIONED_COMPILER
+Python/getcompiler.o: $(srcdir)/Python/getcompiler.c Makefile
+	$(CC) -c $(PY_CORE_CFLAGS) \
+		-DCOMPILER='"$(UNVERSIONED_COMPILER)"' \
+		-o $@ $(srcdir)/Python/getcompiler.c
+endif
+
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
 		-DPREFIX='"$(host_prefix)"' \
