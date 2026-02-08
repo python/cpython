@@ -419,6 +419,11 @@ def _init_non_posix(vars):
         vars['TZPATH'] = check_tzpath
     else:
         vars['TZPATH'] = ''
+    try:
+        from sysconfig._windows_config import get_windows_config_vars
+        vars.update(get_windows_config_vars() | vars)
+    except:
+        pass
 
 #
 # public APIs
