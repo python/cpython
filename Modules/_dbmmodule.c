@@ -426,7 +426,7 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 _dbm.dbm.setdefault
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)
-    default: object(c_default="NULL") = b''
+    default: object
     /
 
 Return the value for key if present, otherwise default.
@@ -437,7 +437,7 @@ If key is not in the database, it is inserted with default as the value.
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                          Py_ssize_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=9c2f6ea6d0fb576c input=c01510ef7571e13b]*/
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=12069156f2ddea7e]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;
@@ -450,20 +450,13 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
     if (val.dptr != NULL) {
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
-    if (default_value == NULL) {
-        default_value = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        val.dptr = NULL;
-        val.dsize = 0;
+    if ( !PyArg_Parse(default_value, "s#", &val.dptr, &tmp_size) ) {
+        PyErr_SetString(PyExc_TypeError,
+                        "dbm mappings have bytes or string elements only");
+        return NULL;
     }
-    else {
-        if ( !PyArg_Parse(default_value, "s#", &val.dptr, &tmp_size) ) {
-            PyErr_SetString(PyExc_TypeError,
-                "dbm mappings have bytes or string elements only");
-            return NULL;
-        }
-        val.dsize = tmp_size;
-        Py_INCREF(default_value);
-    }
+    val.dsize = tmp_size;
+    Py_INCREF(default_value);
     if (dbm_store(self->di_dbm, dbm_key, val, DBM_INSERT) < 0) {
         dbm_clearerr(self->di_dbm);
         PyErr_SetString(state->dbm_error, "cannot add item to database");
