@@ -500,6 +500,16 @@ Module constants
 
       The ``named`` DB-API parameter style is also supported.
 
+.. data:: Binary
+
+   A type object used to describe columns containing :abbr:`BLOB (Binary Large Object)` data.
+   This is currently implemented as an alias for :class:`memoryview`.
+
+   .. note::
+
+      Binary data can also be stored and retrieved using bytes-like objects
+      directly without using :data:`!Binary`. This is the current behavior.
+
 .. data:: sqlite_version
 
    Version number of the runtime SQLite library as a :class:`string <str>`.
