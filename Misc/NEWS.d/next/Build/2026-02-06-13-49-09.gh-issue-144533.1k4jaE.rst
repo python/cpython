@@ -1,0 +1,1 @@
+Use ``pybuilddir.txt`` to find ``_sysconfigdata`` for the WASI build script.
