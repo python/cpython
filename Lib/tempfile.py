@@ -905,12 +905,12 @@ class TemporaryDirectory:
     def __init__(self, suffix=None, prefix=None, dir=None,
                  ignore_cleanup_errors=False, *, delete=True):
         self.name = mkdtemp(suffix, prefix, dir)
+        self.delete = delete
         self._ignore_cleanup_errors = ignore_cleanup_errors
-        self._delete = delete
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
             warn_message="Implicitly cleaning up {!r}".format(self),
-            ignore_errors=self._ignore_cleanup_errors, delete=self._delete)
+            ignore_errors=self._ignore_cleanup_errors, delete=self.delete)
 
     @classmethod
     def _rmtree(cls, name, ignore_errors=False, repeated=False):
@@ -967,7 +967,7 @@ class TemporaryDirectory:
         return self.name
 
     def __exit__(self, exc, value, tb):
-        if self._delete:
+        if self.delete:
             self.cleanup()
 
     def cleanup(self):
