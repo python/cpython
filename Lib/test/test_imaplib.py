@@ -665,11 +665,33 @@ class NewIMAPTestsMixin:
 
     # property tests
 
-    def test_file_property_should_not_be_accessed(self):
+    def test_file_property_getter(self):
         client, _ = self._setup(SimpleIMAPHandler)
-        # the 'file' property replaced a private attribute that is now unsafe
-        with self.assertWarns(RuntimeWarning):
-            client.file
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(client.file.raw, socket.SocketIO)
+
+    def test_file_property_setter(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        with self.assertWarns(DeprecationWarning):
+            # ensure that the caller closes the existing file
+            client.file.close()
+        for new_file in [mock.Mock(), None]:
+            with self.assertWarns(DeprecationWarning):
+                client.file = new_file
+            with self.assertWarns(DeprecationWarning):
+                self.assertIs(client.file, new_file)
+
+    def test_file_property_setter_should_not_close_previous_file(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        with mock.patch.object(client, "_imaplib_file", mock.Mock()) as f:
+            f.close.assert_not_called()
+            with self.assertWarns(DeprecationWarning):
+                self.assertIs(client.file, f)
+            with self.assertWarns(DeprecationWarning):
+                client.file = None
+            with self.assertWarns(DeprecationWarning):
+                self.assertIsNone(client.file)
+            f.close.assert_not_called()
 
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):

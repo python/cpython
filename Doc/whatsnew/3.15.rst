@@ -1343,6 +1343,12 @@ New deprecations
 
     (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+* :mod:`imaplib`:
+
+  * Altering :attr:`IMAP4.file <imaplib.IMAP4.file>` is now deprecated
+    and slated for removal in Python 3.19. This property is now unused
+    and changing its value does *not* explicitly close the current file.
+
 * ``__version__``
 
   * The ``__version__``, ``version`` and ``VERSION`` attributes have been

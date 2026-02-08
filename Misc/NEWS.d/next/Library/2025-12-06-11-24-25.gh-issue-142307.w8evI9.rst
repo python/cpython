@@ -1,0 +1,4 @@
+:mod:`imaplib`: deprecate support for :attr:`IMAP4.file <imaplib.IMAP4.file>`.
+This attribute was never meant to be part of the public interface and altering
+its value may result in unclosed files or other synchronization issues with
+the underlying socket. Patch by Bénédikt Tran.
