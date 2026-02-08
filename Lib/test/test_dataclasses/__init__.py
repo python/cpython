@@ -534,7 +534,7 @@ class TestCase(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError,
                                     r"__init__\(\) missing 1 required "
-                                    "positional argument: 'x'"):
+                                    "argument: 'x'"):
             C()
 
     def test_field_default(self):
@@ -949,7 +949,7 @@ class TestCase(unittest.TestCase):
             x: int=field(default=MISSING)
         with self.assertRaisesRegex(TypeError,
                                     r'__init__\(\) missing 1 required '
-                                    'positional argument'):
+                                    'argument'):
             C()
         self.assertNotIn('x', C.__dict__)
 
@@ -958,7 +958,7 @@ class TestCase(unittest.TestCase):
             x: int
         with self.assertRaisesRegex(TypeError,
                                     r'__init__\(\) missing 1 required '
-                                    'positional argument'):
+                                    'argument'):
             D()
         self.assertNotIn('x', D.__dict__)
 
@@ -971,7 +971,7 @@ class TestCase(unittest.TestCase):
             x: int=field(default_factory=MISSING)
         with self.assertRaisesRegex(TypeError,
                                     r'__init__\(\) missing 1 required '
-                                    'positional argument'):
+                                    'argument'):
             C()
         self.assertNotIn('x', C.__dict__)
 
@@ -980,7 +980,7 @@ class TestCase(unittest.TestCase):
             x: int=field(default=MISSING, default_factory=MISSING)
         with self.assertRaisesRegex(TypeError,
                                     r'__init__\(\) missing 1 required '
-                                    'positional argument'):
+                                    'argument'):
             D()
         self.assertNotIn('x', D.__dict__)
 
@@ -3417,7 +3417,7 @@ class TestSlots(unittest.TestCase):
         #  also have a default value (of type
         #  types.MemberDescriptorType).
         with self.assertRaisesRegex(TypeError,
-                                    r"__init__\(\) missing 1 required positional argument: 'x'"):
+                                    r"__init__\(\) missing 1 required argument: 'x'"):
             C()
 
         # We can create an instance, and assign to x.
@@ -3941,7 +3941,7 @@ class TestSlots(unittest.TestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "missing 1 required positional argument: 'arg'",
+            "missing 1 required argument: 'arg'",
         ):
             @dataclass(slots=True)
             class WithWrongSuper(WrongSuper, arg=1):
@@ -4183,7 +4183,7 @@ class TestDescriptors(unittest.TestCase):
         class C:
             i: D = D()
 
-        with self.assertRaisesRegex(TypeError, 'missing 1 required positional argument'):
+        with self.assertRaisesRegex(TypeError, 'missing 1 required argument'):
             c = C()
 
 class TestStringAnnotations(unittest.TestCase):
@@ -4392,7 +4392,7 @@ class TestMakeDataclass(unittest.TestCase):
         C = make_dataclass('C',
                            [('y', int)],
                            bases=(Base1, Base2))
-        with self.assertRaisesRegex(TypeError, 'required positional'):
+        with self.assertRaisesRegex(TypeError, 'required argument'):
             c = C(2)
         c = C(1, 2)
         self.assertIsInstance(c, C)

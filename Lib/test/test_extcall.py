@@ -111,17 +111,17 @@ Verify clearing of SF bug #733667
     >>> g()
     Traceback (most recent call last):
       ...
-    TypeError: g() missing 1 required positional argument: 'x'
+    TypeError: g() missing 1 required argument: 'x'
 
     >>> g(*())
     Traceback (most recent call last):
       ...
-    TypeError: g() missing 1 required positional argument: 'x'
+    TypeError: g() missing 1 required argument: 'x'
 
     >>> g(*(), **{})
     Traceback (most recent call last):
       ...
-    TypeError: g() missing 1 required positional argument: 'x'
+    TypeError: g() missing 1 required argument: 'x'
 
     >>> g(1)
     1 () {}
@@ -503,27 +503,27 @@ Too few and missing arguments:
     >>> f()
     Traceback (most recent call last):
       ...
-    TypeError: f() missing 1 required positional argument: 'a'
+    TypeError: f() missing 1 required argument: 'a'
     >>> def f(a, b): pass
     >>> f()
     Traceback (most recent call last):
       ...
-    TypeError: f() missing 2 required positional arguments: 'a' and 'b'
+    TypeError: f() missing 2 required arguments: 'a' and 'b'
     >>> def f(a, b, c): pass
     >>> f()
     Traceback (most recent call last):
       ...
-    TypeError: f() missing 3 required positional arguments: 'a', 'b', and 'c'
+    TypeError: f() missing 3 required arguments: 'a', 'b', and 'c'
     >>> def f(a, b, c, d, e): pass
     >>> f()
     Traceback (most recent call last):
       ...
-    TypeError: f() missing 5 required positional arguments: 'a', 'b', 'c', 'd', and 'e'
+    TypeError: f() missing 5 required arguments: 'a', 'b', 'c', 'd', and 'e'
     >>> def f(a, b=4, c=5, d=5): pass
     >>> f(c=12, b=9)
     Traceback (most recent call last):
       ...
-    TypeError: f() missing 1 required positional argument: 'a'
+    TypeError: f() missing 1 required argument: 'a'
 
 Same with keyword only args:
 

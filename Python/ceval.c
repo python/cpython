@@ -1500,13 +1500,22 @@ format_missing(PyThreadState *tstate, const char *kind,
     }
     if (name_str == NULL)
         return;
-    _PyErr_Format(tstate, PyExc_TypeError,
-                  "%U() missing %i required %s argument%s: %U",
-                  qualname,
-                  len,
-                  kind,
-                  len == 1 ? "" : "s",
-                  name_str);
+    if (kind[0] == '\0') {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "%U() missing %i required argument%s: %U",
+                      qualname,
+                      len,
+                      len == 1 ? "" : "s",
+                      name_str);
+    } else {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "%U() missing %i required %s argument%s: %U",
+                      qualname,
+                      len,
+                      kind,
+                      len == 1 ? "" : "s",
+                      name_str);
+    }
     Py_DECREF(name_str);
 }
 
@@ -1518,8 +1527,32 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
     Py_ssize_t i, j = 0;
     Py_ssize_t start, end;
     int positional = (defcount != -1);
-    const char *kind = positional ? "positional" : "keyword-only";
+    const char *kind = "";
     PyObject *missing_names;
+
+    if (positional) {
+        int has_posonly_missing = 0;
+
+        start = 0;
+        end = co->co_argcount - defcount;
+
+        for (i = start; i < end; i++) {
+            if (PyStackRef_IsNull(localsplus[i])) {
+                if (i < co->co_posonlyargcount) {
+                    has_posonly_missing = 1;
+                    break;
+                }
+            }
+        }
+
+        if (has_posonly_missing) {
+            kind = "positional";
+        } else {
+            kind = "";
+        }
+    } else {
+        kind = "keyword-only";
+    }
 
     /* Compute the names of the arguments that are missing. */
     missing_names = PyList_New(missing);
