@@ -34,14 +34,16 @@ handler.  Code to create and run the server looks like this::
        httpd.serve_forever()
 
 
-.. class:: HTTPServer(server_address, RequestHandlerClass)
+.. class:: HTTPServer(server_address, RequestHandlerClass, \
+                      bind_and_activate=True)
 
    This class builds on the :class:`~socketserver.TCPServer` class by storing
    the server address as instance variables named :attr:`server_name` and
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
-.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
+.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass, \
+                               bind_and_activate=True)
 
    This class is identical to HTTPServer but uses threads to handle
    requests by using the :class:`~socketserver.ThreadingMixIn`. This
@@ -321,14 +323,14 @@ instantiation, of which this module provides three different variants:
       HTTP code associated with the response. If a size of the response is
       available, then it should be passed as the *size* parameter.
 
-   .. method:: log_error(...)
+   .. method:: log_error(format, *args)
 
       Logs an error when a request cannot be fulfilled. By default, it passes
       the message to :meth:`log_message`, so it takes the same arguments
       (*format* and additional values).
 
 
-   .. method:: log_message(format, ...)
+   .. method:: log_message(format, *args)
 
       Logs an arbitrary message to ``sys.stderr``. This is typically overridden
       to create custom error logging mechanisms. The *format* argument is a
