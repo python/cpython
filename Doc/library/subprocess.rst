@@ -11,14 +11,14 @@
 
 --------------
 
-The :mod:`subprocess` module allows you to spawn new processes, connect to their
+The :mod:`!subprocess` module allows you to spawn new processes, connect to their
 input/output/error pipes, and obtain their return codes.  This module intends to
 replace several older modules and functions::
 
    os.system
    os.spawn*
 
-Information about how the :mod:`subprocess` module can be used to replace these
+Information about how the :mod:`!subprocess` module can be used to replace these
 modules and functions can be found in the following sections.
 
 .. seealso::
@@ -27,8 +27,8 @@ modules and functions can be found in the following sections.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
-Using the :mod:`subprocess` Module
-----------------------------------
+Using the :mod:`!subprocess` Module
+-----------------------------------
 
 The recommended approach to invoking subprocesses is to use the :func:`run`
 function for all use cases it can handle. For more advanced use cases, the
@@ -649,7 +649,7 @@ functions.
 
       If specified, *env* must provide any variables required for the program to
       execute.  On Windows, in order to run a `side-by-side assembly`_ the
-      specified *env* **must** include a valid :envvar:`SystemRoot`.
+      specified *env* **must** include a valid ``%SystemRoot%``.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
@@ -803,13 +803,28 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. note::
 
-      When the ``timeout`` parameter is not ``None``, then (on POSIX) the
-      function is implemented using a busy loop (non-blocking call and short
-      sleeps). Use the :mod:`asyncio` module for an asynchronous wait: see
+      When ``timeout`` is not ``None`` and the platform supports it, an
+      efficient event-driven mechanism is used to wait for process termination:
+
+      - Linux >= 5.3 uses :func:`os.pidfd_open` + :func:`select.poll`
+      - macOS and other BSD variants use :func:`select.kqueue` +
+        ``KQ_FILTER_PROC`` + ``KQ_NOTE_EXIT``
+      - Windows uses ``WaitForSingleObject``
+
+      If none of these mechanisms are available, the function falls back to a
+      busy loop (non-blocking call and short sleeps).
+
+   .. note::
+
+      Use the :mod:`asyncio` module for an asynchronous wait: see
       :class:`asyncio.create_subprocess_exec`.
 
    .. versionchanged:: 3.3
       *timeout* was added.
+
+   .. versionchanged:: 3.15
+      if *timeout* is not ``None``, use efficient event-driven implementation
+      on Linux >= 5.3 and macOS / BSD.
 
 .. method:: Popen.communicate(input=None, timeout=None)
 
@@ -831,7 +846,9 @@ Instances of the :class:`Popen` class have the following methods:
 
    If the process does not terminate after *timeout* seconds, a
    :exc:`TimeoutExpired` exception will be raised.  Catching this exception and
-   retrying communication will not lose any output.
+   retrying communication will not lose any output.  Supplying *input* to a
+   subsequent post-timeout :meth:`communicate` call is in undefined behavior
+   and may become an error in the future.
 
    The child process is not killed if the timeout expires, so in order to
    cleanup properly a well-behaved application should kill the child process and
@@ -843,6 +860,11 @@ Instances of the :class:`Popen` class have the following methods:
       except TimeoutExpired:
           proc.kill()
           outs, errs = proc.communicate()
+
+   After a call to :meth:`~Popen.communicate` raises :exc:`TimeoutExpired`, do
+   not call :meth:`~Popen.wait`. Use an additional :meth:`~Popen.communicate`
+   call to finish handling pipes and populate the :attr:`~Popen.returncode`
+   attribute.
 
    .. note::
 
@@ -1034,7 +1056,7 @@ on Windows.
 Windows Constants
 ^^^^^^^^^^^^^^^^^
 
-The :mod:`subprocess` module exposes the following constants.
+The :mod:`!subprocess` module exposes the following constants.
 
 .. data:: STD_INPUT_HANDLE
 
@@ -1323,8 +1345,8 @@ calls these functions.
 
 .. _subprocess-replacements:
 
-Replacing Older Functions with the :mod:`subprocess` Module
------------------------------------------------------------
+Replacing Older Functions with the :mod:`!subprocess` Module
+------------------------------------------------------------
 
 In this section, "a becomes b" means that b can be used as a replacement for a.
 
@@ -1340,7 +1362,7 @@ In this section, "a becomes b" means that b can be used as a replacement for a.
    :attr:`~CalledProcessError.output` attribute of the raised exception.
 
 In the following examples, we assume that the relevant functions have already
-been imported from the :mod:`subprocess` module.
+been imported from the :mod:`!subprocess` module.
 
 
 Replacing :program:`/bin/sh` shell command substitution
@@ -1400,7 +1422,7 @@ Notes:
 
 * The :func:`os.system` function ignores SIGINT and SIGQUIT signals while
   the command is running, but the caller must do this separately when
-  using the :mod:`subprocess` module.
+  using the :mod:`!subprocess` module.
 
 A more realistic example would look like this::
 
@@ -1473,7 +1495,7 @@ handling consistency are valid for these functions.
 
    Return ``(exitcode, output)`` of executing *cmd* in a shell.
 
-   Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
+   Execute the string *cmd* in a shell with :func:`check_output` and
    return a 2-tuple ``(exitcode, output)``.
    *encoding* and *errors* are used to decode output;
    see the notes on :ref:`frequently-used-arguments` for more details.
@@ -1525,6 +1547,24 @@ handling consistency are valid for these functions.
 Notes
 -----
 
+.. _subprocess-timeout-behavior:
+
+Timeout Behavior
+^^^^^^^^^^^^^^^^
+
+When using the ``timeout`` parameter in functions like :func:`run`,
+:meth:`Popen.wait`, or :meth:`Popen.communicate`,
+users should be aware of the following behaviors:
+
+1. **Process Creation Delay**: The initial process creation itself cannot be interrupted
+   on many platform APIs. This means that even when specifying a timeout, you are not
+   guaranteed to see a timeout exception until at least after however long process
+   creation takes.
+
+2. **Extremely Small Timeout Values**: Setting very small timeout values (such as a few
+   milliseconds) may result in almost immediate :exc:`TimeoutExpired` exceptions because
+   process creation and system scheduling inherently require time.
+
 .. _converting-argument-sequence:
 
 Converting an argument sequence to a string on Windows
@@ -1566,7 +1606,7 @@ runtime):
 Disable use of ``posix_spawn()``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
+On Linux, :mod:`!subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 

@@ -22,14 +22,13 @@
 from __future__ import annotations
 
 import sys
+import _colorize
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
-from _colorize import can_colorize, ANSIColors
-
 
 from . import commands, console, input
-from .utils import wlen, unbracket, disp_str
+from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
 
 
@@ -38,8 +37,7 @@ Command = commands.Command
 from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
-# syntax classes:
-
+# syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
 
 
@@ -105,8 +103,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\M-9", "digit-arg"),
         (r"\M-\n", "accept"),
         ("\\\\", "self-insert"),
-        (r"\x1b[200~", "enable_bracketed_paste"),
-        (r"\x1b[201~", "disable_bracketed_paste"),
+        (r"\x1b[200~", "perform-bracketed-paste"),
         (r"\x03", "ctrl-c"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
@@ -144,16 +141,17 @@ class Reader:
     Instance variables of note include:
 
       * buffer:
-        A *list* (*not* a string at the moment :-) containing all the
-        characters that have been entered.
+        A per-character list containing all the characters that have been
+        entered. Does not include color information.
       * console:
         Hopefully encapsulates the OS dependent stuff.
       * pos:
         A 0-based index into 'buffer' for where the insertion point
         is.
       * screeninfo:
-        Ahem.  This list contains some info needed to move the
-        insertion point around reasonably efficiently.
+        A list of screen position tuples. Each list element is a tuple
+        representing information on visible line length for a given line.
+        Allows for efficient skipping of color escape sequences.
       * cxy, lxy:
         the position of the insertion point in screen ...
       * syntax_table:
@@ -203,7 +201,6 @@ class Reader:
     dirty: bool = False
     finished: bool = False
     paste_mode: bool = False
-    in_bracketed_paste: bool = False
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
@@ -221,7 +218,6 @@ class Reader:
     ## cached metadata to speed up screen refreshes
     @dataclass
     class RefreshCache:
-        in_bracketed_paste: bool = False
         screen: list[str] = field(default_factory=list)
         screeninfo: list[tuple[int, list[int]]] = field(init=False)
         line_end_offsets: list[int] = field(default_factory=list)
@@ -235,7 +231,6 @@ class Reader:
                          screen: list[str],
                          screeninfo: list[tuple[int, list[int]]],
             ) -> None:
-            self.in_bracketed_paste = reader.in_bracketed_paste
             self.screen = screen.copy()
             self.screeninfo = screeninfo.copy()
             self.pos = reader.pos
@@ -248,8 +243,7 @@ class Reader:
                 return False
             dimensions = reader.console.width, reader.console.height
             dimensions_changed = dimensions != self.dimensions
-            paste_changed = reader.in_bracketed_paste != self.in_bracketed_paste
-            return not (dimensions_changed or paste_changed)
+            return not dimensions_changed
 
         def get_cached_location(self, reader: Reader) -> tuple[int, int]:
             if self.invalidated:
@@ -279,7 +273,7 @@ class Reader:
         self.screeninfo = [(0, [])]
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
-        self.can_colorize = can_colorize()
+        self.can_colorize = _colorize.can_colorize()
 
         self.last_refresh_cache.screeninfo = self.screeninfo
         self.last_refresh_cache.pos = self.pos
@@ -316,6 +310,12 @@ class Reader:
         pos -= offset
 
         prompt_from_cache = (offset and self.buffer[offset - 1] != "\n")
+
+        if self.can_colorize:
+            colors = list(gen_colors(self.get_unicode()))
+        else:
+            colors = None
+        trace("colors = {colors}", colors=colors)
         lines = "".join(self.buffer[offset:]).split("\n")
         cursor_found = False
         lines_beyond_cursor = 0
@@ -343,9 +343,8 @@ class Reader:
                 screeninfo.append((0, []))
             pos -= line_len + 1
             prompt, prompt_len = self.process_prompt(prompt)
-            chars, char_widths = disp_str(line)
+            chars, char_widths = disp_str(line, colors, offset)
             wrapcount = (sum(char_widths) + prompt_len) // self.console.width
-            trace("wrapcount = {wrapcount}", wrapcount=wrapcount)
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
                 last_refresh_line_end_offsets.append(offset)
@@ -479,7 +478,7 @@ class Reader:
         'lineno'."""
         if self.arg is not None and cursor_on_line:
             prompt = f"(arg: {self.arg}) "
-        elif self.paste_mode and not self.in_bracketed_paste:
+        elif self.paste_mode:
             prompt = "(paste) "
         elif "\n" in self.buffer:
             if lineno == 0:
@@ -492,7 +491,8 @@ class Reader:
             prompt = self.ps1
 
         if self.can_colorize:
-            prompt = f"{ANSIColors.BOLD_MAGENTA}{prompt}{ANSIColors.RESET}"
+            t = THEME()
+            prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
     def push_input_trans(self, itrans: input.KeymapTranslator) -> None:
@@ -567,6 +567,7 @@ class Reader:
     def update_cursor(self) -> None:
         """Move the cursor to reflect changes in self.pos"""
         self.cxy = self.pos2xy()
+        trace("update_cursor({pos}) = {cxy}", pos=self.pos, cxy=self.cxy)
         self.console.move_cursor(*self.cxy)
 
     def after_command(self, cmd: Command) -> None:
@@ -618,6 +619,16 @@ class Reader:
                 setattr(self, arg, prev_state[arg])
             self.prepare()
 
+    @contextmanager
+    def suspend_colorization(self) -> SimpleContextManager:
+        try:
+            old_can_colorize = self.can_colorize
+            self.can_colorize = False
+            yield
+        finally:
+            self.can_colorize = old_can_colorize
+
+
     def finish(self) -> None:
         """Called when a command signals that we're finished."""
         pass
@@ -633,9 +644,6 @@ class Reader:
 
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
-        if self.in_bracketed_paste and self.buffer and not self.buffer[-1] == "\n":
-            return
-
         # this call sets up self.cxy, so call it first.
         self.screen = self.calc_screen()
         self.console.refresh(self.screen, self.cxy)

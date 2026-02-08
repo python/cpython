@@ -645,7 +645,7 @@ class TestNumericTestCase(unittest.TestCase):
 
     def test_numerictestcase_is_testcase(self):
         # Ensure that NumericTestCase actually is a TestCase.
-        self.assertTrue(issubclass(NumericTestCase, unittest.TestCase))
+        self.assertIsSubclass(NumericTestCase, unittest.TestCase)
 
     def test_error_msg_numeric(self):
         # Test the error message generated for numeric comparisons.
@@ -683,32 +683,23 @@ class GlobalsTest(unittest.TestCase):
     def test_meta(self):
         # Test for the existence of metadata.
         for meta in self.expected_metadata:
-            self.assertTrue(hasattr(self.module, meta),
-                            "%s not present" % meta)
+            self.assertHasAttr(self.module, meta)
 
     def test_check_all(self):
         # Check everything in __all__ exists and is public.
         module = self.module
         for name in module.__all__:
             # No private names in __all__:
-            self.assertFalse(name.startswith("_"),
+            self.assertNotStartsWith(name, "_",
                              'private name "%s" in __all__' % name)
             # And anything in __all__ must exist:
-            self.assertTrue(hasattr(module, name),
-                            'missing name "%s" in __all__' % name)
+            self.assertHasAttr(module, name)
 
 
 class StatisticsErrorTest(unittest.TestCase):
     def test_has_exception(self):
-        errmsg = (
-                "Expected StatisticsError to be a ValueError, but got a"
-                " subclass of %r instead."
-                )
-        self.assertTrue(hasattr(statistics, 'StatisticsError'))
-        self.assertTrue(
-                issubclass(statistics.StatisticsError, ValueError),
-                errmsg % statistics.StatisticsError.__base__
-                )
+        self.assertHasAttr(statistics, 'StatisticsError')
+        self.assertIsSubclass(statistics.StatisticsError, ValueError)
 
 
 # === Tests for private utility functions ===
@@ -2014,7 +2005,6 @@ class VarianceStdevMixin(UnivariateCommonMixin):
         expected = self.func(data)
         self.assertEqual(self.func(iter(data)), expected)
 
-
 class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for population variance.
     def setUp(self):
@@ -2121,6 +2111,14 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         data = (3, 6, 7, 10)
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
+
+    def test_gh_140938(self):
+        # Inputs with inf/nan should raise a ValueError
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
+
 
 class TestSqrtHelpers(unittest.TestCase):
 
@@ -2355,6 +2353,7 @@ class TestGeometricMean(unittest.TestCase):
 
 class TestKDE(unittest.TestCase):
 
+    @support.requires_resource('cpu')
     def test_kde(self):
         kde = statistics.kde
         StatisticsError = statistics.StatisticsError
@@ -3327,7 +3326,8 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
-    tests.addTests(doctest.DocTestSuite(statistics))
+    if sys.float_repr_style == 'short':
+        tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

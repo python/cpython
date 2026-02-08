@@ -1,1 +1,0 @@
-Fix crash of ``_interpreters.run_string`` on string subclasses.

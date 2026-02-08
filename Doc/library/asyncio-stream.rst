@@ -171,12 +171,16 @@ and work with streams:
 .. function:: start_unix_server(client_connected_cb, path=None, \
                  *, limit=None, sock=None, backlog=100, ssl=None, \
                  ssl_handshake_timeout=None, \
-                 ssl_shutdown_timeout=None, start_serving=True)
+                 ssl_shutdown_timeout=None, start_serving=True, cleanup_socket=True)
    :async:
 
    Start a Unix socket server.
 
    Similar to :func:`start_server` but works with Unix sockets.
+
+   If *cleanup_socket* is true then the Unix socket will automatically
+   be removed from the filesystem when the server is closed, unless the
+   socket has been replaced after the server has been created.
 
    See also the documentation of :meth:`loop.create_unix_server`.
 
@@ -197,6 +201,9 @@ and work with streams:
 
    .. versionchanged:: 3.11
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.13
+      Added the *cleanup_socket* parameter.
 
 
 StreamReader
@@ -309,10 +316,14 @@ StreamWriter
       If that fails, the data is queued in an internal write buffer until it can be
       sent.
 
+      The *data* buffer should be a bytes, bytearray, or C-contiguous one-dimensional
+      memoryview object.
+
       The method should be used along with the ``drain()`` method::
 
          stream.write(data)
          await stream.drain()
+
 
    .. method:: writelines(data)
 

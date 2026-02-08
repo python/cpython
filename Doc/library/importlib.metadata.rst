@@ -297,7 +297,7 @@ Distribution files
    package is not installed in the current Python environment.
 
    Returns :const:`None` if the distribution is found but the installation
-   database records reporting the files associated with the distribuion package
+   database records reporting the files associated with the distribution package
    are missing.
 
 .. class:: PackagePath
@@ -418,6 +418,16 @@ Distributions
    equal, even if they relate to the same installed distribution and
    accordingly have the same attributes.
 
+   .. method:: discover(cls, *, context=None, **kwargs)
+
+      Returns an iterable of :class:`Distribution` instances for all packages.
+
+      The optional argument *context* is a :class:`DistributionFinder.Context`
+      instance, used to modify the search for distributions. Alternatively,
+      *kwargs* may contain keyword arguments for constructing a new
+      :class:`!DistributionFinder.Context`.
+
+
 While the module level API described above is the most common and convenient usage,
 you can get all of that information from the :class:`!Distribution` class.
 :class:`!Distribution` is an abstract object that represents the metadata for
@@ -466,6 +476,61 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 - ``importlib.metadata`` does not honor :class:`bytes` objects on ``sys.path``.
 - ``importlib.metadata`` will incidentally honor :py:class:`pathlib.Path` objects on ``sys.path`` even though such values will be ignored for imports.
 
+.. class:: DistributionFinder
+
+   A :class:`~importlib.abc.MetaPathFinder` subclass capable of discovering
+   installed distributions.
+
+   Custom providers should implement this interface in order to
+   supply metadata.
+
+    .. class:: Context(**kwargs)
+
+       A :class:`!Context` gives a custom provider a means to
+       solicit additional details from the callers of distribution discovery
+       functions like :func:`distributions` or :meth:`Distribution.discover`
+       beyond :attr:`!.name` and :attr:`!.path` when searching
+       for distributions.
+
+       For example, a provider could expose suites of packages in either a
+       "public" or "private" ``realm``. A caller of distribution discovery
+       functions may wish to query only for distributions in a particular realm
+       and could call ``distributions(realm="private")`` to signal to the
+       custom provider to only include distributions from that
+       realm.
+
+       Each :class:`!DistributionFinder` must expect any parameters and should
+       attempt to honor the canonical parameters defined below when
+       appropriate.
+
+       See the section on :ref:`implementing-custom-providers` for more details.
+
+       .. attribute:: name
+
+          Specific name for which a distribution finder should match.
+
+          A :attr:`!.name` of ``None`` matches all distributions.
+
+       .. attribute:: path
+
+          A property providing the sequence of directory paths that a
+          distribution finder should search.
+
+          Typically refers to Python installed package paths such as
+          "site-packages" directories and defaults to :attr:`sys.path`.
+
+
+.. function:: distributions(**kwargs)
+
+   Returns an iterable of :class:`Distribution` instances for all packages.
+
+   The *kwargs* argument may contain either a keyword argument ``context``, a
+   :class:`DistributionFinder.Context` instance, or pass keyword arguments for
+   constructing a new :class:`!DistributionFinder.Context`. The
+   :class:`!DistributionFinder.Context` is used to modify the search for
+   distributions.
+
+.. _implementing-custom-providers:
 
 Implementing Custom Providers
 =============================
@@ -493,7 +558,7 @@ interface expected of finders by Python's import system.
 ``importlib.metadata`` extends this protocol by looking for an optional
 ``find_distributions`` callable on the finders from
 :data:`sys.meta_path` and presents this extended interface as the
-``DistributionFinder`` abstract base class, which defines this abstract
+:class:`DistributionFinder` abstract base class, which defines this abstract
 method::
 
     @abc.abstractmethod
@@ -502,9 +567,11 @@ method::
         loading the metadata for packages for the indicated ``context``.
         """
 
-The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
-properties indicating the path to search and name to match and may
-supply other relevant context sought by the consumer.
+The :class:`DistributionFinder.Context` object provides
+:attr:`~DistributionFinder.Context.path` and
+:attr:`~DistributionFinder.Context.name` properties indicating the path to
+search and name to match and may supply other relevant context sought by the
+consumer.
 
 In practice, to support finding distribution package
 metadata in locations other than the file system, subclass
@@ -529,7 +596,7 @@ Imagine a custom finder that loads Python modules from a database::
 That importer now presumably provides importable modules from a
 database, but it provides no metadata or entry points. For this
 custom importer to provide metadata, it would also need to implement
-``DistributionFinder``::
+:class:`DistributionFinder`::
 
     from importlib.metadata import DistributionFinder
 

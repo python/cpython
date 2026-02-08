@@ -11,6 +11,7 @@
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
+#include "pycore_unicodeobject.h" // _PyUnicode_Dedent()
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -127,7 +128,7 @@ pymain_get_importer(const wchar_t *filename, PyObject **importer_p, int *exitcod
 {
     PyObject *sys_path0 = NULL, *importer;
 
-    sys_path0 = PyUnicode_FromWideChar(filename, wcslen(filename));
+    sys_path0 = PyUnicode_FromWideChar(filename, -1);
     if (sys_path0 == NULL) {
         goto error;
     }
@@ -244,6 +245,11 @@ pymain_run_command(wchar_t *command)
         return pymain_exit_err_print();
     }
 
+    Py_SETREF(unicode, _PyUnicode_Dedent(unicode));
+    if (unicode == NULL) {
+        goto error;
+    }
+
     bytes = PyUnicode_AsUTF8String(unicode);
     Py_DECREF(unicode);
     if (bytes == NULL) {
@@ -263,13 +269,14 @@ error:
 
 
 static int
-pymain_start_pyrepl_no_main(void)
+pymain_start_pyrepl(int pythonstartup)
 {
     int res = 0;
     PyObject *console = NULL;
     PyObject *empty_tuple = NULL;
     PyObject *kwargs = NULL;
     PyObject *console_result = NULL;
+    PyObject *main_module = NULL;
 
     PyObject *pyrepl = PyImport_ImportModule("_pyrepl.main");
     if (pyrepl == NULL) {
@@ -293,7 +300,13 @@ pymain_start_pyrepl_no_main(void)
         res = pymain_exit_err_print();
         goto done;
     }
-    if (!PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
+    main_module = PyImport_AddModuleRef("__main__");
+    if (main_module == NULL) {
+        res = pymain_exit_err_print();
+        goto done;
+    }
+    if (!PyDict_SetItemString(kwargs, "mainmodule", main_module)
+        && !PyDict_SetItemString(kwargs, "pythonstartup", pythonstartup ? Py_True : Py_False)) {
         console_result = PyObject_Call(console, empty_tuple, kwargs);
         if (console_result == NULL) {
             res = pymain_exit_err_print();
@@ -305,6 +318,7 @@ done:
     Py_XDECREF(empty_tuple);
     Py_XDECREF(console);
     Py_XDECREF(pyrepl);
+    Py_XDECREF(main_module);
     return res;
 }
 
@@ -322,7 +336,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         fprintf(stderr, "Could not import runpy._run_module_as_main\n");
         return pymain_exit_err_print();
     }
-    module = PyUnicode_FromWideChar(modname, wcslen(modname));
+    module = PyUnicode_FromWideChar(modname, -1);
     if (module == NULL) {
         fprintf(stderr, "Could not convert module name to unicode\n");
         Py_DECREF(runmodule);
@@ -433,7 +447,7 @@ pymain_run_startup(PyConfig *config, int *exitcode)
     if (env == NULL || env[0] == L'\0') {
         return 0;
     }
-    startup = PyUnicode_FromWideChar(env, wcslen(env));
+    startup = PyUnicode_FromWideChar(env, -1);
     if (startup == NULL) {
         goto error;
     }
@@ -483,15 +497,12 @@ error:
 static int
 pymain_run_interactive_hook(int *exitcode)
 {
-    PyObject *hook = PyImport_ImportModuleAttrString("sys",
-                                                     "__interactivehook__");
-    if (hook == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            // no sys.__interactivehook__ attribute
-            PyErr_Clear();
-            return 0;
-        }
+    PyObject *hook;
+    if (PySys_GetOptionalAttrString("__interactivehook__", &hook) < 0) {
         goto error;
+    }
+    if (hook == NULL) {
+        return 0;
     }
 
     if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
@@ -556,7 +567,7 @@ pymain_run_stdin(PyConfig *config)
         int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
         return (run != 0);
     }
-    return pymain_run_module(L"_pyrepl", 0);
+    return pymain_start_pyrepl(0);
 }
 
 
@@ -589,7 +600,7 @@ pymain_repl(PyConfig *config, int *exitcode)
         *exitcode = (run != 0);
         return;
     }
-    int run = pymain_start_pyrepl_no_main();
+    int run = pymain_start_pyrepl(1);
     *exitcode = (run != 0);
     return;
 }

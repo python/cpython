@@ -12,10 +12,10 @@
 
 --------------
 
-The :mod:`email` package is a library for managing email messages.  It is
+The :mod:`!email` package is a library for managing email messages.  It is
 specifically *not* designed to do any sending of email messages to SMTP
 (:rfc:`2821`), NNTP, or other servers; those are functions of modules such as
-:mod:`smtplib`.  The :mod:`email` package attempts to be as
+:mod:`smtplib`.  The :mod:`!email` package attempts to be as
 RFC-compliant as possible, supporting :rfc:`5322` and :rfc:`6532`, as well as
 such MIME-related RFCs as :rfc:`2045`, :rfc:`2046`, :rfc:`2047`, :rfc:`2183`,
 and :rfc:`2231`.
@@ -68,7 +68,7 @@ high level structure in question, and not the details of how those structures
 are represented.  Since MIME content types are used widely in modern internet
 software (not just email), this will be a familiar concept to many programmers.
 
-The following sections describe the functionality of the :mod:`email` package.
+The following sections describe the functionality of the :mod:`!email` package.
 We start with the :mod:`~email.message` object model, which is the primary
 interface an application will use, and follow that with the
 :mod:`~email.parser` and :mod:`~email.generator` components.  Then we cover the
@@ -102,7 +102,7 @@ compatibility reasons.
    :class:`~email.message.EmailMessage`/:class:`~email.policy.EmailPolicy`
    API.
 
-Contents of the :mod:`email` package documentation:
+Contents of the :mod:`!email` package documentation:
 
 .. toctree::
 

@@ -186,6 +186,140 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_STATX)
+
+PyDoc_STRVAR(os_statx__doc__,
+"statx($module, /, path, mask, *, flags=0, dir_fd=None,\n"
+"      follow_symlinks=True)\n"
+"--\n"
+"\n"
+"Perform a statx system call on the given path.\n"
+"\n"
+"  path\n"
+"    Path to be examined; can be string, bytes, a path-like object or\n"
+"    open-file-descriptor int.\n"
+"  mask\n"
+"    A bitmask of STATX_* constants defining the requested information.\n"
+"  flags\n"
+"    A bitmask of AT_NO_AUTOMOUNT and/or AT_STATX_* flags.\n"
+"  dir_fd\n"
+"    If not None, it should be a file descriptor open to a directory,\n"
+"    and path should be a relative string; path will then be relative to\n"
+"    that directory.\n"
+"  follow_symlinks\n"
+"    If False, and the last element of the path is a symbolic link,\n"
+"    statx will examine the symbolic link itself instead of the file\n"
+"    the link points to.\n"
+"\n"
+"It\'s an error to use dir_fd or follow_symlinks when specifying path as\n"
+"  an open file descriptor.");
+
+#define OS_STATX_METHODDEF    \
+    {"statx", _PyCFunction_CAST(os_statx), METH_FASTCALL|METH_KEYWORDS, os_statx__doc__},
+
+static PyObject *
+os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
+              int dir_fd, int follow_symlinks);
+
+static PyObject *
+os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(path), &_Py_ID(mask), &_Py_ID(flags), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", "mask", "flags", "dir_fd", "follow_symlinks", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "statx",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    path_t path = PATH_T_INITIALIZE_P("statx", "path", 0, 0, 0, 1);
+    unsigned int mask;
+    int flags = 0;
+    int dir_fd = DEFAULT_DIR_FD;
+    int follow_symlinks = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &mask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        flags = PyLong_AsInt(args[2]);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        if (!dir_fd_converter(args[3], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    follow_symlinks = PyObject_IsTrue(args[4]);
+    if (follow_symlinks < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_statx_impl(module, &path, mask, flags, dir_fd, follow_symlinks);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_STATX) */
+
 PyDoc_STRVAR(os_access__doc__,
 "access($module, /, path, mode, *, dir_fd=None, effective_ids=False,\n"
 "       follow_symlinks=True)\n"
@@ -215,8 +349,8 @@ PyDoc_STRVAR(os_access__doc__,
 "  NotImplementedError.\n"
 "\n"
 "Note that most operations will use the effective uid/gid, therefore this\n"
-"  routine can be used in a suid/sgid environment to test if the invoking user\n"
-"  has the specified access to the path.");
+"  routine can be used in a suid/sgid environment to test if the invoking\n"
+"  user has the specified access to the path.");
 
 #define OS_ACCESS_METHODDEF    \
     {"access", _PyCFunction_CAST(os_access), METH_FASTCALL|METH_KEYWORDS, os_access__doc__},
@@ -380,7 +514,7 @@ PyDoc_STRVAR(os_chdir__doc__,
 "\n"
 "path may always be specified as a string.\n"
 "On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
+"If this functionality is unavailable, using it raises an exception.");
 
 #define OS_CHDIR_METHODDEF    \
     {"chdir", _PyCFunction_CAST(os_chdir), METH_FASTCALL|METH_KEYWORDS, os_chdir__doc__},
@@ -840,11 +974,26 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         _PyArg_BadArgument("chflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
-    flags = PyLong_AsUnsignedLongMask(args[1]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &flags, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -924,11 +1073,26 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         _PyArg_BadArgument("lchflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
-    flags = PyLong_AsUnsignedLongMask(args[1]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &flags, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     return_value = os_lchflags_impl(module, &path, flags);
 
 exit:
@@ -1471,7 +1635,7 @@ os_getcwdb(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(os_link__doc__,
 "link($module, /, src, dst, *, src_dir_fd=None, dst_dir_fd=None,\n"
-"     follow_symlinks=True)\n"
+"     follow_symlinks=(os.name != \'nt\'))\n"
 "--\n"
 "\n"
 "Create a hard link to a file.\n"
@@ -1530,7 +1694,7 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     path_t dst = PATH_T_INITIALIZE_P("link", "dst", 0, 0, 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
+    int follow_symlinks = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1659,7 +1823,7 @@ exit:
     return return_value;
 }
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listdrives__doc__,
 "listdrives($module, /)\n"
@@ -1681,9 +1845,9 @@ os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_listdrives_impl(module);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listvolumes__doc__,
 "listvolumes($module, /)\n"
@@ -1705,9 +1869,9 @@ os_listvolumes(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_listvolumes_impl(module);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listmounts__doc__,
 "listmounts($module, /, volume)\n"
@@ -1774,7 +1938,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 #if defined(MS_WINDOWS)
 
@@ -2014,57 +2178,24 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_splitroot__doc__,
-"_path_splitroot($module, /, path)\n"
+"_path_splitroot($module, path, /)\n"
 "--\n"
 "\n"
 "Removes everything after the root on Win32.");
 
 #define OS__PATH_SPLITROOT_METHODDEF    \
-    {"_path_splitroot", _PyCFunction_CAST(os__path_splitroot), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot__doc__},
+    {"_path_splitroot", (PyCFunction)os__path_splitroot, METH_O, os__path_splitroot__doc__},
 
 static PyObject *
 os__path_splitroot_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_splitroot(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_splitroot",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE_P("_path_splitroot", "path", 0, 0, 0, 0);
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!path_converter(args[0], &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__path_splitroot_impl(module, &path);
@@ -2225,58 +2356,25 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, /, s)\n"
+"_path_isdir($module, path, /)\n"
 "--\n"
 "\n"
 "Return true if the pathname refers to an existing directory.");
 
 #define OS__PATH_ISDIR_METHODDEF    \
-    {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
+    {"_path_isdir", (PyCFunction)os__path_isdir, METH_O, os__path_isdir__doc__},
 
 static int
 os__path_isdir_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_isdir(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { _Py_LATIN1_CHR('s'), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"s", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_isdir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE_P("_path_isdir", "path", 0, 0, 1, 1);
     int _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!path_converter(args[0], &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     _return_value = os__path_isdir_impl(module, &path);
@@ -2511,7 +2609,7 @@ exit:
 #endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, /, p)\n"
+"_path_splitroot_ex($module, path, /)\n"
 "--\n"
 "\n"
 "Split a pathname into drive, root and tail.\n"
@@ -2519,51 +2617,18 @@ PyDoc_STRVAR(os__path_splitroot_ex__doc__,
 "The tail contains anything after the root.");
 
 #define OS__PATH_SPLITROOT_EX_METHODDEF    \
-    {"_path_splitroot_ex", _PyCFunction_CAST(os__path_splitroot_ex), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot_ex__doc__},
+    {"_path_splitroot_ex", (PyCFunction)os__path_splitroot_ex, METH_O, os__path_splitroot_ex__doc__},
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_splitroot_ex(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { _Py_LATIN1_CHR('p'), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"p", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_splitroot_ex",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "path", 0, 1, 1, 0, 0);
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!path_converter(args[0], &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__path_splitroot_ex_impl(module, &path);
@@ -5104,7 +5169,8 @@ PyDoc_STRVAR(os_forkpty__doc__,
 "Returns a tuple of (pid, master_fd).\n"
 "Like fork(), return pid of 0 to the child process,\n"
 "and pid of child to the parent process.\n"
-"To both, return fd of newly opened pseudo-terminal.");
+"To both, return fd of newly opened pseudo-terminal.\n"
+"The master_fd is non-inheritable.");
 
 #define OS_FORKPTY_METHODDEF    \
     {"forkpty", (PyCFunction)os_forkpty, METH_NOARGS, os_forkpty__doc__},
@@ -7883,6 +7949,7 @@ PyDoc_STRVAR(os_preadv__doc__,
 "\n"
 "- RWF_HIPRI\n"
 "- RWF_NOWAIT\n"
+"- RWF_DONTCACHE\n"
 "\n"
 "Using non-zero flags requires Linux 4.6 or newer.");
 
@@ -8169,6 +8236,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8275,6 +8347,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     return_value = os_sendfile_impl(module, out_fd, in_fd, offobj, count);
 
@@ -8614,6 +8691,8 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
 "- RWF_APPEND\n"
+"- RWF_DONTCACHE\n"
+"- RWF_ATOMIC\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -8758,6 +8837,11 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8876,6 +8960,11 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -9584,6 +9673,27 @@ exit:
 }
 
 #endif /* !defined(MS_WINDOWS) */
+
+#if defined(HAVE_CLEARENV)
+
+PyDoc_STRVAR(os__clearenv__doc__,
+"_clearenv($module, /)\n"
+"--\n"
+"\n");
+
+#define OS__CLEARENV_METHODDEF    \
+    {"_clearenv", (PyCFunction)os__clearenv, METH_NOARGS, os__clearenv__doc__},
+
+static PyObject *
+os__clearenv_impl(PyObject *module);
+
+static PyObject *
+os__clearenv(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__clearenv_impl(module);
+}
+
+#endif /* defined(HAVE_CLEARENV) */
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -11306,6 +11416,11 @@ os_urandom(PyObject *module, PyObject *arg)
             goto exit;
         }
         size = ival;
+        if (size < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "size cannot be negative");
+            goto exit;
+        }
     }
     return_value = os_urandom_impl(module, size);
 
@@ -11373,9 +11488,21 @@ os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    flags = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (flags == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &flags, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = os_memfd_create_impl(module, name, flags);
@@ -12655,7 +12782,7 @@ PyDoc_STRVAR(os__inputhook__doc__,
 "_inputhook($module, /)\n"
 "--\n"
 "\n"
-"Calls PyOS_CallInputHook droppong the GIL first");
+"Calls PyOS_InputHook dropping the GIL first");
 
 #define OS__INPUTHOOK_METHODDEF    \
     {"_inputhook", (PyCFunction)os__inputhook, METH_NOARGS, os__inputhook__doc__},
@@ -12673,7 +12800,7 @@ PyDoc_STRVAR(os__is_inputhook_installed__doc__,
 "_is_inputhook_installed($module, /)\n"
 "--\n"
 "\n"
-"Checks if PyOS_CallInputHook is set");
+"Checks if PyOS_InputHook is set");
 
 #define OS__IS_INPUTHOOK_INSTALLED_METHODDEF    \
     {"_is_inputhook_installed", (PyCFunction)os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},
@@ -12726,6 +12853,84 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* defined(__EMSCRIPTEN__) */
+
+#if defined(__EMSCRIPTEN__)
+
+PyDoc_STRVAR(os__emscripten_log__doc__,
+"_emscripten_log($module, /, arg)\n"
+"--\n"
+"\n"
+"Log something to the JS console. Emscripten only.");
+
+#define OS__EMSCRIPTEN_LOG_METHODDEF    \
+    {"_emscripten_log", _PyCFunction_CAST(os__emscripten_log), METH_FASTCALL|METH_KEYWORDS, os__emscripten_log__doc__},
+
+static PyObject *
+os__emscripten_log_impl(PyObject *module, const char *arg);
+
+static PyObject *
+os__emscripten_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(arg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"arg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_emscripten_log",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    const char *arg;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("_emscripten_log", "argument 'arg'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t arg_length;
+    arg = PyUnicode_AsUTF8AndSize(args[0], &arg_length);
+    if (arg == NULL) {
+        goto exit;
+    }
+    if (strlen(arg) != (size_t)arg_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = os__emscripten_log_impl(module, arg);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(__EMSCRIPTEN__) */
+
+#ifndef OS_STATX_METHODDEF
+    #define OS_STATX_METHODDEF
+#endif /* !defined(OS_STATX_METHODDEF) */
 
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
@@ -13247,6 +13452,10 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS_UNSETENV_METHODDEF
 #endif /* !defined(OS_UNSETENV_METHODDEF) */
 
+#ifndef OS__CLEARENV_METHODDEF
+    #define OS__CLEARENV_METHODDEF
+#endif /* !defined(OS__CLEARENV_METHODDEF) */
+
 #ifndef OS_WCOREDUMP_METHODDEF
     #define OS_WCOREDUMP_METHODDEF
 #endif /* !defined(OS_WCOREDUMP_METHODDEF) */
@@ -13398,4 +13607,8 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=35dd8edb53b50537 input=a9049054013a1b77]*/
+
+#ifndef OS__EMSCRIPTEN_LOG_METHODDEF
+    #define OS__EMSCRIPTEN_LOG_METHODDEF
+#endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
+/*[clinic end generated code: output=5fd2aeb6ba9a5df8 input=a9049054013a1b77]*/

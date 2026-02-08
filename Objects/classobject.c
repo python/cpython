@@ -7,6 +7,8 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_symtable.h"      // _Py_Mangle()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include "clinic/classobject.c.h"
@@ -142,6 +144,20 @@ method___reduce___impl(PyMethodObject *self)
     if (funcname == NULL) {
         return NULL;
     }
+    if (_Py_IsPrivateName(funcname)) {
+        PyObject *classname = PyType_Check(funcself)
+            ? PyType_GetName((PyTypeObject *)funcself)
+            : PyType_GetName(Py_TYPE(funcself));
+        if (classname == NULL) {
+            Py_DECREF(funcname);
+            return NULL;
+        }
+        Py_SETREF(funcname, _Py_Mangle(classname, funcname));
+        Py_DECREF(classname);
+        if (funcname == NULL) {
+            return NULL;
+        }
+    }
     return Py_BuildValue(
             "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), funcself, funcname);
 }
@@ -245,8 +261,7 @@ method_dealloc(PyObject *self)
 {
     PyMethodObject *im = _PyMethodObject_CAST(self);
     _PyObject_GC_UNTRACK(im);
-    if (im->im_weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)im);
+    FT_CLEAR_WEAKREFS(self, im->im_weakreflist);
     Py_DECREF(im->im_func);
     Py_XDECREF(im->im_self);
     assert(Py_IS_TYPE(self, &PyMethod_Type));

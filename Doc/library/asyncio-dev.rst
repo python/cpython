@@ -46,10 +46,6 @@ In addition to enabling the debug mode, consider also:
 
 When the debug mode is enabled:
 
-* asyncio checks for :ref:`coroutines that were not awaited
-  <asyncio-coroutine-not-scheduled>` and logs them; this mitigates
-  the "forgotten await" pitfall.
-
 * Many non-threadsafe asyncio APIs (such as :meth:`loop.call_soon` and
   :meth:`loop.call_at` methods) raise an exception if they are called
   from a wrong thread.

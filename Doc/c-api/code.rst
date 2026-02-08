@@ -69,12 +69,13 @@ bound into a function.
       The old name is deprecated, but will remain available until the
       signature changes again.
 
+.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(...)
+   :no-typesetting:
+
 .. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
    The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
-
-   .. index:: single: PyCode_NewWithPosOnlyArgs (C function)
 
    .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
@@ -182,7 +183,7 @@ bound into a function.
    Type of a code object watcher callback function.
 
    If *event* is ``PY_CODE_EVENT_CREATE``, then the callback is invoked
-   after `co` has been fully initialized. Otherwise, the callback is invoked
+   after *co* has been fully initialized. Otherwise, the callback is invoked
    before the destruction of *co* takes place, so the prior state of *co*
    can be inspected.
 
@@ -211,6 +212,82 @@ bound into a function.
    .. versionadded:: 3.12
 
 
+.. c:function:: PyObject *PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names, PyObject *lnotab_obj)
+
+   This is a :term:`soft deprecated` function that does nothing.
+
+   Prior to Python 3.10, this function would perform basic optimizations to a
+   code object.
+
+   .. versionchanged:: 3.10
+      This function now does nothing.
+
+
+.. _c_codeobject_flags:
+
+Code Object Flags
+-----------------
+
+Code objects contain a bit-field of flags, which can be retrieved as the
+:attr:`~codeobject.co_flags` Python attribute (for example using
+:c:func:`PyObject_GetAttrString`), and set using a *flags* argument to
+:c:func:`PyUnstable_Code_New` and similar functions.
+
+Flags whose names start with ``CO_FUTURE_`` correspond to features normally
+selectable by :ref:`future statements <future>`. These flags can be used in
+:c:member:`PyCompilerFlags.cf_flags`.
+Note that many ``CO_FUTURE_`` flags are mandatory in current versions of
+Python, and setting them has no effect.
+
+The following flags are available.
+For their meaning, see the linked documentation of their Python equivalents.
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * Flag
+     * Meaning
+   * * .. c:macro:: CO_OPTIMIZED
+     * :py:data:`inspect.CO_OPTIMIZED`
+   * * .. c:macro:: CO_NEWLOCALS
+     * :py:data:`inspect.CO_NEWLOCALS`
+   * * .. c:macro:: CO_VARARGS
+     * :py:data:`inspect.CO_VARARGS`
+   * * .. c:macro:: CO_VARKEYWORDS
+     * :py:data:`inspect.CO_VARKEYWORDS`
+   * * .. c:macro:: CO_NESTED
+     * :py:data:`inspect.CO_NESTED`
+   * * .. c:macro:: CO_GENERATOR
+     * :py:data:`inspect.CO_GENERATOR`
+   * * .. c:macro:: CO_COROUTINE
+     * :py:data:`inspect.CO_COROUTINE`
+   * * .. c:macro:: CO_ITERABLE_COROUTINE
+     * :py:data:`inspect.CO_ITERABLE_COROUTINE`
+   * * .. c:macro:: CO_ASYNC_GENERATOR
+     * :py:data:`inspect.CO_ASYNC_GENERATOR`
+   * * .. c:macro:: CO_HAS_DOCSTRING
+     * :py:data:`inspect.CO_HAS_DOCSTRING`
+   * * .. c:macro:: CO_METHOD
+     * :py:data:`inspect.CO_METHOD`
+
+   * * .. c:macro:: CO_FUTURE_DIVISION
+     * no effect (:py:data:`__future__.division`)
+   * * .. c:macro:: CO_FUTURE_ABSOLUTE_IMPORT
+     * no effect (:py:data:`__future__.absolute_import`)
+   * * .. c:macro:: CO_FUTURE_WITH_STATEMENT
+     * no effect (:py:data:`__future__.with_statement`)
+   * * .. c:macro:: CO_FUTURE_PRINT_FUNCTION
+     * no effect (:py:data:`__future__.print_function`)
+   * * .. c:macro:: CO_FUTURE_UNICODE_LITERALS
+     * no effect (:py:data:`__future__.unicode_literals`)
+   * * .. c:macro:: CO_FUTURE_GENERATOR_STOP
+     * no effect (:py:data:`__future__.generator_stop`)
+   * * .. c:macro:: CO_FUTURE_ANNOTATIONS
+     * :py:data:`__future__.annotations`
+
+
 Extra information
 -----------------
 
@@ -222,9 +299,12 @@ These functions are part of the unstable C API tier:
 this functionality is a CPython implementation detail, and the API
 may change without deprecation warnings.
 
+.. c:function:: Py_ssize_t _PyEval_RequestCodeExtraIndex(freefunc free)
+   :no-typesetting:
+
 .. c:function:: Py_ssize_t PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
 
-   Return a new an opaque index value used to adding data to code objects.
+   Return a new opaque index value used to adding data to code objects.
 
    You generally call this function once (per interpreter) and use the result
    with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate
@@ -234,8 +314,6 @@ may change without deprecation warnings.
    *free* will be called on non-``NULL`` data stored under the new index.
    Use :c:func:`Py_DecRef` when storing :c:type:`PyObject`.
 
-   .. index:: single: _PyEval_RequestCodeExtraIndex (C function)
-
    .. versionadded:: 3.6 as ``_PyEval_RequestCodeExtraIndex``
 
    .. versionchanged:: 3.12
@@ -243,6 +321,9 @@ may change without deprecation warnings.
      Renamed to ``PyUnstable_Eval_RequestCodeExtraIndex``.
      The old private name is deprecated, but will be available until the API
      changes.
+
+.. c:function:: int _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+   :no-typesetting:
 
 .. c:function:: int PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 
@@ -252,8 +333,6 @@ may change without deprecation warnings.
    If no data was set under the index, set *extra* to ``NULL`` and return
    0 without setting an exception.
 
-   .. index:: single: _PyCode_GetExtra (C function)
-
    .. versionadded:: 3.6 as ``_PyCode_GetExtra``
 
    .. versionchanged:: 3.12
@@ -262,12 +341,13 @@ may change without deprecation warnings.
      The old private name is deprecated, but will be available until the API
      changes.
 
+.. c:function:: int _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+   :no-typesetting:
+
 .. c:function:: int PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 
    Set the extra data stored under the given index to *extra*.
    Return 0 on success. Set an exception and return -1 on failure.
-
-   .. index:: single: _PyCode_SetExtra (C function)
 
    .. versionadded:: 3.6 as ``_PyCode_SetExtra``
 

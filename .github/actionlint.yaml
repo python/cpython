@@ -1,5 +1,6 @@
 self-hosted-runner:
-  labels: ["windows-aarch64"]
+  # Pending https://github.com/rhysd/actionlint/pull/615
+  labels: ["windows-2025-vs2026"]
 
 config-variables: null
 

@@ -633,39 +633,43 @@ def _netstat_getnode():
 try:
     import _uuid
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
+    _has_stable_extractable_node = _uuid.has_stable_extractable_node
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
 except ImportError:
     _uuid = None
     _generate_time_safe = None
+    _has_stable_extractable_node = False
     _UuidCreate = None
 
 
 def _unix_getnode():
     """Get the hardware address on Unix using the _uuid extension module."""
-    if _generate_time_safe:
+    if _generate_time_safe and _has_stable_extractable_node:
         uuid_time, _ = _generate_time_safe()
         return UUID(bytes=uuid_time).node
 
 def _windll_getnode():
     """Get the hardware address on Windows using the _uuid extension module."""
-    if _UuidCreate:
+    if _UuidCreate and _has_stable_extractable_node:
         uuid_bytes = _UuidCreate()
         return UUID(bytes_le=uuid_bytes).node
 
 def _random_getnode():
     """Get a random node ID."""
-    # RFC 4122, $4.1.6 says "For systems with no IEEE address, a randomly or
-    # pseudo-randomly generated value may be used; see Section 4.5.  The
-    # multicast bit must be set in such addresses, in order that they will
-    # never conflict with addresses obtained from network cards."
+    # RFC 9562, §6.10-3 says that
+    #
+    #   Implementations MAY elect to obtain a 48-bit cryptographic-quality
+    #   random number as per Section 6.9 to use as the Node ID. [...] [and]
+    #   implementations MUST set the least significant bit of the first octet
+    #   of the Node ID to 1. This bit is the unicast or multicast bit, which
+    #   will never be set in IEEE 802 addresses obtained from network cards.
     #
     # The "multicast bit" of a MAC address is defined to be "the least
     # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
     # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
-    import random
-    return random.getrandbits(48) | (1 << 40)
+    return int.from_bytes(os.urandom(6)) | (1 << 40)
 
 
 # _OS_GETTERS, when known, are targeted for a specific OS or platform.
@@ -733,6 +737,7 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID(safely_generated)
         except ValueError:
             is_safe = SafeUUID.unknown
+        # The version field is assumed to be handled by _generate_time_safe().
         return UUID(bytes=uuid_time, is_safe=is_safe)
 
     global _last_timestamp
@@ -949,7 +954,9 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Generate a UUID using the selected UUID function.")
+        description="Generate a UUID using the selected UUID function.",
+        color=True,
+    )
     parser.add_argument("-u", "--uuid",
                         choices=uuid_funcs.keys(),
                         default="uuid4",

@@ -136,7 +136,7 @@ Managing the Monitoring State
 -----------------------------
 
 Monitoring states can be managed with the help of monitoring scopes. A scope
-would typically correspond to a python function.
+would typically correspond to a Python function.
 
 .. c:function:: int PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version, const uint8_t *event_types, Py_ssize_t length)
 
@@ -205,6 +205,6 @@ would typically correspond to a python function.
 
    .. versionadded:: 3.13
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
 
       This function is :term:`soft deprecated`.

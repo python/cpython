@@ -1,14 +1,12 @@
+import importlib
 import re
 import textwrap
 import unittest
-import warnings
-import importlib
-import contextlib
 
-from . import fixtures
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
+    Prepared,
     distribution,
     entry_points,
     files,
@@ -17,12 +15,7 @@ from importlib.metadata import (
     version,
 )
 
-
-@contextlib.contextmanager
-def suppress_known_deprecation():
-    with warnings.catch_warnings(record=True) as ctx:
-        warnings.simplefilter('default', category=DeprecationWarning)
-        yield ctx
+from . import fixtures
 
 
 class APITests(
@@ -153,13 +146,13 @@ class APITests(
         classifiers = md.get_all('Classifier')
         assert 'Topic :: Software Development :: Libraries' in classifiers
 
-    def test_missing_key_legacy(self):
+    def test_missing_key(self):
         """
-        Requesting a missing key will still return None, but warn.
+        Requesting a missing key raises KeyError.
         """
         md = metadata('distinfo-pkg')
-        with suppress_known_deprecation():
-            assert md['does-not-exist'] is None
+        with self.assertRaises(KeyError):
+            md['does-not-exist']
 
     def test_get_key(self):
         """
@@ -321,3 +314,36 @@ class InvalidateCache(unittest.TestCase):
     def test_invalidate_cache(self):
         # No externally observable behavior, but ensures test coverage...
         importlib.invalidate_caches()
+
+
+class PreparedTests(unittest.TestCase):
+    def test_normalize(self):
+        tests = [
+            # Simple
+            ("sample", "sample"),
+            # Mixed case
+            ("Sample", "sample"),
+            ("SAMPLE", "sample"),
+            ("SaMpLe", "sample"),
+            # Separator conversions
+            ("sample-pkg", "sample_pkg"),
+            ("sample.pkg", "sample_pkg"),
+            ("sample_pkg", "sample_pkg"),
+            # Multiple separators
+            ("sample---pkg", "sample_pkg"),
+            ("sample___pkg", "sample_pkg"),
+            ("sample...pkg", "sample_pkg"),
+            # Mixed separators
+            ("sample-._pkg", "sample_pkg"),
+            ("sample_.-pkg", "sample_pkg"),
+            # Complex
+            ("Sample__Pkg-name.foo", "sample_pkg_name_foo"),
+            ("Sample__Pkg.name__foo", "sample_pkg_name_foo"),
+            # Uppercase with separators
+            ("SAMPLE-PKG", "sample_pkg"),
+            ("Sample.Pkg", "sample_pkg"),
+            ("SAMPLE_PKG", "sample_pkg"),
+        ]
+        for name, expected in tests:
+            with self.subTest(name=name):
+                self.assertEqual(Prepared.normalize(name), expected)

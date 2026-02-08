@@ -17,8 +17,10 @@
 
 #include <lzma.h>
 
+#include "pycore_long.h"          // _PyLong_UInt32_Converter()
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_*_RELAXED
 
 #if OUTPUT_BUFFER_MAX_BLOCK_SIZE > SIZE_MAX
     #error "The maximum block size accepted by liblzma is SIZE_MAX."
@@ -71,13 +73,6 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 }
 
 
-#define ACQUIRE_LOCK(obj) do { \
-    if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-        Py_BEGIN_ALLOW_THREADS \
-        PyThread_acquire_lock((obj)->lock, 1); \
-        Py_END_ALLOW_THREADS \
-    } } while (0)
-#define RELEASE_LOCK(obj) PyThread_release_lock((obj)->lock)
 
 typedef struct {
     PyTypeObject *lzma_compressor_type;
@@ -110,7 +105,7 @@ typedef struct {
     lzma_allocator alloc;
     lzma_stream lzs;
     int flushed;
-    PyThread_type_lock lock;
+    PyMutex mutex;
 } Compressor;
 
 typedef struct {
@@ -123,7 +118,7 @@ typedef struct {
     char needs_input;
     uint8_t *input_buffer;
     size_t input_buffer_size;
-    PyThread_type_lock lock;
+    PyMutex mutex;
 } Decompressor;
 
 #define Compressor_CAST(op)     ((Compressor *)(op))
@@ -203,25 +198,26 @@ PyLzma_Free(void *opaque, void *ptr)
       to be strictly correct, we need to define two separate converters.
  */
 
-#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME) \
-    static int \
-    FUNCNAME(PyObject *obj, void *ptr) \
-    { \
-        unsigned long long val; \
-        \
-        val = PyLong_AsUnsignedLongLong(obj); \
-        if (PyErr_Occurred()) \
-            return 0; \
-        if ((unsigned long long)(TYPE)val != val) { \
-            PyErr_SetString(PyExc_OverflowError, \
-                            "Value too large for " #TYPE " type"); \
-            return 0; \
-        } \
-        *(TYPE *)ptr = (TYPE)val; \
-        return 1; \
-    }
+#define INT_TYPE_CONVERTER_FUNC(TYPE, FUNCNAME)                     \
+static int                                                          \
+FUNCNAME(PyObject *obj, void *ptr)                                  \
+{                                                                   \
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                        \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                          \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE |                      \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                      \
+    if (bytes < 0) {                                                \
+        return 0;                                                   \
+    }                                                               \
+    if ((size_t)bytes > sizeof(TYPE)) {                             \
+        PyErr_SetString(PyExc_OverflowError,                        \
+                        "Python int too large for C "#TYPE);        \
+        return 0;                                                   \
+    }                                                               \
+    return 1;                                                       \
+}
 
-INT_TYPE_CONVERTER_FUNC(uint32_t, uint32_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_vli, lzma_vli_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_mode, lzma_mode_converter)
 INT_TYPE_CONVERTER_FUNC(lzma_match_finder, lzma_mf_converter)
@@ -251,7 +247,7 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
         return NULL;
     }
     if (preset_obj != NULL) {
-        int ok = uint32_converter(preset_obj, &preset);
+        int ok = _PyLong_UInt32_Converter(preset_obj, &preset);
         Py_DECREF(preset_obj);
         if (!ok) {
             return NULL;
@@ -272,14 +268,14 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
     if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec,
                                      "|OOO&O&O&O&O&O&O&O&", optnames,
                                      &id, &preset_obj,
-                                     uint32_converter, &options->dict_size,
-                                     uint32_converter, &options->lc,
-                                     uint32_converter, &options->lp,
-                                     uint32_converter, &options->pb,
+                                     _PyLong_UInt32_Converter, &options->dict_size,
+                                     _PyLong_UInt32_Converter, &options->lc,
+                                     _PyLong_UInt32_Converter, &options->lp,
+                                     _PyLong_UInt32_Converter, &options->pb,
                                      lzma_mode_converter, &options->mode,
-                                     uint32_converter, &options->nice_len,
+                                     _PyLong_UInt32_Converter, &options->nice_len,
                                      lzma_mf_converter, &options->mf,
-                                     uint32_converter, &options->depth)) {
+                                     _PyLong_UInt32_Converter, &options->depth)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for LZMA filter");
         PyMem_Free(options);
@@ -298,7 +294,7 @@ parse_filter_spec_delta(_lzma_state *state, PyObject *spec)
     lzma_options_delta *options;
 
     if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", optnames,
-                                     &id, uint32_converter, &dist)) {
+                                     &id, _PyLong_UInt32_Converter, &dist)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for delta filter");
         return NULL;
@@ -322,7 +318,7 @@ parse_filter_spec_bcj(_lzma_state *state, PyObject *spec)
     lzma_options_bcj *options;
 
     if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", optnames,
-                                     &id, uint32_converter, &start_offset)) {
+                                     &id, _PyLong_UInt32_Converter, &start_offset)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for BCJ filter");
         return NULL;
@@ -355,11 +351,13 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
                         "Filter specifier must have an \"id\" entry");
         return 0;
     }
-    f->id = PyLong_AsUnsignedLongLong(id_obj);
-    Py_DECREF(id_obj);
-    if (PyErr_Occurred()) {
+    lzma_vli id;
+    if (!lzma_vli_converter(id_obj, &id)) {
+        Py_DECREF(id_obj);
         return 0;
     }
+    Py_DECREF(id_obj);
+    f->id = id;
 
     switch (f->id) {
         case LZMA_FILTER_LZMA1:
@@ -550,7 +548,7 @@ static PyObject *
 compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
 {
     PyObject *result;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(c));
     assert(state != NULL);
 
@@ -613,14 +611,14 @@ _lzma_LZMACompressor_compress_impl(Compressor *self, Py_buffer *data)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed) {
         PyErr_SetString(PyExc_ValueError, "Compressor has been flushed");
     }
     else {
         result = compress(self, data->buf, data->len, LZMA_RUN);
     }
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -640,14 +638,14 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed) {
         PyErr_SetString(PyExc_ValueError, "Repeated call to flush()");
     } else {
         self->flushed = 1;
         result = compress(self, NULL, 0, LZMA_FINISH);
     }
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -801,7 +799,7 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    if (preset_obj != Py_None && !uint32_converter(preset_obj, &preset)) {
+    if (preset_obj != Py_None && !_PyLong_UInt32_Converter(preset_obj, &preset)) {
         return NULL;
     }
 
@@ -816,12 +814,7 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     self->alloc.free = PyLzma_Free;
     self->lzs.allocator = &self->alloc;
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
+    self->mutex = (PyMutex){0};
 
     self->flushed = 0;
     switch (format) {
@@ -863,10 +856,8 @@ static void
 Compressor_dealloc(PyObject *op)
 {
     Compressor *self = Compressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
     lzma_end(&self->lzs);
-    if (self->lock != NULL) {
-        PyThread_free_lock(self->lock);
-    }
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -877,13 +868,6 @@ static PyMethodDef Compressor_methods[] = {
     _LZMA_LZMACOMPRESSOR_FLUSH_METHODDEF
     {NULL}
 };
-
-static int
-Compressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
 
 PyDoc_STRVAR(Compressor_doc,
 "LZMACompressor(format=FORMAT_XZ, check=-1, preset=None, filters=None)\n"
@@ -918,7 +902,6 @@ static PyType_Slot lzma_compressor_type_slots[] = {
     {Py_tp_methods, Compressor_methods},
     {Py_tp_new, Compressor_new},
     {Py_tp_doc, (char *)Compressor_doc},
-    {Py_tp_traverse, Compressor_traverse},
     {0, 0}
 };
 
@@ -944,7 +927,7 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
 {
     PyObject *result;
     lzma_stream *lzs = &d->lzs;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(d));
     assert(state != NULL);
 
@@ -966,10 +949,10 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
             goto error;
         }
         if (lzret == LZMA_GET_CHECK || lzret == LZMA_NO_CHECK) {
-            d->check = lzma_get_check(&d->lzs);
+            FT_ATOMIC_STORE_INT_RELAXED(d->check, lzma_get_check(&d->lzs));
         }
         if (lzret == LZMA_STREAM_END) {
-            d->eof = 1;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->eof, 1);
             break;
         } else if (lzs->avail_out == 0) {
             /* Need to check lzs->avail_out before lzs->avail_in.
@@ -1056,13 +1039,14 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
 
     if (d->eof) {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
         if (lzs->avail_in > 0) {
-            Py_XSETREF(d->unused_data,
-                      PyBytes_FromStringAndSize((char *)lzs->next_in, lzs->avail_in));
-            if (d->unused_data == NULL) {
+            PyObject *unused_data = PyBytes_FromStringAndSize(
+                (char *)lzs->next_in, lzs->avail_in);
+            if (unused_data == NULL) {
                 goto error;
             }
+            Py_XSETREF(d->unused_data, unused_data);
         }
     }
     else if (lzs->avail_in == 0) {
@@ -1072,17 +1056,17 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
             /* (avail_in==0 && avail_out==0)
                Maybe lzs's internal state still have a few bytes can
                be output, try to output them next time. */
-            d->needs_input = 0;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
 
             /* If max_length < 0, lzs->avail_out always > 0 */
             assert(max_length >= 0);
         } else {
             /* Input buffer exhausted, output buffer has space. */
-            d->needs_input = 1;
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 1);
         }
     }
     else {
-        d->needs_input = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
 
         /* If we did not use the input buffer, we now have
            to copy the tail from the caller's buffer into the
@@ -1121,6 +1105,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _lzma.LZMADecompressor.decompress
 
     data: Py_buffer
@@ -1145,16 +1130,16 @@ the unused_data attribute.
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=ef4e20ec7122241d input=60c1f135820e309d]*/
+/*[clinic end generated code: output=ef4e20ec7122241d input=d5cbd45801b4b8b0]*/
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->eof)
         PyErr_SetString(PyExc_EOFError, "Already at end of stream");
     else
         result = decompress(self, data->buf, data->len, max_length);
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -1221,8 +1206,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
                             "Cannot specify memory limit with FORMAT_RAW");
             return NULL;
         }
-        memlimit_ = PyLong_AsUnsignedLongLong(memlimit);
-        if (PyErr_Occurred()) {
+        if (!_PyLong_UInt64_Converter(memlimit, &memlimit_)) {
             return NULL;
         }
     }
@@ -1248,21 +1232,13 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     self->lzs.allocator = &self->alloc;
     self->lzs.next_in = NULL;
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
+    self->mutex = (PyMutex){0};
 
     self->check = LZMA_CHECK_UNKNOWN;
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
-    if (self->unused_data == NULL) {
-        goto error;
-    }
+    Py_XSETREF(self->unused_data, Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
 
     switch (format) {
         case FORMAT_AUTO:
@@ -1311,24 +1287,16 @@ static void
 Decompressor_dealloc(PyObject *op)
 {
     Decompressor *self = Decompressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
+
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
 
     lzma_end(&self->lzs);
     Py_CLEAR(self->unused_data);
-    if (self->lock != NULL) {
-        PyThread_free_lock(self->lock);
-    }
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
-}
-
-static int
-Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static PyMethodDef Decompressor_methods[] = {
@@ -1348,6 +1316,26 @@ PyDoc_STRVAR(Decompressor_needs_input_doc,
 PyDoc_STRVAR(Decompressor_unused_data_doc,
 "Data found after the end of the compressed stream.");
 
+static PyObject *
+Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(closure))
+{
+    Decompressor *self = Decompressor_CAST(op);
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(self->eof)) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef Decompressor_getset[] = {
+    {"unused_data", Decompressor_unused_data_get, NULL,
+     Decompressor_unused_data_doc},
+    {NULL},
+};
+
 static PyMemberDef Decompressor_members[] = {
     {"check", Py_T_INT, offsetof(Decompressor, check), Py_READONLY,
      Decompressor_check_doc},
@@ -1355,8 +1343,6 @@ static PyMemberDef Decompressor_members[] = {
      Decompressor_eof_doc},
     {"needs_input", Py_T_BOOL, offsetof(Decompressor, needs_input), Py_READONLY,
      Decompressor_needs_input_doc},
-    {"unused_data", Py_T_OBJECT_EX, offsetof(Decompressor, unused_data), Py_READONLY,
-     Decompressor_unused_data_doc},
     {NULL}
 };
 
@@ -1365,8 +1351,8 @@ static PyType_Slot lzma_decompressor_type_slots[] = {
     {Py_tp_methods, Decompressor_methods},
     {Py_tp_new, _lzma_LZMADecompressor},
     {Py_tp_doc, (char *)_lzma_LZMADecompressor__doc__},
-    {Py_tp_traverse, Decompressor_traverse},
     {Py_tp_members, Decompressor_members},
+    {Py_tp_getset, Decompressor_getset},
     {0, 0}
 };
 
@@ -1441,7 +1427,7 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
 {
     lzma_ret lzret;
     uint32_t encoded_size;
-    PyObject *result = NULL;
+    PyBytesWriter *writer = NULL;
     _lzma_state *state = get_lzma_state(module);
     assert(state != NULL);
 
@@ -1449,25 +1435,26 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
     if (catch_lzma_error(state, lzret))
         goto error;
 
-    result = PyBytes_FromStringAndSize(NULL, encoded_size);
-    if (result == NULL)
+    writer = PyBytesWriter_Create(encoded_size);
+    if (writer == NULL) {
         goto error;
+    }
 
-    lzret = lzma_properties_encode(
-            &filter, (uint8_t *)PyBytes_AS_STRING(result));
+    lzret = lzma_properties_encode(&filter, PyBytesWriter_GetData(writer));
     if (catch_lzma_error(state, lzret)) {
         goto error;
     }
 
-    return result;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_XDECREF(result);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
 
 /*[clinic input]
+@permit_long_summary
 _lzma._decode_filter_properties
     filter_id: lzma_vli
     encoded_props: Py_buffer
@@ -1481,7 +1468,7 @@ The result does not include the filter ID itself, only the options.
 static PyObject *
 _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
                                      Py_buffer *encoded_props)
-/*[clinic end generated code: output=714fd2ef565d5c60 input=246410800782160c]*/
+/*[clinic end generated code: output=714fd2ef565d5c60 input=b9750bf909109bbe]*/
 {
     lzma_filter filter;
     lzma_ret lzret;
