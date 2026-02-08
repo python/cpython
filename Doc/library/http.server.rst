@@ -362,7 +362,8 @@ instantiation, of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, \
+                                    *, directory=None, extra_response_headers=None)
 
    This class serves files from the directory *directory* and below,
    or the current directory if *directory* is not provided, directly
@@ -373,6 +374,9 @@ instantiation, of which this module provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added *extra_response_headers* parameter.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -395,6 +399,12 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.9
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
+
+   .. attribute:: extra_response_headers
+
+      A sequence of ``(name, value)`` pairs containing user-defined extra
+      HTTP response headers to add to each successful HTTP status 200 response.
+      These headers are not included in other status code responses.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -427,6 +437,9 @@ instantiation, of which this module provides three different variants:
       A ``'Content-type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
+
+      The instance attribute ``extra_response_headers`` is a sequence of
+      ``(name, value)`` pairs containing user-defined extra response headers.
 
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.
@@ -542,6 +555,14 @@ The following options are accepted:
    This option requires `--tls-cert`` to be specified.
 
    .. versionadded:: 3.14
+
+.. option:: -H, --header <header> <value>
+
+   Specify an additional extra HTTP Response Header to send on successful HTTP
+   200 responses. Can be used multiple times to send additional custom response
+   headers.
+
+   .. versionadded:: next
 
 
 .. _http.server-security:

@@ -634,6 +634,19 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+http.server
+-----------
+
+* Added a new ``extra_response_headers`` keyword argument to
+  :class:`~http.server.SimpleHTTPRequestHandler` to support custom headers in
+  HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
+
+* Added a ``-H`` or ``--header`` flag to the :program:`python -m http.server`
+  command-line interface to support custom headers in HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
+
+
 inspect
 -------
 
