@@ -1271,6 +1271,10 @@ class TracebackException:
         well, recursively, with indentation relative to their nesting depth.
         """
         colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1299,9 +1303,9 @@ class TracebackException:
         ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [indent + l + '\n' for l in note.split('\n')]
+                yield from [indent + theme.note + l + theme.reset + '\n' for l in note.split('\n')]
         elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+            yield indent + theme.note + "{}".format(_safe_string(self.__notes__, '__notes__', func=repr)) + theme.reset + "\n"
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
