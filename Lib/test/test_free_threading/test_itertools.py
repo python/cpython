@@ -1,5 +1,5 @@
 import unittest
-from itertools import batched, chain, combinations_with_replacement, cycle, permutations
+from itertools import batched, chain, combinations_with_replacement, cycle, islice, permutations
 from test.support import threading_helper
 
 
@@ -47,6 +47,13 @@ class ItertoolsThreading(unittest.TestCase):
         for _ in range(number_of_iterations):
             it = combinations_with_replacement(tuple(range(2)), 2)
             threading_helper.run_concurrently(work_iterator, nthreads=6, args=[it])
+
+    @threading_helper.reap_threads
+    def test_islice(self):
+        number_of_iterations = 6
+        for _ in range(number_of_iterations):
+            it = islice(tuple(range(10)), 1, 8, 2)
+            threading_helper.run_concurrently(work_iterator, nthreads=10, args=[it])
 
     @threading_helper.reap_threads
     def test_permutations(self):
