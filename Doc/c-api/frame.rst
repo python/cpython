@@ -250,3 +250,62 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
+.. c:type:: PyUnstable_ExecutableKinds
+
+   An array of executable kinds (executor types) for frames, used for internal
+   debugging and tracing.
+
+   Tools like debuggers and profilers can use this to identify the type of execution
+   context associated with a frame (For example: to filter out internal frames).
+   The entries are indexed by the following constants:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: auto
+
+      * - Constant
+        - Description
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
+        - The frame is internal (For example: inlined) and should be skipped by tools.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
+        - The frame corresponds to a standard Python function.
+
+   Example usage:
+
+   .. code-block:: c
+
+      int kind = PyUnstable_Frame_GetExecutableKind(frame);
+
+      if (kind == PyUnstable_EXECUTABLE_KIND_SKIP) {
+          continue;
+      }
+
+   .. versionadded:: 3.13
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
+
+   Index for the "Python function" kind in ``PyUnstable_ExecutableKinds``.
+
+   .. versionadded:: 3.13
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
+
+   Index for the "built-in function" kind in ``PyUnstable_ExecutableKinds``.
+
+   .. versionadded:: 3.13
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
+
+   Index for the "method descriptor" kind in ``PyUnstable_ExecutableKinds``.
+
+   .. versionadded:: 3.13
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KINDS
+
+   The number of entries in ``PyUnstable_ExecutableKinds``.
+
+   .. versionadded:: 3.13
