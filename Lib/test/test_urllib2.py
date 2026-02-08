@@ -867,26 +867,19 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers["Last-modified"], modified)
             self.assertEqual(respurl, canonurl)
 
+        with open(TESTFN, "wb") as f:
+            f.write(towrite)
+        self.addCleanup(os.remove, TESTFN)
         for url in [
             parsed._replace(netloc='localhost:80').geturl(),
             "file:///file_does_not_exist.txt",
             "file://not-a-local-host.com//dir/file.txt",
-            "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
-                                   os.getcwd(), TESTFN),
-            "file://somerandomhost.ontheinternet.com%s/%s" %
-            (os.getcwd(), TESTFN),
+            "file://%s:80%s" % (socket.gethostbyname('localhost'),
+                                urllib.request.pathname2url(os.path.join(os.getcwd(), TESTFN))),
+            "file://somerandomhost.ontheinternet.com%s" %
+            urllib.request.pathname2url(os.path.join(os.getcwd(), TESTFN)),
             ]:
-            try:
-                f = open(TESTFN, "wb")
-                try:
-                    f.write(towrite)
-                finally:
-                    f.close()
-
-                self.assertRaises(urllib.error.URLError,
-                                  h.file_open, Request(url))
-            finally:
-                os.remove(TESTFN)
+            self.assertRaises(urllib.error.URLError, h.file_open, Request(url))
 
         h = urllib.request.FileHandler()
         o = h.parent = MockOpener()
