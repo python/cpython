@@ -232,9 +232,12 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             if file.name == "reusable-windows-msi.yml":
                 run_windows_msi = True
             if file.name == "reusable-macos.yml":
+                run_tests = True
                 platforms_changed.add("macos")
             if file.name == "reusable-wasi.yml":
+                run_tests = True
                 platforms_changed.add("wasi")
+            continue
 
         if not doc_file and file not in RUN_TESTS_IGNORE:
             run_tests = True
