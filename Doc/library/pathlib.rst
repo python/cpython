@@ -1602,15 +1602,22 @@ Copying, moving and deleting
    .. versionadded:: 3.14
 
 
-.. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
+.. method:: Path.copy_into(target_dir, *, exist_ok=True, follow_symlinks=True, \
                            preserve_metadata=False)
 
    Copy this file or directory tree into the given *target_dir*, which should
-   be an existing directory. Other arguments are handled identically to
-   :meth:`Path.copy`. Returns a new :class:`!Path` instance pointing to the
+   be an existing directory. If *exist_ok* is true (the default), copying a file
+   overwrites an existing file with the same name and copying a directory merges
+   its contents into an existing directory with the same name. If *exist_ok* is
+   false, :exc:`FileExistsError` is raised if *target_dir* already contains an
+   entry with the same name as the source. Other arguments are handled identically
+   to :meth:`Path.copy`. Returns a new :class:`!Path` instance pointing to the
    copy.
 
    .. versionadded:: 3.14
+
+   .. versionchanged:: 3.15
+      The *exist_ok* parameter is added to allow copying duplicate directories.
 
 
 .. method:: Path.rename(target)
