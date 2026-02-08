@@ -358,6 +358,33 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
 
+    def test_prompt_with_newline_no_duplicate(self):
+        # gh-127068: prompts with newlines should not duplicate
+        # The bug is that screen = cache.screen creates a reference, not a copy,
+        from unittest.mock import MagicMock
+
+        console = MagicMock()
+        console.height = 100
+        console.width = 80
+
+        reader = prepare_reader(console)
+
+        screen = reader.calc_screen()
+        reader.last_refresh_cache.update_cache(reader, screen, reader.screeninfo)
+
+        cache_screen_before = reader.last_refresh_cache.screen
+        original_cache_content = cache_screen_before.copy()
+
+        reader.insert("h")
+        screen = reader.calc_screen()
+
+        self.assertEqual(
+            cache_screen_before, original_cache_content,
+            f"Cache was modified during calc_screen! "
+            f"Original: {original_cache_content}, Now: {cache_screen_before}"
+        )
+
+
 @force_colorized_test_class
 class TestReaderInColor(ScreenEqualMixin, TestCase):
     def test_syntax_highlighting_basic(self):

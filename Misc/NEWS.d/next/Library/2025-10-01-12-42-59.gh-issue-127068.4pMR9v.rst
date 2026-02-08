@@ -1,0 +1,2 @@
+Fix an issue in default REPL where prompts containing newlines would be duplicated
+on each keypress.
