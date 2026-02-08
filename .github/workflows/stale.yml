@@ -23,4 +23,4 @@ jobs:
         days-before-pr-stale: 30
         days-before-close: -1
         ascending: true
-        operations-per-run: 120
+        operations-per-run: 5000
