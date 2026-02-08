@@ -1,0 +1,2 @@
+The ``level`` field on :class:`ast.ImportFrom` is now marked as required.
+The parser always sets it to an integer.
