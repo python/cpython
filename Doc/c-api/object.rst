@@ -405,21 +405,17 @@ Object Protocol
 
 .. c:function:: int PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
-   Return ``1`` if the class *derived* is identical to or derived from the class
-   *cls*, otherwise return ``0``.  In case of an error, return ``-1``.
+   Return ``1`` if *derived* is a subclass of *cls*, ``0`` if not, or ``-1`` on
+   error.
 
-   If *cls* is a tuple, the check will be done against every entry in *cls*.
-   The result will be ``1`` when at least one of the checks returns ``1``,
-   otherwise it will be ``0``.
+   If *cls* is a tuple, return ``1`` if *derived* is a subclass of any entry in
+   *cls*.
 
-   If *cls* has a :meth:`~type.__subclasscheck__` method, it will be called to
-   determine the subclass status as described in :pep:`3119`.  Otherwise,
-   *derived* is a subclass of *cls* if it is a direct or indirect subclass,
-   i.e. contained in :attr:`cls.__mro__ <type.__mro__>`.
-
-   Normally only class objects, i.e. instances of :class:`type` or a derived
-   class, are considered classes.  However, objects can override this by having
-   a :attr:`~type.__bases__` attribute (which must be a tuple of base classes).
+   The check respects :meth:`~type.__subclasscheck__` method if defined (see
+   :pep:`3119`); otherwise, checks whether *derived* is in
+   :attr:`cls.__mro__ <type.__mro__>`. Non-class objects with a
+   :attr:`~type.__bases__` attribute (which must be a tuple of base classes)
+   are also supported.
 
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
