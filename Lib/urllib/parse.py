@@ -551,6 +551,8 @@ def _check_bracketed_host(hostname):
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
         if isinstance(ip, ipaddress.IPv4Address):
             raise ValueError(f"An IPv4 address cannot be in brackets")
+        if "%" in hostname and not re.match(r"\A(%[a-fA-F0-9]{2}|[\w\.~-])+\z", hostname.split("%", 1)[1], flags=re.ASCII):
+            raise ValueError(f"IPv6 ZoneID is invalid")
 
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.
