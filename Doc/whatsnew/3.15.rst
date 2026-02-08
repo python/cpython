@@ -1396,6 +1396,11 @@ C API changes
 New features
 ------------
 
+* Add :c:func:`PyArg_ParseVector` and :c:func:`PyArg_ParseVectorAndKeywords`
+  functions to parse arguments of functions using the :c:macro:`METH_FASTCALL`
+  calling convention.
+  (Contributed by Victor Stinner in :gh:`144175`.)
+
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.

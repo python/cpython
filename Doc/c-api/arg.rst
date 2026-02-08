@@ -516,6 +516,28 @@ API Functions
        }
 
 
+.. c:function:: int PyArg_ParseVector(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
+
+   Parse the parameters of a function that takes only vector parameters into
+   local variables (that is, a function using the :c:macro:`METH_FASTCALL`
+   calling convention).
+   Returns true on success; on failure, it returns false and raises the
+   appropriate exception.
+
+   .. versionadded:: next
+
+
+.. c:function:: int PyArg_ParseVectorAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, const char * const *kwlist, ...)
+
+   Parse the parameters of a function that takes both vector and keyword
+   parameters into local variables (that is, a function using the
+   :c:macro:`METH_FASTCALL` ``|`` :c:macro:`METH_KEYWORDS` calling convention).
+   Returns true on success; on failure, it returns false and raises the
+   appropriate exception.
+
+   .. versionadded:: next
+
+
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
 
    A simpler form of parameter retrieval which does not use a format string to
