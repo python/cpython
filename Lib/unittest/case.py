@@ -369,17 +369,20 @@ class _OrderedChainMap(collections.ChainMap):
 class TestCase(object):
     """A class whose instances are single test cases.
 
-    By default, the test code itself should be placed in a method named
-    'runTest'.
+    Test authors may invoke unittest.main() from the subclass's "__name__ guard"
+    section to run all methods defined in the test class. Alternatively,
+    test authors may subclass this TestCase class for their own tests.
+    Testing code may be placed in subclass method named 'runTest';
+    To achieve more precise subclass test invocation see below (viz.,
+    constructor kwarg).
 
-    If the fixture may be used for many test cases, create as
-    many test methods as are needed. When instantiating such a TestCase
-    subclass, specify in the constructor arguments the name of the test method
-    that the instance is to execute.
-
-    Test authors should subclass TestCase for their own tests. Construction
-    and deconstruction of the test's environment ('fixture') can be
+    Construction and destruction of the tests' environment ('fixture') can be
     implemented by overriding the 'setUp' and 'tearDown' methods respectively.
+
+    If the fixture will be used for several distinct test cases, create as
+    many test methods as needed in the TestCase subclass, then specify a
+    method to execute by providing the method name in the 'methodName'
+    parameter of the instance constructor.
 
     If it is necessary to override the __init__ method, the base class
     __init__ method must always be called. It is important that subclasses
