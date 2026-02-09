@@ -6,8 +6,8 @@
 C API Extension Support for Free Threading
 ******************************************
 
-Starting with the 3.13 release, CPython has experimental support for running
-with the :term:`global interpreter lock` (GIL) disabled in a configuration
+Starting with the 3.13 release, CPython has support for running with
+the :term:`global interpreter lock` (GIL) disabled in a configuration
 called :term:`free threading`.  This document describes how to adapt C API
 extensions to support free threading.
 
@@ -23,6 +23,14 @@ You can use it to enable code that only runs under the free-threaded build::
     /* code that only runs in the free-threaded build */
     #endif
 
+.. note::
+
+   On Windows, this macro is not defined automatically, but must be specified
+   to the compiler when building. The :func:`sysconfig.get_config_var` function
+   can be used to determine whether the current running interpreter had the
+   macro defined.
+
+
 Module Initialization
 =====================
 
@@ -37,9 +45,12 @@ single-phase initialization.
 Multi-Phase Initialization
 ..........................
 
-Extensions that use multi-phase initialization (i.e.,
-:c:func:`PyModuleDef_Init`) should add a :c:data:`Py_mod_gil` slot in the
-module definition.  If your extension supports older versions of CPython,
+Extensions that use :ref:`multi-phase initialization <multi-phase-initialization>`
+(functions like :c:func:`PyModuleDef_Init`,
+:c:func:`PyModExport_* <PyModExport_modulename>` export hook,
+:c:func:`PyModule_FromSlotsAndSpec`) should add a
+:c:data:`Py_mod_gil` slot in the module definition.
+If your extension supports older versions of CPython,
 you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
 
 ::
@@ -52,18 +63,12 @@ you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
         {0, NULL}
     };
 
-    static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT,
-        .m_slots = module_slots,
-        ...
-    };
-
 
 Single-Phase Initialization
 ...........................
 
-Extensions that use single-phase initialization (i.e.,
-:c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
+Extensions that use legacy :ref:`single-phase initialization <single-phase-initialization>`
+(that is, :c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
 indicate that they support running with the GIL disabled.  The function is
 only defined in the free-threaded build, so you should guard the call with
 ``#ifdef Py_GIL_DISABLED`` to avoid compilation errors in the regular build.
@@ -153,6 +158,8 @@ that return :term:`strong references <strong reference>`.
 +===================================+===================================+
 | :c:func:`PyList_GetItem`          | :c:func:`PyList_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
+| :c:func:`PyList_GET_ITEM`         | :c:func:`PyList_GetItemRef`       |
++-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItem`          | :c:func:`PyDict_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItemWithError` | :c:func:`PyDict_GetItemRef`       |
@@ -163,9 +170,9 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_Next`             | none (see :ref:`PyDict_Next`)     |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GetObject`     | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GetObject`    | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GET_OBJECT`    | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GET_OBJECT`   | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
 +-----------------------------------+-----------------------------------+
@@ -193,7 +200,7 @@ Memory Allocation APIs
 Python's memory management C API provides functions in three different
 :ref:`allocation domains <allocator-domains>`: "raw", "mem", and "object".
 For thread-safety, the free-threaded build requires that only Python objects
-are allocated using the object domain, and that all Python object are
+are allocated using the object domain, and that all Python objects are
 allocated using that domain.  This differs from the prior Python versions,
 where this was only a best practice and not a hard requirement.
 
@@ -243,6 +250,141 @@ depend on your extension, but some common patterns include:
   `thread-local storage <https://en.cppreference.com/w/c/language/storage_duration>`_.
 
 
+Critical Sections
+=================
+
+.. _critical-sections:
+
+In the free-threaded build, CPython provides a mechanism called "critical
+sections" to protect data that would otherwise be protected by the GIL.
+While extension authors may not interact with the internal critical section
+implementation directly, understanding their behavior is crucial when using
+certain C API functions or managing shared state in the free-threaded build.
+
+What Are Critical Sections?
+...........................
+
+Conceptually, critical sections act as a deadlock avoidance layer built on
+top of simple mutexes. Each thread maintains a stack of active critical
+sections. When a thread needs to acquire a lock associated with a critical
+section (e.g., implicitly when calling a thread-safe C API function like
+:c:func:`PyDict_SetItem`, or explicitly using macros), it attempts to acquire
+the underlying mutex.
+
+Using Critical Sections
+.......................
+
+The primary APIs for using critical sections are:
+
+* :c:macro:`Py_BEGIN_CRITICAL_SECTION` and :c:macro:`Py_END_CRITICAL_SECTION` -
+  For locking a single object
+
+* :c:macro:`Py_BEGIN_CRITICAL_SECTION2` and :c:macro:`Py_END_CRITICAL_SECTION2`
+  - For locking two objects simultaneously
+
+These macros must be used in matching pairs and must appear in the same C
+scope, since they establish a new local scope.  These macros are no-ops in
+non-free-threaded builds, so they can be safely added to code that needs to
+support both build types.
+
+A common use of a critical section would be to lock an object while accessing
+an internal attribute of it.  For example, if an extension type has an internal
+count field, you could use a critical section while reading or writing that
+field::
+
+    // read the count, returns new reference to internal count value
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    result = Py_NewRef(obj->count);
+    Py_END_CRITICAL_SECTION();
+    return result;
+
+    // write the count, consumes reference from new_count
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    obj->count = new_count;
+    Py_END_CRITICAL_SECTION();
+
+
+How Critical Sections Work
+..........................
+
+Unlike traditional locks, critical sections do not guarantee exclusive access
+throughout their entire duration. If a thread would block while holding a
+critical section (e.g., by acquiring another lock or performing I/O), the
+critical section is temporarily suspended—all locks are released—and then
+resumed when the blocking operation completes.
+
+This behavior is similar to what happens with the GIL when a thread makes a
+blocking call. The key differences are:
+
+* Critical sections operate on a per-object basis rather than globally
+
+* Critical sections follow a stack discipline within each thread (the "begin" and
+  "end" macros enforce this since they must be paired and within the same scope)
+
+* Critical sections automatically release and reacquire locks around potential
+  blocking operations
+
+Deadlock Avoidance
+..................
+
+Critical sections help avoid deadlocks in two ways:
+
+1. If a thread tries to acquire a lock that's already held by another thread,
+   it first suspends all of its active critical sections, temporarily releasing
+   their locks
+
+2. When the blocking operation completes, only the top-most critical section is
+   reacquired first
+
+This means you cannot rely on nested critical sections to lock multiple objects
+at once, as the inner critical section may suspend the outer ones. Instead, use
+:c:macro:`Py_BEGIN_CRITICAL_SECTION2` to lock two objects simultaneously.
+
+Note that the locks described above are only :c:type:`PyMutex` based locks.
+The critical section implementation does not know about or affect other locking
+mechanisms that might be in use, like POSIX mutexes.  Also note that while
+blocking on any :c:type:`PyMutex` causes the critical sections to be
+suspended, only the mutexes that are part of the critical sections are
+released.  If :c:type:`PyMutex` is used without a critical section, it will
+not be released and therefore does not get the same deadlock avoidance.
+
+Important Considerations
+........................
+
+* Critical sections may temporarily release their locks, allowing other threads
+  to modify the protected data. Be careful about making assumptions about the
+  state of the data after operations that might block.
+
+* Because locks can be temporarily released (suspended), entering a critical
+  section does not guarantee exclusive access to the protected resource
+  throughout the section's duration. If code within a critical section calls
+  another function that blocks (e.g., acquires another lock, performs blocking
+  I/O), all locks held by the thread via critical sections will be released.
+  This is similar to how the GIL can be released during blocking calls.
+
+* Only the lock(s) associated with the most recently entered (top-most)
+  critical section are guaranteed to be held at any given time. Locks for
+  outer, nested critical sections might have been suspended.
+
+* You can lock at most two objects simultaneously with these APIs. If you need
+  to lock more objects, you'll need to restructure your code.
+
+* While critical sections will not deadlock if you attempt to lock the same
+  object twice, they are less efficient than purpose-built reentrant locks for
+  this use case.
+
+* When using :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, the order of the objects
+  doesn't affect correctness (the implementation handles deadlock avoidance),
+  but it's good practice to always lock objects in a consistent order.
+
+* Remember that the critical section macros are primarily for protecting access
+  to *Python objects* that might be involved in internal CPython operations
+  susceptible to the deadlock scenarios described above. For protecting purely
+  internal extension state, standard mutexes or other synchronization
+  primitives might be more appropriate.
+
+
 Building Extensions for the Free-Threaded Build
 ===============================================
 
@@ -252,8 +394,9 @@ The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
   free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
 * `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build if you set
-  `CIBW_FREE_THREADED_SUPPORT <https://cibuildwheel.pypa.io/en/stable/options/#free-threaded-support>`_.
+  free-threaded build on Python 3.13 and 3.14. On Python 3.14, free-threaded
+  wheels will be built by default. On Python 3.13, you will need to set
+  `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
 
 Limited C API and Stable ABI
 ............................

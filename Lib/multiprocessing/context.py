@@ -145,7 +145,7 @@ class BaseContext(object):
         '''Check whether this is a fake forked process in a frozen executable.
         If so then run code specified by commandline and exit.
         '''
-        if sys.platform == 'win32' and getattr(sys, 'frozen', False):
+        if self.get_start_method() == 'spawn' and getattr(sys, 'frozen', False):
             from .spawn import freeze_support
             freeze_support()
 
@@ -177,12 +177,15 @@ class BaseContext(object):
         from .spawn import set_executable
         set_executable(executable)
 
-    def set_forkserver_preload(self, module_names):
+    def set_forkserver_preload(self, module_names, *, on_error='ignore'):
         '''Set list of module names to try to load in forkserver process.
-        This is really just a hint.
+
+        The on_error parameter controls how import failures are handled:
+        "ignore" (default) silently ignores failures, "warn" emits warnings,
+        and "fail" raises exceptions breaking the forkserver context.
         '''
         from .forkserver import set_forkserver_preload
-        set_forkserver_preload(module_names)
+        set_forkserver_preload(module_names, on_error=on_error)
 
     def get_context(self, method=None):
         if method is None:

@@ -21,12 +21,17 @@
 # > echo "0" | sudo tee /sys/devices/system/cpu/cpufreq/boost
 #
 
+import copy
 import math
 import os
 import queue
 import sys
 import threading
 import time
+from collections import namedtuple
+from dataclasses import dataclass
+from operator import methodcaller
+from typing import NamedTuple
 
 # The iterations in individual benchmarks are scaled by this factor.
 WORK_SCALE = 100
@@ -64,6 +69,19 @@ def object_lookup_special():
     N = 1000 * WORK_SCALE
     for i in range(N):
         round(i / N)
+
+class MyContextManager:
+    def __enter__(self):
+        pass
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+@register_benchmark
+def context_manager():
+    N = 1000 * WORK_SCALE
+    for i in range(N):
+        with MyContextManager():
+            pass
 
 @register_benchmark
 def mult_constant():
@@ -174,6 +192,55 @@ def thread_local_read():
         _ = tmp.x
         _ = tmp.x
         _ = tmp.x
+
+class MyClass:
+    __slots__ = ()
+
+    def func(self):
+        pass
+
+@register_benchmark
+def method_caller():
+    mc = methodcaller("func")
+    obj = MyClass()
+    for i in range(1000 * WORK_SCALE):
+        mc(obj)
+
+@dataclass
+class MyDataClass:
+    x: int
+    y: int
+    z: int
+
+@register_benchmark
+def instantiate_dataclass():
+    for _ in range(1000 * WORK_SCALE):
+        obj = MyDataClass(x=1, y=2, z=3)
+
+MyNamedTuple = namedtuple("MyNamedTuple", ["x", "y", "z"])
+
+@register_benchmark
+def instantiate_namedtuple():
+    for _ in range(1000 * WORK_SCALE):
+        obj = MyNamedTuple(x=1, y=2, z=3)
+
+
+class MyTypingNamedTuple(NamedTuple):
+    x: int
+    y: int
+    z: int
+
+@register_benchmark
+def instantiate_typing_namedtuple():
+    for _ in range(1000 * WORK_SCALE):
+        obj = MyTypingNamedTuple(x=1, y=2, z=3)
+
+
+@register_benchmark
+def deepcopy():
+    x = {'list': [1, 2], 'tuple': (1, None)}
+    for i in range(40 * WORK_SCALE):
+        copy.deepcopy(x)
 
 
 def bench_one_thread(func):

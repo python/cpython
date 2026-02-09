@@ -577,6 +577,23 @@ class OpenerDirectorTests(unittest.TestCase):
         self.assertRaises(TypeError,
                           OpenerDirector().add_handler, NonHandler())
 
+    def test_no_protocol_methods(self):
+        # test the case that methods starts with handler type without the protocol
+        # like open*() or _open*().
+        # These methods should be ignored
+
+        o = OpenerDirector()
+        meth_spec = [
+            ["open"],
+            ["_open"],
+            ["error"]
+        ]
+
+        add_ordered_mock_handlers(o, meth_spec)
+
+        self.assertEqual(len(o.handle_open), 0)
+        self.assertEqual(len(o.handle_error), 0)
+
     def test_badly_named_methods(self):
         # test work-around for three methods that accidentally follow the
         # naming conventions for handler methods
@@ -809,7 +826,7 @@ class HandlerTests(unittest.TestCase):
 
         TESTFN = os_helper.TESTFN
         towrite = b"hello, world\n"
-        canonurl = 'file:' + urllib.request.pathname2url(os.path.abspath(TESTFN))
+        canonurl = urllib.request.pathname2url(os.path.abspath(TESTFN), add_scheme=True)
         parsed = urlsplit(canonurl)
         if parsed.netloc:
             raise unittest.SkipTest("non-local working directory")
@@ -1193,15 +1210,15 @@ class HandlerTests(unittest.TestCase):
         r = MockResponse(200, "OK", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         r = MockResponse(202, "Accepted", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         r = MockResponse(206, "Partial content", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         # anything else calls o.error (and MockOpener returns None, here)
         r = MockResponse(502, "Bad gateway", {}, "", url)
         self.assertIsNone(h.http_response(req, r))
@@ -1416,7 +1433,7 @@ class HandlerTests(unittest.TestCase):
                 response = opener.open('http://example.com/')
                 expected = b'GET ' + result + b' '
                 request = handler.last_buf
-                self.assertTrue(request.startswith(expected), repr(request))
+                self.assertStartsWith(request, expected)
 
     def test_redirect_head_request(self):
         from_url = "http://example.com/a.html"
@@ -1446,7 +1463,8 @@ class HandlerTests(unittest.TestCase):
                              [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
-        os.environ['no_proxy'] = 'python.org'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = 'python.org'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1458,10 +1476,10 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_no_proxy_all(self):
-        os.environ['no_proxy'] = '*'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = '*'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1469,7 +1487,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_https(self):
         o = OpenerDirector()
@@ -1906,9 +1923,9 @@ class MiscTests(unittest.TestCase):
         url = code = fp = None
         hdrs = 'Content-Length: 42'
         err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
-        self.assertTrue(hasattr(err, 'reason'))
+        self.assertHasAttr(err, 'reason')
         self.assertEqual(err.reason, 'something bad happened')
-        self.assertTrue(hasattr(err, 'headers'))
+        self.assertHasAttr(err, 'headers')
         self.assertEqual(err.headers, 'Content-Length: 42')
         expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
         self.assertEqual(str(err), expected_errmsg)

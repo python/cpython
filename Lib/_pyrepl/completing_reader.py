@@ -293,3 +293,7 @@ class CompletingReader(Reader):
 
     def get_completions(self, stem: str) -> list[str]:
         return []
+
+    def get_line(self) -> str:
+        """Return the current line until the cursor position."""
+        return ''.join(self.buffer[:self.pos])

@@ -15,7 +15,8 @@ import sys
 import tempfile
 import types
 
-_testsinglephase = import_helper.import_module("_testsinglephase")
+# gh-116303: Skip test module dependent tests if test modules are unavailable
+import_helper.import_module("_testmultiphase")
 
 
 BUILTINS = types.SimpleNamespace()

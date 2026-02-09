@@ -77,23 +77,23 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
             async def __aexit__(self, exc_type, exc_value, traceback):
                 return None
 
-        self.assertTrue(issubclass(ManagerFromScratch, AbstractAsyncContextManager))
+        self.assertIsSubclass(ManagerFromScratch, AbstractAsyncContextManager)
 
         class DefaultEnter(AbstractAsyncContextManager):
             async def __aexit__(self, *args):
                 await super().__aexit__(*args)
 
-        self.assertTrue(issubclass(DefaultEnter, AbstractAsyncContextManager))
+        self.assertIsSubclass(DefaultEnter, AbstractAsyncContextManager)
 
         class NoneAenter(ManagerFromScratch):
             __aenter__ = None
 
-        self.assertFalse(issubclass(NoneAenter, AbstractAsyncContextManager))
+        self.assertNotIsSubclass(NoneAenter, AbstractAsyncContextManager)
 
         class NoneAexit(ManagerFromScratch):
             __aexit__ = None
 
-        self.assertFalse(issubclass(NoneAexit, AbstractAsyncContextManager))
+        self.assertNotIsSubclass(NoneAexit, AbstractAsyncContextManager)
 
 
 class AsyncContextManagerTestCase(unittest.TestCase):
@@ -640,6 +640,78 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
             result.append(2)
 
         self.assertEqual(result, [1, 2, 3, 4])
+
+    @_async_test
+    async def test_enter_async_context_classmethod(self):
+        class TestCM:
+            @classmethod
+            async def __aenter__(cls):
+                result.append(('enter', cls))
+            @classmethod
+            async def __aexit__(cls, *exc_details):
+                result.append(('exit', cls, *exc_details))
+
+        cm = TestCM()
+        result = []
+        async with self.exit_stack() as stack:
+            await stack.enter_async_context(cm)
+            self.assertEqual(result, [('enter', TestCM)])
+        self.assertEqual(result, [('enter', TestCM),
+                                  ('exit', TestCM, None, None, None)])
+
+        result = []
+        async with self.exit_stack() as stack:
+            stack.push_async_exit(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', TestCM, None, None, None)])
+
+    @_async_test
+    async def test_enter_async_context_staticmethod(self):
+        class TestCM:
+            @staticmethod
+            async def __aenter__():
+                result.append('enter')
+            @staticmethod
+            async def __aexit__(*exc_details):
+                result.append(('exit', *exc_details))
+
+        cm = TestCM()
+        result = []
+        async with self.exit_stack() as stack:
+            await stack.enter_async_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        async with self.exit_stack() as stack:
+            stack.push_async_exit(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
+
+    @_async_test
+    async def test_enter_async_context_slots(self):
+        class TestCM:
+            __slots__ = ('__aenter__', '__aexit__')
+            def __init__(self):
+                async def enter():
+                    result.append('enter')
+                async def exit(*exc_details):
+                    result.append(('exit', *exc_details))
+                self.__aenter__ = enter
+                self.__aexit__ = exit
+
+        cm = TestCM()
+        result = []
+        async with self.exit_stack() as stack:
+            await stack.enter_async_context(cm)
+            self.assertEqual(result, ['enter'])
+        self.assertEqual(result, ['enter', ('exit', None, None, None)])
+
+        result = []
+        async with self.exit_stack() as stack:
+            stack.push_async_exit(cm)
+            self.assertEqual(result, [])
+        self.assertEqual(result, [('exit', None, None, None)])
 
     @_async_test
     async def test_enter_async_context_errors(self):

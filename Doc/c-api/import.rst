@@ -16,19 +16,6 @@ Importing Modules
    This is a wrapper around :c:func:`PyImport_Import()` which takes a
    :c:expr:`const char *` as an argument instead of a :c:expr:`PyObject *`.
 
-.. c:function:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
-
-   This function is a deprecated alias of :c:func:`PyImport_ImportModule`.
-
-   .. versionchanged:: 3.3
-      This function used to fail immediately when the import lock was held
-      by another thread.  In Python 3.3 though, the locking scheme switched
-      to per-module locks for most purposes, so this function's special
-      behaviour isn't needed anymore.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyImport_ImportModule` instead.
-
 
 .. c:function:: PyObject* PyImport_ImportModuleEx(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
 
@@ -142,8 +129,7 @@ Importing Modules
    of :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
    The module's :attr:`~module.__file__` attribute will be set to the code
-   object's :attr:`~codeobject.co_filename`.  If applicable,
-   :attr:`~module.__cached__` will also be set.
+   object's :attr:`~codeobject.co_filename`.
 
    This function will reload the module if it was already imported.  See
    :c:func:`PyImport_ReloadModule` for the intended way to reload a module.
@@ -155,9 +141,12 @@ Importing Modules
    :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
    .. versionchanged:: 3.12
-      The setting of :attr:`~module.__cached__` and :attr:`~module.__loader__`
+      The setting of ``__cached__`` and :attr:`~module.__loader__`
       is deprecated. See :class:`~importlib.machinery.ModuleSpec` for
       alternatives.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` is no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
@@ -170,15 +159,18 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname, PyObject *cpathname)
 
-   Like :c:func:`PyImport_ExecCodeModuleEx`, but the :attr:`~module.__cached__`
-   attribute of the module object is set to *cpathname* if it is
-   non-``NULL``.  Of the three functions, this is the preferred one to use.
+   Like :c:func:`PyImport_ExecCodeModuleEx`, but the path to any compiled file
+   via *cpathname* is used appropriately when non-``NULL``.  Of the three
+   functions, this is the preferred one to use.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.12
-      Setting :attr:`~module.__cached__` is deprecated. See
+      Setting ``__cached__`` is deprecated. See
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
@@ -327,6 +319,13 @@ Importing Modules
    initialization.
 
 
+.. c:var:: struct _inittab *PyImport_Inittab
+
+   The table of built-in modules used by Python initialization. Do not use this directly;
+   use :c:func:`PyImport_AppendInittab` and :c:func:`PyImport_ExtendInittab`
+   instead.
+
+
 .. c:function:: PyObject* PyImport_ImportModuleAttr(PyObject *mod_name, PyObject *attr_name)
 
    Import the module *mod_name* and get its attribute *attr_name*.
@@ -346,3 +345,24 @@ Importing Modules
    strings instead of Python :class:`str` objects.
 
    .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))
+
+   This function is a building block that enables embedders to implement
+   the :py:meth:`~importlib.abc.Loader.create_module` step of custom
+   static extension importers (e.g. of statically-linked extensions).
+
+   *spec* must be a :class:`~importlib.machinery.ModuleSpec` object.
+
+   *initfunc* must be an :ref:`initialization function <extension-export-hook>`,
+   the same as for :c:func:`PyImport_AppendInittab`.
+
+   On success, create and return a module object.
+   This module will not be initialized; call :c:func:`PyModule_Exec`
+   to initialize it.
+   (Custom importers should do this in their
+   :py:meth:`~importlib.abc.Loader.exec_module` method.)
+
+   On error, return NULL with an exception set.
+
+   .. versionadded:: 3.15

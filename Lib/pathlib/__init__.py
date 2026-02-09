@@ -14,7 +14,9 @@ import sys
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
-from stat import S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import (
+    S_IMODE, S_ISDIR, S_ISREG, S_ISLNK, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO,
+)
 from _collections_abc import Sequence
 
 try:
@@ -27,9 +29,9 @@ except ImportError:
     grp = None
 
 from pathlib._os import (
-    PathInfo, DirEntryInfo,
+    vfsopen, vfspath,
     ensure_different_files, ensure_distinct_paths,
-    copyfile2, copyfileobj, magic_open, copy_info,
+    copyfile2, copyfileobj,
 )
 
 
@@ -187,9 +189,6 @@ class PurePath:
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
-    def __fspath__(self):
-        return str(self)
-
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
@@ -257,6 +256,9 @@ class PurePath:
             self._str = self._format_parsed_parts(self.drive, self.root,
                                                   self._tail) or '.'
             return self._str
+
+    __fspath__ = __str__
+    __vfspath__ = __str__
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
@@ -334,13 +336,8 @@ class PurePath:
             return paths[0]
         elif paths:
             # Join path segments from the initializer.
-            path = self.parser.join(*paths)
-            # Cache the joined path.
-            paths.clear()
-            paths.append(path)
-            return path
+            return self.parser.join(*paths)
         else:
-            paths.append('')
             return ''
 
     @property
@@ -488,16 +485,19 @@ class PurePath:
         """
         if not hasattr(other, 'with_segments'):
             other = self.with_segments(other)
-        for step, path in enumerate(chain([other], other.parents)):
+        parts = []
+        for path in chain([other], other.parents):
             if path == self or path in self.parents:
                 break
             elif not walk_up:
                 raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
             elif path.name == '..':
                 raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
+            else:
+                parts.append('..')
         else:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
-        parts = ['..'] * step + self._tail[len(path._tail):]
+        parts.extend(self._tail[len(path._tail):])
         return self._from_parsed_parts('', '', parts)
 
     def is_relative_to(self, other):
@@ -517,18 +517,6 @@ class PurePath:
                     return True
             return False
         return self.parser.isabs(self)
-
-    def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
-        import warnings
-        msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
-               "for removal in Python 3.15. Use os.path.isreserved() to "
-               "detect reserved paths on Windows.")
-        warnings._deprecated("pathlib.PurePath.is_reserved", msg, remove=(3, 15))
-        if self.parser is ntpath:
-            return self.parser.isreserved(self)
-        return False
 
     def as_uri(self):
         """Return the path as a URI."""
@@ -623,6 +611,211 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
+_STAT_RESULT_ERROR = []  # falsy sentinel indicating stat() failed.
+
+
+class _Info:
+    """Implementation of pathlib.types.PathInfo that provides status
+    information by querying a wrapped os.stat_result object. Don't try to
+    construct it yourself."""
+    __slots__ = ('_path', '_entry', '_stat_result', '_lstat_result')
+
+    def __init__(self, path, entry=None):
+        self._path = path
+        self._entry = entry
+        self._stat_result = None
+        self._lstat_result = None
+
+    def __repr__(self):
+        path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
+        return f"<{path_type}.info>"
+
+    def _stat(self, *, follow_symlinks=True):
+        """Return the status as an os.stat_result."""
+        if self._entry:
+            return self._entry.stat(follow_symlinks=follow_symlinks)
+        if follow_symlinks:
+            if not self._stat_result:
+                try:
+                    self._stat_result = os.stat(self._path)
+                except (OSError, ValueError):
+                    self._stat_result = _STAT_RESULT_ERROR
+                    raise
+            return self._stat_result
+        else:
+            if not self._lstat_result:
+                try:
+                    self._lstat_result = os.lstat(self._path)
+                except (OSError, ValueError):
+                    self._lstat_result = _STAT_RESULT_ERROR
+                    raise
+            return self._lstat_result
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        if self._entry:
+            if not follow_symlinks:
+                return True
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
+            return False
+        return True
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        if self._entry:
+            try:
+                return self._entry.is_dir(follow_symlinks=follow_symlinks)
+            except OSError:
+                return False
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            st = self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
+            return False
+        return S_ISDIR(st.st_mode)
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        if self._entry:
+            try:
+                return self._entry.is_file(follow_symlinks=follow_symlinks)
+            except OSError:
+                return False
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            st = self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
+            return False
+        return S_ISREG(st.st_mode)
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        if self._entry:
+            try:
+                return self._entry.is_symlink()
+            except OSError:
+                return False
+        if self._lstat_result is _STAT_RESULT_ERROR:
+            return False
+        try:
+            st = self._stat(follow_symlinks=False)
+        except (OSError, ValueError):
+            return False
+        return S_ISLNK(st.st_mode)
+
+    def _posix_permissions(self, *, follow_symlinks=True):
+        """Return the POSIX file permissions."""
+        return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
+
+    def _file_id(self, *, follow_symlinks=True):
+        """Returns the identifier of the file."""
+        st = self._stat(follow_symlinks=follow_symlinks)
+        return st.st_dev, st.st_ino
+
+    def _access_time_ns(self, *, follow_symlinks=True):
+        """Return the access time in nanoseconds."""
+        return self._stat(follow_symlinks=follow_symlinks).st_atime_ns
+
+    def _mod_time_ns(self, *, follow_symlinks=True):
+        """Return the modify time in nanoseconds."""
+        return self._stat(follow_symlinks=follow_symlinks).st_mtime_ns
+
+    if hasattr(os.stat_result, 'st_flags'):
+        def _bsd_flags(self, *, follow_symlinks=True):
+            """Return the flags."""
+            return self._stat(follow_symlinks=follow_symlinks).st_flags
+
+    if hasattr(os, 'listxattr'):
+        def _xattrs(self, *, follow_symlinks=True):
+            """Return the xattrs as a list of (attr, value) pairs, or an empty
+            list if extended attributes aren't supported."""
+            try:
+                return [
+                    (attr, os.getxattr(self._path, attr, follow_symlinks=follow_symlinks))
+                    for attr in os.listxattr(self._path, follow_symlinks=follow_symlinks)]
+            except OSError as err:
+                if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
+                    raise
+                return []
+
+
+def _copy_info(info, target, follow_symlinks=True):
+    """Copy metadata from the given PathInfo to the given local path."""
+    copy_times_ns = (
+        hasattr(info, '_access_time_ns') and
+        hasattr(info, '_mod_time_ns') and
+        (follow_symlinks or os.utime in os.supports_follow_symlinks))
+    if copy_times_ns:
+        t0 = info._access_time_ns(follow_symlinks=follow_symlinks)
+        t1 = info._mod_time_ns(follow_symlinks=follow_symlinks)
+        os.utime(target, ns=(t0, t1), follow_symlinks=follow_symlinks)
+
+    # We must copy extended attributes before the file is (potentially)
+    # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
+    copy_xattrs = (
+        hasattr(info, '_xattrs') and
+        hasattr(os, 'setxattr') and
+        (follow_symlinks or os.setxattr in os.supports_follow_symlinks))
+    if copy_xattrs:
+        xattrs = info._xattrs(follow_symlinks=follow_symlinks)
+        for attr, value in xattrs:
+            try:
+                os.setxattr(target, attr, value, follow_symlinks=follow_symlinks)
+            except OSError as e:
+                if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
+                    raise
+
+    copy_posix_permissions = (
+        hasattr(info, '_posix_permissions') and
+        (follow_symlinks or os.chmod in os.supports_follow_symlinks))
+    if copy_posix_permissions:
+        posix_permissions = info._posix_permissions(follow_symlinks=follow_symlinks)
+        try:
+            os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
+        except NotImplementedError:
+            # if we got a NotImplementedError, it's because
+            #   * follow_symlinks=False,
+            #   * lchown() is unavailable, and
+            #   * either
+            #       * fchownat() is unavailable or
+            #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
+            #         (it returned ENOSUP.)
+            # therefore we're out of options--we simply cannot chown the
+            # symlink.  give up, suppress the error.
+            # (which is what shutil always did in this circumstance.)
+            pass
+
+    copy_bsd_flags = (
+        hasattr(info, '_bsd_flags') and
+        hasattr(os, 'chflags') and
+        (follow_symlinks or os.chflags in os.supports_follow_symlinks))
+    if copy_bsd_flags:
+        bsd_flags = info._bsd_flags(follow_symlinks=follow_symlinks)
+        try:
+            os.chflags(target, bsd_flags, follow_symlinks=follow_symlinks)
+        except OSError as why:
+            if why.errno not in (EOPNOTSUPP, ENOTSUP):
+                raise
+
+
 class Path(PurePath):
     """PurePath subclass that can make system calls.
 
@@ -648,7 +841,7 @@ class Path(PurePath):
         try:
             return self._info
         except AttributeError:
-            self._info = PathInfo(self)
+            self._info = _Info(str(self))
             return self._info
 
     def stat(self, *, follow_symlinks=True):
@@ -828,7 +1021,7 @@ class Path(PurePath):
     def _from_dir_entry(self, dir_entry, path_str):
         path = self.with_segments(path_str)
         path._str = path_str
-        path._info = DirEntryInfo(dir_entry)
+        path._info = _Info(dir_entry.path, dir_entry)
         return path
 
     def iterdir(self):
@@ -1134,17 +1327,17 @@ class Path(PurePath):
                 self.joinpath(child.name)._copy_from(
                     child, follow_symlinks, preserve_metadata)
             if preserve_metadata:
-                copy_info(source.info, self)
+                _copy_info(source.info, self)
         else:
             self._copy_from_file(source, preserve_metadata)
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
-        with magic_open(source, 'rb') as source_f:
+        with vfsopen(source, 'rb') as source_f:
             with open(self, 'wb') as target_f:
                 copyfileobj(source_f, target_f)
         if preserve_metadata:
-            copy_info(source.info, self)
+            _copy_info(source.info, self)
 
     if copyfile2:
         # Use fast OS routine for local file copying where available.
@@ -1164,14 +1357,14 @@ class Path(PurePath):
         # os.symlink() incorrectly creates a file-symlink on Windows. Avoid
         # this by passing *target_is_dir* to os.symlink() on Windows.
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self, source.info.is_dir())
+            os.symlink(vfspath(source.readlink()), self, source.info.is_dir())
             if preserve_metadata:
-                copy_info(source.info, self, follow_symlinks=False)
+                _copy_info(source.info, self, follow_symlinks=False)
     else:
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self)
+            os.symlink(vfspath(source.readlink()), self)
             if preserve_metadata:
-                copy_info(source.info, self, follow_symlinks=False)
+                _copy_info(source.info, self, follow_symlinks=False)
 
     def move(self, target):
         """
@@ -1271,15 +1464,17 @@ class Path(PurePath):
         if not self.is_absolute():
             raise ValueError("relative paths can't be expressed as file URIs")
         from urllib.request import pathname2url
-        return f'file:{pathname2url(str(self))}'
+        return pathname2url(str(self), add_scheme=True)
 
     @classmethod
     def from_uri(cls, uri):
         """Return a new path from the given 'file' URI."""
-        if not uri.startswith('file:'):
-            raise ValueError(f"URI does not start with 'file:': {uri!r}")
+        from urllib.error import URLError
         from urllib.request import url2pathname
-        path = cls(url2pathname(uri.removeprefix('file:')))
+        try:
+            path = cls(url2pathname(uri, require_scheme=True))
+        except URLError as exc:
+            raise ValueError(exc.reason) from None
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path

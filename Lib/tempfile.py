@@ -180,7 +180,7 @@ def _candidate_tempdir_list():
 
     return dirlist
 
-def _get_default_tempdir():
+def _get_default_tempdir(dirlist=None):
     """Calculate the default directory to use for temporary files.
     This routine should be called exactly once.
 
@@ -190,7 +190,8 @@ def _get_default_tempdir():
     service, the name of the test file must be randomized."""
 
     namer = _RandomNameSequence()
-    dirlist = _candidate_tempdir_list()
+    if dirlist is None:
+        dirlist = _candidate_tempdir_list()
 
     for dir in dirlist:
         if dir != _os.curdir:
@@ -655,7 +656,7 @@ else:
             fd = None
             def opener(*args):
                 nonlocal fd
-                flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
+                flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT & ~_os.O_EXCL
                 fd = _os.open(dir, flags2, 0o600)
                 return fd
             try:
@@ -690,7 +691,7 @@ else:
             fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
             try:
                 _os.unlink(name)
-            except BaseException as e:
+            except BaseException:
                 _os.close(fd)
                 raise
             return fd

@@ -1,3 +1,4 @@
+import sys
 import unittest
 from test.support import import_helper
 
@@ -55,7 +56,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'', 0), bytearray())
         self.assertEqual(fromstringandsize(NULL, 0), bytearray())
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
-        self.assertRaises(MemoryError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, fromstringandsize, NULL,
+                          PY_SSIZE_T_MAX-sys.getsizeof(b'') + 1)
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
         self.assertRaises(SystemError, fromstringandsize, b'abc', PY_SSIZE_T_MIN)
@@ -66,6 +69,7 @@ class CAPITest(unittest.TestCase):
         # Test PyByteArray_FromObject()
         fromobject = _testlimitedcapi.bytearray_fromobject
 
+        self.assertEqual(fromobject(b''), bytearray(b''))
         self.assertEqual(fromobject(b'abc'), bytearray(b'abc'))
         self.assertEqual(fromobject(bytearray(b'abc')), bytearray(b'abc'))
         self.assertEqual(fromobject(ByteArraySubclass(b'abc')), bytearray(b'abc'))
@@ -115,6 +119,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(concat(b'abc', bytearray(b'def')), bytearray(b'abcdef'))
         self.assertEqual(concat(bytearray(b'abc'), b''), bytearray(b'abc'))
         self.assertEqual(concat(b'', bytearray(b'def')), bytearray(b'def'))
+        self.assertEqual(concat(bytearray(b''), bytearray(b'')), bytearray(b''))
         self.assertEqual(concat(memoryview(b'xabcy')[1:4], b'def'),
                          bytearray(b'abcdef'))
         self.assertEqual(concat(b'abc', memoryview(b'xdefy')[1:4]),
@@ -147,6 +152,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(resize(ba, 2**20), 0)
         self.assertEqual(len(ba), 2**20)
         self.assertEqual(ba[:3], bytearray(b'abc'))
+        self.assertEqual(resize(ba, 0), 0)
+        self.assertEqual(ba, bytearray())
+
+        ba = bytearray(b'')
         self.assertEqual(resize(ba, 0), 0)
         self.assertEqual(ba, bytearray())
 

@@ -530,7 +530,6 @@ class Formatter:
         fields.append(instr.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
         if instr.arg is not None:
-            arg = repr(instr.arg)
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
@@ -1131,7 +1130,7 @@ class Bytecode:
 def main(args=None):
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-C', '--show-caches', action='store_true',
                         help='show inline caches')
     parser.add_argument('-O', '--show-offsets', action='store_true',

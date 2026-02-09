@@ -19,7 +19,7 @@ This module defines classes for implementing HTTP servers.
 
 .. warning::
 
-    :mod:`http.server` is not recommended for production. It only implements
+    :mod:`!http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -78,7 +78,7 @@ handler.  Code to create and run the server looks like this::
 
    By default, it is set to ``["http/1.1"]``, meaning the server supports HTTP/1.1.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. class:: ThreadingHTTPSServer(server_address, RequestHandlerClass,\
                                 bind_and_activate=True, *, certfile, keyfile=None,\
@@ -88,7 +88,7 @@ handler.  Code to create and run the server looks like this::
    requests by inheriting from :class:`~socketserver.ThreadingMixIn`. This is
    analogous to :class:`ThreadingHTTPServer` only using :class:`HTTPSServer`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 The :class:`HTTPServer`, :class:`ThreadingHTTPServer`, :class:`HTTPSServer` and
@@ -154,7 +154,7 @@ instantiation, of which this module provides three different variants:
       variable. This instance parses and manages the headers in the HTTP
       request. The :func:`~http.client.parse_headers` function from
       :mod:`http.client` is used to parse the headers and it requires that the
-      HTTP request provide a valid :rfc:`2822` style header.
+      HTTP request provide a valid :rfc:`5322` style header.
 
    .. attribute:: rfile
 
@@ -429,8 +429,7 @@ instantiation, of which this module provides three different variants:
       ``'Last-Modified:'`` header with the file's modification time.
 
       Then follows a blank line signifying the end of the headers, and then the
-      contents of the file are output. If the file's MIME type starts with
-      ``text/`` the file is opened in text mode; otherwise binary mode is used.
+      contents of the file are output.
 
       For example usage, see the implementation of the ``test`` function
       in :source:`Lib/http/server.py`.
@@ -459,61 +458,12 @@ such as using different index file names by overriding the class attribute
 :attr:`index_pages`.
 
 
-.. class:: CGIHTTPRequestHandler(request, client_address, server)
-
-   This class is used to serve either files or output of CGI scripts from the
-   current directory and below. Note that mapping HTTP hierarchic structure to
-   local directory structure is exactly as in :class:`SimpleHTTPRequestHandler`.
-
-   .. note::
-
-      CGI scripts run by the :class:`CGIHTTPRequestHandler` class cannot execute
-      redirects (HTTP code 302), because code 200 (script output follows) is
-      sent prior to execution of the CGI script.  This pre-empts the status
-      code.
-
-   The class will however, run the CGI script, instead of serving it as a file,
-   if it guesses it to be a CGI script.  Only directory-based CGI are used ---
-   the other common server configuration is to treat special extensions as
-   denoting CGI scripts.
-
-   The :func:`do_GET` and :func:`do_HEAD` functions are modified to run CGI scripts
-   and serve the output, instead of serving files, if the request leads to
-   somewhere below the ``cgi_directories`` path.
-
-   The :class:`CGIHTTPRequestHandler` defines the following data member:
-
-   .. attribute:: cgi_directories
-
-      This defaults to ``['/cgi-bin', '/htbin']`` and describes directories to
-      treat as containing CGI scripts.
-
-   The :class:`CGIHTTPRequestHandler` defines the following method:
-
-   .. method:: do_POST()
-
-      This method serves the ``'POST'`` request type, only allowed for CGI
-      scripts.  Error 501, "Can only POST to CGI scripts", is output when trying
-      to POST to a non-CGI url.
-
-   Note that CGI scripts will be run with UID of user nobody, for security
-   reasons.  Problems with the CGI script will be translated to error 403.
-
-   .. deprecated-removed:: 3.13 3.15
-
-      :class:`CGIHTTPRequestHandler` is being removed in 3.15.  CGI has not
-      been considered a good way to do things for well over a decade. This code
-      has been unmaintained for a while now and sees very little practical use.
-      Retaining it could lead to further :ref:`security considerations
-      <http.server-security>`.
-
-
 .. _http-server-cli:
 
 Command-line interface
 ----------------------
 
-:mod:`http.server` can also be invoked directly using the :option:`-m`
+:mod:`!http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  The following example illustrates how to serve
 files relative to the current directory::
 
@@ -564,31 +514,13 @@ The following options are accepted:
 
    .. versionadded:: 3.11
 
-.. option:: --cgi
-
-   :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
-   the ``--cgi`` option::
-
-      python -m http.server --cgi
-
-   .. deprecated-removed:: 3.13 3.15
-
-      :mod:`http.server` command line ``--cgi`` support is being removed
-      because :class:`CGIHTTPRequestHandler` is being removed.
-
-.. warning::
-
-   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command-line option
-   are not intended for use by untrusted clients and may be vulnerable
-   to exploitation. Always use within a secure environment.
-
 .. option:: --tls-cert
 
    Specifies a TLS certificate chain for HTTPS connections::
 
       python -m http.server --tls-cert fullchain.pem
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: --tls-key
 
@@ -596,7 +528,7 @@ The following options are accepted:
 
    This option requires ``--tls-cert`` to be specified.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: --tls-password-file
 
@@ -609,7 +541,7 @@ The following options are accepted:
 
    This option requires `--tls-cert`` to be specified.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _http.server-security:

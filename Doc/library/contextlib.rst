@@ -49,7 +49,7 @@ Functions and classes provided:
 
    While many objects natively support use in with statements, sometimes a
    resource needs to be managed that isn't a context manager in its own right,
-   and doesn't implement a ``close()`` method for use with ``contextlib.closing``
+   and doesn't implement a ``close()`` method for use with ``contextlib.closing``.
 
    An abstract example would be the following to ensure correct resource
    management::
@@ -327,10 +327,10 @@ Functions and classes provided:
 .. function:: redirect_stdout(new_target)
 
    Context manager for temporarily redirecting :data:`sys.stdout` to
-   another file or file-like object.
+   another :term:`file object`.
 
    This tool adds flexibility to existing functions or classes whose output
-   is hardwired to stdout.
+   is hardwired to :data:`sys.stdout`.
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
@@ -366,8 +366,8 @@ Functions and classes provided:
 
 .. function:: redirect_stderr(new_target)
 
-   Similar to :func:`~contextlib.redirect_stdout` but redirecting
-   :data:`sys.stderr` to another file or file-like object.
+   Similar to :func:`~contextlib.redirect_stdout` but redirecting the global
+   :data:`sys.stderr` to another :term:`file object`.
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
@@ -564,6 +564,10 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not a context manager.
 
+      .. versionchanged:: next
+         Added support for arbitrary descriptors :meth:`!__enter__` and
+         :meth:`!__exit__`.
+
    .. method:: push(exit)
 
       Adds a context manager's :meth:`~object.__exit__` method to the callback stack.
@@ -581,6 +585,9 @@ Functions and classes provided:
 
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
+
+      .. versionchanged:: next
+         Added support for arbitrary descriptors :meth:`!__exit__`.
 
    .. method:: callback(callback, /, *args, **kwds)
 
@@ -639,10 +646,16 @@ Functions and classes provided:
          Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
          is not an asynchronous context manager.
 
+      .. versionchanged:: next
+         Added support for arbitrary descriptors :meth:`!__aenter__` and :meth:`!__aexit__`.
+
    .. method:: push_async_exit(exit)
 
       Similar to :meth:`ExitStack.push` but expects either an asynchronous context manager
       or a coroutine function.
+
+      .. versionchanged:: next
+         Added support for arbitrary descriptors :meth:`!__aexit__`.
 
    .. method:: push_async_callback(callback, /, *args, **kwds)
 
@@ -668,7 +681,7 @@ Examples and Recipes
 --------------------
 
 This section describes some examples and recipes for making effective use of
-the tools provided by :mod:`contextlib`.
+the tools provided by :mod:`!contextlib`.
 
 
 Supporting a variable number of context managers

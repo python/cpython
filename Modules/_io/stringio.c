@@ -1,6 +1,7 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
@@ -444,7 +445,7 @@ stringio_iternext(PyObject *op)
 /*[clinic input]
 @critical_section
 _io.StringIO.truncate
-    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="((stringio *)self)->pos") = None
+    pos: object = None
     /
 
 Truncate size to pos.
@@ -455,16 +456,26 @@ Returns the new absolute position.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=eb3aef8e06701365 input=fa8a6c98bb2ba780]*/
+_io_StringIO_truncate_impl(stringio *self, PyObject *pos)
+/*[clinic end generated code: output=c76c43b5ecfaf4e2 input=d59fd2ee49757ae6]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
 
-    if (size < 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "Negative size value %zd", size);
-        return NULL;
+    Py_ssize_t size;
+    if (pos == Py_None) {
+        size = self->pos;
+    }
+    else {
+        size = PyLong_AsLong(pos);
+        if (size == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (size < 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "negative pos value %zd", size);
+            return NULL;
+        }
     }
 
     if (size < self->string_size) {
@@ -628,9 +639,7 @@ stringio_dealloc(PyObject *op)
     }
     PyUnicodeWriter_Discard(self->writer);
     (void)stringio_clear(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1085,7 +1094,7 @@ static PyType_Slot stringio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec stringio_spec = {
+PyType_Spec _Py_stringio_spec = {
     .name = "_io.StringIO",
     .basicsize = sizeof(stringio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

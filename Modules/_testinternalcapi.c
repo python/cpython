@@ -10,6 +10,7 @@
 #undef NDEBUG
 
 #include "Python.h"
+#include <string.h>
 #include "pycore_backoff.h"       // JUMP_BACKWARD_INITIAL_VALUE
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
@@ -21,18 +22,21 @@
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_import.h"        // _PyImport_ClearExtension()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
+#include "pycore_jit.h"           // _PyJIT_AddressInJitCode()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -40,8 +44,20 @@
 // Include test definitions from _testinternalcapi/
 #include "_testinternalcapi/parts.h"
 
+#if defined(HAVE_DLADDR) && !defined(__wasi__)
+#  include <dlfcn.h>
+#endif
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#  include <intrin.h>
+#  include <winnt.h>
+#  include <wchar.h>
+#endif
 
 #define MODULE_NAME "_testinternalcapi"
+
+
+static const uintptr_t min_frame_pointer_addr = 0x1000;
 
 
 static PyObject *
@@ -120,10 +136,278 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit) / _PyOS_STACK_MARGIN_BYTES * 50);
     return PyLong_FromLong(remaining);
 }
 
+static PyObject*
+get_stack_pointer(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    return PyLong_FromSize_t(here_addr);
+}
+
+static PyObject*
+get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
+}
+
+#ifdef MS_WINDOWS
+static const char *
+classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
+{
+    HMODULE module = NULL;
+    if (GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+            | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            (LPCWSTR)addr,
+            &module)) {
+        wchar_t path[MAX_PATH];
+        DWORD len = GetModuleFileNameW(module, path, Py_ARRAY_LENGTH(path));
+        if (len > 0 && len < Py_ARRAY_LENGTH(path)) {
+            const wchar_t *base = wcsrchr(path, L'\\');
+            base = base ? base + 1 : path;
+            if (_wcsnicmp(base, L"python", 6) == 0) {
+                return "python";
+            }
+            return "other";
+        }
+        /* Module resolved but path unavailable: treat as non-JIT. */
+        return "other";
+    }
+#ifdef _Py_JIT
+    if (jit_enabled && _PyJIT_AddressInJitCode(interp, addr)) {
+        return "jit";
+    }
+#endif
+    return "other";
+}
+#elif defined(HAVE_DLADDR) && !defined(__wasi__)
+static const char *
+classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
+{
+    Dl_info info;
+    if (dladdr((void *)addr, &info) != 0
+        && info.dli_fname != NULL
+        && info.dli_fname[0] != '\0') {
+        const char *base = strrchr(info.dli_fname, '/');
+        base = base ? base + 1 : info.dli_fname;
+        if (strncmp(base, "python", 6) == 0) {
+            return "python";
+        }
+        return "other";
+    }
+#ifdef _Py_JIT
+    if (jit_enabled && _PyJIT_AddressInJitCode(interp, addr)) {
+        return "jit";
+    }
+#endif
+    return "other";
+}
+#else
+static const char *
+classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
+{
+#ifdef _Py_JIT
+    if (jit_enabled && _PyJIT_AddressInJitCode(interp, addr)) {
+        return "jit";
+    }
+#endif
+    return "other";
+}
+#endif
+
+static PyObject *
+classify_stack_addresses(PyObject *self, PyObject *args)
+{
+    PyObject *seq = NULL;
+    int jit_enabled = 0;
+
+    if (!PyArg_ParseTuple(args, "O|p:classify_stack_addresses",
+                          &seq, &jit_enabled)) {
+        return NULL;
+    }
+    PyObject *fast = PySequence_Fast(seq, "addresses must be iterable");
+    if (fast == NULL) {
+        return NULL;
+    }
+    Py_ssize_t n = PySequence_Fast_GET_SIZE(fast);
+    PyObject *labels = PyList_New(n);
+    if (labels == NULL) {
+        Py_DECREF(fast);
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate ? tstate->interp : NULL;
+    PyObject **items = PySequence_Fast_ITEMS(fast);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        unsigned long long value = PyLong_AsUnsignedLongLong(items[i]);
+        if (PyErr_Occurred()) {
+            Py_DECREF(labels);
+            Py_DECREF(fast);
+            return NULL;
+        }
+        const char *label = classify_address((uintptr_t)value, jit_enabled, interp);
+        PyObject *label_obj = PyUnicode_FromString(label);
+        if (label_obj == NULL) {
+            Py_DECREF(labels);
+            Py_DECREF(fast);
+            return NULL;
+        }
+        PyList_SET_ITEM(labels, i, label_obj);
+    }
+    Py_DECREF(fast);
+    return labels;
+}
+
+static PyObject *
+get_jit_code_ranges(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *ranges = PyList_New(0);
+    if (ranges == NULL) {
+        return NULL;
+    }
+#ifdef _Py_JIT
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate ? tstate->interp : NULL;
+    if (interp == NULL) {
+        return ranges;
+    }
+    for (_PyExecutorObject *exec = interp->executor_list_head;
+         exec != NULL;
+         exec = exec->vm_data.links.next)
+    {
+        if (exec->jit_code == NULL || exec->jit_size == 0) {
+            continue;
+        }
+        uintptr_t start = (uintptr_t)exec->jit_code;
+        uintptr_t end = start + exec->jit_size;
+        PyObject *start_obj = PyLong_FromUnsignedLongLong(start);
+        PyObject *end_obj = PyLong_FromUnsignedLongLong(end);
+        if (start_obj == NULL || end_obj == NULL) {
+            Py_XDECREF(start_obj);
+            Py_XDECREF(end_obj);
+            Py_DECREF(ranges);
+            return NULL;
+        }
+        PyObject *pair = PyTuple_New(2);
+        if (pair == NULL) {
+            Py_DECREF(start_obj);
+            Py_DECREF(end_obj);
+            Py_DECREF(ranges);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(pair, 0, start_obj);
+        PyTuple_SET_ITEM(pair, 1, end_obj);
+        if (PyList_Append(ranges, pair) < 0) {
+            Py_DECREF(pair);
+            Py_DECREF(ranges);
+            return NULL;
+        }
+        Py_DECREF(pair);
+    }
+#endif
+    return ranges;
+}
+
+static PyObject *
+get_jit_backend(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#ifdef _Py_JIT
+    return PyUnicode_FromString("jit");
+#elif defined(_Py_TIER2)
+    return PyUnicode_FromString("interpreter");
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
+static PyObject *
+manual_unwind_from_fp(uintptr_t *frame_pointer)
+{
+    Py_ssize_t max_depth = 200;
+    int stack_grows_down = _Py_STACK_GROWS_DOWN;
+
+    if (frame_pointer == NULL) {
+        return PyList_New(0);
+    }
+
+    PyObject *result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t depth = 0;
+         depth < max_depth && frame_pointer != NULL;
+         depth++)
+    {
+        uintptr_t fp_addr = (uintptr_t)frame_pointer;
+        if ((fp_addr % sizeof(uintptr_t)) != 0) {
+            break;
+        }
+        uintptr_t return_addr = frame_pointer[1];
+
+        PyObject *addr_obj = PyLong_FromUnsignedLongLong(return_addr);
+        if (addr_obj == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (PyList_Append(result, addr_obj) < 0) {
+            Py_DECREF(addr_obj);
+            Py_DECREF(result);
+            return NULL;
+        }
+        Py_DECREF(addr_obj);
+
+        uintptr_t *next_fp = (uintptr_t *)frame_pointer[0];
+        // Stop if the frame pointer is extremely low.
+        if ((uintptr_t)next_fp < min_frame_pointer_addr) {
+            break;
+        }
+        uintptr_t next_addr = (uintptr_t)next_fp;
+        if (stack_grows_down) {
+            if (next_addr <= fp_addr) {
+                break;
+            }
+        }
+        else {
+            if (next_addr >= fp_addr) {
+                break;
+            }
+        }
+        frame_pointer = next_fp;
+    }
+
+    return result;
+}
+#if defined(__GNUC__) || defined(__clang__)
+static PyObject *
+manual_frame_pointer_unwind(PyObject *self, PyObject *args)
+{
+    uintptr_t *frame_pointer = (uintptr_t *)__builtin_frame_address(0);
+    return manual_unwind_from_fp(frame_pointer);
+}
+#elif defined(MS_WINDOWS) && defined(_M_ARM64)
+static PyObject *
+manual_frame_pointer_unwind(PyObject *self, PyObject *args)
+{
+    CONTEXT ctx;
+    uintptr_t *frame_pointer = NULL;
+
+    RtlCaptureContext(&ctx);
+    frame_pointer = (uintptr_t *)ctx.Fp;
+    return manual_unwind_from_fp(frame_pointer);
+}
+#else
+static PyObject *
+manual_frame_pointer_unwind(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyErr_SetString(PyExc_RuntimeError,
+                    "manual_frame_pointer_unwind is not supported on this platform");
+    return NULL;
+}
+#endif
 
 static PyObject*
 test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
@@ -679,6 +963,43 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+// Defined in interpreter.c
+extern PyObject*
+Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag);
+extern int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
+
+static PyObject *
+get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *res = PyDict_New();
+    if (res == NULL) {
+        return NULL;
+    }
+    PyObject *resumes = PyLong_FromLong(Test_EvalFrame_Resumes);
+    if (resumes == NULL || PyDict_SetItemString(res, "resumes", resumes) < 0) {
+        Py_XDECREF(resumes);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(resumes);
+    PyObject *loads = PyLong_FromLong(Test_EvalFrame_Loads);
+    if (loads == NULL || PyDict_SetItemString(res, "loads", loads) < 0) {
+        Py_XDECREF(loads);
+        Py_DECREF(res);
+        return NULL;
+    }
+    Py_DECREF(loads);
+    Test_EvalFrame_Resumes = Test_EvalFrame_Loads = 0;
+    return res;
+}
+
+static PyObject *
+set_eval_frame_interp(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), Test_EvalFrame);
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 
 _testinternalcapi.compiler_cleandoc -> object
@@ -946,6 +1267,18 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+code_returns_only_none(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)arg;
+    int res = _PyCode_ReturnsOnlyNone(code);
+    return PyBool_FromLong(res);
+}
+
+static PyObject *
 get_co_framesize(PyObject *self, PyObject *arg)
 {
     if (!PyCode_Check(arg)) {
@@ -957,9 +1290,244 @@ get_co_framesize(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
-jit_enabled(PyObject *self, PyObject *arg)
+get_co_localskinds(PyObject *self, PyObject *arg)
 {
-    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *co = (PyCodeObject *)arg;
+
+    PyObject *kinds = PyDict_New();
+    if (kinds == NULL) {
+        return NULL;
+    }
+    for (int offset = 0; offset < co->co_nlocalsplus; offset++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, offset);
+        _PyLocals_Kind k = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        PyObject *kind = PyLong_FromLong(k);
+        if (kind == NULL) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+        int res = PyDict_SetItem(kinds, name, kind);
+        Py_DECREF(kind);
+        if (res < 0) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+    }
+    return kinds;
+}
+
+static PyObject *
+get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *codearg;
+    PyObject *globalnames = NULL;
+    PyObject *attrnames = NULL;
+    PyObject *globalsns = NULL;
+    PyObject *builtinsns = NULL;
+    static char *kwlist[] = {"code", "globalnames", "attrnames", "globalsns",
+                             "builtinsns", NULL};
+    if (!PyArg_ParseTupleAndKeywords(_args, _kwargs,
+                    "O|OOO!O!:get_code_var_counts", kwlist,
+                    &codearg, &globalnames, &attrnames,
+                    &PyDict_Type, &globalsns, &PyDict_Type, &builtinsns))
+    {
+        return NULL;
+    }
+    if (PyFunction_Check(codearg)) {
+        if (globalsns == NULL) {
+            globalsns = PyFunction_GET_GLOBALS(codearg);
+        }
+        if (builtinsns == NULL) {
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
+        }
+        codearg = PyFunction_GET_CODE(codearg);
+    }
+    else if (!PyCode_Check(codearg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must be a code object or a function");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)codearg;
+
+    _PyCode_var_counts_t counts = {0};
+    _PyCode_GetVarCounts(code, &counts);
+    if (_PyCode_SetUnboundVarCounts(
+            tstate, code, &counts, globalnames, attrnames,
+            globalsns, builtinsns) < 0)
+    {
+        return NULL;
+    }
+
+#define SET_COUNT(DICT, STRUCT, NAME) \
+    do { \
+        PyObject *count = PyLong_FromLong(STRUCT.NAME); \
+        if (count == NULL) { \
+            goto error; \
+        } \
+        int res = PyDict_SetItemString(DICT, #NAME, count); \
+        Py_DECREF(count); \
+        if (res < 0) { \
+            goto error; \
+        } \
+    } while (0)
+
+    PyObject *locals = NULL;
+    PyObject *args = NULL;
+    PyObject *cells = NULL;
+    PyObject *hidden = NULL;
+    PyObject *unbound = NULL;
+    PyObject *globals = NULL;
+    PyObject *countsobj = PyDict_New();
+    if (countsobj == NULL) {
+        return NULL;
+    }
+    SET_COUNT(countsobj, counts, total);
+
+    // locals
+    locals = PyDict_New();
+    if (locals == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(countsobj, "locals", locals) < 0) {
+        goto error;
+    }
+    SET_COUNT(locals, counts.locals, total);
+
+    // locals.args
+    args = PyDict_New();
+    if (args == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(locals, "args", args) < 0) {
+        goto error;
+    }
+    SET_COUNT(args, counts.locals.args, total);
+    SET_COUNT(args, counts.locals.args, numposonly);
+    SET_COUNT(args, counts.locals.args, numposorkw);
+    SET_COUNT(args, counts.locals.args, numkwonly);
+    SET_COUNT(args, counts.locals.args, varargs);
+    SET_COUNT(args, counts.locals.args, varkwargs);
+
+    // locals.numpure
+    SET_COUNT(locals, counts.locals, numpure);
+
+    // locals.cells
+    cells = PyDict_New();
+    if (cells == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(locals, "cells", cells) < 0) {
+        goto error;
+    }
+    SET_COUNT(cells, counts.locals.cells, total);
+    SET_COUNT(cells, counts.locals.cells, numargs);
+    SET_COUNT(cells, counts.locals.cells, numothers);
+
+    // locals.hidden
+    hidden = PyDict_New();
+    if (hidden == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(locals, "hidden", hidden) < 0) {
+        goto error;
+    }
+    SET_COUNT(hidden, counts.locals.hidden, total);
+    SET_COUNT(hidden, counts.locals.hidden, numpure);
+    SET_COUNT(hidden, counts.locals.hidden, numcells);
+
+    // numfree
+    SET_COUNT(countsobj, counts, numfree);
+
+    // unbound
+    unbound = PyDict_New();
+    if (unbound == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(countsobj, "unbound", unbound) < 0) {
+        goto error;
+    }
+    SET_COUNT(unbound, counts.unbound, total);
+    SET_COUNT(unbound, counts.unbound, numattrs);
+    SET_COUNT(unbound, counts.unbound, numunknown);
+
+    // unbound.globals
+    globals = PyDict_New();
+    if (globals == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(unbound, "globals", globals) < 0) {
+        goto error;
+    }
+    SET_COUNT(globals, counts.unbound.globals, total);
+    SET_COUNT(globals, counts.unbound.globals, numglobal);
+    SET_COUNT(globals, counts.unbound.globals, numbuiltin);
+    SET_COUNT(globals, counts.unbound.globals, numunknown);
+
+#undef SET_COUNT
+
+    Py_DECREF(locals);
+    Py_DECREF(args);
+    Py_DECREF(cells);
+    Py_DECREF(hidden);
+    Py_DECREF(unbound);
+    Py_DECREF(globals);
+    return countsobj;
+
+error:
+    Py_DECREF(countsobj);
+    Py_XDECREF(locals);
+    Py_XDECREF(args);
+    Py_XDECREF(cells);
+    Py_XDECREF(hidden);
+    Py_XDECREF(unbound);
+    Py_XDECREF(globals);
+    return NULL;
+}
+
+static PyObject *
+verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *codearg;
+    PyObject *globalnames = NULL;
+    PyObject *globalsns = NULL;
+    PyObject *builtinsns = NULL;
+    static char *kwlist[] = {"code", "globalnames",
+                             "globalsns", "builtinsns", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "O|O!O!O!:get_code_var_counts", kwlist,
+                    &codearg, &PySet_Type, &globalnames,
+                    &PyDict_Type, &globalsns, &PyDict_Type, &builtinsns))
+    {
+        return NULL;
+    }
+    if (PyFunction_Check(codearg)) {
+        if (globalsns == NULL) {
+            globalsns = PyFunction_GET_GLOBALS(codearg);
+        }
+        if (builtinsns == NULL) {
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
+        }
+        codearg = PyFunction_GET_CODE(codearg);
+    }
+    else if (!PyCode_Check(codearg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must be a code object or a function");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)codearg;
+
+    if (_PyCode_VerifyStateless(
+                tstate, code, globalnames, globalsns, builtinsns) < 0)
+    {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 #ifdef _Py_TIER2
@@ -982,6 +1550,30 @@ invalidate_executors(PyObject *self, PyObject *obj)
     PyInterpreterState *interp = PyInterpreterState_Get();
     _Py_Executors_InvalidateDependency(interp, obj, 1);
     Py_RETURN_NONE;
+}
+
+static PyObject *
+clear_executor_deletion_list(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _Py_ClearExecutorDeletionList(interp);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_exit_executor(PyObject *self, PyObject *arg)
+{
+    if (!PyLong_CheckExact(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be an ID to an _PyExitData");
+        return NULL;
+    }
+    uint64_t ptr;
+    if (PyLong_AsUInt64(arg, &ptr) < 0) {
+        // Error set by PyLong API
+        return NULL;
+    }
+    _PyExitData *exit = (_PyExitData *)ptr;
+    return Py_NewRef(exit->executor);
 }
 
 #endif
@@ -1446,11 +2038,12 @@ create_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"id", NULL};
+    static char *kwlist[] = {"id", "basic", NULL};
     PyObject *idobj = NULL;
+    int basic = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O:destroy_interpreter", kwlist,
-                                     &idobj))
+                                     "O|p:destroy_interpreter", kwlist,
+                                     &idobj, &basic))
     {
         return NULL;
     }
@@ -1460,7 +2053,27 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    _PyXI_EndInterpreter(interp, NULL, NULL);
+    if (basic)
+    {
+        // Test the basic Py_EndInterpreter with weird out of order thread states
+        PyThreadState *t1, *t2;
+        PyThreadState *prev;
+        t1 = interp->threads.head;
+        if (t1 == NULL) {
+            t1 = PyThreadState_New(interp);
+        }
+        t2 = PyThreadState_New(interp);
+        prev = PyThreadState_Swap(t2);
+        PyThreadState_Clear(t1);
+        PyThreadState_Delete(t1);
+        Py_EndInterpreter(t2);
+        PyThreadState_Swap(prev);
+    }
+    else
+    {
+        // use the cross interpreter _PyXI_EndInterpreter normally
+        _PyXI_EndInterpreter(interp, NULL, NULL);
+    }
     Py_RETURN_NONE;
 }
 
@@ -1520,9 +2133,9 @@ finally:
 
 /* To run some code in a sub-interpreter.
 
-Generally you can use test.support.interpreters,
+Generally you can use the interpreters module,
 but we keep this helper as a distinct implementation.
-That's especially important for testing test.support.interpreters.
+That's especially important for testing the interpreters module.
 */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1686,41 +2299,101 @@ interpreter_refcount_linked(PyObject *self, PyObject *idobj)
 static void
 _xid_capsule_destructor(PyObject *capsule)
 {
-    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
-    if (data != NULL) {
-        assert(_PyXIData_Release(data) == 0);
-        _PyXIData_Free(data);
+    _PyXIData_t *xidata = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
+    if (xidata != NULL) {
+        assert(_PyXIData_Release(xidata) == 0);
+        _PyXIData_Free(xidata);
     }
 }
 
 static PyObject *
-get_crossinterp_data(PyObject *self, PyObject *args)
+get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return NULL;
-    }
-
     PyObject *obj = NULL;
-    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+    PyObject *modeobj = NULL;
+    static char *kwlist[] = {"obj", "mode", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "O|O:get_crossinterp_data", kwlist,
+                    &obj, &modeobj))
+    {
         return NULL;
+    }
+    const char *mode = NULL;
+    if (modeobj == NULL || modeobj == Py_None) {
+        mode = "xidata";
+    }
+    else if (!PyUnicode_Check(modeobj)) {
+        PyErr_Format(PyExc_TypeError, "expected mode str, got %R", modeobj);
+        return NULL;
+    }
+    else {
+        mode = PyUnicode_AsUTF8(modeobj);
+        if (strlen(mode) == 0) {
+            mode = "xidata";
+        }
     }
 
-    _PyXIData_t *data = _PyXIData_New();
-    if (data == NULL) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyXIData_t *xidata = _PyXIData_New();
+    if (xidata == NULL) {
         return NULL;
     }
-    if (_PyObject_GetXIData(&ctx, obj, data) != 0) {
-        _PyXIData_Free(data);
-        return NULL;
+    if (strcmp(mode, "xidata") == 0) {
+        if (_PyObject_GetXIDataNoFallback(tstate, obj, xidata) != 0) {
+            goto error;
+        }
     }
-    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIData(tstate, obj, fallback, xidata) != 0)
+        {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "pickle") == 0) {
+        if (_PyPickle_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "marshal") == 0) {
+        if (_PyMarshal_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "code") == 0) {
+        if (_PyCode_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "func") == 0) {
+        if (_PyFunction_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script") == 0) {
+        if (_PyCode_GetScriptXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script-pure") == 0) {
+        if (_PyCode_GetPureScriptXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_ValueError, "unsupported mode %R", modeobj);
+        goto error;
+    }
+    PyObject *capsule = PyCapsule_New(xidata, NULL, _xid_capsule_destructor);
     if (capsule == NULL) {
-        assert(_PyXIData_Release(data) == 0);
-        _PyXIData_Free(data);
+        assert(_PyXIData_Release(xidata) == 0);
+        goto error;
     }
     return capsule;
+
+error:
+    _PyXIData_Free(xidata);
+    return NULL;
 }
 
 static PyObject *
@@ -1731,11 +2404,11 @@ restore_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
-    if (data == NULL) {
+    _PyXIData_t *xidata = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
+    if (xidata == NULL) {
         return NULL;
     }
-    return _PyXIData_NewObject(data);
+    return _PyXIData_NewObject(xidata);
 }
 
 
@@ -1878,8 +2551,7 @@ get_code(PyObject *obj)
         return (PyCodeObject *)PyFunction_GetCode(obj);
     }
     return (PyCodeObject *)PyErr_Format(
-        PyExc_TypeError, "expected function or code object, got %s",
-        Py_TYPE(obj)->tp_name);
+        PyExc_TypeError, "expected function or code object, got %T", obj);
 }
 
 static PyObject *
@@ -1909,6 +2581,13 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
     }
     return PyLong_FromVoidPtr(bc);
 }
+
+static PyObject *
+get_long_lived_total(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromInt64(PyInterpreterState_Get()->gc.long_lived_total);
+}
+
 #endif
 
 static PyObject *
@@ -1962,6 +2641,18 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     return Py_NewRef(spam);
 }
 
+/*[clinic input]
+get_next_dict_keys_version
+[clinic start generated code]*/
+
+static PyObject *
+get_next_dict_keys_version_impl(PyObject *module)
+/*[clinic end generated code: output=e5405a509cf9d423 input=bd1cee7c6b9d3a3c]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    uint32_t keys_version = interp->dict_state.next_keys_version;
+    return PyLong_FromLong(keys_version);
+}
 
 static PyObject *
 get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -2005,10 +2696,157 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+
+EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
+    let idx = 0;
+    const encoder = new TextEncoder();
+    const bufs = [
+        encoder.encode("ab\n"),
+        encoder.encode("fi\n"),
+        encoder.encode("xy\n"),
+    ];
+    function sleep(t) {
+        return new Promise(res => setTimeout(res, t));
+    }
+    FS.createAsyncInputDevice("/dev", "blah", async () => {
+        await sleep(5);
+        return bufs[(idx ++) % 3];
+    });
+    return !!WebAssembly.promising;
+});
+
+static PyObject *
+emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+    if (emscripten_set_up_async_input_device_js()) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+#endif
+
+static PyObject *
+simple_pending_call(PyObject *self, PyObject *callable)
+{
+    if (_PyEval_AddPendingCall(_PyInterpreterState_GET(), _pending_callback, Py_NewRef(callable), 0) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+vectorcall_nop(PyObject *callable, PyObject *const *args,
+               size_t nargsf, PyObject *kwnames)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+set_vectorcall_nop(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "expected function");
+        return NULL;
+    }
+
+    ((PyFunctionObject*)func)->vectorcall = vectorcall_nop;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+module_get_gc_hooks(PyObject *self, PyObject *arg)
+{
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyObject *traverse = NULL;
+    PyObject *clear = NULL;
+    PyObject *free = NULL;
+    PyObject *result = NULL;
+    traverse = PyLong_FromVoidPtr(mod->md_state_traverse);
+    if (!traverse) {
+        goto finally;
+    }
+    clear = PyLong_FromVoidPtr(mod->md_state_clear);
+    if (!clear) {
+        goto finally;
+    }
+    free = PyLong_FromVoidPtr(mod->md_state_free);
+    if (!free) {
+        goto finally;
+    }
+    result = PyTuple_FromArray((PyObject*[]){ traverse, clear, free }, 3);
+finally:
+    Py_XDECREF(traverse);
+    Py_XDECREF(clear);
+    Py_XDECREF(free);
+    return result;
+}
+
+
+static void
+check_threadstate_set_stack_protection(PyThreadState *tstate,
+                                       void *start, size_t size)
+{
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == 0);
+    assert(!PyErr_Occurred());
+
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(ts->c_stack_top == (uintptr_t)start + size);
+    assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
+    assert(ts->c_stack_soft_limit < ts->c_stack_top);
+}
+
+
+static PyObject *
+test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(!PyErr_Occurred());
+
+    uintptr_t init_base = ts->c_stack_init_base;
+    size_t init_top = ts->c_stack_init_top;
+
+    // Test the minimum stack size
+    size_t size = _PyOS_MIN_STACK_SIZE;
+    void *start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test a larger size
+    size = 7654321;
+    assert(size > _PyOS_MIN_STACK_SIZE);
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test invalid size (too small)
+    size = 5;
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_ValueError));
+    PyErr_Clear();
+
+    // Test PyUnstable_ThreadState_ResetStackProtection()
+    PyUnstable_ThreadState_ResetStackProtection(tstate);
+    assert(ts->c_stack_init_base == init_base);
+    assert(ts->c_stack_init_top == init_top);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
+    {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
+    {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
+    {"get_stack_margin", get_stack_margin, METH_NOARGS},
+    {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
+    {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
+    {"get_jit_backend", get_jit_backend, METH_NOARGS},
+    {"manual_frame_pointer_unwind", manual_frame_pointer_unwind, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
@@ -2021,6 +2859,7 @@ static PyMethodDef module_functions[] = {
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
+    {"set_eval_frame_interp", set_eval_frame_interp, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
@@ -2034,11 +2873,18 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
-    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
+    {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
+    {"get_code_var_counts", _PyCFunction_CAST(get_code_var_counts),
+     METH_VARARGS | METH_KEYWORDS, NULL},
+    {"verify_stateless_code", _PyCFunction_CAST(verify_stateless_code),
+     METH_VARARGS | METH_KEYWORDS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
+    {"clear_executor_deletion_list", clear_executor_deletion_list, METH_NOARGS, NULL},
+    {"get_exit_executor", get_exit_executor, METH_O, NULL},
 #endif
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
@@ -2075,7 +2921,8 @@ static PyMethodDef module_functions[] = {
     {"interpreter_refcount_linked", interpreter_refcount_linked, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
-    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
+    {"get_crossinterp_data",    _PyCFunction_CAST(get_crossinterp_data),
+     METH_VARARGS | METH_KEYWORDS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
@@ -2089,6 +2936,7 @@ static PyMethodDef module_functions[] = {
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
+    {"get_long_lived_total", get_long_lived_total, METH_NOARGS},
 #endif
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
@@ -2100,6 +2948,15 @@ static PyMethodDef module_functions[] = {
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
+    GET_NEXT_DICT_KEYS_VERSION_METHODDEF
+#ifdef __EMSCRIPTEN__
+    {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
+#endif
+    {"simple_pending_call", simple_pending_call, METH_O},
+    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
+    {"test_threadstate_set_stack_protection",
+     test_threadstate_set_stack_protection, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2116,6 +2973,9 @@ module_exec(PyObject *module)
         return 1;
     }
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_Complex(module) < 0) {
         return 1;
     }
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
@@ -2148,7 +3008,8 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
+        // + 1 more due to one loop spent on tracing.
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
         return 1;
     }
 
@@ -2167,10 +3028,17 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    if (PyModule_AddIntMacro(module, _PY_NSMALLPOSINTS) < 0) {
+        return 1;
+    }
+
     return 0;
 }
 
+PyABIInfo_VAR(abi_info);
+
 static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

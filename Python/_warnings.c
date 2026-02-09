@@ -6,7 +6,6 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
@@ -69,6 +68,7 @@ warnings_clear_state(WarningsState *st)
     Py_CLEAR(st->filters);
     Py_CLEAR(st->once_registry);
     Py_CLEAR(st->default_action);
+    Py_CLEAR(st->context);
 }
 
 #ifndef Py_DEBUG
@@ -156,6 +156,13 @@ _PyWarnings_InitState(PyInterpreterState *interp)
         }
     }
 
+    if (st->context == NULL) {
+        st->context = PyContextVar_New("_warnings_context", NULL);
+        if (st->context == NULL) {
+            return -1;
+        }
+    }
+
     st->filters_version = 0;
     return 0;
 }
@@ -164,7 +171,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
 /*************************************************************************/
 
 static int
-check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
+check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg, PyObject *arg2)
 {
     PyObject *result;
     int rc;
@@ -175,6 +182,9 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
 
     /* An internal plain text default filter must match exactly */
     if (PyUnicode_CheckExact(obj)) {
+        if (arg == NULL) {
+            return 0;
+        }
         int cmp_result = PyUnicode_Compare(obj, arg);
         if (cmp_result == -1 && PyErr_Occurred()) {
             return -1;
@@ -183,10 +193,19 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
+    if (arg != NULL) {
+        result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
+    }
+    else {
+        PyObject *match = PyImport_ImportModuleAttrString("_py_warnings", "_match_filename");
+        if (match == NULL) {
+            return -1;
+        }
+        result = PyObject_CallFunctionObjArgs(match, obj, arg2, NULL);
+        Py_DECREF(match);
+    }
     if (result == NULL)
         return -1;
-
     rc = PyObject_IsTrue(result);
     Py_DECREF(result);
     return rc;
@@ -254,6 +273,68 @@ static inline bool
 warnings_lock_held(WarningsState *st)
 {
     return PyMutex_IsLocked(&st->lock.mutex);
+}
+
+static PyObject *
+get_warnings_context(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(PyContextVar_CheckExact(st->context));
+    PyObject *ctx;
+    if (PyContextVar_Get(st->context, NULL, &ctx) < 0) {
+        return NULL;
+    }
+    if (ctx == NULL) {
+        Py_RETURN_NONE;
+    }
+    return ctx;
+}
+
+static PyObject *
+get_warnings_context_filters(PyInterpreterState *interp)
+{
+    PyObject *ctx = get_warnings_context(interp);
+    if (ctx == NULL) {
+        return NULL;
+    }
+    if (ctx == Py_None) {
+        Py_RETURN_NONE;
+    }
+    PyObject *context_filters = PyObject_GetAttr(ctx, &_Py_ID(_filters));
+    Py_DECREF(ctx);
+    if (context_filters == NULL) {
+        return NULL;
+    }
+    if (!PyList_Check(context_filters)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "_filters of warnings._warnings_context must be a list");
+        Py_DECREF(context_filters);
+        return NULL;
+    }
+    return context_filters;
+}
+
+// Returns a borrowed reference to the list.
+static PyObject *
+get_warnings_filters(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    if (warnings_filters == NULL) {
+        if (PyErr_Occurred())
+            return NULL;
+    }
+    else {
+        Py_SETREF(st->filters, warnings_filters);
+    }
+
+    PyObject *filters = st->filters;
+    if (filters == NULL || !PyList_Check(filters)) {
+        PyErr_SetString(PyExc_ValueError,
+                        MODULE_NAME ".filters must be a list");
+        return NULL;
+    }
+    return filters;
 }
 
 /*[clinic input]
@@ -349,35 +430,17 @@ get_default_action(PyInterpreterState *interp)
     return default_action;
 }
 
-
-/* The item is a new reference. */
-static PyObject*
-get_filter(PyInterpreterState *interp, PyObject *category,
-           PyObject *text, Py_ssize_t lineno,
-           PyObject *module, PyObject **item)
-{
-    WarningsState *st = warnings_get_state(interp);
-    assert(st != NULL);
-
-    assert(warnings_lock_held(st));
-
-    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
-    if (warnings_filters == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
-    }
-    else {
-        Py_SETREF(st->filters, warnings_filters);
-    }
-
-    PyObject *filters = st->filters;
-    if (filters == NULL || !PyList_Check(filters)) {
-        PyErr_SetString(PyExc_ValueError,
-                        MODULE_NAME ".filters must be a list");
-        return NULL;
-    }
-
-    /* WarningsState.filters could change while we are iterating over it. */
+/* Search filters list of match, returns false on error.  If no match
+ * then 'matched_action' is NULL.  */
+static bool
+filter_search(PyInterpreterState *interp, PyObject *category,
+              PyObject *text, Py_ssize_t lineno,
+              PyObject *module, PyObject *filename, char *list_name, PyObject *filters,
+              PyObject **item, PyObject **matched_action) {
+    bool result = true;
+    *matched_action = NULL;
+    /* Avoid the filters list changing while we iterate over it. */
+    Py_BEGIN_CRITICAL_SECTION(filters);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
@@ -386,8 +449,9 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         tmp_item = PyList_GET_ITEM(filters, i);
         if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
             PyErr_Format(PyExc_ValueError,
-                         MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
-            return NULL;
+                         "warnings.%s item %zd isn't a 5-tuple", list_name, i);
+            result = false;
+            break;
         }
 
         /* Python code: action, msg, cat, mod, ln = item */
@@ -403,42 +467,102 @@ get_filter(PyInterpreterState *interp, PyObject *category,
                          "action must be a string, not '%.200s'",
                          Py_TYPE(action)->tp_name);
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
-        good_msg = check_matched(interp, msg, text);
+        good_msg = check_matched(interp, msg, text, NULL);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
-        good_mod = check_matched(interp, mod, module);
+        good_mod = check_matched(interp, mod, module, filename);
         if (good_mod == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
         is_subclass = PyObject_IsSubclass(category, cat);
         if (is_subclass == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
         ln = PyLong_AsSsize_t(ln_obj);
         if (ln == -1 && PyErr_Occurred()) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln)) {
             *item = tmp_item;
-            return action;
+            *matched_action = action;
+            result = true;
+            break;
         }
 
         Py_DECREF(tmp_item);
     }
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
 
-    PyObject *action = get_default_action(interp);
+/* The item is a new reference. */
+static PyObject*
+get_filter(PyInterpreterState *interp, PyObject *category,
+           PyObject *text, Py_ssize_t lineno,
+           PyObject *module, PyObject *filename, PyObject **item)
+{
+#ifdef Py_DEBUG
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    assert(warnings_lock_held(st));
+#endif
+
+    /* check _warning_context _filters list */
+    PyObject *context_filters = get_warnings_context_filters(interp);
+    if (context_filters == NULL) {
+        return NULL;
+    }
+    bool use_global_filters = false;
+    if (context_filters == Py_None) {
+        use_global_filters = true;
+    } else {
+        PyObject *context_action = NULL;
+        if (!filter_search(interp, category, text, lineno, module, filename, "_warnings_context _filters",
+                           context_filters, item, &context_action)) {
+            Py_DECREF(context_filters);
+            return NULL;
+        }
+        Py_DECREF(context_filters);
+        if (context_action != NULL) {
+            return context_action;
+        }
+    }
+
+    PyObject *action;
+
+    if (use_global_filters) {
+        /* check warnings.filters list */
+        PyObject *filters = get_warnings_filters(interp);
+        if (filters == NULL) {
+            return NULL;
+        }
+        if (!filter_search(interp, category, text, lineno, module, filename, "filters",
+                           filters, item, &action)) {
+            return NULL;
+        }
+        if (action != NULL) {
+            return action;
+        }
+    }
+
+    action = get_default_action(interp);
     if (action != NULL) {
         *item = Py_NewRef(Py_None);
         return action;
@@ -500,39 +624,6 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
     return 0;
 }
 
-/* New reference. */
-static PyObject *
-normalize_module(PyObject *filename)
-{
-    PyObject *module;
-    int kind;
-    const void *data;
-    Py_ssize_t len;
-
-    len = PyUnicode_GetLength(filename);
-    if (len < 0)
-        return NULL;
-
-    if (len == 0)
-        return PyUnicode_FromString("<unknown>");
-
-    kind = PyUnicode_KIND(filename);
-    data = PyUnicode_DATA(filename);
-
-    /* if filename.endswith(".py"): */
-    if (len >= 3 &&
-        PyUnicode_READ(kind, data, len-3) == '.' &&
-        PyUnicode_READ(kind, data, len-2) == 'p' &&
-        PyUnicode_READ(kind, data, len-1) == 'y')
-    {
-        module = PyUnicode_Substring(filename, 0, len-3);
-    }
-    else {
-        module = Py_NewRef(filename);
-    }
-    return module;
-}
-
 static int
 update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
                 PyObject *category, int add_zero)
@@ -565,7 +656,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         goto error;
     }
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
     }
@@ -700,22 +791,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         return NULL;
     }
 
-    /* Normalize module. */
-    if (module == NULL) {
-        module = normalize_module(filename);
-        if (module == NULL)
-            return NULL;
-    }
-    else
-        Py_INCREF(module);
-
     /* Normalize message. */
     Py_INCREF(message);  /* DECREF'ed in cleanup. */
-    rc = PyObject_IsInstance(message, PyExc_Warning);
-    if (rc == -1) {
-        goto cleanup;
-    }
-    if (rc == 1) {
+    if (PyObject_TypeCheck(message, (PyTypeObject *)PyExc_Warning)) {
         text = PyObject_Str(message);
         if (text == NULL)
             goto cleanup;
@@ -750,7 +828,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         /* Else this warning hasn't been generated before. */
     }
 
-    action = get_filter(interp, category, text, lineno, module, &item);
+    action = get_filter(interp, category, text, lineno, module, filename, &item);
     if (action == NULL)
         goto cleanup;
 
@@ -813,7 +891,6 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     Py_XDECREF(key);
     Py_XDECREF(text);
     Py_XDECREF(lineno_obj);
-    Py_DECREF(module);
     Py_XDECREF(message);
     return result;  /* Py_None or NULL. */
 }
@@ -1012,26 +1089,25 @@ setup_context(Py_ssize_t stack_level,
 static PyObject *
 get_category(PyObject *message, PyObject *category)
 {
-    int rc;
-
-    /* Get category. */
-    rc = PyObject_IsInstance(message, PyExc_Warning);
-    if (rc == -1)
-        return NULL;
-
-    if (rc == 1)
-        category = (PyObject*)Py_TYPE(message);
-    else if (category == NULL || category == Py_None)
-        category = PyExc_UserWarning;
+    if (PyObject_TypeCheck(message, (PyTypeObject *)PyExc_Warning)) {
+        /* Ignore the category argument. */
+        return (PyObject*)Py_TYPE(message);
+    }
+    if (category == NULL || category == Py_None) {
+        return PyExc_UserWarning;
+    }
 
     /* Validate category. */
-    rc = PyObject_IsSubclass(category, PyExc_Warning);
-    /* category is not a subclass of PyExc_Warning or
-       PyObject_IsSubclass raised an error */
-    if (rc == -1 || rc == 0) {
+    if (!PyType_Check(category)) {
         PyErr_Format(PyExc_TypeError,
-                     "category must be a Warning subclass, not '%s'",
-                     Py_TYPE(category)->tp_name);
+                     "category must be a Warning subclass, not '%T'",
+                     category);
+        return NULL;
+    }
+    if (!PyType_IsSubtype((PyTypeObject *)category, (PyTypeObject *)PyExc_Warning)) {
+        PyErr_Format(PyExc_TypeError,
+                     "category must be a Warning subclass, not class '%N'",
+                     (PyTypeObject *)category);
         return NULL;
     }
 
@@ -1538,6 +1614,9 @@ warnings_module_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddObjectRef(module, "_defaultaction", st->default_action) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_warnings_context", st->context) < 0) {
         return -1;
     }
     return 0;

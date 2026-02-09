@@ -48,8 +48,21 @@ struct _qsbr_thread_state {
     // Thread state (or NULL)
     PyThreadState *tstate;
 
-    // Used to defer advancing write sequence a fixed number of times
-    int deferrals;
+    // Number of held items added by this thread since the last write sequence
+    // advance
+    int deferred_count;
+
+    // Estimate for the amount of memory that is held by this thread since
+    // the last write sequence advance
+    size_t deferred_memory;
+
+    // Amount of memory in mimalloc pages deferred from collection.  When
+    // deferred, they are prevented from being used for a different size class
+    // and in a different thread.
+    size_t deferred_page_memory;
+
+    // True if the deferred memory frees should be processed.
+    bool should_process;
 
     // Is this thread state allocated?
     bool allocated;
@@ -109,11 +122,17 @@ _Py_qbsr_goal_reached(struct _qsbr_thread_state *qsbr, uint64_t goal)
 extern uint64_t
 _Py_qsbr_advance(struct _qsbr_shared *shared);
 
-// Batches requests to advance the write sequence. This advances the write
-// sequence every N calls, which reduces overhead but increases time to
-// reclamation. Returns the new goal.
+// Return the next value for the write sequence (current plus the increment).
 extern uint64_t
-_Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr);
+_Py_qsbr_shared_next(struct _qsbr_shared *shared);
+
+// Return true if deferred memory frees held by QSBR should be processed to
+// determine if they can be safely freed.
+static inline bool
+_Py_qsbr_should_process(struct _qsbr_thread_state *qsbr)
+{
+    return qsbr->should_process;
+}
 
 // Have the read sequences advanced to the given goal? If this returns true,
 // it safe to reclaim any memory tagged with the goal (or earlier goal).

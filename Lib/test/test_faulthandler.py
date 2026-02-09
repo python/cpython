@@ -55,6 +55,13 @@ def temporary_filename():
     finally:
         os_helper.unlink(filename)
 
+
+ADDRESS_EXPR = "0x[0-9a-f]+"
+C_STACK_REGEX = [
+    r"Current thread's C stack trace \(most recent call first\):",
+    fr'(  Binary file ".+"(, at .*(\+|-){ADDRESS_EXPR})? \[{ADDRESS_EXPR}\])|(<.+>)'
+]
+
 class FaultHandlerTests(unittest.TestCase):
 
     def get_output(self, code, filename=None, fd=None):
@@ -103,6 +110,7 @@ class FaultHandlerTests(unittest.TestCase):
                     fd=None, know_current_thread=True,
                     py_fatal_error=False,
                     garbage_collecting=False,
+                    c_stack=True,
                     function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
@@ -134,6 +142,8 @@ class FaultHandlerTests(unittest.TestCase):
             if garbage_collecting and not all_threads_disabled:
                 regex.append('  Garbage-collecting')
             regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if c_stack:
+            regex.extend(C_STACK_REGEX)
         regex = '\n'.join(regex)
 
         if other_regex:
@@ -155,29 +165,6 @@ class FaultHandlerTests(unittest.TestCase):
     def check_windows_exception(self, code, line_number, name_regex, **kw):
         fatal_error = 'Windows fatal exception: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
-
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     "the first page of memory is a mapped read-only on AIX")
-    def test_read_null(self):
-        if not MS_WINDOWS:
-            self.check_fatal_error("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
-                '(?:Segmentation fault'
-                    '|Bus error'
-                    '|Illegal instruction)')
-        else:
-            self.check_windows_exception("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                'access violation')
 
     @skip_segfault_on_android
     def test_sigsegv(self):
@@ -374,6 +361,17 @@ class FaultHandlerTests(unittest.TestCase):
             all_threads=False)
 
     @skip_segfault_on_android
+    def test_enable_without_c_stack(self):
+        self.check_fatal_error("""
+            import faulthandler
+            faulthandler.enable(c_stack=False)
+            faulthandler._sigsegv()
+            """,
+            3,
+            'Segmentation fault',
+            c_stack=False)
+
+    @skip_segfault_on_android
     def test_disable(self):
         code = """
             import faulthandler
@@ -390,10 +388,11 @@ class FaultHandlerTests(unittest.TestCase):
 
     @skip_segfault_on_android
     def test_dump_ext_modules(self):
+        # Don't filter stdlib module names: disable sys.stdlib_module_names
         code = """
             import faulthandler
             import sys
-            # Don't filter stdlib module names
+            import math
             sys.stdlib_module_names = frozenset()
             faulthandler.enable()
             faulthandler._sigsegv()
@@ -405,8 +404,20 @@ class FaultHandlerTests(unittest.TestCase):
         if not match:
             self.fail(f"Cannot find 'Extension modules:' in {stderr!r}")
         modules = set(match.group(1).strip().split(', '))
-        for name in ('sys', 'faulthandler'):
+        for name in ('sys', 'faulthandler', 'math'):
             self.assertIn(name, modules)
+
+        # Ignore "math.integer" sub-module if "math" package is
+        # in sys.stdlib_module_names
+        code = """
+            import faulthandler
+            import math.integer
+            faulthandler.enable()
+            faulthandler._sigsegv()
+            """
+        stderr, exitcode = self.get_output(code)
+        stderr = '\n'.join(stderr)
+        self.assertNotIn('Extension modules:', stderr)
 
     def test_is_enabled(self):
         orig_stderr = sys.stderr
@@ -949,6 +960,36 @@ class FaultHandlerTests(unittest.TestCase):
         """)
         _, exitcode = self.get_output(code)
         self.assertEqual(exitcode, 0)
+
+    def check_c_stack(self, output):
+        starting_line = output.pop(0)
+        self.assertRegex(starting_line, C_STACK_REGEX[0])
+        self.assertGreater(len(output), 0)
+
+        for line in output:
+            with self.subTest(line=line):
+                if line != '':  # Ignore trailing or leading newlines
+                    self.assertRegex(line, C_STACK_REGEX[1])
+
+
+    def test_dump_c_stack(self):
+        code = dedent("""
+        import faulthandler
+        faulthandler.dump_c_stack()
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(exitcode, 0)
+        self.check_c_stack(output)
+
+
+    def test_dump_c_stack_file(self):
+        import tempfile
+
+        with tempfile.TemporaryFile("w+") as tmp:
+            faulthandler.dump_c_stack(file=tmp)
+            tmp.flush()  # Just in case
+            tmp.seek(0)
+            self.check_c_stack(tmp.read().split("\n"))
 
 if __name__ == "__main__":
     unittest.main()

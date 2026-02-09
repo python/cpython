@@ -121,8 +121,11 @@ Module contents
      :meth:`!__le__`, :meth:`!__gt__`, or :meth:`!__ge__`, then
      :exc:`TypeError` is raised.
 
-   - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
-     is generated according to how *eq* and *frozen* are set.
+   - *unsafe_hash*: If true, force ``dataclasses`` to create a
+     :meth:`~object.__hash__` method, even though it may not be safe to do so.
+     Otherwise, generate a :meth:`~object.__hash__` method according to how
+     *eq* and *frozen* are set.
+     The default value is ``False``.
 
      :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
@@ -158,13 +161,15 @@ Module contents
      :class:`object`, this means it will fall back to id-based hashing).
 
    - *frozen*: If true (the default is ``False``), assigning to fields will
-     generate an exception.  This emulates read-only frozen instances.  If
-     :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
-     :exc:`TypeError` is raised.  See the discussion below.
+     generate an exception.  This emulates read-only frozen instances.
+     See the :ref:`discussion <dataclasses-frozen>` below.
+
+     If :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class
+     and *frozen* is true, then :exc:`TypeError` is raised.
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
-     parameters to the generated :meth:`~object.__init__` method (even if
+     non keyword-only parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
      :attr:`!__match_args__` is already defined in the class, then
      :attr:`!__match_args__` will not be generated.
@@ -175,10 +180,11 @@ Module contents
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
-     with a keyword when :meth:`!__init__` is called.  There is no
-     effect on any other aspect of dataclasses.  See the
-     :term:`parameter` glossary entry for details.  Also see the
+     with a keyword when :meth:`!__init__` is called. See the :term:`parameter`
+     glossary entry for details.  Also see the
      :const:`KW_ONLY` section.
+
+     Keyword-only fields are not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
 
@@ -299,17 +305,19 @@ Module contents
      This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
 
+     Keyword-only fields are also not included in :attr:`!__match_args__`.
+
     .. versionadded:: 3.10
 
-   - ``doc``: optional docstring for this field.
+   - *doc*: optional docstring for this field.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.14
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
    replaced by the specified *default* value.  If *default* is not
    provided, then the class attribute will be deleted.  The intent is
-   that after the :func:`@dataclass <dataclass>` decorator runs, the class
+   that after the :deco:`dataclass` decorator runs, the class
    attributes will all contain the default values for the fields, just
    as if the default value itself were specified.  For example,
    after::
@@ -340,6 +348,15 @@ Module contents
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
+
+.. class:: InitVar
+
+   ``InitVar[T]`` type annotations describe variables that are :ref:`init-only
+   <dataclasses-init-only-variables>`. Fields annotated with :class:`!InitVar`
+   are considered pseudo-fields, and thus are neither returned by the
+   :func:`fields` function nor used in any way except adding them as
+   parameters to :meth:`~object.__init__` and an optional
+   :meth:`__post_init__`.
 
 .. function:: fields(class_or_instance)
 
@@ -410,7 +427,7 @@ Module contents
    :data:`typing.Any` is used for ``type``.  The values of *init*,
    *repr*, *eq*, *order*, *unsafe_hash*, *frozen*,
    *match_args*, *kw_only*, *slots*, and *weakref_slot* have
-   the same meaning as they do in :func:`@dataclass <dataclass>`.
+   the same meaning as they do in :deco:`dataclass`.
 
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
@@ -418,12 +435,12 @@ Module contents
 
    The *decorator* parameter is a callable that will be used to create the dataclass.
    It should take the class object as a first argument and the same keyword arguments
-   as :func:`@dataclass <dataclass>`. By default, the :func:`@dataclass <dataclass>`
+   as :deco:`dataclass`. By default, the :deco:`dataclass`
    function is used.
 
    This function is not strictly required, because any Python
-   mechanism for creating a new class with :attr:`!__annotations__` can
-   then apply the :func:`@dataclass <dataclass>` function to convert that class to
+   mechanism for creating a new class with :attr:`~object.__annotations__` can
+   then apply the :deco:`dataclass` function to convert that class to
    a dataclass.  This function is provided as a convenience.  For
    example::
 
@@ -552,7 +569,7 @@ Post-init processing
          def __post_init__(self):
              self.c = self.a + self.b
 
-The :meth:`~object.__init__` method generated by :func:`@dataclass <dataclass>` does not call base
+The :meth:`~object.__init__` method generated by :deco:`dataclass` does not call base
 class :meth:`!__init__` methods. If the base class has an :meth:`!__init__` method
 that has to be called, it is common to call this method in a
 :meth:`__post_init__` method::
@@ -582,7 +599,7 @@ parameters to :meth:`!__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of the few places where :func:`@dataclass <dataclass>` actually inspects the type
+One of the few places where :deco:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 :data:`typing.ClassVar`.  If a field is a ``ClassVar``, it is excluded
@@ -595,10 +612,10 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
+Another place where :deco:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
-if the type of a field is of type ``dataclasses.InitVar``.  If a field
-is an ``InitVar``, it is considered a pseudo-field called an init-only
+if the type of a field is of type :class:`InitVar`.  If a field
+is an :class:`InitVar`, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
 parameters to the generated :meth:`~object.__init__` method, and are passed to
@@ -629,7 +646,7 @@ Frozen instances
 ----------------
 
 It is not possible to create truly immutable Python objects.  However,
-by passing ``frozen=True`` to the :func:`@dataclass <dataclass>` decorator you can
+by passing ``frozen=True`` to the :deco:`dataclass` decorator you can
 emulate immutability.  In that case, dataclasses will add
 :meth:`~object.__setattr__` and :meth:`~object.__delattr__` methods to the class.  These
 methods will raise a :exc:`FrozenInstanceError` when invoked.
@@ -645,7 +662,7 @@ must use :meth:`!object.__setattr__`.
 Inheritance
 -----------
 
-When the dataclass is being created by the :func:`@dataclass <dataclass>` decorator,
+When the dataclass is being created by the :deco:`dataclass` decorator,
 it looks through all of the class's base classes in reverse MRO (that
 is, starting at :class:`object`) and, for each dataclass that it finds,
 adds the fields from that base class to an ordered mapping of fields.
@@ -769,7 +786,7 @@ for :attr:`!x` when creating a class instance will share the same copy
 of :attr:`!x`.  Because dataclasses just use normal Python class
 creation they also share this behavior.  There is no general way
 for Data Classes to detect this condition.  Instead, the
-:func:`@dataclass <dataclass>` decorator will raise a :exc:`ValueError` if it
+:deco:`dataclass` decorator will raise a :exc:`ValueError` if it
 detects an unhashable default parameter.  The assumption is that if
 a value is unhashable, it is mutable.  This is a partial solution,
 but it does protect against many common errors.
@@ -803,7 +820,7 @@ default value have the following special behaviors:
   :meth:`~object.__get__` or :meth:`!__set__` method is called rather than returning or
   overwriting the descriptor object.
 
-* To determine whether a field contains a default value, :func:`@dataclass <dataclass>`
+* To determine whether a field contains a default value, :deco:`dataclass`
   will call the descriptor's :meth:`!__get__` method using its class access
   form: ``descriptor.__get__(obj=None, type=cls)``.  If the
   descriptor returns a value in this case, it will be used as the

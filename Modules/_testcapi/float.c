@@ -171,5 +171,9 @@ _PyTestCapi_Init_Float(PyObject *mod)
         return -1;
     }
 
-    return 0;
+#if (defined(__mips__) && !defined(__mips_nan2008)) || defined(__hppa__)
+    return PyModule_Add(mod, "nan_msb_is_signaling", PyBool_FromLong(1));
+#else
+    return PyModule_Add(mod, "nan_msb_is_signaling", PyBool_FromLong(0));
+#endif
 }

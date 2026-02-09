@@ -128,7 +128,7 @@ time_time_ns(PyObject *self, PyObject *unused)
     if (PyTime_Time(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(time_ns_doc,
@@ -187,7 +187,7 @@ time_clockid_converter(PyObject *obj, clockid_t *p)
 {
 #ifdef _AIX
     long long clk_id = PyLong_AsLongLong(obj);
-#elif defined(__DragonFly__)
+#elif defined(__DragonFly__) || defined(__CYGWIN__)
     long clk_id = PyLong_AsLong(obj);
 #else
     int clk_id = PyLong_AsInt(obj);
@@ -261,7 +261,7 @@ time_clock_gettime_ns_impl(PyObject *module, clockid_t clk_id)
     if (_PyTime_FromTimespec(&t, &ts) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 #endif   /* HAVE_CLOCK_GETTIME */
 
@@ -310,7 +310,7 @@ time_clock_settime_ns(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     if (_PyTime_AsTimespec(t, &ts) == -1) {
@@ -1216,7 +1216,7 @@ time_monotonic_ns(PyObject *self, PyObject *unused)
     if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(monotonic_ns_doc,
@@ -1248,7 +1248,7 @@ time_perf_counter_ns(PyObject *self, PyObject *unused)
     if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(perf_counter_ns_doc,
@@ -1437,7 +1437,7 @@ time_process_time_ns(PyObject *module, PyObject *unused)
     if (py_process_time(state, &t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(process_time_ns_doc,
@@ -1610,7 +1610,7 @@ time_thread_time_ns(PyObject *self, PyObject *unused)
     if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsLong(t);
+    return PyLong_FromInt64(t);
 }
 
 PyDoc_STRVAR(thread_time_ns_doc,

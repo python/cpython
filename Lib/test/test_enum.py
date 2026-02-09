@@ -19,7 +19,8 @@ from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ, REPO_ROOT
-from test.support import threading_helper
+from test.support import threading_helper, cpython_only
+from test.support.import_helper import ensure_lazy_imports
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -35,7 +36,7 @@ def load_tests(loader, tests, ignore):
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
     howto_tests = os.path.join(REPO_ROOT, 'Doc/howto/enum.rst')
-    if os.path.exists(howto_tests):
+    if os.path.exists(howto_tests) and sys.float_repr_style == 'short':
         tests.addTests(doctest.DocFileSuite(
                 howto_tests,
                 module_relative=False,
@@ -433,9 +434,9 @@ class _EnumTests:
             def spam(cls):
                 pass
         #
-        self.assertTrue(hasattr(Season, 'spam'))
+        self.assertHasAttr(Season, 'spam')
         del Season.spam
-        self.assertFalse(hasattr(Season, 'spam'))
+        self.assertNotHasAttr(Season, 'spam')
         #
         with self.assertRaises(AttributeError):
             del Season.SPRING
@@ -1001,12 +1002,18 @@ class _FlagTests:
             self.assertIs(~(A|B), OpenAB(252))
             self.assertIs(~AB_MASK, OpenAB(0))
             self.assertIs(~OpenAB(0), AB_MASK)
+            self.assertIs(OpenAB(~4), OpenAB(251))
         else:
             self.assertIs(~A, B)
             self.assertIs(~B, A)
+            self.assertIs(OpenAB(~1), B)
+            self.assertIs(OpenAB(~2), A)
             self.assertIs(~(A|B), OpenAB(0))
             self.assertIs(~AB_MASK, OpenAB(0))
             self.assertIs(~OpenAB(0), (A|B))
+            self.assertIs(OpenAB(~3), OpenAB(0))
+            self.assertIs(OpenAB(~4), OpenAB(3))
+            self.assertIs(OpenAB(~33), B)
         #
         class OpenXYZ(self.enum_type):
             X = 4
@@ -1030,12 +1037,37 @@ class _FlagTests:
             self.assertIs(~X, Y|Z)
             self.assertIs(~Y, X|Z)
             self.assertIs(~Z, X|Y)
+            self.assertIs(OpenXYZ(~4), Y|Z)
+            self.assertIs(OpenXYZ(~2), X|Z)
+            self.assertIs(OpenXYZ(~1), X|Y)
             self.assertIs(~(X|Y), Z)
             self.assertIs(~(X|Z), Y)
             self.assertIs(~(Y|Z), X)
             self.assertIs(~(X|Y|Z), OpenXYZ(0))
             self.assertIs(~XYZ_MASK, OpenXYZ(0))
             self.assertTrue(~OpenXYZ(0), (X|Y|Z))
+
+    def test_assigned_negative_value(self):
+        class X(self.enum_type):
+            A = auto()
+            B = auto()
+            C = A | B
+            D = ~A
+        self.assertEqual(list(X), [X.A, X.B])
+        self.assertIs(~X.A, X.B)
+        self.assertIs(X.D, X.B)
+        self.assertEqual(X.D.value, 2)
+        #
+        class Y(self.enum_type):
+            A = auto()
+            B = auto()
+            C = A | B
+            D = ~A
+            E = auto()
+        self.assertEqual(list(Y), [Y.A, Y.B, Y.E])
+        self.assertIs(~Y.A, Y.B|Y.E)
+        self.assertIs(Y.D, Y.B|Y.E)
+        self.assertEqual(Y.D.value, 6)
 
 
 class TestPlainEnumClass(_EnumTests, _PlainOutputTests, unittest.TestCase):
@@ -1352,7 +1384,7 @@ class TestSpecial(unittest.TestCase):
                 red = 1
                 green = 2
                 blue = 3
-                def red(self):
+                def red(self):  # noqa: F811
                     return 'red'
         #
         with self.assertRaises(TypeError):
@@ -1360,7 +1392,7 @@ class TestSpecial(unittest.TestCase):
                 @enum.property
                 def red(self):
                     return 'redder'
-                red = 1
+                red = 1  # noqa: F811
                 green = 2
                 blue = 3
 
@@ -1568,6 +1600,17 @@ class TestSpecial(unittest.TestCase):
             X = 1
         self.assertIn(IntEnum1.X, IntFlag1)
         self.assertIn(IntFlag1.X, IntEnum1)
+
+    def test_contains_does_not_call_missing(self):
+        class AnEnum(Enum):
+            UNKNOWN = None
+            LUCKY = 3
+            @classmethod
+            def _missing_(cls, *values):
+                return cls.UNKNOWN
+        self.assertTrue(None in AnEnum)
+        self.assertTrue(3 in AnEnum)
+        self.assertFalse(7 in AnEnum)
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -2640,12 +2683,12 @@ class TestSpecial(unittest.TestCase):
             OneDay = day_1
             OneWeek = week_1
             OneMonth = month_1
-        self.assertFalse(hasattr(Period, '_ignore_'))
-        self.assertFalse(hasattr(Period, 'Period'))
-        self.assertFalse(hasattr(Period, 'i'))
-        self.assertTrue(isinstance(Period.day_1, timedelta))
-        self.assertTrue(Period.month_1 is Period.day_30)
-        self.assertTrue(Period.week_4 is Period.day_28)
+        self.assertNotHasAttr(Period, '_ignore_')
+        self.assertNotHasAttr(Period, 'Period')
+        self.assertNotHasAttr(Period, 'i')
+        self.assertIsInstance(Period.day_1, timedelta)
+        self.assertIs(Period.month_1, Period.day_30)
+        self.assertIs(Period.week_4, Period.day_28)
 
     def test_nonhash_value(self):
         class AutoNumberInAList(Enum):
@@ -2865,7 +2908,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(str(ReformedColor.BLUE), 'blue')
         self.assertEqual(ReformedColor.RED.behavior(), 'booyah')
         self.assertEqual(ConfusedColor.RED.social(), "what's up?")
-        self.assertTrue(issubclass(ReformedColor, int))
+        self.assertIsSubclass(ReformedColor, int)
 
     def test_multiple_inherited_mixin(self):
         @unique
@@ -3668,6 +3711,8 @@ class OldTestFlag(unittest.TestCase):
             C = 4 | B
         #
         self.assertTrue(SkipFlag.C in (SkipFlag.A|SkipFlag.C))
+        self.assertTrue(SkipFlag.B in SkipFlag.C)
+        self.assertIs(SkipFlag(~1), SkipFlag.B)
         self.assertRaisesRegex(ValueError, 'SkipFlag.. invalid value 42', SkipFlag, 42)
         #
         class SkipIntFlag(enum.IntFlag):
@@ -3676,6 +3721,8 @@ class OldTestFlag(unittest.TestCase):
             C = 4 | B
         #
         self.assertTrue(SkipIntFlag.C in (SkipIntFlag.A|SkipIntFlag.C))
+        self.assertTrue(SkipIntFlag.B in SkipIntFlag.C)
+        self.assertIs(SkipIntFlag(~1), SkipIntFlag.B|SkipIntFlag.C)
         self.assertEqual(SkipIntFlag(42).value, 42)
         #
         class MethodHint(Flag):
@@ -4715,6 +4762,8 @@ class TestVerify(unittest.TestCase):
             BLUE = 4
             WHITE = -1
         # no error means success
+        self.assertEqual(list(Color.WHITE), [Color.RED, Color.GREEN, Color.BLUE])
+        self.assertEqual(Color.WHITE.value, 7)
 
 
 class TestInternals(unittest.TestCase):
@@ -4838,7 +4887,7 @@ class TestInternals(unittest.TestCase):
                 def _generate_next_value_(name, start, count, last):
                     return name
 
-    def test_auto_order_wierd(self):
+    def test_auto_order_weird(self):
         weird_auto = auto()
         weird_auto.value = 'pathological case'
         class Color(Enum):
@@ -5275,7 +5324,11 @@ class TestStdLib(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+        support.check__all__(self, enum)
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("enum", {"functools", "warnings", "inspect", "re"})
 
     def test_doc_1(self):
         class Single(Enum):
@@ -5476,12 +5529,16 @@ class TestEnumDict(unittest.TestCase):
 # helpers
 
 def enum_dir(cls):
+    if issubclass(cls, Flag):
+        members = list(cls._member_map_.keys())
+    else:
+        members = cls._member_names_
     interesting = set([
             '__class__', '__contains__', '__doc__', '__getitem__',
             '__iter__', '__len__', '__members__', '__module__',
             '__name__', '__qualname__',
             ]
-            + cls._member_names_
+            + members
             )
     if cls._new_member_ is not object.__new__:
         interesting.add('__new__')

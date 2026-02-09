@@ -8,6 +8,11 @@ import unittest
 from .support import is_pypi
 from .support.lexical_path import LexicalWindowsPath
 
+if is_pypi:
+    from pathlib_abc import vfspath
+else:
+    from pathlib._os import vfspath
+
 
 class JoinTestBase:
     def test_join(self):
@@ -70,17 +75,17 @@ class JoinTestBase:
         self.assertEqual(p / './dd:s', P(r'C:/a/b\./dd:s'))
         self.assertEqual(p / 'E:d:s', P('E:d:s'))
 
-    def test_str(self):
+    def test_vfspath(self):
         p = self.cls(r'a\b\c')
-        self.assertEqual(str(p), 'a\\b\\c')
+        self.assertEqual(vfspath(p), 'a\\b\\c')
         p = self.cls(r'c:\a\b\c')
-        self.assertEqual(str(p), 'c:\\a\\b\\c')
+        self.assertEqual(vfspath(p), 'c:\\a\\b\\c')
         p = self.cls('\\\\a\\b\\')
-        self.assertEqual(str(p), '\\\\a\\b\\')
+        self.assertEqual(vfspath(p), '\\\\a\\b\\')
         p = self.cls(r'\\a\b\c')
-        self.assertEqual(str(p), '\\\\a\\b\\c')
+        self.assertEqual(vfspath(p), '\\\\a\\b\\c')
         p = self.cls(r'\\a\b\c\d')
-        self.assertEqual(str(p), '\\\\a\\b\\c\\d')
+        self.assertEqual(vfspath(p), '\\\\a\\b\\c\\d')
 
     def test_parts(self):
         P = self.cls
