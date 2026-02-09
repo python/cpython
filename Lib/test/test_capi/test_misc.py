@@ -921,11 +921,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(cls.__bases__, (int,))
         self.assertEqual(cls.__base__, int)
 
-    def test_tp_bases_slot_invalid(self):
+    def test_tp_bases_slot_none(self):
         self.assertRaisesRegex(
             SystemError,
             "Py_tp_bases is not a tuple",
-            _testcapi.create_heapctype_with_invalid_bases_slot
+            _testcapi.create_heapctype_with_none_bases_slot
         )
 
 
