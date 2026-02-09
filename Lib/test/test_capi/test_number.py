@@ -263,11 +263,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(long(IntLike.with_val(99)), 99)
 
         self.assertRaises(TypeError, long, IntLike.with_val(1.0))
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, long, IntLike.with_val(True))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(IntLike.with_val(True)), 1)
+        self.assertRaises(TypeError, long, IntLike.with_val(True))
         self.assertRaises(RuntimeError, long, IntLike.with_exc(RuntimeError))
 
         self.assertRaises(TypeError, long, 1j)
@@ -307,11 +303,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(index(11), 11)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, index, IndexLike.with_val(True))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(index(IndexLike.with_val(True)), 1)
+        self.assertRaises(TypeError, index, IndexLike.with_val(True))
         self.assertRaises(TypeError, index, IndexLike.with_val(1.0))
         self.assertRaises(RuntimeError, index, IndexLike.with_exc(RuntimeError))
 

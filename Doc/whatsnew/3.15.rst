@@ -1303,6 +1303,13 @@ zipimport
   Use :meth:`zipimport.zipimporter.exec_module` instead.
   (Contributed by Jiahao Li in :gh:`133656`.)
 
+Others
+------
+
+* Remove support for returning non-:class:`int` objects in
+  :meth:`~object.__index__` and :meth:`~object.__int__`.
+  (Contributed by Sergey B Kirpichev in :gh:`144584`.)
+
 
 Deprecated
 ==========

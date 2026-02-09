@@ -26,9 +26,6 @@ although there is currently no date scheduled for their removal.
     :keyword:`and`, :keyword:`else`, :keyword:`for`, :keyword:`if`,
     :keyword:`in`, :keyword:`is` and :keyword:`or`.  In a future release it
     will be changed to a syntax error. (:gh:`87999`)
-  * Support for ``__index__()`` and ``__int__()`` method returning non-int type:
-    these methods will be required to return an instance of a strict subclass of
-    :class:`int`.
   * Support for ``__float__()`` method returning a strict subclass of
     :class:`float`: these methods will be required to return an instance of
     :class:`float`.
