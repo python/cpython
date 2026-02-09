@@ -11931,11 +11931,10 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
 #ifdef MS_WINDOWS
     HANDLE h = (HANDLE)_get_osfhandle(fd);
     if (h != INVALID_HANDLE_VALUE) {
-        if (GetFileType(h) == FILE_TYPE_DISK) {
-            result = _lseeki64(fd, position, how);
-        } else {
-            // Only file is seekable
+        if (GetFileType(h) == FILE_TYPE_PIPE) {
             errno = ESPIPE;
+        } else {
+            result = _lseeki64(fd, position, how);
         }
     }
 #else
