@@ -3568,18 +3568,20 @@ make_version_info(PyThreadState *tstate)
 }
 
 /* sys.implementation values */
-#define NAME "cpython"
-const char *_PySys_ImplName = NAME;
+#ifndef _PY_IMPL_NAME
+#define _PY_IMPL_NAME "cpython"
+#endif
+const char *_PySys_ImplName = _PY_IMPL_NAME;
+#ifndef _PY_IMPL_CACHE_TAG
 #define MAJOR Py_STRINGIFY(PY_MAJOR_VERSION)
 #define MINOR Py_STRINGIFY(PY_MINOR_VERSION)
-#ifndef TAG
-#define TAG NAME "-" MAJOR MINOR
+#define _PY_IMPL_CACHE_TAG NAME "-" MAJOR MINOR
 #endif
-const char *_PySys_ImplCacheTag = TAG;
-#undef NAME
+const char *_PySys_ImplCacheTag = _PY_IMPL_CACHE_TAG;
+#ifndef _PY_IMPL_CACHE_TAG
 #undef MAJOR
 #undef MINOR
-#undef TAG
+#endif
 
 static PyObject *
 make_impl_info(PyObject *version_info)
