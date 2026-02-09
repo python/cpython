@@ -18,7 +18,7 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "false"
+the key "include-system-site-packages" is set to  "true"
 (case-insensitive), the system-level prefixes will still also be
 searched for site-packages; otherwise they won't.
 
