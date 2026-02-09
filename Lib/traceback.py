@@ -1103,6 +1103,13 @@ class TracebackException:
                 self.msg = exc_value.msg
                 self._is_syntax_error = True
                 self._exc_metadata = getattr(exc_value, "_metadata", None)
+            elif (issubclass(exc_type, ModuleNotFoundError)
+                    and getattr(exc_value, "name", None) in sys.stdlib_module_names):
+                module_name = exc_value.name
+                self._str = _MISSING_STDLIB_MODULE_MESSAGES.get(
+                    module_name,
+                    f"Standard library module {module_name!r} was not found"
+                )
             elif suggestion := _suggestion_message(exc_type, exc_value, exc_traceback):
                 if self._str.endswith(('.', '?', '!')):
                     punctuation = ''
@@ -1113,56 +1120,6 @@ class TracebackException:
             self.exc_type_qualname = None
             self.exc_type_module = None
 
-        if exc_type and issubclass(exc_type, SyntaxError):
-            # Handle SyntaxError's specially
-            self.filename = exc_value.filename
-            lno = exc_value.lineno
-            self.lineno = str(lno) if lno is not None else None
-            end_lno = exc_value.end_lineno
-            self.end_lineno = str(end_lno) if end_lno is not None else None
-            self.text = exc_value.text
-            self.offset = exc_value.offset
-            self.end_offset = exc_value.end_offset
-            self.msg = exc_value.msg
-            self._is_syntax_error = True
-            self._exc_metadata = getattr(exc_value, "_metadata", None)
-        elif exc_type and issubclass(exc_type, ImportError) and \
-                getattr(exc_value, "name_from", None) is not None:
-            wrong_name = getattr(exc_value, "name_from", None)
-            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
-            if suggestion:
-                if suggestion.isascii():
-                    self._str += f". Did you mean: '{suggestion}'?"
-                else:
-                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
-        elif exc_type and issubclass(exc_type, ModuleNotFoundError):
-            module_name = getattr(exc_value, "name", None)
-            if module_name in sys.stdlib_module_names:
-                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
-                    module_name,
-                    f"Standard library module {module_name!r} was not found"
-                )
-                self._str = message
-            elif sys.flags.no_site:
-                self._str += (". Site initialization is disabled, did you forget to "
-                    + "add the site-packages directory to sys.path "
-                    + "or to enable your virtual environment?")
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
-                getattr(exc_value, "name", None) is not None:
-            wrong_name = getattr(exc_value, "name", None)
-            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
-            if suggestion:
-                if suggestion.isascii():
-                    self._str += f". Did you mean: '{suggestion}'?"
-                else:
-                    self._str += f". Did you mean: '{suggestion}' ({suggestion!a})?"
-            if issubclass(exc_type, NameError):
-                wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
-                    if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'?"
-                    else:
-                        self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -1798,7 +1755,8 @@ def _suggestion_message(exc_type, exc_value, exc_traceback):
         and getattr(exc_value, "name", None) not in sys.stdlib_module_names
     ):
         return ("Site initialization is disabled, did you forget to "
-            "add the site-packages directory to sys.path?")
+                    "add the site-packages directory to sys.path "
+                    "or to enable your virtual environment?")
     if issubclass(exc_type, (ImportError, NameError, AttributeError)):
         if issubclass(exc_type, ImportError):
             wrong_name = getattr(exc_value, "name_from", None)
@@ -1816,7 +1774,10 @@ def _suggestion_message(exc_type, exc_value, exc_traceback):
                 if maybe_stdlib_import:
                     return f"Did you forget to import '{wrong_name}'?"
                 return None
-            text = f"Did you mean: '{other_name}'?"
+            if other_name.isascii():
+                text = f"Did you mean: '{other_name}'?"
+            else:
+                text = f"Did you mean: '{other_name}' ({other_name!a})?"
             if maybe_stdlib_import:
                 return f"{text} Or did you forget to import '{wrong_name}'?"
             return text
