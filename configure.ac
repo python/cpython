@@ -916,8 +916,8 @@ esac
 
 if test $define_xopen_source = yes
 then
-  # X/Open 7, incorporating POSIX.1-2008
-  AC_DEFINE([_XOPEN_SOURCE], [700],
+  # X/Open 8, incorporating POSIX.1-2024
+  AC_DEFINE([_XOPEN_SOURCE], [800],
             [Define to the level of X/Open that your system supports])
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
@@ -927,8 +927,8 @@ then
   AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1],
             [Define to activate Unix95-and-earlier features])
 
-  AC_DEFINE([_POSIX_C_SOURCE], [200809L],
-            [Define to activate features from IEEE Stds 1003.1-2008])
+  AC_DEFINE([_POSIX_C_SOURCE], [202405L],
+            [Define to activate features from IEEE Std 1003.1-2024])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -5060,6 +5060,29 @@ then
      [Define if you want to compile in Python-specific mallocs])
 fi
 AC_MSG_RESULT([$with_pymalloc])
+
+AC_MSG_CHECKING([for --with-pymalloc-hugepages])
+AC_ARG_WITH(
+  [pymalloc-hugepages],
+  [AS_HELP_STRING([--with-pymalloc-hugepages],
+    [enable huge page support for pymalloc arenas (default is no)])])
+if test "$with_pymalloc_hugepages" = "yes"
+then
+    dnl configure only runs on Unix-like systems; Windows uses MEM_LARGE_PAGES
+    dnl via VirtualAlloc but does not use configure. Only check MAP_HUGETLB here.
+    AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[
+#include <sys/mman.h>
+      ]], [[
+int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;
+(void)flags;
+      ]])],
+      [AC_DEFINE([PYMALLOC_USE_HUGEPAGES], [1],
+         [Define to use huge pages for pymalloc arenas])],
+      [AC_MSG_WARN([--with-pymalloc-hugepages requested but MAP_HUGETLB not found])
+       with_pymalloc_hugepages=no])
+fi
+AC_MSG_RESULT([${with_pymalloc_hugepages:-no}])
 
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING([for --with-c-locale-coercion])

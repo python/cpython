@@ -6184,7 +6184,6 @@
                 JUMP_TO_JUMP_TARGET();
             }
             getitem = PyStackRef_FromPyObjectNew(getitem_o);
-            STAT_INC(BINARY_OP, hit);
             _tos_cache2 = getitem;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = container;
@@ -6203,6 +6202,7 @@
             getitem = stack_pointer[-1];
             sub = stack_pointer[-2];
             container = stack_pointer[-3];
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -6227,6 +6227,7 @@
             getitem = _stack_item_0;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -6252,6 +6253,7 @@
             getitem = _stack_item_1;
             sub = _stack_item_0;
             container = stack_pointer[-1];
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -6278,6 +6280,7 @@
             getitem = _stack_item_2;
             sub = _stack_item_1;
             container = _stack_item_0;
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -8667,32 +8670,18 @@
             self_or_null = &stack_pointer[1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
-                _PyCStackRef method;
                 stack_pointer[0] = owner;
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyThreadState_PushCStackRef(tstate, &method);
-                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
+                attr = _Py_LoadAttr_StackRefSteal(tstate, owner, name, self_or_null);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (is_meth) {
-                    assert(!PyStackRef_IsNull(method.ref));
-                    self_or_null[0] = owner;
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                }
-                else {
-                    stack_pointer += -1;
+                if (PyStackRef_IsNull(attr)) {
+                    stack_pointer[-1] = attr;
+                    stack_pointer += (oparg&1);
                     ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PyStackRef_CLOSE(owner);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    self_or_null[0] = PyStackRef_NULL;
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                    if (PyStackRef_IsNull(attr)) {
-                        SET_CURRENT_CACHED_VALUES(0);
-                        JUMP_TO_ERROR();
-                    }
-                    stack_pointer += 1;
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_ERROR();
                 }
             }
             else {
@@ -8700,19 +8689,19 @@
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                attr = _PyObject_GetAttrStackRef(PyStackRef_AsPyObjectBorrow(owner), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -1;
+                stack_pointer[-1] = attr;
+                stack_pointer += (oparg&1);
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(owner);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (attr_o == NULL) {
+                if (PyStackRef_IsNull(attr)) {
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
-                stack_pointer += 1;
+                stack_pointer += -(oparg&1);
             }
             _tos_cache0 = PyStackRef_ZERO_BITS;
             _tos_cache1 = PyStackRef_ZERO_BITS;
@@ -18265,11 +18254,6 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (tstate->py_recursion_remaining <= 1) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
-            }
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -18282,12 +18266,6 @@
             uint32_t framesize = (uint32_t)CURRENT_OPERAND0_32();
             assert(framesize <= INT_MAX);
             if (!_PyThreadState_HasStackSpace(tstate, framesize)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (tstate->py_recursion_remaining <= 1) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -18313,13 +18291,6 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (tstate->py_recursion_remaining <= 1) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache1 = _stack_item_1;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(2);
-                JUMP_TO_JUMP_TARGET();
-            }
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
@@ -18336,14 +18307,6 @@
             uint32_t framesize = (uint32_t)CURRENT_OPERAND0_32();
             assert(framesize <= INT_MAX);
             if (!_PyThreadState_HasStackSpace(tstate, framesize)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache2 = _stack_item_2;
-                _tos_cache1 = _stack_item_1;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(3);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (tstate->py_recursion_remaining <= 1) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = _stack_item_1;
@@ -20150,7 +20113,7 @@
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + !exit->is_control_flow;
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg, previous_executor);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, stack_pointer, chain_depth, exit, target->op.arg, previous_executor);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
@@ -20168,14 +20131,116 @@
             GOTO_TIER_ONE(target);
         }
 
+        case _GUARD_CODE_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (code == Py_None) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (code == Py_None) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_r22: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (code == Py_None) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_CODE_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (code == Py_None) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache2 = _stack_item_2;
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(3);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (((PyCodeObject *)code)->co_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache2 = _stack_item_2;
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(3);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache2 = _stack_item_2;
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _GUARD_IP__PUSH_FRAME_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            #define OFFSET_OF__PUSH_FRAME ((0))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF__PUSH_FRAME;
+            _Py_CODEUNIT *target = frame->instr_ptr;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF__PUSH_FRAME;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     SET_CURRENT_CACHED_VALUES(0);
@@ -20183,7 +20248,6 @@
                 }
             }
             SET_CURRENT_CACHED_VALUES(0);
-            #undef OFFSET_OF__PUSH_FRAME
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20192,11 +20256,9 @@
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
-            #define OFFSET_OF__PUSH_FRAME ((0))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF__PUSH_FRAME;
+            _Py_CODEUNIT *target = frame->instr_ptr;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF__PUSH_FRAME;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache0 = _stack_item_0;
@@ -20206,7 +20268,6 @@
             }
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
-            #undef OFFSET_OF__PUSH_FRAME
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20216,11 +20277,9 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
-            #define OFFSET_OF__PUSH_FRAME ((0))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF__PUSH_FRAME;
+            _Py_CODEUNIT *target = frame->instr_ptr;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF__PUSH_FRAME;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache1 = _stack_item_1;
@@ -20232,7 +20291,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
-            #undef OFFSET_OF__PUSH_FRAME
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20243,11 +20301,9 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
-            #define OFFSET_OF__PUSH_FRAME ((0))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF__PUSH_FRAME;
+            _Py_CODEUNIT *target = frame->instr_ptr;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF__PUSH_FRAME;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache2 = _stack_item_2;
@@ -20261,7 +20317,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
-            #undef OFFSET_OF__PUSH_FRAME
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20269,11 +20324,10 @@
         case _GUARD_IP_YIELD_VALUE_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            #define OFFSET_OF_YIELD_VALUE ((1+INLINE_CACHE_ENTRIES_SEND))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_YIELD_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_YIELD_VALUE;
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     SET_CURRENT_CACHED_VALUES(0);
@@ -20281,7 +20335,6 @@
                 }
             }
             SET_CURRENT_CACHED_VALUES(0);
-            #undef OFFSET_OF_YIELD_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20290,11 +20343,10 @@
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
-            #define OFFSET_OF_YIELD_VALUE ((1+INLINE_CACHE_ENTRIES_SEND))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_YIELD_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_YIELD_VALUE;
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache0 = _stack_item_0;
@@ -20304,7 +20356,6 @@
             }
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
-            #undef OFFSET_OF_YIELD_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20314,11 +20365,10 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
-            #define OFFSET_OF_YIELD_VALUE ((1+INLINE_CACHE_ENTRIES_SEND))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_YIELD_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_YIELD_VALUE;
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache1 = _stack_item_1;
@@ -20330,7 +20380,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
-            #undef OFFSET_OF_YIELD_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20341,11 +20390,10 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
-            #define OFFSET_OF_YIELD_VALUE ((1+INLINE_CACHE_ENTRIES_SEND))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_YIELD_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_YIELD_VALUE;
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache2 = _stack_item_2;
@@ -20359,7 +20407,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
-            #undef OFFSET_OF_YIELD_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20367,11 +20414,10 @@
         case _GUARD_IP_RETURN_VALUE_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            #define OFFSET_OF_RETURN_VALUE ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_VALUE;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     SET_CURRENT_CACHED_VALUES(0);
@@ -20379,7 +20425,6 @@
                 }
             }
             SET_CURRENT_CACHED_VALUES(0);
-            #undef OFFSET_OF_RETURN_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20388,11 +20433,10 @@
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
-            #define OFFSET_OF_RETURN_VALUE ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_VALUE;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache0 = _stack_item_0;
@@ -20402,7 +20446,6 @@
             }
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
-            #undef OFFSET_OF_RETURN_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20412,11 +20455,10 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
-            #define OFFSET_OF_RETURN_VALUE ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_VALUE;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache1 = _stack_item_1;
@@ -20428,7 +20470,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
-            #undef OFFSET_OF_RETURN_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20439,11 +20480,10 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
-            #define OFFSET_OF_RETURN_VALUE ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_VALUE;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_VALUE;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache2 = _stack_item_2;
@@ -20457,7 +20497,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
-            #undef OFFSET_OF_RETURN_VALUE
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20465,11 +20504,10 @@
         case _GUARD_IP_RETURN_GENERATOR_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            #define OFFSET_OF_RETURN_GENERATOR ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_GENERATOR;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_GENERATOR;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     SET_CURRENT_CACHED_VALUES(0);
@@ -20477,7 +20515,6 @@
                 }
             }
             SET_CURRENT_CACHED_VALUES(0);
-            #undef OFFSET_OF_RETURN_GENERATOR
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20486,11 +20523,10 @@
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
-            #define OFFSET_OF_RETURN_GENERATOR ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_GENERATOR;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_GENERATOR;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache0 = _stack_item_0;
@@ -20500,7 +20536,6 @@
             }
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
-            #undef OFFSET_OF_RETURN_GENERATOR
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20510,11 +20545,10 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
-            #define OFFSET_OF_RETURN_GENERATOR ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_GENERATOR;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_GENERATOR;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache1 = _stack_item_1;
@@ -20526,7 +20560,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
-            #undef OFFSET_OF_RETURN_GENERATOR
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -20537,11 +20570,10 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
-            #define OFFSET_OF_RETURN_GENERATOR ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0_64();
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_GENERATOR;
+            _Py_CODEUNIT *target = frame->instr_ptr + frame->return_offset;
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_RETURN_GENERATOR;
+                frame->instr_ptr += frame->return_offset;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     _tos_cache2 = _stack_item_2;
@@ -20555,7 +20587,6 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
-            #undef OFFSET_OF_RETURN_GENERATOR
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`http.cookiejar` module defines classes for automatic handling of HTTP
+The :mod:`!http.cookiejar` module defines classes for automatic handling of HTTP
 cookies.  It is useful for accessing websites that require small pieces of data
 -- :dfn:`cookies` -- to be set on the client machine by an HTTP response from a
 web server, and then returned to the server in later HTTP requests.
@@ -21,7 +21,7 @@ Both the regular Netscape cookie protocol and the protocol defined by
 :rfc:`2109` cookies are parsed as Netscape cookies and subsequently treated
 either as Netscape or RFC 2965 cookies according to the 'policy' in effect.
 Note that the great majority of cookies on the internet are Netscape cookies.
-:mod:`http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
+:mod:`!http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
 differs substantially from that set out in the original Netscape specification),
 including taking note of the ``max-age`` and ``port`` cookie-attributes
 introduced with RFC 2965.
@@ -109,7 +109,7 @@ The following classes are provided:
 .. class:: Cookie()
 
    This class represents Netscape, :rfc:`2109` and :rfc:`2965` cookies.  It is not
-   expected that users of :mod:`http.cookiejar` construct their own :class:`Cookie`
+   expected that users of :mod:`!http.cookiejar` construct their own :class:`Cookie`
    instances.  Instead, if necessary, call :meth:`make_cookies` on a
    :class:`CookieJar` instance.
 
@@ -121,13 +121,13 @@ The following classes are provided:
 
    Module :mod:`http.cookies`
       HTTP cookie classes, principally useful for server-side code.  The
-      :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
+      :mod:`!http.cookiejar` and :mod:`http.cookies` modules do not depend on each
       other.
 
    https://curl.se/rfc/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
-      the major browsers (and :mod:`http.cookiejar`) only bears a passing resemblance to
+      the major browsers (and :mod:`!http.cookiejar`) only bears a passing resemblance to
       the one sketched out in ``cookie_spec.html``.
 
    :rfc:`2109` - HTTP State Management Mechanism
@@ -617,7 +617,7 @@ standard cookie-attributes specified in the various cookie standards.  The
 correspondence is not one-to-one, because there are complicated rules for
 assigning default values, because the ``max-age`` and ``expires``
 cookie-attributes contain equivalent information, and because :rfc:`2109` cookies
-may be 'downgraded' by :mod:`http.cookiejar` from version 1 to version 0 (Netscape)
+may be 'downgraded' by :mod:`!http.cookiejar` from version 1 to version 0 (Netscape)
 cookies.
 
 Assignment to these attributes should not be necessary other than in rare
@@ -629,7 +629,7 @@ internal consistency, so you should know what you're doing if you do that.
 
    Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. :rfc:`2965` and
    :rfc:`2109` cookies have a ``version`` cookie-attribute of 1.  However, note that
-   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
+   :mod:`!http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
 
@@ -692,7 +692,7 @@ internal consistency, so you should know what you're doing if you do that.
    ``True`` if this cookie was received as an :rfc:`2109` cookie (ie. the cookie
    arrived in a :mailheader:`Set-Cookie` header, and the value of the Version
    cookie-attribute in that header was 1).  This attribute is provided because
-   :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
+   :mod:`!http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
    which case :attr:`version` is 0.
 
 
@@ -744,7 +744,7 @@ The :class:`Cookie` class also defines the following method:
 Examples
 --------
 
-The first example shows the most common usage of :mod:`http.cookiejar`::
+The first example shows the most common usage of :mod:`!http.cookiejar`::
 
    import http.cookiejar, urllib.request
    cj = http.cookiejar.CookieJar()

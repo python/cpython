@@ -17,7 +17,7 @@
 Introduction
 ------------
 
-The purpose of the :mod:`importlib` package is three-fold.
+The purpose of the :mod:`!importlib` package is three-fold.
 
 One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the

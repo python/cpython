@@ -1007,6 +1007,34 @@ cleanup:
     return res;
 }
 
+_PyStackRef
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null)
+{
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
+    if (is_meth) {
+        /* We can bypass temporary bound method object.
+           meth is unbound method and obj is self.
+           meth | self | arg1 | ... | argN
+         */
+        assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
+        self_or_null[0] = owner;  // Transfer ownership
+        return _PyThreadState_PopCStackRefSteal(tstate, &method);
+    }
+    /* meth is not an unbound method (but a regular attr, or
+       something was returned by a descriptor protocol).  Set
+       the second element of the stack to NULL, to signal
+       CALL that it's not a method call.
+       meth | NULL | arg1 | ... | argN
+    */
+    PyStackRef_CLOSE(owner);
+    self_or_null[0] = PyStackRef_NULL;
+    return _PyThreadState_PopCStackRefSteal(tstate, &method);
+}
+
 #ifdef Py_DEBUG
 void
 _Py_assert_within_stack_bounds(
@@ -1321,8 +1349,6 @@ tier2_start:
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
-#undef ENABLE_SPECIALIZATION_FT
-#define ENABLE_SPECIALIZATION_FT 0
 
     uint16_t uopcode;
 #ifdef Py_STATS
@@ -2002,11 +2028,16 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
             PyStackRef_CLOSE(func);
             goto error;
         }
-        size_t total_args = nargs + PyDict_GET_SIZE(kwargs);
+        size_t nkwargs = PyDict_GET_SIZE(kwargs);
         assert(sizeof(PyObject *) == sizeof(_PyStackRef));
         newargs = (_PyStackRef *)object_array;
-        for (size_t i = 0; i < total_args; i++) {
-            newargs[i] = PyStackRef_FromPyObjectSteal(object_array[i]);
+        /* Positional args are borrowed from callargs tuple, need new reference */
+        for (Py_ssize_t i = 0; i < nargs; i++) {
+            newargs[i] = PyStackRef_FromPyObjectNew(object_array[i]);
+        }
+        /* Keyword args are owned by _PyStack_UnpackDict, steal them */
+        for (size_t i = 0; i < nkwargs; i++) {
+            newargs[nargs + i] = PyStackRef_FromPyObjectSteal(object_array[nargs + i]);
         }
     }
     else {
@@ -3393,7 +3424,9 @@ _PyEval_GetAwaitable(PyObject *iterable, int oparg)
     else if (PyCoro_CheckExact(iter)) {
         PyCoroObject *coro = (PyCoroObject *)iter;
         int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(coro->cr_frame_state);
-        if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
+        if (frame_state == FRAME_SUSPENDED_YIELD_FROM ||
+            frame_state == FRAME_SUSPENDED_YIELD_FROM_LOCKED)
+        {
             /* `iter` is a coroutine object that is being awaited. */
             Py_CLEAR(iter);
             _PyErr_SetString(PyThreadState_GET(), PyExc_RuntimeError,

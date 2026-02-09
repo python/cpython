@@ -58,6 +58,49 @@ jit_error(const char *message)
     PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
 }
 
+static size_t _Py_jit_shim_size = 0;
+
+static int
+address_in_executor_list(_PyExecutorObject *head, uintptr_t addr)
+{
+    for (_PyExecutorObject *exec = head;
+         exec != NULL;
+         exec = exec->vm_data.links.next)
+    {
+        if (exec->jit_code == NULL || exec->jit_size == 0) {
+            continue;
+        }
+        uintptr_t start = (uintptr_t)exec->jit_code;
+        uintptr_t end = start + exec->jit_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+PyAPI_FUNC(int)
+_PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr)
+{
+    if (interp == NULL) {
+        return 0;
+    }
+    if (_Py_jit_entry != _Py_LazyJitShim && _Py_jit_shim_size != 0) {
+        uintptr_t start = (uintptr_t)_Py_jit_entry;
+        uintptr_t end = start + _Py_jit_shim_size;
+        if (addr >= start && addr < end) {
+            return 1;
+        }
+    }
+    if (address_in_executor_list(interp->executor_list_head, addr)) {
+        return 1;
+    }
+    if (address_in_executor_list(interp->executor_deletion_list_head, addr)) {
+        return 1;
+    }
+    return 0;
+}
+
 static unsigned char *
 jit_alloc(size_t size)
 {
@@ -150,8 +193,6 @@ typedef struct {
     symbol_state got_symbols;
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
 } jit_state;
-
-static size_t _Py_jit_shim_size = 0;
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 

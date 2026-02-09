@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`tarfile` module makes it possible to read and write tar
+The :mod:`!tarfile` module makes it possible to read and write tar
 archives, including those using gzip, bz2 and lzma compression.
 Use the :mod:`zipfile` module to read or write :file:`.zip` files, or the
 higher-level functions in :ref:`shutil <archiving-operations>`.
@@ -220,25 +220,25 @@ Some facts and figures:
 
 .. function:: is_tarfile(name)
 
-   Return :const:`True` if *name* is a tar archive file, that the :mod:`tarfile`
+   Return :const:`True` if *name* is a tar archive file, that the :mod:`!tarfile`
    module can read. *name* may be a :class:`str`, file, or file-like object.
 
    .. versionchanged:: 3.9
       Support for file and file-like objects.
 
 
-The :mod:`tarfile` module defines the following exceptions:
+The :mod:`!tarfile` module defines the following exceptions:
 
 
 .. exception:: TarError
 
-   Base class for all :mod:`tarfile` exceptions.
+   Base class for all :mod:`!tarfile` exceptions.
 
 
 .. exception:: ReadError
 
    Is raised when a tar archive is opened, that either cannot be handled by the
-   :mod:`tarfile` module or is somehow invalid.
+   :mod:`!tarfile` module or is somehow invalid.
 
 
 .. exception:: CompressionError
@@ -359,7 +359,7 @@ The following constants are available at the module level:
 
 
 Each of the following constants defines a tar archive format that the
-:mod:`tarfile` module is able to create. See section :ref:`tar-formats` for
+:mod:`!tarfile` module is able to create. See section :ref:`tar-formats` for
 details.
 
 
@@ -1289,7 +1289,7 @@ Command-Line Interface
 
 .. versionadded:: 3.4
 
-The :mod:`tarfile` module provides a simple command-line interface to interact
+The :mod:`!tarfile` module provides a simple command-line interface to interact
 with tar archives.
 
 If you want to create a new tar archive, specify its name after the :option:`-c`
@@ -1450,7 +1450,7 @@ parameter in :meth:`TarFile.add`::
 Supported tar formats
 ---------------------
 
-There are three tar formats that can be created with the :mod:`tarfile` module:
+There are three tar formats that can be created with the :mod:`!tarfile` module:
 
 * The POSIX.1-1988 ustar format (:const:`USTAR_FORMAT`). It supports filenames
   up to a length of at best 256 characters and linknames up to 100 characters.
@@ -1459,7 +1459,7 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
 
 * The GNU tar format (:const:`GNU_FORMAT`). It supports long filenames and
   linknames, files bigger than 8 GiB and sparse files. It is the de facto
-  standard on GNU/Linux systems. :mod:`tarfile` fully supports the GNU tar
+  standard on GNU/Linux systems. :mod:`!tarfile` fully supports the GNU tar
   extensions for long names, sparse file support is read-only.
 
 * The POSIX.1-2001 pax format (:const:`PAX_FORMAT`). It is the most flexible
@@ -1504,7 +1504,7 @@ Unfortunately, there is no way to autodetect the encoding of an archive. The
 pax format was designed to solve this problem. It stores non-ASCII metadata
 using the universal character encoding *UTF-8*.
 
-The details of character conversion in :mod:`tarfile` are controlled by the
+The details of character conversion in :mod:`!tarfile` are controlled by the
 *encoding* and *errors* keyword arguments of the :class:`TarFile` class.
 
 *encoding* defines the character encoding to use for the metadata in the

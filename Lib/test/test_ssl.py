@@ -131,6 +131,7 @@ REMOTE_HOST = "self-signed.pythontest.net"
 EMPTYCERT = data_file("nullcert.pem")
 BADCERT = data_file("badcert.pem")
 NONEXISTINGCERT = data_file("XXXnonexisting.pem")
+NONEXISTINGKEY = data_file("XXXnonexistingkey.pem")
 BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
@@ -1229,6 +1230,11 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             ctx.load_cert_chain(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.filename, NONEXISTINGCERT)
+        with self.assertRaises(OSError) as cm:
+            ctx.load_cert_chain(CERTFILE, keyfile=NONEXISTINGKEY)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.filename, NONEXISTINGKEY)
         with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_cert_chain(BADCERT)
         with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):

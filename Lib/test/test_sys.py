@@ -1880,7 +1880,10 @@ class SizeofTest(unittest.TestCase):
         check(S(), set(), '3P')
         class FS(frozenset):
             __slots__ = 'a', 'b', 'c'
-        check(FS(), frozenset(), '3P')
+
+        class mytuple(tuple):
+            pass
+        check(FS([mytuple()]), frozenset([mytuple()]), '3P')
         from collections import OrderedDict
         class OD(OrderedDict):
             __slots__ = 'a', 'b', 'c'
