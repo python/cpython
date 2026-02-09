@@ -1,5 +1,6 @@
 import atexit
 import errno
+import json
 import os
 import selectors
 import signal
@@ -163,17 +164,19 @@ class ForkServer(object):
                 self._forkserver_pid = None
 
             cmd = ('from multiprocessing.forkserver import main; ' +
-                   'main(%d, %d, %r, **%r)')
+                   'main(listener_fd=%d, alive_r=%d, init_r=%d)')
 
-            main_kws = {}
             if self._preload_modules:
                 data = spawn.get_preparation_data('ignore')
-                if 'sys_path' in data:
-                    main_kws['sys_path'] = data['sys_path']
-                if 'init_main_from_path' in data:
-                    main_kws['main_path'] = data['init_main_from_path']
-                if self._preload_on_error != 'ignore':
-                    main_kws['on_error'] = self._preload_on_error
+                preload_kwargs = {
+                    "preload": self._preload_modules,
+                    "sys_path": data["sys_path"],
+                    "main_path": data.get("init_main_from_path", None),
+                    "sys_argv": data["sys_argv"],
+                    "on_error": self._preload_on_error,
+                }
+            else:
+                preload_kwargs = None
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -186,32 +189,31 @@ class ForkServer(object):
                 # when they all terminate the read end becomes ready.
                 alive_r, alive_w = os.pipe()
                 # A short lived pipe to initialize the forkserver authkey.
-                authkey_r, authkey_w = os.pipe()
+                init_r, init_w = os.pipe()
                 try:
-                    fds_to_pass = [listener.fileno(), alive_r, authkey_r]
-                    main_kws['authkey_r'] = authkey_r
-                    cmd %= (listener.fileno(), alive_r, self._preload_modules,
-                            main_kws)
+                    fds_to_pass = [listener.fileno(), alive_r, init_r]
+                    cmd %= (listener.fileno(), alive_r, init_r)
                     exe = spawn.get_executable()
                     args = [exe] + util._args_from_interpreter_flags()
                     args += ['-c', cmd]
-                    if self._preload_modules:
-                        args += data["sys_argv"]
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 except:
                     os.close(alive_w)
-                    os.close(authkey_w)
+                    os.close(init_w)
                     raise
                 finally:
                     os.close(alive_r)
-                    os.close(authkey_r)
+                    os.close(init_r)
                 # Authenticate our control socket to prevent access from
                 # processes we have not shared this key with.
                 try:
                     self._forkserver_authkey = os.urandom(_AUTHKEY_LEN)
-                    os.write(authkey_w, self._forkserver_authkey)
+                    os.write(init_w, self._forkserver_authkey)
+                    preload_data = json.dumps(preload_kwargs).encode()
+                    os.write(init_w, struct.pack("Q", len(preload_data)))
+                    os.write(init_w, preload_data)
                 finally:
-                    os.close(authkey_w)
+                    os.close(init_w)
                 self._forkserver_address = address
                 self._forkserver_alive_fd = alive_w
                 self._forkserver_pid = pid
@@ -281,24 +283,22 @@ def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
     util._flush_std_streams()
 
 
-def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, authkey_r=None, on_error='ignore'):
+def main(listener_fd, alive_r, init_r):
     """Run forkserver."""
-    if authkey_r is not None:
-        try:
-            authkey = os.read(authkey_r, _AUTHKEY_LEN)
-            assert len(authkey) == _AUTHKEY_LEN, f'{len(authkey)} < {_AUTHKEY_LEN}'
-        finally:
-            os.close(authkey_r)
-    else:
-        authkey = b''
+    try:
+        authkey = os.read(init_r, _AUTHKEY_LEN)
+        assert len(authkey) == _AUTHKEY_LEN, f'{len(authkey)} < {_AUTHKEY_LEN}'
 
-    if preload:
-        sys_argv = sys.argv[1:]
-    else:
-        sys_argv = None
+        preload_data_len, = struct.unpack("Q", os.read(init_r, struct.calcsize("Q")))
+        preload_data = b""
+        while len(preload_data) < preload_data_len:
+            preload_data += os.read(init_r, preload_data_len - len(preload_data))
+        preload_kwargs = json.loads(preload_data.decode())
+    finally:
+        os.close(init_r)
 
-    _handle_preload(preload, main_path, sys_path, sys_argv, on_error)
+    if preload_kwargs:
+        _handle_preload(**preload_kwargs)
 
     util._close_stdin()
 
