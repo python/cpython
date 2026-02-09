@@ -11930,12 +11930,10 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
     HANDLE h = (HANDLE)_get_osfhandle(fd);
-    if (h != INVALID_HANDLE_VALUE) {
-        if (GetFileType(h) == FILE_TYPE_PIPE) {
-            errno = ESPIPE;
-        } else {
-            result = _lseeki64(fd, position, how);
-        }
+    if (h != INVALID_HANDLE_VALUE && GetFileType(h) == FILE_TYPE_PIPE) {
+        errno = ESPIPE;
+    } else {
+        result = _lseeki64(fd, position, how);
     }
 #else
     result = lseek(fd, position, how);
