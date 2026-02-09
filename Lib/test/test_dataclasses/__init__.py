@@ -1504,7 +1504,7 @@ class TestCase(unittest.TestCase):
 
         @dataclass
         class C:
-            kaboom: ClassVar[None] = Kaboom()
+            kaboom: ClassVar[Kaboom] = Kaboom()
 
         self.assertIsInstance(C.__dict__["kaboom"], Kaboom)
 
