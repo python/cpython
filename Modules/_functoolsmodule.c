@@ -713,15 +713,14 @@ partial_repr(PyObject *self)
 
     arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL)
-        goto free_arguments;
+        goto arglist_error;
     /* Pack positional arguments */
     n = PyTuple_GET_SIZE(args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
                                         PyTuple_GET_ITEM(args, i)));
         if (arglist == NULL)
-            goto free_arguments;
-
+            goto arglist_error;
     }
     /* Pack keyword arguments */
     for (i = 0; PyDict_Next(kw, &i, &key, &value);) {
@@ -731,24 +730,24 @@ partial_repr(PyObject *self)
                                                 key, value));
         Py_DECREF(value);
         if (arglist == NULL)
-            goto free_arguments;
+            goto arglist_error;
     }
 
     mod = PyType_GetModuleName(Py_TYPE(pto));
-    if (mod == NULL) {
-        goto free_arglist;
-    }
+    if (mod == NULL)
+        goto mod_error;
+
     name = PyType_GetQualName(Py_TYPE(pto));
-    if (name == NULL) {
-        goto free_mod;
-    }
+    if (name == NULL)
+        goto name_error;
+
     result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, fn, arglist);
     Py_DECREF(name);
- free_mod:
+ name_error:
     Py_DECREF(mod);
- free_arglist:
+ mod_error:
     Py_DECREF(arglist);
- free_arguments:
+ arglist_error:
     Py_DECREF(fn);
     Py_DECREF(args);
     Py_DECREF(kw);
