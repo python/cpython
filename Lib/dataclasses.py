@@ -1085,7 +1085,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                 setattr(cls, f.name, f.default)
             continue
 
-        # Regular fields can be set or removed as necessary.
+        # Other fields can be set or removed as necessary.
         if isinstance(getattr(cls, f.name, None), Field):
             if f.default is MISSING:
                 # If there's no default, delete the class attribute.
