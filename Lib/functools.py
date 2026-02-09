@@ -1101,8 +1101,7 @@ class _singledispatchmethod_get:
         if hasattr(method, "__get__"):
             method = method.__get__(self._obj, self._cls)
             if (self._skip_bound_arg
-                    and isinstance(method, MethodType)
-                    and method.__self__ is self):
+                    and isinstance(method, MethodType)):
                 args = args[1:]
         return method(*args, **kwargs)
 
