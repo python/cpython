@@ -1,6 +1,7 @@
 """Tests for sampling profiler core functionality."""
 
 import io
+import re
 from unittest import mock
 import unittest
 
@@ -591,7 +592,6 @@ class TestPrintSampledStats(unittest.TestCase):
 
         # Extract just the function names for comparison
         func_names = []
-        import re
 
         for line in data_lines:
             # Function name is between the last ( and ), accounting for ANSI color codes

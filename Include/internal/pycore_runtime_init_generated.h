@@ -1333,11 +1333,23 @@ extern "C" {
 }
 
 #define _Py_str_identifiers_INIT { \
+    INIT_ID(AGEN_CLOSED), \
+    INIT_ID(AGEN_CREATED), \
+    INIT_ID(AGEN_RUNNING), \
+    INIT_ID(AGEN_SUSPENDED), \
     INIT_ID(CANCELLED), \
+    INIT_ID(CORO_CLOSED), \
+    INIT_ID(CORO_CREATED), \
+    INIT_ID(CORO_RUNNING), \
+    INIT_ID(CORO_SUSPENDED), \
     INIT_ID(Emax), \
     INIT_ID(Emin), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
+    INIT_ID(GEN_CLOSED), \
+    INIT_ID(GEN_CREATED), \
+    INIT_ID(GEN_RUNNING), \
+    INIT_ID(GEN_SUSPENDED), \
     INIT_ID(JSONDecodeError), \
     INIT_ID(PENDING), \
     INIT_ID(Py_Repr), \
@@ -1560,6 +1572,7 @@ extern "C" {
     INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
+    INIT_ID(adobe), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(alias), \
@@ -1755,6 +1768,7 @@ extern "C" {
     INIT_ID(flags), \
     INIT_ID(flush), \
     INIT_ID(fold), \
+    INIT_ID(foldspaces), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
@@ -1795,6 +1809,7 @@ extern "C" {
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
+    INIT_ID(ignorechars), \
     INIT_ID(imag), \
     INIT_ID(implieslink), \
     INIT_ID(importlib), \
@@ -1953,6 +1968,7 @@ extern "C" {
     INIT_ID(outpath), \
     INIT_ID(overlapped), \
     INIT_ID(owner), \
+    INIT_ID(pad), \
     INIT_ID(pages), \
     INIT_ID(parameter), \
     INIT_ID(parent), \
@@ -2140,6 +2156,7 @@ extern "C" {
     INIT_ID(which), \
     INIT_ID(who), \
     INIT_ID(withdata), \
+    INIT_ID(wrapcol), \
     INIT_ID(writable), \
     INIT_ID(write), \
     INIT_ID(write_through), \

@@ -103,7 +103,6 @@ extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
 extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
-extern void _PyPerfTrampoline_FreeArenas(void);
 extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -474,6 +473,11 @@ PyAPI_FUNC(void)
 _Py_assert_within_stack_bounds(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     const char *filename, int lineno);
+
+PyAPI_FUNC(_PyStackRef)
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null);
 
 // Like PyMapping_GetOptionalItem, but returns the PyObject* instead of taking
 // it as an out parameter. This helps MSVC's escape analysis when used with

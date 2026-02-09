@@ -1073,6 +1073,7 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
 
     PyBytesWriter *writer = PyBytesWriter_Create(n);
     if (writer == NULL) {
+        LEAVE_BUFFERED(self)
         return NULL;
     }
 
@@ -1504,8 +1505,8 @@ buffered_iternext(PyObject *op)
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     tp = Py_TYPE(self);
-    if (Py_IS_TYPE(tp, state->PyBufferedReader_Type) ||
-        Py_IS_TYPE(tp, state->PyBufferedRandom_Type))
+    if (tp == state->PyBufferedReader_Type ||
+        tp == state->PyBufferedRandom_Type)
     {
         /* Skip method call overhead for speed */
         line = _buffered_readline(self, -1);

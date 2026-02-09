@@ -156,6 +156,19 @@
 #  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
+#if _Py_TIER2
+#define STOP_TRACING() \
+    do { \
+        if (IS_JIT_TRACING()) { \
+            LEAVE_TRACING(); \
+            _PyJit_FinalizeTracing(tstate, 0); \
+        } \
+    } while (0);
+#else
+#define STOP_TRACING() ((void)(0));
+#endif
+
+
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
@@ -338,7 +351,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
-#ifdef ENABLE_SPECIALIZATION_FT
+#ifdef ENABLE_SPECIALIZATION
 /* Multiple threads may execute these concurrently if thread-local bytecode is
  * disabled and they all execute the main copy of the bytecode. Specialization
  * is disabled in that case so the value is unused, but the RMW cycle should be
@@ -420,7 +433,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state.prev_state.code_curr_size == 2); \
+        assert(uop_buffer_length(&((_PyThreadStateImpl *)tstate)->jit_tracer_state->code_buffer)); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \
@@ -489,6 +502,8 @@ do {                                                   \
 #define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
 #endif
 
+#define IS_PEP523_HOOKED(tstate) (tstate->interp->eval_frame != NULL)
+
 static inline int
 check_periodics(PyThreadState *tstate) {
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
@@ -507,18 +522,22 @@ gen_try_set_executing(PyGenObject *gen)
 #ifdef Py_GIL_DISABLED
     if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
         int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
-        while (frame_state < FRAME_EXECUTING) {
+        while (frame_state < FRAME_SUSPENDED_YIELD_FROM_LOCKED) {
             if (_Py_atomic_compare_exchange_int8(&gen->gi_frame_state,
                                                  &frame_state,
                                                  FRAME_EXECUTING)) {
                 return true;
             }
         }
+        // NB: We return false for FRAME_SUSPENDED_YIELD_FROM_LOCKED as well.
+        // That case is rare enough that we can just handle it in the deopt.
+        return false;
     }
 #endif
     // Use faster non-atomic modifications in the GIL-enabled build and when
     // the object is uniquely referenced in the free-threaded build.
     if (gen->gi_frame_state < FRAME_EXECUTING) {
+        assert(gen->gi_frame_state != FRAME_SUSPENDED_YIELD_FROM_LOCKED);
         gen->gi_frame_state = FRAME_EXECUTING;
         return true;
     }

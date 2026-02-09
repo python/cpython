@@ -1,0 +1,1 @@
+Mime type ``image/jxl`` is now supported by :mod:`mimetypes`.

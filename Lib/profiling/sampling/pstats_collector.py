@@ -1,9 +1,10 @@
 import collections
 import marshal
+import pstats
 
 from _colorize import ANSIColors
 from .collector import Collector, extract_lineno
-from .constants import MICROSECONDS_PER_SECOND
+from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
 
 class PstatsCollector(Collector):
@@ -86,9 +87,6 @@ class PstatsCollector(Collector):
 
     def print_stats(self, sort=-1, limit=None, show_summary=True, mode=None):
         """Print formatted statistics to stdout."""
-        import pstats
-        from .constants import PROFILING_MODE_CPU
-
         # Create stats object
         stats = pstats.SampledStats(self).strip_dirs()
         if not stats.stats:

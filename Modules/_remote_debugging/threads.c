@@ -632,6 +632,12 @@ seize_thread(pid_t tid)
     if (errno == ESRCH) {
         return 1;  // Thread gone, skip
     }
+    if (errno == EPERM) {
+        // Thread may have exited, be in a special state, or already be traced.
+        // Skip rather than fail - this avoids endless retry loops when
+        // threads transiently become inaccessible.
+        return 1;
+    }
     if (errno == EINVAL || errno == EIO) {
         // Fallback for older kernels
         if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == 0) {
@@ -639,8 +645,8 @@ seize_thread(pid_t tid)
             waitpid(tid, &status, __WALL);
             return 0;
         }
-        if (errno == ESRCH) {
-            return 1;  // Thread gone
+        if (errno == ESRCH || errno == EPERM) {
+            return 1;  // Thread gone or inaccessible
         }
     }
     return -1;  // Real error

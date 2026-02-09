@@ -160,6 +160,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(legacy_windows_stdio, BOOL, READ_ONLY, NO_SYS),
 #endif
     SPEC(malloc_stats, BOOL, READ_ONLY, NO_SYS),
+    SPEC(pymalloc_hugepages, BOOL, READ_ONLY, NO_SYS),
     SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv")),
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
@@ -900,6 +901,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
+    assert(config->pymalloc_hugepages >= 0);
     assert(config->site_import >= 0);
     assert(config->bytes_warning >= 0);
     assert(config->warn_default_encoding >= 0);
@@ -1879,6 +1881,18 @@ config_read_env_vars(PyConfig *config)
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
     }
+    {
+        const char *env = _Py_GetEnv(use_env, "PYTHON_PYMALLOC_HUGEPAGES");
+        if (env) {
+            int value;
+            if (_Py_str_to_int(env, &value) < 0 || value < 0) {
+                /* PYTHON_PYMALLOC_HUGEPAGES=text or negative
+                   behaves as PYTHON_PYMALLOC_HUGEPAGES=1 */
+                value = 1;
+            }
+            config->pymalloc_hugepages = (value > 0);
+        }
+    }
 
     if (config->dump_refs_file == NULL) {
         status = CONFIG_GET_ENV_DUP(config, &config->dump_refs_file,
@@ -2811,6 +2825,10 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     {
         return _PyStatus_NO_MEMORY();
     }
+
+#ifdef PYMALLOC_USE_HUGEPAGES
+    runtime->allocators.use_hugepages = config->pymalloc_hugepages;
+#endif
 
     return _PyStatus_OK();
 }
