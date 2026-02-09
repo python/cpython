@@ -19,7 +19,7 @@ from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import GenericAlias, MethodType, MappingProxyType, UnionType
+from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
 
 ################################################################################
