@@ -1514,7 +1514,7 @@ class TestCase(unittest.TestCase):
         class C:
             x: ClassVar[int] = 1000
 
-        self.assertEqual(C.__dataclass_fields__['x'].default, MISSING)
+        self.assertIs(C.__dataclass_fields__['x'].default, MISSING)
         self.assertEqual(C.x, 1000)
 
     def test_classvar_default_factory(self):
