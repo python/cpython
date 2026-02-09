@@ -1,0 +1,3 @@
+:deco:`dataclasses.dataclass` no longer triggers ``__get__`` of
+:data:`~typing.ClassVar` members nor tracks them as field defaults. Patch by
+Bartosz Sławecki.

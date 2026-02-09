@@ -828,16 +828,11 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # default_kw_only is the value of kw_only to use if there isn't a field()
     # that defines it.
 
-    # If the default value isn't derived from Field, then it's only a
-    # normal default value.  Convert it to a Field().
-    default = getattr(cls, a_name, MISSING)
-    if isinstance(default, Field):
-        f = default
+    member = vars(cls).get(a_name, MISSING)
+    if isinstance(member, Field):
+        f = member
     else:
-        if isinstance(default, types.MemberDescriptorType):
-            # This is a field in __slots__, so it has no default value.
-            default = MISSING
-        f = field(default=default)
+        f = field()
 
     # Only at this point do we know the name and the type.  Set them.
     f.name = a_name
@@ -899,6 +894,17 @@ def _get_field(cls, a_name, a_type, default_kw_only):
 
     # kw_only validation and assignment.
     if f._field_type in (_FIELD, _FIELD_INITVAR):
+        # If the default value isn't derived from Field, then it's only a
+        # normal default value.
+        default = getattr(cls, a_name, MISSING)
+
+        # This is a field in __slots__, so it has no default value.
+        if isinstance(default, types.MemberDescriptorType):
+            default = MISSING
+
+        if not isinstance(default, Field):
+            f.default = default
+
         # For real and InitVar fields, if kw_only wasn't specified use the
         # default value.
         if f.kw_only is MISSING:
@@ -1072,6 +1078,14 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # field) exists and is of type 'Field', replace it with the
         # real default.  This is so that normal class introspection
         # sees a real default value, not a Field.
+
+        # Class variables cannot be removed from the class.
+        if f._field_type is _FIELD_CLASSVAR:
+            if f.default is not MISSING:
+                setattr(cls, f.name, f.default)
+            continue
+
+        # Regular fields can be set or removed as necessary.
         if isinstance(getattr(cls, f.name, None), Field):
             if f.default is MISSING:
                 # If there's no default, delete the class attribute.

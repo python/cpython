@@ -1496,6 +1496,25 @@ class TestCase(unittest.TestCase):
         d = D(4, 5)
         self.assertEqual((d.x, d.z), (4, 5))
 
+    def test_classvar_default_value_failing_descriptor(self):
+        class Kaboom:
+            def __get__(self, inst, owner):
+                raise RuntimeError("kaboom!")
+
+        @dataclass
+        class C:
+            kaboom: ClassVar[None] = Kaboom()
+
+        self.assertIsInstance(C.__dict__["kaboom"], Kaboom)
+
+    def test_classvar_member_isnt_tracked_or_removed(self):
+        @dataclass
+        class C:
+            x: ClassVar[int] = 1000
+
+        self.assertEqual(C.__dataclass_fields__['x'].default, MISSING)
+        self.assertEqual(C.x, 1000)
+
     def test_classvar_default_factory(self):
         # It's an error for a ClassVar to have a factory function.
         with self.assertRaisesRegex(TypeError,
