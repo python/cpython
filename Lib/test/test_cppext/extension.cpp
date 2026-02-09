@@ -19,7 +19,7 @@
    // mode (when MI_DEBUG is not zero)
    // mimalloc emits compiler warnings when Python is built on Windows
    // in free-threaded mode.
-#  if !defined(Py_DEBUG) && !(defined(MS_WINDOWS) && defined(Py_GIL_DISABLED))
+#  if !(defined(MS_WINDOWS) && defined(Py_GIL_DISABLED))
 #    include "internal/pycore_backoff.h"
 #    include "internal/pycore_cell.h"
 #  endif
