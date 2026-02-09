@@ -2364,31 +2364,9 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                _PyCStackRef method;
-                _PyThreadState_PushCStackRef(tstate, &method);
-                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
-                if (is_meth) {
-                    /* We can bypass temporary bound method object.
-                       meth is unbound method and obj is self.
-                       meth | self | arg1 | ... | argN
-                     */
-                    assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
-                    self_or_null[0] = owner;  // Transfer ownership
-                    DEAD(owner);
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                }
-                else {
-                    /* meth is not an unbound method (but a regular attr, or
-                       something was returned by a descriptor protocol).  Set
-                       the second element of the stack to NULL, to signal
-                       CALL that it's not a method call.
-                       meth | NULL | arg1 | ... | argN
-                    */
-                    PyStackRef_CLOSE(owner);
-                    self_or_null[0] = PyStackRef_NULL;
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                    ERROR_IF(PyStackRef_IsNull(attr));
-                }
+                attr = _Py_LoadAttr_StackRefSteal(tstate, owner, name, self_or_null);
+                DEAD(owner);
+                ERROR_IF(PyStackRef_IsNull(attr));
             }
             else {
                 /* Classic, pushes one value. */

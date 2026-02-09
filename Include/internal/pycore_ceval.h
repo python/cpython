@@ -474,6 +474,11 @@ _Py_assert_within_stack_bounds(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     const char *filename, int lineno);
 
+PyAPI_FUNC(_PyStackRef)
+_Py_LoadAttr_StackRefSteal(
+    PyThreadState *tstate, _PyStackRef owner,
+    PyObject *name, _PyStackRef *self_or_null);
+
 // Like PyMapping_GetOptionalItem, but returns the PyObject* instead of taking
 // it as an out parameter. This helps MSVC's escape analysis when used with
 // tail calling.

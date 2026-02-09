@@ -486,6 +486,10 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').stem
       'library'
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 
 .. method:: PurePath.as_posix()
 
