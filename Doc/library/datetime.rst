@@ -2540,7 +2540,7 @@ requires, and these work on all supported platforms.
 |  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
 |           | space-padded decimal number.   |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            | \(0)  |
+|  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            |       |
 |           | the ISO 8601 format.           | 1001-12-30             |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%g``   | Last 2 digits of ISO 8601 year | 00, 01, ..., 99        | \(0)  |
@@ -2673,10 +2673,10 @@ differences between platforms in handling of unsupported format specifiers.
    ``%G``, ``%u`` and ``%V`` were added.
 
 .. versionadded:: 3.12
-   ``%:z`` was added for :meth:`~.datetime.strftime`
+   ``%:z`` was added for :meth:`~.datetime.strftime`.
 
 .. versionadded:: 3.15
-   ``%:z`` was added for :meth:`~.datetime.strptime`
+   ``%:z`` and ``%F`` were added for :meth:`~.datetime.strptime`.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
