@@ -725,10 +725,11 @@ remove it.
 
       An array of additional slots, terminated by a ``{0, NULL}`` entry.
 
-      This array may not contain slots corresponding to :c:type:`PyModuleDef`
-      members.
-      For example, you cannot use :c:macro:`Py_mod_name` in :c:member:`!m_slots`;
-      the module name must be given as :c:member:`PyModuleDef.m_name`.
+      If the array contains slots corresponding to :c:type:`PyModuleDef`
+      members, the values must match.
+      For example, if you use :c:macro:`Py_mod_name` in :c:member:`!m_slots`,
+      :c:member:`PyModuleDef.m_name` must be set to the same pointer
+      (not just an equal string).
 
       .. versionchanged:: 3.5
 
