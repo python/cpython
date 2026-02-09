@@ -2163,6 +2163,8 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
+      >>> 'spam, spam, spam'.index('spam')
+      0
       >>> 'spam, spam, spam'.index('eggs')
       Traceback (most recent call last):
         File "<python-input-0>", line 1, in <module>
@@ -2178,7 +2180,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``.
+   ``c.isdigit()``, or ``c.isnumeric()``. For example::
+
+   .. doctest::
+
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ''.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
 
 
 .. method:: str.isalpha()
@@ -2470,6 +2483,19 @@ expression support in the :mod:`re` module).
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Monty Python'.partition(' ')
+      ('Monty', ' ', 'Python')
+      >>> "Monty Python's Flying Circus".partition(' ')
+      ('Monty', ' ', "Python's Flying Circus")
+      >>> 'Monty Python'.partition('-')
+      ('Monty Python', '', '')
+
+   See also :meth:`rpartition`.
+
 
 .. method:: str.removeprefix(prefix, /)
 
@@ -2546,6 +2572,20 @@ expression support in the :mod:`re` module).
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
+   For example:
+
+   .. doctest::
+
+      >>> 'spam, spam, spam'.rindex('spam')
+      12
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin-0>", line 1, in <module>
+          'spam, spam, spam'.rindex('eggs')
+          ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+      ValueError: substring not found
+
+   See also :meth:`index` and :meth:`find`.
 
 
 .. method:: str.rjust(width, fillchar=' ', /)
@@ -2734,6 +2774,19 @@ expression support in the :mod:`re` module).
    *prefix* can also be a tuple of prefixes to look for.  With optional *start*,
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'a'))
+      True
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith` and :meth:`removeprefix`.
 
 
 .. method:: str.strip(chars=None, /)

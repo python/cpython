@@ -1,0 +1,1 @@
+Update bundled `libexpat <https://libexpat.github.io/>`_ to 2.7.4

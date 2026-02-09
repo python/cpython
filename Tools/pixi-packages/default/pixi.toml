@@ -1,6 +1,9 @@
+# NOTE: Please always only modify default/pixi.toml and then run clone-recipe.sh to
+# propagate the changes to the other variants.
+
 [workspace]
 channels = ["https://prefix.dev/conda-forge"]
-platforms = ["osx-arm64", "linux-64"]
+platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64"]
 preview = ["pixi-build"]
 
 [package.build.backend]

@@ -19,6 +19,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
@@ -1928,6 +1929,37 @@ get_dotted_path(PyObject *name)
     return PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
 }
 
+static PyObject *
+join_dotted_path(PyObject *dotted_path)
+{
+    return PyUnicode_Join(_Py_LATIN1_CHR('.'), dotted_path);
+}
+
+/* Returns -1 (with an exception set) on error, 0 if there were no changes,
+ * 1 if some names were mangled. */
+static int
+mangle_dotted_path(PyObject *dotted_path)
+{
+    int rc = 0;
+    Py_ssize_t n = PyList_GET_SIZE(dotted_path);
+    for (Py_ssize_t i = n-1; i > 0; i--) {
+        PyObject *subpath = PyList_GET_ITEM(dotted_path, i);
+        if (_Py_IsPrivateName(subpath)) {
+            PyObject *parent = PyList_GET_ITEM(dotted_path, i-1);
+            PyObject *mangled = _Py_Mangle(parent, subpath);
+            if (mangled == NULL) {
+                return -1;
+            }
+            if (mangled != subpath) {
+                rc = 1;
+            }
+            PyList_SET_ITEM(dotted_path, i, mangled);
+            Py_DECREF(subpath);
+        }
+    }
+    return rc;
+}
+
 static int
 check_dotted_path(PickleState *st, PyObject *obj, PyObject *dotted_path)
 {
@@ -3809,6 +3841,15 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     dotted_path = get_dotted_path(global_name);
     if (dotted_path == NULL)
         goto error;
+    switch (mangle_dotted_path(dotted_path)) {
+        case -1:
+            goto error;
+        case 1:
+            Py_SETREF(global_name, join_dotted_path(dotted_path));
+            if (global_name == NULL) {
+                goto error;
+            }
+    }
     module_name = whichmodule(st, obj, global_name, dotted_path);
     if (module_name == NULL)
         goto error;
