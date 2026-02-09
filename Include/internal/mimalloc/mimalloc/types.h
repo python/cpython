@@ -481,7 +481,7 @@ typedef struct mi_segment_s {
   struct mi_segment_s* next;            // the list of freed segments in the cache (must be first field, see `segment.c:mi_segment_init`)
 
   size_t            abandoned;          // abandoned pages (i.e. the original owning thread stopped) (`abandoned <= used`)
-  size_t            abandoned_visits;   // count how often this segment is visited in the abandoned list (to force reclaim it it is too long)
+  size_t            abandoned_visits;   // count how often this segment is visited in the abandoned list (to force reclaim if it is too long)
   size_t            used;               // count of pages in use
   uintptr_t         cookie;             // verify addresses in debug mode: `mi_ptr_cookie(segment) == segment->cookie`
 
@@ -705,7 +705,7 @@ void _mi_stat_counter_increase(mi_stat_counter_t* stat, size_t amount);
 // Thread Local data
 // ------------------------------------------------------
 
-// A "span" is is an available range of slices. The span queues keep
+// A "span" is an available range of slices. The span queues keep
 // track of slice spans of at most the given `slice_count` (but more than the previous size class).
 typedef struct mi_span_queue_s {
   mi_slice_t* first;

@@ -33,6 +33,8 @@ The :mod:`!compression.zstd` module contains:
 * The :class:`CompressionParameter`, :class:`DecompressionParameter`, and
   :class:`Strategy` classes for setting advanced (de)compression parameters.
 
+.. include:: ../includes/optional-module.rst
+
 
 Exceptions
 ----------
@@ -71,7 +73,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be non-None.
@@ -115,7 +117,7 @@ Reading and writing compressed files
    argument is not None, a :exc:`!TypeError` will be raised.
 
    When writing, the *options* argument can be a dictionary
-   providing advanced decompression parameters; see
+   providing advanced compression parameters; see
    :class:`CompressionParameter` for detailed information about supported
    parameters. The *level* argument is the compression level to use when
    writing compressed data. Only one of *level* or *options* may be passed. The
@@ -523,8 +525,14 @@ Advanced parameter control
    .. attribute:: compression_level
 
       A high-level means of setting other compression parameters that affect
-      the speed and ratio of compressing data. Setting the level to zero uses
-      :attr:`COMPRESSION_LEVEL_DEFAULT`.
+      the speed and ratio of compressing data.
+
+      Regular compression levels are greater than ``0``. Values greater than
+      ``20`` are considered "ultra" compression and require more memory than
+      other levels. Negative values can be used to trade off faster compression
+      for worse compression ratios.
+
+      Setting the level to zero uses :attr:`COMPRESSION_LEVEL_DEFAULT`.
 
    .. attribute:: window_log
 

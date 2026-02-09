@@ -35,11 +35,11 @@ Update bundled libexpat to 2.5.0
 .. nonce: ik4iOv
 .. section: Core and Builtins
 
-The docs clearly say that ``PyImport_Inittab``,
+The docs clearly say that :c:data:`PyImport_Inittab`,
 :c:func:`PyImport_AppendInittab`, and :c:func:`PyImport_ExtendInittab`
 should not be used after :c:func:`Py_Initialize` has been called. We now
 enforce this for the two functions.  Additionally, the runtime now uses an
-internal copy of ``PyImport_Inittab``, to guard against modification.
+internal copy of :c:data:`PyImport_Inittab`, to guard against modification.
 
 ..
 
@@ -333,7 +333,7 @@ aware of this shim frame and the changes to the semantics of
 .. date: 2022-10-19-01-01-08
 .. gh-issue: 98415
 .. nonce: ZS2eWh
-.. section: Core and Builtins
+.. section: Build
 
 Fix detection of MAC addresses for :mod:`uuid` on certain OSs. Patch by
 Chaim Sanders
@@ -405,7 +405,7 @@ Expose :const:`~socket.ETH_P_ALL` and some of the :ref:`ETHERTYPE_* constants
 .. date: 2022-06-10-16-37-44
 .. gh-issue: 93696
 .. nonce: 65BI2R
-.. section: Core and Builtins
+.. section: Library
 
 Allow :mod:`pdb` to locate source for frozen modules in the standard
 library.

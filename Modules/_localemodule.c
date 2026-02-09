@@ -87,6 +87,41 @@ copy_grouping(const char* s)
     return result;
 }
 
+#if defined(MS_WINDOWS)
+
+// 16 is the number of elements in the szCodePage field
+// of the __crt_locale_strings structure.
+#define MAX_CP_LEN 15
+
+static int
+check_locale_name(const char *locale, const char *end)
+{
+    size_t len = end ? (size_t)(end - locale) : strlen(locale);
+    const char *dot = memchr(locale, '.', len);
+    if (dot && locale + len - dot - 1 > MAX_CP_LEN) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+check_locale_name_all(const char *locale)
+{
+    const char *start = locale;
+    while (1) {
+        const char *end = strchr(start, ';');
+        if (check_locale_name(start, end) < 0) {
+            return -1;
+        }
+        if (end == NULL) {
+            break;
+        }
+        start = end + 1;
+    }
+    return 0;
+}
+#endif
+
 /*[clinic input]
 _locale.setlocale
 
@@ -110,6 +145,18 @@ _locale_setlocale_impl(PyObject *module, int category, const char *locale)
         PyErr_SetString(get_locale_state(module)->Error,
                         "invalid locale category");
         return NULL;
+    }
+    if (locale) {
+        if ((category == LC_ALL
+             ? check_locale_name_all(locale)
+             : check_locale_name(locale, NULL)) < 0)
+        {
+            /* Debug assertion failure on Windows.
+             * _Py_BEGIN_SUPPRESS_IPH/_Py_END_SUPPRESS_IPH do not help. */
+            PyErr_SetString(get_locale_state(module)->Error,
+                "unsupported locale setting");
+            return NULL;
+        }
     }
 #endif
 
@@ -408,35 +455,72 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
         goto exit;
     }
 
-    /* assume no change in size, first */
-    n1 = n1 + 1;
-    buf = PyMem_New(wchar_t, n1);
-    if (!buf) {
-        PyErr_NoMemory();
-        goto exit;
-    }
     errno = 0;
-    n2 = wcsxfrm(buf, s, n1);
+    n2 = wcsxfrm(NULL, s, 0);
     if (errno && errno != ERANGE) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto exit;
     }
-    if (n2 >= (size_t)n1) {
-        /* more space needed */
-        wchar_t * new_buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
-        if (!new_buf) {
-            PyErr_NoMemory();
-            goto exit;
+    buf = PyMem_New(wchar_t, n2+1);
+    if (!buf) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+
+    errno = 0;
+    n2 = wcsxfrm(buf, s, n2+1);
+    if (errno) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto exit;
+    }
+    /* The result is just a sequence of integers, they are not necessary
+       Unicode code points, so PyUnicode_FromWideChar() cannot be used
+       here. For example, 0xD83D 0xDC0D should not be larger than 0xFF41.
+     */
+#if SIZEOF_WCHAR_T == 4
+    {
+        /* Some codes can exceed the range of Unicode code points
+           (0 - 0x10FFFF), so they cannot be directly used in
+           PyUnicode_FromKindAndData(). They should be first encoded in
+           a way that preserves the lexicographical order.
+
+           Codes in the range 0-0xFFFF represent themself.
+           Codes larger than 0xFFFF are encoded as a pair:
+           * 0x1xxxx -- the highest 16 bits
+           * 0x0xxxx -- the lowest 16 bits
+         */
+        size_t n3 = 0;
+        for (size_t i = 0; i < n2; i++) {
+            if ((Py_UCS4)buf[i] > 0x10000u) {
+                n3++;
+            }
         }
-        buf = new_buf;
-        errno = 0;
-        n2 = wcsxfrm(buf, s, n2+1);
-        if (errno) {
-            PyErr_SetFromErrno(PyExc_OSError);
+        if (n3) {
+            n3 += n2; // no integer overflow
+            Py_UCS4 *buf2 = PyMem_New(Py_UCS4, n3);
+            if (buf2 == NULL) {
+                PyErr_NoMemory();
+                goto exit;
+            }
+            size_t j = 0;
+            for (size_t i = 0; i < n2; i++) {
+                Py_UCS4 c = (Py_UCS4)buf[i];
+                if (c > 0x10000u) {
+                    buf2[j++] = (c >> 16) | 0x10000u;
+                    buf2[j++] = c & 0xFFFFu;
+                }
+                else {
+                    buf2[j++] = c;
+                }
+            }
+            assert(j == n3);
+            result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buf2, n3);
+            PyMem_Free(buf2);
             goto exit;
         }
     }
-    result = PyUnicode_FromWideChar(buf, n2);
+#endif
+    result = PyUnicode_FromKindAndData(sizeof(wchar_t), buf, n2);
 exit:
     PyMem_Free(buf);
     PyMem_Free(s);
@@ -692,7 +776,7 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
             result = result != NULL ? result : "";
             char *oldloc = NULL;
             if (langinfo_constants[i].category != LC_CTYPE
-                && (
+                && *result && (
 #ifdef __GLIBC__
                     // gh-133740: Always change the locale for ALT_DIGITS and ERA
 #  ifdef ALT_DIGITS

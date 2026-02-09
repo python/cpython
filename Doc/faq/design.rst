@@ -591,9 +591,9 @@ exhaustive test suites that exercise every line of code in a module.
 An appropriate testing discipline can help build large complex applications in
 Python as well as having interface specifications would.  In fact, it can be
 better because an interface specification cannot test certain properties of a
-program.  For example, the :meth:`!list.append` method is expected to add new elements
+program.  For example, the :meth:`list.append` method is expected to add new elements
 to the end of some internal list; an interface specification cannot test that
-your :meth:`!list.append` implementation will actually do this correctly, but it's
+your :meth:`list.append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
 Writing test suites is very helpful, and you might want to design your code to

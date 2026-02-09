@@ -167,13 +167,14 @@ CODE_EXAMPLES = {
 }
 
 
-def benchmark(unwinder, duration_seconds=10):
+def benchmark(unwinder, duration_seconds=10, blocking=False):
     """Benchmark mode - measure raw sampling speed for specified duration"""
     sample_count = 0
     fail_count = 0
     total_work_time = 0.0
     start_time = time.perf_counter()
     end_time = start_time + duration_seconds
+    total_attempts = 0
 
     colors = get_colors(can_colorize())
 
@@ -183,18 +184,24 @@ def benchmark(unwinder, duration_seconds=10):
 
     try:
         while time.perf_counter() < end_time:
+            total_attempts += 1
             work_start = time.perf_counter()
             try:
-                stack_trace = unwinder.get_stack_trace()
-                if stack_trace:
-                    sample_count += 1
+                if blocking:
+                    unwinder.pause_threads()
+                try:
+                    stack_trace = unwinder.get_stack_trace()
+                    if stack_trace:
+                        sample_count += 1
+                finally:
+                    if blocking:
+                        unwinder.resume_threads()
             except (OSError, RuntimeError, UnicodeDecodeError) as e:
                 fail_count += 1
 
             work_end = time.perf_counter()
             total_work_time += work_end - work_start
 
-            total_attempts = sample_count + fail_count
             if total_attempts % 10000 == 0:
                 avg_work_time_us = (total_work_time / total_attempts) * 1e6
                 work_rate = (
@@ -221,7 +228,6 @@ def benchmark(unwinder, duration_seconds=10):
 
     actual_end_time = time.perf_counter()
     wall_time = actual_end_time - start_time
-    total_attempts = sample_count + fail_count
 
     # Return final statistics
     return {
@@ -346,6 +352,19 @@ Available code examples:
         help="Code example to benchmark (default: basic)",
     )
 
+    parser.add_argument(
+        "--threads",
+        choices=["all", "main", "only_active"],
+        default="all",
+        help="Which threads to include in the benchmark (default: all)",
+    )
+
+    parser.add_argument(
+        "--blocking",
+        action="store_true",
+        help="Stop all threads before sampling for consistent snapshots",
+    )
+
     return parser.parse_args()
 
 
@@ -401,6 +420,9 @@ def main():
     print(
         f"{colors.CYAN}Benchmark Duration:{colors.RESET} {colors.YELLOW}{args.duration}{colors.RESET} seconds"
     )
+    print(
+        f"{colors.CYAN}Blocking Mode:{colors.RESET} {colors.GREEN if args.blocking else colors.YELLOW}{'enabled' if args.blocking else 'disabled'}{colors.RESET}"
+    )
 
     process = None
     temp_file_path = None
@@ -419,10 +441,17 @@ def main():
                 # Create unwinder and run benchmark
                 print(f"{colors.BLUE}Initializing unwinder...{colors.RESET}")
                 try:
+                    kwargs = {}
+                    if args.threads == "all":
+                        kwargs["all_threads"] = True
+                    elif args.threads == "main":
+                        kwargs["all_threads"] = False
+                    elif args.threads == "only_active":
+                        kwargs["only_active_thread"] = True
                     unwinder = _remote_debugging.RemoteUnwinder(
-                        process.pid, all_threads=True
+                        process.pid, cache_frames=True, **kwargs
                     )
-                    results = benchmark(unwinder, duration_seconds=args.duration)
+                    results = benchmark(unwinder, duration_seconds=args.duration, blocking=args.blocking)
                 finally:
                     cleanup_process(process, temp_file_path)
 

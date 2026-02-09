@@ -2,7 +2,7 @@
 
 from test.support import (
     run_with_locale, cpython_only, no_rerun,
-    MISSING_C_DOCSTRINGS, EqualToForwardRef,
+    MISSING_C_DOCSTRINGS, EqualToForwardRef, check_disallow_instantiation,
 )
 from test.support.script_helper import assert_python_ok
 from test.support.import_helper import import_fresh_module
@@ -21,6 +21,7 @@ import types
 import unittest.mock
 import weakref
 import typing
+import re
 
 c_types = import_fresh_module('types', fresh=['_types'])
 py_types = import_fresh_module('types', blocked=['_types'])
@@ -52,6 +53,7 @@ class TypesTests(unittest.TestCase):
             'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
             'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
             'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
+            'FrameLocalsProxyType',
             'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
             'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
             'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
@@ -710,6 +712,19 @@ class TypesTests(unittest.TestCase):
         """
         assert_python_ok("-c", code)
 
+    def test_frame_locals_proxy_type(self):
+        self.assertIsInstance(types.FrameLocalsProxyType, type)
+        if MISSING_C_DOCSTRINGS:
+            self.assertIsNone(types.FrameLocalsProxyType.__doc__)
+        else:
+            self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
+        self.assertEqual(types.FrameLocalsProxyType.__module__, 'builtins')
+        self.assertEqual(types.FrameLocalsProxyType.__name__, 'FrameLocalsProxy')
+
+        frame = inspect.currentframe()
+        self.assertIsNotNone(frame)
+        self.assertIsInstance(frame.f_locals, types.FrameLocalsProxyType)
+
 
 class UnionTests(unittest.TestCase):
 
@@ -1148,8 +1163,7 @@ class UnionTests(unittest.TestCase):
                              msg='Check for union reference leak.')
 
     def test_instantiation(self):
-        with self.assertRaises(TypeError):
-            types.UnionType()
+        check_disallow_instantiation(self, types.UnionType)
         self.assertIs(int, types.UnionType[int])
         self.assertIs(int, types.UnionType[int, int])
         self.assertEqual(int | str, types.UnionType[int, str])
@@ -1375,6 +1389,27 @@ class MappingProxyTests(unittest.TestCase):
         mapping = HashableDict({'a': 1, 'b': 2})
         view = self.mappingproxy(mapping)
         self.assertEqual(hash(view), hash(mapping))
+
+    def test_richcompare(self):
+        mp1 = self.mappingproxy({'a': 1})
+        mp1_2 = self.mappingproxy({'a': 1})
+        mp2 = self.mappingproxy({'a': 2})
+
+        self.assertTrue(mp1 == mp1_2)
+        self.assertFalse(mp1 != mp1_2)
+        self.assertFalse(mp1 == mp2)
+        self.assertTrue(mp1 != mp2)
+
+        msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
+
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 > mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 < mp1_2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp2 >= mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1_2 <= mp1
 
 
 class ClassCreationTests(unittest.TestCase):
@@ -2010,6 +2045,24 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertEqual(ns1, ns2)
         self.assertNotEqual(ns2, types.SimpleNamespace())
 
+    def test_richcompare_unsupported(self):
+        ns1 = types.SimpleNamespace(x=1)
+        ns2 = types.SimpleNamespace(y=2)
+
+        msg = re.escape(
+            "not supported between instances of "
+            "'types.SimpleNamespace' and 'types.SimpleNamespace'"
+        )
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 > ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 >= ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 < ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 <= ns2
+
     def test_nested(self):
         ns1 = types.SimpleNamespace(a=1, b=2)
         ns2 = types.SimpleNamespace()
@@ -2241,8 +2294,8 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(wrapper.__name__, gen.__name__)
 
         # Test AttributeErrors
-        for name in {'gi_running', 'gi_frame', 'gi_code', 'gi_yieldfrom',
-                     'cr_running', 'cr_frame', 'cr_code', 'cr_await'}:
+        for name in {'gi_running', 'gi_frame', 'gi_code', 'gi_yieldfrom', 'gi_suspended',
+                     'cr_running', 'cr_frame', 'cr_code', 'cr_await', 'cr_suspended'}:
             with self.assertRaises(AttributeError):
                 getattr(wrapper, name)
 
@@ -2251,14 +2304,17 @@ class CoroutineTests(unittest.TestCase):
         gen.gi_frame = object()
         gen.gi_code = object()
         gen.gi_yieldfrom = object()
+        gen.gi_suspended = object()
         self.assertIs(wrapper.gi_running, gen.gi_running)
         self.assertIs(wrapper.gi_frame, gen.gi_frame)
         self.assertIs(wrapper.gi_code, gen.gi_code)
         self.assertIs(wrapper.gi_yieldfrom, gen.gi_yieldfrom)
+        self.assertIs(wrapper.gi_suspended, gen.gi_suspended)
         self.assertIs(wrapper.cr_running, gen.gi_running)
         self.assertIs(wrapper.cr_frame, gen.gi_frame)
         self.assertIs(wrapper.cr_code, gen.gi_code)
         self.assertIs(wrapper.cr_await, gen.gi_yieldfrom)
+        self.assertIs(wrapper.cr_suspended, gen.gi_suspended)
 
         wrapper.close()
         gen.close.assert_called_once_with()
@@ -2377,7 +2433,7 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(wrapper.__await__(), gen)
 
         for name in ('__name__', '__qualname__', 'gi_code',
-                     'gi_running', 'gi_frame'):
+                     'gi_running', 'gi_frame', 'gi_suspended'):
             self.assertIs(getattr(foo(), name),
                           getattr(gen, name))
         self.assertIs(foo().cr_code, gen.gi_code)
@@ -2440,8 +2496,8 @@ class CoroutineTests(unittest.TestCase):
         self.assertEqual(repr(wrapper), str(wrapper))
         self.assertTrue(set(dir(wrapper)).issuperset({
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',
-            'cr_frame', 'gi_code', 'gi_frame', 'gi_running', 'send',
-            'close', 'throw'}))
+            'cr_frame', 'cr_suspended', 'gi_code', 'gi_frame', 'gi_running',
+            'gi_suspended', 'send', 'close', 'throw'}))
 
 
 class FunctionTests(unittest.TestCase):

@@ -1,8 +1,11 @@
 import unittest
 from test import audiotests
 from test import support
+from test.support.os_helper import FakePath
 import io
+import os
 import struct
+import tempfile
 import sys
 import wave
 
@@ -195,6 +198,34 @@ class WaveLowLevelTest(unittest.TestCase):
         b += b'data' + struct.pack('<L', 0)
         with self.assertRaisesRegex(wave.Error, 'bad sample width'):
             wave.open(io.BytesIO(b))
+
+    def test_open_in_write_raises(self):
+        # gh-136523: Wave_write.__del__ should not throw
+        with support.catch_unraisable_exception() as cm:
+            with self.assertRaises(OSError):
+                wave.open(os.curdir, "wb")
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
+
+
+class WaveOpen(unittest.TestCase):
+    def test_open_pathlike(self):
+        """It is possible to use `wave.read` and `wave.write` with a path-like object"""
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            cases = (
+                FakePath(fp.name),
+                FakePath(os.fsencode(fp.name)),
+                os.fsencode(fp.name),
+                )
+            for fake_path in cases:
+                with self.subTest(fake_path):
+                    with wave.open(fake_path, 'wb') as f:
+                        f.setnchannels(1)
+                        f.setsampwidth(2)
+                        f.setframerate(44100)
+
+                    with wave.open(fake_path, 'rb') as f:
+                        pass
 
 
 if __name__ == '__main__':

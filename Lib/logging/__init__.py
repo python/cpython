@@ -45,9 +45,6 @@ import threading
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-# The following module attributes are no longer updated.
-__version__ = "0.5.1.2"
-__date__    = "07 February 2010"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -1852,9 +1849,9 @@ class LoggerAdapter(object):
 
     def __init__(self, logger, extra=None, merge_extra=False):
         """
-        Initialize the adapter with a logger and a dict-like object which
-        provides contextual information. This constructor signature allows
-        easy stacking of LoggerAdapters, if so desired.
+        Initialize the adapter with a logger and an optional dict-like object
+        which provides contextual information. This constructor signature
+        allows easy stacking of LoggerAdapters, if so desired.
 
         You can effectively pass keyword arguments as shown in the
         following example:
@@ -1885,8 +1882,9 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        if self.merge_extra and "extra" in kwargs:
-            kwargs["extra"] = {**self.extra, **kwargs["extra"]}
+        if self.merge_extra and kwargs.get("extra") is not None:
+            if self.extra is not None:
+                kwargs["extra"] = {**self.extra, **kwargs["extra"]}
         else:
             kwargs["extra"] = self.extra
         return msg, kwargs
@@ -2341,3 +2339,16 @@ def captureWarnings(capture):
         if _warnings_showwarning is not None:
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None
+
+
+def __getattr__(name):
+    if name in ("__version__", "__date__"):
+        from warnings import _deprecated
+
+        _deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "0.5.1.2",
+            "__date__": "07 February 2010",
+        }[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

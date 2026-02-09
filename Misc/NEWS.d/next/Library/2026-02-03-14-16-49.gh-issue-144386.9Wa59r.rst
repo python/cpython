@@ -1,0 +1,4 @@
+Add support for arbitrary descriptors :meth:`!__enter__`, :meth:`!__exit__`,
+:meth:`!__aenter__`, and :meth:`!__aexit__` in :class:`contextlib.ExitStack`
+and :class:`contextlib.AsyncExitStack`, for consistency with the
+:keyword:`with` and :keyword:`async with` statements.

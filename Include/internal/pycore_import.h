@@ -17,7 +17,8 @@ extern int _PyImport_IsInitialized(PyInterpreterState *);
 // Export for 'pyexpat' shared extension
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 
-extern int _PyImport_SetModuleString(const char *name, PyObject* module);
+// Export for 'math' shared extension
+PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern void _PyImport_ReleaseLock(PyInterpreterState *interp);
@@ -127,11 +128,18 @@ PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 // state of the module argument:
 // - If module is NULL or a PyModuleObject with md_gil == Py_MOD_GIL_NOT_USED,
 //   call _PyEval_DisableGIL().
-// - Otherwise, call _PyEval_EnableGILPermanent(). If the GIL was not already
-//   enabled permanently, issue a warning referencing the module's name.
+// - Otherwise, call _PyImport_EnableGILAndWarn
 //
 // This function may raise an exception.
 extern int _PyImport_CheckGILForModule(PyObject *module, PyObject *module_name);
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), call _PyEval_EnableGILPermanent().
+// If the GIL was not already enabled permanently, issue a warning referencing
+// the module's name.
+// Leave a message in verbose mode.
+//
+// This function may raise an exception.
+extern int _PyImport_EnableGILAndWarn(PyThreadState *, PyObject *module_name);
 #endif
 
 #ifdef __cplusplus

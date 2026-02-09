@@ -137,8 +137,6 @@ __all__ = [
     "UNICODE", "NOFLAG", "RegexFlag", "PatternError"
 ]
 
-__version__ = "2.2.1"
-
 @enum.global_enum
 @enum._simple_enum(enum.IntFlag, boundary=enum.KEEP)
 class RegexFlag:
@@ -399,9 +397,12 @@ class Scanner:
         s = _parser.State()
         s.flags = flags
         for phrase, action in lexicon:
+            sub_pattern = _parser.parse(phrase, flags)
+            if sub_pattern.state.groups != 1:
+                raise ValueError("Cannot use capturing groups in re.Scanner")
             gid = s.opengroup()
             p.append(_parser.SubPattern(s, [
-                (SUBPATTERN, (gid, 0, 0, _parser.parse(phrase, flags))),
+                (SUBPATTERN, (gid, 0, 0, sub_pattern)),
                 ]))
             s.closegroup(gid, p[-1])
         p = _parser.SubPattern(s, [(BRANCH, (None, p))])
@@ -426,3 +427,12 @@ class Scanner:
                 append(action)
             i = j
         return result, string[i:]
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "2.2.1"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

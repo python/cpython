@@ -39,41 +39,41 @@ descr_name(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_repr(PyDescrObject *descr, const char *format)
+descr_repr(PyDescrObject *descr, const char *kind)
 {
     PyObject *name = NULL;
     if (descr->d_name != NULL && PyUnicode_Check(descr->d_name))
         name = descr->d_name;
 
-    return PyUnicode_FromFormat(format, name, "?", descr->d_type->tp_name);
+    if (descr->d_type == &PyBaseObject_Type) {
+        return PyUnicode_FromFormat("<%s '%V'>", kind, name, "?");
+    }
+    return PyUnicode_FromFormat("<%s '%V' of '%s' objects>",
+                                kind, name, "?", descr->d_type->tp_name);
 }
 
 static PyObject *
 method_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<method '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "method");
 }
 
 static PyObject *
 member_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<member '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "member");
 }
 
 static PyObject *
 getset_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<attribute '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "attribute");
 }
 
 static PyObject *
 wrapperdescr_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<slot wrapper '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "slot wrapper");
 }
 
 static int
@@ -313,7 +313,7 @@ method_vectorcall_VARARGS(
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
-    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    PyObject *argstuple = PyTuple_FromArray(args+1, nargs-1);
     if (argstuple == NULL) {
         return NULL;
     }
@@ -338,7 +338,7 @@ method_vectorcall_VARARGS_KEYWORDS(
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
-    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    PyObject *argstuple = PyTuple_FromArray(args+1, nargs-1);
     if (argstuple == NULL) {
         return NULL;
     }
@@ -1233,7 +1233,10 @@ static PyObject *
 mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     mappingproxyobject *v = (mappingproxyobject *)self;
-    return PyObject_RichCompare(v->mapping, w, op);
+    if (op == Py_EQ || op == Py_NE) {
+        return PyObject_RichCompare(v->mapping, w, op);
+    }
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static int

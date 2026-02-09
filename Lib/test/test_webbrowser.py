@@ -7,6 +7,7 @@ import sys
 import unittest
 import webbrowser
 from test import support
+from test.support import force_not_colorized_test_class
 from test.support import import_helper
 from test.support import is_apple_mobile
 from test.support import os_helper
@@ -503,6 +504,7 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(webbrowser.get().name, sys.executable)
 
 
+@force_not_colorized_test_class
 class CliTest(unittest.TestCase):
     def test_parse_args(self):
         for command, url, new_win in [
