@@ -3578,8 +3578,10 @@ const char *_PySys_ImplName = _PY_IMPL_NAME;
 #define _PY_IMPL_CACHE_TAG NAME "-" MAJOR MINOR
 #endif
 const char *_PySys_ImplCacheTag = _PY_IMPL_CACHE_TAG;
-#ifndef _PY_IMPL_CACHE_TAG
+#ifdef MAJOR
 #undef MAJOR
+#endif
+#ifdef MINOR
 #undef MINOR
 #endif
 
