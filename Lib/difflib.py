@@ -1490,8 +1490,7 @@ def diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
     for line in lines:
         yield line.encode('ascii', 'surrogateescape')
 
-def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK,
-          linematcher=None, charmatcher=None):
+def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
     r"""
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
@@ -1509,13 +1508,9 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK,
       whitespace characters (a blank or tab; note: it's a bad idea to
       include newline in this!).
 
-    - `linematcher`: callable that takes 3 positional arguments.
-      i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
-      Default (if None) is SequenceMatcher class.
-
-    - `charmatcher`: callable that takes 3 positional arguments.
-      i.e. matcher(isjunk, a, b) which returns SequenceMatcherBase instance
-      Default (if None) is SequenceMatcher class.
+    - `differ`: callable that takes 2 positional arguments.
+      i.e. differ(linejunk, charjunk) which returns `Differ` instance
+      Default (if None) is Differ class.
 
     Tools/scripts/ndiff.py is a command-line front-end to this function.
 
@@ -1534,11 +1529,15 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK,
     + tree
     + emu
     """
-    return Differ(linejunk, charjunk, linematcher, charmatcher).compare(a, b)
+    if differ is None:
+        differ = Differ
+    elif not callable(differ):
+        raise TypeError("differ must be callable: %r" % (differ,))
+
+    return differ(linejunk, charjunk).compare(a, b)
 
 def _mdiff(fromlines, tolines, context=None,
-           linejunk=None, charjunk=IS_CHARACTER_JUNK,
-           linematcher=None, charmatcher=None):
+           linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
     r"""Returns generator yielding marked up from/to side by side differences.
 
     Arguments:
@@ -1548,7 +1547,7 @@ def _mdiff(fromlines, tolines, context=None,
                if None, all from/to text lines will be generated.
     linejunk -- passed on to ndiff (see ndiff documentation)
     charjunk -- passed on to ndiff (see ndiff documentation)
-    linematcher -- passed on to ndiff (see ndiff documentation)
+    differ -- passed on to ndiff (see ndiff documentation)
     charmatcher -- passed on to ndiff (see ndiff documentation)
 
     This function returns an iterator which returns a tuple:
@@ -1579,8 +1578,7 @@ def _mdiff(fromlines, tolines, context=None,
     change_re = re.compile(r'(\++|\-+|\^+)')
 
     # create the difference iterator to generate the differences
-    diff_lines_iterator = ndiff(fromlines, tolines, linejunk, charjunk,
-                                linematcher, charmatcher)
+    diff_lines_iterator = ndiff(fromlines, tolines, linejunk, charjunk, differ)
 
     def _make_line(lines, format_key, side, num_lines=[0,0]):
         """Returns line of text with user's change markup and line formatting.
@@ -1925,15 +1923,14 @@ class HtmlDiff(object):
     _default_prefix = 0
 
     def __init__(self,tabsize=8, wrapcolumn=None,
-                 linejunk=None, charjunk=IS_CHARACTER_JUNK,
-                 linematcher=None, charmatcher=None):
+                 linejunk=None, charjunk=IS_CHARACTER_JUNK, differ=None):
         """HtmlDiff instance initializer
 
         Arguments:
         tabsize -- tab stop spacing, defaults to 8.
         wrapcolumn -- column number where lines are broken and wrapped,
             defaults to None where lines are not wrapped.
-        linejunk,charjunk,linematcher,charmatcher -- keyword arguments
+        linejunk,charjunk,differ -- keyword arguments
             passed into ndiff() (used by HtmlDiff() to generate the side
             by side HTML differences).  See ndiff() documentation for
             argument default values and descriptions.
@@ -1942,8 +1939,7 @@ class HtmlDiff(object):
         self._wrapcolumn = wrapcolumn
         self._linejunk = linejunk
         self._charjunk = charjunk
-        self._linematcher = linematcher
-        self._charmatcher = charmatcher
+        self._differ = differ
 
     def make_file(self, fromlines, tolines, fromdesc='', todesc='',
                   context=False, numlines=5, *, charset='utf-8'):
@@ -2216,7 +2212,7 @@ class HtmlDiff(object):
             context_lines = None
         diffs = _mdiff(fromlines, tolines, context_lines,
                        linejunk=self._linejunk, charjunk=self._charjunk,
-                       linematcher=self._linematcher, charmatcher=self._charmatcher)
+                       differ=self._differ)
 
         # set up iterator to wrap lines that exceed desired width
         if self._wrapcolumn:
@@ -2774,7 +2770,7 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
 
     Time Complexity:
         find_longest_match : O(n)
-        get_matching_blocks : O(n) average for common diff case
+        get_matching_blocks : O(n) - O(nlogn) for average diff case
                               O(n^2) worst case.
 
         Example of worst case complexity `get_matching_blocks` case:

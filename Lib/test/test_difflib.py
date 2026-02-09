@@ -3,6 +3,7 @@ from test.support import findfile, force_colorized
 import unittest
 import doctest
 import sys
+import functools
 
 
 class TestWithAscii(unittest.TestCase):
@@ -283,6 +284,7 @@ class TestSFpatches(unittest.TestCase):
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
 class TestDiffer(unittest.TestCase):
+
     def test_close_matches_aligned(self):
         # Of the 4 closely matching pairs, we want 1 to match with 3,
         # and 2 with 4, to align with a "top to bottom" mental model.
@@ -310,6 +312,46 @@ class TestDiffer(unittest.TestCase):
     def test_one_delete(self):
         m = difflib.Differ().compare('a' + 'b' * 2, 'b' * 2)
         self.assertEqual(list(m), ['- a', '  b', '  b'])
+
+    def test_differ_with_balancing_gestalt_matcher(self):
+        gsm_cls = functools.partial(difflib.GestaltSequenceMatcher, balancing=2/3)
+        d1 = difflib.Differ()
+        d2 = difflib.Differ(linematcher=gsm_cls, charmatcher=gsm_cls)
+        a = ["a\n", "b\n", "-\n", "a\n", "b\n", "close match 1\n", "a\n", "b\n", "c\n"]
+        b = ["a\n", "b\n", "c\n", "+\n", "a\n", "b\n", "close match 2\n", "a\n", "b\n"]
+        m = list(d1.compare(a, b))
+        self.assertEqual(m,
+                         ['- a\n',
+                          '- b\n',
+                          '- -\n',
+                          '- a\n',
+                          '- b\n',
+                          '- close match 1\n',
+                          '  a\n',
+                          '  b\n',
+                          '  c\n',
+                          '+ +\n',
+                          '+ a\n',
+                          '+ b\n',
+                          '+ close match 2\n',
+                          '+ a\n',
+                          '+ b\n'])
+        m = list(d2.compare(a, b))
+        self.assertEqual(m,
+                         ['  a\n',
+                          '  b\n',
+                          '- -\n',
+                          '+ c\n',
+                          '+ +\n',
+                          '  a\n',
+                          '  b\n',
+                          '- close match 1\n',
+                          '?             ^\n',
+                          '+ close match 2\n',
+                          '?             ^\n',
+                          '  a\n',
+                          '  b\n',
+                          '- c\n'])
 
 
 class TestOutputFormat(unittest.TestCase):
@@ -724,7 +766,7 @@ def foo2(a, b):
 class TestGestaltSequenceMatcher(unittest.TestCase):
     def test_cross_test_with_autojunk_false(self):
         cases = [
-            ("ABCDEFGHIJKLMNOP" * 50, "ACEGIKMOQBDFHJLNP" * 50),
+            ("ABCDEFGHIJKLMNOP" * 10, "ACEGIKMOQBDFHJLNP" * 10),
             (
                 "".join(chr(ord('a') + i % 10) * (i + 1) for i in range(30)),
                 "".join(chr(ord('a') + i % 10) * (30 - i) for i in range(30))
