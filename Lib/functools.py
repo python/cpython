@@ -1096,7 +1096,7 @@ class _singledispatchmethod_get:
                             '1 positional argument')
         if self._skip_bound_arg:
             method = self._dispatch(args[1].__class__)
-            if not isinstance(method, FunctionType):
+            if isinstance(method, MethodType):
                 args = args[1:]
         else:
             method = self._dispatch(args[0].__class__)
