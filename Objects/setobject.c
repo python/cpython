@@ -1061,8 +1061,7 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
     PySetObject *so = si->si_set;
     if (so != NULL) {
         Py_BEGIN_CRITICAL_SECTION2(op, so);
-        if (si->si_pos >= 0 &&
-            si->si_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used))
+        if (si->si_pos >= 0 && si->si_used == so->used)
         {
             len = si->len;
         }
@@ -1133,33 +1132,21 @@ setiter_iternext(PyObject *self)
 
 #ifdef Py_GIL_DISABLED
     Py_BEGIN_CRITICAL_SECTION2(self, so);
-    i = si->si_pos;
-    if (i >= 0) {
-        entry = so->table;
-        mask = so->mask;
-        while (i <= mask &&
-                (entry[i].key == NULL || entry[i].key == dummy)) {
-            i++;
-        }
-        if (i <= mask) {
-            key = Py_NewRef(entry[i].key);
-            si->si_pos = i + 1;
-            si->len--;
-        }
-        else {
-            si->si_pos = -1;
-            si->len = 0;
-        }
-    }
-    Py_END_CRITICAL_SECTION2();
-    return key;
 #else
     Py_BEGIN_CRITICAL_SECTION(so);
+#endif
+
     i = si->si_pos;
+#ifdef Py_GIL_DISABLED
+    if (i < 0) {
+        /* iterator already exhausted */
+        goto done;
+    }
+#endif
+
     entry = so->table;
     mask = so->mask;
-    while (i <= mask &&
-            (entry[i].key == NULL || entry[i].key == dummy)) {
+    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
         i++;
     }
     if (i <= mask) {
@@ -1168,9 +1155,20 @@ setiter_iternext(PyObject *self)
         si->len--;
     }
     else {
+        /* exhausted */
+        si->si_pos = -1;
+        si->len = 0;
+#ifndef Py_GIL_DISABLED
         si->si_set = NULL;
         decref_so = 1;
+#endif
     }
+
+#ifdef Py_GIL_DISABLED
+done:
+    Py_END_CRITICAL_SECTION2();
+    return key;
+#else
     Py_END_CRITICAL_SECTION();
 
     if (decref_so) {
