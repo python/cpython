@@ -2847,7 +2847,9 @@ expression support in the :mod:`re` module).
    character-to-character mappings in different formats.
 
    The following example uses a mapping to replace ``'a'`` with ``'X'``,
-   ``'b'`` with ``'Y'``, and delete ``'c'``::
+   ``'b'`` with ``'Y'``, and delete ``'c'``:
+
+   .. doctest::
 
       >>> 'abc123'.translate({ord('a'): 'X', ord('b'): 'Y', ord('c'): None})
       'XY123'
