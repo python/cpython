@@ -29,12 +29,6 @@ although there is currently no date scheduled for their removal.
   * Support for ``__index__()`` and ``__int__()`` method returning non-int type:
     these methods will be required to return an instance of a strict subclass of
     :class:`int`.
-  * Support for ``__float__()`` method returning a strict subclass of
-    :class:`float`: these methods will be required to return an instance of
-    :class:`float`.
-  * Support for ``__complex__()`` method returning a strict subclass of
-    :class:`complex`: these methods will be required to return an instance of
-    :class:`complex`.
   * Delegation of ``int()`` to ``__trunc__()`` method.
   * Passing a complex number as the *real* or *imag* argument in the
     :func:`complex` constructor is now deprecated; it should only be passed
