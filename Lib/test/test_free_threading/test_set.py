@@ -214,7 +214,8 @@ class RaceTestBase:
 
     def test_iternext_concurrent_exhaust_race(self):
         NUM_LOOPS = 20_000
-        barrier = Barrier(3)
+        number_of_threads = 3
+        barrier = Barrier(number_of_threads)
         box = {"it": None}
 
         def advancer():
@@ -235,11 +236,7 @@ class RaceTestBase:
                 barrier.wait()
                 barrier.wait()
 
-        threads = [
-            Thread(target=advancer),
-            Thread(target=advancer),
-            Thread(target=producer),
-        ]
+        threads = [Thread(target=advancer) for _ in range(number_of_threads)]
         for t in threads:
             t.start()
         for t in threads:
