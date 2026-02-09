@@ -2374,6 +2374,10 @@ expression support in the :mod:`re` module).
    Return ``True`` if all cased characters [4]_ in the string are uppercase and
    there is at least one cased character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
       >>> 'BANANA'.isupper()
       True
       >>> 'banana'.isupper()
@@ -2383,6 +2387,7 @@ expression support in the :mod:`re` module).
       >>> ' '.isupper()
       False
 
+   See also :meth:`islower` and :meth:`upper`.
 
 
 .. _meth-str-join:
@@ -2437,6 +2442,8 @@ expression support in the :mod:`re` module).
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
+
+   See also :meth:`islower` and :meth:`upper`.
 
 
 .. method:: str.lstrip(chars=None, /)
@@ -2877,14 +2884,33 @@ expression support in the :mod:`re` module).
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Upper Method Example'.upper()
+      'UPPER METHOD EXAMPLE'
+
+   Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
+   For example, see the word "Python" written in Punjabi, the most spoken language
+   in Pakistan:
+
+   .. doctest::
+
+      >>> 'ازگر'.upper().isupper()
+      False
+
    The uppercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
+
+   See also :meth:`isupper` and :meth:`lower`.
 
 
 .. method:: str.zfill(width, /)
