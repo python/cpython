@@ -87,6 +87,9 @@ POST request.
 
    If *ignorechars* is specified, it should be a :term:`bytes-like object`
    containing characters to ignore from the input when *validate* is true.
+   If *ignorechars* contains the pad character ``'='``,  the pad characters
+   presented before the end of the encoded data and the excess pad characters
+   will be ignored.
    The default value of *validate* is ``True`` if *ignorechars* is specified,
    ``False`` otherwise.
 
@@ -244,8 +247,9 @@ Refer to the documentation of the individual functions for more information.
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   *pad* controls whether the input is padded to a multiple of 4
-   before encoding. Note that the ``btoa`` implementation always pads.
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+   Note that the ``btoa`` implementation always pads.
 
    *adobe* controls whether the encoded byte sequence is framed with ``<~``
    and ``~>``, which is used by the Adobe implementation.
@@ -265,8 +269,9 @@ Refer to the documentation of the individual functions for more information.
    *adobe* controls whether the input sequence is in Adobe Ascii85 format
    (i.e. is framed with <~ and ~>).
 
-   *ignorechars* should be a byte string containing characters to ignore
-   from the input. This should only contain whitespace characters, and by
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+   This should only contain whitespace characters, and by
    default contains all whitespace characters in ASCII.
 
    .. versionadded:: 3.4

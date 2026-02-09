@@ -1095,10 +1095,10 @@ dummy_func(
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             getitem = PyStackRef_FromPyObjectNew(getitem_o);
-            STAT_INC(BINARY_OP, hit);
         }
 
         op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem -- new_frame)) {
+            STAT_INC(BINARY_OP, hit);
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
@@ -1108,7 +1108,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_GETITEM) =
-            _RECORD_TOS +
+            _RECORD_NOS +
             unused/5 + // Skip over the counter and cache
             _CHECK_PEP_523 +
             _BINARY_OP_SUBSCR_CHECK_FUNC +
@@ -1269,7 +1269,7 @@ dummy_func(
         // The stack effect here is a bit misleading.
         // retval is popped from the stack, but res
         // is pushed to a different frame, the callers' frame.
-        op(_RETURN_VALUE, (retval -- res)) {
+        inst(RETURN_VALUE, (retval -- res)) {
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
             DEAD(retval);
@@ -1293,13 +1293,9 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        macro(RETURN_VALUE) =
-            _RECORD_CALLER_CODE +
-            _RETURN_VALUE;
-
         macro(INSTRUMENTED_RETURN_VALUE) =
             _RETURN_VALUE_EVENT +
-            _RETURN_VALUE;
+            RETURN_VALUE;
 
         inst(GET_AITER, (obj -- iter)) {
             unaryfunc getter = NULL;
@@ -1436,11 +1432,12 @@ dummy_func(
 
         macro(SEND_GEN) =
             unused/1 +
+            _RECORD_NOS_GEN_FUNC +
             _CHECK_PEP_523 +
             _SEND_GEN_FRAME +
             _PUSH_FRAME;
 
-        op(_YIELD_VALUE, (retval -- value)) {
+        inst(YIELD_VALUE, (retval -- value)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1476,10 +1473,6 @@ dummy_func(
             LLTRACE_RESUME_FRAME();
         }
 
-        macro(YIELD_VALUE) =
-            _RECORD_CALLER_CODE +
-            _YIELD_VALUE;
-
         tier1 op(_YIELD_VALUE_EVENT, (val -- val)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
@@ -1495,7 +1488,7 @@ dummy_func(
 
         macro(INSTRUMENTED_YIELD_VALUE) =
             _YIELD_VALUE_EVENT +
-            _YIELD_VALUE;
+            YIELD_VALUE;
 
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -2371,38 +2364,15 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                _PyCStackRef method;
-                _PyThreadState_PushCStackRef(tstate, &method);
-                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
-                if (is_meth) {
-                    /* We can bypass temporary bound method object.
-                       meth is unbound method and obj is self.
-                       meth | self | arg1 | ... | argN
-                     */
-                    assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
-                    self_or_null[0] = owner;  // Transfer ownership
-                    DEAD(owner);
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                }
-                else {
-                    /* meth is not an unbound method (but a regular attr, or
-                       something was returned by a descriptor protocol).  Set
-                       the second element of the stack to NULL, to signal
-                       CALL that it's not a method call.
-                       meth | NULL | arg1 | ... | argN
-                    */
-                    PyStackRef_CLOSE(owner);
-                    self_or_null[0] = PyStackRef_NULL;
-                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
-                    ERROR_IF(PyStackRef_IsNull(attr));
-                }
+                attr = _Py_LoadAttr_StackRefSteal(tstate, owner, name, self_or_null);
+                DEAD(owner);
+                ERROR_IF(PyStackRef_IsNull(attr));
             }
             else {
                 /* Classic, pushes one value. */
-                PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                attr = _PyObject_GetAttrStackRef(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
-                ERROR_IF(attr_o == NULL);
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                ERROR_IF(PyStackRef_IsNull(attr));
             }
         }
 
@@ -3523,7 +3493,7 @@ dummy_func(
         }
 
         macro(FOR_ITER_GEN) =
-            _RECORD_NOS +
+            _RECORD_NOS_GEN_FUNC +
             unused/1 +
             _CHECK_PEP_523 +
             _FOR_ITER_GEN_FRAME +
@@ -5074,7 +5044,7 @@ dummy_func(
             *ptr = attr;
         }
 
-        op(_RETURN_GENERATOR, (-- res)) {
+        inst(RETURN_GENERATOR, (-- res)) {
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -5096,10 +5066,6 @@ dummy_func(
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
         }
-
-        macro(RETURN_GENERATOR) =
-            _RECORD_CALLER_CODE +
-            _RETURN_GENERATOR;
 
         inst(BUILD_SLICE, (args[oparg] -- slice)) {
             PyObject *start_o = PyStackRef_AsPyObjectBorrow(args[0]);
@@ -5646,6 +5612,12 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
+        tier2 op(_GUARD_CODE, (version/2 -- )) {
+            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            EXIT_IF(code == Py_None);
+            EXIT_IF(((PyCodeObject *)code)->co_version != version);
+        }
+
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
             _Py_CODEUNIT *target = frame->instr_ptr;
             if (target != (_Py_CODEUNIT *)ip) {
@@ -5694,6 +5666,14 @@ dummy_func(
             RECORD_VALUE(PyStackRef_AsPyObjectBorrow(nos));
         }
 
+        tier2 op(_RECORD_NOS_GEN_FUNC, (nos, tos -- nos, tos)) {
+            PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
+            if (PyGen_Check(obj)) {
+                PyObject *func = (PyObject *)_PyFrame_GetFunction(&((PyGenObject *)obj)->gi_iframe);
+                RECORD_VALUE(func);
+            }
+        }
+
         tier2 op(_RECORD_4OS, (value, _3os, nos, tos -- value, _3os, nos, tos)) {
             RECORD_VALUE(PyStackRef_AsPyObjectBorrow(value));
         }
@@ -5710,12 +5690,9 @@ dummy_func(
             }
         }
 
-        tier2 op(_RECORD_CALLER_CODE, ( -- )) {
-            _PyInterpreterFrame *caller_frame = frame->previous;
-            if (caller_frame->owner < FRAME_OWNED_BY_INTERPRETER) {
-                PyCodeObject *code = _PyFrame_GetCode(frame->previous);
-                RECORD_VALUE(code);
-            }
+        /* Inserted by the JIT tracer. Never executed. */
+        tier2 op(_RECORD_CODE, ( -- )) {
+            RECORD_VALUE(NULL);
         }
 
         label(pop_2_error) {
