@@ -11932,7 +11932,8 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     HANDLE h = (HANDLE)_get_osfhandle(fd);
     if (h != INVALID_HANDLE_VALUE && GetFileType(h) == FILE_TYPE_PIPE) {
         errno = ESPIPE;
-    } else {
+    }
+    else {
         result = _lseeki64(fd, position, how);
     }
 #else

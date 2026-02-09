@@ -993,7 +993,8 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
     if (h != INVALID_HANDLE_VALUE && GetFileType(h) == FILE_TYPE_PIPE) {
         res = -1;
         errno = ESPIPE;
-    } else {
+    }
+    else {
         res = _lseeki64(fd, pos, whence);
     }
 #else
