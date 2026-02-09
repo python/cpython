@@ -3042,7 +3042,9 @@ class TestSingleDispatch(unittest.TestCase):
                 def __get__(self, inst, owner):
                     # Different instance bound to the returned method
                     # doesn't cause it to receive the original instance
-                    # as a separate argument. Return a partial() to workaround.
+                    # as a separate argument.
+                    # To work around this, wrap the returned bound method
+                    # with `functools.partial`.
                     return C().special5
 
             generic.register(D2, D2())
