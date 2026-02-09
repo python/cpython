@@ -1060,12 +1060,14 @@ class _singledispatchmethod_get:
         # Set instance attributes which cannot be handled in __getattr__()
         # because they conflict with type descriptors.
         func = unbound.func
+
         # Dispatch on the second argument if a generic method turns into
-        # a bound method on instance-level access.
+        # a bound method on instance-level access. See GH-143535.
         if obj is None and isinstance(func, FunctionType):
             self._skip_bound_arg = True
         else:
             self._skip_bound_arg = False
+
         try:
             self.__module__ = func.__module__
         except AttributeError:

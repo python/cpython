@@ -3006,7 +3006,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A().static_func.__name__, 'static_func')
 
     def test_method_classlevel_calls(self):
-        """Regression test for GH-144615."""
+        """Regression test for GH-143535."""
         class C:
             @functools.singledispatchmethod
             def generic(self, x: object):
