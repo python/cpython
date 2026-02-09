@@ -957,6 +957,9 @@ conflict.
    and :ref:`installation paths <sysconfig-user-scheme>` for
    ``python -m pip install --user``.
 
+   To disable the user site-packages, see :envvar:`PYTHONNOUSERSITE` or the :option:`-s`
+   option.
+
    .. seealso::
 
       :pep:`370` -- Per user site-packages directory
