@@ -1497,6 +1497,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual((d.x, d.z), (4, 5))
 
     def test_classvar_default_value_failing_descriptor(self):
+        """Regression test for GH-144618."""
         class Kaboom:
             def __get__(self, inst, owner):
                 raise RuntimeError("kaboom!")
@@ -1508,6 +1509,7 @@ class TestCase(unittest.TestCase):
         self.assertIsInstance(C.__dict__["kaboom"], Kaboom)
 
     def test_classvar_member_isnt_tracked_or_removed(self):
+        """Regression test for GH-144618."""
         @dataclass
         class C:
             x: ClassVar[int] = 1000
