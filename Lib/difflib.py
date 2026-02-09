@@ -2301,7 +2301,8 @@ def restore(delta, which):
 
 
 class _LCSUBAutomaton:
-    """Suffix Automaton for finding longest common substring.
+    """
+    Suffix Automaton for finding longest common substring.
 
     Complexity:
         T: O(n1 + n2) ~ n1 + 5 × n2
@@ -2381,9 +2382,10 @@ class _LCSUBAutomaton:
             self.cache = key
 
     def find(self, seq1, start1=0, stop1=None, start2=0, stop2=None):
-        """Find leftmost longest match
-            Firstly, it will be leftmost in seq1
-            Secondly, it will be leftmost in seq2 if more than one occurrence
+        """
+        Find leftmost longest match
+        Firstly, it will be leftmost in seq1
+        Secondly, it will be leftmost in seq2 if more than one occurrence
 
         Returns:
             match: (start_in_seq1, start_in_seq2, match_length)
@@ -2396,9 +2398,11 @@ class _LCSUBAutomaton:
         return res
 
     def batchfind(self, seq1, bounds_list):
-        """Performance method for many `find` calls
-            It calls `find` in order that aims to minimize builds needed
-            Also, does not evaluate same range twice
+        """
+        Performance method for many `find` calls
+        It calls `find` in order that aims to minimize builds needed
+        Also, does not evaluate same range twice
+
         Args:
             bounds_list : list[tuple[int, int, int, int]]
                 list of tuples: (start1, stop1, start2, stop2)
@@ -2423,11 +2427,12 @@ class _LCSUBAutomaton:
     # ---------------------------------
 
     def _try_find(self, seq1, start1, stop1, start2, stop2):
-        """Attempts to find match without building
-            Querying in exactly the same range will always succeed
-            Also, it might be possible if (start2, stop2) is within cached range
+        """
+        Attempts to find match without building
+        Querying in exactly the same range will always succeed
+        Also, it might be possible if (start2, stop2) is within cached range
 
-            returns None on fail
+        returns None on fail
         """
         if start1 >= stop1 or start2 >= stop2:
             return (start1, start2, 0)
@@ -2447,9 +2452,10 @@ class _LCSUBAutomaton:
                 return (e1 + 1 - k, start_in_seq2, k)
 
     def _find(self, seq1, start1, stop1, start2, stop2):
-        """Returns lefmost longest match
-            Does not attempt to retrieve from inexactly built range
-            Always returns an answer
+        """
+        Returns lefmost longest match
+        Does not attempt to retrieve from inexactly built range
+        Always returns an answer
         """
         if start1 >= stop1 or start2 >= stop2:
             return (start1, start2, 0)
@@ -2599,7 +2605,9 @@ class _LCSUBAutomaton:
         return nodes
 
     def _finditer(self, seq1, start1, stop1, best=False):
-        """Core scanning routine
+        """
+        Core scanning routine
+
         Args:
             best : bool
                 False - return all matches, including non-maximal
@@ -2691,8 +2699,10 @@ RESULTBLOCKS = _Sentinel('RESULTBLOCKS')    # List of blocks that terminate recu
 
 
 def _calc_skew(i, j, k, alo, ahi, blo, bhi):
-    """Difference in normalized positions of block mid-points
-        Returns skew : float, where -1 < skew < 1
+    """
+    Difference in normalized positions of block mid-points
+
+    Returns skew : float, where -1 < skew < 1
     """
     k_div_2 = k / 2
     apos = (i + k_div_2 - alo) / (ahi - alo)
@@ -2705,18 +2715,19 @@ _BALANCE_SCORE_POWER = 1.284320049734199
 
 
 def _calc_candidate_score(block0, block1, block2):
-    """Calculates the score for 1-3 block candidates for balancing procedure
+    """
+    Calculates the score for 1-3 block candidates for balancing procedure
 
     Score is calculated so that long match is preferred
-        to many small ones but not too aggressively,
-        so to be able to jump out of skewed positions.
+    to many small ones but not too aggressively,
+    so to be able to jump out of skewed positions.
 
-        total = ∑ length^p
-        where p is such that c^p == (0.9c)^p + (0.2c)^p
+    total = ∑ length^p
+    where p is such that c^p == (0.9c)^p + (0.2c)^p
 
-        If only 1 block found, it is a definitive score.
-        Otherwise, it gets bonus for each additional block
-        as it has poential to recurse further to each side
+    If only 1 block found, it is a definitive score.
+    Otherwise, it gets bonus for each additional block
+    as it has poential to recurse further to each side
     """
     k1 = block1[2]
     if not k1:
@@ -2748,10 +2759,10 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
 
     However, while `SequenceMatcher` is able to obtain same result,
     it is only practical to use with `autojunk` set to False due to
-    quadratic worst case complexity.
+    quadratic worst case complexity of Longest Common Substring algorithm.
 
     `GestaltSequenceMatcher`, on the other hand, implements Suffix Automaton,
-    which has guaranteed O(n) complexity, making it possible to use exact
+    which has O(n) complexity guaranteed, making it possible to use exact
     calculation on long sequences.
 
     Furthermore, `GestaltSequenceMatcher` has `balancing` parameter.
@@ -2760,6 +2771,20 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
     It does so by sometimes selecting shorter matches by lookin 1 step ahead.
     It produces more concise diffs with more lines matched, while retaining
     block-oriented nature.
+
+    Time Complexity:
+        find_longest_match : O(n)
+        get_matching_blocks : O(n) average for common diff case
+                              O(n^2) worst case.
+
+        Example of worst case complexity `get_matching_blocks` case:
+            chars = ['ab'[i % 2] for i in range(100)]
+            seq1 = '+'.join(chars)
+            seq2 = '-'.join(chars)
+
+    Space Complexity:
+        find_longest_match: c × O(n), c ~ 3x (compared to `SequenceMatcher`)
+        get_matching_blocks: c × O(n), c ~ 3x (compared to `SequenceMatcher`)
     """
 
     def __init__(self, isjunk=None, a='', b='', balancing=0):
@@ -2826,11 +2851,11 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
         Examples:
             >>> seq1 = 'aaaa_aaaa_bbbbb'
             >>> seq2 = 'bbbbb-aaaa-aaaa'
-            >>> m1 = GestaltSequenceMatcher(None, seq1, seq2)
-            >>> m2 = GestaltSequenceMatcher(None, seq1, seq2, balancing=2/3)
-            >>> list(map(tuple, m1.get_matching_blocks()))
+            >>> gsm1 = GestaltSequenceMatcher(None, seq1, seq2)
+            >>> gsm2 = GestaltSequenceMatcher(None, seq1, seq2, balancing=2/3)
+            >>> list(map(tuple, gsm1.get_matching_blocks()))
             [(10, 0, 5), (15, 15, 0)]
-            >>> list(map(tuple, m2.get_matching_blocks()))
+            >>> list(map(tuple, gsm2.get_matching_blocks()))
             [(0, 6, 4), (5, 11, 4), (15, 15, 0)]
         """
         balancing = float(balancing)
@@ -2848,14 +2873,15 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
         self.automaton = _LCSUBAutomaton(b, junk=bjunk)
 
     def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None, *, quick_only=False):
-        """Find longest matching block in a[alo:ahi] and b[blo:bhi].
-            By default it will find the longest match in the entirety of a and b.
+        """
+        Find longest matching block in a[alo:ahi] and b[blo:bhi].
+        By default it will find the longest match in the entirety of a and b.
 
-            Look up docstring of SequenceMatcher.find_longest_match
-            for more information.
+        Look up docstring of SequenceMatcher.find_longest_match
+        for more information.
 
-            The only difference is `quick_only` argument, which if set to True
-            might not return a value if not possible with current build
+        The only difference is `quick_only` argument, which if set to True
+        might not return a value if not possible with current build
         """
         a, b, bjunk = self.a, self.b, self.bjunk
         automaton = self.automaton
@@ -2873,9 +2899,11 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
         return Match._make(block)
 
     def batch_find_longest_match(self, bounds_list):
-        """Performance method for many `find_longest_match` calls
-            It calls `find` in order that aims to minimize builds needed
-            Also, does not evaluate same range twice
+        """
+        Performance method for many `find_longest_match` calls
+        It calls `find` in order that aims to minimize builds needed
+        Also, does not evaluate same range twice
+
         Args:
             bounds_list : list[tuple[int, int, int, int]]
                 list of tuples: (alo, ahi, blo, bhi)
@@ -2890,11 +2918,12 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
             yield _make_match(block)
 
     def _modifier(self, depth, block, alo, ahi, blo, bhi):
-        """An entry point for intercepting `_get_matching_blocks` algorithm
-            It is subject to be implemented by derived class.
-            It can be used for:
-                a) quick peak into what algorithm is doing
-                b) modification of divide-and-conquer algorithm
+        """
+        An entry point for intercepting `_get_matching_blocks` algorithm
+        It is subject to be implemented by derived class.
+        It can be used for:
+            a) quick peak into what algorithm is doing
+            b) modification of divide-and-conquer algorithm
 
         Args:
             depth : int
@@ -2931,6 +2960,18 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
         return None
 
     def _get_matching_blocks(self):
+        """
+        Return list of triples describing matching subsequences.
+
+        Each triple is of the form (i, j, n), s.t. a[i:i+n] == b[j:j+n].
+
+        The last triple is a dummy, (len(a), len(b), 0), and is the only
+        triple with n==0.
+
+        >>> gsm = GestaltSequenceMatcher(None, "abxcd", "abcd")
+        >>> list(gsm.get_matching_blocks())
+        [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
+        """
         balancing = self.balancing
         alo, ahi, blo, bhi = 0, len(self.a), 0, len(self.b)
         if alo >= ahi or blo >= bhi:
@@ -3061,12 +3102,12 @@ class GestaltSequenceMatcher(SequenceMatcherBase):
 
                     # 2.2.3. Pick middle block of the best tripple
                     for triple in triples:
-                        triple[0] = t0 = job_results[triple[0]]
-                        triple[2] = t2 = job_results[triple[2]]
-                        t1 = triple[1]
-                        score = _calc_candidate_score(t0, t1, t2)
+                        triple[0] = block0 = job_results[triple[0]]
+                        triple[2] = block2 = job_results[triple[2]]
+                        block1 = triple[1]
+                        score = _calc_candidate_score(block0, block1, block2)
                         # NOTE: secondary key is `skew` as above
-                        mid_skew = _calc_skew(*t1, *bounds)
+                        mid_skew = _calc_skew(*block1, *bounds)
                         triple.append((score, -abs(mid_skew)))
                     best = max(triples, key=lambda x: x[-1])
                     tail_blocks = best[1:2]
