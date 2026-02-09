@@ -2691,8 +2691,9 @@ in the format string will be pulled from the default value.
 
 .. note::
    Format strings without separators can be ambiguous for parsing. For
-   example, ``%Y%m%d`` parses the string ``2026111`` as ``2026-11-01``,
-   not ``2026-01-11``. Use separators to ensure the input is parsed as intended.
+   example, with ``%Y%m%d``, the string ``2026111`` may be parsed either as
+   ``2026-11-01`` or as ``2026-01-11``.
+   Use separators to ensure the input is parsed as intended.
 
 .. note::
    When used to parse partial dates lacking a year, :meth:`.datetime.strptime`
