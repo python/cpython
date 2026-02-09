@@ -57,15 +57,19 @@ otherwise they are set to the same value as :data:`sys.base_prefix` and
 :data:`sys.base_exec_prefix`, respectively.
 This is used by :ref:`sys-path-init-virtual-environments`.
 
-Finally, the :mod:`site` module is processed and :file:`site-packages` directories
-are added to the module search path. A common way to customize the search path is
-to create :mod:`sitecustomize` or :mod:`usercustomize` modules as described in
-the :mod:`site` module documentation.
+Finally, the :mod:`site` module is processed and :file:`site-packages`
+directories are added to the module search path.  The :envvar:`PYTHONUSERBASE`
+environment variable controls where is searched for user site-packages and the
+:envvar:`PYTHONNOUSERSITE` environment variable prevents searching for user
+site-packages all together.  A common way to customize the search path is to
+create :mod:`sitecustomize` or :mod:`usercustomize` modules as described in the
+:mod:`site` module documentation.
 
 .. note::
 
-   Certain command line options may further affect path calculations.
-   See :option:`-E`, :option:`-I`, :option:`-s` and :option:`-S` for further details.
+   The command line options :option:`-E`, :option:`-P`, :option:`-I`,
+   :option:`-S` and :option:`-s` further affect path calculations, see their
+   documentation for details.
 
 .. versionchanged:: 3.14
 
