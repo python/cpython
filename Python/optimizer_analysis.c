@@ -83,7 +83,7 @@ dump_abstract_stack(_Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer)
 
 static void
 dump_uop(JitOptContext *ctx, const char *label, int index,
-         const _PyUOpInstruction *instr, JitOptRef *stack_pointer)
+              const _PyUOpInstruction *instr, JitOptRef *stack_pointer)
 {
     if (get_lltrace() >= 3) {
         printf("%4d %s: ", index, label);
@@ -95,11 +95,24 @@ dump_uop(JitOptContext *ctx, const char *label, int index,
     }
 }
 
+static void
+dump_uops(JitOptContext *ctx, const char *label,
+          _PyUOpInstruction *start, JitOptRef *stack_pointer)
+{
+    int current_len = uop_buffer_length(&ctx->out_buffer);
+    int added_count = (int)(ctx->out_buffer.next - start);
+    for (int j = 0; j < added_count; j++) {
+        dump_uop(ctx, label, current_len - added_count + j, &start[j], stack_pointer);
+    }
+}
+
 #define DUMP_UOP dump_uop
+#define DUMP_UOPS dump_uops
 
 #else
     #define DPRINTF(level, ...)
     #define DUMP_UOP(ctx, label, index, instr, stack_pointer)
+    #define DUMP_UOPS(ctx, label, start, stack_pointer)
 #endif
 
 static int
@@ -508,7 +521,7 @@ optimize_uops(
             *(ctx->out_buffer.next++) = *this_instr;
         }
         assert(ctx->frame != NULL);
-        DUMP_UOP(ctx, "out", uop_buffer_length(&ctx->out_buffer) - 1, out_ptr, stack_pointer);
+        DUMP_UOPS(ctx, "out", out_ptr, stack_pointer);
         if (!CURRENT_FRAME_IS_INIT_SHIM() && !ctx->done) {
             DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
             ctx->frame->stack_pointer = stack_pointer;
