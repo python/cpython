@@ -544,9 +544,19 @@ groupby_next(PyObject *op)
         else if (gbo->tgtkey == NULL)
             break;
         else {
-            int rcmp;
+            /* A user-defined __eq__ can re-enter groupby and advance the iterator,
+               mutating gbo->tgtkey / gbo->currkey while we are comparing them.
+               Take local snapshots and hold strong references so INCREF/DECREF
+               apply to the same objects even under re-entrancy. */
+            PyObject *tgtkey = gbo->tgtkey;
+            PyObject *currkey = gbo->currkey;
 
-            rcmp = PyObject_RichCompareBool(gbo->tgtkey, gbo->currkey, Py_EQ);
+            Py_INCREF(tgtkey);
+            Py_INCREF(currkey);
+            int rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
+            Py_DECREF(tgtkey);
+            Py_DECREF(currkey);
+
             if (rcmp == -1)
                 return NULL;
             else if (rcmp == 0)
