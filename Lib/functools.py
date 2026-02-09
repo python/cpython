@@ -19,7 +19,7 @@ from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
+from types import GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
 
 ################################################################################
@@ -1096,12 +1096,15 @@ class _singledispatchmethod_get:
                             '1 positional argument')
         if self._skip_bound_arg:
             method = self._dispatch(args[1].__class__)
-            if isinstance(method, FunctionType):
-                args = args[1:]
         else:
             method = self._dispatch(args[0].__class__)
         if hasattr(method, "__get__"):
             method = method.__get__(self._obj, self._cls)
+            if (
+                self._skip_bound_arg
+                and isinstance(method, MethodType)
+                and method.__self__ is self):
+                args = args[1:]
         return method(*args, **kwargs)
 
     def __getattr__(self, name):
