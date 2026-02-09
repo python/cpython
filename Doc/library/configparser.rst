@@ -80,7 +80,7 @@ Let's take a very basic configuration file that looks like this:
 The structure of INI files is described `in the following section
 <#supported-ini-file-structure>`_.  Essentially, the file
 consists of sections, each of which contains keys with values.
-:mod:`configparser` classes can read and write such files.  Let's start by
+:mod:`!configparser` classes can read and write such files.  Let's start by
 creating the above configuration file programmatically.
 
 .. doctest::
@@ -449,7 +449,7 @@ Mapping Protocol Access
 .. versionadded:: 3.2
 
 Mapping protocol access is a generic name for functionality that enables using
-custom objects as if they were dictionaries.  In case of :mod:`configparser`,
+custom objects as if they were dictionaries.  In case of :mod:`!configparser`,
 the mapping interface implementation is using the
 ``parser['section']['option']`` notation.
 
@@ -459,7 +459,7 @@ the original parser on demand.  What's even more important is that when values
 are changed on a section proxy, they are actually mutated in the original
 parser.
 
-:mod:`configparser` objects behave as close to actual dictionaries as possible.
+:mod:`!configparser` objects behave as close to actual dictionaries as possible.
 The mapping interface is complete and adheres to the
 :class:`~collections.abc.MutableMapping` ABC.
 However, there are a few differences that should be taken into account:
@@ -507,7 +507,7 @@ Customizing Parser Behaviour
 ----------------------------
 
 There are nearly as many INI format variants as there are applications using it.
-:mod:`configparser` goes a long way to provide support for the largest sensible
+:mod:`!configparser` goes a long way to provide support for the largest sensible
 set of INI styles available.  The default functionality is mainly dictated by
 historical background and it's very likely that you will want to customize some
 of the features.
@@ -560,7 +560,7 @@ the :meth:`!__init__` options:
 * *allow_no_value*, default value: ``False``
 
   Some configuration files are known to include settings without values, but
-  which otherwise conform to the syntax supported by :mod:`configparser`.  The
+  which otherwise conform to the syntax supported by :mod:`!configparser`.  The
   *allow_no_value* parameter to the constructor can be used to
   indicate that such values should be accepted:
 
@@ -615,7 +615,7 @@ the :meth:`!__init__` options:
   prefixes for whole line comments.
 
   .. versionchanged:: 3.2
-     In previous versions of :mod:`configparser` behaviour matched
+     In previous versions of :mod:`!configparser` behaviour matched
      ``comment_prefixes=('#',';')`` and ``inline_comment_prefixes=(';',)``.
 
   Please note that config parsers don't support escaping of comment prefixes so
@@ -672,7 +672,7 @@ the :meth:`!__init__` options:
   parsers in new applications.
 
   .. versionchanged:: 3.2
-     In previous versions of :mod:`configparser` behaviour matched
+     In previous versions of :mod:`!configparser` behaviour matched
      ``strict=False``.
 
 * *empty_lines_in_values*, default value: ``True``
@@ -842,7 +842,7 @@ be overridden by subclasses or by attribute assignment.
 Legacy API Examples
 -------------------
 
-Mainly because of backwards compatibility concerns, :mod:`configparser`
+Mainly because of backwards compatibility concerns, :mod:`!configparser`
 provides also a legacy API with explicit ``get``/``set`` methods.  While there
 are valid use cases for the methods outlined below, mapping protocol access is
 preferred for new projects.  The legacy API is at times more advanced,
@@ -1378,7 +1378,7 @@ Exceptions
 
 .. exception:: Error
 
-   Base class for all other :mod:`configparser` exceptions.
+   Base class for all other :mod:`!configparser` exceptions.
 
 
 .. exception:: NoSectionError

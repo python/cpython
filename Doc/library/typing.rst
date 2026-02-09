@@ -2243,7 +2243,7 @@ without the dedicated syntax, as documented below.
    .. versionadded:: 3.10
 
 
-.. class:: TypeAliasType(name, value, *, type_params=())
+.. class:: TypeAliasType(name, value, *, type_params=(), qualname=None)
 
    The type of type aliases created through the :keyword:`type` statement.
 
@@ -2266,6 +2266,20 @@ without the dedicated syntax, as documented below.
          >>> type Alias = int
          >>> Alias.__name__
          'Alias'
+
+   .. attribute:: __qualname__
+
+      The :term:`qualified name` of the type alias:
+
+      .. doctest::
+
+        >>> class Class:
+        ...     type Alias = int
+        ...
+        >>> Class.Alias.__qualname__
+        'Class.Alias'
+
+      .. versionadded:: 3.15
 
    .. attribute:: __module__
 
@@ -2428,6 +2442,10 @@ types.
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
+   .. versionchanged:: 3.9
+      ``NamedTuple`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
+
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
@@ -2574,7 +2592,7 @@ types.
 .. class:: TypedDict(dict)
 
    Special construct to add type hints to a dictionary.
-   At runtime it is a plain :class:`dict`.
+   At runtime ":class:`!TypedDict` instances" are simply :class:`dicts <dict>`.
 
    ``TypedDict`` declares a dictionary type that expects all of its
    instances to have a certain set of keys, where each key is
@@ -2797,6 +2815,10 @@ types.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.9
+      ``TypedDict`` is now a function rather than a class.
+      It can still be used as a class base, as described above.
+
    .. versionchanged:: 3.11
       Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
       See :pep:`655`.
@@ -2855,8 +2877,8 @@ ABCs and Protocols for working with I/O
 ---------------------------------------
 
 .. class:: IO[AnyStr]
-           TextIO[AnyStr]
-           BinaryIO[AnyStr]
+           TextIO
+           BinaryIO
 
    Generic class ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
@@ -3244,17 +3266,6 @@ Functions and decorators
 
    ``@no_type_check`` mutates the decorated object in place.
 
-.. decorator:: no_type_check_decorator
-
-   Decorator to give another decorator the :func:`no_type_check` effect.
-
-   This wraps the decorator with something that wraps the decorated
-   function in :func:`no_type_check`.
-
-   .. deprecated-removed:: 3.13 3.15
-      No type checker ever added support for ``@no_type_check_decorator``. It
-      is therefore deprecated, and will be removed in Python 3.15.
-
 .. decorator:: override
 
    Decorator to indicate that a method in a subclass is intended to override a
@@ -3340,7 +3351,8 @@ Introspection helpers
      ``__annotations__`` dictionaries. Annotations on classes appearing
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.
-   * The function recursively replaces all occurrences of ``Annotated[T, ...]``
+   * The function recursively replaces all occurrences of
+     ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
 
@@ -4099,10 +4111,6 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.12
      - Undecided
      - :pep:`695`
-   * - :func:`@typing.no_type_check_decorator <no_type_check_decorator>`
-     - 3.13
-     - 3.15
-     - :gh:`106309`
    * - :data:`typing.AnyStr`
      - 3.13
      - 3.18

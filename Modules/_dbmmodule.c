@@ -515,8 +515,12 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyObject *result;
     dbmobject *dp = dbmobject_CAST(self);
-    return _dbm_dbm_close_impl(dp);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _dbm_dbm_close_impl(dp);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef dbm_methods[] = {

@@ -1,2 +1,0 @@
-Expand ``_colorize`` theme with ``keyword_constant`` and implement in
-:term:`repl`.

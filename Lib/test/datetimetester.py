@@ -2706,24 +2706,20 @@ class TestDateTime(TestDate):
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
             one = fts(1e-6)
-            try:
-                minus_one = fts(-1e-6)
-            except OSError:
-                # localtime(-1) and gmtime(-1) is not supported on Windows
-                pass
-            else:
-                self.assertEqual(minus_one.second, 59)
-                self.assertEqual(minus_one.microsecond, 999999)
+            minus_one = fts(-1e-6)
 
-                t = fts(-1e-8)
-                self.assertEqual(t, zero)
-                t = fts(-9e-7)
-                self.assertEqual(t, minus_one)
-                t = fts(-1e-7)
-                self.assertEqual(t, zero)
-                t = fts(-1/2**7)
-                self.assertEqual(t.second, 59)
-                self.assertEqual(t.microsecond, 992188)
+            self.assertEqual(minus_one.second, 59)
+            self.assertEqual(minus_one.microsecond, 999999)
+
+            t = fts(-1e-8)
+            self.assertEqual(t, zero)
+            t = fts(-9e-7)
+            self.assertEqual(t, minus_one)
+            t = fts(-1e-7)
+            self.assertEqual(t, zero)
+            t = fts(-1/2**7)
+            self.assertEqual(t.second, 59)
+            self.assertEqual(t.microsecond, 992188)
 
             t = fts(1e-7)
             self.assertEqual(t, zero)
@@ -2752,22 +2748,18 @@ class TestDateTime(TestDate):
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
             one = fts(D('0.000_001'))
-            try:
-                minus_one = fts(D('-0.000_001'))
-            except OSError:
-                # localtime(-1) and gmtime(-1) is not supported on Windows
-                pass
-            else:
-                self.assertEqual(minus_one.second, 59)
-                self.assertEqual(minus_one.microsecond, 999_999)
+            minus_one = fts(D('-0.000_001'))
 
-                t = fts(D('-0.000_000_1'))
-                self.assertEqual(t, zero)
-                t = fts(D('-0.000_000_9'))
-                self.assertEqual(t, minus_one)
-                t = fts(D(-1)/2**7)
-                self.assertEqual(t.second, 59)
-                self.assertEqual(t.microsecond, 992188)
+            self.assertEqual(minus_one.second, 59)
+            self.assertEqual(minus_one.microsecond, 999_999)
+
+            t = fts(D('-0.000_000_1'))
+            self.assertEqual(t, zero)
+            t = fts(D('-0.000_000_9'))
+            self.assertEqual(t, minus_one)
+            t = fts(D(-1)/2**7)
+            self.assertEqual(t.second, 59)
+            self.assertEqual(t.microsecond, 992188)
 
             t = fts(D('0.000_000_1'))
             self.assertEqual(t, zero)
@@ -2803,22 +2795,18 @@ class TestDateTime(TestDate):
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
             one = fts(F(1, 1_000_000))
-            try:
-                minus_one = fts(F(-1, 1_000_000))
-            except OSError:
-                # localtime(-1) and gmtime(-1) is not supported on Windows
-                pass
-            else:
-                self.assertEqual(minus_one.second, 59)
-                self.assertEqual(minus_one.microsecond, 999_999)
+            minus_one = fts(F(-1, 1_000_000))
 
-                t = fts(F(-1, 10_000_000))
-                self.assertEqual(t, zero)
-                t = fts(F(-9, 10_000_000))
-                self.assertEqual(t, minus_one)
-                t = fts(F(-1, 2**7))
-                self.assertEqual(t.second, 59)
-                self.assertEqual(t.microsecond, 992188)
+            self.assertEqual(minus_one.second, 59)
+            self.assertEqual(minus_one.microsecond, 999_999)
+
+            t = fts(F(-1, 10_000_000))
+            self.assertEqual(t, zero)
+            t = fts(F(-9, 10_000_000))
+            self.assertEqual(t, minus_one)
+            t = fts(F(-1, 2**7))
+            self.assertEqual(t.second, 59)
+            self.assertEqual(t.microsecond, 992188)
 
             t = fts(F(1, 10_000_000))
             self.assertEqual(t, zero)
@@ -2860,6 +2848,7 @@ class TestDateTime(TestDate):
             # If that assumption changes, this value can change as well
             self.assertEqual(max_ts, 253402300799.0)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows doesn't support min timestamp")
     def test_fromtimestamp_limits(self):
         try:
             self.theclass.fromtimestamp(-2**32 - 1)
@@ -2899,6 +2888,7 @@ class TestDateTime(TestDate):
                     # OverflowError, especially on 32-bit platforms.
                     self.theclass.fromtimestamp(ts)
 
+    @unittest.skipIf(sys.platform == "win32", "Windows doesn't support min timestamp")
     def test_utcfromtimestamp_limits(self):
         with self.assertWarns(DeprecationWarning):
             try:
@@ -2960,13 +2950,11 @@ class TestDateTime(TestDate):
                 self.assertRaises(OverflowError, self.theclass.utcfromtimestamp,
                                   insane)
 
-    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_fromtimestamp(self):
         # The result is tz-dependent; at least test that this doesn't
         # fail (like it did before bug 1646728 was fixed).
         self.theclass.fromtimestamp(-1.05)
 
-    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_utcfromtimestamp(self):
         with self.assertWarns(DeprecationWarning):
             d = self.theclass.utcfromtimestamp(-1.05)
@@ -6300,21 +6288,21 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
 
         gdt = datetime(1941, 6, 23, 20, 59, 59, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Mon Jun 23 23:59:59 1941 MSK+0300')
         self.assertEqual(ldt.fold, 0)
         self.assertFalse(ldt.dst())
 
         gdt = datetime(1941, 6, 23, 21, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Mon Jun 23 23:00:00 1941 CEST+0200')
         self.assertEqual(ldt.fold, 1)
         self.assertTrue(ldt.dst())
 
         gdt = datetime(1941, 6, 23, 22, tzinfo=timezone.utc)
         ldt = gdt.astimezone(Vilnius)
-        self.assertEqual(ldt.strftime("%c %Z%z"),
+        self.assertEqual(ldt.strftime("%a %b %d %H:%M:%S %Y %Z%z"),
                          'Tue Jun 24 00:00:00 1941 CEST+0200')
         self.assertEqual(ldt.fold, 0)
         self.assertTrue(ldt.dst())
@@ -6324,22 +6312,22 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
 
         ldt = datetime(1941, 6, 23, 22, 59, 59, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 19:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 23, 23, 59, 59, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 20:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 23, 23, 59, 59, tzinfo=Vilnius, fold=1)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 21:59:59 1941 UTC')
 
         ldt = datetime(1941, 6, 24, 0, tzinfo=Vilnius)
         gdt = ldt.astimezone(timezone.utc)
-        self.assertEqual(gdt.strftime("%c %Z"),
+        self.assertEqual(gdt.strftime("%a %b %d %H:%M:%S %Y %Z"),
                          'Mon Jun 23 22:00:00 1941 UTC')
 
     def test_constructors(self):

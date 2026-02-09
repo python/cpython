@@ -1,3 +1,0 @@
-The ``wasm_build.py`` script has been removed.  ``Tools/wasm/emscripten``
-and ``Tools/wasm/wasi`` should be used instead, as described in the `Dev
-Guide <https://devguide.python.org/contrib/workflows/compile/>`__.

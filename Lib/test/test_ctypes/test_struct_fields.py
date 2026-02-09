@@ -130,6 +130,21 @@ class FieldsTestBase(StructCheckMixin):
             self.check_struct(S)
             self.assertEqual(S.largeField.bit_size, size * 8)
 
+    def test_bitfield_overflow_error_message(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"bit field 'x' overflows its type \(2 \+ 7 > 8\)",
+        ):
+            CField(
+                name="x",
+                type=c_byte,
+                byte_size=1,
+                byte_offset=0,
+                index=0,
+                _internal_use=True,
+                bit_size=7,
+                bit_offset=2,
+            )
 
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.

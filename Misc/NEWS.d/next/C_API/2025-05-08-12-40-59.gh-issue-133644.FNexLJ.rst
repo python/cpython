@@ -1,3 +1,0 @@
-Remove deprecated function :c:func:`!PyWeakref_GetObject` and macro
-:c:macro:`!PyWeakref_GET_OBJECT`. Use :c:func:`PyWeakref_GetRef` instead.
-Patch by Bénédikt Tran.

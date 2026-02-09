@@ -16,6 +16,7 @@ on:
       - "Tools/build/check_extension_modules.py"
       - "Tools/build/check_warnings.py"
       - "Tools/build/compute-changes.py"
+      - "Tools/build/consts_getter.py"
       - "Tools/build/deepfreeze.py"
       - "Tools/build/generate-build-details.py"
       - "Tools/build/generate_sbom.py"
@@ -25,6 +26,7 @@ on:
       - "Tools/build/update_file.py"
       - "Tools/build/verify_ensurepip_wheels.py"
       - "Tools/cases_generator/**"
+      - "Tools/check-c-api-docs/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
@@ -57,15 +59,16 @@ jobs:
           "Lib/tomllib",
           "Tools/build",
           "Tools/cases_generator",
+          "Tools/check-c-api-docs",
           "Tools/clinic",
           "Tools/jit",
           "Tools/peg_generator",
         ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
           cache: pip

@@ -108,7 +108,7 @@ class InspectLoader(Loader):
         source = self.get_source(fullname)
         if source is None:
             return None
-        return self.source_to_code(source)
+        return self.source_to_code(source, '<string>', fullname)
 
     @abc.abstractmethod
     def get_source(self, fullname):
@@ -120,15 +120,14 @@ class InspectLoader(Loader):
         raise ImportError
 
     @staticmethod
-    def source_to_code(data, path='<string>'):
+    def source_to_code(data, path='<string>', fullname=None):
         """Compile 'data' into a code object.
 
         The 'data' argument can be anything that compile() can handle. The'path'
         argument should be where the data was retrieved (when applicable)."""
-        return compile(data, path, 'exec', dont_inherit=True)
+        return compile(data, path, 'exec', dont_inherit=True, module=fullname)
 
     exec_module = _bootstrap_external._LoaderBasics.exec_module
-    load_module = _bootstrap_external._LoaderBasics.load_module
 
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 
@@ -163,9 +162,8 @@ class ExecutionLoader(InspectLoader):
         try:
             path = self.get_filename(fullname)
         except ImportError:
-            return self.source_to_code(source)
-        else:
-            return self.source_to_code(source, path)
+            path = '<string>'
+        return self.source_to_code(source, path, fullname)
 
 _register(
     ExecutionLoader,

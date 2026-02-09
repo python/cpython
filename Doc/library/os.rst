@@ -25,7 +25,7 @@ Notes on the availability of these functions:
   with the POSIX interface).
 
 * Extensions peculiar to a particular operating system are also available
-  through the :mod:`os` module, but using them is of course a threat to
+  through the :mod:`!os` module, but using them is of course a threat to
   portability.
 
 * All functions accepting path or file names accept both bytes and string
@@ -34,7 +34,7 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
-* On WebAssembly platforms, Android and iOS, large parts of the :mod:`os` module are
+* On WebAssembly platforms, Android and iOS, large parts of the :mod:`!os` module are
   not available or behave differently. APIs related to processes (e.g.
   :func:`~os.fork`, :func:`~os.execve`) and resources (e.g. :func:`~os.nice`)
   are not available. Others like :func:`~os.getuid` and :func:`~os.getpid` are
@@ -108,7 +108,7 @@ Python UTF-8 Mode
 .. versionadded:: 3.7
    See :pep:`540` for more details.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
    It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
@@ -185,7 +185,7 @@ process and user.
    of your home directory (on some platforms), and is equivalent to
    ``getenv("HOME")`` in C.
 
-   This mapping is captured the first time the :mod:`os` module is imported,
+   This mapping is captured the first time the :mod:`!os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
@@ -558,7 +558,7 @@ process and user.
 
 .. function:: initgroups(username, gid, /)
 
-   Call the system initgroups() to initialize the group access list with all of
+   Call the system ``initgroups()`` to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
@@ -1279,7 +1279,7 @@ as internal buffering of data.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
-   the :mod:`os` module.  In particular, on Windows adding
+   the :mod:`!os` module.  In particular, on Windows adding
    :const:`O_BINARY` is needed to open files in binary mode.
 
    This function can support :ref:`paths relative to directory descriptors
@@ -1553,7 +1553,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Linux >= 6.14
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
+
+
+.. data:: RWF_ATOMIC
+
+   Write data atomically. Requires alignment to the device's atomic write unit.
+
+   .. availability:: Linux >= 6.11
+
+   .. versionadded:: 3.15
 
 
 .. function:: ptsname(fd, /)
@@ -1598,6 +1607,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
+   - :data:`RWF_ATOMIC`
 
    Return the total number of bytes actually written.
 
@@ -1969,7 +1979,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program, other file descriptors are inherited.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
@@ -2013,7 +2024,7 @@ features:
 .. _path_fd:
 
 * **specifying a file descriptor:**
-  Normally the *path* argument provided to functions in the :mod:`os` module
+  Normally the *path* argument provided to functions in the :mod:`!os` module
   must be a string specifying a file path.  However, some functions now
   alternatively accept an open file descriptor for their *path* argument.
   The function will then operate on the file referred to by the descriptor.
@@ -2645,7 +2656,7 @@ features:
 
    Non-existent device.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: pathconf(path, name)
@@ -3383,6 +3394,359 @@ features:
       Added the :attr:`st_birthtime` member on Windows.
 
 
+.. function:: statx(path, mask, *, flags=0, dir_fd=None, follow_symlinks=True)
+
+   Get the status of a file or file descriptor by performing a :c:func:`!statx`
+   system call on the given path.
+
+   *path* is a :term:`path-like object` or an open file descriptor. *mask* is a
+   combination of the module-level :const:`STATX_* <STATX_TYPE>` constants
+   specifying the information to retrieve. *flags* is a combination of the
+   module-level :const:`AT_STATX_* <AT_STATX_FORCE_SYNC>` constants and/or
+   :const:`AT_NO_AUTOMOUNT`. Returns a :class:`statx_result` object whose
+   :attr:`~os.statx_result.stx_mask` attribute specifies the information
+   actually retrieved (which may differ from *mask*).
+
+   This function supports :ref:`specifying a file descriptor <path_fd>`,
+   :ref:`paths relative to directory descriptors <dir_fd>`, and
+   :ref:`not following symlinks <follow_symlinks>`.
+
+   .. seealso:: The :manpage:`statx(2)` man page.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: 3.15
+
+
+.. class:: statx_result
+
+   Information about a file returned by :func:`os.statx`.
+
+   :class:`!statx_result` has the following attributes:
+
+   .. attribute:: stx_atime
+
+      Time of most recent access expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_ATIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_atime_ns
+
+      Time of most recent access expressed in nanoseconds as an integer.
+
+      Equal to ``None`` if :data:`STATX_ATIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_atomic_write_segments_max
+
+      Maximum iovecs for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_unit_max
+
+      Maximum size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_unit_max_opt
+
+      Maximum optimized size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.16.
+
+   .. attribute:: stx_atomic_write_unit_min
+
+      Minimum size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_attributes
+
+      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
+      specifying the attributes of this file.
+
+   .. attribute:: stx_attributes_mask
+
+      A mask indicating which bits in :attr:`stx_attributes` are supported by
+      the VFS and the filesystem.
+
+   .. attribute:: stx_blksize
+
+      "Preferred" blocksize for efficient file system I/O. Writing to a file in
+      smaller chunks may cause an inefficient read-modify-rewrite.
+
+   .. attribute:: stx_blocks
+
+      Number of 512-byte blocks allocated for file.
+      This may be smaller than :attr:`stx_size`/512 when the file has holes.
+
+      Equal to ``None`` if :data:`STATX_BLOCKS` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_btime
+
+      Time of file creation expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_BTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_btime_ns
+
+      Time of file creation expressed in nanoseconds as an integer.
+
+      Equal to ``None`` if :data:`STATX_BTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ctime
+
+      Time of most recent metadata change expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_CTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ctime_ns
+
+      Time of most recent metadata change expressed in nanoseconds as an
+      integer.
+
+      Equal to ``None`` if :data:`STATX_CTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_dev
+
+      Identifier of the device on which this file resides.
+
+   .. attribute:: stx_dev_major
+
+      Major number of the device on which this file resides.
+
+   .. attribute:: stx_dev_minor
+
+      Minor number of the device on which this file resides.
+
+   .. attribute:: stx_dio_mem_align
+
+      Direct I/O memory buffer alignment requirement.
+
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.1.
+
+   .. attribute:: stx_dio_offset_align
+
+      Direct I/O file offset alignment requirement.
+
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.1.
+
+   .. attribute:: stx_dio_read_offset_align
+
+      Direct I/O file offset alignment requirement for reads.
+
+      Equal to ``None`` if :data:`STATX_DIO_READ_ALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.14.
+
+   .. attribute:: stx_gid
+
+      Group identifier of the file owner.
+
+      Equal to ``None`` if :data:`STATX_GID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ino
+
+      Inode number.
+
+      Equal to ``None`` if :data:`STATX_INO` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mask
+
+      Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
+      information retrieved, which may differ from what was requested.
+
+   .. attribute:: stx_mnt_id
+
+      Mount identifier.
+
+      Equal to ``None`` if :data:`STATX_MNT_ID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 5.8.
+
+   .. attribute:: stx_mode
+
+      File mode: file type and file mode bits (permissions).
+
+      Equal to ``None`` if :data:`STATX_TYPE | STATX_MODE <STATX_TYPE>`
+      is missing from :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mtime
+
+      Time of most recent content modification expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_MTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mtime_ns
+
+      Time of most recent content modification expressed in nanoseconds as an
+      integer.
+
+      Equal to ``None`` if :data:`STATX_MTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_nlink
+
+      Number of hard links.
+
+      Equal to ``None`` if :data:`STATX_NLINK` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_rdev
+
+      Type of device if an inode device.
+
+   .. attribute:: stx_rdev_major
+
+      Major number of the device this file represents.
+
+   .. attribute:: stx_rdev_minor
+
+      Minor number of the device this file represents.
+
+   .. attribute:: stx_size
+
+      Size of the file in bytes, if it is a regular file or a symbolic link.
+      The size of a symbolic link is the length of the pathname it contains,
+      without a terminating null byte.
+
+      Equal to ``None`` if :data:`STATX_SIZE` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_subvol
+
+      Subvolume identifier.
+
+      Equal to ``None`` if :data:`STATX_SUBVOL` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.10.
+
+   .. attribute:: stx_uid
+
+      User identifier of the file owner.
+
+      Equal to ``None`` if :data:`STATX_UID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. seealso:: The :manpage:`statx(2)` man page.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: 3.15
+
+
+.. data:: STATX_TYPE
+          STATX_MODE
+          STATX_NLINK
+          STATX_UID
+          STATX_GID
+          STATX_ATIME
+          STATX_MTIME
+          STATX_CTIME
+          STATX_INO
+          STATX_SIZE
+          STATX_BLOCKS
+          STATX_BASIC_STATS
+          STATX_BTIME
+          STATX_MNT_ID
+          STATX_DIOALIGN
+          STATX_MNT_ID_UNIQUE
+          STATX_SUBVOL
+          STATX_WRITE_ATOMIC
+          STATX_DIO_READ_ALIGN
+
+   Bitflags for use in the *mask* parameter to :func:`os.statx`.  Some of these
+   flags may be available even when their corresponding members in
+   :class:`statx_result` are not available.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: 3.15
+
+.. data:: AT_STATX_FORCE_SYNC
+
+   A flag for the :func:`os.statx` function.  Requests that the kernel return
+   up-to-date information even when doing so is expensive (for example,
+   requiring a round trip to the server for a file on a network filesystem).
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: 3.15
+
+.. data:: AT_STATX_DONT_SYNC
+
+   A flag for the :func:`os.statx` function.  Requests that the kernel return
+   cached information if possible.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: 3.15
+
+.. data:: AT_STATX_SYNC_AS_STAT
+
+   A flag for the :func:`os.statx` function.  This flag is defined as ``0``, so
+   it has no effect, but it can be used to explicitly indicate neither
+   :data:`AT_STATX_FORCE_SYNC` nor :data:`AT_STATX_DONT_SYNC` is being passed.
+   In the absence of the other two flags, the kernel will generally return
+   information as fresh as :func:`os.stat` would return.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: 3.15
+
+
+.. data:: AT_NO_AUTOMOUNT
+
+   If the final component of a path is an automount point, operate on the
+   automount point instead of performing the automount.  On Linux,
+   :func:`os.stat`, :func:`os.fstat` and :func:`os.lstat` always behave this
+   way.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.15
+
+
 .. function:: statvfs(path)
 
    Perform a :c:func:`!statvfs` system call on the given path.  The return value is
@@ -3431,7 +3795,7 @@ features:
 
 .. data:: supports_dir_fd
 
-   A :class:`set` object indicating which functions in the :mod:`os`
+   A :class:`set` object indicating which functions in the :mod:`!os`
    module accept an open file descriptor for their *dir_fd* parameter.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement the *dir_fd* parameter is not
@@ -3476,7 +3840,7 @@ features:
 .. data:: supports_fd
 
    A :class:`set` object indicating which functions in the
-   :mod:`os` module permit specifying their *path* parameter as an open file
+   :mod:`!os` module permit specifying their *path* parameter as an open file
    descriptor on the local platform.  Different platforms provide different
    features, and the underlying functionality Python uses to accept open file
    descriptors as *path* arguments is not available on all platforms Python
@@ -3495,7 +3859,7 @@ features:
 
 .. data:: supports_follow_symlinks
 
-   A :class:`set` object indicating which functions in the :mod:`os` module
+   A :class:`set` object indicating which functions in the :mod:`!os` module
    accept ``False`` for their *follow_symlinks* parameter on the local platform.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement *follow_symlinks* is not available
@@ -3519,6 +3883,9 @@ features:
 .. function:: symlink(src, dst, target_is_directory=False, *, dir_fd=None)
 
    Create a symbolic link pointing to *src* named *dst*.
+
+   The *src* parameter refers to the target of the link (the file or directory being linked to),
+   and *dst* is the name of the link being created.
 
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
@@ -3646,7 +4013,7 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real numbers as *times*, not only integers or floats.
 
 
@@ -3895,7 +4262,7 @@ features:
        import os
 
        # semaphore with start value '1'
-       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFD_CLOEXEC)
        try:
            # acquire semaphore
            v = os.eventfd_read(fd)
@@ -4592,6 +4959,8 @@ written in Python, such as a mail server's external command delivery program.
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
+   The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
+
    .. audit-event:: os.forkpty "" os.forkpty
 
    .. warning::
@@ -4607,6 +4976,9 @@ written in Python, such as a mail server's external command delivery program.
       If Python is able to detect that your process has multiple
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
+
+   .. versionchanged:: 3.15
+      The returned file descriptor is now made non-inheritable.
 
    .. availability:: Unix, not WASI, not Android, not iOS.
 
@@ -5632,7 +6004,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-      :func:`cpu_count` returns the overridden value *n*.
+      :func:`cpu_count` returns the override value *n*.
 
 
 .. function:: getloadavg()
@@ -5654,7 +6026,7 @@ Miscellaneous System Information
    in the **system**.
 
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-   :func:`process_cpu_count` returns the overridden value *n*.
+   :func:`process_cpu_count` returns the override value *n*.
 
    See also the :func:`sched_getaffinity` function.
 

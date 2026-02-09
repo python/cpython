@@ -323,6 +323,7 @@ class ThreadTests(BaseTestCase):
 
     # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)
     # exposed at the Python level.  This test relies on ctypes to get at it.
+    @cpython_only
     def test_PyThreadState_SetAsyncExc(self):
         ctypes = import_module("ctypes")
 
@@ -1776,6 +1777,7 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(os.read(r_interp, 1), DONE)
 
     @cpython_only
+    @support.skip_if_sanitizer(thread=True, memory=True)
     def test_daemon_threads_fatal_error(self):
         import_module("_testcapi")
         subinterp_code = f"""if 1:

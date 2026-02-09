@@ -1,1 +1,0 @@
-Fix use-after-free when reporting unknown event in :func:`xml.etree.ElementTree.iterparse`. Patch by Ken Jin.

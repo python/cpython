@@ -65,6 +65,27 @@ Python:
    .. versionadded:: 3.3
 
 
+   The structure of a particular object can be determined using the following
+   macros.
+   The macros cannot fail; their behavior is undefined if their argument
+   is not a Python Unicode object.
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: PyUnicode_IS_COMPACT(o)
+
+      True if *o* uses the :c:struct:`PyCompactUnicodeObject` structure.
+
+      .. versionadded:: 3.3
+
+
+   .. c:macro:: PyUnicode_IS_COMPACT_ASCII(o)
+
+      True if *o* uses the :c:struct:`PyASCIIObject` structure.
+
+      .. versionadded:: 3.3
+
+
 The following APIs are C macros and static inlined functions for fast checks and
 access to internal read-only data of Unicode objects:
 
@@ -321,12 +342,22 @@ These APIs can be used to work with surrogates:
 
    Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
 
+.. c:function:: Py_UCS4 Py_UNICODE_HIGH_SURROGATE(Py_UCS4 ch)
+
+    Return the high UTF-16 surrogate (``0xD800`` to ``0xDBFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
+.. c:function:: Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch)
+
+    Return the low UTF-16 surrogate (``0xDC00`` to ``0xDFFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
 .. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
    Join two surrogate code points and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
-   surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
-   be in the range [0xDC00; 0xDFFF].
+   surrogate pair. *high* must be in the range ``[0xD800; 0xDBFF]`` and *low* must
+   be in the range ``[0xDC00; 0xDFFF]``.
 
 
 Creating and accessing Unicode strings

@@ -72,8 +72,12 @@ for example, a package and its resources can be imported from a zip file using
 
     .. versionadded:: 3.9
 
-    .. deprecated-removed:: 3.12 3.15
-       *package* parameter was renamed to *anchor*. *anchor* can now be a
+    .. versionchanged:: 3.12
+      *package* parameter was renamed to *anchor*.
+      *package* was still accepted, but deprecated.
+
+    .. versionchanged:: 3.15
+       *package* parameter was fully removed. *anchor* can now be a
        non-package module and if omitted will default to the caller's module.
        *package* is no longer accepted since Python 3.15. Consider passing the
        anchor positionally or using ``importlib_resources >= 5.10`` for a

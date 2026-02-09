@@ -63,7 +63,7 @@ pack_arguments_2pos_varpos(PyObject *a, PyObject *b,
                            PyObject * const *args, Py_ssize_t args_length)
 /*[clinic end generated code: output=267032f41bd039cc input=86ee3064b7853e86]*/
 {
-    PyObject *tuple = _PyTuple_FromArray(args, args_length);
+    PyObject *tuple = PyTuple_FromArray(args, args_length);
     if (tuple == NULL) {
         return NULL;
     }
@@ -1174,7 +1174,7 @@ varpos_array_impl(PyObject *module, PyObject * const *args,
                   Py_ssize_t args_length)
 /*[clinic end generated code: output=a25f42f39c9b13ad input=97b8bdcf87e019c7]*/
 {
-    return _PyTuple_FromArray(args, args_length);
+    return PyTuple_FromArray(args, args_length);
 }
 
 
@@ -1610,7 +1610,7 @@ _testclinic_TestClass_varpos_array_no_fastcall_impl(PyTypeObject *type,
                                                     Py_ssize_t args_length)
 /*[clinic end generated code: output=27c9da663e942617 input=9ba5ae1f1eb58777]*/
 {
-    return _PyTuple_FromArray(args, args_length);
+    return PyTuple_FromArray(args, args_length);
 }
 
 
