@@ -89,7 +89,7 @@ Evaluation of these atoms yields the corresponding value.
 
    Several more built-in constants are available as global variables,
    but only the ones mentioned here are :ref:`keywords <keywords>`.
-   In particular, these names cannot be reassigned or used as attributes
+   In particular, these names cannot be reassigned or used as attributes:
 
    .. code-block:: pycon
 
@@ -1532,7 +1532,7 @@ The floor division operation can be customized using the special
    pair: operator; % (percent)
 
 The ``%`` (modulo) operator yields the remainder from the division of the first
-argument by the second.  The numeric arguments are first converted to a
+argument by the second.  The numeric arguments are first
 :ref:`converted to a common type <stdtypes-mixed-arithmetic>`.
 A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
 arguments may be floating-point numbers, e.g., ``3.14%0.7`` equals ``0.34``
