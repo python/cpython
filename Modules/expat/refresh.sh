@@ -61,6 +61,4 @@ Updated! next steps:
     git status
 - Regenerate the sbom file
     make regen-sbom
-- Update warning count in Tools/build/.warningignore_macos
-    (use info from CI if not on a Mac)
 "
