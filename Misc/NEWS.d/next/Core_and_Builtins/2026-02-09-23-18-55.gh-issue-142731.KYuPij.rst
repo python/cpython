@@ -1,0 +1,3 @@
+Fix a potential use-after-free crash when setting or deleting instance
+attributes if a re-entrant ``__hash__`` implementation mutates the instance
+``__dict__`` during attribute handling.

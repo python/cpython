@@ -6983,7 +6983,10 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
             Py_DECREF(dict);
             return res;
         }
-        return store_instance_attr_dict(obj, dict, name, value);
+        Py_INCREF(dict);
+        int res = store_instance_attr_dict(obj, dict, name, value);
+        Py_DECREF(dict);
+        return res;
     }
 
 #ifdef Py_GIL_DISABLED
@@ -7012,7 +7015,10 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
             return res;
         }
     }
-    return store_instance_attr_dict(obj, dict, name, value);
+    Py_INCREF((PyObject *)dict);
+    int res = store_instance_attr_dict(obj, dict, name, value);
+    Py_DECREF((PyObject *)dict);
+    return res;
 #else
     return store_instance_attr_lock_held(obj, values, name, value);
 #endif
