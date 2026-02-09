@@ -3047,7 +3047,6 @@ class TestSingleDispatch(unittest.TestCase):
 
             generic.register(D2, D2())
 
-
         self.assertEqual(C.generic(C(), "foo"), "generic")
         self.assertEqual(C.generic(C(), 1), "special1")
         self.assertEqual(C.generic(C(), 2.0), "special2")
