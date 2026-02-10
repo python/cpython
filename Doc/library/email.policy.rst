@@ -662,6 +662,13 @@ The header objects and their attributes are described in
    An instance of :class:`Compat32`, providing  backward compatibility with the
    behavior of the email package in Python 3.2.
 
+   .. note::
+
+      The :const:`compat32` policy should not be used as a policy for
+      :class:`~email.message.EmailMessage` objects, and should only be used
+      to serialize messages that were created using the :const:`compat32`
+      policy.
+
 
 .. rubric:: Footnotes
 

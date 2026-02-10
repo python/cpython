@@ -2,33 +2,25 @@
 // Index page specific functionality
 
 // ============================================================================
+// Heatmap Bar Coloring
+// ============================================================================
+
+function applyHeatmapBarColors() {
+    const bars = document.querySelectorAll('.heatmap-bar[data-intensity]');
+    bars.forEach(bar => {
+        const intensity = parseFloat(bar.getAttribute('data-intensity')) || 0;
+        const color = intensityToColor(intensity);
+        bar.style.backgroundColor = color;
+    });
+}
+
+// ============================================================================
 // Theme Support
 // ============================================================================
 
 function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('heatmap-theme', next);
-
-    // Update theme button icon
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
-    }
-}
-
-function restoreUIState() {
-    // Restore theme
-    const savedTheme = localStorage.getItem('heatmap-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const btn = document.getElementById('theme-btn');
-        if (btn) {
-            btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
-        }
-    }
+    toggleAndSaveTheme();
+    applyHeatmapBarColors();
 }
 
 // ============================================================================
@@ -108,4 +100,5 @@ function collapseAll() {
 
 document.addEventListener('DOMContentLoaded', function() {
     restoreUIState();
+    applyHeatmapBarColors();
 });

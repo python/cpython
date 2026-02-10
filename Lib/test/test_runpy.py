@@ -57,7 +57,6 @@ nested = runpy._run_module_code('x=1\\n', mod_name='<run>')
 implicit_namespace = {
     "__name__": None,
     "__file__": None,
-    "__cached__": None,
     "__package__": None,
     "__doc__": None,
     "__spec__": None
@@ -286,7 +285,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
     def _fix_ns_for_legacy_pyc(self, ns, alter_sys):
         char_to_add = "c"
         ns["__file__"] += char_to_add
-        ns["__cached__"] = ns["__file__"]
         spec = ns["__spec__"]
         new_spec = importlib.util.spec_from_file_location(spec.name,
                                                           ns["__file__"])
@@ -306,7 +304,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": mod_spec.cached,
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -323,14 +320,16 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             importlib.invalidate_caches()
             __import__(mod_name)
-            os.remove(mod_fname)
             if not sys.dont_write_bytecode:
-                make_legacy_pyc(mod_fname)
+                make_legacy_pyc(mod_fname, allow_compile=True)
                 unload(mod_name)  # In case loader caches paths
+                os.remove(mod_fname)
                 importlib.invalidate_caches()
                 if verbose > 1: print("Running from compiled:", mod_name)
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
+            else:
+                os.remove(mod_fname)
         finally:
             self._del_pkg(pkg_dir)
         if verbose > 1: print("Module executed successfully")
@@ -347,7 +346,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": pkg_name,
             "__spec__": mod_spec,
         })
@@ -364,14 +362,16 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             importlib.invalidate_caches()
             __import__(mod_name)
-            os.remove(mod_fname)
             if not sys.dont_write_bytecode:
-                make_legacy_pyc(mod_fname)
+                make_legacy_pyc(mod_fname, allow_compile=True)
                 unload(mod_name)  # In case loader caches paths
+                os.remove(mod_fname)
                 if verbose > 1: print("Running from compiled:", pkg_name)
                 importlib.invalidate_caches()
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
+            else:
+                os.remove(mod_fname)
         finally:
             self._del_pkg(pkg_dir)
         if verbose > 1: print("Package executed successfully")
@@ -424,7 +424,7 @@ from ..uncle.cousin import nephew
             importlib.invalidate_caches()
             __import__(mod_name)
             os.remove(mod_fname)
-            if not sys.dont_write_bytecode:
+            if not sys.dont_write_bytecode and sys.implementation.cache_tag:
                 make_legacy_pyc(mod_fname)
                 unload(mod_name)  # In case the loader caches paths
                 if verbose > 1: print("Running from compiled:", mod_name)
@@ -552,7 +552,6 @@ from ..uncle.cousin import nephew
         expected_ns.update({
             "__name__": run_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -632,7 +631,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": expected_name,
             "__file__": expected_file,
-            "__cached__": mod_cached,
             "__package__": "",
             "__spec__": mod_spec,
             "run_argv0": expected_argv0,
@@ -682,6 +680,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag')
     def test_script_compiled(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -702,12 +702,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            legacy_pyc = make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            if not sys.dont_write_bytecode:
-                legacy_pyc = make_legacy_pyc(script_name)
-                self._check_script(script_dir, "<run_path>", legacy_pyc,
-                                   script_dir, mod_name=mod_name)
+            self._check_script(script_dir, "<run_path>", legacy_pyc,
+                               script_dir, mod_name=mod_name)
 
     def test_directory_error(self):
         with temp_dir() as script_dir:
@@ -728,7 +726,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True)
             zip_name, fname = make_zip_script(script_dir, 'test_zip',
                                               compiled_name)
             self._check_script(zip_name, "<run_path>", fname, zip_name,

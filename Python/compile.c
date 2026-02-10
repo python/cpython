@@ -634,7 +634,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         }
     }
     if (u->u_ste->ste_has_conditional_annotations) {
-        /* Cook up an implicit __conditional__annotations__ cell */
+        /* Cook up an implicit __conditional_annotations__ cell */
         Py_ssize_t res;
         assert(u->u_scope_type == COMPILE_SCOPE_CLASS || u->u_scope_type == COMPILE_SCOPE_MODULE);
         res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__conditional_annotations__));
@@ -1443,7 +1443,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
     int stackdepth;
     int nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;
@@ -1718,7 +1718,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
 
     int code_flags = 0;
     int stackdepth, nlocalsplus;
-    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd, code_flags,
+    if (_PyCfg_OptimizedCfgToInstructionSequence(g, umd,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
         goto error;

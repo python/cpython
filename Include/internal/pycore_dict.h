@@ -114,6 +114,7 @@ extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject
 
 extern int _PyDict_GetMethodStackRef(PyDictObject *dict, PyObject *name, _PyStackRef *method);
 
+extern Py_ssize_t _PyDict_LookupIndexAndValue(PyDictObject *, PyObject *, PyObject **);
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
 
@@ -272,8 +273,7 @@ _PyDict_SendEvent(int watcher_bits,
                   PyObject *value);
 
 static inline void
-_PyDict_NotifyEvent(PyInterpreterState *interp,
-                    PyDict_WatchEvent event,
+_PyDict_NotifyEvent(PyDict_WatchEvent event,
                     PyDictObject *mp,
                     PyObject *key,
                     PyObject *value)

@@ -158,6 +158,11 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+   .. method:: prweek(theweek, width)
+
+      Print a week's calendar as returned by :meth:`formatweek` and without a
+      final newline.
+
 
    .. method:: formatday(theday, weekday, width)
 
@@ -447,7 +452,7 @@ For simple text calendars this module provides the following functions.
    inverse.
 
 
-The :mod:`calendar` module exports the following data attributes:
+The :mod:`!calendar` module exports the following data attributes:
 
 .. data:: day_name
 
@@ -573,7 +578,7 @@ The :mod:`calendar` module exports the following data attributes:
    .. versionadded:: 3.12
 
 
-The :mod:`calendar` module defines the following exceptions:
+The :mod:`!calendar` module defines the following exceptions:
 
 .. exception:: IllegalMonthError(month)
 
@@ -612,7 +617,7 @@ Command-line usage
 
 .. versionadded:: 2.5
 
-The :mod:`calendar` module can be executed as a script from the command line
+The :mod:`!calendar` module can be executed as a script from the command line
 to interactively print a calendar.
 
 .. code-block:: shell

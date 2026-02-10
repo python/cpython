@@ -30,14 +30,16 @@
 
 --------------
 
-The :mod:`decimal` module provides support for fast correctly rounded
+The :mod:`!decimal` module provides support for fast correctly rounded
 decimal floating-point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
-* Decimal "is based on a floating-point model which was designed with people
-  in mind, and necessarily has a paramount guiding principle -- computers must
-  provide an arithmetic that works in the same way as the arithmetic that
-  people learn at school." -- excerpt from the decimal arithmetic specification.
+* Decimal "is based on a `floating-point model
+  <https://speleotrove.com/decimal/damodel.html#refnumber>`__ which was designed
+  with people in mind, and necessarily has a paramount guiding principle --
+  computers must provide an arithmetic that works in the same way as the
+  arithmetic that people learn at school." -- excerpt from the decimal
+  arithmetic specification.
 
 * Decimal numbers can be represented exactly.  In contrast, numbers like
   ``1.1`` and ``2.2`` do not have exact representations in binary
@@ -238,6 +240,26 @@ floating-point flying circus:
    >>> c % a
    Decimal('0.77')
 
+Decimals can be formatted (with :func:`format` built-in or :ref:`f-strings`) in
+fixed-point or scientific notation, using the same formatting syntax (see
+:ref:`formatspec`) as builtin :class:`float` type:
+
+.. doctest::
+
+   >>> format(Decimal('2.675'), "f")
+   '2.675'
+   >>> format(Decimal('2.675'), ".2f")
+   '2.68'
+   >>> f"{Decimal('2.675'):.2f}"
+   '2.68'
+   >>> format(Decimal('2.675'), ".2e")
+   '2.68e+0'
+   >>> with localcontext() as ctx:
+   ...     ctx.rounding = ROUND_DOWN
+   ...     print(format(Decimal('2.675'), ".2f"))
+   ...
+   2.67
+
 And some mathematical functions are also available to Decimal:
 
    >>> getcontext().prec = 28
@@ -267,7 +289,7 @@ For more advanced work, it may be useful to create alternate contexts using the
 :meth:`Context` constructor.  To make an alternate active, use the :func:`setcontext`
 function.
 
-In accordance with the standard, the :mod:`decimal` module provides two ready to
+In accordance with the standard, the :mod:`!decimal` module provides two ready to
 use standard contexts, :const:`BasicContext` and :const:`ExtendedContext`. The
 former is especially useful for debugging because many of the traps are
 enabled:
@@ -1825,7 +1847,7 @@ properties of addition:
    >>> u * (v+w)
    Decimal('0.0060000')
 
-The :mod:`decimal` module makes it possible to restore the identities by
+The :mod:`!decimal` module makes it possible to restore the identities by
 expanding the precision sufficiently to avoid loss of significance:
 
 .. doctest:: newcontext
@@ -1847,7 +1869,7 @@ expanding the precision sufficiently to avoid loss of significance:
 Special values
 ^^^^^^^^^^^^^^
 
-The number system for the :mod:`decimal` module provides special values
+The number system for the :mod:`!decimal` module provides special values
 including ``NaN``, ``sNaN``, ``-Infinity``, ``Infinity``,
 and two zeros, ``+0`` and ``-0``.
 

@@ -403,7 +403,7 @@ def detect_encoding(readline):
             return None
         encoding = _get_normal_name(match.group(1).decode())
         try:
-            codec = lookup(encoding)
+            lookup(encoding)
         except LookupError:
             # This behaviour mimics the Python interpreter
             if filename is None:

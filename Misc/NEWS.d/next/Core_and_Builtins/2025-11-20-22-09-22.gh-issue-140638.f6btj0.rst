@@ -1,2 +1,0 @@
-Expose a ``"candidates"`` stat in :func:`gc.get_stats` and
-:data:`gc.callbacks`.

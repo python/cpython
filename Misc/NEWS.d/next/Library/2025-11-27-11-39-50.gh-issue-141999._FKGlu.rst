@@ -1,2 +1,0 @@
-Correctly allow :exc:`KeyboardInterrupt` to stop the process when using
-:mod:`!profiling.sampling`.

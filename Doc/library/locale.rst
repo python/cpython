@@ -11,17 +11,17 @@
 
 --------------
 
-The :mod:`locale` module opens access to the POSIX locale database and
+The :mod:`!locale` module opens access to the POSIX locale database and
 functionality. The POSIX locale mechanism allows programmers to deal with
 certain cultural issues in an application, without requiring the programmer to
 know all the specifics of each country where the software is executed.
 
 .. index:: pair: module; _locale
 
-The :mod:`locale` module is implemented on top of the :mod:`!_locale` module,
+The :mod:`!locale` module is implemented on top of the :mod:`!_locale` module,
 which in turn uses an ANSI C locale implementation if available.
 
-The :mod:`locale` module defines the following exception and functions:
+The :mod:`!locale` module defines the following exception and functions:
 
 
 .. exception:: Error
@@ -48,8 +48,19 @@ The :mod:`locale` module defines the following exception and functions:
    If *locale* is omitted or ``None``, the current setting for *category* is
    returned.
 
+   Example::
+
+      >>> import locale
+      >>> loc = locale.setlocale(locale.LC_ALL)  # get current locale
+      # use German locale; name and availability varies with platform
+      >>> locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+      >>> locale.strcoll('f\xe4n', 'foo')  # compare a string containing an umlaut
+      >>> locale.setlocale(locale.LC_ALL, '')   # use user's preferred locale
+      >>> locale.setlocale(locale.LC_ALL, 'C')  # use default (C) locale
+      >>> locale.setlocale(locale.LC_ALL, loc)  # restore saved locale
+
    :func:`setlocale` is not thread-safe on most systems. Applications typically
-   start with a call of ::
+   start with a call of::
 
       import locale
       locale.setlocale(locale.LC_ALL, '')
@@ -359,8 +370,6 @@ The :mod:`locale` module defines the following exception and functions:
    determined.
    The "C" locale is represented as ``(None, None)``.
 
-   .. deprecated-removed:: 3.11 3.15
-
 
 .. function:: getlocale(category=LC_CTYPE)
 
@@ -531,7 +540,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. data:: LC_COLLATE
 
    Locale category for sorting strings.  The functions :func:`strcoll` and
-   :func:`strxfrm` of the :mod:`locale` module are affected.
+   :func:`strxfrm` of the :mod:`!locale` module are affected.
 
 
 .. data:: LC_TIME
@@ -560,7 +569,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. data:: LC_NUMERIC
 
    Locale category for formatting numbers.  The functions :func:`format_string`,
-   :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`locale` module are
+   :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`!locale` module are
    affected by that category.  All other numeric formatting operations are not
    affected.
 
@@ -578,18 +587,6 @@ The :mod:`locale` module defines the following exception and functions:
 
    This is a symbolic constant used for different values returned by
    :func:`localeconv`.
-
-
-Example::
-
-   >>> import locale
-   >>> loc = locale.getlocale()  # get current locale
-   # use German locale; name might vary with platform
-   >>> locale.setlocale(locale.LC_ALL, 'de_DE')
-   >>> locale.strcoll('f\xe4n', 'foo')  # compare a string containing an umlaut
-   >>> locale.setlocale(locale.LC_ALL, '')   # use user's preferred locale
-   >>> locale.setlocale(locale.LC_ALL, 'C')  # use default (C) locale
-   >>> locale.setlocale(locale.LC_ALL, loc)  # restore saved locale
 
 
 Background, details, hints, tips and caveats
@@ -696,7 +693,7 @@ the current locale is.  But since the return value can only be used portably to
 restore it, that is not very useful (except perhaps to find out whether or not
 the locale is ``C``).
 
-When Python code uses the :mod:`locale` module to change the locale, this also
+When Python code uses the :mod:`!locale` module to change the locale, this also
 affects the embedding application.  If the embedding application doesn't want
 this to happen, it should remove the :mod:`!_locale` extension module (which does
 all the work) from the table of built-in modules in the :file:`config.c` file,

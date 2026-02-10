@@ -129,8 +129,7 @@ Importing Modules
    of :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
    The module's :attr:`~module.__file__` attribute will be set to the code
-   object's :attr:`~codeobject.co_filename`.  If applicable,
-   :attr:`~module.__cached__` will also be set.
+   object's :attr:`~codeobject.co_filename`.
 
    This function will reload the module if it was already imported.  See
    :c:func:`PyImport_ReloadModule` for the intended way to reload a module.
@@ -142,9 +141,12 @@ Importing Modules
    :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
    .. versionchanged:: 3.12
-      The setting of :attr:`~module.__cached__` and :attr:`~module.__loader__`
+      The setting of ``__cached__`` and :attr:`~module.__loader__`
       is deprecated. See :class:`~importlib.machinery.ModuleSpec` for
       alternatives.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` is no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
@@ -157,15 +159,18 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname, PyObject *cpathname)
 
-   Like :c:func:`PyImport_ExecCodeModuleEx`, but the :attr:`~module.__cached__`
-   attribute of the module object is set to *cpathname* if it is
-   non-``NULL``.  Of the three functions, this is the preferred one to use.
+   Like :c:func:`PyImport_ExecCodeModuleEx`, but the path to any compiled file
+   via *cpathname* is used appropriately when non-``NULL``.  Of the three
+   functions, this is the preferred one to use.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.12
-      Setting :attr:`~module.__cached__` is deprecated. See
+      Setting ``__cached__`` is deprecated. See
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` no longer set.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
