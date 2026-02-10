@@ -1059,14 +1059,13 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 
 #ifdef Py_GIL_DISABLED
     PySetObject *so = si->si_set;
-    if (so != NULL) {
-        Py_BEGIN_CRITICAL_SECTION2(op, so);
-        if (si->si_pos >= 0 && si->si_used == so->used)
-        {
-            len = si->len;
-        }
-        Py_END_CRITICAL_SECTION2();
+    assert(so != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION2(op, so);
+    if (si->si_pos >= 0 && si->si_used == so->used) {
+        len = si->len;
     }
+    Py_END_CRITICAL_SECTION2();
 #else
     if (si->si_set != NULL && si->si_used == si->si_set->used) {
         len = si->len;
@@ -1112,9 +1111,6 @@ setiter_iternext(PyObject *self)
     Py_ssize_t i, mask;
     setentry *entry;
     PySetObject *so = si->si_set;
-#ifndef Py_GIL_DISABLED
-    int decref_so = 0;
-#endif
 
     if (so == NULL) {
         return NULL;
@@ -1160,7 +1156,6 @@ setiter_iternext(PyObject *self)
         si->len = 0;
 #ifndef Py_GIL_DISABLED
         si->si_set = NULL;
-        decref_so = 1;
 #endif
     }
 
@@ -1171,7 +1166,8 @@ done:
 #else
     Py_END_CRITICAL_SECTION();
 
-    if (decref_so) {
+    if (key == NULL) {
+        /* exhausted */
         Py_DECREF(so);
         return NULL;
     }

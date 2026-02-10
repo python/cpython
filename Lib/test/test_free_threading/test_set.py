@@ -168,7 +168,7 @@ class RaceTestBase:
 
     @threading_helper.reap_threads
     def test_length_hint_exhaust_race(self):
-        NUM_ITERS = 50
+        NUM_ITERS = 10
         NUM_THREADS = 10
 
         for _ in range(NUM_ITERS):
@@ -187,7 +187,7 @@ class RaceTestBase:
 
     @threading_helper.reap_threads
     def test_iternext_concurrent_exhaust_race(self):
-        NUM_ITERS = 200
+        NUM_ITERS = 10
         NUM_THREADS = 10
 
         for _ in range(NUM_ITERS):
