@@ -1,5 +1,5 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
-target-version = "py314"
+target-version = "py314"  # unlike `Tools/`, tests can use newer syntax than `PYTHON_FOR_REGEN`
 
 extend-exclude = [
     # Excluded (run with the other AC files in its own separate ruff job in pre-commit)
