@@ -1,6 +1,9 @@
 import collections
 import subprocess
 import warnings
+import os
+import signal
+import sys
 
 from . import protocols
 from . import transports
@@ -23,6 +26,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._pending_calls = collections.deque()
         self._pipes = {}
         self._finished = False
+        self._pipes_connected = False
 
         if stdin == subprocess.PIPE:
             self._pipes[0] = None
@@ -57,7 +61,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._closed:
             info.append('closed')
         if self._pid is not None:
-            info.append(f'pid={self.pid}')
+            info.append(f'pid={self._pid}')
         if self._returncode is not None:
             info.append(f'returncode={self._returncode}')
         elif self._pid is not None:
@@ -101,7 +105,12 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         for proto in self._pipes.values():
             if proto is None:
                 continue
-            proto.pipe.close()
+            # See gh-114177
+            # skip closing the pipe if loop is already closed
+            # this can happen e.g. when loop is closed immediately after
+            # process is killed
+            if self._loop and not self._loop.is_closed():
+                proto.pipe.close()
 
         if (self._proc is not None and
                 # has the child process finished?
@@ -115,15 +124,15 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
             try:
                 self._proc.kill()
-            except ProcessLookupError:
+            except (ProcessLookupError, PermissionError):
+                # the process may have already exited or may be running setuid
                 pass
 
             # Don't clear the _proc reference yet: _post_init() may still run
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if not self._closed:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
     def get_pid(self):
@@ -142,17 +151,31 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._proc is None:
             raise ProcessLookupError()
 
-    def send_signal(self, signal):
-        self._check_proc()
-        self._proc.send_signal(signal)
+    if sys.platform == 'win32':
+        def send_signal(self, signal):
+            self._check_proc()
+            self._proc.send_signal(signal)
 
-    def terminate(self):
-        self._check_proc()
-        self._proc.terminate()
+        def terminate(self):
+            self._check_proc()
+            self._proc.terminate()
 
-    def kill(self):
-        self._check_proc()
-        self._proc.kill()
+        def kill(self):
+            self._check_proc()
+            self._proc.kill()
+    else:
+        def send_signal(self, signal):
+            self._check_proc()
+            try:
+                os.kill(self._proc.pid, signal)
+            except ProcessLookupError:
+                pass
+
+        def terminate(self):
+            self.send_signal(signal.SIGTERM)
+
+        def kill(self):
+            self.send_signal(signal.SIGKILL)
 
     async def _connect_pipes(self, waiter):
         try:
@@ -183,12 +206,15 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             for callback, data in self._pending_calls:
                 loop.call_soon(callback, *data)
             self._pending_calls = None
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             if waiter is not None and not waiter.cancelled():
                 waiter.set_exception(exc)
         else:
             if waiter is not None and not waiter.cancelled():
                 waiter.set_result(None)
+            self._pipes_connected = True
 
     def _call(self, cb, *data):
         if self._pending_calls is not None:
@@ -214,13 +240,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
             self._proc.returncode = returncode
         self._call(self._protocol.process_exited)
-        self._try_finish()
 
-        # wake up futures waiting for wait()
-        for waiter in self._exit_waiters:
-            if not waiter.cancelled():
-                waiter.set_result(returncode)
-        self._exit_waiters = None
+        self._try_finish()
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
@@ -237,6 +258,15 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         assert not self._finished
         if self._returncode is None:
             return
+        if not self._pipes_connected:
+            # self._pipes_connected can be False if not all pipes were connected
+            # because either the process failed to start or the self._connect_pipes task
+            # got cancelled. In this broken state we consider all pipes disconnected and
+            # to avoid hanging forever in self._wait as otherwise _exit_waiters
+            # would never be woken up, we wake them up here.
+            for waiter in self._exit_waiters:
+                if not waiter.cancelled():
+                    waiter.set_result(self._returncode)
         if all(p is not None and p.disconnected
                for p in self._pipes.values()):
             self._finished = True
@@ -246,6 +276,11 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         try:
             self._protocol.connection_lost(exc)
         finally:
+            # wake up futures waiting for wait()
+            for waiter in self._exit_waiters:
+                if not waiter.cancelled():
+                    waiter.set_result(self._returncode)
+            self._exit_waiters = None
             self._loop = None
             self._proc = None
             self._protocol = None

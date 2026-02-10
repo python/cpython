@@ -1,5 +1,5 @@
-:mod:`syslog` --- Unix syslog library routines
-==============================================
+:mod:`!syslog` --- Unix syslog library routines
+===============================================
 
 .. module:: syslog
    :platform: Unix
@@ -11,9 +11,11 @@ This module provides an interface to the Unix ``syslog`` library routines.
 Refer to the Unix manual pages for a detailed description of the ``syslog``
 facility.
 
+.. availability:: Unix, not WASI, not iOS.
+
 This module wraps the system ``syslog`` family of routines.  A pure Python
 library that can speak to a syslog server is available in the
-:mod:`logging.handlers` module as :class:`SysLogHandler`.
+:mod:`logging.handlers` module as :class:`~logging.handlers.SysLogHandler`.
 
 The module defines the following functions:
 
@@ -29,7 +31,21 @@ The module defines the following functions:
    value given in the :func:`openlog` call is used.
 
    If :func:`openlog` has not been called prior to the call to :func:`syslog`,
-   ``openlog()`` will be called with no arguments.
+   :func:`openlog` will be called with no arguments.
+
+   .. audit-event:: syslog.syslog priority,message syslog.syslog
+
+   .. versionchanged:: 3.2
+      In previous versions, :func:`openlog` would not be called automatically if
+      it wasn't called prior to the call to :func:`syslog`, deferring to the syslog
+      implementation to call ``openlog()``.
+
+   .. versionchanged:: 3.12
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      :func:`openlog` must be called in the main interpreter before :func:`syslog` may be used
+      in a subinterpreter.  Otherwise it will raise :exc:`RuntimeError`.
 
 
 .. function:: openlog([ident[, logoption[, facility]]])
@@ -45,10 +61,18 @@ The module defines the following functions:
    keyword argument (default is :const:`LOG_USER`) sets the default facility for
    messages which do not have a facility explicitly encoded.
 
+   .. audit-event:: syslog.openlog ident,logoption,facility syslog.openlog
+
    .. versionchanged:: 3.2
       In previous versions, keyword arguments were not allowed, and *ident* was
-      required.  The default for *ident* was dependent on the system libraries,
-      and often was ``python`` instead of the name of the python program file.
+      required.
+
+   .. versionchanged:: 3.12
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      This may only be called in the main interpreter.
+      It will raise :exc:`RuntimeError` if called in a subinterpreter.
 
 
 .. function:: closelog()
@@ -60,6 +84,15 @@ The module defines the following functions:
    :func:`openlog` hasn't already been called), and *ident* and other
    :func:`openlog` parameters are reset to defaults.
 
+   .. audit-event:: syslog.closelog "" syslog.closelog
+
+   .. versionchanged:: 3.12
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      This may only be called in the main interpreter.
+      It will raise :exc:`RuntimeError` if called in a subinterpreter.
+
 
 .. function:: setlogmask(maskpri)
 
@@ -70,24 +103,66 @@ The module defines the following functions:
    ``LOG_UPTO(pri)`` calculates the mask for all priorities up to and including
    *pri*.
 
+   .. audit-event:: syslog.setlogmask maskpri syslog.setlogmask
+
 The module defines the following constants:
 
-Priority levels (high to low):
-   :const:`LOG_EMERG`, :const:`LOG_ALERT`, :const:`LOG_CRIT`, :const:`LOG_ERR`,
-   :const:`LOG_WARNING`, :const:`LOG_NOTICE`, :const:`LOG_INFO`,
-   :const:`LOG_DEBUG`.
 
-Facilities:
-   :const:`LOG_KERN`, :const:`LOG_USER`, :const:`LOG_MAIL`, :const:`LOG_DAEMON`,
-   :const:`LOG_AUTH`, :const:`LOG_LPR`, :const:`LOG_NEWS`, :const:`LOG_UUCP`,
-   :const:`LOG_CRON`, :const:`LOG_SYSLOG`, :const:`LOG_LOCAL0` to
-   :const:`LOG_LOCAL7`, and, if defined in ``<syslog.h>``,
-   :const:`LOG_AUTHPRIV`.
+.. data:: LOG_EMERG
+          LOG_ALERT
+          LOG_CRIT
+          LOG_ERR
+          LOG_WARNING
+          LOG_NOTICE
+          LOG_INFO
+          LOG_DEBUG
 
-Log options:
-   :const:`LOG_PID`, :const:`LOG_CONS`, :const:`LOG_NDELAY`, and, if defined
-   in ``<syslog.h>``, :const:`LOG_ODELAY`, :const:`LOG_NOWAIT`, and
-   :const:`LOG_PERROR`.
+   Priority levels (high to low).
+
+
+.. data:: LOG_AUTH
+          LOG_AUTHPRIV
+          LOG_CRON
+          LOG_DAEMON
+          LOG_FTP
+          LOG_INSTALL
+          LOG_KERN
+          LOG_LAUNCHD
+          LOG_LPR
+          LOG_MAIL
+          LOG_NETINFO
+          LOG_NEWS
+          LOG_RAS
+          LOG_REMOTEAUTH
+          LOG_SYSLOG
+          LOG_USER
+          LOG_UUCP
+          LOG_LOCAL0
+          LOG_LOCAL1
+          LOG_LOCAL2
+          LOG_LOCAL3
+          LOG_LOCAL4
+          LOG_LOCAL5
+          LOG_LOCAL6
+          LOG_LOCAL7
+
+   Facilities, depending on availability in ``<syslog.h>`` for :const:`LOG_AUTHPRIV`,
+   :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`,
+   :const:`LOG_INSTALL` and :const:`LOG_RAS`.
+
+   .. versionchanged:: 3.13
+       Added :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`,
+       :const:`LOG_INSTALL`, :const:`LOG_RAS`, and :const:`LOG_LAUNCHD`.
+
+.. data:: LOG_PID
+          LOG_CONS
+          LOG_NDELAY
+          LOG_ODELAY
+          LOG_NOWAIT
+          LOG_PERROR
+
+   Log options, depending on availability in ``<syslog.h>`` for
+   :const:`LOG_ODELAY`, :const:`LOG_NOWAIT` and :const:`LOG_PERROR`.
 
 
 Examples

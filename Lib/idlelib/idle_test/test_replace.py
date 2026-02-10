@@ -1,15 +1,16 @@
-"""Unittest for idlelib.replace.py"""
+"Test replace, coverage 78%."
+
+from idlelib.replace import ReplaceDialog
+import unittest
 from test.support import requires
 requires('gui')
-
-import unittest
-from unittest.mock import Mock
 from tkinter import Tk, Text
+
+from unittest.mock import Mock
 from idlelib.idle_test.mock_tk import Mbox
 import idlelib.searchengine as se
-from idlelib.replace import ReplaceDialog
 
-orig_mbox = se.tkMessageBox
+orig_mbox = se.messagebox
 showerror = Mbox.showerror
 
 
@@ -19,7 +20,7 @@ class ReplaceDialogTest(unittest.TestCase):
     def setUpClass(cls):
         cls.root = Tk()
         cls.root.withdraw()
-        se.tkMessageBox = Mbox
+        se.messagebox = Mbox
         cls.engine = se.SearchEngine(cls.root)
         cls.dialog = ReplaceDialog(cls.root, cls.engine)
         cls.dialog.bell = lambda: None
@@ -31,7 +32,7 @@ class ReplaceDialogTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        se.tkMessageBox = orig_mbox
+        se.messagebox = orig_mbox
         del cls.text, cls.dialog, cls.engine
         cls.root.destroy()
         del cls.root

@@ -6,7 +6,7 @@
 #
 # sample script to install or update a set of default Root Certificates
 # for the ssl module.  Uses the certificates provided by the certifi package:
-#       https://pypi.python.org/pypi/certifi
+#       https://pypi.org/project/certifi/
 
 import os
 import os.path
@@ -25,7 +25,8 @@ def main():
 
     print(" -- pip install --upgrade certifi")
     subprocess.check_call([sys.executable,
-        "-E", "-s", "-m", "pip", "install", "--upgrade", "certifi"])
+        "-E", "-s", "-m", "pip", "install", "--upgrade", "certifi",
+        "--disable-pip-version-check"])
 
     import certifi
 

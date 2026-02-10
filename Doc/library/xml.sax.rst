@@ -1,5 +1,5 @@
-:mod:`xml.sax` --- Support for SAX2 parsers
-===========================================
+:mod:`!xml.sax` --- Support for SAX2 parsers
+============================================
 
 .. module:: xml.sax
    :synopsis: Package containing SAX2 base classes and convenience functions.
@@ -12,18 +12,25 @@
 
 --------------
 
-The :mod:`xml.sax` package provides a number of modules which implement the
+The :mod:`!xml.sax` package provides a number of modules which implement the
 Simple API for XML (SAX) interface for Python.  The package itself provides the
 SAX exceptions and the convenience functions which will be most used by users of
 the SAX API.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.sax` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
+.. versionchanged:: 3.7.1
+
+   The SAX parser no longer processes general external entities by default
+   to increase security. Before, the parser created network connections
+   to fetch remote files or loaded local files from the file
+   system for DTD and entities. The feature can be enabled again with method
+   :meth:`~xml.sax.xmlreader.XMLReader.setFeature` on the parser object
+   and argument :data:`~xml.sax.handler.feature_external_ges`.
 
 The convenience functions are:
 
@@ -32,9 +39,12 @@ The convenience functions are:
 
    Create and return a SAX :class:`~xml.sax.xmlreader.XMLReader` object.  The
    first parser found will
-   be used.  If *parser_list* is provided, it must be a sequence of strings which
+   be used.  If *parser_list* is provided, it must be an iterable of strings which
    name modules that have a function named :func:`create_parser`.  Modules listed
    in *parser_list* will be used before modules in the default list of parsers.
+
+   .. versionchanged:: 3.8
+      The *parser_list* argument can be any iterable, not just a list.
 
 
 .. function:: parse(filename_or_stream, handler, error_handler=handler.ErrorHandler())
@@ -79,9 +89,9 @@ module :mod:`xml.sax.xmlreader`.  The handler interfaces are defined in
 :mod:`xml.sax.handler`.  For convenience,
 :class:`~xml.sax.xmlreader.InputSource` (which is often
 instantiated directly) and the handler classes are also available from
-:mod:`xml.sax`.  These interfaces are described below.
+:mod:`!xml.sax`.  These interfaces are described below.
 
-In addition to these classes, :mod:`xml.sax` provides the following exception
+In addition to these classes, :mod:`!xml.sax` provides the following exception
 classes.
 
 

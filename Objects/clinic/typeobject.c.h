@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
+
 PyDoc_STRVAR(type___instancecheck____doc__,
 "__instancecheck__($self, instance, /)\n"
 "--\n"
@@ -15,12 +17,12 @@ static int
 type___instancecheck___impl(PyTypeObject *self, PyObject *instance);
 
 static PyObject *
-type___instancecheck__(PyTypeObject *self, PyObject *instance)
+type___instancecheck__(PyObject *self, PyObject *instance)
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = type___instancecheck___impl(self, instance);
+    _return_value = type___instancecheck___impl((PyTypeObject *)self, instance);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -43,12 +45,12 @@ static int
 type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass);
 
 static PyObject *
-type___subclasscheck__(PyTypeObject *self, PyObject *subclass)
+type___subclasscheck__(PyObject *self, PyObject *subclass)
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = type___subclasscheck___impl(self, subclass);
+    _return_value = type___subclasscheck___impl((PyTypeObject *)self, subclass);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -71,9 +73,9 @@ static PyObject *
 type_mro_impl(PyTypeObject *self);
 
 static PyObject *
-type_mro(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type_mro(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type_mro_impl(self);
+    return type_mro_impl((PyTypeObject *)self);
 }
 
 PyDoc_STRVAR(type___subclasses____doc__,
@@ -89,9 +91,9 @@ static PyObject *
 type___subclasses___impl(PyTypeObject *self);
 
 static PyObject *
-type___subclasses__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type___subclasses__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type___subclasses___impl(self);
+    return type___subclasses___impl((PyTypeObject *)self);
 }
 
 PyDoc_STRVAR(type___dir____doc__,
@@ -107,9 +109,9 @@ static PyObject *
 type___dir___impl(PyTypeObject *self);
 
 static PyObject *
-type___dir__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type___dir___impl(self);
+    return type___dir___impl((PyTypeObject *)self);
 }
 
 PyDoc_STRVAR(type___sizeof____doc__,
@@ -125,9 +127,27 @@ static PyObject *
 type___sizeof___impl(PyTypeObject *self);
 
 static PyObject *
-type___sizeof__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type___sizeof___impl(self);
+    return type___sizeof___impl((PyTypeObject *)self);
+}
+
+PyDoc_STRVAR(object___getstate____doc__,
+"__getstate__($self, /)\n"
+"--\n"
+"\n"
+"Helper for pickle.");
+
+#define OBJECT___GETSTATE___METHODDEF    \
+    {"__getstate__", (PyCFunction)object___getstate__, METH_NOARGS, object___getstate____doc__},
+
+static PyObject *
+object___getstate___impl(PyObject *self);
+
+static PyObject *
+object___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return object___getstate___impl(self);
 }
 
 PyDoc_STRVAR(object___reduce____doc__,
@@ -166,7 +186,8 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    if (!PyArg_Parse(arg, "i:__reduce_ex__", &protocol)) {
+    protocol = PyLong_AsInt(arg);
+    if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = object___reduce_ex___impl(self, protocol);
@@ -179,7 +200,9 @@ PyDoc_STRVAR(object___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
 "\n"
-"Default object formatter.");
+"Default object formatter.\n"
+"\n"
+"Return str(self) if format_spec is empty. Raise TypeError otherwise.");
 
 #define OBJECT___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)object___format__, METH_O, object___format____doc__},
@@ -193,9 +216,11 @@ object___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
+    format_spec = arg;
     return_value = object___format___impl(self, format_spec);
 
 exit:
@@ -237,4 +262,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=8c4c856859564eaa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b55c0d257e2518d2 input=a9049054013a1b77]*/

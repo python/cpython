@@ -40,7 +40,7 @@ ENCODER(cp932)
             if (c == 0xf8f0)
                 OUTBYTE1(0xa0);
             else
-                OUTBYTE1(c - 0xfef1 + 0xfd);
+                OUTBYTE1(c - 0xf8f1 + 0xfd);
             NEXT(1, 1);
             continue;
         }
@@ -164,7 +164,7 @@ ENCODER(euc_jis_2004)
         insize = 1;
 
         if (c <= 0xFFFF) {
-            EMULATE_JISX0213_2000_ENCODE_BMP(code, c)
+            EMULATE_JISX0213_2000_ENCODE_BMP(codec->config, code, c)
             else if (TRYMAP_ENC(jisx0213_bmp, code, c)) {
                 if (code == MULTIC) {
                     if (inlen - *inpos < 2) {
@@ -192,8 +192,11 @@ ENCODER(euc_jis_2004)
                                 JISX0213_ENCPAIRS);
                             if (code == DBCINV)
                                 return 1;
-                        } else
+                        }
+                        else if (c2 != 0) {
+                            /* Don't consume null char as part of pair */
                             insize = 2;
+                        }
                     }
                 }
             }
@@ -215,7 +218,7 @@ ENCODER(euc_jis_2004)
                 return 1;
         }
         else if (c >> 16 == EMPBASE >> 16) {
-            EMULATE_JISX0213_2000_ENCODE_EMP(code, c)
+            EMULATE_JISX0213_2000_ENCODE_EMP(codec->config, code, c)
             else if (TRYMAP_ENC(jisx0213_emp, code, c & 0xffff))
                 ;
             else
@@ -271,7 +274,7 @@ DECODER(euc_jis_2004)
             c3 = INBYTE3 ^ 0x80;
 
             /* JIS X 0213 Plane 2 or JIS X 0212 (see NOTES) */
-            EMULATE_JISX0213_2000_DECODE_PLANE2(writer, c2, c3)
+            EMULATE_JISX0213_2000_DECODE_PLANE2(codec->config, writer, c2, c3)
             else if (TRYMAP_DEC(jisx0213_2_bmp, decoded, c2, c3))
                 OUTCHAR(decoded);
             else if (TRYMAP_DEC(jisx0213_2_emp, code, c2, c3)) {
@@ -293,7 +296,7 @@ DECODER(euc_jis_2004)
             c2 = INBYTE2 ^ 0x80;
 
             /* JIS X 0213 Plane 1 */
-            EMULATE_JISX0213_2000_DECODE_PLANE1(writer, c, c2)
+            EMULATE_JISX0213_2000_DECODE_PLANE1(codec->config, writer, c, c2)
             else if (c == 0x21 && c2 == 0x40)
                 OUTCHAR(0xff3c);
             else if (c == 0x22 && c2 == 0x32)
@@ -582,7 +585,7 @@ ENCODER(shift_jis_2004)
 
         if (code == NOCHAR) {
             if (c <= 0xffff) {
-                EMULATE_JISX0213_2000_ENCODE_BMP(code, c)
+                EMULATE_JISX0213_2000_ENCODE_BMP(codec->config, code, c)
                 else if (TRYMAP_ENC(jisx0213_bmp, code, c)) {
                     if (code == MULTIC) {
                         if (inlen - *inpos < 2) {
@@ -611,8 +614,10 @@ ENCODER(shift_jis_2004)
                             if (code == DBCINV)
                                 return 1;
                             }
-                            else
+                            else if (ch2 != 0) {
+                                /* Don't consume null char as part of pair */
                                 insize = 2;
+                            }
                         }
                     }
                 }
@@ -625,7 +630,7 @@ ENCODER(shift_jis_2004)
                     return 1;
             }
             else if (c >> 16 == EMPBASE >> 16) {
-                EMULATE_JISX0213_2000_ENCODE_EMP(code, c)
+                EMULATE_JISX0213_2000_ENCODE_EMP(codec->config, code, c)
                 else if (TRYMAP_ENC(jisx0213_emp, code, c&0xffff))
                     ;
                 else
@@ -686,7 +691,7 @@ DECODER(shift_jis_2004)
 
             if (c1 < 0x5e) { /* Plane 1 */
                 c1 += 0x21;
-                EMULATE_JISX0213_2000_DECODE_PLANE1(writer,
+                EMULATE_JISX0213_2000_DECODE_PLANE1(codec->config, writer,
                                 c1, c2)
                 else if (TRYMAP_DEC(jisx0208, decoded, c1, c2))
                     OUTCHAR(decoded);
@@ -708,7 +713,7 @@ DECODER(shift_jis_2004)
                 else
                     c1 -= 0x3d;
 
-                EMULATE_JISX0213_2000_DECODE_PLANE2(writer,
+                EMULATE_JISX0213_2000_DECODE_PLANE2(codec->config, writer,
                                 c1, c2)
                 else if (TRYMAP_DEC(jisx0213_2_bmp, decoded, c1, c2))
                     OUTCHAR(decoded);
@@ -733,7 +738,7 @@ DECODER(shift_jis_2004)
 }
 
 
-BEGIN_MAPPINGS_LIST
+BEGIN_MAPPINGS_LIST(11)
   MAPPING_DECONLY(jisx0208)
   MAPPING_DECONLY(jisx0212)
   MAPPING_ENCONLY(jisxcommon)
@@ -747,14 +752,19 @@ BEGIN_MAPPINGS_LIST
   MAPPING_ENCDEC(cp932ext)
 END_MAPPINGS_LIST
 
-BEGIN_CODECS_LIST
+#define CODEC_CUSTOM(NAME, N, METH) \
+    NEXT_CODEC = (MultibyteCodec){NAME, (void *)N, NULL, _STATELESS_METHODS(METH)};
+
+BEGIN_CODECS_LIST(7)
   CODEC_STATELESS(shift_jis)
   CODEC_STATELESS(cp932)
   CODEC_STATELESS(euc_jp)
   CODEC_STATELESS(shift_jis_2004)
   CODEC_STATELESS(euc_jis_2004)
-  { "euc_jisx0213", (void *)2000, NULL, _STATELESS_METHODS(euc_jis_2004) },
-  { "shift_jisx0213", (void *)2000, NULL, _STATELESS_METHODS(shift_jis_2004) },
+  CODEC_CUSTOM("euc_jisx0213", 2000, euc_jis_2004)
+  CODEC_CUSTOM("shift_jisx0213", 2000, shift_jis_2004)
 END_CODECS_LIST
+
+#undef CODEC_CUSTOM
 
 I_AM_A_MODULE_FOR(jp)

@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2006 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -10,7 +10,6 @@ from email import errors
 from email.mime.base import MIMEBase
 
 
-
 class MIMENonMultipart(MIMEBase):
     """Base class for MIME non-multipart type messages."""
 

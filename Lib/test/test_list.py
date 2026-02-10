@@ -1,5 +1,10 @@
+import signal
 import sys
-from test import list_tests
+import textwrap
+from test import list_tests, support
+from test.support import cpython_only
+from test.support.import_helper import import_module
+from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
 import unittest
 
@@ -45,6 +50,34 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             list(sequence=[])
 
+    def test_keywords_in_subclass(self):
+        class subclass(list):
+            pass
+        u = subclass([1, 2])
+        self.assertIs(type(u), subclass)
+        self.assertEqual(list(u), [1, 2])
+        with self.assertRaises(TypeError):
+            subclass(sequence=())
+
+        class subclass_with_init(list):
+            def __init__(self, seq, newarg=None):
+                super().__init__(seq)
+                self.newarg = newarg
+        u = subclass_with_init([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(list):
+            def __new__(cls, seq, newarg=None):
+                self = super().__new__(cls, seq)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
+
     def test_truth(self):
         super().test_truth()
         self.assertTrue(not [])
@@ -66,6 +99,37 @@ class ListTest(list_tests.CommonTest):
         def imul(a, b): a *= b
         self.assertRaises((MemoryError, OverflowError), mul, lst, n)
         self.assertRaises((MemoryError, OverflowError), imul, lst, n)
+
+    def test_empty_slice(self):
+        x = []
+        x[:] = x
+        self.assertEqual(x, [])
+
+    def test_list_resize_overflow(self):
+        # gh-97616: test new_allocated * sizeof(PyObject*) overflow
+        # check in list_resize()
+        lst = [0] * 65
+        del lst[1:]
+        self.assertEqual(len(lst), 1)
+
+        size = sys.maxsize
+        with self.assertRaises((MemoryError, OverflowError)):
+            lst * size
+        with self.assertRaises((MemoryError, OverflowError)):
+            lst *= size
+
+    def test_repr_mutate(self):
+        class Obj:
+            @staticmethod
+            def __repr__():
+                try:
+                    mylist.pop()
+                except IndexError:
+                    pass
+                return 'obj'
+
+        mylist = [Obj() for _ in range(5)]
+        self.assertEqual(repr(mylist), '[obj, obj, obj]')
 
     def test_repr_large(self):
         # Check the repr of large list objects
@@ -149,6 +213,11 @@ class ListTest(list_tests.CommonTest):
             a[:] = data
             self.assertEqual(list(it), [])
 
+    def test_step_overflow(self):
+        a = [0, 1, 2, 3, 4]
+        a[1::sys.maxsize] = [0]
+        self.assertEqual(a[3::sys.maxsize], [3])
+
     def test_no_comdat_folding(self):
         # Issue 8847: In the PGO build, the MSVC linker's COMDAT folding
         # optimization causes failures in code that relies on distinct
@@ -156,6 +225,162 @@ class ListTest(list_tests.CommonTest):
         class L(list): pass
         with self.assertRaises(TypeError):
             (3,) + L([1,2])
+
+    def test_equal_operator_modifying_operand(self):
+        # test fix for seg fault reported in bpo-38588 part 2.
+        class X:
+            def __eq__(self,other) :
+                list2.clear()
+                return NotImplemented
+
+        class Y:
+            def __eq__(self, other):
+                list1.clear()
+                return NotImplemented
+
+        class Z:
+            def __eq__(self, other):
+                list3.clear()
+                return NotImplemented
+
+        list1 = [X()]
+        list2 = [Y()]
+        self.assertTrue(list1 == list2)
+
+        list3 = [Z()]
+        list4 = [1]
+        self.assertFalse(list3 == list4)
+
+    def test_lt_operator_modifying_operand(self):
+        # See gh-120298
+        class evil:
+            def __lt__(self, other):
+                other.clear()
+                return NotImplemented
+
+        a = [[evil()]]
+        with self.assertRaises(TypeError):
+            a[0] < a
+
+    def test_list_index_modifing_operand(self):
+        # See gh-120384
+        class evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __iter__(self):
+                yield from self.lst
+                self.lst.clear()
+
+        lst = list(range(5))
+        operand = evil(lst)
+        with self.assertRaises(ValueError):
+            lst[::-1] = operand
+
+    @cpython_only
+    def test_preallocation(self):
+        iterable = [0] * 10
+        iter_size = sys.getsizeof(iterable)
+
+        self.assertEqual(iter_size, sys.getsizeof(list([0] * 10)))
+        self.assertEqual(iter_size, sys.getsizeof(list(range(10))))
+
+    def test_count_index_remove_crashes(self):
+        # bpo-38610: The count(), index(), and remove() methods were not
+        # holding strong references to list elements while calling
+        # PyObject_RichCompareBool().
+        class X:
+            def __eq__(self, other):
+                lst.clear()
+                return NotImplemented
+
+        lst = [X()]
+        with self.assertRaises(ValueError):
+            lst.index(lst)
+
+        class L(list):
+            def __eq__(self, other):
+                str(other)
+                return NotImplemented
+
+        lst = L([X()])
+        lst.count(lst)
+
+        lst = L([X()])
+        with self.assertRaises(ValueError):
+            lst.remove(lst)
+
+        # bpo-39453: list.__contains__ was not holding strong references
+        # to list elements while calling PyObject_RichCompareBool().
+        lst = [X(), X()]
+        3 in lst
+        lst = [X(), X()]
+        X() in lst
+
+    def test_tier2_invalidates_iterator(self):
+        # GH-121012
+        for _ in range(100):
+            a = [1, 2, 3]
+            it = iter(a)
+            for _ in it:
+                pass
+            a.append(4)
+            self.assertEqual(list(it), [])
+
+    @support.cpython_only
+    def test_no_memory(self):
+        # gh-118331: Make sure we don't crash if list allocation fails
+        import_module("_testcapi")
+        code = textwrap.dedent("""
+        import _testcapi, sys
+        # Prime the freelist
+        l = [None]
+        del l
+        _testcapi.set_nomemory(0)
+        l = [None]
+        """)
+        rc, _, _ = assert_python_failure("-c", code)
+        if support.MS_WINDOWS:
+            # STATUS_ACCESS_VIOLATION
+            self.assertNotEqual(rc, 0xC0000005)
+        else:
+            self.assertNotEqual(rc, -int(signal.SIGSEGV))
+
+    def test_deopt_from_append_list(self):
+        # gh-132011: it used to crash, because
+        # of `CALL_LIST_APPEND` specialization failure.
+        code = textwrap.dedent("""
+            import _testinternalcapi
+
+            l = []
+            def lappend(l, x, y):
+                l.append((x, y))
+            for x in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                lappend(l, None, None)
+            try:
+                lappend(list, None, None)
+            except TypeError:
+                pass
+            else:
+                raise AssertionError
+        """)
+
+        rc, _, _ = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+
+    def test_list_overwrite_local(self):
+        """Test that overwriting the last reference to the
+           iterable doesn't prematurely free the iterable"""
+
+        def foo(x):
+            self.assertEqual(sys.getrefcount(x), 1)
+            r = 0
+            for i in x:
+                r += i
+                x = None
+            return r
+
+        self.assertEqual(foo(list(range(10))), 45)
+
 
 if __name__ == "__main__":
     unittest.main()

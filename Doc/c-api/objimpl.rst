@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _newtypes:
 
@@ -12,6 +12,7 @@ object types.
 .. toctree::
 
    allocation.rst
+   lifecycle.rst
    structures.rst
    typeobj.rst
    gcsupport.rst

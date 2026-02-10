@@ -1,5 +1,5 @@
-:mod:`numbers` --- Numeric abstract base classes
-================================================
+:mod:`!numbers` --- Numeric abstract base classes
+=================================================
 
 .. module:: numbers
    :synopsis: Numeric abstract base classes (Complex, Real, Integral, etc.).
@@ -8,9 +8,9 @@
 
 --------------
 
-The :mod:`numbers` module (:pep:`3141`) defines a hierarchy of numeric
+The :mod:`!numbers` module (:pep:`3141`) defines a hierarchy of numeric
 :term:`abstract base classes <abstract base class>` which progressively define
-more operations.  None of the types defined in this module can be instantiated.
+more operations.  None of the types defined in this module are intended to be instantiated.
 
 
 .. class:: Number
@@ -27,8 +27,8 @@ The numeric tower
    Subclasses of this type describe complex numbers and include the operations
    that work on the built-in :class:`complex` type. These are: conversions to
    :class:`complex` and :class:`bool`, :attr:`.real`, :attr:`.imag`, ``+``,
-   ``-``, ``*``, ``/``, :func:`abs`, :meth:`conjugate`, ``==``, and ``!=``. All
-   except ``-`` and ``!=`` are abstract.
+   ``-``, ``*``, ``/``, ``**``, :func:`abs`, :meth:`conjugate`, ``==``, and
+   ``!=``. All except ``-`` and ``!=`` are abstract.
 
    .. attribute:: real
 
@@ -38,14 +38,15 @@ The numeric tower
 
       Abstract. Retrieves the imaginary component of this number.
 
-   .. abstractmethod:: conjugate()
+   .. method:: conjugate()
+      :abstractmethod:
 
       Abstract. Returns the complex conjugate. For example, ``(1+3j).conjugate()
       == (1-3j)``.
 
 .. class:: Real
 
-   To :class:`Complex`, :class:`Real` adds the operations that work on real
+   To :class:`Complex`, :class:`!Real` adds the operations that work on real
    numbers.
 
    In short, those are: a conversion to :class:`float`, :func:`math.trunc`,
@@ -58,32 +59,36 @@ The numeric tower
 
 .. class:: Rational
 
-   Subtypes :class:`Real` and adds
-   :attr:`~Rational.numerator` and :attr:`~Rational.denominator` properties, which
-   should be in lowest terms. With these, it provides a default for
+   Subtypes :class:`Real` and adds :attr:`~Rational.numerator` and
+   :attr:`~Rational.denominator` properties. It also provides a default for
    :func:`float`.
+
+   The :attr:`~Rational.numerator` and :attr:`~Rational.denominator` values
+   should be instances of :class:`Integral` and should be in lowest terms with
+   :attr:`~Rational.denominator` positive.
 
    .. attribute:: numerator
 
-      Abstract.
+      Abstract.  The numerator of this rational number.
 
    .. attribute:: denominator
 
-      Abstract.
+      Abstract.  The denominator of this rational number.
 
 
 .. class:: Integral
 
    Subtypes :class:`Rational` and adds a conversion to :class:`int`.  Provides
    defaults for :func:`float`, :attr:`~Rational.numerator`, and
-   :attr:`~Rational.denominator`.  Adds abstract methods for ``**`` and
-   bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``, ``~``.
+   :attr:`~Rational.denominator`.  Adds abstract methods for :func:`pow` with
+   modulus and bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``,
+   ``~``.
 
 
-Notes for type implementors
+Notes for type implementers
 ---------------------------
 
-Implementors should be careful to make equal numbers equal and hash
+Implementers should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
 extensions of the real numbers. For example, :class:`fractions.Fraction`
 implements :func:`hash` as follows::
@@ -122,7 +127,8 @@ We want to implement the arithmetic operations so that mixed-mode
 operations either call an implementation whose author knew about the
 types of both arguments, or convert both to the nearest built in type
 and do the operation there. For subtypes of :class:`Integral`, this
-means that :meth:`__add__` and :meth:`__radd__` should be defined as::
+means that :meth:`~object.__add__` and :meth:`~object.__radd__` should be
+defined as::
 
     class MyIntegral(Integral):
 
@@ -156,27 +162,27 @@ refer to ``MyIntegral`` and ``OtherTypeIKnowAbout`` as
 of :class:`Complex` (``a : A <: Complex``), and ``b : B <:
 Complex``. I'll consider ``a + b``:
 
-    1. If ``A`` defines an :meth:`__add__` which accepts ``b``, all is
-       well.
-    2. If ``A`` falls back to the boilerplate code, and it were to
-       return a value from :meth:`__add__`, we'd miss the possibility
-       that ``B`` defines a more intelligent :meth:`__radd__`, so the
-       boilerplate should return :const:`NotImplemented` from
-       :meth:`__add__`. (Or ``A`` may not implement :meth:`__add__` at
-       all.)
-    3. Then ``B``'s :meth:`__radd__` gets a chance. If it accepts
-       ``a``, all is well.
-    4. If it falls back to the boilerplate, there are no more possible
-       methods to try, so this is where the default implementation
-       should live.
-    5. If ``B <: A``, Python tries ``B.__radd__`` before
-       ``A.__add__``. This is ok, because it was implemented with
-       knowledge of ``A``, so it can handle those instances before
-       delegating to :class:`Complex`.
+1. If ``A`` defines an :meth:`~object.__add__` which accepts ``b``, all is
+   well.
+2. If ``A`` falls back to the boilerplate code, and it were to
+   return a value from :meth:`~object.__add__`, we'd miss the possibility
+   that ``B`` defines a more intelligent :meth:`~object.__radd__`, so the
+   boilerplate should return :data:`NotImplemented` from
+   :meth:`!__add__`. (Or ``A`` may not implement :meth:`!__add__` at
+   all.)
+3. Then ``B``'s :meth:`~object.__radd__` gets a chance. If it accepts
+   ``a``, all is well.
+4. If it falls back to the boilerplate, there are no more possible
+   methods to try, so this is where the default implementation
+   should live.
+5. If ``B <: A``, Python tries ``B.__radd__`` before
+   ``A.__add__``. This is ok, because it was implemented with
+   knowledge of ``A``, so it can handle those instances before
+   delegating to :class:`Complex`.
 
 If ``A <: Complex`` and ``B <: Real`` without sharing any other knowledge,
 then the appropriate shared operation is the one involving the built
-in :class:`complex`, and both :meth:`__radd__` s land there, so ``a+b
+in :class:`complex`, and both :meth:`~object.__radd__` s land there, so ``a+b
 == b+a``.
 
 Because most of the operations on any given type will be very similar,
@@ -201,9 +207,9 @@ forward and reverse instances of any given operator. For example,
             if isinstance(a, Rational):
                 # Includes ints.
                 return monomorphic_operator(a, b)
-            elif isinstance(a, numbers.Real):
+            elif isinstance(a, Real):
                 return fallback_operator(float(a), float(b))
-            elif isinstance(a, numbers.Complex):
+            elif isinstance(a, Complex):
                 return fallback_operator(complex(a), complex(b))
             else:
                 return NotImplemented

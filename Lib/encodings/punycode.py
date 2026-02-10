@@ -1,4 +1,4 @@
-""" Codec for the Punicode encoding, as specified in RFC 3492
+""" Codec for the Punycode encoding, as specified in RFC 3492
 
 Written by Martin v. Löwis.
 """
@@ -17,7 +17,7 @@ def segregate(str):
         else:
             extended.add(c)
     extended = sorted(extended)
-    return bytes(base), extended
+    return base.take_bytes(), extended
 
 def selective_len(str, max):
     """Return the length of str, considering only characters below max."""
@@ -83,7 +83,7 @@ def generate_generalized_integer(N, bias):
         t = T(j, bias)
         if N < t:
             result.append(digits[N])
-            return bytes(result)
+            return result.take_bytes()
         result.append(digits[t + ((N - t) % (36 - t))])
         N = (N - t) // (36 - t)
         j += 1
@@ -112,7 +112,7 @@ def generate_integers(baselen, deltas):
         s = generate_generalized_integer(delta, bias)
         result.extend(s)
         bias = adapt(delta, points==0, baselen+points+1)
-    return bytes(result)
+    return result.take_bytes()
 
 def punycode_encode(text):
     base, extended = segregate(text)
@@ -131,10 +131,11 @@ def decode_generalized_number(extended, extpos, bias, errors):
     j = 0
     while 1:
         try:
-            char = ord(extended[extpos])
+            char = extended[extpos]
         except IndexError:
             if errors == "strict":
-                raise UnicodeError("incomplete punicode string")
+                raise UnicodeDecodeError("punycode", extended, extpos, extpos+1,
+                                         "incomplete punycode string")
             return extpos + 1, None
         extpos += 1
         if 0x41 <= char <= 0x5A: # A-Z
@@ -142,8 +143,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
         elif 0x30 <= char <= 0x39:
             digit = char - 22 # 0x30-26
         elif errors == "strict":
-            raise UnicodeError("Invalid extended code point '%s'"
-                               % extended[extpos])
+            raise UnicodeDecodeError("punycode", extended, extpos-1, extpos,
+                                     f"Invalid extended code point '{extended[extpos-1]}'")
         else:
             return extpos, None
         t = T(j, bias)
@@ -155,11 +156,14 @@ def decode_generalized_number(extended, extpos, bias, errors):
 
 
 def insertion_sort(base, extended, errors):
-    """3.2 Insertion unsort coding"""
+    """3.2 Insertion sort coding"""
+    # This function raises UnicodeDecodeError with position in the extended.
+    # Caller should add the offset.
     char = 0x80
     pos = -1
     bias = 72
     extpos = 0
+
     while extpos < len(extended):
         newpos, delta = decode_generalized_number(extended, extpos,
                                                   bias, errors)
@@ -171,7 +175,9 @@ def insertion_sort(base, extended, errors):
         char += pos // (len(base) + 1)
         if char > 0x10FFFF:
             if errors == "strict":
-                raise UnicodeError("Invalid character U+%x" % char)
+                raise UnicodeDecodeError(
+                    "punycode", extended, pos-1, pos,
+                    f"Invalid character U+{char:x}")
             char = ord('?')
         pos = pos % (len(base) + 1)
         base = base[:pos] + chr(char) + base[pos:]
@@ -187,11 +193,21 @@ def punycode_decode(text, errors):
     pos = text.rfind(b"-")
     if pos == -1:
         base = ""
-        extended = str(text, "ascii").upper()
+        extended = text.upper()
     else:
-        base = str(text[:pos], "ascii", errors)
-        extended = str(text[pos+1:], "ascii").upper()
-    return insertion_sort(base, extended, errors)
+        try:
+            base = str(text[:pos], "ascii", errors)
+        except UnicodeDecodeError as exc:
+            raise UnicodeDecodeError("ascii", text, exc.start, exc.end,
+                                     exc.reason) from None
+        extended = text[pos+1:].upper()
+    try:
+        return insertion_sort(base, extended, errors)
+    except UnicodeDecodeError as exc:
+        offset = pos + 1
+        raise UnicodeDecodeError("punycode", text,
+                                 offset+exc.start, offset+exc.end,
+                                 exc.reason) from None
 
 ### Codec APIs
 
@@ -203,7 +219,7 @@ class Codec(codecs.Codec):
 
     def decode(self, input, errors='strict'):
         if errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeError("Unsupported error handling "+errors)
+            raise UnicodeError(f"Unsupported error handling: {errors}")
         res = punycode_decode(input, errors)
         return res, len(input)
 
@@ -214,7 +230,7 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
         if self.errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeError("Unsupported error handling "+self.errors)
+            raise UnicodeError(f"Unsupported error handling: {self.errors}")
         return punycode_decode(input, self.errors)
 
 class StreamWriter(Codec,codecs.StreamWriter):

@@ -3,7 +3,7 @@
 
 /* note: you must import expat.h before importing this module! */
 
-#define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.0"
+#define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.1"
 #define PyExpat_CAPSULE_NAME "pyexpat.expat_CAPI"
 
 struct PyExpat_CAPI
@@ -48,6 +48,20 @@ struct PyExpat_CAPI
     enum XML_Status (*SetEncoding)(XML_Parser parser, const XML_Char *encoding);
     int (*DefaultUnknownEncodingHandler)(
         void *encodingHandlerData, const XML_Char *name, XML_Encoding *info);
+    /* might be NULL for expat < 2.1.0 */
+    int (*SetHashSalt)(XML_Parser parser, unsigned long hash_salt);
+    /* might be NULL for expat < 2.6.0 */
+    XML_Bool (*SetReparseDeferralEnabled)(XML_Parser parser, XML_Bool enabled);
+    /* might be NULL for expat < 2.7.2 */
+    XML_Bool (*SetAllocTrackerActivationThreshold)(
+        XML_Parser parser, unsigned long long activationThresholdBytes);
+    XML_Bool (*SetAllocTrackerMaximumAmplification)(
+        XML_Parser parser, float maxAmplificationFactor);
+    /* might be NULL for expat < 2.4.0 */
+    XML_Bool (*SetBillionLaughsAttackProtectionActivationThreshold)(
+        XML_Parser parser, unsigned long long activationThresholdBytes);
+    XML_Bool (*SetBillionLaughsAttackProtectionMaximumAmplification)(
+        XML_Parser parser, float maxAmplificationFactor);
     /* always add new stuff to the end! */
 };
 

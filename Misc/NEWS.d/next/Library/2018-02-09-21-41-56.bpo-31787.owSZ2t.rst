@@ -1,2 +1,0 @@
-Fixed refleaks of ``__init__()`` methods in various modules.
-(Contributed by Oren Milman)

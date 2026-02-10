@@ -69,7 +69,8 @@ def read_environ():
 
                 # Python 3's http.server.CGIHTTPRequestHandler decodes
                 # using the urllib.unquote default of UTF-8, amongst other
-                # issues.
+                # issues. While the CGI handler is removed in 3.15, this
+                # is kept for legacy reasons.
                 elif (
                     software.startswith('simplehttp/')
                     and 'python/3' in software
@@ -136,6 +137,10 @@ class BaseHandler:
             self.setup_environ()
             self.result = application(self.environ, self.start_response)
             self.finish_response()
+        except (ConnectionAbortedError, BrokenPipeError, ConnectionResetError):
+            # We expect the client to close the connection abruptly from time
+            # to time.
+            return
         except:
             try:
                 self.handle_error()
@@ -179,7 +184,16 @@ class BaseHandler:
                 for data in self.result:
                     self.write(data)
                 self.finish_content()
-        finally:
+        except:
+            # Call close() on the iterable returned by the WSGI application
+            # in case of an exception.
+            if hasattr(self.result, 'close'):
+                self.result.close()
+            raise
+        else:
+            # We only call close() when no exception is raised, because it
+            # will set status, result, headers, and environ fields to None.
+            # See bpo-29183 for more details.
             self.close()
 
 
@@ -215,8 +229,7 @@ class BaseHandler:
         if exc_info:
             try:
                 if self.headers_sent:
-                    # Re-raise original exception if headers sent
-                    raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
+                    raise
             finally:
                 exc_info = None        # avoid dangling circular ref
         elif self.headers is not None:
@@ -225,17 +238,24 @@ class BaseHandler:
         self.status = status
         self.headers = self.headers_class(headers)
         status = self._convert_string_type(status, "Status")
-        assert len(status)>=4,"Status must be at least 4 characters"
-        assert status[:3].isdigit(), "Status message must begin w/3-digit code"
-        assert status[3]==" ", "Status message must have a space after code"
+        self._validate_status(status)
 
         if __debug__:
             for name, val in headers:
                 name = self._convert_string_type(name, "Header name")
                 val = self._convert_string_type(val, "Header value")
-                assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
+                assert not is_hop_by_hop(name),\
+                       f"Hop-by-hop header, '{name}: {val}', not allowed"
 
         return self.write
+
+    def _validate_status(self, status):
+        if len(status) < 4:
+            raise AssertionError("Status must be at least 4 characters")
+        if not status[:3].isdigit():
+            raise AssertionError("Status message must begin w/3-digit code")
+        if status[3] != " ":
+            raise AssertionError("Status message must have a space after code")
 
     def _convert_string_type(self, value, title):
         """Convert/check value type."""
@@ -456,10 +476,7 @@ class SimpleHandler(BaseHandler):
         from warnings import warn
         warn("SimpleHandler.stdout.write() should not do partial writes",
             DeprecationWarning)
-        while True:
-            data = data[result:]
-            if not data:
-                break
+        while data := data[result:]:
             result = self.stdout.write(data)
 
     def _flush(self):

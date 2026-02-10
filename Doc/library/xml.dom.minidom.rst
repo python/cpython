@@ -1,5 +1,5 @@
-:mod:`xml.dom.minidom` --- Minimal DOM implementation
-=====================================================
+:mod:`!xml.dom.minidom` --- Minimal DOM implementation
+======================================================
 
 .. module:: xml.dom.minidom
    :synopsis: Minimal Document Object Model (DOM) implementation.
@@ -12,22 +12,21 @@
 
 --------------
 
-:mod:`xml.dom.minidom` is a minimal implementation of the Document Object
+:mod:`!xml.dom.minidom` is a minimal implementation of the Document Object
 Model interface, with an API similar to that in other languages.  It is intended
 to be simpler than the full DOM and also significantly smaller.  Users who are
 not already proficient with the DOM should consider using the
 :mod:`xml.etree.ElementTree` module for their XML processing instead.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.dom.minidom` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 
 DOM applications typically start by parsing some XML into a DOM.  With
-:mod:`xml.dom.minidom`, this is done through the parse functions::
+:mod:`!xml.dom.minidom`, this is done through the parse functions::
 
    from xml.dom.minidom import parse, parseString
 
@@ -71,7 +70,7 @@ functions do not provide a parser implementation themselves.
 You can also create a :class:`Document` by calling a method on a "DOM
 Implementation" object.  You can get this object either by calling the
 :func:`getDOMImplementation` function in the :mod:`xml.dom` package or the
-:mod:`xml.dom.minidom` module.  Once you have a :class:`Document`, you
+:mod:`!xml.dom.minidom` module.  Once you have a :class:`Document`, you
 can add child nodes to it to populate the DOM::
 
    from xml.dom.minidom import getDOMImplementation
@@ -94,15 +93,15 @@ document: the one that holds all others.  Here is an example program::
 
 When you are finished with a DOM tree, you may optionally call the
 :meth:`unlink` method to encourage early cleanup of the now-unneeded
-objects.  :meth:`unlink` is an :mod:`xml.dom.minidom`\ -specific
-extension to the DOM API that renders the node and its descendants are
+objects.  :meth:`unlink` is an :mod:`!xml.dom.minidom`\ -specific
+extension to the DOM API that renders the node and its descendants
 essentially useless.  Otherwise, Python's garbage collector will
 eventually take care of the objects in the tree.
 
 .. seealso::
 
    `Document Object Model (DOM) Level 1 Specification <https://www.w3.org/TR/REC-DOM-Level-1/>`_
-      The W3C recommendation for the DOM supported by :mod:`xml.dom.minidom`.
+      The W3C recommendation for the DOM supported by :mod:`!xml.dom.minidom`.
 
 
 .. _minidom-objects:
@@ -112,7 +111,7 @@ DOM Objects
 
 The definition of the DOM API for Python is given as part of the :mod:`xml.dom`
 module documentation.  This section lists the differences between the API and
-:mod:`xml.dom.minidom`.
+:mod:`!xml.dom.minidom`.
 
 
 .. method:: Node.unlink()
@@ -126,25 +125,40 @@ module documentation.  This section lists the differences between the API and
 
    You can avoid calling this method explicitly by using the :keyword:`with`
    statement. The following code will automatically unlink *dom* when the
-   :keyword:`with` block is exited::
+   :keyword:`!with` block is exited::
 
       with xml.dom.minidom.parse(datasource) as dom:
           ... # Work with dom.
 
 
-.. method:: Node.writexml(writer, indent="", addindent="", newl="")
+.. method:: Node.writexml(writer, indent="", addindent="", newl="", \
+                          encoding=None, standalone=None)
 
-   Write XML to the writer object.  The writer should have a :meth:`write` method
-   which matches that of the file object interface.  The *indent* parameter is the
-   indentation of the current node.  The *addindent* parameter is the incremental
-   indentation to use for subnodes of the current one.  The *newl* parameter
-   specifies the string to use to terminate newlines.
+   Write XML to the writer object.  The writer receives texts but not bytes as input,
+   it should have a :meth:`write` method which matches that of the file object
+   interface.  The *indent* parameter is the indentation of the current node.
+   The *addindent* parameter is the incremental indentation to use for subnodes
+   of the current one.  The *newl* parameter specifies the string to use to
+   terminate newlines.
 
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
+   Similarly, explicitly stating the *standalone* argument causes the
+   standalone document declarations to be added to the prologue of the XML
+   document.
+   If the value is set to ``True``, ``standalone="yes"`` is added,
+   otherwise it is set to ``"no"``.
+   Not stating the argument will omit the declaration from the document.
 
-.. method:: Node.toxml(encoding=None)
+   .. versionchanged:: 3.8
+      The :meth:`writexml` method now preserves the attribute order specified
+      by the user.
+
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
+
+.. method:: Node.toxml(encoding=None, standalone=None)
 
    Return a string or byte string containing the XML represented by
    the DOM node.
@@ -156,7 +170,17 @@ module documentation.  This section lists the differences between the API and
    encoding. Encoding this string in an encoding other than UTF-8 is
    likely incorrect, since UTF-8 is the default encoding of XML.
 
-.. method:: Node.toprettyxml(indent="", newl="", encoding="")
+   The *standalone* argument behaves exactly as in :meth:`writexml`.
+
+   .. versionchanged:: 3.8
+      The :meth:`toxml` method now preserves the attribute order specified
+      by the user.
+
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
+
+.. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
+                             standalone=None)
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
@@ -165,6 +189,14 @@ module documentation.  This section lists the differences between the API and
    The *encoding* argument behaves like the corresponding argument of
    :meth:`toxml`.
 
+   The *standalone* argument behaves exactly as in :meth:`writexml`.
+
+   .. versionchanged:: 3.8
+      The :meth:`toprettyxml` method now preserves the attribute order specified
+      by the user.
+
+   .. versionchanged:: 3.9
+      The *standalone* parameter was added.
 
 .. _dom-example:
 
@@ -182,7 +214,7 @@ particular case, we do not take much advantage of the flexibility of the DOM.
 minidom and the DOM standard
 ----------------------------
 
-The :mod:`xml.dom.minidom` module is essentially a DOM 1.0-compatible DOM with
+The :mod:`!xml.dom.minidom` module is essentially a DOM 1.0-compatible DOM with
 some DOM 2 features (primarily namespace features).
 
 Usage of the DOM interface in Python is straight-forward.  The following mapping
@@ -205,7 +237,7 @@ rules apply:
 * The types ``short int``, ``unsigned int``, ``unsigned long long``, and
   ``boolean`` all map to Python integer objects.
 
-* The type ``DOMString`` maps to Python strings. :mod:`xml.dom.minidom` supports
+* The type ``DOMString`` maps to Python strings. :mod:`!xml.dom.minidom` supports
   either bytes or strings, but will normally produce strings.
   Values of type ``DOMString`` may also be ``None`` where allowed to have the IDL
   ``null`` value by the DOM specification from the W3C.
@@ -213,8 +245,8 @@ rules apply:
 * ``const`` declarations map to variables in their respective scope (e.g.
   ``xml.dom.minidom.Node.PROCESSING_INSTRUCTION_NODE``); they must not be changed.
 
-* ``DOMException`` is currently not supported in :mod:`xml.dom.minidom`.
-  Instead, :mod:`xml.dom.minidom` uses standard Python exceptions such as
+* ``DOMException`` is currently not supported in :mod:`!xml.dom.minidom`.
+  Instead, :mod:`!xml.dom.minidom` uses standard Python exceptions such as
   :exc:`TypeError` and :exc:`AttributeError`.
 
 * :class:`NodeList` objects are implemented using Python's built-in list type.
@@ -223,25 +255,11 @@ rules apply:
   however, much more "Pythonic" than the interface defined in the W3C
   recommendations.
 
-The following interfaces have no implementation in :mod:`xml.dom.minidom`:
+The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`DocumentType`
-
-* :class:`DOMImplementation`
-
-* :class:`CharacterData`
-
-* :class:`CDATASection`
-
-* :class:`Notation`
-
-* :class:`Entity`
-
 * :class:`EntityReference`
-
-* :class:`DocumentFragment`
 
 Most of these reflect information in the XML document that is not of general
 utility to most DOM users.

@@ -23,10 +23,13 @@ askfloat -- get a float from the user
 askstring -- get a string from the user
 """
 
-from tkinter import *
+from tkinter import Button, Entry, Frame, Label, Message, Tk, Toplevel
+from tkinter import _get_temp_root, _destroy_temp_root
 from tkinter import messagebox
+from tkinter.constants import ACTIVE, BOTH, END, LEFT, RIDGE, W, E
 
-import tkinter # used at _QueryDialog for tkinter._default_root
+__all__ = ["SimpleDialog", "Dialog", "askinteger", "askfloat", "askstring"]
+
 
 class SimpleDialog:
 
@@ -40,6 +43,9 @@ class SimpleDialog:
         if title:
             self.root.title(title)
             self.root.iconname(title)
+
+        _setup_dialog(self.root)
+
         self.message = Message(self.root, text=text, aspect=400)
         self.message.pack(expand=1, fill=BOTH)
         self.frame = Frame(self.root)
@@ -56,36 +62,8 @@ class SimpleDialog:
                 b.config(relief=RIDGE, borderwidth=8)
             b.pack(side=LEFT, fill=BOTH, expand=1)
         self.root.protocol('WM_DELETE_WINDOW', self.wm_delete_window)
-        self._set_transient(master)
-
-    def _set_transient(self, master, relx=0.5, rely=0.3):
-        widget = self.root
-        widget.withdraw() # Remain invisible while we figure out the geometry
-        widget.transient(master)
-        widget.update_idletasks() # Actualize geometry information
-        if master.winfo_ismapped():
-            m_width = master.winfo_width()
-            m_height = master.winfo_height()
-            m_x = master.winfo_rootx()
-            m_y = master.winfo_rooty()
-        else:
-            m_width = master.winfo_screenwidth()
-            m_height = master.winfo_screenheight()
-            m_x = m_y = 0
-        w_width = widget.winfo_reqwidth()
-        w_height = widget.winfo_reqheight()
-        x = m_x + (m_width - w_width) * relx
-        y = m_y + (m_height - w_height) * rely
-        if x+w_width > master.winfo_screenwidth():
-            x = master.winfo_screenwidth() - w_width
-        elif x < 0:
-            x = 0
-        if y+w_height > master.winfo_screenheight():
-            y = master.winfo_screenheight() - w_height
-        elif y < 0:
-            y = 0
-        widget.geometry("+%d+%d" % (x, y))
-        widget.deiconify() # Become visible at the desired location
+        self.root.transient(master)
+        _place_window(self.root, master)
 
     def go(self):
         self.root.wait_visibility()
@@ -119,7 +97,6 @@ class Dialog(Toplevel):
     '''
 
     def __init__(self, parent, title = None):
-
         '''Initialize a dialog.
 
         Arguments:
@@ -128,17 +105,23 @@ class Dialog(Toplevel):
 
             title -- the dialog title
         '''
-        Toplevel.__init__(self, parent)
+        master = parent
+        if master is None:
+            master = _get_temp_root()
+
+        Toplevel.__init__(self, master)
 
         self.withdraw() # remain invisible for now
-        # If the master is not viewable, don't
+        # If the parent is not viewable, don't
         # make the child transient, or else it
         # would be opened withdrawn
-        if parent.winfo_viewable():
+        if parent is not None and parent.winfo_viewable():
             self.transient(parent)
 
         if title:
             self.title(title)
+
+        _setup_dialog(self)
 
         self.parent = parent
 
@@ -150,16 +133,12 @@ class Dialog(Toplevel):
 
         self.buttonbox()
 
-        if not self.initial_focus:
+        if self.initial_focus is None:
             self.initial_focus = self
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
 
-        if self.parent is not None:
-            self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                      parent.winfo_rooty()+50))
-
-        self.deiconify() # become visible now
+        _place_window(self, parent)
 
         self.initial_focus.focus_set()
 
@@ -172,6 +151,7 @@ class Dialog(Toplevel):
         '''Destroy the window'''
         self.initial_focus = None
         Toplevel.destroy(self)
+        _destroy_temp_root(self.master)
 
     #
     # construction hooks
@@ -249,6 +229,44 @@ class Dialog(Toplevel):
         pass # override
 
 
+# Place a toplevel window at the center of parent or screen
+# It is a Python implementation of ::tk::PlaceWindow.
+def _place_window(w, parent=None):
+    w.wm_withdraw() # Remain invisible while we figure out the geometry
+    w.update_idletasks() # Actualize geometry information
+
+    minwidth = w.winfo_reqwidth()
+    minheight = w.winfo_reqheight()
+    maxwidth = w.winfo_vrootwidth()
+    maxheight = w.winfo_vrootheight()
+    if parent is not None and parent.winfo_ismapped():
+        x = parent.winfo_rootx() + (parent.winfo_width() - minwidth) // 2
+        y = parent.winfo_rooty() + (parent.winfo_height() - minheight) // 2
+        vrootx = w.winfo_vrootx()
+        vrooty = w.winfo_vrooty()
+        x = min(x, vrootx + maxwidth - minwidth)
+        x = max(x, vrootx)
+        y = min(y, vrooty + maxheight - minheight)
+        y = max(y, vrooty)
+        if w._windowingsystem == 'aqua':
+            # Avoid the native menu bar which sits on top of everything.
+            y = max(y, 22)
+    else:
+        x = (w.winfo_screenwidth() - minwidth) // 2
+        y = (w.winfo_screenheight() - minheight) // 2
+
+    w.wm_maxsize(maxwidth, maxheight)
+    w.wm_geometry('+%d+%d' % (x, y))
+    w.wm_deiconify() # Become visible at the desired location
+
+
+def _setup_dialog(w):
+    if w._windowingsystem == "aqua":
+        w.tk.call("::tk::unsupported::MacWindowStyle", "style",
+                  w, "moveableModal", "")
+    elif w._windowingsystem == "x11":
+        w.wm_attributes(type="dialog")
+
 # --------------------------------------------------------------------
 # convenience dialogues
 
@@ -258,9 +276,6 @@ class _QueryDialog(Dialog):
                  initialvalue=None,
                  minvalue = None, maxvalue = None,
                  parent = None):
-
-        if not parent:
-            parent = tkinter._default_root
 
         self.prompt   = prompt
         self.minvalue = minvalue
@@ -324,8 +339,10 @@ class _QueryDialog(Dialog):
 
 class _QueryInteger(_QueryDialog):
     errormessage = "Not an integer."
+
     def getresult(self):
         return self.getint(self.entry.get())
+
 
 def askinteger(title, prompt, **kw):
     '''get an integer from the user
@@ -341,10 +358,13 @@ def askinteger(title, prompt, **kw):
     d = _QueryInteger(title, prompt, **kw)
     return d.result
 
+
 class _QueryFloat(_QueryDialog):
-    errormessage = "Not a floating point value."
+    errormessage = "Not a floating-point value."
+
     def getresult(self):
         return self.getdouble(self.entry.get())
+
 
 def askfloat(title, prompt, **kw):
     '''get a float from the user
@@ -359,6 +379,7 @@ def askfloat(title, prompt, **kw):
     '''
     d = _QueryFloat(title, prompt, **kw)
     return d.result
+
 
 class _QueryString(_QueryDialog):
     def __init__(self, *args, **kw):
@@ -378,6 +399,7 @@ class _QueryString(_QueryDialog):
     def getresult(self):
         return self.entry.get()
 
+
 def askstring(title, prompt, **kw):
     '''get a string from the user
 
@@ -391,7 +413,6 @@ def askstring(title, prompt, **kw):
     '''
     d = _QueryString(title, prompt, **kw)
     return d.result
-
 
 
 if __name__ == '__main__':

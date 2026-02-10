@@ -1,4 +1,4 @@
-# Copyright (C) 2004-2006 Python Software Foundation
+# Copyright (C) 2004 Python Software Foundation
 # Authors: Baxter, Wouters and Warsaw
 # Contact: email-sig@python.org
 
@@ -30,18 +30,19 @@ from io import StringIO
 
 NLCRE = re.compile(r'\r\n|\r|\n')
 NLCRE_bol = re.compile(r'(\r\n|\r|\n)')
-NLCRE_eol = re.compile(r'(\r\n|\r|\n)\Z')
+NLCRE_eol = re.compile(r'(\r\n|\r|\n)\z')
 NLCRE_crack = re.compile(r'(\r\n|\r|\n)')
-# RFC 2822 $3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
+# RFC 5322 section 3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
 # except controls, SP, and ":".
 headerRE = re.compile(r'^(From |[\041-\071\073-\176]*:|[\t ])')
 EMPTYSTRING = ''
 NL = '\n'
+boundaryendRE = re.compile(
+    r'(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)?$')
 
 NeedMoreData = object()
 
 
-
 class BufferedSubFile(object):
     """A file-ish object that can have new data loaded into it.
 
@@ -132,7 +133,6 @@ class BufferedSubFile(object):
         return line
 
 
-
 class FeedParser:
     """A feed-style parser of email."""
 
@@ -189,7 +189,7 @@ class FeedParser:
         assert not self._msgstack
         # Look for final set of defects
         if root.get_content_maintype() == 'multipart' \
-               and not root.is_multipart():
+               and not root.is_multipart() and not self._headersonly:
             defect = errors.MultipartInvariantViolationDefect()
             self.policy.handle_defect(root, defect)
         return root
@@ -266,7 +266,7 @@ class FeedParser:
                         yield NeedMoreData
                         continue
                     break
-                msg = self._pop_message()
+                self._pop_message()
                 # We need to pop the EOF matcher in order to tell if we're at
                 # the end of the current file, not the end of the last block
                 # of message headers.
@@ -294,7 +294,7 @@ class FeedParser:
             return
         if self._cur.get_content_maintype() == 'message':
             # The message claims to be a message/* type, then what follows is
-            # another RFC 2822 message.
+            # another RFC 5322 message.
             for retval in self._parsegen():
                 if retval is NeedMoreData:
                     yield NeedMoreData
@@ -320,7 +320,7 @@ class FeedParser:
                 self._cur.set_payload(EMPTYSTRING.join(lines))
                 return
             # Make sure a valid content type was specified per RFC 2045:6.4.
-            if (self._cur.get('content-transfer-encoding', '8bit').lower()
+            if (str(self._cur.get('content-transfer-encoding', '8bit')).lower()
                     not in ('7bit', '8bit', 'binary')):
                 defect = errors.InvalidMultipartContentTransferEncodingDefect()
                 self.policy.handle_defect(self._cur, defect)
@@ -329,9 +329,10 @@ class FeedParser:
             # this onto the input stream until we've scanned past the
             # preamble.
             separator = '--' + boundary
-            boundaryre = re.compile(
-                '(?P<sep>' + re.escape(separator) +
-                r')(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)?$')
+            def boundarymatch(line):
+                if not line.startswith(separator):
+                    return None
+                return boundaryendRE.match(line, len(separator))
             capturing_preamble = True
             preamble = []
             linesep = False
@@ -343,7 +344,7 @@ class FeedParser:
                     continue
                 if line == '':
                     break
-                mo = boundaryre.match(line)
+                mo = boundarymatch(line)
                 if mo:
                     # If we're looking at the end boundary, we're done with
                     # this multipart.  If there was a newline at the end of
@@ -375,13 +376,13 @@ class FeedParser:
                         if line is NeedMoreData:
                             yield NeedMoreData
                             continue
-                        mo = boundaryre.match(line)
+                        mo = boundarymatch(line)
                         if not mo:
                             self._input.unreadline(line)
                             break
                     # Recurse to parse this subpart; the input stream points
                     # at the subpart's first line.
-                    self._input.push_eof_matcher(boundaryre.match)
+                    self._input.push_eof_matcher(boundarymatch)
                     for retval in self._parsegen():
                         if retval is NeedMoreData:
                             yield NeedMoreData
@@ -503,10 +504,9 @@ class FeedParser:
                     self._input.unreadline(line)
                     return
                 else:
-                    # Weirdly placed unix-from line.  Note this as a defect
-                    # and ignore it.
+                    # Weirdly placed unix-from line.
                     defect = errors.MisplacedEnvelopeHeaderDefect(line)
-                    self._cur.defects.append(defect)
+                    self.policy.handle_defect(self._cur, defect)
                     continue
             # Split the line on the colon separating field name from value.
             # There will always be a colon, because if there wasn't the part of
@@ -518,7 +518,7 @@ class FeedParser:
             # message. Track the error but keep going.
             if i == 0:
                 defect = errors.InvalidHeaderDefect("Missing header name.")
-                self._cur.defects.append(defect)
+                self.policy.handle_defect(self._cur, defect)
                 continue
 
             assert i>0, "_parse_headers fed line with no : and no leading WS"

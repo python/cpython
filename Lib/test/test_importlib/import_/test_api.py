@@ -1,9 +1,10 @@
-from .. import util
+from test.test_importlib import util
 
 from importlib import machinery
 import sys
 import types
 import unittest
+import warnings
 
 PKG_NAME = 'fine'
 SUBMOD_NAME = 'fine.bogus'
@@ -23,18 +24,6 @@ class BadSpecFinderLoader:
     @staticmethod
     def exec_module(module):
         if module.__name__ == SUBMOD_NAME:
-            raise ImportError('I cannot be loaded!')
-
-
-class BadLoaderFinder:
-    @classmethod
-    def find_module(cls, fullname, path):
-        if fullname == SUBMOD_NAME:
-            return cls
-
-    @classmethod
-    def load_module(cls, fullname):
-        if fullname == SUBMOD_NAME:
             raise ImportError('I cannot be loaded!')
 
 
@@ -95,15 +84,6 @@ class APITest:
                     self.__import__(PKG_NAME,
                                     fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
                 self.assertEqual(cm.exception.name, SUBMOD_NAME)
-
-
-class OldAPITests(APITest):
-    bad_finder_loader = BadLoaderFinder
-
-
-(Frozen_OldAPITests,
- Source_OldAPITests
- ) = util.test_both(OldAPITests, __import__=util.__import__)
 
 
 class SpecAPITests(APITest):

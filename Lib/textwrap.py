@@ -2,7 +2,7 @@
 """
 
 # Copyright (C) 1999-2001 Gregory P. Ward.
-# Copyright (C) 2002, 2003 Python Software Foundation.
+# Copyright (C) 2002 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
 import re
@@ -63,10 +63,7 @@ class TextWrapper:
         Append to the last line of truncated text.
     """
 
-    unicode_whitespace_trans = {}
-    uspace = ord(' ')
-    for x in _whitespace:
-        unicode_whitespace_trans[ord(x)] = uspace
+    unicode_whitespace_trans = dict.fromkeys(map(ord, _whitespace), ord(' '))
 
     # This funky little regex is just the trick for splitting
     # text up into word-wrappable chunks.  E.g.
@@ -89,7 +86,7 @@ class TextWrapper:
               -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
               (?= %(lt)s -? %(lt)s)
             | # end of word
-              (?=%(ws)s|\Z)
+              (?=%(ws)s|\z)
             | # em-dash
               (?<=%(wp)s) (?=-{2,}\w)
             )
@@ -110,7 +107,7 @@ class TextWrapper:
     sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
                                  r'[\"\']?'           # optional end-of-quote
-                                 r'\Z')               # end of chunk
+                                 r'\z')               # end of chunk
 
     def __init__(self,
                  width=70,
@@ -214,9 +211,17 @@ class TextWrapper:
 
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
-        if self.break_long_words:
-            cur_line.append(reversed_chunks[-1][:space_left])
-            reversed_chunks[-1] = reversed_chunks[-1][space_left:]
+        if self.break_long_words and space_left > 0:
+            end = space_left
+            chunk = reversed_chunks[-1]
+            if self.break_on_hyphens and len(chunk) > space_left:
+                # break after last hyphen, but only if there are
+                # non-hyphens before it
+                hyphen = chunk.rfind('-', 0, space_left)
+                if hyphen > 0 and any(c != '-' for c in chunk[:hyphen]):
+                    end = hyphen + 1
+            cur_line.append(chunk[:end])
+            reversed_chunks[-1] = chunk[end:]
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
@@ -408,9 +413,6 @@ def shorten(text, width, **kwargs):
 
 # -- Loosely related functionality -------------------------------------
 
-_whitespace_only_re = re.compile('^[ \t]+$', re.MULTILINE)
-_leading_whitespace_re = re.compile('(^[ \t]*)(?:[^ \t\n])', re.MULTILINE)
-
 def dedent(text):
     """Remove any common leading whitespace from every line in `text`.
 
@@ -420,46 +422,26 @@ def dedent(text):
 
     Note that tabs and spaces are both treated as whitespace, but they
     are not equal: the lines "  hello" and "\\thello" are
-    considered to have no common leading whitespace.  (This behaviour is
-    new in Python 2.5; older versions of this module incorrectly
-    expanded tabs before searching for common leading whitespace.)
+    considered to have no common leading whitespace.
+
+    Entirely blank lines are normalized to a newline character.
     """
-    # Look for the longest leading string of spaces and tabs common to
-    # all lines.
-    margin = None
-    text = _whitespace_only_re.sub('', text)
-    indents = _leading_whitespace_re.findall(text)
-    for indent in indents:
-        if margin is None:
-            margin = indent
+    try:
+        lines = text.split('\n')
+    except (AttributeError, TypeError):
+        msg = f'expected str object, not {type(text).__qualname__!r}'
+        raise TypeError(msg) from None
 
-        # Current line more deeply indented than previous winner:
-        # no change (previous winner is still on top).
-        elif indent.startswith(margin):
-            pass
+    # Get length of leading whitespace, inspired by ``os.path.commonprefix()``.
+    non_blank_lines = [l for l in lines if l and not l.isspace()]
+    l1 = min(non_blank_lines, default='')
+    l2 = max(non_blank_lines, default='')
+    margin = 0
+    for margin, c in enumerate(l1):
+        if c != l2[margin] or c not in ' \t':
+            break
 
-        # Current line consistent with and no deeper than previous winner:
-        # it's the new winner.
-        elif margin.startswith(indent):
-            margin = indent
-
-        # Find the largest common whitespace between current line and previous
-        # winner.
-        else:
-            for i, (x, y) in enumerate(zip(margin, indent)):
-                if x != y:
-                    margin = margin[:i]
-                    break
-
-    # sanity check (testing/debugging only)
-    if 0 and margin:
-        for line in text.split("\n"):
-            assert not line or line.startswith(margin), \
-                   "line = %r, margin = %r" % (line, margin)
-
-    if margin:
-        text = re.sub(r'(?m)^' + margin, '', text)
-    return text
+    return '\n'.join([l[margin:] if not l.isspace() else '' for l in lines])
 
 
 def indent(text, prefix, predicate=None):
@@ -470,14 +452,21 @@ def indent(text, prefix, predicate=None):
     it will default to adding 'prefix' to all non-empty lines that do not
     consist solely of whitespace characters.
     """
+    prefixed_lines = []
     if predicate is None:
-        def predicate(line):
-            return line.strip()
-
-    def prefixed_lines():
+        # str.splitlines(keepends=True) doesn't produce the empty string,
+        # so we need to use `str.isspace()` rather than a truth test.
+        # Inlining the predicate leads to a ~30% performance improvement.
         for line in text.splitlines(True):
-            yield (prefix + line if predicate(line) else line)
-    return ''.join(prefixed_lines())
+            if not line.isspace():
+                prefixed_lines.append(prefix)
+            prefixed_lines.append(line)
+    else:
+        for line in text.splitlines(True):
+            if predicate(line):
+                prefixed_lines.append(prefix)
+            prefixed_lines.append(line)
+    return ''.join(prefixed_lines)
 
 
 if __name__ == "__main__":

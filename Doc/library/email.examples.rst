@@ -12,7 +12,7 @@ text content and the addresses may contain unicode characters):
 .. literalinclude:: ../includes/email-simple.py
 
 
-Parsing RFC822 headers can easily be done by the using the classes
+Parsing :rfc:`822` headers can easily be done by the using the classes
 from the :mod:`~email.parser` module:
 
 .. literalinclude:: ../includes/email-headers.py
@@ -55,11 +55,11 @@ Up to the prompt, the output from the above is:
 
     To: Penelope Pussycat <penelope@example.com>, Fabrette Pussycat <fabrette@example.com>
     From: Pepé Le Pew <pepe@example.com>
-    Subject: Ayons asperges pour le déjeuner
+    Subject: Pourquoi pas des asperges pour ce midi ?
 
     Salut!
 
-    Cela ressemble à un excellent recipie[1] déjeuner.
+    Cette recette [1] sera sûrement un très bon repas.
 
 
 .. rubric:: Footnotes

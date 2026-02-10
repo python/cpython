@@ -69,6 +69,16 @@ class ColorsysTest(unittest.TestCase):
             self.assertTripleEqual(hls, colorsys.rgb_to_hls(*rgb))
             self.assertTripleEqual(rgb, colorsys.hls_to_rgb(*hls))
 
+    def test_hls_nearwhite(self):  # gh-106498
+        values = (
+            # rgb, hls: these do not work in reverse
+            ((0.9999999999999999, 1, 1), (0.5, 1.0, 1.0)),
+            ((1, 0.9999999999999999, 0.9999999999999999), (0.0, 1.0, 1.0)),
+        )
+        for rgb, hls in values:
+            self.assertTripleEqual(hls, colorsys.rgb_to_hls(*rgb))
+            self.assertTripleEqual((1.0, 1.0, 1.0), colorsys.hls_to_rgb(*hls))
+
     def test_yiq_roundtrip(self):
         for r in frange(0.0, 1.0, 0.2):
             for g in frange(0.0, 1.0, 0.2):

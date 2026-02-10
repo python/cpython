@@ -17,7 +17,7 @@ the set are:
   reference material about types, functions, and the modules in the standard
   library.  The standard Python distribution includes a *lot* of additional code.
   There are modules to read Unix mailboxes, retrieve documents via HTTP, generate
-  random numbers, parse command-line options, write CGI programs, compress data,
+  random numbers, parse command-line options, compress data,
   and many other tasks. Skimming through the Library Reference will give you an
   idea of what's available.
 
@@ -30,16 +30,13 @@ the set are:
 
 More Python resources:
 
-* https://www.python.org:  The major Python Web site.  It contains code,
-  documentation, and pointers to Python-related pages around the Web.  This Web
-  site is mirrored in various places around the world, such as Europe, Japan, and
-  Australia; a mirror may be faster than the main site, depending on your
-  geographical location.
+* https://www.python.org:  The major Python website.  It contains code,
+  documentation, and pointers to Python-related pages around the web.
 
 * https://docs.python.org:  Fast access to Python's  documentation.
 
-* https://pypi.python.org/pypi: The Python Package Index, previously also nicknamed
-  the Cheese Shop, is an index of user-created Python modules that are available
+* https://pypi.org: The Python Package Index, previously also nicknamed
+  the Cheese Shop [#]_, is an index of user-created Python modules that are available
   for download.  Once you begin releasing code, you can register it here so that
   others can find it.
 
@@ -48,7 +45,7 @@ More Python resources:
   Particularly notable contributions are collected in a book also titled Python
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)
 
-* http://www.pyvideo.org collects links to Python-related videos from
+* https://pyvideo.org collects links to Python-related videos from
   conferences and user-group meetings.
 
 * https://scipy.org: The Scientific Python project includes modules for fast
@@ -68,3 +65,9 @@ Before posting, be sure to check the list of
 :ref:`Frequently Asked Questions <faq-index>` (also called the FAQ).  The
 FAQ answers many of the questions that come up again and again, and may
 already contain the solution for your problem.
+
+.. rubric:: Footnotes
+
+.. [#] "Cheese Shop" is a Monty Python's sketch: a customer enters a cheese shop,
+   but whatever cheese he asks for, the clerk says it's missing.
+

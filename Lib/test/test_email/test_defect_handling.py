@@ -57,7 +57,7 @@ class TestDefectsBase:
             msg = self._str_msg(source)
         if self.raise_expected: return
         inner = msg.get_payload(0)
-        self.assertTrue(hasattr(inner, 'defects'))
+        self.assertHasAttr(inner, 'defects')
         self.assertEqual(len(self.get_defects(inner)), 1)
         self.assertIsInstance(self.get_defects(inner)[0],
                               errors.StartBoundaryNotFoundDefect)
@@ -126,12 +126,10 @@ class TestDefectsBase:
             errors.InvalidMultipartContentTransferEncodingDefect)
 
     def test_multipart_no_cte_no_defect(self):
-        if self.raise_expected: return
         msg = self._str_msg(self.multipart_msg.format(''))
         self.assertEqual(len(self.get_defects(msg)), 0)
 
     def test_multipart_valid_cte_no_defect(self):
-        if self.raise_expected: return
         for cte in ('7bit', '8bit', 'BINary'):
             msg = self._str_msg(
                 self.multipart_msg.format("\nContent-Transfer-Encoding: "+cte))
@@ -151,7 +149,7 @@ class TestDefectsBase:
         with self._raise_point(errors.NoBoundaryInMultipartDefect):
             msg = self._str_msg(source)
         if self.raise_expected: return
-        self.assertTrue(hasattr(msg, 'defects'))
+        self.assertHasAttr(msg, 'defects')
         self.assertEqual(len(self.get_defects(msg)), 2)
         self.assertIsInstance(self.get_defects(msg)[0],
                               errors.NoBoundaryInMultipartDefect)
@@ -254,6 +252,23 @@ class TestDefectsBase:
         self.assertDefectsEqual(self.get_defects(msg),
                                 [errors.InvalidBase64CharactersDefect])
 
+    def test_invalid_length_of_base64_payload(self):
+        source = textwrap.dedent("""\
+            Subject: test
+            MIME-Version: 1.0
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: base64
+
+            abcde
+            """)
+        msg = self._str_msg(source)
+        with self._raise_point(errors.InvalidBase64LengthDefect):
+            payload = msg.get_payload(decode=True)
+        if self.raise_expected: return
+        self.assertEqual(payload, b'abcde')
+        self.assertDefectsEqual(self.get_defects(msg),
+                                [errors.InvalidBase64LengthDefect])
+
     def test_missing_ending_boundary(self):
         source = textwrap.dedent("""\
             To: 1@harrydomain4.com
@@ -282,6 +297,47 @@ class TestDefectsBase:
         self.assertEqual(msg.get_payload(1).get_payload(), 'Alternative 2\n')
         self.assertDefectsEqual(self.get_defects(msg),
                                 [errors.CloseBoundaryNotFoundDefect])
+
+    def test_line_beginning_colon(self):
+        string = (
+            "Subject: Dummy subject\r\n: faulty header line\r\n\r\nbody\r\n"
+        )
+
+        with self._raise_point(errors.InvalidHeaderDefect):
+            msg = self._str_msg(string)
+            self.assertEqual(len(self.get_defects(msg)), 1)
+            self.assertDefectsEqual(
+                self.get_defects(msg), [errors.InvalidHeaderDefect]
+            )
+
+            if msg:
+                self.assertEqual(msg.items(), [("Subject", "Dummy subject")])
+                self.assertEqual(msg.get_payload(), "body\r\n")
+
+    def test_misplaced_envelope(self):
+        string = (
+            "Subject: Dummy subject\r\nFrom wtf\r\nTo: abc\r\n\r\nbody\r\n"
+        )
+        with self._raise_point(errors.MisplacedEnvelopeHeaderDefect):
+            msg = self._str_msg(string)
+            self.assertEqual(len(self.get_defects(msg)), 1)
+            self.assertDefectsEqual(
+                self.get_defects(msg), [errors.MisplacedEnvelopeHeaderDefect]
+            )
+
+            if msg:
+                headers = [("Subject", "Dummy subject"), ("To", "abc")]
+                self.assertEqual(msg.items(), headers)
+                self.assertEqual(msg.get_payload(), "body\r\n")
+
+
+
+class TestCompat32(TestDefectsBase, TestEmailBase):
+
+    policy = policy.compat32
+
+    def get_defects(self, obj):
+        return obj.defects
 
 
 class TestDefectDetection(TestDefectsBase, TestEmailBase):
@@ -314,6 +370,9 @@ class TestDefectRaising(TestDefectsBase, TestEmailBase):
     def _raise_point(self, defect):
         with self.assertRaises(defect):
             yield
+
+    def get_defects(self, obj):
+        return obj.defects
 
 
 if __name__ == '__main__':

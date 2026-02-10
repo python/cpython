@@ -1,5 +1,5 @@
 """Test relative imports (PEP 328)."""
-from .. import util
+from test.test_importlib import util
 import unittest
 import warnings
 
@@ -81,7 +81,7 @@ class RelativeImports:
             self.__import__('pkg')  # For __import__().
             module = self.__import__('', global_, fromlist=['mod2'], level=1)
             self.assertEqual(module.__name__, 'pkg')
-            self.assertTrue(hasattr(module, 'mod2'))
+            self.assertHasAttr(module, 'mod2')
             self.assertEqual(module.mod2.attr, 'pkg.mod2')
         self.relative_import_test(create, globals_, callback)
 
@@ -107,7 +107,7 @@ class RelativeImports:
             module = self.__import__('', global_, fromlist=['module'],
                              level=1)
             self.assertEqual(module.__name__, 'pkg')
-            self.assertTrue(hasattr(module, 'module'))
+            self.assertHasAttr(module, 'module')
             self.assertEqual(module.module.attr, 'pkg.module')
         self.relative_import_test(create, globals_, callback)
 
@@ -131,8 +131,9 @@ class RelativeImports:
             module = self.__import__('', global_, fromlist=['subpkg2'],
                                             level=2)
             self.assertEqual(module.__name__, 'pkg')
-            self.assertTrue(hasattr(module, 'subpkg2'))
+            self.assertHasAttr(module, 'subpkg2')
             self.assertEqual(module.subpkg2.attr, 'pkg.subpkg2.__init__')
+        self.relative_import_test(create, globals_, callback)
 
     def test_deep_import(self):
         # [deep import]
@@ -156,7 +157,7 @@ class RelativeImports:
                     {'__name__': 'pkg', '__path__': ['blah']})
         def callback(global_):
             self.__import__('pkg')
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.__import__('', global_, fromlist=['top_level'],
                                     level=2)
         self.relative_import_test(create, globals_, callback)
@@ -167,7 +168,7 @@ class RelativeImports:
         globals_ = {'__package__': 'pkg'}, {'__name__': 'pkg.module'}
         def callback(global_):
             self.__import__('pkg')
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.__import__('', global_, fromlist=['top_level'],
                                     level=2)
         self.relative_import_test(create, globals_, callback)
@@ -221,6 +222,21 @@ class RelativeImports:
         with self.assertRaises(ImportError):
             self.__import__('sys', {'__package__': '', '__spec__': None},
                             level=1)
+
+    def test_malicious_relative_import(self):
+        # https://github.com/python/cpython/issues/134100
+        # Test to make sure UAF bug with error msg doesn't come back to life
+        import sys
+        loooong = "".ljust(0x23000, "b")
+        name = f"a.{loooong}.c"
+
+        with util.uncache(name):
+            sys.modules[name] = {}
+            with self.assertRaisesRegex(
+                KeyError,
+                r"'a\.b+' not in sys\.modules as expected"
+            ):
+                __import__(f"{loooong}.c", {"__package__": "a"}, level=1)
 
 
 (Frozen_RelativeImports,

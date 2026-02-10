@@ -36,7 +36,7 @@ class _Printer(object):
         import os
         self.__name = name
         self.__data = data
-        self.__lines = None
+        self.__lines = []
         self.__filenames = [os.path.join(dir, filename)
                             for dir in dirs
                             for filename in files]
@@ -47,7 +47,7 @@ class _Printer(object):
         data = None
         for filename in self.__filenames:
             try:
-                with open(filename, "r") as fp:
+                with open(filename, encoding='utf-8') as fp:
                     data = fp.read()
                 break
             except OSError:
@@ -65,24 +65,12 @@ class _Printer(object):
             return "Type %s() to see the full %s text" % ((self.__name,)*2)
 
     def __call__(self):
+        from _pyrepl.pager import get_pager
         self.__setup()
-        prompt = 'Hit Return for more, or q (and Return) to quit: '
-        lineno = 0
-        while 1:
-            try:
-                for i in range(lineno, lineno + self.MAXLINES):
-                    print(self.__lines[i])
-            except IndexError:
-                break
-            else:
-                lineno += self.MAXLINES
-                key = None
-                while key is None:
-                    key = input(prompt)
-                    if key not in ('', 'q'):
-                        key = None
-                if key == 'q':
-                    break
+
+        pager = get_pager()
+        text = "\n".join(self.__lines)
+        pager(text, title=self.__name)
 
 
 class _Helper(object):

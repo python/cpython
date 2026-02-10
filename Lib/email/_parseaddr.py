@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Contact: email-sig@python.org
 
 """Email address parsing code.
@@ -13,7 +13,7 @@ __all__ = [
     'quote',
     ]
 
-import time, calendar
+import time
 
 SPACE = ' '
 EMPTYSTRING = ''
@@ -65,8 +65,10 @@ def _parsedate_tz(data):
 
     """
     if not data:
-        return
+        return None
     data = data.split()
+    if not data:  # This happens for whitespace-only input.
+        return None
     # The FWS after the comma after the day-of-week is optional, so search and
     # adjust for this.
     if data[0].endswith(',') or data[0].lower() in _daynames:
@@ -93,6 +95,8 @@ def _parsedate_tz(data):
         return None
     data = data[:5]
     [dd, mm, yy, tm, tz] = data
+    if not (dd and mm and yy):
+        return None
     mm = mm.lower()
     if mm not in _monthnames:
         dd, mm = mm, dd.lower()
@@ -108,6 +112,8 @@ def _parsedate_tz(data):
         yy, tm = tm, yy
     if yy[-1] == ',':
         yy = yy[:-1]
+        if not yy:
+            return None
     if not yy[0].isdigit():
         yy, tz = tz, yy
     if tm[-1] == ',':
@@ -126,6 +132,8 @@ def _parsedate_tz(data):
             tss = 0
         elif len(tm) == 3:
             [thh, tmm, tss] = tm
+        else:
+            return None
     else:
         return None
     try:
@@ -138,8 +146,9 @@ def _parsedate_tz(data):
         return None
     # Check for a yy specified in two-digit format, then convert it to the
     # appropriate four-digit format, according to the POSIX standard. RFC 822
-    # calls for a two-digit yy, but RFC 2822 (which obsoletes RFC 822)
-    # mandates a 4-digit yy. For more information, see the documentation for
+    # calls for a two-digit yy, but RFC 2822 (which obsoletes RFC 822) already
+    # mandated a 4-digit yy, and RFC 5322 (which obsoletes RFC 2822) continues
+    # this requirement. For more information, see the documentation for
     # the time module.
     if yy < 100:
         # The year is between 1969 and 1999 (inclusive).
@@ -186,6 +195,9 @@ def mktime_tz(data):
         # No zone info, so localtime is better assumption than GMT
         return time.mktime(data[:8] + (-1,))
     else:
+        # Delay the import, since mktime_tz is rarely used
+        import calendar
+
         t = calendar.timegm(data)
         return t - data[9]
 
@@ -213,7 +225,7 @@ class AddrlistClass:
     def __init__(self, field):
         """Initialize a new instance.
 
-        `field' is an unparsed address header field, containing
+        'field' is an unparsed address header field, containing
         one or more addresses.
         """
         self.specials = '()<>@,:;.\"[]'
@@ -222,9 +234,11 @@ class AddrlistClass:
         self.CR = '\r\n'
         self.FWS = self.LWS + self.CR
         self.atomends = self.specials + self.LWS + self.CR
-        # Note that RFC 2822 now specifies `.' as obs-phrase, meaning that it
-        # is obsolete syntax.  RFC 2822 requires that we recognize obsolete
-        # syntax, so allow dots in phrases.
+        # Note that RFC 2822 section 4.1 introduced '.' as obs-phrase to handle
+        # existing practice (periods in display names), even though it was not
+        # allowed in RFC 822. RFC 5322 section 4.1 (which obsoletes RFC 2822)
+        # continues this requirement. We must recognize obsolete syntax, so
+        # allow dots in phrases.
         self.phraseends = self.atomends.replace('.', '')
         self.field = field
         self.commentlist = []
@@ -379,7 +393,12 @@ class AddrlistClass:
         aslist.append('@')
         self.pos += 1
         self.gotonext()
-        return EMPTYSTRING.join(aslist) + self.getdomain()
+        domain = self.getdomain()
+        if not domain:
+            # Invalid domain, return an empty address instead of returning a
+            # local part to denote failed parsing.
+            return EMPTYSTRING
+        return EMPTYSTRING.join(aslist) + domain
 
     def getdomain(self):
         """Get the complete domain name from an address."""
@@ -394,6 +413,10 @@ class AddrlistClass:
             elif self.field[self.pos] == '.':
                 self.pos += 1
                 sdlist.append('.')
+            elif self.field[self.pos] == '@':
+                # bpo-34155: Don't parse domains with two `@` like
+                # `a@malicious.org@important.com`.
+                return EMPTYSTRING
             elif self.field[self.pos] in self.atomends:
                 break
             else:
@@ -403,14 +426,14 @@ class AddrlistClass:
     def getdelimited(self, beginchar, endchars, allowcomments=True):
         """Parse a header fragment delimited by special characters.
 
-        `beginchar' is the start character for the fragment.
-        If self is not looking at an instance of `beginchar' then
+        'beginchar' is the start character for the fragment.
+        If self is not looking at an instance of 'beginchar' then
         getdelimited returns the empty string.
 
-        `endchars' is a sequence of allowable end-delimiting characters.
+        'endchars' is a sequence of allowable end-delimiting characters.
         Parsing stops when one of these is encountered.
 
-        If `allowcomments' is non-zero, embedded RFC 2822 comments are allowed
+        If 'allowcomments' is non-zero, embedded RFC 2822 comments are allowed
         within the parsed fragment.
         """
         if self.field[self.pos] != beginchar:
@@ -454,7 +477,7 @@ class AddrlistClass:
 
         Optional atomends specifies a different set of end token delimiters
         (the default is to use self.atomends).  This is used e.g. in
-        getphraselist() since phrase endings must not include the `.' (which
+        getphraselist() since phrase endings must not include the '.' (which
         is legal in phrases)."""
         atomlist = ['']
         if atomends is None:
