@@ -1112,9 +1112,13 @@ setiter_iternext(PyObject *self)
     setentry *entry;
     PySetObject *so = si->si_set;
 
+#ifdef Py_GIL_DISABLED
+    assert(so != NULL);
+#else
     if (so == NULL) {
         return NULL;
     }
+#endif
     assert(PyAnySet_Check(so));
 
     Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
