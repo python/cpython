@@ -11,6 +11,7 @@
 #endif
 
 #include "Python.h"
+#include "datetime.h"
 
 #ifdef TEST_INTERNAL_C_API
    // gh-135906: Check for compiler warnings in the internal C API.
@@ -50,8 +51,21 @@ _testcext_add(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+static PyObject *
+test_datetime(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyDateTime_IMPORT;
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef _testcext_methods[] = {
     {"add", _testcext_add, METH_VARARGS, _testcext_add_doc},
+    {"test_datetime", test_datetime, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}  // sentinel
 };
 
@@ -65,11 +79,17 @@ _testcext_exec(
 #endif
     )
 {
+    PyObject *result;
+
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
         return -1;
     }
 #endif
+
+    result = PyObject_CallMethod(module, "test_datetime", "");
+    if (!result) return -1;
+    Py_DECREF(result);
 
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
