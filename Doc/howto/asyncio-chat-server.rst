@@ -35,6 +35,19 @@ asyncio calls your callback with two arguments: a
 :class:`~asyncio.StreamWriter` for sending data back.  Each connection runs
 as its own coroutine, so multiple clients are handled concurrently.
 
+The :meth:`~asyncio.StreamWriter.write` method buffers data without sending
+it immediately.  Awaiting :meth:`~asyncio.StreamWriter.drain` flushes the
+buffer and applies back-pressure if the client is slow to read.  Similarly,
+:meth:`~asyncio.StreamWriter.close` initiates shutdown, and awaiting
+:meth:`~asyncio.StreamWriter.wait_closed` waits until the connection is
+fully closed.
+
+Using the server as an async context manager (``async with server``) ensures
+it is properly cleaned up when done.  Calling
+:meth:`~asyncio.Server.serve_forever` keeps the server running until the
+program is interrupted.  Finally, :func:`asyncio.run` starts the event loop
+and runs the top-level coroutine.
+
 Here is a complete echo server::
 
    import asyncio
@@ -65,13 +78,6 @@ Here is a complete echo server::
 
    asyncio.run(main())
 
-The :meth:`~asyncio.StreamWriter.write` method buffers data without sending
-it immediately.  Awaiting :meth:`~asyncio.StreamWriter.drain` flushes the
-buffer and applies back-pressure if the client is slow to read.  Similarly,
-:meth:`~asyncio.StreamWriter.close` initiates shutdown, and awaiting
-:meth:`~asyncio.StreamWriter.wait_closed` waits until the connection is
-fully closed.
-
 To test, run the server in one terminal and connect from another using ``nc``
 (or ``telnet``):
 
@@ -88,13 +94,40 @@ Building the chat server
 The chat server extends the echo server with two additions: tracking connected
 clients and broadcasting messages to everyone.
 
-We store each client's name and :class:`~asyncio.StreamWriter` in a dictionary.
-When a message arrives, we broadcast it to all other connected clients.
-:class:`asyncio.TaskGroup` sends to all recipients concurrently, and
-:func:`contextlib.suppress` silently handles any :exc:`ConnectionError` from
-clients that have already disconnected.
+Client tracking
+---------------
 
-::
+We store each connected client's name and :class:`~asyncio.StreamWriter` in a
+module-level dictionary.  When a client connects, ``handle_client`` prompts for
+a name and adds the writer to the dictionary.  A ``finally`` block ensures the
+client is always removed on disconnect, even if the connection drops
+unexpectedly.
+
+Broadcasting messages
+---------------------
+
+To send a message to all clients, we define a ``broadcast`` function.
+:class:`asyncio.TaskGroup` sends to all recipients concurrently rather than
+one at a time.  :func:`contextlib.suppress` silently handles any
+:exc:`ConnectionError` from clients that have already disconnected::
+
+   async def broadcast(message, *, sender=None):
+       """Send a message to all connected clients except the sender."""
+       async def send(writer):
+           with contextlib.suppress(ConnectionError):
+               writer.write(message.encode())
+               await writer.drain()
+
+       async with asyncio.TaskGroup() as tg:
+           # Iterate over a copy: clients may leave during the broadcast.
+           for name, writer in list(connected_clients.items()):
+               if name != sender:
+                   tg.create_task(send(writer))
+
+The complete chat server
+------------------------
+
+Putting it all together::
 
    import asyncio
    import contextlib
