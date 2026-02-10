@@ -3116,6 +3116,10 @@ def get_signal_name(exitcode):
     except KeyError:
         pass
 
+    # Format Windows exit status as hexadecimal
+    if 0xC0000000 <= exitcode:
+        return f"0x{exitcode:X}"
+
     return None
 
 class BrokenIter:
