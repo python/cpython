@@ -64,7 +64,7 @@ PACKAGE_TO_FILES = {
         exclude=[
             "Modules/expat/expat_config.h",
             "Modules/expat/pyexpatns.h",
-            "Modules/expat/refresh.sh",
+            "Modules/_hacl/refresh.sh",
         ]
     ),
     "macholib": PackageFiles(

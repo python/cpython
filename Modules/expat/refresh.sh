@@ -57,13 +57,4 @@ rm libexpat.tar.gz
 # Step 3: Add the namespacing include to expat_external.h
 sed -i 's/#  define Expat_External_INCLUDED 1/&\n\/* Namespace external symbols to allow multiple libexpat version to\n   co-exist. \*\/\n#include "pyexpatns.h"/' expat_external.h
 
-echo "
-Updated! next steps:
-- Verify all is okay:
-    git diff
-    git status
-- Regenerate the sbom file
-    make regen-sbom
-- Update warning count in Tools/build/.warningignore_macos
-    (use info from CI if not on a Mac)
-"
+echo "Updated; verify all is okay using git diff and git status."
