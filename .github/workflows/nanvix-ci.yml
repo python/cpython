@@ -446,12 +446,12 @@ jobs:
             --latest \
             release-assets/*.tar.bz2
 
-  report-minor-release-failure:
+  report-failure:
     needs:
       - build
     if: >-
-      ${{ always() && github.event_name == 'repository_dispatch' &&
-          (github.event.action == 'sqlite-release' || github.event.action == 'openssl-release') &&
+      ${{ always() &&
+          (github.event_name == 'repository_dispatch' || github.event_name == 'schedule' || github.event_name == 'push') &&
           needs.build.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
@@ -465,10 +465,10 @@ jobs:
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const title = `Dependency release CI failure (run ${context.runNumber})`;
+            const title = `CI failure (run ${context.runNumber})`;
             const body = [
-              `The cpython CI workflow failed after dependency release.`,
-              `- Trigger: ${context.payload.action}`,
+              `The cpython CI workflow failed.`,
+              `- Trigger: ${context.eventName}`,
               `- Run: [#${context.runNumber}](${runUrl})`,
               `- SHA: ${context.sha}`,
               `- build: ${process.env.BUILD_RESULT}`,
