@@ -38,6 +38,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
+#include "pycore_instruments.h"   // PyUnstable_SetEvalCallback
 
 #include "clinic/_testinternalcapi.c.h"
 
@@ -2836,9 +2837,50 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+// Helper for testing PyUnstable_SetEvalCallback / PyUnstable_GetEvalCallback
+static int
+test_eval_callback(PyUnstable_EvalEvent event, void *data)
+{
+    if (data == NULL) {
+        return 0;
+    }
+    PyObject *event_int = PyLong_FromLong((long)event);
+    if (event_int == NULL) {
+        return -1;
+    }
+    int res = PyList_Append((PyObject *)data, event_int);
+    Py_DECREF(event_int);
+    return res;
+}
+
+static PyObject *
+set_eval_callback_record(PyObject *self, PyObject *list)
+{
+    if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a list");
+        return NULL;
+    }
+    if (PyUnstable_SetEvalCallback(test_eval_callback, list) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+clear_eval_callback(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (PyUnstable_SetEvalCallback(NULL, NULL) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
+    {"set_eval_callback_record", set_eval_callback_record, METH_O, NULL},
+    {"clear_eval_callback", clear_eval_callback, METH_NOARGS, NULL},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},

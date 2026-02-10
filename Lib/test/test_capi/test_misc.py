@@ -2858,6 +2858,84 @@ class Test_Pep523API(unittest.TestCase):
         self.do_test(func, names)
 
 
+class TestEvalCallback(unittest.TestCase):
+    """Test PyUnstable_SetEvalCallback / PyUnstable_GetEvalCallback API"""
+
+    # Event constants matching PyUnstable_EvalEvent enum values
+    EVAL_TRACE_SET = 0
+    EVAL_TRACE_CLEAR = 1
+    EVAL_PROFILE_SET = 2
+    EVAL_PROFILE_CLEAR = 3
+
+    def setUp(self):
+        self.events = []
+        _testinternalcapi.set_eval_callback_record(self.events)
+
+    def tearDown(self):
+        _testinternalcapi.clear_eval_callback()
+        sys.settrace(None)
+        sys.setprofile(None)
+
+    def test_settrace_fires_callback(self):
+        def dummy_trace(frame, event, arg):
+            return dummy_trace
+        sys.settrace(dummy_trace)
+        self.assertIn(self.EVAL_TRACE_SET, self.events)
+
+    def test_settrace_none_fires_clear(self):
+        def dummy_trace(frame, event, arg):
+            return dummy_trace
+        sys.settrace(dummy_trace)
+        self.events.clear()
+        sys.settrace(None)
+        self.assertIn(self.EVAL_TRACE_CLEAR, self.events)
+
+    def test_setprofile_fires_callback(self):
+        def dummy_profile(frame, event, arg):
+            pass
+        sys.setprofile(dummy_profile)
+        self.assertIn(self.EVAL_PROFILE_SET, self.events)
+
+    def test_setprofile_none_fires_clear(self):
+        def dummy_profile(frame, event, arg):
+            pass
+        sys.setprofile(dummy_profile)
+        self.events.clear()
+        sys.setprofile(None)
+        self.assertIn(self.EVAL_PROFILE_CLEAR, self.events)
+
+    def test_multiple_set_clear_cycles(self):
+        def dummy_trace(frame, event, arg):
+            return dummy_trace
+        def dummy_profile(frame, event, arg):
+            pass
+
+        sys.settrace(dummy_trace)
+        sys.settrace(None)
+        sys.setprofile(dummy_profile)
+        sys.setprofile(None)
+
+        self.assertEqual(self.events, [
+            self.EVAL_TRACE_SET,
+            self.EVAL_TRACE_CLEAR,
+            self.EVAL_PROFILE_SET,
+            self.EVAL_PROFILE_CLEAR,
+        ])
+
+    def test_clear_callback_stops_events(self):
+        _testinternalcapi.clear_eval_callback()
+        events_after_clear = []
+        _testinternalcapi.set_eval_callback_record(events_after_clear)
+        _testinternalcapi.clear_eval_callback()
+
+        def dummy_trace(frame, event, arg):
+            return dummy_trace
+        sys.settrace(dummy_trace)
+        sys.settrace(None)
+
+        self.assertEqual(events_after_clear, [])
+
+
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
 class TestPyThreadId(unittest.TestCase):
     def test_py_thread_id(self):

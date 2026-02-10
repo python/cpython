@@ -1,0 +1,5 @@
+Added :c:func:`PyUnstable_SetEvalCallback` and
+:c:func:`PyUnstable_GetEvalCallback` to receive notifications when
+:func:`sys.settrace` or :func:`sys.setprofile` are called. This allows JIT
+compilers and other tools using :pep:`523` frame evaluation hooks to
+efficiently detect tracing/profiling changes without polling.
