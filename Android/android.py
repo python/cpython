@@ -38,16 +38,19 @@ HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
 APP_ID = "org.python.testbed"
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
+def get_android_home() -> Path:
+    try:
+        return Path(os.environ["ANDROID_HOME"])
+    except KeyError:
+        raise SystemExit("The ANDROID_HOME environment variable is required.")
 
-try:
-    android_home = Path(os.environ['ANDROID_HOME'])
-except KeyError:
-    sys.exit("The ANDROID_HOME environment variable is required.")
 
-adb = Path(
-    f"{android_home}/platform-tools/adb"
-    + (".exe" if os.name == "nt" else "")
-)
+def get_adb() -> Path:
+    android_home = get_android_home()
+    return Path(
+        f"{android_home}/platform-tools/adb"
+        + (".exe" if os.name == "nt" else "")
+    )
 
 gradlew = Path(
     f"{TESTBED_DIR}/gradlew"
@@ -316,16 +319,19 @@ def setup_ci():
         else:
             raise ValueError(f"Failed to find NDK version in {ENV_SCRIPT.name}")
 
-        for item in (android_home / "ndk").iterdir():
+        for item in (get_android_home() / "ndk").iterdir():
             if item.name[0].isdigit() and item.name != ndk_version:
                 delete_glob(item)
 
 
 def setup_sdk():
+    android_home = get_android_home()
     sdkmanager = android_home / (
         "cmdline-tools/latest/bin/sdkmanager"
         + (".bat" if os.name == "nt" else "")
     )
+
+    adb = get_adb()
 
     # Gradle will fail if it needs to install an SDK package whose license
     # hasn't been accepted, so pre-accept all licenses.
@@ -437,7 +443,7 @@ async def list_devices():
     serials = []
     header_found = False
 
-    lines = (await async_check_output(adb, "devices")).splitlines()
+    lines = (await async_check_output(get_adb(), "devices")).splitlines()
     for line in lines:
         # Ignore blank lines, and all lines before the header.
         line = line.strip()
@@ -487,9 +493,9 @@ async def find_pid(serial):
         try:
             # `pidof` requires API level 24 or higher. The level 23 emulator
             # includes it, but it doesn't work (it returns all processes).
-            pid = (await async_check_output(
-                adb, "-s", serial, "shell", "pidof", "-s", APP_ID
-            )).strip()
+                pid = (await async_check_output(
+                    get_adb(), "-s", serial, "shell", "pidof", "-s", APP_ID
+                )).strip()
         except CalledProcessError as e:
             # If the app isn't running yet, pidof gives no output. So if there
             # is output, there must have been some other error. However, this
@@ -525,7 +531,7 @@ async def logcat_task(context, initial_devices):
     # long`). For example, every time pytest runs a test, it prints a "." and
     # flushes the stream. Each "." becomes a separate log message, but we should
     # show them all on the same line.
-    args = [adb, "-s", serial, "logcat", "--pid", pid,  "--binary"]
+    args = [get_adb(), "-s", serial, "logcat", "--pid", pid,  "--binary"]
     logcat_started = False
     async with async_process(
         *args, stdout=subprocess.PIPE, stderr=None
@@ -599,7 +605,7 @@ async def read_logcat(stream):
     payload_fields = (await read_bytes(payload_len - 1)).split(b"\0")
     if len(payload_fields) < 2:
         raise ValueError(
-            f"payload {payload!r} does not contain at least 2 "
+            f"payload {payload_fields!r} does not contain at least 2 "
             f"null-separated fields"
         )
     tag, message, *_ = [
@@ -609,7 +615,7 @@ async def read_logcat(stream):
 
 
 def stop_app(serial):
-    run([adb, "-s", serial, "shell", "am", "force-stop", APP_ID], log=False)
+    run([get_adb(), "-s", serial, "shell", "am", "force-stop", APP_ID], log=False)
 
 
 async def gradle_task(context):
