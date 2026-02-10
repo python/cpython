@@ -140,6 +140,10 @@ System includes
    * ``<stdlib.h>``
    * ``<string.h>``
 
+   The ``<string.h>`` header is also included when using :ref:`Limited API
+   <limited-c-api>` 3.11 or newer if Python is unable to get a ``typeof()``
+   implementation.
+
 .. note::
 
    Since Python may define some pre-processor definitions which affect the standard
