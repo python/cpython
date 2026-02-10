@@ -1,0 +1,1 @@
+Optimize and eliminate ref-counting in ``_BINARY_OP_SUBSCR_LIST_SLICE``
