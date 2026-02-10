@@ -1280,6 +1280,14 @@ def _find_and_load(name, import_):
         # NOTE: because of this, initializing must be set *before*
         # putting the new module in sys.modules.
         _lock_unlock_module(name)
+    else:
+        # Verify the module is still in sys.modules. Another thread may have
+        # removed it (due to import failure) between our sys.modules.get()
+        # above and the _initializing check. If removed, we retry the import
+        # to preserve normal semantics: the caller gets the exception from
+        # the actual import failure rather than a synthetic error.
+        if sys.modules.get(name) is not module:
+            return _find_and_load(name, import_)
 
     if module is None:
         message = f'import of {name} halted; None in sys.modules'
