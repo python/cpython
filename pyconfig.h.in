@@ -1858,6 +1858,9 @@
 /* The size of '_Bool', as computed by sizeof. */
 #undef SIZEOF__BOOL
 
+/* Platform tag, used in binary module extension filenames. */
+#undef SOABI_PLATFORM
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
