@@ -1,1 +1,1 @@
-Fix a data race in ``set_iterator.__length_hint__`` under ``Py_GIL_DISABLED``.
+Fix potential races in set iterators (``__length_hint__`` and iteration) in free-threaded builds.
