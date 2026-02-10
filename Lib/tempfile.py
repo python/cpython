@@ -57,6 +57,13 @@ _bin_openflags = _text_openflags
 if hasattr(_os, 'O_BINARY'):
     _bin_openflags |= _os.O_BINARY
 
+# This is more than enough.
+# Each name contains more than 40 random bits.  Even with a million of
+# temporary files, a chance of conflict is less than 1 per million,
+# and with 20 attempts it is less than 1e-120.
+# Each name contains over 40 random bits.  Even with a million temporary
+# files, the chance of a conflict is less than 1 in a million, and with
+# 20 attempts, it is less than 1e-120.
 TMP_MAX = 20
 
 # This variable _was_ unused for legacy reasons, see issue 10354.
@@ -193,8 +200,7 @@ def _get_default_tempdir(dirlist=None):
     for dir in dirlist:
         if dir != _os.curdir:
             dir = _os.path.abspath(dir)
-        # Try only a few names per directory.
-        for seq in range(100):
+        for seq in range(TMP_MAX):
             name = next(namer)
             filename = _os.path.join(dir, name)
             try:
