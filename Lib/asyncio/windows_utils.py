@@ -23,7 +23,7 @@ BUFSIZE = 8192
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
 _mmap_counter = itertools.count()
-_MAX_PIPE_ATTEMPTS = 100
+_MAX_PIPE_ATTEMPTS = 20
 
 
 # Replacement for os.pipe() using handles instead of fds
