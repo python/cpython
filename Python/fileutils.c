@@ -2118,7 +2118,6 @@ _Py_wrealpath(const wchar_t *path,
               wchar_t *resolved_path, size_t resolved_path_len)
 {
     char *cpath;
-    char cresolved_path[MAXPATHLEN];
     wchar_t *wresolved_path;
     char *res;
     size_t r;
@@ -2127,12 +2126,14 @@ _Py_wrealpath(const wchar_t *path,
         errno = EINVAL;
         return NULL;
     }
-    res = realpath(cpath, cresolved_path);
+    res = realpath(cpath, NULL);
     PyMem_RawFree(cpath);
     if (res == NULL)
         return NULL;
 
-    wresolved_path = Py_DecodeLocale(cresolved_path, &r);
+    wresolved_path = Py_DecodeLocale(res, &r);
+    free(res);
+
     if (wresolved_path == NULL) {
         errno = EINVAL;
         return NULL;

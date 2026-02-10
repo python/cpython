@@ -3703,36 +3703,36 @@ long_hash(PyObject *obj)
 #endif
 
     while (--i >= 0) {
-        /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
+        /* Here x is a quantity in the range [0, PyHASH_MODULUS); we
            want to compute x * 2**PyLong_SHIFT + v->long_value.ob_digit[i] modulo
-           _PyHASH_MODULUS.
+           PyHASH_MODULUS.
 
-           The computation of x * 2**PyLong_SHIFT % _PyHASH_MODULUS
+           The computation of x * 2**PyLong_SHIFT % PyHASH_MODULUS
            amounts to a rotation of the bits of x.  To see this, write
 
-             x * 2**PyLong_SHIFT = y * 2**_PyHASH_BITS + z
+             x * 2**PyLong_SHIFT = y * 2**PyHASH_BITS + z
 
-           where y = x >> (_PyHASH_BITS - PyLong_SHIFT) gives the top
+           where y = x >> (PyHASH_BITS - PyLong_SHIFT) gives the top
            PyLong_SHIFT bits of x (those that are shifted out of the
-           original _PyHASH_BITS bits, and z = (x << PyLong_SHIFT) &
-           _PyHASH_MODULUS gives the bottom _PyHASH_BITS - PyLong_SHIFT
-           bits of x, shifted up.  Then since 2**_PyHASH_BITS is
-           congruent to 1 modulo _PyHASH_MODULUS, y*2**_PyHASH_BITS is
-           congruent to y modulo _PyHASH_MODULUS.  So
+           original PyHASH_BITS bits, and z = (x << PyLong_SHIFT) &
+           PyHASH_MODULUS gives the bottom PyHASH_BITS - PyLong_SHIFT
+           bits of x, shifted up.  Then since 2**PyHASH_BITS is
+           congruent to 1 modulo PyHASH_MODULUS, y*2**PyHASH_BITS is
+           congruent to y modulo PyHASH_MODULUS.  So
 
-             x * 2**PyLong_SHIFT = y + z (mod _PyHASH_MODULUS).
+             x * 2**PyLong_SHIFT = y + z (mod PyHASH_MODULUS).
 
            The right-hand side is just the result of rotating the
-           _PyHASH_BITS bits of x left by PyLong_SHIFT places; since
-           not all _PyHASH_BITS bits of x are 1s, the same is true
-           after rotation, so 0 <= y+z < _PyHASH_MODULUS and y + z is
+           PyHASH_BITS bits of x left by PyLong_SHIFT places; since
+           not all PyHASH_BITS bits of x are 1s, the same is true
+           after rotation, so 0 <= y+z < PyHASH_MODULUS and y + z is
            the reduction of x*2**PyLong_SHIFT modulo
-           _PyHASH_MODULUS. */
-        x = ((x << PyLong_SHIFT) & _PyHASH_MODULUS) |
-            (x >> (_PyHASH_BITS - PyLong_SHIFT));
+           PyHASH_MODULUS. */
+        x = ((x << PyLong_SHIFT) & PyHASH_MODULUS) |
+            (x >> (PyHASH_BITS - PyLong_SHIFT));
         x += v->long_value.ob_digit[i];
-        if (x >= _PyHASH_MODULUS)
-            x -= _PyHASH_MODULUS;
+        if (x >= PyHASH_MODULUS)
+            x -= PyHASH_MODULUS;
     }
     x = x * sign;
     if (x == (Py_uhash_t)-1)
@@ -4434,10 +4434,10 @@ pylong_int_divmod(PyLongObject *v, PyLongObject *w,
     if (result == NULL) {
         return -1;
     }
-    if (!PyTuple_Check(result)) {
+    if (!PyTuple_Check(result) || PyTuple_GET_SIZE(result) != 2) {
         Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError,
-                        "tuple is required from int_divmod()");
+                        "tuple of length 2 is required from int_divmod()");
         return -1;
     }
     PyObject *q = PyTuple_GET_ITEM(result, 0);
@@ -5589,45 +5589,44 @@ long_bitwise(PyLongObject *a,
     Py_ssize_t size_a, size_b, size_z, i;
     PyLongObject *z;
 
+    PyLongObject *new_a = NULL;
+    PyLongObject *new_b = NULL;
+
     /* Bitwise operations for negative numbers operate as though
        on a two's complement representation.  So convert arguments
        from sign-magnitude to two's complement, and convert the
        result back to sign-magnitude at the end. */
 
-    /* If a is negative, replace it by its two's complement. */
     size_a = _PyLong_DigitCount(a);
+    size_b = _PyLong_DigitCount(b);
+    /* Swap a and b if necessary to ensure size_a >= size_b. */
+    if (size_a < size_b) {
+        z = a; a = b; b = z;
+        size_z = size_a; size_a = size_b; size_b = size_z;
+    }
+
+    /* If a is negative, replace it by its two's complement. */
     nega = _PyLong_IsNegative(a);
     if (nega) {
         z = long_alloc(size_a);
         if (z == NULL)
             return NULL;
         v_complement(z->long_value.ob_digit, a->long_value.ob_digit, size_a);
+        new_a = z; // reference to decrement instead of a itself
         a = z;
     }
-    else
-        /* Keep reference count consistent. */
-        Py_INCREF(a);
 
     /* Same for b. */
-    size_b = _PyLong_DigitCount(b);
     negb = _PyLong_IsNegative(b);
     if (negb) {
         z = long_alloc(size_b);
         if (z == NULL) {
-            Py_DECREF(a);
+            Py_XDECREF(new_a);
             return NULL;
         }
         v_complement(z->long_value.ob_digit, b->long_value.ob_digit, size_b);
+        new_b = z; // reference to decrement instead of b itself
         b = z;
-    }
-    else
-        Py_INCREF(b);
-
-    /* Swap a and b if necessary to ensure size_a >= size_b. */
-    if (size_a < size_b) {
-        z = a; a = b; b = z;
-        size_z = size_a; size_a = size_b; size_b = size_z;
-        negz = nega; nega = negb; negb = negz;
     }
 
     /* JRH: The original logic here was to allocate the result value (z)
@@ -5658,8 +5657,8 @@ long_bitwise(PyLongObject *a,
        the final two's complement of z doesn't overflow. */
     z = long_alloc(size_z + negz);
     if (z == NULL) {
-        Py_DECREF(a);
-        Py_DECREF(b);
+        Py_XDECREF(new_a);
+        Py_XDECREF(new_b);
         return NULL;
     }
 
@@ -5696,8 +5695,8 @@ long_bitwise(PyLongObject *a,
         v_complement(z->long_value.ob_digit, z->long_value.ob_digit, size_z+1);
     }
 
-    Py_DECREF(a);
-    Py_DECREF(b);
+    Py_XDECREF(new_a);
+    Py_XDECREF(new_b);
     return (PyObject *)maybe_small_long(long_normalize(z));
 }
 
@@ -6476,14 +6475,33 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         return NULL;
     }
 
-    bytes = PyObject_Bytes(bytes_obj);
-    if (bytes == NULL)
-        return NULL;
-
-    long_obj = _PyLong_FromByteArray(
-        (unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
-        little_endian, is_signed);
-    Py_DECREF(bytes);
+    /* Fast-path exact bytes. */
+    if (PyBytes_CheckExact(bytes_obj)) {
+        long_obj = _PyLong_FromByteArray(
+            (unsigned char *)PyBytes_AS_STRING(bytes_obj), Py_SIZE(bytes_obj),
+            little_endian, is_signed);
+    }
+    /* Use buffer protocol to avoid copies. */
+    else if (PyObject_CheckBuffer(bytes_obj)) {
+        Py_buffer view;
+        if (PyObject_GetBuffer(bytes_obj, &view, PyBUF_SIMPLE) != 0) {
+            return NULL;
+        }
+        long_obj = _PyLong_FromByteArray(view.buf, view.len, little_endian,
+            is_signed);
+        PyBuffer_Release(&view);
+    }
+    else {
+        /* fallback: Construct a bytes then convert. */
+        bytes = PyObject_Bytes(bytes_obj);
+        if (bytes == NULL) {
+            return NULL;
+        }
+        long_obj = _PyLong_FromByteArray(
+            (unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
+            little_endian, is_signed);
+        Py_DECREF(bytes);
+    }
 
     if (long_obj != NULL && type != &PyLong_Type) {
         Py_SETREF(long_obj, PyObject_CallOneArg((PyObject *)type, long_obj));

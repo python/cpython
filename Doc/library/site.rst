@@ -34,7 +34,7 @@ For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
 :file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
-optional suffix "t" indicates the :term:`free threading` build, and is
+optional suffix "t" indicates the :term:`free-threaded build`, and is
 appended if ``"t"`` is present in the :data:`sys.abiflags` constant.)
 For each
 of the distinct head-tail combinations, it sees if it refers to an existing
@@ -51,11 +51,11 @@ added path for configuration files.
 
 .. versionchanged:: 3.14
 
-   :mod:`site` is no longer responsible for updating :data:`sys.prefix` and
+   :mod:`!site` is no longer responsible for updating :data:`sys.prefix` and
    :data:`sys.exec_prefix` on :ref:`sys-path-init-virtual-environments`. This is
    now done during the :ref:`path initialization <sys-path-init>`. As a result,
    under :ref:`sys-path-init-virtual-environments`, :data:`sys.prefix` and
-   :data:`sys.exec_prefix` no longer depend on the :mod:`site` initialization,
+   :data:`sys.exec_prefix` no longer depend on the :mod:`!site` initialization,
    and are therefore unaffected by :option:`-S`.
 
 .. _site-virtual-environments-configuration:
@@ -270,12 +270,12 @@ Module contents
 
 .. _site-commandline:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 .. program:: site
 
-The :mod:`site` module also provides a way to get the user directories from the
+The :mod:`!site` module also provides a way to get the user directories from the
 command line:
 
 .. code-block:: shell-session

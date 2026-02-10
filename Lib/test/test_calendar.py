@@ -245,6 +245,34 @@ result_2004_html = """\
 </html>
 """
 
+result_2009_6_html = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar for 2009</title>
+<style>
+:root { color-scheme: light dark; }
+table.year { border: solid; }
+table.year > tbody > tr > td { border: solid; vertical-align: top; }
+</style>
+<link rel="stylesheet" href="calendar.css">
+</head>
+<body>
+<table class="month">
+<tr><th colspan="7" class="month">June 2009</th></tr>
+<tr><th class="mon">Mon</th><th class="tue">Tue</th><th class="wed">Wed</th><th class="thu">Thu</th><th class="fri">Fri</th><th class="sat">Sat</th><th class="sun">Sun</th></tr>
+<tr><td class="mon">1</td><td class="tue">2</td><td class="wed">3</td><td class="thu">4</td><td class="fri">5</td><td class="sat">6</td><td class="sun">7</td></tr>
+<tr><td class="mon">8</td><td class="tue">9</td><td class="wed">10</td><td class="thu">11</td><td class="fri">12</td><td class="sat">13</td><td class="sun">14</td></tr>
+<tr><td class="mon">15</td><td class="tue">16</td><td class="wed">17</td><td class="thu">18</td><td class="fri">19</td><td class="sat">20</td><td class="sun">21</td></tr>
+<tr><td class="mon">22</td><td class="tue">23</td><td class="wed">24</td><td class="thu">25</td><td class="fri">26</td><td class="sat">27</td><td class="sun">28</td></tr>
+<tr><td class="mon">29</td><td class="tue">30</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td><td class="noday">&nbsp;</td></tr>
+</table>
+</body>
+</html>
+"""
+
 result_2004_days = [
     [[[0, 0, 0, 1, 2, 3, 4],
       [5, 6, 7, 8, 9, 10, 11],
@@ -505,6 +533,13 @@ class OutputTestCase(unittest.TestCase):
         with support.captured_stdout() as out:
             calendar.format(["1", "2", "3"], colwidth=3, spacing=1)
             self.assertEqual(out.getvalue().strip(), "1   2   3")
+
+    def test_format_html_year_with_month(self):
+        self.assertEqual(
+            calendar.HTMLCalendar().formatmonthpage(2009, 6).decode("ascii"),
+            result_2009_6_html
+        )
+
 
 class CalendarTestCase(unittest.TestCase):
 
@@ -1102,7 +1137,6 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('2004', '1', 'spam')
         self.assertFailure('2004', '1', '1')
         self.assertFailure('2004', '1', '1', 'spam')
-        self.assertFailure('-t', 'html', '2004', '1')
 
     def test_output_current_year(self):
         for run in self.runners:

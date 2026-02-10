@@ -141,7 +141,7 @@ Dict display element unpacking
     >>> {0:1, **{0:2}, 0:3, 0:4}
     {0: 4}
 
-List comprehension element unpacking
+Comprehension element unpacking
 
     >>> a, b, c = [0, 1, 2], 3, 4
     >>> [*a, b, c]
@@ -149,46 +149,206 @@ List comprehension element unpacking
 
     >>> l = [a, (3, 4), {5}, {6: None}, (i for i in range(7, 10))]
     >>> [*item for item in l]
-    Traceback (most recent call last):
-    ...
-    SyntaxError: iterable unpacking cannot be used in comprehension
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-    >>> [*[0, 1] for i in range(10)]
-    Traceback (most recent call last):
-    ...
-    SyntaxError: iterable unpacking cannot be used in comprehension
+    >>> [*[0, 1] for i in range(5)]
+    [0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
 
-    >>> [*'a' for i in range(10)]
-    Traceback (most recent call last):
-    ...
-    SyntaxError: iterable unpacking cannot be used in comprehension
+    >>> [*'a' for i in range(5)]
+    ['a', 'a', 'a', 'a', 'a']
 
     >>> [*[] for i in range(10)]
-    Traceback (most recent call last):
-    ...
-    SyntaxError: iterable unpacking cannot be used in comprehension
+    []
+
+    >>> [*(x*2) for x in [[1, 2, 3], [], 'cat']]
+    [1, 2, 3, 1, 2, 3, 'c', 'a', 't', 'c', 'a', 't']
 
     >>> {**{} for a in [1]}
+    {}
+
+    >>> {**{7: i} for i in range(10)}
+    {7: 9}
+
+    >>> dicts = [{1: 2}, {3: 4}, {5: 6, 7: 8}, {}, {9: 10}, {1: 0}]
+    >>> {**d for d in dicts}
+    {1: 0, 3: 4, 5: 6, 7: 8, 9: 10}
+
+    >>> gen = (*(0, 1) for i in range(5))
+    >>> next(gen)
+    0
+    >>> list(gen)
+    [1, 0, 1, 0, 1, 0, 1, 0, 1]
+
+Comprehension unpacking with conditionals and double loops
+
+    >>> [*[i, i+1] for i in range(5) if i % 2 == 0]
+    [0, 1, 2, 3, 4, 5]
+
+    >>> [*y for x in [[[0], [1, 2, 3], [], [4, 5]], [[6, 7]]] for y in x]
+    [0, 1, 2, 3, 4, 5, 6, 7]
+
+    >>> [*y for x in [[[0], [1, 2, 3], [], [4, 5]], [[6, 7]]] for y in x if y and y[0]>0]
+    [1, 2, 3, 4, 5, 6, 7]
+
+    >>> dicts = [{1: 2}, {3: 4}, {5: 6, 7: 8}, {}, {9: 10}, {1: 0}]
+    >>> {**d for d in dicts if len(d) != 2}
+    {1: 0, 3: 4, 9: 10}
+
+Scoping of assignment expressions in comprehensions
+
+    >>> [*((y := i**2), 2*y) for i in range(4)]
+    [0, 0, 1, 2, 4, 8, 9, 18]
+    >>> y
+    9
+
+    >>> [*(y := [i, i+1, i+2]) for i in range(4)]
+    [0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, 5]
+    >>> y
+    [3, 4, 5]
+
+    >>> g = (*(z := [i, i+1, i+2]) for i in range(4))
+    >>> z
     Traceback (most recent call last):
     ...
-    SyntaxError: dict unpacking cannot be used in dict comprehension
+    NameError: name 'z' is not defined
+    >>> next(g)
+    0
+    >>> z
+    [0, 1, 2]
+    >>> next(g)
+    1
+    >>> z
+    [0, 1, 2]
+    >>> next(g)
+    2
+    >>> z
+    [0, 1, 2]
+    >>> next(g)
+    1
+    >>> z
+    [1, 2, 3]
 
-# Pegen is better here.
-# Generator expression in function arguments
+    >>> x = [1, 2, 3]
+    >>> y = [4, 5, 6]
+    >>> def f(*args):
+    ...     print(args)
 
-#     >>> list(*x for x in (range(5) for i in range(3)))
-#     Traceback (most recent call last):
-#     ...
-#         list(*x for x in (range(5) for i in range(3)))
-#                   ^
-#     SyntaxError: invalid syntax
+    >>> f(*x if x else y)
+    (1, 2, 3)
+
+
+Malformed comperehension element unpacking
+
+    >>> [*x for x in [1, 2, 3]]
+    Traceback (most recent call last):
+    ...
+    [*x for x in [1, 2, 3]]
+     ^^
+    TypeError: Value after * must be an iterable, not int
+
+
+Error messages for specific failure modes of unpacking
+
+    >>> [*x if x else y for x in z]
+    Traceback (most recent call last):
+    ...
+    [*x if x else y for x in z]
+     ^^^^^^^^^^^^^^
+    SyntaxError: invalid starred expression. Did you forget to wrap the conditional expression in parentheses?
+
+    >>> [*x if x else y]
+    Traceback (most recent call last):
+    ...
+    [*x if x else y]
+     ^^^^^^^^^^^^^^
+    SyntaxError: invalid starred expression. Did you forget to wrap the conditional expression in parentheses?
+
+    >>> [x if x else *y for x in z]
+    Traceback (most recent call last):
+    ...
+    [x if x else *y for x in z]
+                 ^
+    SyntaxError: cannot unpack only part of a conditional expression
+
+    >>> [x if x else *y]
+    Traceback (most recent call last):
+    ...
+    [x if x else *y]
+                 ^
+    SyntaxError: cannot unpack only part of a conditional expression
+
+    >>> {**x if x else y}
+    Traceback (most recent call last):
+    ...
+    {**x if x else y}
+     ^^^^^^^^^^^^^^^^
+    SyntaxError: invalid double starred expression. Did you forget to wrap the conditional expression in parentheses?
+    >>> {x if x else **y}
+    Traceback (most recent call last):
+    ...
+    {x if x else **y}
+                 ^^
+    SyntaxError: cannot use dict unpacking on only part of a conditional expression
+
+    >>> [**x for x in [{1: 2}]]
+    Traceback (most recent call last):
+    ...
+    [**x for x in [{1: 2}]]
+     ^^^
+    SyntaxError: cannot use dict unpacking in list comprehension
+
+    >>> (**x for x in [{1:2}])
+    Traceback (most recent call last):
+    ...
+        (**x for x in [{1:2}])
+         ^^^
+    SyntaxError: cannot use dict unpacking in generator expression
 
     >>> dict(**x for x in [{1:2}])
     Traceback (most recent call last):
     ...
         dict(**x for x in [{1:2}])
-                   ^
-    SyntaxError: invalid syntax
+             ^^^
+    SyntaxError: cannot use dict unpacking in generator expression
+
+    >>> {*a: b for a, b in {1: 2}.items()}
+    Traceback (most recent call last):
+    ...
+    {*a: b for a, b in {1: 2}.items()}
+     ^^
+    SyntaxError: cannot use a starred expression in a dictionary key
+
+    >>> {**a: b for a, b in {1: 2}.items()}
+    Traceback (most recent call last):
+    ...
+    {**a: b for a, b in {1: 2}.items()}
+     ^^^
+    SyntaxError: cannot use dict unpacking in a dictionary key
+
+    >>> {a: *b for a, b in {1: 2}.items()}
+    Traceback (most recent call last):
+    ...
+    {a: *b for a, b in {1: 2}.items()}
+        ^^
+    SyntaxError: cannot use a starred expression in a dictionary value
+
+    >>> {a: **b for a, b in {1: 2}.items()}
+    Traceback (most recent call last):
+    ...
+    {a: **b for a, b in {1: 2}.items()}
+        ^^^
+    SyntaxError: cannot use dict unpacking in a dictionary value
+
+
+# Generator expression in function arguments
+
+    >>> list(*x for x in (range(5) for i in range(3)))
+    [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+
+    >>> def f(arg):
+    ...     print(type(arg), list(arg), list(arg))
+    >>> f(*x for x in [[1,2,3]])
+    <class 'generator'> [1, 2, 3] []
 
 Iterable argument unpacking
 

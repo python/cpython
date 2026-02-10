@@ -580,9 +580,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     }
     co->_co_firsttraceable = entry_point;
 #ifdef Py_GIL_DISABLED
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->config.tlbc_enabled);
+    int enable_counters = interp->config.tlbc_enabled && interp->opt_config.specialization_enabled;
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), enable_counters);
 #else
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), 1);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->opt_config.specialization_enabled);
 #endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
@@ -1005,8 +1006,8 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-int
-_PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq)
+static int
+_PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
@@ -1021,11 +1022,28 @@ _PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq)
 }
 
 int
+_PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
+{
+    if (addrq < 0) {
+        return co->co_firstlineno;
+    }
+    if (co->_co_monitoring && co->_co_monitoring->lines) {
+        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    }
+    if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
+        return -1;
+    }
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
+    return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     int lineno;
     Py_BEGIN_CRITICAL_SECTION(co);
-    lineno = _PyCode_Addr2LineNoTstate(co, addrq);
+    lineno = _PyCode_Addr2Line(co, addrq);
     Py_END_CRITICAL_SECTION();
     return lineno;
 }
@@ -2415,6 +2433,7 @@ code_dealloc(PyObject *self)
         PyMem_Free(co_extra);
     }
 #ifdef _Py_TIER2
+    _PyJit_Tracer_InvalidateDependency(tstate, self);
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
@@ -3351,13 +3370,13 @@ deopt_code_unit(PyCodeObject *code, int i)
 }
 
 static void
-copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
+copy_code(PyInterpreterState *interp, _Py_CODEUNIT *dst, PyCodeObject *co)
 {
     int code_len = (int) Py_SIZE(co);
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = deopt_code_unit(co, i);
     }
-    _PyCode_Quicken(dst, code_len, 1);
+    _PyCode_Quicken(dst, code_len, interp->opt_config.specialization_enabled);
 }
 
 static Py_ssize_t
@@ -3373,7 +3392,7 @@ get_pow2_greater(Py_ssize_t initial, Py_ssize_t limit)
 }
 
 static _Py_CODEUNIT *
-create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
+create_tlbc_lock_held(PyInterpreterState *interp, PyCodeObject *co, Py_ssize_t idx)
 {
     _PyCodeArray *tlbc = co->co_tlbc;
     if (idx >= tlbc->size) {
@@ -3396,7 +3415,7 @@ create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
         PyErr_NoMemory();
         return NULL;
     }
-    copy_code((_Py_CODEUNIT *) bc, co);
+    copy_code(interp, (_Py_CODEUNIT *) bc, co);
     assert(tlbc->entries[idx] == NULL);
     tlbc->entries[idx] = bc;
     return (_Py_CODEUNIT *) bc;
@@ -3411,7 +3430,8 @@ get_tlbc_lock_held(PyCodeObject *co)
     if (idx < tlbc->size && tlbc->entries[idx] != NULL) {
         return (_Py_CODEUNIT *)tlbc->entries[idx];
     }
-    return create_tlbc_lock_held(co, idx);
+    PyInterpreterState *interp = tstate->base.interp;
+    return create_tlbc_lock_held(interp, co, idx);
 }
 
 _Py_CODEUNIT *

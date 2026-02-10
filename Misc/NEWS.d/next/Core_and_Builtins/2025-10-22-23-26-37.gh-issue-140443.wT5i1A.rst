@@ -1,5 +1,0 @@
-The logarithm functions (such as :func:`math.log10` and :func:`math.log`) may now produce
-slightly different results for extremely large integers that cannot be
-converted to floats without overflow. These results are generally more
-accurate, with reduced worst-case error and a tighter overall error
-distribution.

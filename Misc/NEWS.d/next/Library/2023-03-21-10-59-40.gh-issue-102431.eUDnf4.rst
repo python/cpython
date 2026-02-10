@@ -1,2 +1,0 @@
-Clarify constraints for "logical" arguments in methods of
-:class:`decimal.Context`.
