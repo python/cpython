@@ -1,0 +1,1 @@
+Ensure the Android testbed's Gradle-managed emulator has enough RAM to run the CPython test suite reliably.
