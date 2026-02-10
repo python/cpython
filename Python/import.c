@@ -297,12 +297,32 @@ PyImport_GetModule(PyObject *name)
     mod = import_get_module(tstate, name);
     if (mod != NULL && mod != Py_None) {
         if (import_ensure_initialized(tstate->interp, mod, name) < 0) {
+            goto error;
+        }
+        /* Verify the module is still in sys.modules. Another thread may have
+           removed it (due to import failure) between our import_get_module()
+           call and the _initializing check in import_ensure_initialized(). */
+        PyObject *mod_check = import_get_module(tstate, name);
+        if (mod_check != mod) {
+            Py_XDECREF(mod_check);
+            if (_PyErr_Occurred(tstate)) {
+                goto error;
+            }
+            /* The module was removed or replaced. Return NULL to report
+               "not found" rather than trying to keep up with racing
+               modifications to sys.modules; returning the new value would
+               require looping to redo the ensure_initialized check. */
             Py_DECREF(mod);
-            remove_importlib_frames(tstate);
             return NULL;
         }
+        Py_DECREF(mod_check);
     }
     return mod;
+
+error:
+    Py_DECREF(mod);
+    remove_importlib_frames(tstate);
+    return NULL;
 }
 
 /* Get the module object corresponding to a module name.
@@ -3896,6 +3916,27 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     if (mod != NULL && mod != Py_None) {
         if (import_ensure_initialized(tstate->interp, mod, abs_name) < 0) {
             goto error;
+        }
+        /* Verify the module is still in sys.modules. Another thread may have
+           removed it (due to import failure) between our import_get_module()
+           call and the _initializing check in import_ensure_initialized().
+           If removed, we retry the import to preserve normal semantics: the
+           caller gets the exception from the actual import failure rather
+           than a synthetic error. */
+        PyObject *mod_check = import_get_module(tstate, abs_name);
+        if (mod_check != mod) {
+            Py_XDECREF(mod_check);
+            if (_PyErr_Occurred(tstate)) {
+                goto error;
+            }
+            Py_DECREF(mod);
+            mod = import_find_and_load(tstate, abs_name);
+            if (mod == NULL) {
+                goto error;
+            }
+        }
+        else {
+            Py_DECREF(mod_check);
         }
     }
     else {
