@@ -515,7 +515,7 @@ class TestPartial:
         self.assertEqual(alias.__parameters__, ())
 
     # Issue 144475
-    def test_repr_for_segfault(self):
+    def test_repr_saftey_against_reentrant_mutation(self):
         g_partial = None
 
         class Function:
@@ -547,24 +547,21 @@ class TestPartial:
         trigger = EvilObject("trigger", is_trigger=True)
         victim = EvilObject("victim")
 
-        p = functools.partial(Function("old_function"), victim, victim=trigger)
-        g_partial = p
+        g_partial = functools.partial(Function("old_function"), victim, victim=trigger)
         self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject(victim), victim=EvilObject(trigger))")
 
         trigger.triggered = False
         g_partial = None
-        p = functools.partial(Function("old_function"), trigger, victim=victim)
-        g_partial = p
+        g_partial = functools.partial(Function("old_function"), trigger, victim=victim)
         self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject(trigger), victim=EvilObject(victim))")
 
 
         trigger.triggered = False
-        p = functools.partial(Function("old_function"), trigger, victim)
-        g_partial = p
+        g_partial = functools.partial(Function("old_function"), trigger, victim)
+        self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject(trigger), EvilObject(victim))")
 
         trigger.triggered = False
-        p = functools.partial(Function("old_function"), trigger=trigger, victim=victim)
-        g_partial = p
+        g_partial = functools.partial(Function("old_function"), trigger=trigger, victim=victim)
         self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), trigger=EvilObject(trigger), victim=EvilObject(victim))")
 
         trigger.triggered = False
@@ -573,8 +570,7 @@ class TestPartial:
         victim3 = EvilObject("victim")
         victim4 = EvilObject("victim")
         victim5 = EvilObject("victim")
-        p = functools.partial(Function("old_function"), trigger, victim1, victim2, victim3, victim4, victim=victim5)
-        g_partial = p
+        g_partial = functools.partial(Function("old_function"), trigger, victim1, victim2, victim3, victim4, victim=victim5)
         self.assertEqual(repr(g_partial),"functools.partial(Function(old_function), EvilObject(trigger), EvilObject(victim), EvilObject(victim), EvilObject(victim), EvilObject(victim), victim=EvilObject(victim))")
 
 
