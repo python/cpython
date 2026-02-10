@@ -16,8 +16,9 @@
 #ifdef TEST_INTERNAL_C_API
    // gh-135906: Check for compiler warnings in the internal C API
 #  include "internal/pycore_frame.h"
-   // mimalloc emits compiler warnings when Python is built on Windows.
-#  if !defined(MS_WINDOWS)
+   // mimalloc emits compiler warnings when Python is built on Windows
+   // and macOS.
+#  if !defined(MS_WINDOWS) && !defined(__APPLE__)
 #    include "internal/pycore_backoff.h"
 #    include "internal/pycore_cell.h"
 #  endif
