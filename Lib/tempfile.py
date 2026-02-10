@@ -57,7 +57,7 @@ _bin_openflags = _text_openflags
 if hasattr(_os, 'O_BINARY'):
     _bin_openflags |= _os.O_BINARY
 
-TMP_MAX = 100
+TMP_MAX = 20
 
 # This variable _was_ unused for legacy reasons, see issue 10354.
 # But as of 3.5 we actually use it at runtime so changing it would
