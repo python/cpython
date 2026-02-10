@@ -46,7 +46,10 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
+          choco install llvm --allow-downgrade --no-progress --version ${{ env.LLVM_VERSION }}.1.0
           $env:PlatformToolset = "clangcl"
+          $env:LLVMToolsVersion = "${{ env.LLVM_VERSION }}.1.0"
+          $env:LLVMInstallDir = "C:\Program Files\LLVM"
           ./PCbuild/build.bat --tail-call-interp ${{ matrix.build_flags }} -c Release -p ${{ matrix.architecture }}
       - name: Test
         if: matrix.run_tests
