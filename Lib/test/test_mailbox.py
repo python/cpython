@@ -1127,6 +1127,16 @@ class _TestSingleFile(TestMailbox):
         self.assertEqual(st.st_gid, other_gid)
         self.assertEqual(st.st_mode, mode)
 
+    def test_context_manager_locks_and_closes(self):
+        # Context manager locks/unlocks and closes.
+        # (This test uses an implementation detail to get the state.)
+        self.assertFalse(self._box._locked)
+        with self._box as context_object:
+            self.assertIs(self._box, context_object)
+            self.assertTrue(self._box._locked)
+            self.assertFalse(self._box._file.closed)
+        self.assertFalse(self._box._locked)
+        self.assertTrue(self._box._file.closed)
 
 class _TestMboxMMDF(_TestSingleFile):
 
