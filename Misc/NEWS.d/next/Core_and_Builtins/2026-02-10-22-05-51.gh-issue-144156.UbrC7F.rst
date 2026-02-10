@@ -1,0 +1,3 @@
+Fix folding of email headers violating `RFC 2047`_ with two consecutive encoded words without separating linear-white-space.
+
+.. _RFC 2047: https://www.rfc-editor.org/rfc/rfc2047
