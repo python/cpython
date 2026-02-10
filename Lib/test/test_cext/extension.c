@@ -74,13 +74,7 @@ static PyMethodDef _testcext_methods[] = {
 
 
 static int
-_testcext_exec(
-#ifdef __STDC_VERSION__
-    PyObject *module
-#else
-    PyObject *Py_UNUSED(module)
-#endif
-    )
+_testcext_exec(PyObject *module)
 {
     PyObject *result;
 
