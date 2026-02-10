@@ -544,8 +544,8 @@ class TestMailbox(TestBase):
 
     def test_use_context_manager(self):
         # Mailboxes are usable as a context manager
-        with self._factory(self._path) as box:
-            self.assertIsInstance(box, self._box.__class__)
+        with self._box as box:
+            self.assertIs(self._box, box)
 
     def test_dump_message(self):
         # Write message representations to disk
