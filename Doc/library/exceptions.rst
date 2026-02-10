@@ -450,7 +450,7 @@ The following exceptions are the exceptions that are usually raised.
 
       :meth:`threading.Thread.join` can now raise this exception.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       This exception may be raised when acquiring :meth:`threading.Lock`
       or :meth:`threading.RLock`.
@@ -742,8 +742,8 @@ depending on the system error code.
 
    .. attribute:: characters_written
 
-      An integer containing the number of characters written to the stream
-      before it blocked.  This attribute is available when using the
+      An integer containing the number of **bytes** written to the stream
+      before it blocked. This attribute is available when using the
       buffered I/O classes from the :mod:`io` module.
 
 .. exception:: ChildProcessError
@@ -897,6 +897,9 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about dubious syntax.
 
+   This warning is typically emitted when compiling Python source code, and usually won't be reported
+   when running already compiled code.
+
 
 .. exception:: RuntimeWarning
 
@@ -974,6 +977,12 @@ their subgroups based on the types of the contained exceptions.
    automatic. The :exc:`ExceptionGroup` constructor, on the other hand,
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
+
+   .. impl-detail::
+
+      The ``excs`` parameter may be any sequence, but lists and tuples are
+      specifically processed more efficiently here. For optimal performance,
+      pass a tuple as ``excs``.
 
    .. attribute:: message
 

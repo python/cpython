@@ -16,7 +16,7 @@ having to sort the list after each insertion.  For long lists of items with
 expensive comparison operations, this can be an improvement over
 linear searches or frequent resorting.
 
-The module is called :mod:`bisect` because it uses a basic bisection
+The module is called :mod:`!bisect` because it uses a basic bisection
 algorithm to do its work.  Unlike other bisection tools that search for a
 specific value, the functions in this module are designed to locate an
 insertion point. Accordingly, the functions never call an :meth:`~object.__eq__`
@@ -27,9 +27,9 @@ point between values in an array.
 .. note::
 
    The functions in this module are not thread-safe. If multiple threads
-   concurrently use :mod:`bisect` functions on the same sequence, this
+   concurrently use :mod:`!bisect` functions on the same sequence, this
    may result in undefined behaviour. Likewise, if the provided sequence
-   is mutated by a different thread while a :mod:`bisect` function
+   is mutated by a different thread while a :mod:`!bisect` function
    is operating on it, the result is undefined. For example, using
    :py:func:`~bisect.insort_left` on the same list from multiple threads
    may result in the list becoming unsorted.
@@ -83,7 +83,7 @@ The following functions are provided:
    Insert *x* in *a* in sorted order.
 
    This function first runs :py:func:`~bisect.bisect_left` to locate an insertion point.
-   Next, it runs the :meth:`!insert` method on *a* to insert *x* at the
+   Next, it runs the :meth:`~sequence.insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
 
    To support inserting records in a table, the *key* function (if any) is
@@ -103,7 +103,7 @@ The following functions are provided:
    entries of *x*.
 
    This function first runs :py:func:`~bisect.bisect_right` to locate an insertion point.
-   Next, it runs the :meth:`!insert` method on *a* to insert *x* at the
+   Next, it runs the :meth:`~sequence.insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
 
    To support inserting records in a table, the *key* function (if any) is

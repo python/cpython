@@ -268,8 +268,6 @@ class GzipFile(_streams.BaseStream):
         self.name = filename
         self.crc = zlib.crc32(b"")
         self.size = 0
-        self.writebuf = []
-        self.bufsize = 0
         self.offset = 0  # Current file offset for seek(), tell(), etc
 
     def tell(self):

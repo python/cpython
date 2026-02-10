@@ -1,7 +1,7 @@
 .. _tkinter:
 
 *********************************
-Graphical User Interfaces with Tk
+Graphical user interfaces with Tk
 *********************************
 
 .. index::
@@ -39,6 +39,7 @@ alternative `GUI frameworks and tools <https://wiki.python.org/moin/GuiProgrammi
    tkinter.dnd.rst
    tkinter.ttk.rst
    idle.rst
+   turtle.rst
 
 .. Other sections I have in mind are
    Tkinter internals

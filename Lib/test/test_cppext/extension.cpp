@@ -7,7 +7,7 @@
 #undef NDEBUG
 
 #ifdef TEST_INTERNAL_C_API
-#  define Py_BUILD_CORE 1
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
@@ -15,6 +15,11 @@
 #ifdef TEST_INTERNAL_C_API
    // gh-135906: Check for compiler warnings in the internal C API
 #  include "internal/pycore_frame.h"
+   // mimalloc emits compiler warnings when Python is built on Windows.
+#  if !defined(MS_WINDOWS)
+#    include "internal/pycore_backoff.h"
+#    include "internal/pycore_cell.h"
+#  endif
 #endif
 
 #ifndef MODULE_NAME

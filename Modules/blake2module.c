@@ -16,9 +16,10 @@
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pycore_strhex.h"       // _Py_strhex()
-#include "pycore_typeobject.h"
 #include "pycore_moduleobject.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_typeobject.h"
 
 // QUICK CPU AUTODETECTION
 //
@@ -1008,17 +1009,10 @@ py_blake2_dealloc(PyObject *self)
     Py_DECREF(type);
 }
 
-static int
-py_blake2_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyType_Slot blake2b_type_slots[] = {
     {Py_tp_clear, py_blake2_clear},
     {Py_tp_dealloc, py_blake2_dealloc},
-    {Py_tp_traverse, py_blake2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_doc, (char *)py_blake2b_new__doc__},
     {Py_tp_methods, py_blake2b_methods},
     {Py_tp_getset, py_blake2b_getsetters},
@@ -1029,7 +1023,7 @@ static PyType_Slot blake2b_type_slots[] = {
 static PyType_Slot blake2s_type_slots[] = {
     {Py_tp_clear, py_blake2_clear},
     {Py_tp_dealloc, py_blake2_dealloc},
-    {Py_tp_traverse, py_blake2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_doc, (char *)py_blake2s_new__doc__},
     {Py_tp_methods, py_blake2b_methods},
     {Py_tp_getset, py_blake2b_getsetters},

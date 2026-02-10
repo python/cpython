@@ -13,7 +13,7 @@ IDLE --- Python editor and shell
    single: Integrated Development Environment
 
 ..
-   Remember to update Lib/idlelib/help.html with idlelib.help.copy_source() when modifying this file.
+   Remember to update Lib/idlelib/help.html with idlelib.help.copy_strip() when modifying this file.
 
 --------------
 
@@ -36,6 +36,10 @@ IDLE has the following features:
   of global and local namespaces
 
 * configuration, browsers, and other dialogs
+
+The IDLE application is implemented in the :mod:`idlelib` package.
+
+.. include:: ../includes/optional-module.rst
 
 Menus
 -----
@@ -88,7 +92,7 @@ Save
 
 Save As...
    Save the current window with a Save As dialog.  The file saved becomes the
-   new associated file for the window. (If your file namager is set to hide
+   new associated file for the window. (If your file manager is set to hide
    extensions, the current extension will be omitted in the file name box.
    If the new filename has no '.', '.py' and '.txt' will be added for Python
    and text files, except that on macOS Aqua,'.py' is added for all files.)
@@ -154,7 +158,7 @@ Go to Line
 
 Show Completions
    Open a scrollable list allowing selection of existing names. See
-   :ref:`Completions <completions>` in the Editing and navigation section below.
+   :ref:`Completions <completions>` in the Editing and Navigation section below.
 
 Expand Word
    Expand a prefix you have typed to match a full word in the same window;
@@ -163,7 +167,7 @@ Expand Word
 Show Call Tip
    After an unclosed parenthesis for a function, open a small window with
    function parameter hints.  See :ref:`Calltips <calltips>` in the
-   Editing and navigation section below.
+   Editing and Navigation section below.
 
 Show Surrounding Parens
    Highlight the surrounding parenthesis.
@@ -174,9 +178,9 @@ Format menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Format Paragraph
-   Reformat the current blank-line-delimited paragraph in comment block or
-   multiline string or selected line in a string.  All lines in the
-   paragraph will be formatted to less than N columns, where N defaults to 72.
+   Rewrap the text block containing the text insert cursor.
+   Avoid code lines.  See :ref:`Format block<format-block>` in the
+   Editing and Navigation section below.
 
 Indent Region
    Shift selected lines right by the indent width (default 4 spaces).
@@ -204,9 +208,9 @@ New Indent Width
    Open a dialog to change indent width. The accepted default by the Python
    community is 4 spaces.
 
-Strip Trailing Chitespace
+Strip Trailing Whitespace
    Remove trailing space and other whitespace characters after the last
-   non-whitespace character of a line by applying str.rstrip to each line,
+   non-whitespace character of a line by applying :meth:`str.rstrip` to each line,
    including lines within multiline strings.  Except for Shell windows,
    remove extra newlines at the end of the file.
 
@@ -562,6 +566,20 @@ In an editor, import statements have no effect until one runs the file.
 One might want to run a file after writing import statements, after
 adding function definitions, or after opening an existing file.
 
+.. _format-block:
+
+Format block
+^^^^^^^^^^^^
+
+Reformat Paragraph rewraps a block ('paragraph') of contiguous equally
+indented non-blank comments, a similar block of text within a multiline
+string, or a selected subset of either.
+If needed, add a blank line to separate string from code.
+Partial lines in a selection expand to complete lines.
+The resulting lines have the same indent as before
+but have maximum total length of N columns (characters).
+Change the default N of 72 on the Window tab of IDLE Settings.
+
 .. _code-context:
 
 Code Context
@@ -657,7 +675,9 @@ looked for in the user's home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE's Python shell.
 
-Command line usage
+.. _idlelib-cli:
+
+Command-line usage
 ^^^^^^^^^^^^^^^^^^
 
 .. program:: idle

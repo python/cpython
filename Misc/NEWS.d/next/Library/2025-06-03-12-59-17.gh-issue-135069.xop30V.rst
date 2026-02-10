@@ -1,3 +1,0 @@
-Fix the "Invalid error handling" exception in
-:class:`!encodings.idna.IncrementalDecoder` to correctly replace the
-'errors' parameter.

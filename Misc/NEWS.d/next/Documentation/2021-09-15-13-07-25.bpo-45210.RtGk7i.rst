@@ -1,2 +1,0 @@
-Document that error indicator may be set in tp_dealloc, and how to avoid
-clobbering it.

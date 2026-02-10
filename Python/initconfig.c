@@ -160,6 +160,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(legacy_windows_stdio, BOOL, READ_ONLY, NO_SYS),
 #endif
     SPEC(malloc_stats, BOOL, READ_ONLY, NO_SYS),
+    SPEC(pymalloc_hugepages, BOOL, READ_ONLY, NO_SYS),
     SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv")),
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
@@ -239,9 +240,11 @@ static const PyConfigSpec PYPRECONFIG_SPEC[] = {
 
 
 // Forward declarations
-static PyObject*
-config_get(const PyConfig *config, const PyConfigSpec *spec,
-           int use_sys);
+static PyObject* config_get(const PyConfig *config, const PyConfigSpec *spec,
+                            int use_sys);
+static void initconfig_free_wstr(wchar_t *member);
+static void initconfig_free_wstr_list(PyWideStringList *list);
+static void initconfig_free_config(const PyConfig *config);
 
 
 /* --- Command line options --------------------------------------- */
@@ -256,6 +259,7 @@ static const char usage_help[] = "\
 Options (and corresponding environment variables):\n\
 -b     : issue warnings about converting bytes/bytearray to str and comparing\n\
          bytes/bytearray with str or bytes with int. (-bb: issue errors)\n\
+         deprecated since 3.15 and will become no-op in 3.17.\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
@@ -897,6 +901,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
+    assert(config->pymalloc_hugepages >= 0);
     assert(config->site_import >= 0);
     assert(config->bytes_warning >= 0);
     assert(config->warn_default_encoding >= 0);
@@ -1843,7 +1848,9 @@ config_read_env_vars(PyConfig *config)
     _Py_get_env_flag(use_env, &config->parser_debug, "PYTHONDEBUG");
     _Py_get_env_flag(use_env, &config->verbose, "PYTHONVERBOSE");
     _Py_get_env_flag(use_env, &config->optimization_level, "PYTHONOPTIMIZE");
-    _Py_get_env_flag(use_env, &config->inspect, "PYTHONINSPECT");
+    if (!config->inspect && _Py_GetEnv(use_env, "PYTHONINSPECT")) {
+        config->inspect = 1;
+    }
 
     int dont_write_bytecode = 0;
     _Py_get_env_flag(use_env, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
@@ -1873,6 +1880,18 @@ config_read_env_vars(PyConfig *config)
     }
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
+    }
+    {
+        const char *env = _Py_GetEnv(use_env, "PYTHON_PYMALLOC_HUGEPAGES");
+        if (env) {
+            int value;
+            if (_Py_str_to_int(env, &value) < 0 || value < 0) {
+                /* PYTHON_PYMALLOC_HUGEPAGES=text or negative
+                   behaves as PYTHON_PYMALLOC_HUGEPAGES=1 */
+                value = 1;
+            }
+            config->pymalloc_hugepages = (value > 0);
+        }
     }
 
     if (config->dump_refs_file == NULL) {
@@ -2807,10 +2826,8 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
         return _PyStatus_NO_MEMORY();
     }
 
-#ifdef Py_STATS
-    if (config->_pystats) {
-        _Py_StatsOn();
-    }
+#ifdef PYMALLOC_USE_HUGEPAGES
+    runtime->allocators.use_hugepages = config->pymalloc_hugepages;
 #endif
 
     return _PyStatus_OK();
@@ -3725,6 +3742,9 @@ PyInitConfig_Free(PyInitConfig *config)
     if (config == NULL) {
         return;
     }
+
+    initconfig_free_config(&config->config);
+    PyMem_RawFree(config->inittab);
     free(config->err_msg);
     free(config);
 }
@@ -4093,13 +4113,51 @@ PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
 }
 
 
+static void
+initconfig_free_wstr(wchar_t *member)
+{
+    if (member) {
+        free(member);
+    }
+}
+
+
+static void
+initconfig_free_wstr_list(PyWideStringList *list)
+{
+    for (Py_ssize_t i = 0; i < list->length; i++) {
+        free(list->items[i]);
+    }
+    free(list->items);
+}
+
+
+static void
+initconfig_free_config(const PyConfig *config)
+{
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        void *member = config_get_spec_member(config, spec);
+        if (spec->type == PyConfig_MEMBER_WSTR
+            || spec->type == PyConfig_MEMBER_WSTR_OPT)
+        {
+            wchar_t *wstr = *(wchar_t **)member;
+            initconfig_free_wstr(wstr);
+        }
+        else if (spec->type == PyConfig_MEMBER_WSTR_LIST) {
+            initconfig_free_wstr_list(member);
+        }
+    }
+}
+
+
 static int
-_PyWideStringList_FromUTF8(PyInitConfig *config, PyWideStringList *list,
-                           Py_ssize_t length, char * const *items)
+initconfig_set_str_list(PyInitConfig *config, PyWideStringList *list,
+                        Py_ssize_t length, char * const *items)
 {
     PyWideStringList wlist = _PyWideStringList_INIT;
     size_t size = sizeof(wchar_t*) * length;
-    wlist.items = (wchar_t **)PyMem_RawMalloc(size);
+    wlist.items = (wchar_t **)malloc(size);
     if (wlist.items == NULL) {
         config->status = _PyStatus_NO_MEMORY();
         return -1;
@@ -4108,14 +4166,14 @@ _PyWideStringList_FromUTF8(PyInitConfig *config, PyWideStringList *list,
     for (Py_ssize_t i = 0; i < length; i++) {
         wchar_t *arg = utf8_to_wstr(config, items[i]);
         if (arg == NULL) {
-            _PyWideStringList_Clear(&wlist);
+            initconfig_free_wstr_list(&wlist);
             return -1;
         }
         wlist.items[i] = arg;
         wlist.length++;
     }
 
-    _PyWideStringList_Clear(list);
+    initconfig_free_wstr_list(list);
     *list = wlist;
     return 0;
 }
@@ -4136,7 +4194,7 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
         return -1;
     }
     PyWideStringList *list = raw_member;
-    if (_PyWideStringList_FromUTF8(config, list, length, items) < 0) {
+    if (initconfig_set_str_list(config, list, length, items) < 0) {
         return -1;
     }
 

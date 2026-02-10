@@ -12,7 +12,7 @@
 
 --------------
 
-The :mod:`pty` module defines operations for handling the pseudo-terminal
+The :mod:`!pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
@@ -22,7 +22,7 @@ Pseudo-terminal handling is highly platform dependent. This code is mainly
 tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
 platforms but it's not been thoroughly tested).
 
-The :mod:`pty` module defines the following functions:
+The :mod:`!pty` module defines the following functions:
 
 
 .. function:: fork()
@@ -33,8 +33,13 @@ The :mod:`pty` module defines the following functions:
    file descriptor connected to the child's controlling terminal (and also to the
    child's standard input and output).
 
+   The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
+
    .. warning:: On macOS the use of this function is unsafe when mixed with using
       higher-level system APIs, and that includes using :mod:`urllib.request`.
+
+   .. versionchanged:: 3.15
+      The returned file descriptor is now made non-inheritable.
 
 
 .. function:: openpty()
