@@ -211,10 +211,23 @@ test_py_set_immortal(PyObject *self, PyObject *unused)
     Py_SET_REFCNT(&object, 1);
     Py_SET_TYPE(&object, &PyBaseObject_Type);
     assert(!PyUnstable_IsImmortal(&object));
-    PyUnstable_SetImmortal(&object);
+    int rc = PyUnstable_SetImmortal(&object);
+    assert(rc == 1);
     assert(PyUnstable_IsImmortal(&object));
     Py_DECREF(&object);  // should not dealloc
     assert(PyUnstable_IsImmortal(&object));
+
+    // Check already immortal object
+    rc = PyUnstable_SetImmortal(&object);
+    assert(rc == 0);
+
+    // Check unicode objects
+    PyObject *unicode = PyUnicode_FromString("test");
+    assert(!PyUnstable_IsImmortal(unicode));
+    rc = PyUnstable_SetImmortal(unicode);
+    assert(rc == 0);
+    assert(!PyUnstable_IsImmortal(unicode));
+    Py_DECREF(unicode);
     Py_RETURN_NONE;
 }
 
