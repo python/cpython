@@ -726,7 +726,7 @@ else:
             try:
                 if _getfinalpathname(spath) == path:
                     path = spath
-            except ValueError as ex:
+            except ValueError:
                 # Unexpected, as an invalid path should not have gained a prefix
                 # at any point, but we ignore this error just in case.
                 pass

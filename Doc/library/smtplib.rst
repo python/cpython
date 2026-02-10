@@ -14,7 +14,7 @@
 
 --------------
 
-The :mod:`smtplib` module defines an SMTP client session object that can be used
+The :mod:`!smtplib` module defines an SMTP client session object that can be used
 to send mail to any internet machine with an SMTP or ESMTP listener daemon.  For
 details of SMTP and ESMTP operation, consult :rfc:`821` (Simple Mail Transfer
 Protocol) and :rfc:`1869` (SMTP Service Extensions).
@@ -354,7 +354,7 @@ An :class:`SMTP` instance has the following methods:
    :exc:`SMTPException`
       No suitable authentication method was found.
 
-   Each of the authentication methods supported by :mod:`smtplib` are tried in
+   Each of the authentication methods supported by :mod:`!smtplib` are tried in
    turn if they are advertised as supported by the server.  See :meth:`auth`
    for a list of supported authentication methods.  *initial_response_ok* is
    passed through to :meth:`auth`.
@@ -406,7 +406,7 @@ An :class:`SMTP` instance has the following methods:
    call the :meth:`login` method, which will try each of the above mechanisms
    in turn, in the order listed.  ``auth`` is exposed to facilitate the
    implementation of authentication methods not (or not yet) supported
-   directly by :mod:`smtplib`.
+   directly by :mod:`!smtplib`.
 
    .. versionadded:: 3.5
 
@@ -458,9 +458,11 @@ An :class:`SMTP` instance has the following methods:
    Send mail.  The required arguments are an :rfc:`822` from-address string, a list
    of :rfc:`822` to-address strings (a bare string will be treated as a list with 1
    address), and a message string.  The caller may pass a list of ESMTP options
-   (such as ``8bitmime``) to be used in ``MAIL FROM`` commands as *mail_options*.
+   (such as ``"8bitmime"``) to be used in ``MAIL FROM`` commands as *mail_options*.
    ESMTP options (such as ``DSN`` commands) that should be used with all ``RCPT``
-   commands can be passed as *rcpt_options*.  (If you need to use different ESMTP
+   commands can be passed as *rcpt_options*. Each option should be passed as a string
+   containing the full text of the option, including any potential key
+   (for instance, ``"NOTIFY=SUCCESS,FAILURE"``). (If you need to use different ESMTP
    options to different recipients you have to use the low-level methods such as
    :meth:`!mail`, :meth:`!rcpt` and :meth:`!data` to send the message.)
 

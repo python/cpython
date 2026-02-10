@@ -1,2 +1,0 @@
-Support :term:`file-like object` raising :exc:`OSError` from :meth:`~io.IOBase.fileno` in color
-detection (``_colorize.can_colorize()``). This can occur when ``sys.stdout`` is redirected.

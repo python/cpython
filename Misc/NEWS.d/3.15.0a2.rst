@@ -583,7 +583,7 @@ would raise an error.
 .. nonce: peEgcr
 .. section: Library
 
-Deprecate ``__version__`` from a :mod:`imaplib`. Patch by Hugo van Kemenade.
+Deprecate ``__version__`` from :mod:`imaplib`. Patch by Hugo van Kemenade.
 
 ..
 
@@ -1093,7 +1093,7 @@ calls to native code.
 .. date: 2025-11-04-12-18-06
 .. gh-issue: 140942
 .. nonce: GYns6n
-.. section: Core and Builtins
+.. section: Library
 
 Add ``.cjs`` to :mod:`mimetypes` to give CommonJS modules a MIME type of
 ``application/node``.
@@ -1122,7 +1122,7 @@ the ``%*b`` format with a large width that results in a :exc:`MemoryError`.
 .. date: 2025-11-02-15-28-33
 .. gh-issue: 140260
 .. nonce: JNzlGz
-.. section: Core and Builtins
+.. section: Library
 
 Fix :mod:`struct` data race in endian table initialization with
 subinterpreters. Patch by Shamil Abdulaev.
@@ -1142,7 +1142,7 @@ Tran.
 .. date: 2025-10-31-14-03-42
 .. gh-issue: 90344
 .. nonce: gvZigO
-.. section: Core and Builtins
+.. section: Library
 
 Replace :class:`io.IncrementalNewlineDecoder` with non incremental newline
 decoders in codebase where :meth:`!io.IncrementalNewlineDecoder.decode` was
@@ -1246,7 +1246,7 @@ encountering malformed :attr:`~ast.AST._fields` containing non-:class:`str`.
 .. date: 2025-10-22-23-26-37
 .. gh-issue: 140443
 .. nonce: wT5i1A
-.. section: Core and Builtins
+.. section: Library
 
 The logarithm functions (such as :func:`math.log10` and :func:`math.log`)
 may now produce slightly different results for extremely large integers that
@@ -1291,7 +1291,7 @@ Specifically, 19 bit branches for AArch64 in Mach-O object files.
 .. date: 2025-10-21-09-20-03
 .. gh-issue: 140398
 .. nonce: SoABwJ
-.. section: Core and Builtins
+.. section: Library
 
 Fix memory leaks in :mod:`readline` functions
 :func:`~readline.read_init_file`, :func:`~readline.read_history_file`,
@@ -1451,7 +1451,7 @@ under no memory.
 .. section: Core and Builtins
 
 Update :class:`bytearray` to use a :class:`bytes` under the hood as its
-buffer and add :func:`bytearray.take_bytes` to take it out.
+buffer and add :meth:`bytearray.take_bytes` to take it out.
 
 ..
 

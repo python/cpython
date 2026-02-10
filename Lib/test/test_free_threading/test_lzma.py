@@ -45,11 +45,24 @@ class TestLZMA(unittest.TestCase):
             data = lzd.decompress(compressed, chunk_size)
             self.assertEqual(len(data), chunk_size)
             output.append(data)
+            # Read attributes concurrently with other threads decompressing
+            self.assertEqual(lzd.check, lzma.CHECK_CRC64)
+            self.assertIsInstance(lzd.eof, bool)
+            self.assertIsInstance(lzd.needs_input, bool)
+            self.assertIsInstance(lzd.unused_data, bytes)
 
         run_concurrently(worker_func=worker, nthreads=NTHREADS)
         self.assertEqual(len(output), NTHREADS)
         # Verify the expected chunks (order doesn't matter due to append race)
         self.assertSetEqual(set(output), set(chunks))
+        self.assertEqual(lzd.check, lzma.CHECK_CRC64)
+        self.assertTrue(lzd.eof)
+        self.assertFalse(lzd.needs_input)
+        # Each thread added full compressed data to the buffer, but only 1 copy
+        # is consumed to produce the output. The rest remains as unused_data.
+        self.assertEqual(
+            len(lzd.unused_data), len(compressed) * (NTHREADS - 1)
+        )
 
 
 if __name__ == "__main__":

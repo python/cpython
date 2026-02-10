@@ -68,6 +68,13 @@ class ResourceTracker(object):
         self._exitcode = None
         self._reentrant_messages = deque()
 
+        # True to use colon-separated lines, rather than JSON lines,
+        # for internal communication. (Mainly for testing).
+        # Filenames not supported by the simple format will always be sent
+        # using JSON.
+        # The reader should understand all formats.
+        self._use_simple_format = False
+
     def _reentrant_call_error(self):
         # gh-109629: this happens if an explicit call to the ResourceTracker
         # gets interrupted by a garbage collection, invoking a finalizer (*)
@@ -200,7 +207,9 @@ class ResourceTracker(object):
             os.close(r)
 
     def _make_probe_message(self):
-        """Return a JSON-encoded probe message."""
+        """Return a probe message."""
+        if self._use_simple_format:
+            return b'PROBE:0:noop\n'
         return (
             json.dumps(
                 {"cmd": "PROBE", "rtype": "noop"},
@@ -267,6 +276,15 @@ class ResourceTracker(object):
         assert nbytes == len(msg), f"{nbytes=} != {len(msg)=}"
 
     def _send(self, cmd, name, rtype):
+        if self._use_simple_format and '\n' not in name:
+            msg = f"{cmd}:{name}:{rtype}\n".encode("ascii")
+            if len(msg) > 512:
+                # posix guarantees that writes to a pipe of less than PIPE_BUF
+                # bytes are atomic, and that PIPE_BUF >= 512
+                raise ValueError('msg too long')
+            self._ensure_running_and_write(msg)
+            return
+
         # POSIX guarantees that writes to a pipe of less than PIPE_BUF (512 on Linux)
         # bytes are atomic. Therefore, we want the message to be shorter than 512 bytes.
         # POSIX shm_open() and sem_open() require the name, including its leading slash,
@@ -286,6 +304,7 @@ class ResourceTracker(object):
 
         # The entire JSON message is guaranteed < PIPE_BUF (512 bytes) by construction.
         assert len(msg) <= 512, f"internal error: message too long ({len(msg)} bytes)"
+        assert msg.startswith(b'{')
 
         self._ensure_running_and_write(msg)
 
@@ -294,6 +313,30 @@ ensure_running = _resource_tracker.ensure_running
 register = _resource_tracker.register
 unregister = _resource_tracker.unregister
 getfd = _resource_tracker.getfd
+
+
+def _decode_message(line):
+    if line.startswith(b'{'):
+        try:
+            obj = json.loads(line.decode('ascii'))
+        except Exception as e:
+            raise ValueError("malformed resource_tracker message: %r" % (line,)) from e
+
+        cmd = obj["cmd"]
+        rtype = obj["rtype"]
+        b64  = obj.get("base64_name", "")
+
+        if not isinstance(cmd, str) or not isinstance(rtype, str) or not isinstance(b64, str):
+            raise ValueError("malformed resource_tracker fields: %r" % (obj,))
+
+        try:
+            name = base64.urlsafe_b64decode(b64).decode('utf-8', 'surrogateescape')
+        except ValueError as e:
+            raise ValueError("malformed resource_tracker base64_name: %r" % (b64,)) from e
+    else:
+        cmd, rest = line.strip().decode('ascii').split(':', maxsplit=1)
+        name, rtype = rest.rsplit(':', maxsplit=1)
+    return cmd, rtype, name
 
 
 def main(fd):
@@ -318,23 +361,7 @@ def main(fd):
         with open(fd, 'rb') as f:
             for line in f:
                 try:
-                    try:
-                        obj = json.loads(line.decode('ascii'))
-                    except Exception as e:
-                        raise ValueError("malformed resource_tracker message: %r" % (line,)) from e
-
-                    cmd = obj["cmd"]
-                    rtype = obj["rtype"]
-                    b64  = obj.get("base64_name", "")
-
-                    if not isinstance(cmd, str) or not isinstance(rtype, str) or not isinstance(b64, str):
-                        raise ValueError("malformed resource_tracker fields: %r" % (obj,))
-
-                    try:
-                        name = base64.urlsafe_b64decode(b64).decode('utf-8', 'surrogateescape')
-                    except ValueError as e:
-                        raise ValueError("malformed resource_tracker base64_name: %r" % (b64,)) from e
-
+                    cmd, rtype, name = _decode_message(line)
                     cleanup_func = _CLEANUP_FUNCS.get(rtype, None)
                     if cleanup_func is None:
                         raise ValueError(

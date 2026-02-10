@@ -18,7 +18,7 @@ jobs:
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.
@@ -28,7 +28,7 @@ jobs:
         version: ${{ env.WASMTIME_VERSION }}
     - name: "Restore WASI SDK"
       id: cache-wasi-sdk
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ env.WASI_SDK_PATH }}
         key: ${{ runner.os }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}
@@ -41,20 +41,20 @@ jobs:
     - name: "Add ccache to PATH"
       run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: "Install Python"
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.x'
     - name: "Runner image version"
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: "Configure build Python"
-      run: python3 Tools/wasm/wasi configure-build-python -- --config-cache --with-pydebug
+      run: python3 Platforms/WASI configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
-      run: python3 Tools/wasm/wasi make-build-python
+      run: python3 Platforms/WASI make-build-python
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
-      run: python3 Tools/wasm/wasi configure-host -- --config-cache
+      run: python3 Platforms/WASI configure-host -- --config-cache
     - name: "Make host"
-      run: python3 Tools/wasm/wasi make-host
+      run: python3 Platforms/WASI make-host
     - name: "Display build info"
       run: make --directory "${CROSS_BUILD_WASI}" pythoninfo
     - name: "Test"

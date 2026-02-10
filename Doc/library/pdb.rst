@@ -520,7 +520,8 @@ can be overridden by the local file.
    To remove all commands from a breakpoint, type ``commands`` and follow it
    immediately with ``end``; that is, give no commands.
 
-   With no *bpnumber* argument, ``commands`` refers to the last breakpoint set.
+   With no *bpnumber* argument, ``commands`` refers to the most recently set
+   breakpoint that still exists.
 
    You can use breakpoint commands to start your program up again.  Simply use
    the :pdbcmd:`continue` command, or :pdbcmd:`step`,

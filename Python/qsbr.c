@@ -57,7 +57,7 @@ qsbr_allocate(struct _qsbr_shared *shared)
     return qsbr;
 }
 
-// Initialize (or reintialize) the freelist of QSBR thread states
+// Initialize (or reinitialize) the freelist of QSBR thread states
 static void
 initialize_new_array(struct _qsbr_shared *shared)
 {

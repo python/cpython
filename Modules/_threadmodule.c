@@ -2200,9 +2200,10 @@ thread_stack_size(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|n:stack_size", &new_size))
         return NULL;
 
-    if (new_size < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "size must be 0 or a positive value");
+    Py_ssize_t min_size = _PyOS_MIN_STACK_SIZE + SYSTEM_PAGE_SIZE;
+    if (new_size != 0 && new_size < min_size) {
+        PyErr_Format(PyExc_ValueError,
+                     "size must be at least %zi bytes", min_size);
         return NULL;
     }
 

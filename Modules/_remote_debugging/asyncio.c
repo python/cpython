@@ -71,6 +71,28 @@ read_async_debug(RemoteUnwinderObject *unwinder)
     return result;
 }
 
+int
+ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
+{
+    // If already available, nothing to do
+    if (unwinder->async_debug_offsets_available) {
+        return 0;
+    }
+
+    // Try to load async debug offsets (the target process may have
+    // loaded asyncio since we last checked)
+    if (read_async_debug(unwinder) < 0) {
+        PyErr_Clear();
+        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
+        return -1;
+    }
+
+    unwinder->async_debug_offsets_available = 1;
+    return 0;
+}
+
 /* ============================================================================
  * SET ITERATION FUNCTIONS
  * ============================================================================ */
@@ -90,8 +112,16 @@ iterate_set_entries(
     }
 
     Py_ssize_t num_els = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.used);
-    Py_ssize_t set_len = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.mask) + 1;
+    Py_ssize_t mask = GET_MEMBER(Py_ssize_t, set_object, unwinder->debug_offsets.set_object.mask);
     uintptr_t table_ptr = GET_MEMBER(uintptr_t, set_object, unwinder->debug_offsets.set_object.table);
+
+    // Validate mask and num_els to prevent huge loop iterations from garbage data
+    if (mask < 0 || mask >= MAX_SET_TABLE_SIZE || num_els < 0 || num_els > mask + 1) {
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "Invalid set object (corrupted remote memory)");
+        return -1;
+    }
+    Py_ssize_t set_len = mask + 1;
 
     Py_ssize_t i = 0;
     Py_ssize_t els = 0;
@@ -790,14 +820,15 @@ append_awaited_by_for_thread(
             return -1;
         }
 
-        if (GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next) == 0) {
+        uintptr_t next_node = GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next);
+        if (next_node == 0) {
             PyErr_SetString(PyExc_RuntimeError,
                            "Invalid linked list structure reading remote memory");
             set_exception_cause(unwinder, PyExc_RuntimeError, "NULL pointer in task linked list");
             return -1;
         }
 
-        uintptr_t task_addr = (uintptr_t)GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next)
+        uintptr_t task_addr = next_node
             - (uintptr_t)unwinder->async_debug_offsets.asyncio_task_object.task_node;
 
         if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
@@ -808,7 +839,7 @@ append_awaited_by_for_thread(
         // Read next node
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                (uintptr_t)GET_MEMBER(uintptr_t, task_node, unwinder->debug_offsets.llist_node.next),
+                next_node,
                 sizeof(task_node),
                 task_node) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read next task node in awaited_by");

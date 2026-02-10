@@ -18,7 +18,7 @@ simple syntaxes resembling that of the Unix shell.  This will often be useful
 for writing minilanguages, (for example, in run control files for Python
 applications) or for parsing quoted strings.
 
-The :mod:`shlex` module defines the following functions:
+The :mod:`!shlex` module defines the following functions:
 
 
 .. function:: split(s, comments=False, posix=True)
@@ -98,7 +98,7 @@ The :mod:`shlex` module defines the following functions:
 
    .. versionadded:: 3.3
 
-The :mod:`shlex` module defines the following class:
+The :mod:`!shlex` module defines the following class:
 
 
 .. class:: shlex(instream=None, infile=None, posix=False, punctuation_chars=False)
@@ -214,7 +214,7 @@ A :class:`~shlex.shlex` instance has the following methods:
    with the name of the current source file and the ``%d`` with the current input
    line number (the optional arguments can be used to override these).
 
-   This convenience is provided to encourage :mod:`shlex` users to generate error
+   This convenience is provided to encourage :mod:`!shlex` users to generate error
    messages in the standard, parseable format understood by Emacs and other Unix
    tools.
 
