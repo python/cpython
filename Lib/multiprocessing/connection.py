@@ -46,6 +46,7 @@ BUFSIZE = 64 * 1024
 CONNECTION_TIMEOUT = 20.
 
 _mmap_counter = itertools.count()
+_MAX_PIPE_ATTEMPTS = 100
 
 default_family = 'AF_INET'
 families = ['AF_INET']
@@ -480,12 +481,14 @@ class Listener(object):
             if address:
                 self._listener = PipeListener(address, backlog)
             else:
-                while True:
+                for attempts in itertools.count():
                     address = arbitrary_address(family)
                     try:
                         self._listener = PipeListener(address, backlog)
                         break
                     except OSError as e:
+                        if attempts >= _MAX_PIPE_ATTEMPTS:
+                            raise
                         if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
                                               _winapi.ERROR_ACCESS_DENIED):
                             raise
@@ -589,7 +592,7 @@ else:
             access = _winapi.GENERIC_WRITE
             obsize, ibsize = 0, BUFSIZE
 
-        while True:
+        for attempts in itertools.count():
             address = arbitrary_address('AF_PIPE')
             try:
                 h1 = _winapi.CreateNamedPipe(
@@ -603,6 +606,8 @@ else:
                     )
                 break
             except OSError as e:
+                if attempts >= _MAX_PIPE_ATTEMPTS:
+                    raise
                 if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
                                       _winapi.ERROR_ACCESS_DENIED):
                     raise

@@ -23,6 +23,7 @@ BUFSIZE = 8192
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
 _mmap_counter = itertools.count()
+_MAX_PIPE_ATTEMPTS = 100
 
 
 # Replacement for os.pipe() using handles instead of fds
@@ -51,7 +52,7 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
 
     h1 = h2 = None
     try:
-        while True:
+        for attempts in itertools.count():
             address = r'\\.\pipe\python-pipe-{:d}-{:d}-{}'.format(
                 os.getpid(), next(_mmap_counter), os.urandom(8).hex())
             try:
@@ -60,6 +61,8 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
                     1, obsize, ibsize, _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL)
                 break
             except OSError as e:
+                if attempts >= _MAX_PIPE_ATTEMPTS:
+                    raise
                 if e.winerror not in (_winapi.ERROR_PIPE_BUSY,
                                       _winapi.ERROR_ACCESS_DENIED):
                     raise
