@@ -103,7 +103,7 @@ class SystemTapBackend(TraceBackend):
     COMMAND = ["stap", "-g"]
 
 
-@unittest.skipIf(MS_WINDOWS, "Tests not compliant with trace on Windows.")
+@unittest.skipIf(MS_WINDOWS, "Tests not compliant with trace on Windows")
 class TraceTests:
     # unittest.TestCase options
     maxDiff = None
