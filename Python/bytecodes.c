@@ -938,9 +938,9 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_LIST_SLICE) =
-            _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE;
+            _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE + POP_TOP + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res, ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
@@ -949,9 +949,13 @@ dummy_func(
 
             PyObject *res_o = _PyList_SliceSubscript(list, sub);
             STAT_INC(BINARY_OP, hit);
-            DECREF_INPUTS();
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            ls = list_st;
+            ss = sub_st;
+            INPUTS_DEAD();
         }
 
         macro(BINARY_OP_SUBSCR_STR_INT) =
