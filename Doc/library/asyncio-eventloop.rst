@@ -1346,7 +1346,7 @@ Executing code in thread or process pools
 .. awaitablemethod:: loop.run_in_executor(executor, func, *args)
 
    Arrange for *func* to be called in the specified executor
-   with *args* being passed as positional arguments.
+   passing *args* as positional arguments.
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
