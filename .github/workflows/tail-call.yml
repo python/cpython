@@ -20,7 +20,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
-  LLVM_VERSION: 21
+  LLVM_VERSION: 20
 
 jobs:
   windows:
@@ -33,14 +33,9 @@ jobs:
         include:
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
-            runner: windows-2025-vs2026
+            runner: windows-2022
             build_flags: ""
             run_tests: true
-          - target: x86_64-pc-windows-msvc/msvc-free-threading
-            architecture: x64
-            runner: windows-2025-vs2026
-            build_flags: --disable-gil
-            run_tests: false
     steps:
       - uses: actions/checkout@v6
         with:
