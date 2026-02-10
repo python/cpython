@@ -49,6 +49,8 @@ Program Execution
 
 - [Quiescent-State Based Reclamation (QSBR)](qsbr.md)
 
+- [Free Threading Building Blocks](free_threading.md)
+
 - [Stack protection](stack_protection.md)
 
 Built-in Types
