@@ -1,0 +1,5 @@
+Enables defining the ``_PY_IMPL_NAME`` and ``_PY_IMPL_CACHE_TAG`` preprocessor
+definitions to override :data:`sys.implementation` at build time. Definitions
+need to include quotes when setting to a string literal. Setting the cache tag
+to ``NULL`` has the effect of completely disabling automatic creation and use of
+``.pyc`` files.

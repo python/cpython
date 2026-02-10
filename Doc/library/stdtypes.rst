@@ -2870,6 +2870,14 @@ expression support in the :mod:`re` module).
    You can use :meth:`str.maketrans` to create a translation map from
    character-to-character mappings in different formats.
 
+   The following example uses a mapping to replace ``'a'`` with ``'X'``,
+   ``'b'`` with ``'Y'``, and delete ``'c'``:
+
+   .. doctest::
+
+      >>> 'abc123'.translate({ord('a'): 'X', ord('b'): 'Y', ord('c'): None})
+      'XY123'
+
    See also the :mod:`codecs` module for a more flexible approach to custom
    character mappings.
 
