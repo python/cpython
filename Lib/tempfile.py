@@ -57,10 +57,7 @@ _bin_openflags = _text_openflags
 if hasattr(_os, 'O_BINARY'):
     _bin_openflags |= _os.O_BINARY
 
-if hasattr(_os, 'TMP_MAX'):
-    TMP_MAX = _os.TMP_MAX
-else:
-    TMP_MAX = 10000
+TMP_MAX = 100
 
 # This variable _was_ unused for legacy reasons, see issue 10354.
 # But as of 3.5 we actually use it at runtime so changing it would
@@ -213,10 +210,14 @@ def _get_default_tempdir(dirlist=None):
             except FileExistsError:
                 pass
             except PermissionError:
-                # This exception is thrown when a directory with the chosen name
-                # already exists on windows.
-                if (_os.name == 'nt' and _os.path.isdir(dir) and
-                    _os.access(dir, _os.W_OK)):
+                # On Posix, this exception is raised when the user has no
+                # write access to the parent directory.
+                # On Windows, it is also raised when a directory with
+                # the chosen name already exists, or if the parent directory
+                # is not a directory.
+                # We cannot distinguish between "directory-exists-error" and
+                # "access-denied-error".
+                if _os.name == 'nt' and _os.path.isdir(dir):
                     continue
                 break   # no point trying more names in this directory
             except OSError:
@@ -258,10 +259,14 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
         except FileExistsError:
             continue    # try again
         except PermissionError:
-            # This exception is thrown when a directory with the chosen name
-            # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
+            # On Posix, this exception is raised when the user has no
+            # write access to the parent directory.
+            # On Windows, it is also raised when a directory with
+            # the chosen name already exists, or if the parent directory
+            # is not a directory.
+            # We cannot distinguish between "directory-exists-error" and
+            # "access-denied-error".
+            if _os.name == 'nt' and _os.path.isdir(dir) and seq < TMP_MAX - 1:
                 continue
             else:
                 raise
@@ -386,10 +391,14 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
         except FileExistsError:
             continue    # try again
         except PermissionError:
-            # This exception is thrown when a directory with the chosen name
-            # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
+            # On Posix, this exception is raised when the user has no
+            # write access to the parent directory.
+            # On Windows, it is also raised when a directory with
+            # the chosen name already exists, or if the parent directory
+            # is not a directory.
+            # We cannot distinguish between "directory-exists-error" and
+            # "access-denied-error".
+            if _os.name == 'nt' and _os.path.isdir(dir) and seq < TMP_MAX - 1:
                 continue
             else:
                 raise
