@@ -3043,7 +3043,6 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
         # encoded word.
         leading_whitespace = _steal_all_trailing_WSP_if_exists(lines)
         to_encode = leading_whitespace + to_encode
-        lines[-1] = ' '
 
     trailing_wsp = ''
     if to_encode[-1] in WSP:
