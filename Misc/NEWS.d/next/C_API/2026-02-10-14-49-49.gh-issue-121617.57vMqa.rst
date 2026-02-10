@@ -1,0 +1,3 @@
+Fix the :c:macro:`Py_CLEAR` implementation in the limited C API version 3.11
+and newer: include ``<string.h>`` to get the ``memcpy()`` function. Patch by
+Victor Stinner.

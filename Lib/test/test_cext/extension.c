@@ -65,6 +65,8 @@ _testcext_exec(
 #endif
     )
 {
+    PyObject *obj;
+
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
         return -1;
@@ -74,6 +76,10 @@ _testcext_exec(
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
     assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
+    // Test Py_CLEAR()
+    obj = NULL;
+    Py_CLEAR(obj);
 
     return 0;
 }

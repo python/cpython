@@ -471,6 +471,9 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
  * and so avoid type punning. Otherwise, use memcpy() which causes type erasure
  * and so prevents the compiler to reuse an old cached 'op' value after
  * Py_CLEAR().
+ *
+ * Include <string.h> if _Py_TYPEOF() is not available, since the limited C API
+ * version 3.11 and newer doesn't include it.
  */
 #ifdef _Py_TYPEOF
 #define Py_CLEAR(op) \
@@ -483,6 +486,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         } \
     } while (0)
 #else
+#include <string.h>               // memcpy()
 #define Py_CLEAR(op) \
     do { \
         PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
