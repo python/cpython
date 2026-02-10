@@ -62,39 +62,44 @@ The :mod:`!secrets` module provides functions for generating secure
 tokens, suitable for applications such as password resets,
 hard-to-guess URLs, and similar.
 
-.. function:: token_bytes([nbytes=None])
+.. function:: token_bytes(nbytes=None)
 
    Return a random byte string containing *nbytes* number of bytes.
-   If *nbytes* is ``None`` or not supplied, a reasonable default is
-   used.
+
+   If *nbytes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
+   is used instead.
 
    .. doctest::
 
-      >>> token_bytes(16)  #doctest:+SKIP
+      >>> token_bytes(16)  # doctest: +SKIP
       b'\xebr\x17D*t\xae\xd4\xe3S\xb6\xe2\xebP1\x8b'
 
 
-.. function:: token_hex([nbytes=None])
+.. function:: token_hex(nbytes=None)
 
    Return a random text string, in hexadecimal.  The string has *nbytes*
-   random bytes, each byte converted to two hex digits.  If *nbytes* is
-   ``None`` or not supplied, a reasonable default is used.
+   random bytes, each byte converted to two hex digits.
+
+   If *nbytes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
+   is used instead.
 
    .. doctest::
 
-      >>> token_hex(16)  #doctest:+SKIP
+      >>> token_hex(16)  # doctest: +SKIP
       'f9bf78b9a18ce6d46a0cd2b0b86df9da'
 
-.. function:: token_urlsafe([nbytes=None])
+.. function:: token_urlsafe(nbytes=None)
 
    Return a random URL-safe text string, containing *nbytes* random
    bytes.  The text is Base64 encoded, so on average each byte results
-   in approximately 1.3 characters.  If *nbytes* is ``None`` or not
-   supplied, a reasonable default is used.
+   in approximately 1.3 characters.
+
+   If *nbytes* is not specified or ``None``, :const:`DEFAULT_ENTROPY`
+   is used instead.
 
    .. doctest::
 
-      >>> token_urlsafe(16)  #doctest:+SKIP
+      >>> token_urlsafe(16)  # doctest: +SKIP
       'Drmhze6EPcv0fN_81Bj-nA'
 
 
@@ -115,11 +120,13 @@ argument to the various ``token_*`` functions.  That argument is taken
 as the number of bytes of randomness to use.
 
 Otherwise, if no argument is provided, or if the argument is ``None``,
-the ``token_*`` functions will use a reasonable default instead.
+the ``token_*`` functions uses :const:`DEFAULT_ENTROPY` instead.
 
-.. note::
+.. data:: DEFAULT_ENTROPY
 
-   That default is subject to change at any time, including during
+   Default number of bytes of randomness used by the ``token_*`` functions.
+
+   The exact value is subject to change at any time, including during
    maintenance releases.
 
 

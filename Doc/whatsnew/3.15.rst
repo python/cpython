@@ -491,6 +491,14 @@ base64
 binascii
 --------
 
+* Added functions for Ascii85, Base85, and Z85 encoding:
+
+  - :func:`~binascii.b2a_ascii85` and :func:`~binascii.a2b_ascii85`
+  - :func:`~binascii.b2a_base85` and :func:`~binascii.a2b_base85`
+  - :func:`~binascii.b2a_z85` and :func:`~binascii.a2b_z85`
+
+  (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
+
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
@@ -1058,6 +1066,11 @@ base64 & binascii
 * CPython's underlying base64 implementation now encodes 2x faster and decodes 3x
   faster thanks to simple CPU pipelining optimizations.
   (Contributed by Gregory P. Smith and Serhiy Storchaka in :gh:`143262`.)
+
+* Implementation for Ascii85, Base85, and Z85 encoding has been rewritten in C.
+  Encoding and decoding is now two orders of magnitude faster and consumes
+  two orders of magnitude less memory.
+  (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
 
 csv
 ---

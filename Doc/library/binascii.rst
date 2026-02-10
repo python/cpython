@@ -98,6 +98,112 @@ The :mod:`!binascii` module defines the following functions:
       Added the *wrapcol* parameter.
 
 
+.. function:: a2b_ascii85(string, /, *, foldspaces=False, adobe=False, ignorechars=b"")
+
+   Convert Ascii85 data back to binary and return the binary data.
+
+   Valid Ascii85 data contains characters from the Ascii85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive. The special character ``z`` is
+   accepted as a short form of the group ``!!!!!``, which encodes four
+   consecutive null bytes.
+
+   *foldspaces* is a flag that specifies whether the 'y' short sequence
+   should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
+   This feature is not supported by the "standard" Ascii85 encoding.
+
+   *adobe* controls whether the input sequence is in Adobe Ascii85 format
+   (i.e. is framed with <~ and ~>).
+
+   *ignorechars* should be a :term:`bytes-like object` containing characters
+   to ignore from the input.
+   This should only contain whitespace characters.
+
+   Invalid Ascii85 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: next
+
+
+.. function:: b2a_ascii85(data, /, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
+
+   Convert binary data to a formatted sequence of ASCII characters in Ascii85
+   coding. The return value is the converted data.
+
+   *foldspaces* is an optional flag that uses the special short sequence 'y'
+   instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
+   feature is not supported by the "standard" Ascii85 encoding.
+
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not insert any newlines.
+
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+   Note that the ``btoa`` implementation always pads.
+
+   *adobe* controls whether the encoded byte sequence is framed with ``<~``
+   and ``~>``, which is used by the Adobe implementation.
+
+   .. versionadded:: next
+
+
+.. function:: a2b_base85(string, /)
+
+   Convert Base85 data back to binary and return the binary data.
+   More than one line may be passed at a time.
+
+   Valid Base85 data contains characters from the Base85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive.
+
+   Invalid Base85 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: next
+
+
+.. function:: b2a_base85(data, /, *, pad=False)
+
+   Convert binary data to a line of ASCII characters in Base85 coding.
+   The return value is the converted line.
+
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+
+   .. versionadded:: next
+
+
+.. function:: a2b_z85(string, /)
+
+   Convert Z85 data back to binary and return the binary data.
+   More than one line may be passed at a time.
+
+   Valid Z85 data contains characters from the Z85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive.
+
+   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   Invalid Z85 data will raise :exc:`binascii.Error`.
+
+   .. versionadded:: next
+
+
+.. function:: b2a_z85(data, /, *, pad=False)
+
+   Convert binary data to a line of ASCII characters in Z85 coding.
+   The return value is the converted line.
+
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+
+   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: next
+
+
 .. function:: a2b_qp(data, header=False)
 
    Convert a block of quoted-printable data back to binary and return the binary

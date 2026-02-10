@@ -1,0 +1,2 @@
+In :c:member:`PyModuleDef.m_slots`, allow slots that repeat information
+present in :c:type:`PyModuleDef`.

@@ -1572,6 +1572,7 @@ extern "C" {
     INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
+    INIT_ID(adobe), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(alias), \
@@ -1767,6 +1768,7 @@ extern "C" {
     INIT_ID(flags), \
     INIT_ID(flush), \
     INIT_ID(fold), \
+    INIT_ID(foldspaces), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
@@ -1966,6 +1968,7 @@ extern "C" {
     INIT_ID(outpath), \
     INIT_ID(overlapped), \
     INIT_ID(owner), \
+    INIT_ID(pad), \
     INIT_ID(pages), \
     INIT_ID(parameter), \
     INIT_ID(parent), \
