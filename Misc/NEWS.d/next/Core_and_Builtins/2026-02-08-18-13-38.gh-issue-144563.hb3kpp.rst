@@ -1,0 +1,4 @@
+Fix interaction of the Tachyon profiler and :mod:`ctypes` and other modules
+that load the Python shared library (if present) in an independent map as
+this was causing the mechanism that loads the binary information to be
+confused. Patch by Pablo Galindo
