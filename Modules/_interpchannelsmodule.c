@@ -2212,9 +2212,9 @@ static PyStructSequence_Field channel_info_fields[] = {
     {"num_interp_send_released",
      "interpreters bound to the send end and released"},
 
-    {"num_interp_recv", "interpreters bound to the send end"},
+    {"num_interp_recv", "interpreters bound to the recv end"},
     {"num_interp_recv_released",
-     "interpreters bound to the send end and released"},
+     "interpreters bound to the recv end and released"},
 
     {"num_interp_both", "interpreters bound to both ends"},
     {"num_interp_both_released",
