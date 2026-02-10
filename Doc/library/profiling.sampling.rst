@@ -354,7 +354,7 @@ Together, these determine how many samples will be collected during a profiling
 session.
 
 The :option:`--sampling-rate` option (:option:`-r`) sets how frequently samples
-are collected. The default is 1 kHz (10,000 samples per second)::
+are collected. The default is 1 kHz (1,000 samples per second)::
 
    python -m profiling.sampling run -r 20khz script.py
 
