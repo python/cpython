@@ -20,11 +20,11 @@
 
 --------------
 
-The :mod:`functools` module is for higher-order functions: functions that act on
+The :mod:`!functools` module is for higher-order functions: functions that act on
 or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
-The :mod:`functools` module defines the following functions:
+The :mod:`!functools` module defines the following functions:
 
 .. decorator:: cache(user_function)
 

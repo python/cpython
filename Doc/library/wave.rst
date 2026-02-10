@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`wave` module provides a convenient interface to the Waveform Audio
+The :mod:`!wave` module provides a convenient interface to the Waveform Audio
 "WAVE" (or "WAV") file format. Only uncompressed PCM encoded wave files are
 supported.
 
@@ -20,7 +20,7 @@ supported.
    Support for ``WAVE_FORMAT_EXTENSIBLE`` headers was added, provided that the
    extended format is ``KSDATAFORMAT_SUBTYPE_PCM``.
 
-The :mod:`wave` module defines the following function and exception:
+The :mod:`!wave` module defines the following function and exception:
 
 
 .. function:: open(file, mode=None)
@@ -77,7 +77,7 @@ Wave_read Objects
 
    .. method:: close()
 
-      Close the stream if it was opened by :mod:`wave`, and make the instance
+      Close the stream if it was opened by :mod:`!wave`, and make the instance
       unusable.  This is called automatically on object collection.
 
 
@@ -174,7 +174,7 @@ Wave_write Objects
    .. method:: close()
 
       Make sure *nframes* is correct, and close the file if it was opened by
-      :mod:`wave`.  This method is called upon object collection.  It will raise
+      :mod:`!wave`.  This method is called upon object collection.  It will raise
       an exception if the output stream is not seekable and *nframes* does not
       match the number of frames actually written.
 

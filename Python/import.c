@@ -2176,13 +2176,29 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     }
 
 main_finally:
+    if (rc < 0) {
+        _Py_ext_module_loader_result_apply_error(&res, name_buf);
+    }
+
     /* Switch back to the subinterpreter. */
     if (switched) {
+        // gh-144601: The exception object can't be transferred across
+        // interpreters. Instead, we print out an unraisable exception, and
+        // then raise a different exception for the calling interpreter.
+        if (rc < 0) {
+            assert(PyErr_Occurred());
+            PyErr_FormatUnraisable("Exception while importing from subinterpreter");
+        }
         assert(main_tstate != tstate);
         switch_back_from_main_interpreter(tstate, main_tstate, mod);
         /* Any module we got from the init function will have to be
          * reloaded in the subinterpreter. */
         mod = NULL;
+        if (rc < 0) {
+            PyErr_SetString(PyExc_ImportError,
+                            "failed to import from subinterpreter due to exception");
+            goto error;
+        }
     }
 
     /*****************************************************************/
@@ -2191,7 +2207,6 @@ main_finally:
 
     /* Finally we handle the error return from _PyImport_RunModInitFunc(). */
     if (rc < 0) {
-        _Py_ext_module_loader_result_apply_error(&res, name_buf);
         goto error;
     }
 

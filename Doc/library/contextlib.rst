@@ -681,7 +681,7 @@ Examples and Recipes
 --------------------
 
 This section describes some examples and recipes for making effective use of
-the tools provided by :mod:`contextlib`.
+the tools provided by :mod:`!contextlib`.
 
 
 Supporting a variable number of context managers
