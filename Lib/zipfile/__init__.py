@@ -2223,10 +2223,10 @@ class PyZipFile(ZipFile):
                     basename = name
                 if self.debug:
                     print("Adding package in", pathname, "as", basename)
-                fname, arcname = self._get_codename(initname[0:-3], basename)
+                arcname, bytecode = self._get_code(initname[0:-3], basename)
                 if self.debug:
                     print("Adding", arcname)
-                self.write(fname, arcname)
+                self.writestr(arcname, bytecode)
                 dirlist = sorted(os.listdir(pathname))
                 dirlist.remove("__init__.py")
                 # Add all *.py files and package subdirectories
@@ -2243,11 +2243,10 @@ class PyZipFile(ZipFile):
                             if self.debug:
                                 print('file %r skipped by filterfunc' % path)
                             continue
-                        fname, arcname = self._get_codename(path[0:-3],
-                                                            basename)
+                        arcname, bytecode = self._get_code(path[0:-3], basename)
                         if self.debug:
                             print("Adding", arcname)
-                        self.write(fname, arcname)
+                        self.writestr(arcname, bytecode)
             else:
                 # This is NOT a package directory, add its files at top level
                 if self.debug:
@@ -2260,101 +2259,58 @@ class PyZipFile(ZipFile):
                             if self.debug:
                                 print('file %r skipped by filterfunc' % path)
                             continue
-                        fname, arcname = self._get_codename(path[0:-3],
-                                                            basename)
+                        arcname, bytecode = self._get_code(path[0:-3], basename)
                         if self.debug:
                             print("Adding", arcname)
-                        self.write(fname, arcname)
+                        self.writestr(arcname, bytecode)
         else:
             if pathname[-3:] != ".py":
                 raise RuntimeError(
                     'Files added with writepy() must end with ".py"')
-            fname, arcname = self._get_codename(pathname[0:-3], basename)
+            arcname, bytecode = self._get_code(pathname[0:-3], basename)
             if self.debug:
                 print("Adding file", arcname)
-            self.write(fname, arcname)
+            self.writestr(arcname, bytecode)
 
-    def _get_codename(self, pathname, basename):
-        """Return (filename, archivename) for the path.
+    def _get_code(self, pathname, basename):
+        """Return (arcname, bytecode) for the path.
 
-        Given a module name path, return the correct file path and
-        archive name, compiling if necessary.  For example, given
-        /python/lib/string, return (/python/lib/string.pyc, string).
+        Given a module name path, return the bytecode and archive
+        name.  For example, given /python/lib/string, return
+        ('string', b'<bytecode of string>').
         """
-        def _compile(file, optimize=-1):
-            import py_compile
-            if self.debug:
-                print("Compiling", file)
-            try:
-                py_compile.compile(file, doraise=True, optimize=optimize)
-            except py_compile.PyCompileError as err:
-                print(err.msg)
-                return False
-            return True
+        import importlib._bootstrap_external
+        import importlib.machinery
 
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
-        pycache_opt0 = importlib.util.cache_from_source(file_py, optimization='')
-        pycache_opt1 = importlib.util.cache_from_source(file_py, optimization=1)
-        pycache_opt2 = importlib.util.cache_from_source(file_py, optimization=2)
-        if self._optimize == -1:
-            # legacy mode: use whatever file is present
-            if (os.path.isfile(file_pyc) and
-                  os.stat(file_pyc).st_mtime >= os.stat(file_py).st_mtime):
-                # Use .pyc file.
-                arcname = fname = file_pyc
-            elif (os.path.isfile(pycache_opt0) and
-                  os.stat(pycache_opt0).st_mtime >= os.stat(file_py).st_mtime):
-                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
-                # file name in the archive.
-                fname = pycache_opt0
-                arcname = file_pyc
-            elif (os.path.isfile(pycache_opt1) and
-                  os.stat(pycache_opt1).st_mtime >= os.stat(file_py).st_mtime):
-                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
-                # file name in the archive.
-                fname = pycache_opt1
-                arcname = file_pyc
-            elif (os.path.isfile(pycache_opt2) and
-                  os.stat(pycache_opt2).st_mtime >= os.stat(file_py).st_mtime):
-                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
-                # file name in the archive.
-                fname = pycache_opt2
-                arcname = file_pyc
-            else:
-                # Compile py into PEP 3147 pyc file.
-                if _compile(file_py):
-                    if sys.flags.optimize == 0:
-                        fname = pycache_opt0
-                    elif sys.flags.optimize == 1:
-                        fname = pycache_opt1
-                    else:
-                        fname = pycache_opt2
-                    arcname = file_pyc
-                else:
-                    fname = arcname = file_py
+        archivename = os.path.split(file_pyc)[1]
+
+        loader = importlib.machinery.SourceFileLoader('<py_compile>', file_py)
+        source_bytes = loader.get_data(file_py)
+        try:
+            if self.debug:
+                print("Compiling", file_py)
+            code = loader.source_to_code(source_bytes, archivename)
+        except Exception as err:
+            # Historically, this function prints messages here rather than raising
+            # (see test_zipfile.test_write_filtered_python_package)
+            from py_compile import PyCompileError
+            print(PyCompileError(type(err), err, file_py).msg)
+
+            archivename = os.path.split(file_py)[1]
+            bytecode = source_bytes
         else:
-            # new mode: use given optimization level
-            if self._optimize == 0:
-                fname = pycache_opt0
-                arcname = file_pyc
-            else:
-                arcname = file_pyc
-                if self._optimize == 1:
-                    fname = pycache_opt1
-                elif self._optimize == 2:
-                    fname = pycache_opt2
-                else:
-                    msg = "invalid value for 'optimize': {!r}".format(self._optimize)
-                    raise ValueError(msg)
-            if not (os.path.isfile(fname) and
-                    os.stat(fname).st_mtime >= os.stat(file_py).st_mtime):
-                if not _compile(file_py, optimize=self._optimize):
-                    fname = arcname = file_py
-        archivename = os.path.split(arcname)[1]
+            # Historically this function has used timestamp comparisons, so we
+            # keep using it until someone makes that specific improvement.
+            source_stats = loader.path_stats(file_py)
+            bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(
+                code, source_stats['mtime'], source_stats['size'])
+
         if basename:
             archivename = "%s/%s" % (basename, archivename)
-        return (fname, archivename)
+
+        return archivename, bytecode
 
 
 def main(args=None):

@@ -6527,7 +6527,8 @@ class TestMain(unittest.TestCase):
         self.assertIn(module.__name__, output)
         self.assertIn(module.__spec__.origin, output)
         self.assertIn(module.__file__, output)
-        self.assertIn(module.__spec__.cached, output)
+        if module.__spec__.cached:
+            self.assertIn(module.__spec__.cached, output)
         self.assertEqual(err, b'')
 
 

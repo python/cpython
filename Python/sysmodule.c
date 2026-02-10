@@ -3568,16 +3568,22 @@ make_version_info(PyThreadState *tstate)
 }
 
 /* sys.implementation values */
-#define NAME "cpython"
-const char *_PySys_ImplName = NAME;
+#ifndef _PY_IMPL_NAME
+#define _PY_IMPL_NAME "cpython"
+#endif
+const char *_PySys_ImplName = _PY_IMPL_NAME;
+#ifndef _PY_IMPL_CACHE_TAG
 #define MAJOR Py_STRINGIFY(PY_MAJOR_VERSION)
 #define MINOR Py_STRINGIFY(PY_MINOR_VERSION)
-#define TAG NAME "-" MAJOR MINOR
-const char *_PySys_ImplCacheTag = TAG;
-#undef NAME
+#define _PY_IMPL_CACHE_TAG _PY_IMPL_NAME "-" MAJOR MINOR
+#endif
+const char *_PySys_ImplCacheTag = _PY_IMPL_CACHE_TAG;
+#ifdef MAJOR
 #undef MAJOR
+#endif
+#ifdef MINOR
 #undef MINOR
-#undef TAG
+#endif
 
 static PyObject *
 make_impl_info(PyObject *version_info)
@@ -3599,9 +3605,12 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-    value = PyUnicode_FromString(_PySys_ImplCacheTag);
-    if (value == NULL)
+    value = _PySys_ImplCacheTag
+        ? PyUnicode_FromString(_PySys_ImplCacheTag)
+        : Py_NewRef(Py_None);
+    if (value == NULL) {
         goto error;
+    }
     res = PyDict_SetItemString(impl_info, "cache_tag", value);
     Py_DECREF(value);
     if (res < 0)
