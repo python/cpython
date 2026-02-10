@@ -35,7 +35,7 @@ Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
    macOS, it *may* be removed if CPython has been built with the
    :option:`--with-app-store-compliance` option.
 
-The :mod:`urllib.parse` module defines functions that fall into two broad
+The :mod:`!urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in
 the following sections.
 

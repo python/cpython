@@ -816,7 +816,7 @@ Constants
 
 .. impl-detail::
 
-   The :mod:`math` module consists mostly of thin wrappers around the platform C
+   The :mod:`!math` module consists mostly of thin wrappers around the platform C
    math library functions.  Behavior in exceptional cases follows Annex F of
    the C99 standard where appropriate.  The current implementation will raise
    :exc:`ValueError` for invalid operations like ``sqrt(-1.0)`` or ``log(0.0)``
