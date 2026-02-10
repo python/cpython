@@ -16,7 +16,7 @@
 This module provides a comprehensive interface for compressing and
 decompressing data using the bzip2 compression algorithm.
 
-The :mod:`bz2` module contains:
+The :mod:`!bz2` module contains:
 
 * The :func:`.open` function and :class:`BZ2File` class for reading and
   writing compressed files.
@@ -24,6 +24,8 @@ The :mod:`bz2` module contains:
   incremental (de)compression.
 * The :func:`compress` and :func:`decompress` functions for one-shot
   (de)compression.
+
+.. include:: ../includes/optional-module.rst
 
 
 (De)compression of files
@@ -315,7 +317,7 @@ One-shot (de)compression
 Examples of usage
 -----------------
 
-Below are some examples of typical usage of the :mod:`bz2` module.
+Below are some examples of typical usage of the :mod:`!bz2` module.
 
 Using :func:`compress` and :func:`decompress` to demonstrate round-trip compression:
 

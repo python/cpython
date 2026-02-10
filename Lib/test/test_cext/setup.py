@@ -99,7 +99,6 @@ def main():
     # Define _Py_OPAQUE_PYOBJECT macro
     if opaque_pyobject:
         cflags.append(f'-D_Py_OPAQUE_PYOBJECT')
-        sources.append('create_moduledef.c')
 
     if internal:
         cflags.append('-DTEST_INTERNAL_C_API=1')

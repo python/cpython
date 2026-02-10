@@ -15,7 +15,7 @@
 
 --------------
 
-The :mod:`ast` module helps Python applications to process trees of the Python
+The :mod:`!ast` module helps Python applications to process trees of the Python
 abstract syntax grammar.  The abstract syntax itself might change with each
 Python release; this module helps to find out programmatically what the current
 grammar looks like.
@@ -46,7 +46,7 @@ Node classes
    This is the base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
    :ref:`above <abstract-grammar>`.  They are defined in the :mod:`!_ast` C
-   module and re-exported in :mod:`ast`.
+   module and re-exported in :mod:`!ast`.
 
    There is one class defined for each left-hand side symbol in the abstract
    grammar (for example, :class:`ast.stmt` or :class:`ast.expr`).  In addition,
@@ -139,12 +139,13 @@ Node classes
     The :meth:`~object.__repr__` output of :class:`~ast.AST` nodes includes
     the values of the node fields.
 
-.. deprecated:: 3.8
+.. deprecated-removed:: 3.8 3.14
 
-   Old classes :class:`!ast.Num`, :class:`!ast.Str`, :class:`!ast.Bytes`,
-   :class:`!ast.NameConstant` and :class:`!ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.  In the meantime,
-   instantiating them will return an instance of a different class.
+   Previous versions of Python provided the AST classes :class:`!ast.Num`,
+   :class:`!ast.Str`, :class:`!ast.Bytes`, :class:`!ast.NameConstant` and
+   :class:`!ast.Ellipsis`, which were deprecated in Python 3.8. These classes
+   were removed in Python 3.14, and their functionality has been replaced with
+   :class:`ast.Constant`.
 
 .. deprecated:: 3.9
 
@@ -2199,16 +2200,16 @@ Async and await
    occurrences of the same value (for example, :class:`ast.Add`).
 
 
-:mod:`ast` helpers
-------------------
+:mod:`!ast` helpers
+-------------------
 
-Apart from the node classes, the :mod:`ast` module defines these utility functions
+Apart from the node classes, the :mod:`!ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1)
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1, module=None)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
-   filename, mode, flags=FLAGS_VALUE, optimize=optimize)``,
+   filename, mode, flags=FLAGS_VALUE, optimize=optimize, module=module)``,
    where ``FLAGS_VALUE`` is ``ast.PyCF_ONLY_AST`` if ``optimize <= 0``
    and ``ast.PyCF_OPTIMIZED_AST`` otherwise.
 
@@ -2260,6 +2261,9 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 .. function:: unparse(ast_obj)
@@ -2416,12 +2420,12 @@ and classes for traversing abstract syntax trees:
    during traversal.  For this a special visitor exists
    (:class:`NodeTransformer`) that allows modifications.
 
-   .. deprecated:: 3.8
+   .. deprecated-removed:: 3.8 3.14
 
       Methods :meth:`!visit_Num`, :meth:`!visit_Str`, :meth:`!visit_Bytes`,
-      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` are deprecated
-      now and will not be called in future Python versions.  Add the
-      :meth:`visit_Constant` method to handle all constant nodes.
+      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` will not be called
+      in Python 3.14+.  Add the :meth:`visit_Constant` method instead to handle
+      all constant nodes.
 
 
 .. class:: NodeTransformer()
@@ -2572,7 +2576,7 @@ Command-line usage
 
 .. versionadded:: 3.9
 
-The :mod:`ast` module can be executed as a script from the command line.
+The :mod:`!ast` module can be executed as a script from the command line.
 It is as simple as:
 
 .. code-block:: sh

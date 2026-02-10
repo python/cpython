@@ -11,7 +11,7 @@
 
 --------------
 
-The :mod:`textwrap` module provides some convenience functions,
+The :mod:`!textwrap` module provides some convenience functions,
 as well as :class:`TextWrapper`, the class that does all the work.
 If you're just wrapping or filling one or two text strings, the convenience
 functions should be good enough; otherwise, you should use an instance of
@@ -102,6 +102,10 @@ functions should be good enough; otherwise, you should use an instance of
           print(repr(s))          # prints '    hello\n      world\n    '
           print(repr(dedent(s)))  # prints 'hello\n  world\n'
 
+   .. versionchanged:: 3.14
+      The :func:`!dedent` function now correctly normalizes blank lines containing
+      only whitespace characters. Previously, the implementation only normalized
+      blank lines containing tabs and spaces.
 
 .. function:: indent(text, prefix, predicate=None)
 

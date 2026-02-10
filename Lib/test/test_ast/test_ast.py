@@ -25,7 +25,7 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, skip_if_unlimited_stack_size
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
@@ -989,10 +989,12 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
+    @skip_if_unlimited_stack_size
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        crash_depth = 500_000
+        # Android test devices have less memory.
+        crash_depth = 100_000 if sys.platform == "android" else 500_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
@@ -1083,6 +1085,16 @@ class AST_Tests(unittest.TestCase):
             self.assertEqual(wm.filename, '<unknown>')
             self.assertIs(wm.category, SyntaxWarning)
 
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=r'<unknown>')
+            ast.parse(source, filename, module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
@@ -1116,6 +1128,7 @@ class CopyTests(unittest.TestCase):
                     ast2 = pickle.loads(pickle.dumps(tree, protocol))
                     self.assertEqual(to_tuple(ast2), to_tuple(tree))
 
+    @skip_if_unlimited_stack_size
     def test_copy_with_parents(self):
         # gh-120108
         code = """
@@ -1429,6 +1442,13 @@ class CopyTests(unittest.TestCase):
         self.assertIs(node.id, 'x')
         self.assertIs(node.ctx, context)
         self.assertRaises(AttributeError, getattr, node, 'unknown')
+
+    def test_replace_non_str_kwarg(self):
+        node = ast.Name(id="x")
+        errmsg = "got an unexpected keyword argument <object object"
+        with self.assertRaisesRegex(TypeError, errmsg):
+            node.__replace__(**{object(): "y"})
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1963,6 +1983,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -1971,6 +1992,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_if_unlimited_stack_size
     @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -3047,8 +3069,8 @@ class EndPositionTests(unittest.TestCase):
 
 class NodeTransformerTests(ASTTestMixin, unittest.TestCase):
     def assertASTTransformation(self, transformer_class,
-                                initial_code, expected_code):
-        initial_ast = ast.parse(dedent(initial_code))
+                                code, expected_code):
+        initial_ast = ast.parse(dedent(code))
         expected_ast = ast.parse(dedent(expected_code))
 
         transformer = transformer_class()
@@ -3288,6 +3310,27 @@ class ASTConstructorTests(unittest.TestCase):
         obj = _AllFieldTypes()
         self.assertIs(obj.a, None)
         self.assertEqual(obj.b, [])
+
+    def test_non_str_kwarg(self):
+        warn_msg = "got an unexpected keyword argument <object object"
+        with (
+            self.assertRaises(TypeError),
+            self.assertWarnsRegex(DeprecationWarning, warn_msg),
+        ):
+            ast.Name(**{object(): 'y'})
+
+        class FakeStr:
+            def __init__(self, value):
+                self.value = value
+
+            def __hash__(self):
+                return hash(self.value)
+
+            def __eq__(self, other):
+                return isinstance(other, str) and self.value == other
+
+        with self.assertRaisesRegex(TypeError, "got multiple values for argument"):
+            ast.Name("x", **{FakeStr('id'): 'y'})
 
 
 @support.cpython_only

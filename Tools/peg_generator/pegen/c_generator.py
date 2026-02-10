@@ -31,6 +31,7 @@ from pegen.parser_generator import ParserGenerator
 
 EXTENSION_PREFIX = """\
 #include "pegen.h"
+#include "pycore_ceval.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
 #  define D(x) if (p->debug) { x; }

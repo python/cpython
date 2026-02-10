@@ -10,7 +10,7 @@
 
 --------------
 
-The :mod:`colorsys` module defines bidirectional conversions of color values
+The :mod:`!colorsys` module defines bidirectional conversions of color values
 between colors expressed in the RGB (Red Green Blue) color space used in
 computer monitors and three other coordinate systems: YIQ, HLS (Hue Lightness
 Saturation) and HSV (Hue Saturation Value).  Coordinates in all of these color
@@ -24,7 +24,7 @@ spaces, the coordinates are all between 0 and 1.
    https://poynton.ca/ColorFAQ.html and
    https://www.cambridgeincolour.com/tutorials/color-spaces.htm.
 
-The :mod:`colorsys` module defines the following functions:
+The :mod:`!colorsys` module defines the following functions:
 
 
 .. function:: rgb_to_yiq(r, g, b)

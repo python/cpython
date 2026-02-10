@@ -279,7 +279,7 @@ The full API is described below for advanced use cases.
 
    .. c:member:: uint8_t abiinfo_minor_version
 
-      The major version of :c:struct:`PyABIInfo`.
+      The minor version of :c:struct:`PyABIInfo`.
       Must be set to ``0``; larger values are reserved for backwards-compatible
       future versions of :c:struct:`!PyABIInfo`.
 

@@ -24,7 +24,7 @@
 
 .. index:: single: Expat
 
-The :mod:`xml.parsers.expat` module is a Python interface to the Expat
+The :mod:`!xml.parsers.expat` module is a Python interface to the Expat
 non-validating XML parser. The module provides a single extension type,
 :class:`xmlparser`, that represents the current state of an XML parser.  After
 an :class:`xmlparser` object has been created, various attributes of the object
@@ -55,7 +55,7 @@ This module provides one exception and one type object:
 
    The type of the return values from the :func:`ParserCreate` function.
 
-The :mod:`xml.parsers.expat` module contains two functions:
+The :mod:`!xml.parsers.expat` module contains two functions:
 
 
 .. function:: ErrorString(errno)
@@ -634,6 +634,15 @@ otherwise stated.
 
 .. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
 
+   .. warning::
+
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before implementing this handler.
+
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,
    *systemId* and *publicId*, are strings if given; if the public identifier is not
@@ -971,7 +980,7 @@ The ``errors`` module has the following attributes:
 
    An operation was requested that requires DTD support to be compiled in, but
    Expat was configured without DTD support.  This should never be reported by a
-   standard build of the :mod:`xml.parsers.expat` module.
+   standard build of the :mod:`!xml.parsers.expat` module.
 
 
 .. data:: XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING

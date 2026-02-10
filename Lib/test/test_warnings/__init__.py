@@ -727,7 +727,7 @@ class WarnTests(BaseTest):
 
     def check_module_globals_error(self, module_globals, errmsg, errtype=ValueError):
         if self.module is py_warnings:
-            self.check_module_globals(module_globals)
+            self.check_module_globals_deprecated(module_globals, errmsg)
             return
         with self.module.catch_warnings(record=True) as w:
             self.module.filterwarnings('always')
@@ -738,9 +738,6 @@ class WarnTests(BaseTest):
         self.assertEqual(len(w), 0)
 
     def check_module_globals_deprecated(self, module_globals, msg):
-        if self.module is py_warnings:
-            self.check_module_globals(module_globals)
-            return
         with self.module.catch_warnings(record=True) as w:
             self.module.filterwarnings('always')
             self.module.warn_explicit(

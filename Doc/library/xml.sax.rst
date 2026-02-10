@@ -12,7 +12,7 @@
 
 --------------
 
-The :mod:`xml.sax` package provides a number of modules which implement the
+The :mod:`!xml.sax` package provides a number of modules which implement the
 Simple API for XML (SAX) interface for Python.  The package itself provides the
 SAX exceptions and the convenience functions which will be most used by users of
 the SAX API.
@@ -89,9 +89,9 @@ module :mod:`xml.sax.xmlreader`.  The handler interfaces are defined in
 :mod:`xml.sax.handler`.  For convenience,
 :class:`~xml.sax.xmlreader.InputSource` (which is often
 instantiated directly) and the handler classes are also available from
-:mod:`xml.sax`.  These interfaces are described below.
+:mod:`!xml.sax`.  These interfaces are described below.
 
-In addition to these classes, :mod:`xml.sax` provides the following exception
+In addition to these classes, :mod:`!xml.sax` provides the following exception
 classes.
 
 

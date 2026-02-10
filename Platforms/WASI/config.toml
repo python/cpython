@@ -1,0 +1,6 @@
+# Any data that can vary between Python versions is to be kept in this file.
+# This allows for blanket copying of the WASI build code between supported
+# Python versions.
+[targets]
+wasi-sdk = 29
+host-triple = "wasm32-wasip1"
