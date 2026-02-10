@@ -404,8 +404,7 @@ which grows at exactly the same rate the first heap is melting.  When the first
 heap completely vanishes, you switch heaps and start a new run.  Clever and
 quite effective!
 
-In a word, heaps are useful memory structures to know.  They are used in a number
-of applications, and it is good to keep a 'heap' module around. :-)
+In a word, heaps are useful memory structures to know.
 
 .. rubric:: Footnotes
 
