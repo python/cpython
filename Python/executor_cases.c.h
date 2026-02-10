@@ -5392,7 +5392,7 @@
             PyObject *res_o = _PyList_SliceSubscript(list, sub);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STAT_INC(BINARY_OP, hit);
-            if (res_o == NULL){
+            if (res_o == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
