@@ -11,6 +11,7 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import errno
 import io
+import itertools
 import os
 import sys
 import socket
@@ -44,6 +45,8 @@ BUFSIZE = 64 * 1024
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
 
+_mmap_counter = itertools.count()
+
 default_family = 'AF_INET'
 families = ['AF_INET']
 
@@ -75,7 +78,8 @@ def arbitrary_address(family):
     elif family == 'AF_UNIX':
         return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
-        return r'\\.\pipe\pyc-' + os.urandom(8).hex()
+        return (r'\\.\pipe\pyc-%d-%d-%s' %
+                (os.getpid(), next(_mmap_counter), os.urandom(8).hex()))
     else:
         raise ValueError('unrecognized family')
 

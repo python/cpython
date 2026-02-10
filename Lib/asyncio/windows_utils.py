@@ -6,6 +6,7 @@ if sys.platform != 'win32':  # pragma: no cover
     raise ImportError('win32 only')
 
 import _winapi
+import itertools
 import msvcrt
 import os
 import subprocess
@@ -21,6 +22,7 @@ __all__ = 'pipe', 'Popen', 'PIPE', 'PipeHandle'
 BUFSIZE = 8192
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
+_mmap_counter = itertools.count()
 
 
 # Replacement for os.pipe() using handles instead of fds
@@ -50,7 +52,8 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     h1 = h2 = None
     try:
         while True:
-            address = r'\\.\pipe\python-pipe-' + os.urandom(8).hex()
+            address = r'\\.\pipe\python-pipe-{:d}-{:d}-{}'.format(
+                os.getpid(), next(_mmap_counter), os.urandom(8).hex())
             try:
                 h1 = _winapi.CreateNamedPipe(
                     address, openmode, _winapi.PIPE_WAIT,
