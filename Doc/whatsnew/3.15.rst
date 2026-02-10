@@ -189,6 +189,7 @@ available output formats, profiling modes, and configuration options.
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
+
 .. _whatsnew315-unpacking-in-comprehensions:
 
 :pep:`798`: Unpacking in Comprehensions
@@ -228,6 +229,7 @@ agen() for x in a)``.
 .. seealso:: :pep:`798` for further details.
 
 (Contributed by Adam Hartz in :gh:`143055`.)
+
 
 .. _whatsnew315-improved-error-messages:
 
@@ -447,6 +449,7 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by James Hilton-Balfe in :gh:`128335`.)
 
+
 New modules
 ===========
 
@@ -476,6 +479,7 @@ argparse
   inline code when color output is enabled.
   (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
+
 base64
 ------
 
@@ -487,6 +491,7 @@ base64
 
 * Added the *ignorechars* parameter in :func:`~base64.b64decode`.
   (Contributed by Serhiy Storchaka in :gh:`144001`.)
+
 
 binascii
 --------
@@ -525,6 +530,7 @@ collections
   :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
   between :class:`~collections.Counter` objects.
   (Contributed by Raymond Hettinger in :gh:`138682`.)
+
 
 collections.abc
 ---------------
@@ -579,7 +585,6 @@ dbm
 * Added new :meth:`!reorganize` methods to :mod:`dbm.dumb` and :mod:`dbm.sqlite3`
   which allow to recover unused free space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
-
 
 
 difflib
@@ -667,8 +672,10 @@ math
 mimetypes
 ---------
 
-* Add ``application/dicom`` MIME type for ``.dcm`` extension. (Contributed by Benedikt Johannes in :gh:`144217`.)
-* Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
+* Add ``application/dicom`` MIME type for ``.dcm`` extension.
+  (Contributed by Benedikt Johannes in :gh:`144217`.)
+* Add ``application/node`` MIME type for ``.cjs`` extension.
+  (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Add ``image/jxl``. (Contributed by Foolbar in :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
@@ -809,6 +816,7 @@ ssl
 
   (Contributed by Ron Frederick in :gh:`138252`.)
 
+
 subprocess
 ----------
 
@@ -823,6 +831,7 @@ subprocess
   If none of these mechanisms are available, the function falls back to the
   traditional busy loop (non-blocking call and short sleeps).
   (Contributed by Giampaolo Rodola in :gh:`83069`).
+
 
 symtable
 --------
@@ -1060,6 +1069,7 @@ Optimizations
   (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
   Special thanks to the MSVC team including Hulon Jenkins.)
 
+
 base64 & binascii
 -----------------
 
@@ -1071,6 +1081,7 @@ base64 & binascii
   Encoding and decoding is now two orders of magnitude faster and consumes
   two orders of magnitude less memory.
   (Contributed by James Seo and Serhiy Storchaka in :gh:`101178`.)
+
 
 csv
 ---
