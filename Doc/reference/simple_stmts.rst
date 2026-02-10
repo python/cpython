@@ -762,7 +762,7 @@ steps:
 #. find a module, loading and initializing it if necessary
 #. define a name or names in the current namespace for the scope where
    the :keyword:`import` statement occurs, just as an assignment statement
-   would, including global, local, and nonlocal semantics.
+   would (including :keyword:`global` and :keyword:`nonlocal` semantics).
 
 When the statement contains multiple clauses (separated by
 commas) the two steps are carried out separately for each clause, just
