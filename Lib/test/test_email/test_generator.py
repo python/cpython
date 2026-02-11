@@ -393,17 +393,19 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
-    # gh-144156
-    # https://github.com/python/cpython/issues/144156
+    # gh-144156: fold between non-encoded and encoded words don't need to encoded
+    #            the separating space
     def test_defaults_handle_spaces_at_start_of_continuation_line_2(self):
         source = ("Re: [SOS-1495488] Commande et livraison - Demande de retour - "
                   "bibijolie - 251210-AABBCC - Abo actualités digitales 20 semaines "
                   "d’abonnement à 24 heures, Bilan, Tribune de Genève et tous les titres Tamedia")
-        expected = (b"Subject: "
-                    b"Re: [SOS-1495488] Commande et livraison - Demande de retour -\n"
-                    b" bibijolie - 251210-AABBCC - Abo =?utf-8?q?actualit=C3=A9s?= digitales 20\n"
-                    b" semaines =?utf-8?q?d=E2=80=99abonnement_=C3=A0?= 24 heures, Bilan, Tribune de\n"
-                    b" =?utf-8?q?Gen=C3=A8ve?= et tous les titres Tamedia\n\n")
+        expected = (
+            b"Subject: "
+            b"Re: [SOS-1495488] Commande et livraison - Demande de retour -\n"
+            b" bibijolie - 251210-AABBCC - Abo =?utf-8?q?actualit=C3=A9s?= digitales 20\n"
+            b" semaines =?utf-8?q?d=E2=80=99abonnement_=C3=A0?= 24 heures, Bilan, Tribune de\n"
+            b" =?utf-8?q?Gen=C3=A8ve?= et tous les titres Tamedia\n\n"
+        )
         msg = EmailMessage()
         msg['Subject'] = source
         s = io.BytesIO()

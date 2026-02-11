@@ -2835,6 +2835,7 @@ def _steal_trailing_WSP_if_exists(lines):
             lines.pop()
     return wsp
 
+
 def _steal_all_trailing_WSP_if_exists(lines):
     lines_popped = False
     wsp_lines = []
@@ -2855,6 +2856,7 @@ def _steal_all_trailing_WSP_if_exists(lines):
     if lines_popped:
         lines.append(' ' if lines else '')
     return ''.join(wsp_lines)
+
 
 def _refold_parse_tree(parse_tree, *, policy):
     """Return string of contents of parse_tree folded according to RFC rules.
