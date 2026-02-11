@@ -2264,6 +2264,22 @@ expression support in the :mod:`re` module).
    like the Kharosthi numbers.  Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
 
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`. Digital characters are a
+   superset of decimal characters.
+
 
 .. method:: str.isidentifier()
 
