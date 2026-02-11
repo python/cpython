@@ -3,7 +3,7 @@
 .. _profiling-sampling:
 
 ***************************************************
-:mod:`profiling.sampling` --- Statistical profiler
+:mod:`!profiling.sampling` --- Statistical profiler
 ***************************************************
 
 .. module:: profiling.sampling
@@ -22,7 +22,7 @@
    :align: center
    :width: 300px
 
-The :mod:`profiling.sampling` module, named **Tachyon**, provides statistical
+The :mod:`!profiling.sampling` module, named **Tachyon**, provides statistical
 profiling of Python programs through periodic stack sampling. Tachyon can
 run scripts directly or attach to any running Python process without requiring
 code changes or restarts. Because sampling occurs externally to the target

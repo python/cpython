@@ -1539,13 +1539,13 @@ some point in the future.
 
 
 
-:mod:`urllib.response` --- Response classes used by urllib
-==========================================================
+:mod:`!urllib.response` --- Response classes used by urllib
+===========================================================
 
 .. module:: urllib.response
    :synopsis: Response classes used by urllib.
 
-The :mod:`urllib.response` module defines functions and classes which define a
+The :mod:`!urllib.response` module defines functions and classes which define a
 minimal file-like interface, including ``read()`` and ``readline()``.
 Functions defined by this module are used internally by the :mod:`!urllib.request` module.
 The typical response object is a :class:`urllib.response.addinfourl` instance:

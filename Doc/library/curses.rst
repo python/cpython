@@ -1824,8 +1824,8 @@ The following table lists the predefined colors:
 +-------------------------+----------------------------+
 
 
-:mod:`curses.textpad` --- Text input widget for curses programs
-===============================================================
+:mod:`!curses.textpad` --- Text input widget for curses programs
+================================================================
 
 .. module:: curses.textpad
    :synopsis: Emacs-like input editing in a curses window.
@@ -1833,13 +1833,13 @@ The following table lists the predefined colors:
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
 
-The :mod:`curses.textpad` module provides a :class:`Textbox` class that handles
+The :mod:`!curses.textpad` module provides a :class:`Textbox` class that handles
 elementary text editing in a curses window, supporting a set of keybindings
 resembling those of Emacs (thus, also of Netscape Navigator, BBedit 6.x,
 FrameMaker, and many other programs).  The module also provides a
 rectangle-drawing function useful for framing text boxes or for other purposes.
 
-The module :mod:`curses.textpad` defines the following function:
+The module :mod:`!curses.textpad` defines the following function:
 
 
 .. function:: rectangle(win, uly, ulx, lry, lrx)
