@@ -1441,108 +1441,111 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
-.. admonition:: Thread safety
+.. _thread-safety-list:
 
-   Reading a single element from a :class:`list` is
-   :term:`atomic <atomic operation>`:
+.. rubric:: Thread safety for list objects
 
-   .. code-block::
-      :class: green
+Reading a single element from a :class:`list` is
+:term:`atomic <atomic operation>`:
 
-      lst[i]   # list.__getitem__
+.. code-block::
+   :class: green
 
-   The following methods traverse the list and use :term:`atomic <atomic operation>`
-   reads of each item to perform their function. That means that they may
-   return results affected by concurrent modifications:
+   lst[i]   # list.__getitem__
 
-   .. code-block::
-      :class: maybe
+The following methods traverse the list and use :term:`atomic <atomic operation>`
+reads of each item to perform their function. That means that they may
+return results affected by concurrent modifications:
 
-      item in lst
-      lst.index(item)
-      lst.count(item)
+.. code-block::
+   :class: maybe
 
-   All of the above methods/operations are also lock-free. They do not block
-   concurrent modifications. Other operations that hold a lock will not block
-   these from observing intermediate states.
+   item in lst
+   lst.index(item)
+   lst.count(item)
 
-   All other operations from here on block using the per-object lock.
+All of the above operations avoid acquiring :term:`per-object locks
+<per-object lock>`. They do not block concurrent modifications. Other
+operations that hold a lock will not block these from observing intermediate
+states.
 
-   Writing a single item via ``lst[i] = x`` is safe to call from multiple
-   threads and will not corrupt the list.
+All other operations from here on block using the :term:`per-object lock`.
 
-   The following operations return new objects and appear
-   :term:`atomic <atomic operation>` to other threads:
+Writing a single item via ``lst[i] = x`` is safe to call from multiple
+threads and will not corrupt the list.
 
-   .. code-block::
-      :class: good
+The following operations return new objects and appear
+:term:`atomic <atomic operation>` to other threads:
 
-      lst1 + lst2    # concatenates two lists into a new list
-      x * lst        # repeats lst x times into a new list
-      lst.copy()     # returns a shallow copy of the list
+.. code-block::
+   :class: good
 
-   Methods that only operate on a single elements with no shifting required are
-   :term:`atomic <atomic operation>`:
+   lst1 + lst2    # concatenates two lists into a new list
+   x * lst        # repeats lst x times into a new list
+   lst.copy()     # returns a shallow copy of the list
 
-   .. code-block::
-      :class: good
+The following methods that only operate on a single element with no shifting
+required are :term:`atomic <atomic operation>`:
 
-      lst.append(x)  # append to the end of the list, no shifting required
-      lst.pop()      # pop element from the end of the list, no shifting required
+.. code-block::
+   :class: good
 
-   The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
-   Other threads cannot observe elements being removed.
+   lst.append(x)  # append to the end of the list, no shifting required
+   lst.pop()      # pop element from the end of the list, no shifting required
 
-   The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
-   Other threads cannot observe intermediate states during sorting, but the
-   list appears empty for the duration of the sort.
+The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
+Other threads cannot observe elements being removed.
 
-   The following operations may allow lock-free operations to observe
-   intermediate states since they modify multiple elements in place:
+The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
+Other threads cannot observe intermediate states during sorting, but the
+list appears empty for the duration of the sort.
 
-   .. code-block::
-      :class: maybe
+The following operations may allow :term:`lock-free` operations to observe
+intermediate states since they modify multiple elements in place:
 
-      lst.insert(idx, item)  # shifts elements
-      lst.pop(idx)           # idx not at the end of the list, shifts elements
-      lst *= x               # copies elements in place
+.. code-block::
+   :class: maybe
 
-   The :meth:`~list.remove` method may allow concurrent modifications since
-   element comparison may execute arbitrary Python code (via
-   :meth:`~object.__eq__`).
+   lst.insert(idx, item)  # shifts elements
+   lst.pop(idx)           # idx not at the end of the list, shifts elements
+   lst *= x               # copies elements in place
 
-   :meth:`~list.extend` is safe to call from multiple threads.  However, its
-   guarantees depend on the iterable passed to it. If it is a :class:`list`, a
-   :class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
-   :ref:`dictionary view object <dict-views>` (but not their subclasses), the
-   ``extend`` operation is safe from concurrent modifications to the iterable.
-   Otherwise, an iterator is created which can be concurrently modified by
-   another thread.  The same applies to inplace concatenation of a list with
-   other iterables when using ``lst += iterable``.
+The :meth:`~list.remove` method may allow concurrent modifications since
+element comparison may execute arbitrary Python code (via
+:meth:`~object.__eq__`).
 
-   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
-   to call from multiple threads, but ``iterable`` is only locked when it is
-   also a :class:`list` (but not its subclasses).
+:meth:`~list.extend` is safe to call from multiple threads.  However, its
+guarantees depend on the iterable passed to it. If it is a :class:`list`, a
+:class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
+:ref:`dictionary view object <dict-views>` (but not their subclasses), the
+``extend`` operation is safe from concurrent modifications to the iterable.
+Otherwise, an iterator is created which can be concurrently modified by
+another thread.  The same applies to inplace concatenation of a list with
+other iterables when using ``lst += iterable``.
 
-   Operations that involve multiple accesses, as well as iteration, are never
-   atomic. For example:
+Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
+to call from multiple threads, but ``iterable`` is only locked when it is
+also a :class:`list` (but not its subclasses).
 
-   .. code-block::
-      :class: bad
+Operations that involve multiple accesses, as well as iteration, are never
+atomic. For example:
 
-      # NOT atomic: read-modify-write
-      lst[i] = lst[i] + 1
+.. code-block::
+   :class: bad
 
-      # NOT atomic: check-then-act
-      if lst:
-          item = lst.pop()
+   # NOT atomic: read-modify-write
+   lst[i] = lst[i] + 1
 
-      # NOT thread-safe: iteration while modifying
-      for item in lst:
-          process(item)  # another thread may modify lst
+   # NOT atomic: check-then-act
+   if lst:
+         item = lst.pop()
 
-   Consider external synchronization when sharing :class:`list` instances
-   across threads.  See :ref:`freethreading-python-howto` for more information.
+   # NOT thread-safe: iteration while modifying
+   for item in lst:
+         process(item)  # another thread may modify lst
+
+Consider external synchronization when sharing :class:`list` instances
+across threads.  See :ref:`freethreading-python-howto` for more information.
 
 
 .. _typesseq-tuple:
