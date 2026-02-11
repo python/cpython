@@ -410,28 +410,7 @@ that point, a deadlock can occur.
 If your extension type needs its own lock, add a separate :c:type:`PyMutex`
 field (or another synchronization primitive) to your object struct.
 :c:type:`PyMutex` is very lightweight — it is only one byte — so there is
-negligible cost to having an additional one::
-
-    /* WRONG — do not lock ob_mutex directly */
-    PyMutex_Lock(&obj->ob_mutex);
-    ...
-    PyMutex_Unlock(&obj->ob_mutex);
-
-    /* RIGHT — use critical sections for ob_mutex */
-    Py_BEGIN_CRITICAL_SECTION(obj);
-    ...
-    Py_END_CRITICAL_SECTION();
-
-    /* RIGHT — use your own mutex for your own state */
-    typedef struct {
-        PyObject_HEAD
-        PyMutex my_mutex;   /* separate lock for extension state */
-        int my_data;
-    } MyObject;
-
-    PyMutex_Lock(&self->my_mutex);
-    self->my_data++;
-    PyMutex_Unlock(&self->my_mutex);
+negligible cost to having an additional one.
 
 
 Building Extensions for the Free-Threaded Build
