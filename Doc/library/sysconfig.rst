@@ -16,7 +16,7 @@
 
 --------------
 
-The :mod:`sysconfig` module provides access to Python's configuration
+The :mod:`!sysconfig` module provides access to Python's configuration
 information like the list of installation paths and the configuration variables
 relevant for the current platform.
 
@@ -28,7 +28,7 @@ A Python distribution contains a :file:`Makefile` and a :file:`pyconfig.h`
 header file that are necessary to build both the Python binary itself and
 third-party C extensions compiled using ``setuptools``.
 
-:mod:`sysconfig` puts all variables found in these files in a dictionary that
+:mod:`!sysconfig` puts all variables found in these files in a dictionary that
 can be accessed using :func:`get_config_vars` or :func:`get_config_var`.
 
 Notice that on Windows, it's a much smaller set.
@@ -68,7 +68,7 @@ Installation paths
 ------------------
 
 Python uses an installation scheme that differs depending on the platform and on
-the installation options.  These schemes are stored in :mod:`sysconfig` under
+the installation options.  These schemes are stored in :mod:`!sysconfig` under
 unique identifiers based on the value returned by :const:`os.name`.
 The schemes are used by package installers to determine where to copy files to.
 
@@ -258,12 +258,12 @@ Path           Installation directory
 Installation path functions
 ---------------------------
 
-:mod:`sysconfig` provides some functions to determine these installation paths.
+:mod:`!sysconfig` provides some functions to determine these installation paths.
 
 .. function:: get_scheme_names()
 
    Return a tuple containing all schemes currently supported in
-   :mod:`sysconfig`.
+   :mod:`!sysconfig`.
 
 
 .. function:: get_default_scheme()
@@ -285,7 +285,7 @@ Installation path functions
    *key* must be either ``"prefix"``, ``"home"``, or ``"user"``.
 
    The return value is a scheme name listed in :func:`get_scheme_names`. It
-   can be passed to :mod:`sysconfig` functions that take a *scheme* argument,
+   can be passed to :mod:`!sysconfig` functions that take a *scheme* argument,
    such as :func:`get_paths`.
 
    .. versionadded:: 3.10
@@ -313,7 +313,7 @@ Installation path functions
 .. function:: get_path_names()
 
    Return a tuple containing all path names currently supported in
-   :mod:`sysconfig`.
+   :mod:`!sysconfig`.
 
 
 .. function:: get_path(name, [scheme, [vars, [expand]]])
@@ -323,7 +323,7 @@ Installation path functions
 
    *name* has to be a value from the list returned by :func:`get_path_names`.
 
-   :mod:`sysconfig` stores installation paths corresponding to each path name,
+   :mod:`!sysconfig` stores installation paths corresponding to each path name,
    for each platform, with variables to be expanded.  For instance the *stdlib*
    path for the *nt* scheme is: ``{base}/Lib``.
 
@@ -434,7 +434,7 @@ Other functions
 Command-line usage
 ------------------
 
-You can use :mod:`sysconfig` as a script with Python's *-m* option:
+You can use :mod:`!sysconfig` as a script with Python's *-m* option:
 
 .. code-block:: shell-session
 

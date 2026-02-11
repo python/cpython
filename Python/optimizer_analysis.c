@@ -83,7 +83,7 @@ dump_abstract_stack(_Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer)
 
 static void
 dump_uop(JitOptContext *ctx, const char *label, int index,
-         const _PyUOpInstruction *instr, JitOptRef *stack_pointer)
+              const _PyUOpInstruction *instr, JitOptRef *stack_pointer)
 {
     if (get_lltrace() >= 3) {
         printf("%4d %s: ", index, label);
@@ -95,11 +95,24 @@ dump_uop(JitOptContext *ctx, const char *label, int index,
     }
 }
 
+static void
+dump_uops(JitOptContext *ctx, const char *label,
+          _PyUOpInstruction *start, JitOptRef *stack_pointer)
+{
+    int current_len = uop_buffer_length(&ctx->out_buffer);
+    int added_count = (int)(ctx->out_buffer.next - start);
+    for (int j = 0; j < added_count; j++) {
+        dump_uop(ctx, label, current_len - added_count + j, &start[j], stack_pointer);
+    }
+}
+
 #define DUMP_UOP dump_uop
+#define DUMP_UOPS dump_uops
 
 #else
     #define DPRINTF(level, ...)
     #define DUMP_UOP(ctx, label, index, instr, stack_pointer)
+    #define DUMP_UOPS(ctx, label, start, stack_pointer)
 #endif
 
 static int
@@ -226,6 +239,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
        uint16_t opcode, uint16_t oparg, uintptr_t operand0)
 {
     _PyUOpInstruction *out = ctx->out_buffer.next;
+    assert(out < ctx->out_buffer.end);
     out->opcode = (opcode);
     out->format = this_instr->format;
     out->oparg = (oparg);
@@ -261,6 +275,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
+#define frame_new_from_symbol _Py_uop_frame_new_from_symbol
 #define frame_pop _Py_uop_frame_pop
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
@@ -269,11 +284,13 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
-#define sym_new_descr_object _Py_uop_sym_new_descr_object
-#define sym_get_attr _Py_uop_sym_get_attr
-#define sym_set_attr _Py_uop_sym_set_attr
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
+#define sym_set_recorded_type(SYM, TYPE) _Py_uop_sym_set_recorded_type(ctx, SYM, TYPE)
+#define sym_set_recorded_value(SYM, VAL) _Py_uop_sym_set_recorded_value(ctx, SYM, VAL)
+#define sym_set_recorded_gen_func(SYM, VAL) _Py_uop_sym_set_recorded_gen_func(ctx, SYM, VAL)
+#define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
+#define sym_get_probable_value _Py_uop_sym_get_probable_value
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
@@ -356,30 +373,6 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
         }
     }
     return sym_new_not_null(ctx);
-}
-
-static PyCodeObject *
-get_code_with_logging(_PyUOpInstruction *op)
-{
-    PyCodeObject *co = NULL;
-    uint64_t push_operand = op->operand0;
-    if (push_operand & 1) {
-        co = (PyCodeObject *)(push_operand & ~1);
-        DPRINTF(3, "  code=%p\n", co);
-        assert(PyCode_Check(co));
-    }
-    else {
-        PyFunctionObject *func = (PyFunctionObject *)push_operand;
-        DPRINTF(3, "  func=%p ", func);
-        if (func == NULL) {
-            DPRINTF(3, "\n");
-            DPRINTF(1, "Missing function\n");
-            return NULL;
-        }
-        co = (PyCodeObject *)func->func_code;
-        DPRINTF(3, "code=%p\n", co);
-    }
-    return co;
 }
 
 static
@@ -506,6 +499,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
+
         if (!CURRENT_FRAME_IS_INIT_SHIM()) {
             stack_pointer = ctx->frame->stack_pointer;
         }
@@ -526,15 +520,9 @@ optimize_uops(
         if (ctx->out_buffer.next == out_ptr) {
             *(ctx->out_buffer.next++) = *this_instr;
         }
-        // Track escapes - but skip when from init shim frame, since self hasn't escaped yet
-        bool is_init_shim = CURRENT_FRAME_IS_INIT_SHIM();
-        if ((_PyUop_Flags[out_ptr->opcode] & HAS_ESCAPES_FLAG) && !is_init_shim)
-        {
-            ctx->last_escape_index = uop_buffer_length(&ctx->out_buffer) - 1;
-        }
         assert(ctx->frame != NULL);
-        DUMP_UOP(ctx, "out", uop_buffer_length(&ctx->out_buffer) - 1, out_ptr, stack_pointer);
-        if (!is_init_shim && !ctx->done) {
+        DUMP_UOPS(ctx, "out", out_ptr, stack_pointer);
+        if (!CURRENT_FRAME_IS_INIT_SHIM() && !ctx->done) {
             DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
             ctx->frame->stack_pointer = stack_pointer;
             assert(STACK_LEVEL() >= 0);

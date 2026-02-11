@@ -13,7 +13,7 @@
 
 .. note::
 
-   While :mod:`argparse` is the default recommended standard library module
+   While :mod:`!argparse` is the default recommended standard library module
    for implementing basic command line applications, authors with more
    exacting requirements for exactly how their command line applications
    behave may find it doesn't provide the necessary level of control.
@@ -1771,7 +1771,7 @@ Subcommands
      >>> parser.parse_args(['--foo', 'b', '--baz', 'Z'])
      Namespace(baz='Z', foo=True)
 
-   Note that the object returned by :meth:`parse_args` will only contain
+   Note that the object returned by :meth:`~ArgumentParser.parse_args` will only contain
    attributes for the main parser and the subparser that was selected by the
    command line (and not any other subparsers).  So in the example above, when
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
@@ -1814,7 +1814,7 @@ Subcommands
        -h, --help     show this help message and exit
        --baz {X,Y,Z}  baz help
 
-   The :meth:`add_subparsers` method also supports ``title`` and ``description``
+   The :meth:`~ArgumentParser.add_subparsers` method also supports ``title`` and ``description``
    keyword arguments.  When either is present, the subparser's commands will
    appear in their own group in the help output.  For example::
 
@@ -1835,34 +1835,8 @@ Subcommands
 
        {foo,bar}   additional help
 
-   Furthermore, :meth:`~_SubParsersAction.add_parser` supports an additional
-   *aliases* argument,
-   which allows multiple strings to refer to the same subparser. This example,
-   like ``svn``, aliases ``co`` as a shorthand for ``checkout``::
-
-     >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers()
-     >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
-     >>> checkout.add_argument('foo')
-     >>> parser.parse_args(['co', 'bar'])
-     Namespace(foo='bar')
-
-   :meth:`~_SubParsersAction.add_parser` supports also an additional
-   *deprecated* argument, which allows to deprecate the subparser.
-
-      >>> import argparse
-      >>> parser = argparse.ArgumentParser(prog='chicken.py')
-      >>> subparsers = parser.add_subparsers()
-      >>> run = subparsers.add_parser('run')
-      >>> fly = subparsers.add_parser('fly', deprecated=True)
-      >>> parser.parse_args(['fly'])  # doctest: +SKIP
-      chicken.py: warning: command 'fly' is deprecated
-      Namespace()
-
-   .. versionadded:: 3.13
-
    One particularly effective way of handling subcommands is to combine the use
-   of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
+   of the :meth:`~ArgumentParser.add_subparsers` method with calls to :meth:`~ArgumentParser.set_defaults` so
    that each subparser knows which Python function it should execute.  For
    example::
 
@@ -1898,12 +1872,12 @@ Subcommands
      >>> args.func(args)
      ((XYZYX))
 
-   This way, you can let :meth:`parse_args` do the job of calling the
+   This way, you can let :meth:`~ArgumentParser.parse_args` do the job of calling the
    appropriate function after argument parsing is complete.  Associating
    functions with actions like this is typically the easiest way to handle the
    different actions for each of your subparsers.  However, if it is necessary
    to check the name of the subparser that was invoked, the ``dest`` keyword
-   argument to the :meth:`add_subparsers` call will work::
+   argument to the :meth:`~ArgumentParser.add_subparsers` call will work::
 
      >>> parser = argparse.ArgumentParser()
      >>> subparsers = parser.add_subparsers(dest='subparser_name')
@@ -1920,6 +1894,43 @@ Subcommands
    .. versionchanged:: 3.14
       Subparser's *prog* is no longer affected by a custom usage message in
       the main parser.
+
+
+.. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, \
+                                         deprecated=False, **kwargs)
+
+   Create and return a new :class:`ArgumentParser` object for the
+   subcommand *name*.
+
+   The *name* argument is the name of the sub-command.
+
+   The *help* argument provides a short description for this sub-command.
+
+   The *aliases* argument allows providing alternative names for this
+   sub-command. For example::
+
+      >>> parser = argparse.ArgumentParser()
+      >>> subparsers = parser.add_subparsers()
+      >>> checkout = subparsers.add_parser('checkout', aliases=['co'])
+      >>> checkout.add_argument('foo')
+      >>> parser.parse_args(['co', 'bar'])
+      Namespace(foo='bar')
+
+   The *deprecated* argument, if ``True``, marks the sub-command as
+   deprecated and will issue a warning when used. For example::
+
+      >>> parser = argparse.ArgumentParser(prog='chicken.py')
+      >>> subparsers = parser.add_subparsers()
+      >>> fly = subparsers.add_parser('fly', deprecated=True)
+      >>> args = parser.parse_args(['fly'])
+      chicken.py: warning: command 'fly' is deprecated
+      Namespace()
+
+   All other keyword arguments are passed directly to the
+   :class:`!ArgumentParser` constructor.
+
+   .. versionadded:: 3.13
+      Added the *deprecated* parameter.
 
 
 FileType objects

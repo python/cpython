@@ -10,7 +10,7 @@
 
 --------------
 
-:mod:`ctypes` is a foreign function library for Python.  It provides C compatible
+:mod:`!ctypes` is a foreign function library for Python.  It provides C compatible
 data types, and allows calling functions in DLLs or shared libraries.  It can be
 used to wrap these libraries in pure Python.
 
@@ -36,7 +36,7 @@ So, you should not be confused if :class:`c_long` is printed if you would expect
 Loading dynamic link libraries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:mod:`ctypes` exports the *cdll*, and on Windows *windll* and *oledll*
+:mod:`!ctypes` exports the *cdll*, and on Windows *windll* and *oledll*
 objects, for loading dynamic link libraries.
 
 You load libraries by accessing them as attributes of these objects. *cdll*
@@ -182,7 +182,7 @@ handle (passing ``None`` as single argument to call it with a ``NULL`` pointer):
 To find out the correct calling convention you have to look into the C header
 file or the documentation for the function you want to call.
 
-On Windows, :mod:`ctypes` uses win32 structured exception handling to prevent
+On Windows, :mod:`!ctypes` uses win32 structured exception handling to prevent
 crashes from general protection faults when functions are called with invalid
 argument values::
 
@@ -192,7 +192,7 @@ argument values::
    OSError: exception: access violation reading 0x00000020
    >>>
 
-There are, however, enough ways to crash Python with :mod:`ctypes`, so you
+There are, however, enough ways to crash Python with :mod:`!ctypes`, so you
 should be careful anyway.  The :mod:`faulthandler` module can be helpful in
 debugging crashes (e.g. from segmentation faults produced by erroneous C library
 calls).
@@ -205,7 +205,7 @@ as pointer to the memory block that contains their data (:c:expr:`char *` or
 :c:expr:`int` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
-more about :mod:`ctypes` data types.
+more about :mod:`!ctypes` data types.
 
 
 .. _ctypes-fundamental-data-types:
@@ -213,7 +213,7 @@ more about :mod:`ctypes` data types.
 Fundamental data types
 ^^^^^^^^^^^^^^^^^^^^^^
 
-:mod:`ctypes` defines a number of primitive C compatible data types:
+:mod:`!ctypes` defines a number of primitive C compatible data types:
 
 +----------------------+------------------------------------------+----------------------------+
 | ctypes type          | C type                                   | Python type                |
@@ -397,7 +397,7 @@ from within *IDLE* or *PythonWin*::
    >>>
 
 As has been mentioned before, all Python types except integers, strings, and
-bytes objects have to be wrapped in their corresponding :mod:`ctypes` type, so
+bytes objects have to be wrapped in their corresponding :mod:`!ctypes` type, so
 that they can be converted to the required C data type::
 
    >>> printf(b"An int %d, a double %f\n", 1234, c_double(3.14))
@@ -431,10 +431,10 @@ specify :attr:`~_CFuncPtr.argtypes` for all variadic functions.
 Calling functions with your own custom data types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can also customize :mod:`ctypes` argument conversion to allow instances of
-your own classes be used as function arguments. :mod:`ctypes` looks for an
+You can also customize :mod:`!ctypes` argument conversion to allow instances of
+your own classes be used as function arguments. :mod:`!ctypes` looks for an
 :attr:`!_as_parameter_` attribute and uses this as the function argument. The
-attribute must be an integer, string, bytes, a :mod:`ctypes` instance, or an
+attribute must be an integer, string, bytes, a :mod:`!ctypes` instance, or an
 object with an :attr:`!_as_parameter_` attribute::
 
    >>> class Bottles:
@@ -490,7 +490,7 @@ the Python object passed to the function call, it should do a typecheck or
 whatever is needed to make sure this object is acceptable, and then return the
 object itself, its :attr:`!_as_parameter_` attribute, or whatever you want to
 pass as the C function argument in this case. Again, the result should be an
-integer, string, bytes, a :mod:`ctypes` instance, or an object with an
+integer, string, bytes, a :mod:`!ctypes` instance, or an object with an
 :attr:`!_as_parameter_` attribute.
 
 
@@ -600,7 +600,7 @@ Sometimes a C api function expects a *pointer* to a data type as parameter,
 probably to write into the corresponding location, or if the data is too large
 to be passed by value. This is also known as *passing parameters by reference*.
 
-:mod:`ctypes` exports the :func:`byref` function which is used to pass parameters
+:mod:`!ctypes` exports the :func:`byref` function which is used to pass parameters
 by reference.  The same effect can be achieved with the :func:`pointer` function,
 although :func:`pointer` does a lot more work since it constructs a real pointer
 object, so it is faster to use :func:`byref` if you don't need the pointer
@@ -625,12 +625,12 @@ Structures and unions
 ^^^^^^^^^^^^^^^^^^^^^
 
 Structures and unions must derive from the :class:`Structure` and :class:`Union`
-base classes which are defined in the :mod:`ctypes` module. Each subclass must
+base classes which are defined in the :mod:`!ctypes` module. Each subclass must
 define a :attr:`~Structure._fields_` attribute.  :attr:`!_fields_` must be a list of
 *2-tuples*, containing a *field name* and a *field type*.
 
-The field type must be a :mod:`ctypes` type like :class:`c_int`, or any other
-derived :mod:`ctypes` type: structure, union, array, pointer.
+The field type must be a :mod:`!ctypes` type like :class:`c_int`, or any other
+derived :mod:`!ctypes` type: structure, union, array, pointer.
 
 Here is a simple example of a POINT structure, which contains two integers named
 *x* and *y*, and also shows how to initialize a structure in the constructor::
@@ -689,7 +689,7 @@ See :class:`CField`::
 
 .. warning::
 
-   :mod:`ctypes` does not support passing unions or structures with bit-fields
+   :mod:`!ctypes` does not support passing unions or structures with bit-fields
    to functions by value.  While this may work on 32-bit x86, it's not
    guaranteed by the library to work in the general case.  Unions and
    structures with bit-fields should always be passed to functions by pointer.
@@ -707,7 +707,7 @@ structure itself by setting the class attributes :attr:`~Structure._pack_`
 and/or :attr:`~Structure._align_`, respectively.
 See the attribute documentation for details.
 
-:mod:`ctypes` uses the native byte order for Structures and Unions.  To build
+:mod:`!ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
 :class:`BigEndianStructure`, :class:`LittleEndianStructure`,
 :class:`BigEndianUnion`, and :class:`LittleEndianUnion` base classes.  These
@@ -796,7 +796,7 @@ Pointers
 ^^^^^^^^
 
 Pointer instances are created by calling the :func:`pointer` function on a
-:mod:`ctypes` type::
+:mod:`!ctypes` type::
 
    >>> from ctypes import *
    >>> i = c_int(42)
@@ -810,7 +810,7 @@ returns the object to which the pointer points, the ``i`` object above::
    c_long(42)
    >>>
 
-Note that :mod:`ctypes` does not have OOR (original object return), it constructs a
+Note that :mod:`!ctypes` does not have OOR (original object return), it constructs a
 new, equivalent object each time you retrieve an attribute::
 
    >>> pi.contents is i
@@ -854,7 +854,7 @@ item.
 
 Behind the scenes, the :func:`pointer` function does more than simply create
 pointer instances, it has to create pointer *types* first. This is done with the
-:func:`POINTER` function, which accepts any :mod:`ctypes` type, and returns a
+:func:`POINTER` function, which accepts any :mod:`!ctypes` type, and returns a
 new type::
 
    >>> PI = POINTER(c_int)
@@ -876,7 +876,7 @@ Calling the pointer type without an argument creates a ``NULL`` pointer.
    False
    >>>
 
-:mod:`ctypes` checks for ``NULL`` when dereferencing pointers (but dereferencing
+:mod:`!ctypes` checks for ``NULL`` when dereferencing pointers (but dereferencing
 invalid non-\ ``NULL`` pointers would crash Python)::
 
    >>> null_ptr[0]
@@ -896,7 +896,7 @@ invalid non-\ ``NULL`` pointers would crash Python)::
 Thread safety without the GIL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-From Python 3.13 onward, the :term:`GIL` can be disabled on :term:`free threaded <free threading>` builds.
+From Python 3.13 onward, the :term:`GIL` can be disabled on the :term:`free-threaded build`.
 In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
 
    .. code-block:: pycon
@@ -961,7 +961,7 @@ To set a POINTER type field to ``NULL``, you can assign ``None``::
 .. XXX list other conversions...
 
 Sometimes you have instances of incompatible types.  In C, you can cast one type
-into another type.  :mod:`ctypes` provides a :func:`cast` function which can be
+into another type.  :mod:`!ctypes` provides a :func:`cast` function which can be
 used in the same way.  The ``Bar`` structure defined above accepts
 ``POINTER(c_int)`` pointers or :class:`c_int` arrays for its ``values`` field,
 but not instances of other types::
@@ -1025,7 +1025,7 @@ work::
    >>>
 
 because the new ``class cell`` is not available in the class statement itself.
-In :mod:`ctypes`, we can define the ``cell`` class and set the
+In :mod:`!ctypes`, we can define the ``cell`` class and set the
 :attr:`~Structure._fields_` attribute later, after the class statement::
 
    >>> from ctypes import *
@@ -1059,7 +1059,7 @@ other, and finally follow the pointer chain a few times::
 Callback functions
 ^^^^^^^^^^^^^^^^^^
 
-:mod:`ctypes` allows creating C callable function pointers from Python callables.
+:mod:`!ctypes` allows creating C callable function pointers from Python callables.
 These are sometimes called *callback functions*.
 
 First, you must create a class for the callback function. The class knows the
@@ -1158,7 +1158,7 @@ write::
 .. note::
 
    Make sure you keep references to :func:`CFUNCTYPE` objects as long as they
-   are used from C code. :mod:`ctypes` doesn't, and if you don't, they may be
+   are used from C code. :mod:`!ctypes` doesn't, and if you don't, they may be
    garbage collected, crashing your program when a callback is made.
 
    Also, note that if the callback function is called in a thread created
@@ -1177,7 +1177,7 @@ Some shared libraries not only export functions, they also export variables. An
 example in the Python library itself is the :c:data:`Py_Version`, Python
 runtime version number encoded in a single constant integer.
 
-:mod:`ctypes` can access values like this with the :meth:`~_CData.in_dll` class methods of
+:mod:`!ctypes` can access values like this with the :meth:`~_CData.in_dll` class methods of
 the type.  *pythonapi* is a predefined symbol giving access to the Python C
 api::
 
@@ -1196,7 +1196,7 @@ Quoting the docs for that value:
    tricks with this to provide a dynamically created collection of frozen modules.
 
 So manipulating this pointer could even prove useful. To restrict the example
-size, we show only how this table can be read with :mod:`ctypes`::
+size, we show only how this table can be read with :mod:`!ctypes`::
 
    >>> from ctypes import *
    >>>
@@ -1242,7 +1242,7 @@ for testing. Try it out with ``import __hello__`` for example.
 Surprises
 ^^^^^^^^^
 
-There are some edges in :mod:`ctypes` where you might expect something other
+There are some edges in :mod:`!ctypes` where you might expect something other
 than what actually happens.
 
 Consider the following example::
@@ -1310,7 +1310,7 @@ constructs a new Python object each time!
 Variable-sized data types
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:mod:`ctypes` provides some support for variable-sized arrays and structures.
+:mod:`!ctypes` provides some support for variable-sized arrays and structures.
 
 The :func:`resize` function can be used to resize the memory buffer of an
 existing ctypes object.  The function takes the object as first argument, and
@@ -1344,7 +1344,7 @@ get errors accessing other elements::
    IndexError: invalid index
    >>>
 
-Another way to use variable-sized data types with :mod:`ctypes` is to use the
+Another way to use variable-sized data types with :mod:`!ctypes` is to use the
 dynamic nature of Python, and (re-)define the data type after the required size
 is already known, on a case by case basis.
 
@@ -1425,7 +1425,7 @@ On Windows, :func:`~ctypes.util.find_library` searches along the system search p
 returns the full pathname, but since there is no predefined naming scheme a call
 like ``find_library("c")`` will fail and return ``None``.
 
-If wrapping a shared library with :mod:`ctypes`, it *may* be better to determine
+If wrapping a shared library with :mod:`!ctypes`, it *may* be better to determine
 the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
@@ -1551,7 +1551,7 @@ configurable.
 
 The *use_errno* parameter, when set to true, enables a ctypes mechanism that
 allows accessing the system :data:`errno` error number in a safe way.
-:mod:`ctypes` maintains a thread-local copy of the system's :data:`errno`
+:mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
 :data:`errno` value before the function call is swapped with the ctypes private
 copy, the same happens immediately after the function call.
@@ -1929,7 +1929,7 @@ the windows header file is this::
        LPCWSTR lpCaption,
        UINT uType);
 
-Here is the wrapping with :mod:`ctypes`::
+Here is the wrapping with :mod:`!ctypes`::
 
    >>> from ctypes import c_int, WINFUNCTYPE, windll
    >>> from ctypes.wintypes import HWND, LPCWSTR, UINT
@@ -1952,7 +1952,7 @@ function retrieves the dimensions of a specified window by copying them into
         HWND hWnd,
         LPRECT lpRect);
 
-Here is the wrapping with :mod:`ctypes`::
+Here is the wrapping with :mod:`!ctypes`::
 
    >>> from ctypes import POINTER, WINFUNCTYPE, windll, WinError
    >>> from ctypes.wintypes import BOOL, HWND, RECT
@@ -1980,7 +1980,7 @@ do the error checking, and raises an exception when the api call failed::
    >>>
 
 If the :attr:`~_CFuncPtr.errcheck` function returns the argument tuple it receives
-unchanged, :mod:`ctypes` continues the normal processing it does on the output
+unchanged, :mod:`!ctypes` continues the normal processing it does on the output
 parameters.  If you want to return a tuple of window coordinates instead of a
 ``RECT`` instance, you can retrieve the fields in the function and return them
 instead, the normal processing will no longer take place::
@@ -2450,7 +2450,7 @@ Fundamental data types
       Python bytes object or string.
 
       When the ``value`` attribute is retrieved from a ctypes instance, usually
-      a new object is returned each time.  :mod:`ctypes` does *not* implement
+      a new object is returned each time.  :mod:`!ctypes` does *not* implement
       original object return, always a new object is constructed.  The same is
       true for all other ctypes object instances.
 
@@ -2749,7 +2749,7 @@ fields, or any other data types containing pointer type fields.
    Abstract base class for structures in *native* byte order.
 
    Concrete structure and union types must be created by subclassing one of these
-   types, and at least define a :attr:`_fields_` class variable. :mod:`ctypes` will
+   types, and at least define a :attr:`_fields_` class variable. :mod:`!ctypes` will
    create :term:`descriptor`\s which allow reading and writing the fields by direct
    attribute accesses.  These are the
 
@@ -2803,7 +2803,7 @@ fields, or any other data types containing pointer type fields.
       Setting :attr:`!_pack_` to 0 is the same as not setting it at all.
       Otherwise, the value must be a positive power of two.
       The effect is equivalent to ``#pragma pack(N)`` in C, except
-      :mod:`ctypes` may allow larger *n* than what the compiler accepts.
+      :mod:`!ctypes` may allow larger *n* than what the compiler accepts.
 
       :attr:`!_pack_` must already be defined
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
@@ -2824,7 +2824,7 @@ fields, or any other data types containing pointer type fields.
 
       The value must not be negative.
       The effect is equivalent to ``__attribute__((aligned(N)))`` on GCC
-      or ``#pragma align(N)`` on MSVC, except :mod:`ctypes` may allow
+      or ``#pragma align(N)`` on MSVC, except :mod:`!ctypes` may allow
       values that the compiler would reject.
 
       :attr:`!_align_` can only *increase* a structure's alignment
@@ -2873,7 +2873,7 @@ fields, or any other data types containing pointer type fields.
       assigned, otherwise it will have no effect.
 
       The fields listed in this variable must be structure or union type fields.
-      :mod:`ctypes` will create descriptors in the structure type that allows
+      :mod:`!ctypes` will create descriptors in the structure type that allows
       accessing the nested fields directly, without the need to create the
       structure or union field.
 
@@ -3017,7 +3017,7 @@ Arrays and pointers
    Abstract base class for arrays.
 
    The recommended way to create concrete array types is by multiplying any
-   :mod:`ctypes` data type with a non-negative integer.  Alternatively, you can subclass
+   :mod:`!ctypes` data type with a non-negative integer.  Alternatively, you can subclass
    this type and define :attr:`_length_` and :attr:`_type_` class variables.
    Array elements can be read and written using standard
    subscript and slice accesses; for slice reads, the resulting object is
@@ -3043,7 +3043,7 @@ Arrays and pointers
 
    Create an array.
    Equivalent to ``type * length``, where *type* is a
-   :mod:`ctypes` data type and *length* an integer.
+   :mod:`!ctypes` data type and *length* an integer.
 
    This function is :term:`soft deprecated` in favor of multiplication.
    There are no plans to remove it.
