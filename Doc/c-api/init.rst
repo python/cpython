@@ -2074,6 +2074,77 @@ Python-level trace functions in previous versions.
 
 .. versionadded:: 3.12
 
+
+Trace/Profile callback notifications
+------------------------------------
+
+.. versionadded:: 3.15
+
+.. c:type:: PyUnstable_EvalEvent
+
+   An enumeration of events that can trigger a callback registered via
+   :c:func:`PyUnstable_SetEvalCallback`. The possible values are:
+
+   .. c:macro:: PyUnstable_EVAL_TRACE_SET
+
+      A trace function was set via :func:`sys.settrace`, :c:func:`PyEval_SetTrace`,
+      or :c:func:`PyEval_SetTraceAllThreads`.
+
+   .. c:macro:: PyUnstable_EVAL_TRACE_CLEAR
+
+      The trace function was cleared.
+
+   .. c:macro:: PyUnstable_EVAL_PROFILE_SET
+
+      A profile function was set via :func:`sys.setprofile`, :c:func:`PyEval_SetProfile`,
+      or :c:func:`PyEval_SetProfileAllThreads`.
+
+   .. c:macro:: PyUnstable_EVAL_PROFILE_CLEAR
+
+      The profile function was cleared.
+
+
+.. c:type:: int (*PyUnstable_EvalCallback)(PyUnstable_EvalEvent event, void *data)
+
+   The type of the callback function registered using
+   :c:func:`PyUnstable_SetEvalCallback`. The *event* parameter indicates
+   which tracing or profiling event occurred. The *data* parameter is the opaque
+   pointer that was provided when :c:func:`PyUnstable_SetEvalCallback` was called.
+
+   If the callback returns a negative value, the exception is logged using
+   :c:func:`PyErr_FormatUnraisable`.
+
+
+.. c:function:: int PyUnstable_SetEvalCallback(PyUnstable_EvalCallback callback, void *data)
+
+   Register a callback to be notified when :func:`sys.settrace` or
+   :func:`sys.setprofile` (or their C equivalents) are called.
+
+   This allows JIT compilers and other tools using :pep:`523` frame evaluation
+   hooks to efficiently detect tracing or profiling changes without polling.
+
+   The *callback* will be invoked with an event indicating whether tracing or
+   profiling was set or cleared. The *data* pointer is passed through to the
+   callback.
+
+   Only one callback can be registered at a time per interpreter. Setting a new
+   callback replaces any previously registered callback. To clear the callback,
+   pass ``NULL`` for *callback*.
+
+   Return ``0`` on success.
+
+
+.. c:function:: PyUnstable_EvalCallback PyUnstable_GetEvalCallback(void **data)
+
+   Retrieve the currently registered eval callback and its associated data.
+
+   If *data* is not ``NULL``, the opaque pointer that was passed to
+   :c:func:`PyUnstable_SetEvalCallback` is stored in ``*data``.
+
+   Return the currently registered callback, or ``NULL`` if no callback
+   is registered.
+
+
 Reference tracing
 =================
 
