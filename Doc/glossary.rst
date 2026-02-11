@@ -1019,10 +1019,11 @@ Glossary
       More information can be found in :ref:`metaclasses`.
 
    method
-      A :term:`function` which is defined inside a :term:`class` body.  If called as an :term:`attribute`
-      of an instance of that class, the method will get the instance object as
-      its first :term:`argument` (which is usually called ``self``).
-      
+      A :term:`function` which is defined inside a :term:`class` body.  If
+      called as an :term:`attribute` of an instance of that class, the method
+      will get the instance object as its first :term:`argument` (which is
+      usually called ``self``).
+
       See also :term:`nested scope`.
 
    method resolution order
