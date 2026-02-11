@@ -1019,10 +1019,10 @@ Glossary
       More information can be found in :ref:`metaclasses`.
 
    method
-      A function which is defined inside a class body.  If called as an attribute
+      A :term:`function` which is defined inside a class body.  If called as an attribute
       of an instance of that class, the method will get the instance object as
       its first :term:`argument` (which is usually called ``self``).
-      See :term:`function` and :term:`nested scope`.
+      See :term:`nested scope`.
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
