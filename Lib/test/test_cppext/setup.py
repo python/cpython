@@ -59,7 +59,7 @@ def main():
         else:
             cppflags.append(f'-std={std}')
 
-        if limited or (std != 'c++03'):
+        if limited or (std != 'c++03') and not internal:
             # See CPPFLAGS_PEDANTIC docstring
             cppflags.extend(CPPFLAGS_PEDANTIC)
 
