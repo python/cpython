@@ -46,7 +46,7 @@ module Python
           | Assert(expr test, expr? msg)
 
           | Import(alias* names)
-          | ImportFrom(identifier? module, alias* names, int? level)
+          | ImportFrom(identifier? module, alias* names, int level)
 
           | Global(identifier* names)
           | Nonlocal(identifier* names)
