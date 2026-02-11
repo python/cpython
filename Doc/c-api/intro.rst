@@ -220,7 +220,7 @@ Docstring macros
 General utility macros
 ----------------------
 
-The following macros common tasks not specific to Python.
+The following macros are for common tasks not specific to Python.
 
 .. c:macro:: Py_UNUSED(arg)
 
@@ -317,7 +317,7 @@ Assertion utilities
    In debug mode, and on unsupported compilers, the macro expands to a call to
    :c:func:`Py_FatalError`.
 
-   A use for ``Py_UNREACHABLE()`` is following a call a function that
+   A use for ``Py_UNREACHABLE()`` is following a call to a function that
    never returns but that is not declared ``_Noreturn``.
 
    If a code path is very unlikely code but can be reached under exceptional
