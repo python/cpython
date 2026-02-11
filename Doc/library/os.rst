@@ -257,7 +257,7 @@ process and user.
 
    .. warning::
       This function is not thread-safe. Calling it while the environment is
-      being modified in an other thread is an undefined behavior. Reading from
+      being modified in another thread is an undefined behavior. Reading from
       :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
       while reloading, may return an empty result.
 
@@ -3989,7 +3989,7 @@ Naturally, they are all only available on Linux.
    except it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_NONBLOCK`
@@ -4021,7 +4021,7 @@ Naturally, they are all only available on Linux.
    *fd* must be a valid timer file descriptor.
 
    The timer's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_TIMER_ABSTIME`
@@ -4090,7 +4090,7 @@ Naturally, they are all only available on Linux.
 
    Return a two-item tuple of floats (``next_expiration``, ``interval``).
 
-   ``next_expiration`` denotes the relative time until next the timer next fires,
+   ``next_expiration`` denotes the relative time until the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.

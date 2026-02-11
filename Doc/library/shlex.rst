@@ -343,7 +343,7 @@ variables which either control lexical analysis or can be used for debugging:
 Parsing Rules
 -------------
 
-When operating in non-POSIX mode, :class:`~shlex.shlex` will try to obey to the
+When operating in non-POSIX mode, :class:`~shlex.shlex` will try to obey the
 following rules.
 
 * Quote characters are not recognized within words (``Do"Not"Separate`` is
@@ -366,7 +366,7 @@ following rules.
 
 * It's not possible to parse empty strings, even if quoted.
 
-When operating in POSIX mode, :class:`~shlex.shlex` will try to obey to the
+When operating in POSIX mode, :class:`~shlex.shlex` will try to obey the
 following parsing rules.
 
 * Quotes are stripped out, and do not separate words (``"Do"Not"Separate"`` is
@@ -382,7 +382,7 @@ following parsing rules.
 * Enclosing characters in quotes which are part of
   :attr:`~shlex.escapedquotes` (e.g. ``'"'``) preserves the literal value
   of all characters within the quotes, with the exception of the characters
-  mentioned in :attr:`~shlex.escape`.  The escape characters retain its
+  mentioned in :attr:`~shlex.escape`.  The escape characters retain their
   special meaning only when followed by the quote in use, or the escape
   character itself. Otherwise the escape character will be considered a
   normal character.

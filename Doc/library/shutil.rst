@@ -543,7 +543,7 @@ instead of 64 KiB) and a :func:`memoryview`-based variant of
 :func:`shutil.copyfileobj` is used.
 
 If the fast-copy operation fails and no data was written in the destination
-file then shutil will silently fallback on using less efficient
+file then shutil will silently fall back to less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8

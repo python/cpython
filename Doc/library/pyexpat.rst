@@ -409,7 +409,7 @@ otherwise stated.
    ...``).  The *doctypeName* is provided exactly as presented.  The *systemId* and
    *publicId* parameters give the system and public identifiers if specified, or
    ``None`` if omitted.  *has_internal_subset* will be true if the document
-   contains and internal document declaration subset. This requires Expat version
+   contains an internal document declaration subset. This requires Expat version
    1.2 or newer.
 
 
