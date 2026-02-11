@@ -4,6 +4,7 @@ import os.path
 import shlex
 import shutil
 import subprocess
+import sys
 import unittest
 from test import support
 
@@ -26,9 +27,6 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 @support.requires_resource('cpu')
 class BaseTests:
     TEST_INTERNAL_C_API = False
-
-    def test_build(self):
-        self.check_build('_testcppext')
 
     def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
@@ -91,6 +89,9 @@ class BaseTests:
 
 
 class TestPublicCAPI(BaseTests, unittest.TestCase):
+    def test_build(self):
+        self.check_build('_testcppext')
+
     @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited_cpp03(self):
         self.check_build('_test_limited_cpp03ext', std='c++03', limited=True)
@@ -118,6 +119,13 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
 
 class TestInteralCAPI(BaseTests, unittest.TestCase):
     TEST_INTERNAL_C_API = True
+
+    def test_build(self):
+        kwargs = {}
+        if sys.platform == 'darwin':
+            # Old Apple clang++ default C++ std is gnu++98
+            kwargs['std'] = 'c++11'
+        self.check_build('_testcppext_internal', **kwargs)
 
 
 if __name__ == "__main__":
