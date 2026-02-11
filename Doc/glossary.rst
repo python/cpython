@@ -1019,7 +1019,7 @@ Glossary
       More information can be found in :ref:`metaclasses`.
 
    method
-      A :term:`function` which is defined inside a class body.  If called as an attribute
+      A :term:`function` which is defined inside a :term:`class` body.  If called as an :term:`attribute`
       of an instance of that class, the method will get the instance object as
       its first :term:`argument` (which is usually called ``self``).
       
